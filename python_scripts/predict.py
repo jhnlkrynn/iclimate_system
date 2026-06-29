@@ -1,0 +1,159 @@
+import json
+import os
+import sys
+import warnings
+
+import joblib
+import pandas as pd
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+RICE_MODEL = os.path.join(
+    BASE_DIR,
+    "storage",
+    "models",
+    "rice_yield_model_final.pkl",
+)
+
+FEATURE_MAP = {
+    "rainfall": "RAINFALL",
+    "temp_avg": "TEMP_AVG",
+    "temp_range": "TEMP_RANGE",
+    "area": "Area",
+    "previous_rainfall": "Previous_Rainfall",
+    "previous_temp": "Previous_Temp",
+    "rainfall_6m": "Rainfall_6M",
+    "temp_3m": "Temp_3M",
+    "temp_6m": "Temp_6M",
+    "seasonal_rainfall": "Seasonal_Rainfall",
+    "seasonal_temp": "Seasonal_Temp",
+    "season": "Season",
+}
+
+
+def install_sklearn_compatibility_shims():
+    """Allow models saved with older sklearn internals to load on this machine."""
+    try:
+        import sklearn.compose._column_transformer as column_transformer
+    except Exception:
+        return
+
+    if not hasattr(column_transformer, "_RemainderColsList"):
+        class _RemainderColsList(list):
+            pass
+
+        column_transformer._RemainderColsList = _RemainderColsList
+
+
+def parse_payload():
+    if len(sys.argv) < 2:
+        raise ValueError("Missing JSON input payload.")
+
+    try:
+        return json.loads(sys.argv[1])
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON input payload: {exc}") from exc
+
+
+def build_features(payload):
+    missing = [field for field in FEATURE_MAP if field not in payload]
+
+    if missing:
+        raise ValueError("Missing required fields: " + ", ".join(missing))
+
+    row = {}
+
+    for input_name, model_name in FEATURE_MAP.items():
+        value = payload[input_name]
+        row[model_name] = value if input_name == "season" else float(value)
+
+    return pd.DataFrame([row], columns=list(FEATURE_MAP.values()))
+
+
+def planting_advisory(payload, predicted_yield):
+    rainfall = float(payload["rainfall"])
+    temp_avg = float(payload["temp_avg"])
+    season = payload["season"]
+
+    if rainfall < 80 and payload.get("farm_type") == "Rainfed":
+        return "Delay planting or prepare supplemental water because rainfall is low for rainfed fields."
+
+    if rainfall > 350:
+        return "Proceed carefully and improve drainage before planting because rainfall is very high."
+
+    if temp_avg < 22 or temp_avg > 36:
+        return "Monitor crop stress closely because the predicted temperature is outside the ideal rice range."
+
+    if predicted_yield >= 4:
+        return f"Good planting window for the {season.lower()} season based on the predicted yield and weather inputs."
+
+    return "Planting is possible, but use caution and coordinate with MAO guidance because the expected yield is moderate."
+
+
+def irrigation_recommendation(payload):
+    rainfall = float(payload["rainfall"])
+    seasonal_rainfall = float(payload["seasonal_rainfall"])
+    farm_type = payload.get("farm_type", "Rainfed")
+
+    if farm_type == "Irrigated" and rainfall < 120:
+        return "Schedule controlled irrigation and keep shallow standing water during critical growth stages."
+
+    if farm_type == "Rainfed" and rainfall < 120:
+        return "Prioritize water-saving practices and avoid transplanting until rainfall improves."
+
+    if rainfall > 300 or seasonal_rainfall > 1200:
+        return "Reduce irrigation and check field drainage to prevent waterlogging."
+
+    return "Maintain normal irrigation monitoring; current rainfall inputs are within a workable range."
+
+
+def notifications(payload, predicted_yield):
+    notices = []
+    rainfall = float(payload["rainfall"])
+    temp_avg = float(payload["temp_avg"])
+    temp_range = float(payload["temp_range"])
+
+    if rainfall < 80:
+        notices.append("Low rainfall warning: drought stress may reduce rice growth.")
+
+    if rainfall > 350:
+        notices.append("Heavy rainfall warning: monitor flooding, drainage, and disease risk.")
+
+    if temp_avg > 35:
+        notices.append("High temperature warning: watch for heat stress during flowering.")
+
+    if temp_range > 12:
+        notices.append("Wide temperature range warning: seedlings may need closer monitoring.")
+
+    if predicted_yield < 3:
+        notices.append("Yield risk warning: predicted yield is below 3 tons per hectare.")
+
+    return notices
+
+
+def main():
+    warnings.filterwarnings("ignore")
+    install_sklearn_compatibility_shims()
+
+    if not os.path.exists(RICE_MODEL):
+        raise FileNotFoundError(f"Rice yield model not found at {RICE_MODEL}")
+
+    payload = parse_payload()
+    features = build_features(payload)
+    model = joblib.load(RICE_MODEL)
+    predicted_yield = float(model.predict(features)[0])
+
+    print(json.dumps({
+        "predicted_yield": round(predicted_yield, 2),
+        "planting_advisory": planting_advisory(payload, predicted_yield),
+        "irrigation_recommendation": irrigation_recommendation(payload),
+        "notifications": notifications(payload, predicted_yield),
+    }))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
