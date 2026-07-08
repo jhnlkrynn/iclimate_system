@@ -23,7 +23,7 @@
     .form-input.is-invalid { border-color: #d92d20; box-shadow: 0 0 0 3px rgba(217,45,32,.10); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
     .atc-icon-img { background: rgba(255,255,255,.92) !important; overflow: hidden; } .atc-icon-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
-    .auth-logo-img { height: 46px; width: auto; max-width: 190px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
+    .auth-logo-img { height: 76px; width: auto; max-width: 300px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
     /* -- CREATE ACCOUNT PAGE --------------------------- */
     body.login-page {
       background: #0f1f17;
@@ -456,7 +456,7 @@
       <div class="lpl-body">
         <div class="lpl-eyebrow">Farmer Registration</div>
         <h1 class="lpl-headline">Join the iClimate community</h1>
-        <p class="lpl-sub">Create a free account to access climate records, planting advisories, announcements, and notifications for Lian, Batangas.</p>
+        <p class="lpl-sub">Create a free account to access climate records, planting advisories, community feed posts, and notifications for Lian, Batangas.</p>
 
         <div class="account-type-card">
           <div class="atc-header">

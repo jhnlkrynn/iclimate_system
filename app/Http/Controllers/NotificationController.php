@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification as UserNotification;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,12 +17,11 @@ class NotificationController extends CrudController
     protected array $columns = ['title' => 'Title', 'type' => 'Type', 'is_read' => 'Read'];
     protected array $searchable = ['title', 'message', 'type'];
     protected array $filterable = ['type' => ['Announcement', 'Advisory', 'Warning'], 'is_read' => [0 => 'Unread', 1 => 'Read']];
-    protected bool $farmerOwnRecordsOnly = true;
 
     public function __construct()
     {
         $this->fields = [
-            ['name' => 'recipient_scope', 'label' => 'Send To', 'type' => 'select', 'options' => ['all' => 'All Users', 'farmers' => 'Farmers', 'specific' => 'Specific User']],
+            ['name' => 'recipient_scope', 'label' => 'Send To', 'type' => 'select', 'options' => ['all' => 'All Users', 'farmers' => 'Farmers', 'mao' => 'MAO Personnel', 'it_experts' => 'IT Experts', 'specific' => 'Specific User']],
             ['name' => 'user_id', 'label' => 'Specific User', 'type' => 'select', 'options' => $this->userOptions()],
             ['name' => 'title', 'label' => 'Title'],
             ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
@@ -64,6 +64,11 @@ class NotificationController extends CrudController
         return redirect()->route('notifications.show', $record)->with('success', 'Notification updated successfully.');
     }
 
+    protected function baseQuery(Request $request): Builder
+    {
+        return UserNotification::query()->where('user_id', $request->user()->id);
+    }
+
     public function markRead(Request $request, int $notification): RedirectResponse
     {
         $record = UserNotification::query()
@@ -98,7 +103,7 @@ class NotificationController extends CrudController
         }
 
         return [
-            'recipient_scope' => ['required', Rule::in(['all', 'farmers', 'specific'])],
+            'recipient_scope' => ['required', Rule::in(['all', 'farmers', 'mao', 'it_experts', 'specific'])],
             'user_id' => ['required_if:recipient_scope,specific', 'nullable', 'exists:users,id'],
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
@@ -111,6 +116,8 @@ class NotificationController extends CrudController
         return match ($data['recipient_scope']) {
             'all' => User::query()->where('status', User::STATUS_ACTIVE)->get(),
             'farmers' => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->get(),
+            'mao' => User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get(),
+            'it_experts' => User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->get(),
             'specific' => User::query()->whereKey($data['user_id'])->get(),
         };
     }

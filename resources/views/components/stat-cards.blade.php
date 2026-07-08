@@ -4,7 +4,7 @@
         ['Climate Records', $totalClimateRecords ?? 0, 'blue', 'Climate'],
         ['Rice Productions', $totalRiceProductions ?? 0, 'amber', 'Harvest'],
         ['Advisories', $totalAdvisories ?? 0, 'coral', 'Guidance'],
-        ['Announcements', $totalAnnouncements ?? 0, 'green', 'News'],
+        ['Community Posts', $totalCommunityPosts ?? 0, 'green', 'Feed'],
         ['Notifications', $totalNotifications ?? 0, 'blue', 'Alerts'],
     ] as [$label, $value, $tone, $tag])
         <div class="col-sm-6 col-xl-4 col-xxl-2">

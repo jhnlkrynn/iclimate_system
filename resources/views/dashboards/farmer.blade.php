@@ -73,7 +73,7 @@
         }
         .climate-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 1rem;
             margin-bottom: 1.25rem;
         }
@@ -204,8 +204,72 @@
             padding: 1.5rem;
             text-align: center;
         }
+        .dashboard-section-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 1.35rem 0 .75rem;
+        }
+        .dashboard-section-label:first-of-type { margin-top: 0; }
+        .section-title {
+            color: var(--fc-ink);
+            font-size: .92rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin: 0;
+        }
+        .section-note { color: var(--fc-muted); font-size: .84rem; margin: 0; }
+        .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .dashboard-group {
+            border: 1px solid var(--fc-line);
+            border-radius: 8px;
+            background: rgba(255,255,255,.58);
+            box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
+            overflow: hidden;
+        }
+        .dashboard-group > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .95rem 1rem;
+            cursor: pointer;
+            list-style: none;
+            background: linear-gradient(135deg, rgba(244,250,239,.95), rgba(232,244,230,.82));
+        }
+        .dashboard-group > summary::-webkit-details-marker { display: none; }
+        .dashboard-group-title { color: var(--fc-ink); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+        .dashboard-group-note { color: var(--fc-muted); font-size: .82rem; margin: .1rem 0 0; }
+        .dashboard-group-toggle { color: var(--fc-green); font-size: .78rem; font-weight: 900; white-space: nowrap; }
+        .dashboard-group-toggle::after { content: "Collapse"; }
+        .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
+        .dashboard-group-body { padding: 1rem; }
+        .dashboard-group-body > .row:last-child, .dashboard-group-body > .farmer-panel:last-child { margin-bottom: 0 !important; }
+        .list-compact .farmer-list-item:nth-of-type(n+4), .list-compact .row > [class*="col-"]:nth-child(n+5) { display: none; }
+        .priority-grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+        .priority-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 148px;
+            padding: 1rem;
+            border: 1px solid var(--fc-line);
+            border-radius: 8px;
+            background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(232,244,230,.97));
+            box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
+            text-decoration: none;
+            color: inherit;
+        }
+        .priority-card:hover { transform: translateY(-2px); border-color: rgba(31,143,85,.55); }
+        .priority-card strong { color: var(--fc-ink); font-size: 1rem; }
+        .priority-card span { color: var(--fc-muted); font-size: .86rem; line-height: 1.45; }
+        @media (max-width: 1399.98px) { .climate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 1199.98px) { .climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .climate-grid, .quick-grid { grid-template-columns: 1fr; } .farmer-panel-header { align-items: flex-start; flex-direction: column; } }
+        @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 767.98px) { .climate-grid, .quick-grid { grid-template-columns: 1fr; } .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } }
     </style>
 
     @php
@@ -220,15 +284,23 @@
                 <div>
                     <div class="farmer-eyebrow mb-2">Farmer Field View</div>
                     <h1 class="h2 fw-bold mb-2">Climate-smart <em>farmer dashboard.</em></h1>
-                    <p class="mb-0">Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, announcements, and notifications for Lian, Batangas.</p>
+                    <p class="mb-0">Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, community updates, and messages for Lian, Batangas.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <span class="field-chip"><span class="field-pulse"></span> {{ $climateSummary?->record_date?->format('M d, Y') ?? 'No climate record yet' }}</span>
-                    <a class="btn btn-light fw-bold" href="{{ route('notifications.index') }}">Notifications</a>
+                    <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ now()->format('l, F d, Y') }}</span></span>
+                    <a class="btn btn-light fw-bold" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
+                    <a class="btn btn-outline-light fw-bold" href="{{ route('community-feed.index') }}">Community Feed</a>
                     <a class="btn btn-outline-light fw-bold" href="{{ route('profile.edit') }}">My Profile</a>
                 </div>
             </div>
         </section>
+
+        <div class="dashboard-section-label">
+            <div>
+                <h2 class="section-title">Today&apos;s Overview</h2>
+                <p class="section-note">Latest climate values and alerts for quick scanning.</p>
+            </div>
+        </div>
 
         <section class="climate-grid">
             <a class="field-card tone-green text-decoration-none" href="{{ route('climate-records.index') }}">
@@ -254,14 +326,45 @@
             </a>
             <a class="field-card tone-red text-decoration-none" href="{{ route('planting-advisories.index') }}">
                 <div class="field-card-body">
-                    <div class="field-label">Unread Alerts</div>
+                    <div class="field-label">Saved Alerts</div>
                     <div class="field-value">{{ number_format($unreadNotifications) }}</div>
-                    <div class="field-note">Farmer notifications needing review</div>
+                    <div class="field-note">Legacy alerts kept for records</div>
+                </div>
+            </a>
+            <a class="field-card tone-red text-decoration-none" href="{{ route('heatmap-areas.index') }}">
+                <div class="field-card-body">
+                    <div class="field-label">Heat Map Risks</div>
+                    <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
+                    <div class="field-note">High or severe barangay risk areas</div>
                 </div>
             </a>
         </section>
 
-        <div class="row g-4 mb-4">
+        <div class="dashboard-section-label">
+            <div>
+                <h2 class="section-title">Priority Tools</h2>
+                <p class="section-note">The three places farmers are most likely to use every day.</p>
+            </div>
+        </div>
+
+        <section class="priority-grid">
+            <a class="priority-card" href="{{ route('ai-chat.index') }}"><div><strong>AI Farming Assistant</strong><span class="d-block mt-2">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div><span class="status-pill align-self-start">Open Assistant</span></a>
+            <a class="priority-card" href="{{ route('heatmap-areas.index') }}"><div><strong>Barangay Heat Map</strong><span class="d-block mt-2">Check risk areas before planning field work, irrigation, and harvest movement.</span></div><span class="status-pill align-self-start">Open Heat Map</span></a>
+            <a class="priority-card" href="{{ route('community-feed.index') }}"><div><strong>Community Feed</strong><span class="d-block mt-2">View MAO updates, programs, activities, photos, videos, comments, and reactions.</span></div><span class="status-pill align-self-start">Open Feed</span></a>
+            <a class="priority-card" href="{{ route('messages.index') }}"><div><strong>Messages</strong><span class="d-block mt-2">Start private conversations with MAO personnel for specific farm concerns.</span></div><span class="status-pill align-self-start">Open Messages</span></a>
+        </section>
+
+        <div class="dashboard-focus-grid">
+        <details class="dashboard-group" open>
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Guidance</h2>
+                    <p class="dashboard-group-note">Published advisories and the most relevant field note.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
             <div class="col-xl-8">
                 <div class="farmer-panel h-100">
                     <div class="farmer-panel-header">
@@ -319,29 +422,40 @@
                 </div>
             </div>
         </div>
+            </div>
+        </details>
 
-        <div class="row g-4 mb-4">
+        <details class="dashboard-group">
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Updates And Profile</h2>
+                    <p class="dashboard-group-note">Community posts, message access, and your registered farm details.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
             <div class="col-xl-4">
                 <div class="farmer-panel h-100">
                     <div class="farmer-panel-header">
                         <div>
-                            <h2 class="farmer-panel-title">Announcements</h2>
-                            <p class="farmer-panel-sub">Municipal updates for farmers.</p>
+                            <h2 class="farmer-panel-title">Community Posts</h2>
+                            <p class="farmer-panel-sub">MAO updates, programs, activities, and announcements.</p>
                         </div>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('announcements.index') }}">Open</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('community-feed.index') }}">Open Feed</a>
                     </div>
-                    <div class="farmer-panel-body">
-                        @forelse($announcements as $announcement)
+                    <div class="farmer-panel-body list-compact">
+                        @forelse($feedPosts as $post)
                             <div class="farmer-list-item">
-                                <div class="list-mark">ANN</div>
+                                <div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div>
                                 <div>
-                                    <div class="list-title">{{ $announcement->title }}</div>
-                                    <div class="list-text">{{ str($announcement->content)->limit(90) }}</div>
-                                    <div class="list-meta">{{ $announcement->category }}</div>
+                                    <div class="list-title">{{ $post->title }}</div>
+                                    <div class="list-text">{{ str($post->body)->limit(90) }}</div>
+                                    <div class="list-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div>
                                 </div>
                             </div>
                         @empty
-                            <div class="empty-soft"><strong>No announcements</strong><div class="small text-muted mt-1">New announcements will appear here.</div></div>
+                            <div class="empty-soft"><strong>No community posts</strong><div class="small text-muted mt-1">MAO feed updates will appear here.</div></div>
                         @endforelse
                     </div>
                 </div>
@@ -351,24 +465,16 @@
                 <div class="farmer-panel h-100">
                     <div class="farmer-panel-header">
                         <div>
-                            <h2 class="farmer-panel-title">Notifications</h2>
-                            <p class="farmer-panel-sub">Messages sent to your account.</p>
+                            <h2 class="farmer-panel-title">Community and Messages</h2>
+                            <p class="farmer-panel-sub">MAO posts and private conversations.</p>
                         </div>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('notifications.index') }}">Open</a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('community-feed.index') }}">Open Feed</a>
                     </div>
                     <div class="farmer-panel-body">
-                        @forelse($notifications as $notification)
-                            <div class="farmer-list-item">
-                                <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
-                                <div>
-                                    <div class="list-title">{{ $notification->title }}</div>
-                                    <div class="list-text">{{ str($notification->message)->limit(95) }}</div>
-                                    <div class="list-meta">{{ $notification->type }} | {{ $notification->created_at?->diffForHumans() }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-soft"><strong>No notifications</strong><div class="small text-muted mt-1">You are all caught up.</div></div>
-                        @endforelse
+                        <div class="quick-grid" style="grid-template-columns:1fr;">
+                            <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>View MAO updates, activities, programs, photos, videos, comments, and reactions.</span></a>
+                            <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Start a private conversation with MAO personnel.</span></a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -399,7 +505,18 @@
                 </div>
             </div>
         </div>
+            </div>
+        </details>
 
+        <details class="dashboard-group">
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Module Access</h2>
+                    <p class="dashboard-group-note">All farmer modules in one place.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
         <div class="farmer-panel">
             <div class="farmer-panel-header">
                 <div>
@@ -410,11 +527,37 @@
             <div class="farmer-panel-body">
                 <div class="quick-grid">
                     <a class="quick-action" href="{{ route('climate-records.index') }}"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
+                    <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
+                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>AI Farming Assistant</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
                     <a class="quick-action" href="{{ route('planting-advisories.index') }}"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
-                    <a class="quick-action" href="{{ route('announcements.index') }}"><strong>Announcements</strong><span>Check municipal news, events, trainings, and distributions.</span></a>
-                    <a class="quick-action" href="{{ route('notifications.index') }}"><strong>Notifications</strong><span>View alerts and mark messages as read.</span></a>
+                    <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
+                    <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>
                 </div>
             </div>
         </div>
+            </div>
+        </details>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateTarget = document.querySelector('[data-current-date]');
+            if (!dateTarget) return;
+
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: '2-digit',
+                year: 'numeric',
+            });
+
+            const refreshDate = () => {
+                dateTarget.textContent = formatter.format(new Date());
+            };
+
+            refreshDate();
+            setInterval(refreshDate, 60000);
+        });
+    </script>
 </x-app-layout>

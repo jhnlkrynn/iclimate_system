@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlantingAdvisory;
+use App\Support\LianBarangays;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class PlantingAdvisoryController extends CrudController
             ['name' => 'title', 'label' => 'Title'],
             ['name' => 'content', 'label' => 'Content', 'type' => 'textarea'],
             ['name' => 'type', 'label' => 'Type', 'type' => 'select', 'options' => ['Planting' => 'Planting', 'Harvesting' => 'Harvesting', 'Irrigation' => 'Irrigation', 'Climate' => 'Climate']],
-            ['name' => 'target_barangay', 'label' => 'Target Barangay'],
+            ['name' => 'target_barangay', 'label' => 'Target Barangay', 'type' => 'select', 'options' => LianBarangays::options()],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['Draft' => 'Draft', 'Published' => 'Published']],
         ];
     }
@@ -38,7 +39,7 @@ class PlantingAdvisoryController extends CrudController
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'type' => ['required', Rule::in(['Planting', 'Harvesting', 'Irrigation', 'Climate'])],
-            'target_barangay' => ['nullable', 'string', 'max:255'],
+            'target_barangay' => ['nullable', 'string', Rule::in(LianBarangays::all())],
             'status' => ['required', Rule::in(['Draft', 'Published'])],
         ];
     }

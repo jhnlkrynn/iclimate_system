@@ -23,7 +23,7 @@
     .field-error { color: #b42318; font-size: .78rem; font-weight: 600; margin-top: 7px; }
     .form-input.is-invalid { border-color: #d92d20; box-shadow: 0 0 0 3px rgba(217,45,32,.10); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
-    .auth-logo-img { height: 46px; width: auto; max-width: 190px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
+    .auth-logo-img { height: 76px; width: auto; max-width: 300px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
     /* -- LOGIN PAGE OVERRIDE ---------------------------- */
     body.login-page {
       background: #0f1f17;

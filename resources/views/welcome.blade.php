@@ -1054,18 +1054,28 @@
     .role-it { background: linear-gradient(135deg, #3D5A48, #0D1F18); }
     .contact-form-card button[type="button"] { cursor: default; }
     .brand-logo-img {
-      height: 42px;
+      height: 76px;
       width: auto;
-      max-width: 172px;
+      max-width: 300px;
       object-fit: contain;
       display: block;
     }
     .footer-logo .brand-logo-img { filter: brightness(0) invert(1); }
     .role-logo-img {
-      width: 96px;
-      height: 96px;
+      width: 118px;
+      height: 118px;
       object-fit: contain;
       display: block;
+    }
+    @media (max-width: 640px) {
+      .brand-logo-img {
+        height: 58px;
+        max-width: 230px;
+      }
+      .role-logo-img {
+        width: 104px;
+        height: 104px;
+      }
     }
   </style>
 </head>
@@ -1364,7 +1374,7 @@
     <div class="section-header">
       <span class="eyebrow">User Roles</span>
       <h2>Who Uses iClimate?</h2>
-      <p>Three specialized user roles: Rice Farmers, MAO Personnel, and IT Expert, each with dedicated features and dashboards for climate-informed agricultural decision-making.</p>
+      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Personnel, and IT Experts, each designed to support climate-informed agricultural planning and decision-making.</p>
     </div>
     <div class="roles-grid">
 
@@ -1373,26 +1383,26 @@
         <div class="role-icon-wrap role-icon-wrap--img">
           <img src="{{ asset('images/rice farmer.png') }}" alt="Rice Farmer" class="role-logo-img">
         </div>
-        <h3>Rice Farmers</h3>
-        <p>Access climate monitoring, rice planting advisories, seasonal reports, and weather risk alerts through a farmer-friendly dashboard.</p>
+        <h3>Rice Farmer</h3>
+        <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
         <ul class="role-features">
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Climate Dashboard
+            Climate Monitoring
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Rice Production
+            Planting Guidance
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Planting Advisory
+            Weather Risk Alerts
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Weather Alerts
+            Notifications
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1405,13 +1415,13 @@
         </a>
       </div>
 
-      <!-- MAO Staff -->
+      <!-- MAO Personnel -->
       <div class="role-card">
         <div class="role-icon-wrap role-icon-wrap--img">
           <img src="{{ asset('images/da.png') }}" alt="Department of Agriculture" class="role-logo-img">
         </div>
         <h3>MAO Personnel</h3>
-        <p>Monitor rice production trends, validate agricultural records, analyze climate-yield relationships, and generate reports for agricultural planning and farmer support.</p>
+        <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
         <ul class="role-features">
@@ -1429,11 +1439,11 @@
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Data Validation
+            Record Validation
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Forecast Monitoring
+            Heat Map Monitoring
           </li>
         </ul>
         <a href="{{ route('login') }}" class="role-cta">
@@ -1448,7 +1458,7 @@
           <img src="{{ asset('images/it-personnel.png') }}" alt="IT Expert" class="role-logo-img">
         </div>
         <h3>IT Expert</h3>
-        <p>Maintain the system infrastructure, manage databases and user accounts, review system logs, maintain records, and ensure system security and performance.</p>
+        <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
         <ul class="role-features">
@@ -1458,19 +1468,19 @@
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            System Monitoring
+            System Logs
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Database Maintenance
+            Record Maintenance
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Security Control
+            Access Control
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Backup &amp; Recovery
+            Security Monitoring
           </li>
         </ul>
         <a href="{{ route('login') }}" class="role-cta">

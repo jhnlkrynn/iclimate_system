@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\DecisionSupportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
@@ -27,7 +28,7 @@ class WeatherPredictionController extends Controller
         ]);
     }
 
-    public function predict(Request $request, MonthlyWeatherRandomForest $forest): View
+    public function predict(Request $request, MonthlyWeatherRandomForest $forest, DecisionSupportService $decisionSupport): View
     {
         $validated = $request->validate([
             'rainfall' => ['required', 'numeric'],
@@ -76,6 +77,23 @@ class WeatherPredictionController extends Controller
                 'error' => 'The Python prediction script returned an invalid response: '.$process->output(),
             ]);
         }
+
+        $decision = $decisionSupport->evaluate([
+            'farm_type' => $validated['farm_type'],
+            'rainfall' => $validated['rainfall'],
+            'wind_speed' => $weatherResult['predictions']['wind_speed'] ?? 0,
+            'humidity' => $weatherResult['predictions']['humidity'] ?? 0,
+            'season' => $validated['season'],
+            'predicted_yield' => $mlResult['predicted_yield'],
+        ]);
+
+        $mlResult = [
+            ...$mlResult,
+            'planting_advisory' => $decision['planting']['recommendation'],
+            'irrigation_recommendation' => $decision['irrigation']['recommendation'],
+            'notifications' => $decision['notifications'],
+            'decision_support' => $decision,
+        ];
 
         return view('weather-predictions.index', [
             'targetMonth' => $targetMonth,

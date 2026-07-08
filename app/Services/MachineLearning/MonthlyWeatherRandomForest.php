@@ -50,10 +50,12 @@ class MonthlyWeatherRandomForest
                 'trees' => $forest->treeCount(),
                 'samples' => count($samples),
                 'features' => count($features),
+                'stability' => $this->targetStability($samples, $target),
             ];
         }
 
         $predictions['season'] = $this->seasonForMonth((int) $targetMonth->format('n'));
+        $confidence = $this->confidence($monthly->count(), $training);
 
         return [
             'ready' => true,
@@ -62,6 +64,8 @@ class MonthlyWeatherRandomForest
             'target_month' => $targetMonth,
             'predictions' => $predictions,
             'training' => $training,
+            'confidence' => $confidence,
+            'insights' => $this->insights($predictions, $confidence),
         ];
     }
 
@@ -141,6 +145,78 @@ class MonthlyWeatherRandomForest
     private function seasonForMonth(int $month): string
     {
         return in_array($month, [5, 6, 7, 8, 9, 10], true) ? 'Wet' : 'Dry';
+    }
+
+    private function targetStability(array $samples, string $target): array
+    {
+        $values = array_map(fn (array $sample): float => (float) $sample[$target], $samples);
+        $mean = array_sum($values) / max(count($values), 1);
+        $variance = array_sum(array_map(fn (float $value): float => ($value - $mean) ** 2, $values)) / max(count($values), 1);
+        $deviation = sqrt($variance);
+        $ratio = $mean > 0 ? $deviation / $mean : 1;
+
+        return [
+            'mean' => round($mean, 2),
+            'deviation' => round($deviation, 2),
+            'label' => $ratio <= .12 ? 'Stable' : ($ratio <= .24 ? 'Variable' : 'Highly variable'),
+        ];
+    }
+
+    private function confidence(int $monthsAvailable, array $training): array
+    {
+        $score = min(92, 48 + ($monthsAvailable * 4));
+
+        foreach ($training as $metric) {
+            $label = $metric['stability']['label'] ?? 'Variable';
+            if ($label === 'Highly variable') {
+                $score -= 6;
+            } elseif ($label === 'Variable') {
+                $score -= 3;
+            }
+        }
+
+        $score = max(45, min(95, $score));
+
+        return [
+            'value' => $score,
+            'label' => match (true) {
+                $score >= 80 => 'High confidence',
+                $score >= 65 => 'Moderate confidence',
+                default => 'Low confidence',
+            },
+            'note' => $monthsAvailable >= 12
+                ? 'The model has at least one full year of monthly climate history.'
+                : 'Add more monthly climate records to improve forecast confidence.',
+        ];
+    }
+
+    private function insights(array $predictions, array $confidence): array
+    {
+        $insights = [];
+
+        if (($predictions['rainfall'] ?? 0) > 300) {
+            $insights[] = 'Rainfall is elevated; prioritize drainage and flood monitoring.';
+        } elseif (($predictions['rainfall'] ?? 0) < 100) {
+            $insights[] = 'Rainfall is low; rainfed farms may need delayed planting or water support.';
+        } else {
+            $insights[] = 'Rainfall is within a workable planning range.';
+        }
+
+        if (($predictions['temperature'] ?? 0) >= 32) {
+            $insights[] = 'Temperature may create heat stress during sensitive rice growth stages.';
+        }
+
+        if (($predictions['humidity'] ?? 0) >= 88) {
+            $insights[] = 'Humidity is high; monitor for pest and disease pressure.';
+        }
+
+        if (($predictions['wind_speed'] ?? 0) >= 18) {
+            $insights[] = 'Wind speed is elevated; watch for storm or lodging risk.';
+        }
+
+        $insights[] = $confidence['note'];
+
+        return array_values(array_unique($insights));
     }
 }
 

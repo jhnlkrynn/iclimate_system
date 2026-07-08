@@ -1,10 +1,12 @@
 <?php
 
-use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AIChatController;
 use App\Http\Controllers\ClimateRecordController;
+use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\HeatmapAreaController;
+use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
@@ -55,7 +57,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('planting-advisories', PlantingAdvisoryController::class);
 
-        Route::resource('announcements', AnnouncementController::class);
+        Route::redirect('announcements', 'community-feed')
+            ->name('announcements.index');
 
         Route::post(
             'notifications/mark-all-read',
@@ -69,7 +72,49 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('notifications', NotificationController::class);
 
+        Route::get('community-feed', [CommunityFeedController::class, 'index'])
+            ->name('community-feed.index');
+
+        Route::post('community-feed', [CommunityFeedController::class, 'store'])
+            ->name('community-feed.store');
+
+        Route::patch('community-feed/{post}', [CommunityFeedController::class, 'update'])
+            ->name('community-feed.update');
+
+        Route::patch('community-feed/{post}/archive', [CommunityFeedController::class, 'archive'])
+            ->name('community-feed.archive');
+
+        Route::post('community-feed/{post}/comments', [CommunityFeedController::class, 'comment'])
+            ->name('community-feed.comments.store');
+
+        Route::post('community-feed/{post}/reactions', [CommunityFeedController::class, 'react'])
+            ->name('community-feed.reactions.store');
+
+        Route::delete('community-feed/{post}', [CommunityFeedController::class, 'destroy'])
+            ->name('community-feed.destroy');
+
+        Route::get('messages', [MessagingController::class, 'index'])
+            ->name('messages.index');
+
+        Route::post('messages', [MessagingController::class, 'store'])
+            ->name('messages.store');
+
+        Route::get('messages/{conversation}', [MessagingController::class, 'show'])
+            ->name('messages.show');
+
+        Route::post('messages/{conversation}', [MessagingController::class, 'reply'])
+            ->name('messages.reply');
+
         Route::resource('heatmap-areas', HeatmapAreaController::class);
+
+        Route::get('ai-farming-assistant', [AIChatController::class, 'index'])
+            ->name('ai-chat.index');
+
+        Route::post('ai-farming-assistant/message', [AIChatController::class, 'message'])
+            ->name('ai-chat.message');
+
+        Route::delete('ai-farming-assistant', [AIChatController::class, 'clear'])
+            ->name('ai-chat.clear');
 
         /*
         |--------------------------------------------------------------------------
@@ -109,6 +154,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->name('reports.export');
 
         Route::resource('reports', ReportController::class);
+
     });
 
     Route::resource('users', UserManagementController::class)

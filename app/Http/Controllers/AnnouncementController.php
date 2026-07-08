@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\Notification as UserNotification;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +35,45 @@ class AnnouncementController extends CrudController
         return $data;
     }
 
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorizeManage($request);
+
+        $announcement = Announcement::query()->create($this->prepareData($request, $this->validated($request)));
+
+        if ($announcement->status === 'Published') {
+            $this->broadcastAnnouncement($announcement);
+        }
+
+        return redirect()->route('announcements.show', $announcement)->with('success', 'Announcement created successfully.');
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $this->authorizeManage($request);
+
+        $announcement = $this->findRecord($request, $id);
+        $wasPublished = $announcement->status === 'Published';
+        $announcement->update($this->prepareData($request, $this->validated($request, $announcement->id)));
+
+        if (! $wasPublished && $announcement->status === 'Published') {
+            $this->broadcastAnnouncement($announcement);
+        }
+
+        return redirect()->route('announcements.show', $announcement)->with('success', 'Announcement updated successfully.');
+    }
+
+    protected function baseQuery(Request $request): Builder
+    {
+        $query = parent::baseQuery($request);
+
+        if ($request->user()->role === User::ROLE_FARMER) {
+            $query->where('status', 'Published');
+        }
+
+        return $query;
+    }
+
     protected function rules(Request $request, ?int $id = null): array
     {
         return [
@@ -39,5 +82,20 @@ class AnnouncementController extends CrudController
             'category' => ['required', Rule::in(['News', 'Event', 'Training', 'Seed Distribution', 'Fertilizer Distribution'])],
             'status' => ['required', Rule::in(['Draft', 'Published'])],
         ];
+    }
+
+    private function broadcastAnnouncement(Announcement $announcement): void
+    {
+        User::query()
+            ->where('status', User::STATUS_ACTIVE)
+            ->each(function (User $user) use ($announcement) {
+                UserNotification::query()->create([
+                    'user_id' => $user->id,
+                    'title' => 'Announcement: '.$announcement->title,
+                    'message' => $announcement->content,
+                    'type' => 'Announcement',
+                    'is_read' => false,
+                ]);
+            });
     }
 }

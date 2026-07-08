@@ -42,7 +42,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'mao@iclimate.com'],
             [
                 'name' => 'Default MAO Personnel',
-                'password' => Hash::make('mao'),
+                'password' => Hash::make('password123'),
                 'role' => User::ROLE_MAO,
                 'contact_number' => '09170000002',
                 'address' => 'Municipal Agriculture Office, Lian, Batangas',

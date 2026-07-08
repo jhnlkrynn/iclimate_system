@@ -72,7 +72,7 @@
         }
         .it-stat-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 1rem;
             margin-bottom: 1.25rem;
         }
@@ -225,8 +225,53 @@
             color: #1f6f4a;
         }
         .status-pill.muted { background: #e8eef6; color: #516579; }
+        .dashboard-section-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 1.35rem 0 .75rem;
+        }
+        .dashboard-section-label:first-of-type { margin-top: 0; }
+        .section-title {
+            color: var(--it-ink);
+            font-size: .92rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin: 0;
+        }
+        .section-note { color: var(--it-muted); font-size: .84rem; margin: 0; }
+        .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .dashboard-group {
+            border: 1px solid var(--it-line);
+            border-radius: 8px;
+            background: rgba(255,255,255,.58);
+            box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
+            overflow: hidden;
+        }
+        .dashboard-group > summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .95rem 1rem;
+            cursor: pointer;
+            list-style: none;
+            background: linear-gradient(135deg, rgba(244,250,239,.95), rgba(232,244,230,.82));
+        }
+        .dashboard-group > summary::-webkit-details-marker { display: none; }
+        .dashboard-group-title { color: var(--it-ink); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+        .dashboard-group-note { color: var(--it-muted); font-size: .82rem; margin: .1rem 0 0; }
+        .dashboard-group-toggle { color: var(--it-green); font-size: .78rem; font-weight: 900; white-space: nowrap; }
+        .dashboard-group-toggle::after { content: "Collapse"; }
+        .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
+        .dashboard-group-body { padding: 1rem; }
+        .dashboard-group-body > .row:last-child { margin-bottom: 0 !important; }
+        .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
+        @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header { align-items: flex-start; flex-direction: column; } }
+        @media (max-width: 767.98px) { .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } }
     </style>
 
     @php
@@ -235,8 +280,8 @@
             'Climate Records' => 'climate-records.index',
             'Rice Productions' => 'rice-productions.index',
             'Advisories' => 'planting-advisories.index',
-            'Announcements' => 'announcements.index',
-            'Notifications' => 'notifications.index',
+            'Community Feed' => 'community-feed.index',
+            'Messages' => 'messages.index',
             'Heat Map Areas' => 'heatmap-areas.index',
             'Reports' => 'reports.index',
         ];
@@ -250,15 +295,23 @@
                 <div>
                     <div class="it-eyebrow mb-2">IT Expert Console</div>
                     <h1 class="h2 fw-bold mb-2">System command center</h1>
-                    <p class="mb-0">Monitor user access, module records, reports, and system activity for the iClimate platform in one operational dashboard.</p>
+                    <p class="mb-0">Monitor user access, heat map risk records, reports, and system activity for the iClimate platform in one operational dashboard.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="it-live-chip"><span class="it-pulse"></span> System Online</span>
+                    <a class="btn btn-light fw-bold" href="{{ route('heatmap-areas.index') }}">Heat Map</a>
                     <a class="btn btn-light fw-bold" href="{{ route('users.index') }}">Manage Users</a>
                     <a class="btn btn-outline-light fw-bold" href="{{ route('system-logs.index') }}">View Logs</a>
                 </div>
             </div>
         </section>
+
+        <div class="dashboard-section-label">
+            <div>
+                <h2 class="section-title">System Overview</h2>
+                <p class="section-note">Heat map, user, farmer, audit, and report status at a glance.</p>
+            </div>
+        </div>
 
         <section class="it-stat-grid">
             <a class="it-card tone-blue text-decoration-none" href="{{ route('users.index') }}">
@@ -288,6 +341,15 @@
                     <div class="it-note">Audit trail events recorded</div>
                 </div>
             </a>
+            <a class="it-card tone-red text-decoration-none" href="{{ route('heatmap-areas.index') }}">
+                <div class="it-card-body">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div><div class="it-label">Heat Map Areas</div><div class="it-value">{{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }}</div></div>
+                        <div class="it-icon">MAP</div>
+                    </div>
+                    <div class="it-note">{{ number_format($highRiskHeatMapAreas) }} high or severe risk areas</div>
+                </div>
+            </a>
             <a class="it-card tone-red text-decoration-none" href="{{ route('reports.index') }}">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
@@ -299,7 +361,17 @@
             </a>
         </section>
 
-        <div class="row g-4 mb-4">
+        <div class="dashboard-focus-grid">
+        <details class="dashboard-group" open>
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Module And Access Health</h2>
+                    <p class="dashboard-group-note">Record coverage by module and role distribution.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
             <div class="col-xl-8">
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
@@ -353,8 +425,19 @@
                 </div>
             </div>
         </div>
+            </div>
+        </details>
 
-        <div class="row g-4 mb-4">
+        <details class="dashboard-group">
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">System Activity</h2>
+                    <p class="dashboard-group-note">Recent events and newly created user accounts.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
             <div class="col-xl-7">
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
@@ -364,7 +447,7 @@
                         </div>
                         <a class="btn btn-sm btn-outline-primary" href="{{ route('system-logs.index') }}">Open Logs</a>
                     </div>
-                    <div class="it-panel-body">
+                    <div class="it-panel-body list-compact">
                         @forelse($latestLogs as $log)
                             <div class="log-row">
                                 <div class="log-dot">EVT</div>
@@ -392,7 +475,7 @@
                         </div>
                         <a class="btn btn-sm btn-primary" href="{{ route('users.create') }}">Add User</a>
                     </div>
-                    <div class="it-panel-body">
+                    <div class="it-panel-body list-compact">
                         @forelse($latestUsers as $user)
                             <div class="user-row">
                                 <div class="avatar-soft">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
@@ -412,7 +495,18 @@
                 </div>
             </div>
         </div>
+            </div>
+        </details>
 
+        <details class="dashboard-group">
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Administration</h2>
+                    <p class="dashboard-group-note">Common maintenance actions and report history.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
         <div class="row g-4">
             <div class="col-xl-5">
                 <div class="it-panel h-100">
@@ -422,11 +516,11 @@
                             <p class="it-panel-sub">Common IT Expert operations.</p>
                         </div>
                     </div>
-                    <div class="it-panel-body">
+                    <div class="it-panel-body list-compact">
                         <div class="quick-grid">
                             <a class="quick-action" href="{{ route('users.create') }}"><strong>Add New User</strong><span>Create Farmer, MAO Personnel, or IT Expert accounts.</span></a>
                             <a class="quick-action" href="{{ route('reports.index') }}"><strong>Reports Center</strong><span>Generate and review platform reports.</span></a>
-                            <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Risk Records</strong><span>Review barangay climate risk areas.</span></a>
+                            <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Heat Map Manager</strong><span>Review barangay climate risk areas and severity records.</span></a>
                             <a class="quick-action" href="{{ route('system-logs.index') }}"><strong>Audit Trail</strong><span>Inspect recent system actions and changes.</span></a>
                         </div>
                     </div>
@@ -461,6 +555,9 @@
                     </div>
                 </div>
             </div>
+        </div>
+            </div>
+        </details>
         </div>
     </div>
 </x-app-layout>

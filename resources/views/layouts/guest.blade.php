@@ -5,21 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', 'iClimate') }}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <style>
-            :root { --leaf:#1f8f55; --leaf-dark:#0d5f3e; --river:#1677b8; --river-dark:#123f73; --sun:#f4b63f; --coral:#d85b45; --ink:#162033; --border:#d8e3ef; }
-            body { min-height: 100vh; color: var(--ink); background: linear-gradient(115deg, rgba(237,247,232,.94), rgba(226,240,229,.92)), repeating-linear-gradient(135deg, rgba(22,119,184,.08) 0 1px, transparent 1px 18px), linear-gradient(140deg, #eaf4e7 0%, #dcecdf 54%, #f4edd2 100%); }
+            :root { --green-950:#0d1f18; --green-900:#122b20; --green-800:#1a3a2a; --green-700:#2d6a4f; --green-500:#52b788; --green-300:#95d5b2; --green-100:#d8f3dc; --green-50:#f0f7f4; --sand:#f5f0e8; --amber:#ffd166; --coral:#d85b45; --ink:#1b2b23; --muted:#5a7a64; --border:#d4edda; }
+            body { min-height: 100vh; color: var(--ink); font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(115deg, rgba(240,247,244,.96), rgba(245,240,232,.9)), radial-gradient(circle at top right, rgba(82,183,136,.14), transparent 32rem), linear-gradient(140deg, #f5f9f6 0%, #eef7ec 54%, var(--sand) 100%); }
             .auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
-            .auth-card { width: min(100%, 980px); background: rgba(239,248,232,.96); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1.2rem 3rem rgba(20,32,51,.12); overflow: hidden; }
-            .auth-side { position: relative; overflow: hidden; background: linear-gradient(155deg, var(--river-dark), #146b78 52%, var(--leaf-dark)); color: #fff; min-height: 100%; }
+            .auth-card { width: min(100%, 980px); background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1.2rem 3rem rgba(13,31,24,.12); overflow: hidden; }
+            .auth-side { position: relative; overflow: hidden; background: linear-gradient(145deg, var(--green-950) 0%, var(--green-800) 62%, #163324 100%); color: #fff; min-height: 100%; }
             .auth-side::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(130deg, rgba(255,255,255,.12) 0 1px, transparent 1px 22px); }
-            .auth-side::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, var(--sun), var(--leaf), var(--river), var(--coral)); }
+            .auth-side::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, var(--amber), var(--green-500), var(--green-300), var(--coral)); }
             .auth-side > * { position: relative; z-index: 1; }
-            .brand-chip { width: 54px; height: 54px; border-radius: 8px; position: relative; background: linear-gradient(135deg, #f7fbef 0 45%, #c7efd3 45% 64%, #8ed2ff 64% 100%); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.18); }
-            .brand-chip::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: 12px; height: 6px; border-top: 2px solid rgba(13,95,62,.75); border-bottom: 2px solid rgba(22,119,184,.65); }
+            .brand-chip { width: 54px; height: 54px; border-radius: 8px; position: relative; background: linear-gradient(135deg, #fff 0 45%, #c7efd3 45% 68%, var(--green-500) 68% 100%); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.18); }
+            .brand-chip::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: 12px; height: 6px; border-top: 2px solid rgba(13,95,62,.75); border-bottom: 2px solid rgba(82,183,136,.7); }
             .auth-form { max-width: 430px; margin: 0 auto; }
-            .btn-primary { --bs-btn-bg: var(--leaf); --bs-btn-border-color: var(--leaf); --bs-btn-hover-bg: var(--leaf-dark); --bs-btn-hover-border-color: var(--leaf-dark); }
+            .auth-side .h4, .auth-side h1 { font-family: 'Syne', sans-serif; letter-spacing: 0; }
+            .btn-primary { --bs-btn-bg: var(--green-800); --bs-btn-border-color: var(--green-800); --bs-btn-hover-bg: var(--green-700); --bs-btn-hover-border-color: var(--green-700); }
             input, select, textarea, .btn { border-radius: 8px !important; }
             @media (max-width: 767.98px) { .auth-side { min-height: auto; } }
         </style>

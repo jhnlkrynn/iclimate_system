@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Announcement;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
+use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
@@ -23,14 +23,14 @@ class ReportController extends CrudController
     protected string $title = 'Report';
     protected array $columns = ['report_type' => 'Report Type', 'title' => 'Title'];
     protected array $searchable = ['report_type', 'title'];
-    protected array $filterable = ['report_type' => ['Climate Records', 'Rice Production', 'Farmer Registration', 'Advisory', 'Announcement']];
+    protected array $filterable = ['report_type' => ['Climate Records', 'Rice Production', 'Farmer Registration', 'Advisory', 'Community Feed']];
 
     public const REPORT_TYPES = [
         'climate_records' => 'Climate Records Report',
         'rice_production' => 'Rice Production Report',
         'farmer_registration' => 'Farmer Registration Report',
         'advisory' => 'Advisory Report',
-        'announcement' => 'Announcement Report',
+        'community_feed' => 'Community Feed Report',
     ];
 
     public function __construct()
@@ -168,7 +168,7 @@ class ReportController extends CrudController
             'rice_production' => $this->riceReport($filters),
             'farmer_registration' => $this->farmerReport($filters),
             'advisory' => $this->advisoryReport($filters),
-            'announcement' => $this->announcementReport($filters),
+            'community_feed' => $this->communityFeedReport($filters),
         };
     }
 
@@ -219,13 +219,13 @@ class ReportController extends CrudController
         ]];
     }
 
-    private function announcementReport(array $filters): array
+    private function communityFeedReport(array $filters): array
     {
-        $query = Announcement::query();
+        $query = FeedPost::query()->with('author');
         $this->applyDateFilters($query, 'created_at', $filters);
 
         return [$query->latest()->get(), [
-            'title' => 'Title', 'category' => 'Category', 'status' => 'Status', 'created_at' => 'Posted',
+            'title' => 'Title', 'category' => 'Category', 'visibility' => 'Visibility', 'author.name' => 'Posted By', 'created_at' => 'Posted',
         ]];
     }
 
