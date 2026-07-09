@@ -13,17 +13,87 @@
         .feed-badge { display:inline-flex; border-radius:999px; padding:.32rem .6rem; background:#d8f3dc; color:#1f6f4a; font-size:.76rem; font-weight:900; }
         .feed-badge.archived { background:#f1f3f2; color:#607468; border:1px solid #d4edda; }
         .post-actions { display:flex; flex-wrap:wrap; gap:.45rem; justify-content:flex-end; align-items:center; }
-        .manage-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:flex-start; margin-top:1rem; padding-top:1rem; border-top:1px solid #edf3ee; }
-        .manage-panel { flex:0 1 auto; border:1px solid #d4edda; border-radius:8px; background:#f7fbf8; overflow:hidden; }
+        .manage-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:1rem; padding-top:1rem; border-top:1px solid #edf3ee; }
+        .manage-actions > form { margin:0; }
+        .manage-panel { flex:0 0 auto; border:0; border-radius:8px; background:transparent; overflow:visible; }
         .manage-panel[open] { flex-basis:100%; }
-        .manage-panel summary { display:inline-flex; cursor:pointer; list-style:none; margin:.75rem .85rem; border:1px solid #1f6f4a; border-radius:8px; background:#fff; color:#1f6f4a; padding:.48rem .75rem; font-weight:900; }
+        .manage-panel summary { display:inline-flex; align-items:center; justify-content:center; min-height:40px; cursor:pointer; list-style:none; margin:0; border:1px solid #1f6f4a; border-radius:8px; background:#fff; color:#1f6f4a; padding:.48rem .75rem; font-weight:900; line-height:1.2; }
+        .manage-panel summary:hover, .manage-panel[open] summary { background:#f0f7f4; }
         .manage-panel summary::-webkit-details-marker { display:none; }
-        .manage-panel-body { padding:.85rem; border-top:1px solid #d4edda; }
+        .manage-panel-body { margin-top:.75rem; padding:.85rem; border:1px solid #d4edda; border-radius:8px; background:#f7fbf8; }
         .media-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; margin-top:.85rem; }
         .media-grid img, .media-grid video { width:100%; border-radius:8px; border:1px solid #d4edda; background:#0d1f18; max-height:330px; object-fit:cover; }
         .file-tile { display:flex; align-items:center; gap:.7rem; padding:.85rem; border:1px solid #d4edda; border-radius:8px; background:#f7fbf8; color:inherit; text-decoration:none; font-weight:800; }
         .reaction-row { display:flex; flex-wrap:wrap; gap:.45rem; padding:.8rem 1rem; border-top:1px solid #edf3ee; border-bottom:1px solid #edf3ee; background:#fbfdfb; }
-        .reaction-row button { border:1px solid #d4edda; border-radius:999px; background:#fff; padding:.35rem .65rem; font-size:.82rem; font-weight:800; color:var(--feed-ink); }
+        .reaction-picker { position:relative; display:inline-flex; align-items:center; }
+        .reaction-trigger { border:1px solid #d4edda; border-radius:999px; background:#fff; color:var(--feed-ink); padding:.42rem .8rem; font-size:.86rem; font-weight:900; min-width:86px; }
+        .reaction-trigger.active { color:#1f6f4a; background:#f0f7f4; border-color:#95d5b2; }
+        .reaction-menu {
+            position:absolute;
+            left:0;
+            bottom:calc(100% + .5rem);
+            display:flex;
+            gap:.42rem;
+            padding:.42rem .5rem;
+            border:1px solid rgba(13,31,24,.35);
+            border-radius:999px;
+            background:#23272d;
+            box-shadow:0 .75rem 1.7rem rgba(13,31,24,.28);
+            opacity:0;
+            visibility:hidden;
+            transform:translateY(.35rem) scale(.96);
+            transform-origin:bottom left;
+            transition:opacity .15s ease, transform .15s ease, visibility .15s ease;
+            z-index:25;
+            white-space:nowrap;
+        }
+        .reaction-picker:hover .reaction-menu,
+        .reaction-picker:focus-within .reaction-menu {
+            opacity:1;
+            visibility:visible;
+            transform:translateY(0) scale(1);
+        }
+        .reaction-picker:hover .reaction-option,
+        .reaction-picker:focus-within .reaction-option {
+            animation: reactionFloat .52s ease both;
+        }
+        .reaction-picker:hover .reaction-menu form:nth-child(2) .reaction-option,
+        .reaction-picker:focus-within .reaction-menu form:nth-child(2) .reaction-option { animation-delay:.03s; }
+        .reaction-picker:hover .reaction-menu form:nth-child(3) .reaction-option,
+        .reaction-picker:focus-within .reaction-menu form:nth-child(3) .reaction-option { animation-delay:.06s; }
+        .reaction-picker:hover .reaction-menu form:nth-child(4) .reaction-option,
+        .reaction-picker:focus-within .reaction-menu form:nth-child(4) .reaction-option { animation-delay:.09s; }
+        .reaction-picker:hover .reaction-menu form:nth-child(5) .reaction-option,
+        .reaction-picker:focus-within .reaction-menu form:nth-child(5) .reaction-option { animation-delay:.12s; }
+        .reaction-menu::after {
+            content:"";
+            position:absolute;
+            left:1.1rem;
+            bottom:-.38rem;
+            width:.7rem;
+            height:.7rem;
+            background:#23272d;
+            border-right:1px solid rgba(13,31,24,.35);
+            border-bottom:1px solid rgba(13,31,24,.35);
+            transform:rotate(45deg);
+        }
+        .reaction-option { position:relative; z-index:1; width:42px; height:42px; display:grid; place-items:center; border:0; border-radius:999px; background:var(--reaction-bg,#2f80ed); padding:0; color:#fff; font-size:0; font-weight:900; box-shadow:inset 0 -5px 10px rgba(0,0,0,.16), 0 .28rem .65rem rgba(0,0,0,.2); transition:transform .14s ease, filter .14s ease; }
+        .reaction-option::before { content:attr(data-icon); font-size:1.45rem; line-height:1; }
+        .reaction-option:hover, .reaction-option:focus { transform:translateY(-.48rem) scale(1.16); filter:saturate(1.08) brightness(1.04); }
+        .reaction-option.like { --reaction-bg:linear-gradient(145deg,#53a5ff,#145bd8); }
+        .reaction-option.love { --reaction-bg:linear-gradient(145deg,#ff5d82,#d81342); }
+        .reaction-option.care { --reaction-bg:linear-gradient(145deg,#ffd86a,#f28d24); }
+        .reaction-option.wow { --reaction-bg:linear-gradient(145deg,#ffd98a,#ff9f43); }
+        .reaction-option.helpful { --reaction-bg:linear-gradient(145deg,#63d7a2,#168a5a); }
+        .reaction-option.text-success { outline:3px solid rgba(255,255,255,.72); outline-offset:2px; }
+        .reaction-display-icon { display:inline-grid; place-items:center; width:1.35rem; height:1.35rem; border-radius:999px; margin-right:.28rem; background:#f0f7f4; font-size:.95rem; line-height:1; vertical-align:-.18rem; }
+        .reaction-counts { display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; color:var(--feed-muted); font-size:.8rem; font-weight:800; }
+        .reaction-count-pill { display:inline-flex; align-items:center; border:1px solid #d4edda; border-radius:999px; background:#fff; padding:.25rem .55rem .25rem .35rem; }
+        @keyframes reactionFloat {
+            0% { transform:translateY(.42rem) scale(.72); opacity:0; }
+            58% { transform:translateY(-.34rem) scale(1.12); opacity:1; }
+            100% { transform:translateY(0) scale(1); opacity:1; }
+        }
         .comment { display:flex; gap:.65rem; margin-top:.75rem; }
         .comment-bubble { background:#f0f7f4; border:1px solid #d4edda; border-radius:8px; padding:.6rem .75rem; flex:1; }
         .side-panel { border:1px solid var(--feed-line); border-radius:8px; background:linear-gradient(145deg,#f7fbf8,#edf7e7); padding:1rem; }
@@ -84,7 +154,7 @@
                     @php
                         $userReaction = $post->reactions->firstWhere('user_id', auth()->id());
                         $counts = $post->reactions->groupBy('type')->map->count();
-                        $canManagePost = $canPost && ($post->user_id === auth()->id() || auth()->user()->role === \App\Models\User::ROLE_IT_EXPERT);
+                        $canManagePost = $canPost;
                         $isArchived = $post->archived_at !== null;
                     @endphp
                     <article class="feed-card">
@@ -123,7 +193,7 @@
                             @if($canManagePost)
                                 <div class="manage-actions">
                                     <details class="manage-panel">
-                                        <summary>Edit Post</summary>
+                                        <summary>Edit</summary>
                                         <div class="manage-panel-body">
                                             <form method="POST" action="{{ route('community-feed.update', $post) }}" enctype="multipart/form-data">
                                                 @csrf
@@ -184,14 +254,45 @@
                         </div>
 
                         @unless($isArchived)
+                            @php
+                                $reactionIcons = [
+                                    'Like' => '👍',
+                                    'Love' => '❤',
+                                    'Care' => '🥰',
+                                    'Wow' => '😮',
+                                    'Helpful' => '💡',
+                                ];
+                            @endphp
                             <div class="reaction-row">
-                                @foreach($reactionTypes as $reaction)
-                                    <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}">
-                                        @csrf
-                                        <input type="hidden" name="type" value="{{ $reaction }}">
-                                        <button type="submit" class="{{ $userReaction?->type === $reaction ? 'text-success' : '' }}">{{ $reaction }} {{ $counts[$reaction] ?? '' }}</button>
-                                    </form>
-                                @endforeach
+                                <div class="reaction-picker">
+                                    <button class="reaction-trigger {{ $userReaction ? 'active' : '' }}" type="button" aria-haspopup="true" aria-expanded="false">
+                                        @if($userReaction)
+                                            <span class="reaction-display-icon">{{ $reactionIcons[$userReaction->type] ?? '👍' }}</span>{{ $userReaction->type }}
+                                        @else
+                                            React
+                                        @endif
+                                    </button>
+                                    <div class="reaction-menu" role="menu" aria-label="Choose a reaction">
+                                        @foreach($reactionTypes as $reaction)
+                                            <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}">
+                                                @csrf
+                                                <input type="hidden" name="type" value="{{ $reaction }}">
+                                                @php
+                                                    $reactionClass = strtolower($reaction);
+                                                    $reactionIcon = $reactionIcons[$reaction] ?? '👍';
+                                                @endphp
+                                                <button type="submit" class="reaction-option {{ $reactionClass }} {{ $userReaction?->type === $reaction ? 'text-success' : '' }}" data-icon="{{ $reactionIcon }}" title="{{ $reaction }}" aria-label="{{ $reaction }}" role="menuitem">{{ $reaction }}</button>
+                                            </form>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @if($counts->isNotEmpty())
+                                    <div class="reaction-counts">
+                                        @foreach($counts as $type => $count)
+                                            <span class="reaction-count-pill"><span class="reaction-display-icon">{{ $reactionIcons[$type] ?? '👍' }}</span>{{ $type }} {{ $count }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         @endunless
 
