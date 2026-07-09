@@ -24,7 +24,7 @@
     <style>
         .heatmap-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr); gap: 1rem; align-items: stretch; }
         .heatmap-main { display: flex; flex-direction: column; gap: 1rem; min-height: 100%; }
-        .map-shell { position: relative; overflow: hidden; display: flex; flex: 1 1 auto; flex-direction: column; border: 1px solid rgba(212,237,218,.98); border-radius: 8px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); min-height: 0; }
+        .map-shell { position: relative; overflow: hidden; display: flex; flex: 1 1 auto; flex-direction: column; border: 1.5px solid #e8e0d0; border-radius: 18px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); min-height: 0; }
         #barangayRiskMap {
             flex: 1 1 auto;
             height: auto;
@@ -48,7 +48,7 @@
             box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24);
         }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
-        .map-insight { position: relative; overflow: hidden; border: 1px solid #d4edda; border-radius: 8px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .map-insight::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .map-summary-card .risk-value { font-size: 1.55rem; line-height: 1.12; margin-top: .32rem; }
         .map-summary-card .risk-help { margin-top: .35rem; }
@@ -61,14 +61,14 @@
         .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
         .risk-side { display: flex; flex-direction: column; gap: 1rem; }
-        .risk-stat { position: relative; overflow: hidden; border: 1px solid #d4edda; border-radius: 8px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .risk-stat { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
         .legend-row { display: flex; align-items: center; gap: .55rem; color: #5a7a64; font-size: .86rem; }
         .legend-swatch { width: 1rem; height: 1rem; border-radius: 4px; flex: 0 0 auto; }
         .barangay-risk-list { display: grid; gap: 1rem; }
-        .barangay-card { border: 1px solid #d4edda; border-radius: 8px; background: #fff; overflow: hidden; box-shadow: 0 .75rem 1.6rem rgba(13,31,24,.05); }
+        .barangay-card { border: 1.5px solid #e8e0d0; border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 .75rem 1.6rem rgba(13,31,24,.05); }
         .barangay-card-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding: 1rem; background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom: 1px solid #d4edda; }
         .barangay-name { color: #0d1f18; font-size: 1.15rem; font-weight: 900; line-height: 1.2; }
         .barangay-card-body { padding: 1rem; display: grid; gap: 1rem; }
@@ -107,8 +107,8 @@
             width: min(292px, calc(100% - 2rem));
             max-height: calc(100% - 5.75rem);
             overflow: auto;
-            border: 1px solid #d4edda;
-            border-radius: 8px;
+            border: 1.5px solid #e8e0d0;
+            border-radius: 18px;
             background: rgba(255,255,255,.96);
             box-shadow: 0 .9rem 2rem rgba(13,31,24,.18);
             padding: .85rem;

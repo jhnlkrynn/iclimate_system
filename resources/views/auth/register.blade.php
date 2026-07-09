@@ -7,7 +7,7 @@
   <title>Create Account | {{ config('app.name', 'iClimate') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -15,15 +15,14 @@
     a { color: inherit; }
     button, input { font: inherit; }
     .register-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
-    .register-brand-mark { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #52B788, #168aad); color: #fff; font-family: 'Syne', sans-serif; font-size: .92rem; font-weight: 800; box-shadow: 0 16px 36px rgba(82,183,136,.25); }
+    .register-brand-mark { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #52B788, #1A3A2A); color: #fff; font-family: 'DM Serif Display', Georgia, serif; font-size: .92rem; font-weight: 400; box-shadow: 0 16px 36px rgba(82,183,136,.25); }
     .register-brand-copy { display: flex; flex-direction: column; line-height: 1.05; }
-    .register-brand-copy strong { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; }
+    .register-brand-copy strong { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.05rem; font-weight: 400; }
     .register-brand-copy small { margin-top: 3px; color: rgba(255,255,255,.48); font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
     .field-error { color: #b42318; font-size: .78rem; font-weight: 600; margin-top: 7px; }
     .form-input.is-invalid { border-color: #d92d20; box-shadow: 0 0 0 3px rgba(217,45,32,.10); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
-    .atc-icon-img { background: rgba(255,255,255,.92) !important; overflow: hidden; } .atc-icon-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
-    .auth-logo-img { height: 76px; width: auto; max-width: 300px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
+    .auth-logo-img { height: 48px; width: auto; max-width: 220px; object-fit: contain; display: block; }
     /* -- CREATE ACCOUNT PAGE --------------------------- */
     body.login-page {
       background: #0f1f17;
@@ -82,17 +81,18 @@
       margin-bottom: 48px;
     }
     .lpl-logo-text {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: 1.2rem;
       color: rgba(255,255,255,0.6);
     }
-    .lpl-logo-text strong { color: #fff; font-weight: 800; }
+    .lpl-logo-text strong { color: #fff; font-weight: 400; }
 
     .lpl-body { flex: 1; }
 
     .lpl-eyebrow {
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: #52B788;
@@ -100,9 +100,9 @@
     }
 
     .lpl-headline {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: clamp(1.6rem, 2.5vw, 2.1rem);
-      font-weight: 800;
+      font-weight: 400;
       color: #fff;
       line-height: 1.18;
       margin-bottom: 12px;
@@ -130,7 +130,9 @@
     }
     .atc-icon {
       width: 40px; height: 40px;
-      background: rgba(82,183,136,0.15);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.3);
+      color: #E8A73D;
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -139,14 +141,17 @@
       flex-shrink: 0;
     }
     .atc-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.97rem;
-      font-weight: 700;
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.02rem;
+      font-weight: 400;
       color: #fff;
       margin-bottom: 2px;
     }
     .atc-subtitle {
-      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       color: rgba(255,255,255,0.4);
     }
     .atc-perks {
@@ -231,9 +236,9 @@
       margin-bottom: 28px;
     }
     .login-form-header h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: 1.85rem;
-      font-weight: 800;
+      font-weight: 400;
       color: #1B2B23;
       margin-bottom: 5px;
       letter-spacing: -0.02em;
@@ -460,10 +465,15 @@
 
         <div class="account-type-card">
           <div class="atc-header">
-            <div class="atc-icon atc-icon-img"><img src="{{ asset('images/rice farmer.png') }}" alt="Rice Farmer"></div>
+            <div class="atc-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4 14C4 7 10 3 15 3C15 8 11 14 4 14Z" stroke="#E8A73D" stroke-width="1.3" stroke-linejoin="round"/>
+                <path d="M4 14L11 7" stroke="#E8A73D" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+            </div>
             <div>
               <div class="atc-title">Rice Farmer Account</div>
-              <div class="atc-subtitle">Public registration  Free access</div>
+              <div class="atc-subtitle">Public registration &middot; Free access</div>
             </div>
           </div>
           <div class="atc-perks">

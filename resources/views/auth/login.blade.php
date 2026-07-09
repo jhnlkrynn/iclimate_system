@@ -7,7 +7,7 @@
   <title>Sign In | {{ config('app.name', 'iClimate') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -15,15 +15,15 @@
     a { color: inherit; }
     button, input { font: inherit; }
     .login-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
-    .login-brand-mark { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #52B788, #168aad); color: #fff; font-family: 'Syne', sans-serif; font-size: .92rem; font-weight: 800; box-shadow: 0 16px 36px rgba(82,183,136,.25); }
+    .login-brand-mark { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #52B788, #1A3A2A); color: #fff; font-family: 'DM Serif Display', Georgia, serif; font-size: .92rem; font-weight: 400; box-shadow: 0 16px 36px rgba(82,183,136,.25); }
     .login-brand-copy { display: flex; flex-direction: column; line-height: 1.05; }
-    .login-brand-copy strong { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; }
+    .login-brand-copy strong { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.05rem; font-weight: 400; }
     .login-brand-copy small { margin-top: 3px; color: rgba(255,255,255,.48); font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
     .auth-status { background: #e8f5ed; border: 1px solid #b7e4c7; color: #1a3a2a; border-radius: 10px; padding: 11px 13px; font-size: .86rem; margin-bottom: 18px; }
     .field-error { color: #b42318; font-size: .78rem; font-weight: 600; margin-top: 7px; }
     .form-input.is-invalid { border-color: #d92d20; box-shadow: 0 0 0 3px rgba(217,45,32,.10); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
-    .auth-logo-img { height: 76px; width: auto; max-width: 300px; object-fit: contain; display: block; filter: brightness(0) invert(1); }
+    .auth-logo-img { height: 48px; width: auto; max-width: 220px; object-fit: contain; display: block; }
     /* -- LOGIN PAGE OVERRIDE ---------------------------- */
     body.login-page {
       background: #0f1f17;
@@ -99,7 +99,7 @@
       margin-bottom: auto;
     }
     .lpl-logo-text {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: 1.2rem;
       color: rgba(255,255,255,0.6);
       letter-spacing: -0.01em;
@@ -133,24 +133,25 @@
       box-shadow: 0 0 8px rgba(82,183,136,0.7);
     }
     .lpl-badge span {
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
       color: #95D5B2;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
 
     .lpl-headline {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: clamp(1.8rem, 3vw, 2.6rem);
-      font-weight: 800;
+      font-weight: 400;
       color: #fff;
       line-height: 1.15;
       margin-bottom: 16px;
     }
     .lpl-headline em {
-      font-style: normal;
-      color: #52B788;
+      font-style: italic;
+      color: #74C69D;
     }
 
     .lpl-sub {
@@ -179,15 +180,16 @@
     }
     .lpl-metric:last-child { border-right: none; }
     .lpl-metric-val {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 400;
       color: #fff;
       line-height: 1;
       margin-bottom: 4px;
     }
     .lpl-metric-label {
-      font-size: 0.72rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
       color: rgba(255,255,255,0.35);
       font-weight: 500;
       text-transform: uppercase;
@@ -208,14 +210,16 @@
     .lpl-tip-icon {
       width: 32px; height: 32px;
       border-radius: 8px;
-      background: rgba(82,183,136,0.1);
-      border: 1px solid rgba(82,183,136,0.18);
+      background: rgba(232,167,61,0.12);
+      border: 1px solid rgba(232,167,61,0.3);
+      color: #E8A73D;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 0.62rem;
-      font-weight: 800;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.56rem;
+      font-weight: 500;
       letter-spacing: 0.03em;
     }
     .lpl-tip-text {
@@ -266,9 +270,9 @@
       margin-bottom: 36px;
     }
     .login-form-header h1 {
-      font-family: 'Syne', sans-serif;
+      font-family: 'DM Serif Display', Georgia, serif;
       font-size: 1.9rem;
-      font-weight: 800;
+      font-weight: 400;
       color: #1B2B23;
       margin-bottom: 6px;
       letter-spacing: -0.02em;
@@ -434,8 +438,9 @@
       margin-bottom: 24px;
     }
     .demo-section-title {
-      font-size: 0.75rem;
-      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #5A7A64;
@@ -679,7 +684,6 @@
     const passwordInput = document.getElementById('password');
     emailInput.value = email;
     passwordInput.value = pass;
-    emailInput.focus();
   }
 
   document.addEventListener('DOMContentLoaded', () => {

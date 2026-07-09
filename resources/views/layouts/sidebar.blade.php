@@ -45,13 +45,16 @@
     $isGroupActive = fn ($links) => collect($links)->contains(fn ($link) => request()->routeIs(...$link[2]));
 @endphp
 
-<aside class="sidebar-fixed d-none d-lg-block">
+<aside class="sidebar-fixed d-none d-lg-flex flex-column">
     <div class="sidebar-brand p-4">
-        <img src="{{ asset('images/iClimate.png') }}" alt="iClimate" class="sidebar-logo-img mb-3">
-        <div class="small text-white-50 mb-1">Lian, Batangas</div>
-        <div class="small text-white-50 pe-2">Weather Impact and Rice Yield System</div>
+        <div class="sidebar-brand-row">
+            <img src="{{ asset('images/iClimate-icon.png') }}" alt="" class="sidebar-logo-icon">
+            <span class="sidebar-wordmark">iClimate<span class="sidebar-wordmark-dot">.</span></span>
+        </div>
+        <div class="sidebar-location"><span class="pulse-dot"></span> Lian, Batangas</div>
+        <div class="sidebar-tagline pe-2">Weather Impact and Rice Yield System</div>
     </div>
-    <div class="p-3">
+    <div class="p-3 flex-grow-1">
         <div class="sidebar-section">Primary</div>
         <div class="d-grid gap-1">
             @foreach ($primaryLinks as [$label, $route, $patterns, $icon])
@@ -77,6 +80,7 @@
             @endforeach
         </div>
     </div>
+    <div class="sidebar-foot">&copy; 2026 iClimate &middot; Lian, Batangas</div>
 </aside>
 
 <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
@@ -84,13 +88,16 @@
         <h5 class="offcanvas-title" id="mobileSidebarLabel">iClimate</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body p-0" style="background: linear-gradient(180deg, var(--ic-green-950), var(--ic-green-800));">
+    <div class="offcanvas-body p-0 d-flex flex-column" style="background: linear-gradient(180deg, var(--ic-green-950), var(--ic-green-800));">
         <div class="sidebar-brand p-4">
-            <img src="{{ asset('images/iClimate.png') }}" alt="iClimate" class="sidebar-logo-img mb-3">
-            <div class="small text-white-50 mb-1">Lian, Batangas</div>
-            <div class="small text-white-50">Weather Impact and Rice Yield System</div>
+            <div class="sidebar-brand-row">
+            <img src="{{ asset('images/iClimate-icon.png') }}" alt="" class="sidebar-logo-icon">
+            <span class="sidebar-wordmark">iClimate<span class="sidebar-wordmark-dot">.</span></span>
         </div>
-        <div class="p-3">
+            <div class="sidebar-location"><span class="pulse-dot"></span> Lian, Batangas</div>
+            <div class="sidebar-tagline">Weather Impact and Rice Yield System</div>
+        </div>
+        <div class="p-3 flex-grow-1">
             <div class="sidebar-section">Primary</div>
             <div class="d-grid gap-1">
                 @foreach ($primaryLinks as [$label, $route, $patterns, $icon])
@@ -116,5 +123,6 @@
                 @endforeach
             </div>
         </div>
+        <div class="sidebar-foot">&copy; 2026 iClimate &middot; Lian, Batangas</div>
     </div>
 </div>
