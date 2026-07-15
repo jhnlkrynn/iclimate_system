@@ -13,13 +13,13 @@
         .it-hero {
             position: relative;
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 32px;
             padding: 1.35rem;
             margin-bottom: 1.25rem;
             color: #fff;
             background:
                 radial-gradient(circle at 83% 12%, rgba(82,183,136,.28), transparent 28%),
-                linear-gradient(135deg, #0d1f18 0%, #123f73 48%, #0d6a41 100%);
+                linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%);
             box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18);
         }
         .it-hero::before {
@@ -80,7 +80,7 @@
             position: relative;
             overflow: hidden;
             border: 1px solid var(--it-line);
-            border-radius: 8px;
+            border-radius: 18px;
             background: linear-gradient(145deg, rgba(244,250,239,.96), rgba(229,242,226,.96));
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
         }
@@ -136,7 +136,7 @@
         .tone-red { --accent: var(--it-red); }
         .it-panel {
             border: 1px solid var(--it-line);
-            border-radius: 8px;
+            border-radius: 18px;
             background: linear-gradient(145deg, rgba(244,250,239,.96), rgba(232,244,230,.96));
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             overflow: hidden;
@@ -205,7 +205,7 @@
         .quick-action {
             min-height: 104px;
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid rgba(153,185,160,.72);
             background: linear-gradient(135deg, #edf7e7, #dfeee8);
             color: inherit;
@@ -245,7 +245,7 @@
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
             border: 1px solid var(--it-line);
-            border-radius: 8px;
+            border-radius: 18px;
             background: rgba(255,255,255,.58);
             box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
             overflow: hidden;

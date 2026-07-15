@@ -11,24 +11,24 @@
 @endphp
 
 <style>
-    .ic-ai-widget { position: fixed; right: 1rem; bottom: 1rem; z-index: 2050; font-family: inherit; }
-    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 900; }
-    .ic-ai-panel { position: absolute; right: 0; bottom: 4.5rem; width: min(380px, calc(100vw - 2rem)); height: min(620px, calc(100vh - 7rem)); border: 1px solid rgba(212,237,218,.98); border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 1.4rem 3rem rgba(13,31,24,.22); display: none; grid-template-rows: auto minmax(0,1fr) auto; }
+    .ic-ai-widget { position: fixed; right: 1rem; bottom: 1rem; z-index: 2050; font-family: 'Inter', system-ui, sans-serif; }
+    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; }
+    .ic-ai-panel { position: absolute; right: 0; bottom: 4.5rem; width: min(380px, calc(100vw - 2rem)); height: min(620px, calc(100vh - 7rem)); border: 1.5px solid #e8e0d0; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 1.4rem 3rem rgba(13,31,24,.22); display: none; grid-template-rows: auto minmax(0,1fr) auto; }
     .ic-ai-widget.open .ic-ai-panel { display: grid; }
-    .ic-ai-head { padding: .85rem; color: #fff; background: linear-gradient(135deg, #0d1f18, #2d6a4f); display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-    .ic-ai-title { font-weight: 900; line-height: 1.15; }
-    .ic-ai-sub { font-size: .74rem; color: rgba(255,255,255,.74); margin-top: .12rem; }
-    .ic-ai-close { border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1); color: #fff; border-radius: 8px; width: 34px; height: 34px; font-weight: 900; }
+    .ic-ai-head { padding: .85rem 1rem; color: #fff; background: linear-gradient(135deg, #0d1f18, #2d6a4f); display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .ic-ai-title { font-family: 'DM Serif Display', serif; font-weight: 400; line-height: 1.2; }
+    .ic-ai-sub { font-family: 'DM Mono', monospace; font-size: .68rem; color: rgba(255,255,255,.68); margin-top: .2rem; }
+    .ic-ai-close { border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1); color: #fff; border-radius: 999px; width: 30px; height: 30px; font-weight: 700; }
     .ic-ai-body { overflow: auto; padding: .8rem; background: linear-gradient(180deg, #f7fbf8, #edf7e7); }
     .ic-ai-msg { display: flex; margin-bottom: .72rem; }
     .ic-ai-msg.user { justify-content: flex-end; }
-    .ic-ai-bubble { max-width: 86%; border: 1px solid #d4edda; border-radius: 8px; padding: .68rem .75rem; background: #fff; color: #0d1f18; line-height: 1.42; white-space: pre-line; overflow-wrap: anywhere; font-size: .9rem; }
+    .ic-ai-bubble { max-width: 86%; border: 1.5px solid #d4edda; border-radius: 14px; padding: .68rem .75rem; background: #fff; color: #0d1f18; line-height: 1.42; white-space: pre-line; overflow-wrap: anywhere; font-size: .9rem; }
     .ic-ai-msg.user .ic-ai-bubble { background: #1f6f4a; color: #fff; border-color: #1f6f4a; }
     .ic-ai-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; margin-top: .6rem; }
-    .ic-ai-card { border: 1px solid #d4edda; border-left: 4px solid #52b788; border-radius: 8px; background: #fff; padding: .5rem; }
-    .ic-ai-card-label { color: #5f7569; font-size: .62rem; font-weight: 900; text-transform: uppercase; }
-    .ic-ai-card-value { color: #0d1f18; font-size: .78rem; font-weight: 900; margin-top: .16rem; }
-    .ic-ai-typing { display: none; color: #5f7569; font-size: .82rem; font-weight: 800; padding: 0 .8rem .6rem; background: #edf7e7; }
+    .ic-ai-card { border: 1px solid #d4edda; border-left: 4px solid #52b788; border-radius: 10px; background: #fff; padding: .5rem; }
+    .ic-ai-card-label { color: #5f7569; font-family: 'DM Mono', monospace; font-size: .6rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+    .ic-ai-card-value { color: #0d1f18; font-size: .78rem; font-weight: 700; margin-top: .16rem; }
+    .ic-ai-typing { display: none; color: #5f7569; font-family: 'DM Mono', monospace; font-size: .74rem; font-weight: 500; padding: 0 .8rem .6rem; background: #edf7e7; }
     .ic-ai-typing.show { display: block; }
     .ic-ai-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .5rem; padding: .7rem; border-top: 1px solid #d4edda; background: #fff; }
     .ic-ai-form textarea { min-height: 42px; max-height: 110px; resize: vertical; font-size: .88rem; }

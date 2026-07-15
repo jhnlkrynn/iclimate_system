@@ -15,8 +15,14 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        if (! $user) {
             abort(Response::HTTP_FORBIDDEN);
+        }
+
+        if (! in_array($user->role, $roles, true)) {
+            return redirect()
+                ->route($user->dashboardRoute())
+                ->with('error', "You don't have access to that page.");
         }
 
         return $next($request);

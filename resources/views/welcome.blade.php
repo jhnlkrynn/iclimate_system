@@ -21,6 +21,9 @@
       --green-50:  #F0F7F4;
       --sand:      #F5F0E8;
       --sand-dark: #E8E0D0;
+      --gold:      #E8A73D;
+      --gold-dark: #C6872A;
+      --gold-light:#FBEBCF;
       --ink:       #0D1F18;
       --ink-mid:   #3D5A48;
       --ink-light: #6B8F71;
@@ -28,11 +31,14 @@
       --radius-sm: 4px;
       --radius-md: 10px;
       --radius-lg: 18px;
+      --radius-xl: 32px;
+      --radius-blob: 62% 38% 41% 59% / 48% 42% 58% 52%;
       --radius-pill: 100px;
       --shadow-sm: 0 1px 4px rgba(13,31,24,0.08);
       --shadow-md: 0 4px 20px rgba(13,31,24,0.12);
       --shadow-lg: 0 16px 56px rgba(13,31,24,0.18);
-      --nav-h: 64px;
+      --shadow-gold: 0 10px 28px rgba(232,167,61,0.35);
+      --nav-h: 108px;
       --ease: cubic-bezier(0.4,0,0.2,1);
     }
 
@@ -72,7 +78,7 @@
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 11px 24px;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-pill);
       font-family: 'Inter', sans-serif;
       font-size: 0.875rem;
       font-weight: 600;
@@ -81,13 +87,14 @@
       letter-spacing: 0.01em;
     }
     .btn-primary {
-      background: var(--green-500);
-      color: var(--white);
+      background: var(--gold);
+      color: var(--ink);
+      box-shadow: var(--shadow-gold);
     }
     .btn-primary:hover {
-      background: var(--green-700);
+      background: var(--gold-dark);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(82,183,136,0.4);
+      box-shadow: 0 10px 28px rgba(232,167,61,0.48);
     }
     .btn-outline {
       border: 1.5px solid var(--green-800);
@@ -104,7 +111,7 @@
       padding-left: 0;
     }
     .btn-ghost-light:hover { color: var(--white); }
-    .btn-lg { padding: 14px 32px; font-size: 0.95rem; border-radius: var(--radius-lg); }
+    .btn-lg { padding: 14px 32px; font-size: 0.95rem; border-radius: var(--radius-pill); }
     .btn-full { width: 100%; justify-content: center; }
 
     /* -- EYEBROW --------------------------------------- */
@@ -130,22 +137,22 @@
        NAVBAR
     =============================================== */
     .navbar {
-      position: fixed;
+      position: absolute;
       top: 0; left: 0; right: 0;
       z-index: 100;
       height: var(--nav-h);
       background: transparent;
-      transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
-    }
-    .navbar.scrolled {
-      background: var(--green-950);
-      box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+      padding: 14px 0;
     }
     .nav-container {
       max-width: 1120px; margin: 0 auto;
-      padding: 0 24px;
+      padding: 10px 16px 10px 24px;
       height: 100%;
       display: flex; align-items: center; gap: 40px;
+      background: var(--green-950);
+      border-radius: var(--radius-pill);
+      box-shadow: 0 8px 32px rgba(13,31,24,0.28);
+      transition: box-shadow 0.3s var(--ease);
     }
     .nav-logo {
       display: flex; align-items: center; gap: 10px;
@@ -178,11 +185,11 @@
       transition: color 0.2s, background 0.2s;
     }
     .nav-link:hover, .nav-link.active { color: var(--white); }
-    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
     .nav-login {
-      padding: 7px 18px;
+      padding: 9px 20px;
       border: 1px solid rgba(255,255,255,0.25);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-pill);
       font-size: 0.875rem;
       font-weight: 500;
       color: rgba(255,255,255,0.8);
@@ -192,6 +199,21 @@
       border-color: rgba(255,255,255,0.6);
       color: var(--white);
     }
+    .nav-cta {
+      padding: 9px 22px;
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--gold);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover {
+      background: var(--gold-dark);
+      transform: translateY(-1px);
+    }
+    @media (max-width: 640px) { .nav-cta { display: none; } }
     .hamburger {
       display: none; flex-direction: column; gap: 5px;
       width: 28px; padding: 4px;
@@ -234,7 +256,7 @@
       width: 100%;
       margin: 0 auto;
       padding: 0 24px;
-      padding-top: calc(var(--nav-h) + 100px);
+      padding-top: calc(var(--nav-h) + 56px);
       padding-bottom: 100px;
       display: grid;
       grid-template-columns: 1fr 420px;
@@ -279,125 +301,110 @@
     }
     .hero-actions {
       display: flex; align-items: center; gap: 20px;
-      flex-wrap: wrap; margin-bottom: 56px;
+      flex-wrap: wrap; margin-bottom: 0;
     }
-    .hero-stats {
-      display: flex; align-items: stretch; gap: 0;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      width: fit-content;
-    }
-    .stat {
-      padding: 16px 24px;
-      display: flex; flex-direction: column; gap: 3px;
-      border-right: 1px solid rgba(255,255,255,0.08);
-    }
-    .stat:last-child { border-right: none; }
-    .stat-num {
-      font-family: 'DM Mono', monospace;
-      font-size: 1.4rem;
-      font-weight: 500;
-      color: var(--white);
-      line-height: 1;
-      letter-spacing: -0.02em;
-    }
-    .stat-label { font-size: 0.72rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
 
-    /* Hero Card */
-    .hero-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(82,183,136,0.18);
+    /* ===============================================
+       HERO VISUAL (location map panel)
+    =============================================== */
+    .hero-visual {
+      position: relative;
+      height: 480px;
+    }
+    .hero-map-panel {
+      position: absolute;
+      inset: 0;
       border-radius: var(--radius-lg);
       overflow: hidden;
-      backdrop-filter: blur(16px);
+      background-color: rgba(255,255,255,0.02);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
-    .hc-head {
-      display: flex; align-items: center; gap: 8px;
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+    .hero-map-dot {
+      position: absolute;
+      top: 16%; left: 50%;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green-400);
+      animation: heroMapPulse 2.4s infinite;
     }
-    .hc-dot { width: 9px; height: 9px; border-radius: 50%; }
-    .hc-dot.r { background: #FF5F56; }
-    .hc-dot.y { background: #FFBD2E; }
-    .hc-dot.g { background: #27C93F; }
-    .hc-title {
+    @keyframes heroMapPulse {
+      0%   { box-shadow: 0 0 0 5px rgba(116,198,157,0.22), 0 0 18px 4px rgba(116,198,157,0.4), 0 0 0 0 rgba(116,198,157,0.5); }
+      70%  { box-shadow: 0 0 0 5px rgba(116,198,157,0.22), 0 0 18px 4px rgba(116,198,157,0.4), 0 0 0 10px rgba(116,198,157,0); }
+      100% { box-shadow: 0 0 0 5px rgba(116,198,157,0.22), 0 0 18px 4px rgba(116,198,157,0.4), 0 0 0 0 rgba(116,198,157,0); }
+    }
+    .hero-map-card {
+      position: absolute;
+      top: 30%; left: 50%;
+      transform: translateX(-50%);
+      width: 270px;
+      background: rgba(13,31,24,0.85);
+      border: 1px solid rgba(82,183,136,0.22);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-lg);
+    }
+    .hmc-location {
       font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-left: auto;
-      margin-right: auto;
-      padding-right: 40px;
+      font-size: 0.8rem;
+      color: var(--green-400);
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
     }
-    .hc-body { padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; }
-    
-    /* Weather row */
-    .hc-weather {
+    .hmc-office {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    /* Trust / stats band */
+    .trust-band {
+      position: relative;
+      z-index: 2;
+      background: var(--green-900);
+      padding-top: 40px;
+    }
+    .trust-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .trust-item {
       display: flex; align-items: center; gap: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex: 1;
+      min-width: 180px;
     }
-    .hc-temp {
+    .trust-icon {
+      width: 52px; height: 52px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: rgba(232,167,61,0.12);
+      border: 1px solid rgba(232,167,61,0.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .trust-num {
       font-family: 'DM Serif Display', serif;
-      font-size: 3rem;
+      font-size: 1.6rem;
       color: var(--white);
       line-height: 1;
       letter-spacing: -0.02em;
     }
-    .hc-temp sup { font-size: 1.2rem; vertical-align: super; }
-    .hc-weather-meta { display: flex; flex-direction: column; gap: 4px; }
-    .hc-weather-label {
-      font-size: 0.875rem; font-weight: 500; color: rgba(255,255,255,0.7);
-    }
-    .hc-weather-sub {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem; color: rgba(255,255,255,0.35);
-      letter-spacing: 0.05em;
-    }
-    .hc-sun {
-      margin-left: auto;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(82,183,136,0.35) 0%, transparent 70%);
-      display: flex; align-items: center; justify-content: center;
-    }
-    
-    /* Mini chart */
-    .hc-chart-wrap { display: flex; flex-direction: column; gap: 8px; }
-    .hc-chart-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem; color: rgba(255,255,255,0.3);
-      letter-spacing: 0.08em; text-transform: uppercase;
-    }
-    .hc-chart svg { width: 100%; }
-    .hc-chart-days {
-      display: flex; justify-content: space-between;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.62rem; color: rgba(255,255,255,0.25);
-      letter-spacing: 0.05em;
-    }
-    
-    /* Status chips */
-    .hc-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chip {
-      padding: 5px 12px;
-      border-radius: var(--radius-pill);
+    .trust-label {
       font-family: 'DM Mono', monospace;
       font-size: 0.68rem;
-      font-weight: 500;
-      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 5px;
     }
-    .chip-green {
-      background: rgba(82,183,136,0.15);
-      color: var(--green-400);
-      border: 1px solid rgba(82,183,136,0.25);
-    }
-    .chip-mint {
-      background: rgba(183,228,199,0.1);
-      color: var(--green-200);
-      border: 1px solid rgba(183,228,199,0.2);
+    @media (max-width: 768px) {
+      .trust-grid { flex-direction: column; }
     }
 
     /* Hero wave */
@@ -423,54 +430,192 @@
     .about-visual {
       position: relative;
     }
-    .about-img-card {
-      background: var(--green-50);
+
+    /* ===============================================
+       LIVE YIELD CALCULATOR
+    =============================================== */
+    .yield-calc {
+      background: var(--sand);
+      border: 1px solid var(--sand-dark);
       border-radius: var(--radius-lg);
-      overflow: hidden;
-      aspect-ratio: 4/3;
-      display: flex; align-items: center; justify-content: center;
-      border: 1px solid var(--green-100);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
     }
-    .about-img-card svg { width: 100%; height: 100%; }
-    .about-accent-box {
-      position: absolute;
-      bottom: -24px; right: -24px;
+    .yc-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 20px;
+    }
+    .yc-live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
       background: var(--green-500);
-      border-radius: var(--radius-md);
-      padding: 20px 24px;
-      min-width: 160px;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 0 0 0 rgba(82,183,136,0.5);
+      animation: ycPulse 2s infinite;
+      flex-shrink: 0;
     }
-    .aab-num {
+    @keyframes ycPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(82,183,136,0.5); }
+      70%  { box-shadow: 0 0 0 6px rgba(82,183,136,0); }
+      100% { box-shadow: 0 0 0 0 rgba(82,183,136,0); }
+    }
+    .yc-header span.yc-title {
       font-family: 'DM Mono', monospace;
-      font-size: 1.8rem;
+      font-size: 0.68rem;
       font-weight: 500;
-      color: var(--white);
-      line-height: 1;
-      letter-spacing: -0.02em;
-    }
-    .aab-label {
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.7);
-      margin-top: 4px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
+      color: var(--ink-mid);
+    }
+    .yc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .yc-field {
+      background: var(--white);
+      border: 1px solid var(--sand-dark);
+      border-radius: var(--radius-md);
+      padding: 13px 16px 15px;
+    }
+    .yc-field-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .yc-field-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--ink-mid);
+    }
+    .yc-field-label svg { color: var(--green-500); flex-shrink: 0; }
+    .yc-field-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--green-50);
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+    }
+    .yc-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 5px;
+      border-radius: var(--radius-pill);
+      background: var(--green-100);
+      outline: none;
+      cursor: pointer;
+    }
+    .yc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--green-500);
+      border: 2px solid var(--white);
+      box-shadow: 0 1px 4px rgba(13,31,24,0.25);
+      cursor: pointer;
+    }
+    .yc-slider::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--green-500);
+      border: 2px solid var(--white);
+      box-shadow: 0 1px 4px rgba(13,31,24,0.25);
+      cursor: pointer;
+    }
+    .yc-select {
+      width: 100%;
+      background: var(--white);
+      border: 1px solid var(--sand-dark);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+      outline: none;
+      cursor: pointer;
+    }
+    .yc-select:focus { border-color: var(--green-500); }
+    .yc-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin: 18px 0 20px;
+    }
+    .yc-stat {
+      background: var(--white);
+      border: 1px solid var(--sand-dark);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+    }
+    .yc-stat.yc-stat-highlight {
+      background: var(--green-100);
+      border-color: var(--green-200);
+    }
+    .yc-stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
       letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+    .yc-stat-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.3rem;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .yc-chart-card {
+      background: var(--white);
+      border: 1px solid var(--sand-dark);
+      border-radius: var(--radius-md);
+      padding: 16px 18px 10px;
+    }
+    .yc-chart-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+    }
+    .yc-chart-svg { width: 100%; height: auto; display: block; }
+    .yc-chart-axis {
+      display: flex; justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--ink-light);
+      margin-top: 4px;
     }
     .about-text { display: flex; flex-direction: column; gap: 20px; }
     .about-text .section-title { margin-bottom: 4px; }
     .about-text p { font-size: 0.975rem; line-height: 1.8; }
     .pillars { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
     .pillar {
-      display: flex; align-items: flex-start; gap: 14px;
+      display: flex; align-items: center; gap: 16px;
       padding: 16px 20px;
       background: var(--green-50);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-pill);
       border: 1px solid var(--green-100);
+      transition: box-shadow 0.2s var(--ease), border-color 0.2s;
     }
+    .pillar:hover { box-shadow: var(--shadow-sm); border-color: var(--green-200); }
     .pillar-icon {
-      font-size: 1.3rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
       flex-shrink: 0;
-      margin-top: 1px;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--green-700);
+      color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
     }
     .pillar-body strong {
       display: block;
@@ -499,32 +644,58 @@
     .section-header .eyebrow { margin-bottom: 16px; }
     .section-header h2 { margin-bottom: 14px; }
     .section-header p { font-size: 1rem; line-height: 1.7; }
-    .features-grid {
+    .features-section > .container > .section-header {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+    .features-section > .container > .section-header .eyebrow {
+      justify-content: center;
+    }
+    .features-top {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      border: 1px solid var(--sand-dark);
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .features-bottom {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
     }
     .feature-card {
       background: var(--white);
-      padding: 36px 32px;
+      padding: 32px 28px;
       display: flex; flex-direction: column; gap: 12px;
-      transition: background 0.2s;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--sand-dark);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
       position: relative;
+      min-width: 0;
     }
-    .feature-card:hover { background: var(--green-50); }
-    .feature-card.fc-wide {
-      grid-column: span 2;
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--green-200);
     }
+    .feature-card--dark {
+      background: var(--green-950);
+      border-color: var(--green-900);
+    }
+    .feature-card--dark:hover { border-color: var(--green-800); }
+    .feature-card.feature-card--dark h3 { color: var(--white); }
+    .feature-card.feature-card--dark p { color: rgba(255,255,255,0.55); }
+    .feature-card.feature-card--dark .fc-icon-wrap { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+    .feature-card.feature-card--dark .fc-badge { background: rgba(82,183,136,0.16); color: var(--green-400); }
     .fc-icon-wrap {
-      width: 48px; height: 48px;
+      width: 52px; height: 52px;
       background: var(--green-50);
-      border-radius: var(--radius-md);
+      border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 4px;
       border: 1px solid var(--green-100);
+      flex-shrink: 0;
     }
     .feature-card h3 {
       font-family: 'Inter', sans-serif;
@@ -534,7 +705,7 @@
       line-height: 1.3;
       letter-spacing: -0.01em;
     }
-    .feature-card p { font-size: 0.875rem; line-height: 1.7; color: var(--ink-light); }
+    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: var(--ink-light); }
     .fc-badge {
       display: inline-block; margin-top: auto;
       font-family: 'DM Mono', monospace;
@@ -546,6 +717,59 @@
       padding: 3px 10px;
       border-radius: var(--radius-pill);
       width: fit-content;
+    }
+
+    /* How it works */
+    .how-block { margin-top: 96px; }
+    .how-block .section-header { margin-bottom: 56px; }
+    .how-steps {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      position: relative;
+    }
+    .how-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 6%;
+      right: 6%;
+      height: 0;
+      border-top: 2px dotted var(--green-200);
+      z-index: 0;
+    }
+    .how-step {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .how-step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1.5px solid var(--green-200);
+      color: var(--green-700);
+      font-family: 'DM Mono', monospace;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .how-step h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .how-step p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--ink-light);
     }
 
     /* ===============================================
@@ -684,6 +908,70 @@
       background: var(--sand);
       padding: 120px 0;
     }
+    .contact-methods {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 64px;
+    }
+    .contact-method {
+      background: var(--white);
+      border: 1px solid var(--sand-dark);
+      border-radius: var(--radius-lg);
+      padding: 28px 26px;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
+    }
+    .contact-method:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--green-200);
+    }
+    .contact-method-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--green-50);
+      border: 1px solid var(--green-100);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .contact-method h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .contact-method p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--ink-light);
+    }
+    .contact-method-link {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--sand-dark);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--green-700);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .contact-method.contact-method--dark {
+      background: var(--green-950);
+      border-color: var(--green-900);
+    }
+    .contact-method.contact-method--dark:hover { border-color: var(--green-800); }
+    .contact-method.contact-method--dark h3 { color: var(--white); }
+    .contact-method.contact-method--dark p { color: rgba(255,255,255,0.55); }
+    .contact-method.contact-method--dark .contact-method-icon { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+    .contact-method.contact-method--dark .contact-method-link { color: var(--green-400); border-top-color: rgba(255,255,255,0.1); }
+
     .contact-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -699,7 +987,7 @@
     }
     .cd-icon-wrap {
       width: 40px; height: 40px;
-      border-radius: var(--radius-md);
+      border-radius: 50%;
       background: var(--white);
       border: 1px solid var(--sand-dark);
       display: flex; align-items: center; justify-content: center;
@@ -708,10 +996,34 @@
     }
     .cd-text strong { font-size: 0.8rem; font-weight: 700; display: block; color: var(--ink); margin-bottom: 2px; }
     .cd-text span { font-size: 0.875rem; color: var(--ink-light); }
-    
+
+    .contact-hours {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--sand-dark);
+    }
+    .contact-hours-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+    }
+    .contact-hours-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 0;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--sand-dark);
+    }
+    .contact-hours-row:last-child { border-bottom: none; }
+    .contact-hours-row span:first-child { color: var(--ink-mid); }
+    .contact-hours-row span:last-child { color: var(--ink); font-weight: 600; }
+
     .contact-form-card {
       background: var(--white);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       padding: 40px;
       border: 1px solid var(--sand-dark);
       box-shadow: var(--shadow-sm);
@@ -720,9 +1032,19 @@
       font-family: 'DM Serif Display', serif;
       font-size: 1.4rem;
       font-weight: 400;
-      margin-bottom: 28px;
+      margin-bottom: 6px;
       color: var(--ink);
       letter-spacing: -0.01em;
+    }
+    .contact-form-sub {
+      font-size: 0.85rem;
+      color: var(--ink-light);
+      margin-bottom: 24px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
     }
     .form-group { margin-bottom: 18px; }
     .form-group label {
@@ -746,11 +1068,18 @@
       outline: none;
       resize: vertical;
     }
+    select.form-input { cursor: pointer; }
     .form-input:focus {
       border-color: var(--green-500);
       box-shadow: 0 0 0 3px rgba(82,183,136,0.12);
     }
     .form-input::placeholder { color: #B0C0B8; }
+    .btn-dark { background: var(--ink); color: var(--white); }
+    .btn-dark:hover {
+      background: var(--green-950);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(13,31,24,0.3);
+    }
 
     /* ===============================================
        FOOTER
@@ -813,11 +1142,15 @@
     =============================================== */
     @media (max-width: 1024px) {
       .hero-inner { grid-template-columns: 1fr; gap: 0; }
-      .hero-card { display: none; }
-      .about-grid { grid-template-columns: 1fr; gap: 48px; }
-      .about-visual { display: none; }
-      .features-grid { grid-template-columns: 1fr 1fr; }
-      .feature-card.fc-wide { grid-column: span 2; }
+      .hero-visual { display: none; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-visual { order: 2; }
+      .about-text { order: 1; }
+      .features-bottom { grid-template-columns: 1fr 1fr; }
+      .how-steps { flex-wrap: wrap; }
+      .how-steps::before { display: none; }
+      .how-step { flex: 1 1 45%; }
+      .contact-methods { grid-template-columns: 1fr 1fr; }
       .contact-grid { grid-template-columns: 1fr; gap: 48px; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
       .footer-brand { grid-column: span 2; }
@@ -844,9 +1177,11 @@
       }
       .hamburger { display: flex; }
       .nav-login { display: none; }
-      .features-grid { grid-template-columns: 1fr; }
-      .feature-card.fc-wide { grid-column: span 1; }
-      .hero-stats { overflow-x: auto; }
+      .features-top { grid-template-columns: 1fr; }
+      .features-bottom { grid-template-columns: 1fr; }
+      .how-step { flex: 1 1 100%; }
+      .contact-methods { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-brand { grid-column: span 1; }
       .footer-col-pair { grid-template-columns: 1fr 1.5fr; column-gap: 20px; }
@@ -896,7 +1231,7 @@
     .role-card {
       background: var(--white);
       border: 1.5px solid var(--green-100);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       padding: 40px 32px 32px;
       display: flex;
       flex-direction: column;
@@ -909,11 +1244,106 @@
       transform: translateY(-4px);
       border-color: var(--green-200);
     }
+    .role-workspace-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green-500);
+      margin-bottom: 8px;
+    }
+    .role-card.role-card--highlight {
+      background: var(--green-950);
+      border-color: var(--green-900);
+      margin-top: -16px;
+      padding-bottom: 48px;
+      box-shadow: var(--shadow-lg);
+    }
+    .role-card.role-card--highlight:hover { border-color: var(--green-800); }
+    .role-card.role-card--highlight .role-workspace-label { color: var(--gold); }
+    .role-card.role-card--highlight h3 { color: var(--white); }
+    .role-card.role-card--highlight > p { color: rgba(255,255,255,0.55); }
+    .role-card.role-card--highlight .role-divider { background: rgba(255,255,255,0.1); }
+    .role-card.role-card--highlight .role-features-label { color: rgba(255,255,255,0.4); }
+    .role-card.role-card--highlight .role-feature-item { color: rgba(255,255,255,0.78); }
+    .role-card.role-card--highlight .role-feature-item svg { color: var(--green-400); }
+    .role-card.role-card--highlight .role-cta {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--ink);
+    }
+    .role-card.role-card--highlight .role-cta:hover {
+      background: var(--gold-dark);
+      border-color: var(--gold-dark);
+    }
+    @media (max-width: 1024px) {
+      .role-card.role-card--highlight { margin-top: 0; padding-bottom: 32px; }
+    }
+
+    /* How the roles connect */
+    .roles-connect {
+      background: var(--green-950);
+      border-radius: var(--radius-xl);
+      padding: 48px 44px;
+      margin-top: 64px;
+    }
+    .roles-connect .eyebrow { color: var(--green-400); margin-bottom: 12px; }
+    .roles-connect .eyebrow::before { background: var(--green-400); }
+    .roles-connect h2 { color: var(--white); max-width: 460px; }
+    .connect-flow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 44px;
+    }
+    .connect-step {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+    .connect-icon {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .connect-step h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .connect-step p {
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.5);
+      max-width: 200px;
+    }
+    .connect-arrow {
+      color: var(--green-500);
+      font-size: 1.1rem;
+      padding-top: 16px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) {
+      .roles-connect { padding: 36px 24px; }
+      .connect-flow { flex-direction: column; align-items: stretch; gap: 24px; }
+      .connect-arrow { display: none; }
+    }
     /* Standard SVG icon wrap */
     .role-icon-wrap {
       width: 72px; height: 72px;
       background: var(--green-700);
-      border-radius: var(--radius-md);
+      border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 28px;
       flex-shrink: 0;
@@ -978,7 +1408,7 @@
     .role-cta {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       padding: 11px 24px;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-pill);
       border: 1.5px solid var(--green-200);
       font-size: 0.875rem;
       font-weight: 600;
@@ -988,9 +1418,9 @@
       width: 100%;
     }
     .role-cta:hover {
-      background: var(--green-700);
-      border-color: var(--green-700);
-      color: var(--white);
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--ink);
     }
     @media (max-width: 1024px) {
       .roles-grid { grid-template-columns: 1fr 1fr; }
@@ -1013,7 +1443,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, var(--green-500), #168aad);
+      background: linear-gradient(135deg, var(--green-500), var(--green-800));
       color: var(--white);
       font-family: 'DM Mono', monospace;
       font-size: 0.78rem;
@@ -1050,7 +1480,7 @@
       box-shadow: 0 18px 40px rgba(13,31,24,0.14);
     }
     .role-farmer { background: linear-gradient(135deg, #52B788, #2D6A4F); }
-    .role-mao { background: linear-gradient(135deg, #168aad, #2D6A4F); }
+    .role-mao { background: linear-gradient(135deg, var(--gold), #2D6A4F); }
     .role-it { background: linear-gradient(135deg, #3D5A48, #0D1F18); }
     .contact-form-card button[type="button"] { cursor: default; }
     .brand-logo-img {
@@ -1060,7 +1490,6 @@
       object-fit: contain;
       display: block;
     }
-    .footer-logo .brand-logo-img { filter: brightness(0) invert(1); }
     .role-logo-img {
       width: 118px;
       height: 118px;
@@ -1096,6 +1525,7 @@
     </ul>
     <div class="nav-actions">
       <a href="{{ route('login') }}" class="nav-login">Login</a>
+      <a href="{{ route('register') }}" class="nav-cta">Create Account</a>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
@@ -1126,78 +1556,48 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-      <div class="hero-stats fade-up fade-up-4">
-        <div class="stat">
-          <span class="stat-num">3</span>
-          <span class="stat-label">User Roles</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num">RT</span>
-          <span class="stat-label">Climate Records</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num">BRY</span>
-          <span class="stat-label">Based Reports</span>
+    </div>
+
+    <div class="hero-visual fade-up fade-up-3">
+      <div class="hero-map-panel">
+        <div class="hero-map-dot"></div>
+        <div class="hero-map-card">
+          <div class="hmc-location">Lian, Batangas</div>
+          <div class="hmc-office">Municipal Agricultural Office</div>
         </div>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="hero-card fade-up fade-up-3">
-      <div class="hc-head">
-        <span class="hc-dot r"></span>
-        <span class="hc-dot y"></span>
-        <span class="hc-dot g"></span>
-        <span class="hc-title">Live Climate Monitor</span>
+<!-- TRUST / STATS BAND -->
+<section class="trust-band">
+  <div class="container trust-grid">
+    <div class="trust-item">
+      <div class="trust-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <div class="hc-body">
-        <div class="hc-weather">
-          <div>
-            <div class="hc-temp">29<sup>&deg;C</sup></div>
-          </div>
-          <div class="hc-weather-meta">
-            <span class="hc-weather-label">Partly Cloudy</span>
-            <span class="hc-weather-sub">HUMID 74% &middot; WIND 12 KM/H</span>
-          </div>
-          <div class="hc-sun">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="5" fill="#52B788"/>
-              <g stroke="#95D5B2" stroke-width="1.5" stroke-linecap="round">
-                <line x1="12" y1="2" x2="12" y2="5"/>
-                <line x1="12" y1="19" x2="12" y2="22"/>
-                <line x1="2" y1="12" x2="5" y2="12"/>
-                <line x1="19" y1="12" x2="22" y2="12"/>
-                <line x1="4.9" y1="4.9" x2="7.1" y2="7.1"/>
-                <line x1="16.9" y1="16.9" x2="19.1" y2="19.1"/>
-                <line x1="19.1" y1="4.9" x2="16.9" y2="7.1"/>
-                <line x1="7.1" y1="16.9" x2="4.9" y2="19.1"/>
-              </g>
-            </svg>
-          </div>
-        </div>
-        <div class="hc-chart-wrap">
-          <span class="hc-chart-label">7-Day Temperature</span>
-          <div class="hc-chart">
-            <svg viewBox="0 0 340 60" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#52B788" stop-opacity="0.3"/>
-                  <stop offset="100%" stop-color="#52B788" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M0 42 C30 38,60 28,90 32 C120 36,150 16,190 20 C220 23,270 12,340 18 L340 60 L0 60Z" fill="url(#cg)"/>
-              <path d="M0 42 C30 38,60 28,90 32 C120 36,150 16,190 20 C220 23,270 12,340 18" fill="none" stroke="#52B788" stroke-width="1.5"/>
-              <circle cx="190" cy="20" r="3.5" fill="#74C69D"/>
-              <circle cx="190" cy="20" r="7" fill="rgba(82,183,136,0.2)"/>
-            </svg>
-          </div>
-          <div class="hc-chart-days">
-            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
-          </div>
-        </div>
-        <div class="hc-chips">
-          <span class="chip chip-green">&#10003; Good Planting Window</span>
-          <span class="chip chip-mint">&uarr; Production +14%</span>
-        </div>
+      <div>
+        <div class="trust-num">3</div>
+        <div class="trust-label">User Roles</div>
+      </div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="trust-num">24/7</div>
+        <div class="trust-label">Real-Time Monitoring</div>
+      </div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="trust-num">PAGASA</div>
+        <div class="trust-label">Verified Data Source</div>
       </div>
     </div>
   </div>
@@ -1214,46 +1614,119 @@
   <div class="container">
     <div class="about-grid">
       <div class="about-visual">
-        <div class="about-img-card">
-          <svg viewBox="0 0 440 330" xmlns="http://www.w3.org/2000/svg">
-            <rect width="440" height="330" fill="#1A3A2A" rx="0"/>
-            <ellipse cx="220" cy="240" rx="180" ry="55" fill="#2D6A4F" opacity="0.5"/>
-            <!-- Rice stalks -->
-            <g fill="#52B788" opacity="0.85">
-              <ellipse cx="80" cy="195" rx="9" ry="24"/>
-              <ellipse cx="80" cy="171" rx="3.5" ry="10"/>
-              <ellipse cx="130" cy="185" rx="9" ry="26"/>
-              <ellipse cx="130" cy="159" rx="3.5" ry="11"/>
-              <ellipse cx="180" cy="192" rx="9" ry="24"/>
-              <ellipse cx="180" cy="168" rx="3.5" ry="10"/>
-              <ellipse cx="230" cy="182" rx="9" ry="26"/>
-              <ellipse cx="230" cy="156" rx="3.5" ry="11"/>
-              <ellipse cx="280" cy="190" rx="9" ry="24"/>
-              <ellipse cx="280" cy="166" rx="3.5" ry="10"/>
-              <ellipse cx="330" cy="188" rx="9" ry="26"/>
-              <ellipse cx="330" cy="162" rx="3.5" ry="11"/>
-              <ellipse cx="380" cy="194" rx="9" ry="22"/>
-              <ellipse cx="380" cy="172" rx="3.5" ry="9"/>
-            </g>
-            <!-- Grid lines -->
-            <g stroke="#95D5B2" stroke-width="0.8" opacity="0.3">
-              <line x1="40" y1="100" x2="400" y2="100"/>
-              <line x1="40" y1="120" x2="400" y2="120"/>
-            </g>
-            <!-- Data line -->
-            <path d="M100 90 L180 72 L260 80 L340 68" stroke="#52B788" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <circle cx="100" cy="90" r="4" fill="#74C69D"/>
-            <circle cx="180" cy="72" r="5" fill="#52B788"/>
-            <circle cx="260" cy="80" r="4" fill="#74C69D"/>
-            <circle cx="340" cy="68" r="4" fill="#74C69D"/>
-            <!-- Label -->
-            <rect x="140" y="44" width="100" height="22" rx="11" fill="#52B788" opacity="0.9"/>
-            <text x="190" y="59" text-anchor="middle" fill="white" font-size="10" font-family="'DM Mono', monospace" letter-spacing="1">YIELD FORECAST</text>
-          </svg>
-        </div>
-        <div class="about-accent-box">
-          <div class="aab-num">4.8t</div>
-          <div class="aab-label">per hectare<br>recorded yield</div>
+        <div class="yield-calc" id="yieldCalc">
+          <div class="yc-header">
+            <span class="yc-live-dot"></span>
+            <span class="yc-title">Live Rice Yield Forecast</span>
+          </div>
+
+          <div class="yc-grid">
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M1 5h12M5 1v12" stroke="currentColor" stroke-width="1.2"/></svg>
+                  Field area (ha)
+                </span>
+                <span class="yc-field-val" id="ycAreaVal">8</span>
+              </div>
+              <input type="range" class="yc-slider" id="ycArea" min="1" max="50" step="1" value="8">
+            </div>
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><ellipse cx="7" cy="7" rx="3" ry="6" stroke="currentColor" stroke-width="1.3"/></svg>
+                  Seed rate (kg/ha)
+                </span>
+                <span class="yc-field-val" id="ycSeedVal">80</span>
+              </div>
+              <input type="range" class="yc-slider" id="ycSeed" min="20" max="160" step="5" value="80">
+            </div>
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1c2.2 3 4 5.3 4 7.5A4 4 0 1 1 3 8.5C3 6.3 4.8 4 7 1z" stroke="currentColor" stroke-width="1.3"/></svg>
+                  Growing season rainfall (mm)
+                </span>
+                <span class="yc-field-val" id="ycRainVal">1000</span>
+              </div>
+              <input type="range" class="yc-slider" id="ycRain" min="300" max="1800" step="10" value="1000">
+            </div>
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 13V7M7 13V3M10 13V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  Nitrogen fertilizer (kg/ha)
+                </span>
+                <span class="yc-field-val" id="ycNitroVal">90</span>
+              </div>
+              <input type="range" class="yc-slider" id="ycNitro" min="0" max="160" step="5" value="90">
+            </div>
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5h12M1 8h12M1 11h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                  Soil quality
+                </span>
+              </div>
+              <select class="yc-select" id="ycSoil">
+                <option value="poor">Poor</option>
+                <option value="average" selected>Average</option>
+                <option value="good">Good</option>
+                <option value="excellent">Excellent</option>
+              </select>
+            </div>
+            <div class="yc-field">
+              <div class="yc-field-top">
+                <span class="yc-field-label">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  Pest / disease pressure
+                </span>
+              </div>
+              <select class="yc-select" id="ycPest">
+                <option value="low" selected>Low</option>
+                <option value="moderate">Moderate</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="yc-stats">
+            <div class="yc-stat yc-stat-highlight">
+              <div class="yc-stat-label">Yield per hectare</div>
+              <div class="yc-stat-value"><span id="ycYieldPerHa">4.9</span> t/ha</div>
+            </div>
+            <div class="yc-stat">
+              <div class="yc-stat-label">Total forecast yield</div>
+              <div class="yc-stat-value"><span id="ycTotalYield">39</span> t</div>
+            </div>
+            <div class="yc-stat">
+              <div class="yc-stat-label">Confidence range</div>
+              <div class="yc-stat-value" id="ycConfidence">4.4&ndash;5.4</div>
+            </div>
+          </div>
+
+          <div class="yc-chart-card">
+            <div class="yc-chart-label">Yield sensitivity &middot; Rainfall (mm)</div>
+            <svg class="yc-chart-svg" id="ycChart" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="ycFillGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#52B788" stop-opacity="0.28"/>
+                  <stop offset="100%" stop-color="#52B788" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g stroke="#E8E0D0" stroke-width="1">
+                <line x1="0" y1="30" x2="400" y2="30"/>
+                <line x1="0" y1="70" x2="400" y2="70"/>
+                <line x1="0" y1="110" x2="400" y2="110"/>
+              </g>
+              <path id="ycCurveFill" fill="url(#ycFillGrad)" stroke="none"/>
+              <path id="ycCurveLine" fill="none" stroke="#52B788" stroke-width="2"/>
+              <circle id="ycMarker" r="5.5" fill="#E8A73D" stroke="#FFFFFF" stroke-width="2"/>
+            </svg>
+            <div class="yc-chart-axis">
+              <span>300mm</span><span>1050mm</span><span>1800mm</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1290,11 +1763,12 @@
   <div class="container">
     <div class="section-header">
       <span class="eyebrow">Key Features</span>
-      <h2>Everything you need to grow smarter</h2>
-      <p>Six integrated tools covering every stage of the rice growing cycle &mdash; from records to harvest.</p>
+      <h2>Six tools, one growing cycle</h2>
+      <p>Each module maps to a real stage of rice farming, from watching the sky to filing the season&rsquo;s final report.</p>
     </div>
-    <div class="features-grid">
-      <div class="feature-card fc-wide">
+
+    <div class="features-top">
+      <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#52B788" stroke-width="1.8" stroke-linecap="round"/>
@@ -1303,10 +1777,10 @@
           </svg>
         </div>
         <h3>Weather Analysis</h3>
-        <p>Manage rainfall, temperature, humidity, wind, and seasonal climate records for Lian, Batangas.</p>
+        <p>Rainfall, temperature, humidity, wind, and seasonal climate records for Lian, Batangas, sourced from PAGASA.</p>
         <span class="fc-badge">Climate Records</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card feature-card--dark">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <rect x="2" y="14" width="4" height="6" rx="1" fill="#52B788"/>
@@ -1315,10 +1789,13 @@
             <path d="M4 10l7-5 7-3" stroke="#95D5B2" stroke-width="1.4" stroke-linecap="round"/>
           </svg>
         </div>
-        <h3>Rice Rice Production</h3>
-        <p>Organized rice production records and report-ready summaries for municipal planning and future forecasting work.</p>
+        <h3>Rice Production</h3>
+        <p>Organized production records and report-ready summaries for municipal planning and forecasting.</p>
         <span class="fc-badge">Records</span>
       </div>
+    </div>
+
+    <div class="features-bottom">
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -1327,7 +1804,7 @@
           </svg>
         </div>
         <h3>Planting Advisory</h3>
-        <p>Season-specific recommendations for transplanting dates, seed varieties, and fertilizer schedules.</p>
+        <p>Season-specific dates, seed varieties, and fertilizer schedules.</p>
         <span class="fc-badge">Advisory</span>
       </div>
       <div class="feature-card">
@@ -1338,7 +1815,7 @@
           </svg>
         </div>
         <h3>Climate Monitoring</h3>
-        <p>Track long-term trends, detect anomalies, and observe seasonal pattern shifts across your region.</p>
+        <p>Track long-term trends, detect anomalies, and observe pattern shifts.</p>
         <span class="fc-badge">Monitoring</span>
       </div>
       <div class="feature-card">
@@ -1349,10 +1826,10 @@
           </svg>
         </div>
         <h3>Heat Map</h3>
-        <p>Barangay climate risk records using Flood, Drought, Typhoon, and Heat risk categories.</p>
+        <p>Barangay risk records using flood, drought, typhoon, and heat categories.</p>
         <span class="fc-badge">Risk Records</span>
       </div>
-      <div class="feature-card fc-wide">
+      <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M4 3h10l4 4v12H4V3z" stroke="#52B788" stroke-width="1.8"/>
@@ -1361,8 +1838,37 @@
           </svg>
         </div>
         <h3>Reports &amp; Analytics</h3>
-        <p>Generate downloadable seasonal reports, multi-year comparative analysis, and shareable insights for LGU stakeholders.</p>
+        <p>Downloadable seasonal reports and shareable insights for LGU stakeholders.</p>
         <span class="fc-badge">Analytics</span>
+      </div>
+    </div>
+
+    <div class="how-block">
+      <div class="section-header">
+        <span class="eyebrow">How It Works</span>
+        <h2>From records to harvest, in four steps</h2>
+      </div>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="how-step-num">01</div>
+          <h3>Log climate data</h3>
+          <p>MAO staff enter or sync PAGASA rainfall, temperature, and wind records.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">02</div>
+          <h3>Get advisories</h3>
+          <p>Farmers receive planting windows and fertilizer guidance for the season.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">03</div>
+          <h3>Monitor risk</h3>
+          <p>Heat maps flag flood, drought, typhoon, and heat exposure by barangay.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">04</div>
+          <h3>Report outcomes</h3>
+          <p>Generate seasonal reports and yield comparisons for LGU planning.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1383,6 +1889,7 @@
         <div class="role-icon-wrap role-icon-wrap--img">
           <img src="{{ asset('images/rice farmer.png') }}" alt="Rice Farmer" class="role-logo-img">
         </div>
+        <div class="role-workspace-label">Workspace 01</div>
         <h3>Rice Farmer</h3>
         <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
         <div class="role-divider"></div>
@@ -1416,10 +1923,11 @@
       </div>
 
       <!-- MAO Personnel -->
-      <div class="role-card">
+      <div class="role-card role-card--highlight">
         <div class="role-icon-wrap role-icon-wrap--img">
           <img src="{{ asset('images/da.png') }}" alt="Department of Agriculture" class="role-logo-img">
         </div>
+        <div class="role-workspace-label">Workspace 02</div>
         <h3>MAO Personnel</h3>
         <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
         <div class="role-divider"></div>
@@ -1457,6 +1965,7 @@
         <div class="role-icon-wrap role-icon-wrap--img">
           <img src="{{ asset('images/it-personnel.png') }}" alt="IT Expert" class="role-logo-img">
         </div>
+        <div class="role-workspace-label">Workspace 03</div>
         <h3>IT Expert</h3>
         <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
         <div class="role-divider"></div>
@@ -1490,56 +1999,161 @@
       </div>
 
     </div>
+
+    <div class="roles-connect">
+      <span class="eyebrow">How the roles connect</span>
+      <h2>One climate picture, three vantage points</h2>
+      <div class="connect-flow">
+        <div class="connect-step">
+          <div class="connect-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Rice Farmer</h3>
+          <p>Follows planting advisories and weather alerts in the field.</p>
+        </div>
+        <div class="connect-arrow">&rarr;</div>
+        <div class="connect-step">
+          <div class="connect-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11L11 4l8 7" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19h12V9.5" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>MAO Personnel</h3>
+          <p>Validates records and turns data into reports for planning.</p>
+        </div>
+        <div class="connect-arrow">&rarr;</div>
+        <div class="connect-step">
+          <div class="connect-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V5l8-3z" stroke="#52B788" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>IT Expert</h3>
+          <p>Keeps accounts, access, and system records secure for everyone.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- CONTACT -->
 <section class="contact-section" id="contact">
   <div class="container">
+
+    <div class="contact-methods">
+      <div class="contact-method">
+        <div class="contact-method-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>+63 43 456 7890</h3>
+        <p>Speak with the MAO front desk about records, dashboard access, or general inquiries.</p>
+        <a href="tel:+63434567890" class="contact-method-link">
+          Call During Office Hours
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="contact-method contact-method--dark">
+        <div class="contact-method-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#52B788" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#52B788" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>maolian@iclimate.ph</h3>
+        <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
+        <a href="mailto:maolian@iclimate.ph" class="contact-method-link">
+          Send An Email
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="contact-method">
+        <div class="contact-method-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
+        </div>
+        <h3>Lian, Batangas, PH</h3>
+        <p>Visit the Municipal Agricultural Office to consult on-site during standard hours.</p>
+        <a href="#contact" class="contact-method-link">
+          Get Directions
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+
     <div class="contact-grid">
       <div class="contact-info">
         <span class="eyebrow">Contact Us</span>
-        <h2>Get in touch</h2>
-        <p>Have questions about iClimate? Reach out to our team at the Agriculture Municipality Office of Lian, Batangas.</p>
+        <h2>Have questions about iClimate?</h2>
+        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support farmers, MAO personnel, and IT experts using the platform.</p>
         <div class="contact-details">
           <div class="cd-item">
-            <div class="cd-icon-wrap">LOC</div>
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
+            </div>
             <div class="cd-text">
               <strong>Address</strong>
-              <span>Lian, Batangas, Philippines</span>
+              <span>Municipal Agricultural Office, Lian, Batangas, Philippines</span>
             </div>
           </div>
           <div class="cd-item">
-            <div class="cd-icon-wrap">MAIL</div>
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
             <div class="cd-text">
               <strong>Email</strong>
               <span>maolian@iclimate.ph</span>
             </div>
           </div>
           <div class="cd-item">
-            <div class="cd-icon-wrap">TEL</div>
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
             <div class="cd-text">
               <strong>Phone</strong>
               <span>+63 49 123 4567</span>
             </div>
           </div>
         </div>
+
+        <div class="contact-hours">
+          <div class="contact-hours-label">Office Hours</div>
+          <div class="contact-hours-row">
+            <span>Monday to Friday</span>
+            <span>8:00 AM to 5:00 PM</span>
+          </div>
+          <div class="contact-hours-row">
+            <span>Saturday</span>
+            <span>By appointment</span>
+          </div>
+          <div class="contact-hours-row">
+            <span>Sunday</span>
+            <span>Closed</span>
+          </div>
+        </div>
       </div>
+
       <div class="contact-form-card">
         <h3>Send a message</h3>
+        <p class="contact-form-sub">We typically respond within one business day.</p>
         <div class="form-group">
           <label>Full Name</label>
           <input type="text" class="form-input" placeholder="Juan dela Cruz"/>
         </div>
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" class="form-input" placeholder="juan@email.com"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" class="form-input" placeholder="juan@email.com"/>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select class="form-input">
+              <option>Rice Farmer</option>
+              <option>MAO Personnel</option>
+              <option>IT Expert</option>
+              <option>Other</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
           <label>Message</label>
           <textarea class="form-input" rows="4" placeholder="How can we help you?"></textarea>
         </div>
-        <button type="button" class="btn btn-primary btn-full">Send Message</button>
+        <button type="button" class="btn btn-dark btn-full">
+          Send Message
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -1586,7 +2200,7 @@
             <li><a href="{{ route('register') }}">Create Account</a></li>
             <li><a href="{{ route('login') }}">Rice Farmer Dashboard</a></li>
             <li><a href="{{ route('login') }}">MAO Personnel Dashboard</a></li>
-            <li><a href="{{ route('login') }}">IT Expert Dashboard</a></li>
+            <li><a href="{{ route('login') }}">IT Personnel Dashboard</a></li>
           </ul>
         </div>
       </div>
@@ -1601,32 +2215,98 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const navbar = document.getElementById('navbar');
     const navLinks = document.getElementById('navLinks');
     const hamburger = document.getElementById('hamburger');
     const links = document.querySelectorAll('.nav-link');
-    const sections = [...document.querySelectorAll('section[id]')];
-
-    const setNavbarState = () => {
-      navbar?.classList.toggle('scrolled', window.scrollY > 24);
-    };
-
-    const setActiveLink = () => {
-      const current = sections.findLast(section => section.offsetTop - 120 <= window.scrollY);
-      if (!current) return;
-      links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${current.id}`));
-    };
 
     hamburger?.addEventListener('click', () => navLinks?.classList.toggle('open'));
     links.forEach(link => link.addEventListener('click', () => navLinks?.classList.remove('open')));
-    window.addEventListener('scroll', () => {
-      setNavbarState();
-      setActiveLink();
-    }, { passive: true });
 
-    setNavbarState();
-    setActiveLink();
+    initYieldCalculator();
   });
+
+  function initYieldCalculator() {
+    const areaInput = document.getElementById('ycArea');
+    if (!areaInput) return;
+
+    const seedInput = document.getElementById('ycSeed');
+    const rainInput = document.getElementById('ycRain');
+    const nitroInput = document.getElementById('ycNitro');
+    const soilInput = document.getElementById('ycSoil');
+    const pestInput = document.getElementById('ycPest');
+
+    const areaVal = document.getElementById('ycAreaVal');
+    const seedVal = document.getElementById('ycSeedVal');
+    const rainVal = document.getElementById('ycRainVal');
+    const nitroVal = document.getElementById('ycNitroVal');
+    const yieldPerHaOut = document.getElementById('ycYieldPerHa');
+    const totalYieldOut = document.getElementById('ycTotalYield');
+    const confidenceOut = document.getElementById('ycConfidence');
+    const curveFill = document.getElementById('ycCurveFill');
+    const curveLine = document.getElementById('ycCurveLine');
+    const marker = document.getElementById('ycMarker');
+
+    const SOIL_MULTIPLIER = { poor: 0.85, average: 1.0, good: 1.1, excellent: 1.2 };
+    const PEST_PENALTY = { low: 0, moderate: 0.4, high: 0.9 };
+    const RAIN_MIN = 300, RAIN_MAX = 1800;
+
+    function yieldPerHectare(rain, seed, nitro, soil, pest) {
+      const rainFactor = Math.exp(-Math.pow((rain - 1000) / 500, 2));
+      const seedFactor = Math.exp(-Math.pow((seed - 80) / 60, 2));
+      let y = 2.2 + rainFactor * 1.6 + seedFactor * 0.5 + (Math.min(nitro, 140) / 140) * 0.9;
+      y *= SOIL_MULTIPLIER[soil] ?? 1.0;
+      y -= PEST_PENALTY[pest] ?? 0;
+      return Math.max(1.2, Math.min(8.5, y));
+    }
+
+    function render() {
+      const area = Number(areaInput.value);
+      const seed = Number(seedInput.value);
+      const rain = Number(rainInput.value);
+      const nitro = Number(nitroInput.value);
+      const soil = soilInput.value;
+      const pest = pestInput.value;
+
+      areaVal.textContent = area;
+      seedVal.textContent = seed;
+      rainVal.textContent = rain;
+      nitroVal.textContent = nitro;
+
+      const yph = yieldPerHectare(rain, seed, nitro, soil, pest);
+      const total = yph * area;
+      const spread = 0.4 + (PEST_PENALTY[pest] ?? 0) * 0.25;
+
+      yieldPerHaOut.textContent = yph.toFixed(1);
+      totalYieldOut.textContent = Math.round(total);
+      confidenceOut.textContent = `${Math.max(0, yph - spread).toFixed(1)}–${(yph + spread).toFixed(1)}`;
+
+      const W = 400, H = 130, PAD = 8, steps = 40;
+      let minY = Infinity, maxY = -Infinity;
+      const points = [];
+      for (let i = 0; i <= steps; i++) {
+        const r = RAIN_MIN + (RAIN_MAX - RAIN_MIN) * (i / steps);
+        const y = yieldPerHectare(r, seed, nitro, soil, pest);
+        points.push([r, y]);
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      const yRange = Math.max(0.4, maxY - minY);
+      const toX = r => ((r - RAIN_MIN) / (RAIN_MAX - RAIN_MIN)) * W;
+      const toY = y => H - PAD - ((y - minY) / yRange) * (H - PAD * 2);
+
+      const linePath = points.map(([r, y], i) => `${i === 0 ? 'M' : 'L'}${toX(r).toFixed(1)} ${toY(y).toFixed(1)}`).join(' ');
+      curveLine.setAttribute('d', linePath);
+      curveFill.setAttribute('d', `${linePath} L${W} ${H} L0 ${H} Z`);
+      marker.setAttribute('cx', toX(rain).toFixed(1));
+      marker.setAttribute('cy', toY(yph).toFixed(1));
+    }
+
+    [areaInput, seedInput, rainInput, nitroInput, soilInput, pestInput].forEach(el => {
+      el.addEventListener('input', render);
+      el.addEventListener('change', render);
+    });
+    render();
+  }
 </script>
 </body>
 </html>
