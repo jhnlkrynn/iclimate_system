@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(php -v)",
+      "Bash(php -r 'try{new PDO\\('\\\\''mysql:host=127.0.0.1;port=3306'\\\\'','\\\\''root'\\\\'','\\\\'''\\\\''\\);echo '\\\\''MySQL OK'\\\\'';}catch\\(Exception $e\\){echo '\\\\''MySQL FAIL: '\\\\''.$e->getMessage\\(\\);}')",
+      "PowerShell(Get-Command php -ErrorAction SilentlyContinue)",
+      "PowerShell(& C:\\\\xampp\\\\php\\\\php.exe -v)",
+      "Read(//c//**)",
+      "Bash(ls /c/xampp | grep -i php)",
+      "Read(//c/xampp/**)",
+      "PowerShell(Get-Command composer -ErrorAction SilentlyContinue)",
+      "PowerShell(& C:\\\\ProgramData\\\\ComposerSetup\\\\bin\\\\composer.phar --version 2>&1)",
+      "Bash(/c/xampp/php/php.exe -v)",
+      "PowerShell(Start-Process -FilePath \"C:\\\\xampp\\\\mysql_start.bat\" -WindowStyle Hidden)",
+      "Bash(/c/xampp/php/php.exe artisan serve > /c/xampp/htdocs/iclimate_system_new/_artisan_serve.log 2>&1 & *)",
+      "Bash(cp /c/php85-cli/php.ini-development /c/php85-cli/php.ini)",
+      "Bash(python3 -)",
+      "Bash(/c/php85-cli/php.exe artisan serve > _artisan_serve.log 2>&1 & *)"
+    ],
+    "additionalDirectories": [
+      "C:\\xampp\\htdocs\\iclimate_system_new"
+    ]
+  }
+}

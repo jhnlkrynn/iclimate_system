@@ -27,13 +27,13 @@
 
 <x-app-layout>
     <style>
-        .wp-hero { position: relative; overflow: hidden; border-radius: 8px; padding: 1.35rem; margin-bottom: 1.25rem; color: #fff; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.24), transparent 30%), linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%); box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18); }
+        .wp-hero { position: relative; overflow: hidden; border-radius: 32px; padding: 1.35rem; margin-bottom: 1.25rem; color: #fff; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.24), transparent 30%), linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%); box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18); }
         .wp-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(90deg, rgba(0,0,0,.8), transparent 86%); }
         .wp-hero::after, .wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
         .wp-hero::after { top: auto; bottom: 0; height: 7px; background: linear-gradient(90deg, #ffd166, #52b788, #95d5b2, #d85b45); }
         .wp-hero > * { position: relative; z-index: 1; }
         .wp-eyebrow { font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.7); }
-        .wp-panel, .wp-metric, .wp-input-card, .wp-result-card { position: relative; overflow: hidden; border: 1px solid rgba(212,237,218,.98); border-radius: 8px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(247,251,248,.96)); box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
+        .wp-panel, .wp-metric, .wp-input-card, .wp-result-card { position: relative; overflow: hidden; border: 1px solid rgba(212,237,218,.98); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(247,251,248,.96)); box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
         .wp-panel-header { padding: 1rem; border-bottom: 1px solid rgba(212,237,218,.9); background: linear-gradient(90deg, #fff, #f0f7f4); }
         .wp-panel-body, .wp-metric-body { padding: 1rem; }
         .wp-metric { min-height: 168px; }

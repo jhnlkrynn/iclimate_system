@@ -34,7 +34,7 @@
 
     .login-layout {
       display: grid;
-      grid-template-columns: 52% 48%;
+      grid-template-columns: 38% 62%;
       min-height: 100vh;
       width: 100%;
     }
@@ -248,7 +248,7 @@
 
     .login-form-wrap {
       width: 100%;
-      max-width: 400px;
+      max-width: 520px;
     }
 
     /* Back link */

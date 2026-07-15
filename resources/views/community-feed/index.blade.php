@@ -1,7 +1,7 @@
 <x-app-layout>
     <style>
         .feed-wrap { --feed-ink:#0d1f18; --feed-muted:#6b8f71; --feed-line:#e8e0d0; --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#2f6f8f; --feed-gold:#e8a73d; }
-        .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:#fff; background:linear-gradient(135deg,#0d1f18,#146b78 52%,#0d6a41); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
+        .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:#fff; background:linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
         .feed-hero::before {
             content:"";
             position:absolute; inset:0;

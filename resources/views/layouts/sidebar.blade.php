@@ -59,7 +59,7 @@
         <div class="d-grid gap-1">
             @foreach ($primaryLinks as [$label, $route, $patterns, $icon])
                 <a class="sidebar-link {{ request()->routeIs(...$patterns) ? 'active' : '' }}" href="{{ route($route) }}">
-                    <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><span class="small">&gt;</span>
+                    <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </a>
             @endforeach
         </div>
@@ -72,7 +72,7 @@
                     <div class="sidebar-group-links">
                         @foreach ($links as [$label, $route, $patterns, $icon])
                             <a class="sidebar-link {{ request()->routeIs(...$patterns) ? 'active' : '' }}" href="{{ route($route) }}">
-                                <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><span class="small">&gt;</span>
+                                <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </a>
                         @endforeach
                     </div>
@@ -88,7 +88,7 @@
         <h5 class="offcanvas-title" id="mobileSidebarLabel">iClimate</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="background: linear-gradient(180deg, var(--ic-green-950), var(--ic-green-800));">
+    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-green-950);">
         <div class="sidebar-brand p-4">
             <div class="sidebar-brand-row">
             <img src="{{ asset('images/iClimate-icon.png') }}" alt="" class="sidebar-logo-icon">
@@ -102,7 +102,7 @@
             <div class="d-grid gap-1">
                 @foreach ($primaryLinks as [$label, $route, $patterns, $icon])
                     <a class="sidebar-link {{ request()->routeIs(...$patterns) ? 'active' : '' }}" href="{{ route($route) }}">
-                        <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><span class="small">&gt;</span>
+                        <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </a>
                 @endforeach
             </div>
@@ -115,7 +115,7 @@
                         <div class="sidebar-group-links">
                             @foreach ($links as [$label, $route, $patterns, $icon])
                                 <a class="sidebar-link {{ request()->routeIs(...$patterns) ? 'active' : '' }}" href="{{ route($route) }}">
-                                    <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><span class="small">&gt;</span>
+                                    <span class="d-flex align-items-center gap-2"><span class="sidebar-icon">{{ $icon }}</span><span>{{ $label }}</span></span><svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </a>
                             @endforeach
                         </div>

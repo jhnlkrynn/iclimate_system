@@ -2,7 +2,7 @@
     <style>
         .report-shell { display: grid; gap: 1rem; }
         .report-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-        .report-stat { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: 1rem; }
+        .report-stat { border: 1px solid #d4edda; border-radius: 18px; background: #fff; padding: 1rem; }
         .report-stat-label { color: #5a7a64; font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
         .report-stat-value { color: #0d1f18; font-size: 1.8rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .report-action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
