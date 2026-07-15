@@ -53,6 +53,16 @@
             background: linear-gradient(90deg, #fff, #f0f7f4);
             border-bottom: 1px solid rgba(212,237,218,.98);
         }
+        .lf-map-search {
+            display: flex;
+            align-items: flex-end;
+            gap: .55rem;
+            flex-wrap: wrap;
+        }
+        .lf-map-search .form-select {
+            min-width: min(290px, 100%);
+            font-weight: 800;
+        }
         .lf-map-frame {
             display: block;
             width: 100%;
@@ -215,7 +225,7 @@
         }
         @media (max-width: 575.98px) {
             .lf-map-frame { height: 72vh; min-height: 420px; }
-            .lf-map-toolbar .btn { width: 100%; }
+            .lf-map-toolbar .btn, .lf-map-search, .lf-map-search .form-select { width: 100%; }
             .lf-model-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -223,9 +233,9 @@
     <section class="lf-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
             <div>
-                <div class="lf-eyebrow mb-2">Windy.com + Trained Model</div>
+                <div class="lf-eyebrow mb-2">Live Weather + Trained Model</div>
                 <h1 class="h2 fw-bold mb-2">Live Forecasting for Lian</h1>
-                <p class="mb-0 text-white-50" style="max-width: 800px;">Windy shows the live weather map, while your trained iClimate model gives the upcoming Lian-only forecast for planning.</p>
+                <p class="mb-0 text-white-50" style="max-width: 800px;">The live weather map shows current movement, while your trained iClimate model gives the upcoming Lian-only forecast for planning.</p>
             </div>
         </div>
     </section>
@@ -234,15 +244,26 @@
         <div class="lf-map-toolbar">
             <div>
                 <div class="lf-label">Map Focus</div>
-                <div class="fw-bold">Lian, Batangas</div>
+                <div class="fw-bold" id="liveMapFocusLabel">Lian, Batangas</div>
             </div>
-            <div class="text-muted small fw-semibold">
-                Center {{ number_format($latitude, 4) }}, {{ number_format($longitude, 4) }} | Municipality-wide zoom {{ $zoom }}
+            <div class="lf-map-search">
+                <div>
+                    <label class="lf-label d-block mb-1" for="liveMapLocation">Search Location</label>
+                    <select id="liveMapLocation" class="form-select" aria-label="Navigate live map location">
+                        @foreach($mapLocations as $key => $location)
+                            <option value="{{ $key }}">{{ $location['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="text-muted small fw-semibold" id="liveMapCoordinateLabel">
+                    Center {{ number_format($latitude, 4) }}, {{ number_format($longitude, 4) }} | Municipality-wide zoom {{ $zoom }}
+                </div>
             </div>
         </div>
         <iframe
+            id="liveWeatherMapFrame"
             class="lf-map-frame"
-            title="Windy.com live forecast map for all barangays in Lian, Batangas"
+            title="Live forecast map for all barangays in Lian, Batangas"
             src="{{ $windyUrl }}"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
@@ -257,7 +278,7 @@
         </div>
         <div class="lf-meta">
             <div class="lf-label">Live Map</div>
-            <div class="lf-value">Universal Windy View</div>
+            <div class="lf-value">Universal Weather View</div>
         </div>
         <div class="lf-meta">
             <div class="lf-label">Model Source</div>
@@ -280,7 +301,7 @@
             </form>
         </div>
         <div class="lf-model-body">
-            <div class="lf-source-note mb-3">Use Windy for live movement and use the trained model below for Lian-only upcoming planning. They support each other, but they are different sources.</div>
+            <div class="lf-source-note mb-3">Use the live map for current movement and use the trained model below for Lian-only upcoming planning. They support each other, but they are different sources.</div>
 
             @if($modelForecast['ready'] ?? false)
                 @php($predictions = $modelForecast['predictions'])
@@ -373,7 +394,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="lf-popup-note mb-3">
-                        <strong>Friendly reminder:</strong> Windy is a live universal weather map, but iClimate uses this selection only for Lian-focused forecast guidance.
+                        <strong>Friendly reminder:</strong> The live map is universal, but iClimate uses this selection only for Lian-focused forecast guidance.
                     </div>
                     <div class="lf-popup-grid mb-3">
                         <div class="lf-popup-item">
@@ -419,12 +440,50 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const barangayDetails = @json($barangayDetails);
+            const mapLocations = @json($mapLocations);
+            const mapFrame = document.getElementById('liveWeatherMapFrame');
+            const mapLocationSelect = document.getElementById('liveMapLocation');
+            const mapFocusLabel = document.getElementById('liveMapFocusLabel');
+            const mapCoordinateLabel = document.getElementById('liveMapCoordinateLabel');
             const modal = document.getElementById('barangayForecastModal');
             const title = document.getElementById('barangayForecastModalLabel');
             const setField = (field, value) => {
                 const node = modal?.querySelector(`[data-popup-field="${field}"]`);
                 if (node) node.textContent = value || 'For monitoring';
             };
+            const liveMapUrl = (location) => {
+                const params = new URLSearchParams({
+                    lat: location.latitude,
+                    lon: location.longitude,
+                    detailLat: location.latitude,
+                    detailLon: location.longitude,
+                    width: 1200,
+                    height: 720,
+                    zoom: location.zoom,
+                    level: 'surface',
+                    overlay: 'rain',
+                    product: 'ecmwf',
+                    marker: 'true',
+                    location: 'coordinates',
+                });
+
+                return `https://embed.windy.com/embed2.html?${params.toString()}`;
+            };
+
+            mapLocationSelect?.addEventListener('change', () => {
+                const location = mapLocations[mapLocationSelect.value];
+                if (!location || !mapFrame) return;
+
+                mapFrame.style.opacity = '.45';
+                mapFrame.src = liveMapUrl(location);
+                if (mapFocusLabel) mapFocusLabel.textContent = location.label;
+                if (mapCoordinateLabel) {
+                    mapCoordinateLabel.textContent = `Center ${Number(location.latitude).toFixed(4)}, ${Number(location.longitude).toFixed(4)} | Zoom ${location.zoom}`;
+                }
+            });
+            mapFrame?.addEventListener('load', () => {
+                mapFrame.style.opacity = '1';
+            });
 
             document.querySelectorAll('[data-barangay]').forEach((button) => {
                 button.addEventListener('click', () => {

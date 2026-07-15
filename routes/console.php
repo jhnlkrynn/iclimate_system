@@ -59,7 +59,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
             \App\Models\ClimateRecord::query()->updateOrCreate(
                 [
                     'record_date' => $recordDate,
-                    'source' => 'PAGASA Ambulong Monthly Data',
+                    'source' => 'PAGASA Lian Monthly Data',
                 ],
                 [
                     'rainfall' => $rainfall,

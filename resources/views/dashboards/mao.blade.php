@@ -254,27 +254,6 @@
         <details class="dashboard-group" open>
             <summary>
                 <div>
-                    <h2 class="dashboard-group-title">Decision Support</h2>
-                    <p class="dashboard-group-note">Machine-learning guidance for fast field recommendations.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
-        <section class="mao-panel">
-            <div class="mao-panel-header">
-                <div>
-                    <h2 class="mao-panel-title">AI Farming Assistant</h2>
-                    <p class="mao-panel-sub">Ask farming questions, receive intelligent recommendations, predict weather, estimate rice yield, and obtain planting and irrigation guidance using machine learning.</p>
-                </div>
-                <a class="btn btn-sm btn-primary" href="{{ route('ai-chat.index') }}">Open Assistant</a>
-            </div>
-        </section>
-            </div>
-        </details>
-
-        <details class="dashboard-group" open>
-            <summary>
-                <div>
                     <h2 class="dashboard-group-title">Heat Map Intelligence</h2>
                     <p class="dashboard-group-note">Barangay risk map first, with weather readings and charts below.</p>
                 </div>

@@ -28,12 +28,16 @@ class LiveForecastingController extends Controller
         $windyUrl = 'https://embed.windy.com/embed2.html?'.http_build_query([
             'lat' => $latitude,
             'lon' => $longitude,
+            'detailLat' => $latitude,
+            'detailLon' => $longitude,
             'width' => 1200,
             'height' => 720,
             'zoom' => $zoom,
             'level' => 'surface',
             'overlay' => 'rain',
             'product' => 'ecmwf',
+            'marker' => 'true',
+            'location' => 'coordinates',
         ]);
 
         return view('live-forecasting.index', [
@@ -42,10 +46,34 @@ class LiveForecastingController extends Controller
             'zoom' => $zoom,
             'barangays' => LianBarangays::all(),
             'barangayDetails' => $this->barangayDetails(),
+            'mapLocations' => $this->mapLocations($latitude, $longitude, $zoom),
             'targetMonth' => $targetMonth,
             'modelForecast' => $weatherForest->predict($targetMonth),
             'windyUrl' => $windyUrl,
         ]);
+    }
+
+    private function mapLocations(float $latitude, float $longitude, int $zoom): array
+    {
+        $locations = [
+            'lian' => [
+                'label' => 'Lian, Batangas',
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'zoom' => $zoom,
+            ],
+        ];
+
+        foreach (LianBarangays::coordinates() as $barangay => [$barangayLatitude, $barangayLongitude]) {
+            $locations[$barangay] = [
+                'label' => $barangay,
+                'latitude' => $barangayLatitude,
+                'longitude' => $barangayLongitude,
+                'zoom' => 13,
+            ];
+        }
+
+        return $locations;
     }
 
     private function barangayDetails(): array
@@ -66,10 +94,10 @@ class LiveForecastingController extends Controller
                     'longitude' => $area?->longitude ?? ($coordinates[1] ?? null),
                     'risk_level' => $area?->risk_level ?: 'For monitoring',
                     'risk_type' => $area?->risk_type ?: 'Live weather watch',
-                    'rainfall_status' => $area?->rainfall_status ?: 'Check the Windy rain layer for the latest movement over this barangay.',
+                    'rainfall_status' => $area?->rainfall_status ?: 'Check the live rain layer for the latest movement over this barangay.',
                     'planting_advisory' => $area?->planting_advisory ?: 'Use the Lian-only upcoming prediction before making planting decisions.',
                     'irrigation_recommendation' => $area?->irrigation_recommendation ?: 'Confirm field moisture locally and monitor rainfall movement on the live map.',
-                    'description' => $area?->description ?: 'This barangay is included in the Lian forecast scope. Windy remains a universal live weather map, while iClimate prediction guidance is limited to Lian, Batangas.',
+                    'description' => $area?->description ?: 'This barangay is included in the Lian forecast scope. The live weather map remains universal, while iClimate prediction guidance is limited to Lian, Batangas.',
                 ],
             ];
         })->all();
