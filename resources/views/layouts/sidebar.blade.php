@@ -10,6 +10,7 @@
         ['Farmer Profiles', 'farmer-profiles.index', ['farmer-profiles.*'], 'FP'],
         ['Climate Records', 'climate-records.index', ['climate-records.*'], 'CR'],
         ['Weather Prediction', 'weather-predictions.index', ['weather-predictions.*'], 'WP'],
+        ['Live Forecasting', 'live-forecasting.index', ['live-forecasting.*'], 'LF'],
         ['Rice Production', 'rice-productions.index', ['rice-productions.*'], 'RP'],
         ['Heat Map Areas', 'heatmap-areas.index', ['heatmap-areas.*'], 'HM'],
         ['Planting Advisories', 'planting-advisories.index', ['planting-advisories.*'], 'PA'],
@@ -33,7 +34,7 @@
         array_values(array_filter(array_merge($moduleLinks, $adminLinks), fn ($link) => in_array($link[0], $primaryLabels, true)))
     );
     $secondaryLinks = array_values(array_filter($moduleLinks, fn ($link) => ! in_array($link[0], $primaryLabels, true)));
-    $recordsLinks = array_values(array_filter($secondaryLinks, fn ($link) => in_array($link[0], ['Farmer Profiles', 'Climate Records', 'Weather Prediction', 'Rice Production', 'Heat Map Areas'], true)));
+    $recordsLinks = array_values(array_filter($secondaryLinks, fn ($link) => in_array($link[0], ['Farmer Profiles', 'Climate Records', 'Weather Prediction', 'Live Forecasting', 'Rice Production', 'Heat Map Areas'], true)));
     $publishingLinks = array_values(array_filter($secondaryLinks, fn ($link) => in_array($link[0], ['Planting Advisories', 'Community Feed', 'Messages', 'Reports'], true)));
     $moreGroups = [
         ['Records', $recordsLinks],

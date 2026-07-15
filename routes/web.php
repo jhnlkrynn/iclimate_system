@@ -6,6 +6,7 @@ use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\HeatmapAreaController;
+use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
@@ -131,6 +132,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/predict',
             [WeatherPredictionController::class, 'predict']
         )->name('weather-predictions.predict');
+
+        Route::get(
+            'live-forecasting',
+            [LiveForecastingController::class, 'index']
+        )->name('live-forecasting.index');
 
         /*
         |--------------------------------------------------------------------------

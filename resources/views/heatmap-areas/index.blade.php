@@ -54,12 +54,50 @@
         .map-summary-card .risk-help { margin-top: .35rem; }
         .priority-list { display: grid; grid-template-columns: 1fr; gap: .42rem; margin: 0; padding: 0; list-style: none; }
         .priority-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .55rem; align-items: center; border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .5rem .58rem; }
+        .priority-jump { border: 0; background: transparent; color: inherit; text-align: left; padding: 0; min-width: 0; }
+        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #2d6a4f; text-decoration: underline; }
         .priority-item .fw-bold, .priority-item .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .priority-score { min-width: 3.6rem; text-align: center; border-radius: 999px; padding: .35rem .55rem; background: var(--chip-bg, #d8f3dc); color: var(--chip-color, #2d6a4f); font-weight: 900; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
         .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
+        .map-control-panel {
+            position: absolute;
+            z-index: 510;
+            left: 1rem;
+            top: 4.85rem;
+            width: min(360px, calc(100% - 2rem));
+            border: 1px solid #d4edda;
+            border-radius: 8px;
+            background: rgba(255,255,255,.96);
+            box-shadow: 0 .7rem 1.5rem rgba(13,31,24,.12);
+            padding: .75rem;
+        }
+        .map-control-panel .form-select { font-weight: 800; }
+        .map-live-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .65rem;
+            margin-top: .58rem;
+            color: #5a7a64;
+            font-size: .78rem;
+            font-weight: 800;
+        }
+        .map-live-status strong { color: #0d1f18; }
+        .map-selected-pill {
+            display: inline-flex;
+            align-items: center;
+            max-width: 100%;
+            border-radius: 999px;
+            background: #d8f3dc;
+            color: #1f6f4a;
+            padding: .28rem .55rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .risk-side { display: flex; flex-direction: column; gap: 1rem; }
         .risk-stat { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
@@ -101,7 +139,7 @@
         .map-popup-source { color: #5a7a64; font-size: .74rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; }
         .map-detail-panel {
             position: absolute;
-            top: 4.75rem;
+            top: 4.85rem;
             right: 1rem;
             z-index: 520;
             width: min(292px, calc(100% - 2rem));
@@ -130,6 +168,14 @@
             line-height: 1;
         }
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
+        .selection-ring {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 3px solid #0d1f18;
+            box-shadow: 0 0 0 7px rgba(82,183,136,.28), 0 .6rem 1.2rem rgba(13,31,24,.22);
+            background: rgba(255,255,255,.72);
+        }
         .barangay-tooltip {
             border: 0;
             border-radius: 999px;
@@ -162,6 +208,12 @@
                 background: #fff;
                 border-bottom: 1px solid #d4edda;
                 -webkit-overflow-scrolling: touch;
+            }
+            .map-control-panel {
+                position: relative;
+                inset: auto;
+                width: auto;
+                margin: .75rem;
             }
             .map-detail-panel {
                 position: relative;
@@ -265,6 +317,19 @@
                     <button class="layer-btn" type="button" data-layer="yield" aria-pressed="false">Rice Yield</button>
                     <button class="layer-btn" type="button" data-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
                 </div>
+                <div class="map-control-panel">
+                    <label class="risk-label mb-2 d-block" for="mapBarangayFocus">Focus Barangay</label>
+                    <select id="mapBarangayFocus" class="form-select" aria-label="Focus heat map on a barangay">
+                        <option value="">Choose a barangay</option>
+                        @foreach($mapAreas->sortBy('barangay') as $area)
+                            <option value="{{ $area->barangay }}">{{ $area->barangay }}</option>
+                        @endforeach
+                    </select>
+                    <div class="map-live-status">
+                        <span>Layer: <strong id="activeLayerLabel">Climate Impact</strong></span>
+                        <span class="map-selected-pill" id="selectedBarangayLabel">No barangay selected</span>
+                    </div>
+                </div>
                 <div id="boundaryNotice" class="alert alert-warning position-absolute m-3 bottom-0 start-0 end-0 d-none" style="z-index: 500;">
                     Add official Lian barangay boundaries to <code>public/geojson/lian-barangays.geojson</code> to render exact barangay polygons.
                 </div>
@@ -283,10 +348,10 @@
                     <ul class="priority-list">
                         @foreach($priorityAreas as $area)
                             <li class="priority-item risk-{{ strtolower($area->risk_level) }}">
-                                <div>
+                                <button class="priority-jump" type="button" data-focus-barangay="{{ $area->barangay }}">
                                     <div class="fw-bold">{{ $area->barangay }}</div>
                                     <div class="small text-muted">{{ $area->risk_level }} risk | {{ $area->risk_type }} | {{ $area->rainfall_status ?: 'No rainfall status' }}</div>
-                                </div>
+                                </button>
                                 <span class="priority-score">{{ number_format($area->risk_score, 2) }}</span>
                             </li>
                         @endforeach
@@ -491,6 +556,10 @@
             let barangayBoundaries = null;
             let activeLayer = 'impact';
             let selectedArea = null;
+            let selectedRing = null;
+            const focusSelect = document.getElementById('mapBarangayFocus');
+            const selectedLabel = document.getElementById('selectedBarangayLabel');
+            const activeLayerLabel = document.getElementById('activeLayerLabel');
 
             const plainRiskMessage = (area) => {
                 if (['High', 'Severe'].includes(area.risk_level)) {
@@ -673,6 +742,8 @@
                 if (!detailPanel) return;
 
                 selectedArea = area;
+                if (selectedLabel) selectedLabel.textContent = area.barangay;
+                if (focusSelect && focusSelect.value !== area.barangay) focusSelect.value = area.barangay;
                 detailPanel.innerHTML = `
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
                     ${popup(area, score, layer)}
@@ -681,13 +752,56 @@
                 detailPanel.querySelector('.map-detail-close')?.addEventListener('click', () => {
                     detailPanel.classList.remove('show');
                     selectedArea = null;
+                    if (selectedLabel) selectedLabel.textContent = 'No barangay selected';
+                    if (focusSelect) focusSelect.value = '';
+                    if (selectedRing) {
+                        map.removeLayer(selectedRing);
+                        selectedRing = null;
+                    }
                     detailPanel.innerHTML = `
                         <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
                         <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
                     `;
                 });
             };
-            detailPanel?.querySelector('.map-detail-close')?.addEventListener('click', () => detailPanel.classList.remove('show'));
+            detailPanel?.querySelector('.map-detail-close')?.addEventListener('click', () => {
+                detailPanel.classList.remove('show');
+                selectedArea = null;
+                if (selectedLabel) selectedLabel.textContent = 'No barangay selected';
+                if (focusSelect) focusSelect.value = '';
+                if (selectedRing) {
+                    map.removeLayer(selectedRing);
+                    selectedRing = null;
+                }
+            });
+
+            const updateSelectionRing = (area) => {
+                if (selectedRing) map.removeLayer(selectedRing);
+
+                selectedRing = L.marker([area.latitude, area.longitude], {
+                    interactive: false,
+                    icon: L.divIcon({
+                        className: '',
+                        html: '<span class="selection-ring"></span>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                    }),
+                }).addTo(map);
+            };
+
+            const focusArea = (barangay, zoom = 13) => {
+                const area = areaByBarangay.get(String(barangay || '').toLowerCase());
+                if (!area) return;
+
+                const score = scoreFor(area, activeLayer);
+                selectedArea = area;
+                updateSelectionRing(area);
+                showDetails(area, score, activeLayer);
+                map.flyTo([area.latitude, area.longitude], Math.max(map.getZoom(), zoom), {
+                    animate: true,
+                    duration: .65,
+                });
+            };
 
             const featureName = (feature) => {
                 const props = feature.properties || {};
@@ -729,9 +843,14 @@
 
             const renderLayer = (layer = 'impact') => {
                 activeLayer = layer;
+                if (activeLayerLabel) activeLayerLabel.textContent = layerTitle(layer);
                 if (geoLayer) map.removeLayer(geoLayer);
                 if (heatLayer) map.removeLayer(heatLayer);
                 if (pointLayer) map.removeLayer(pointLayer);
+                if (selectedRing) {
+                    map.removeLayer(selectedRing);
+                    selectedRing = null;
+                }
 
                 const features = boundaryFeatures().map((feature) => ({
                     ...feature,
@@ -809,6 +928,7 @@
 
                 if (selectedArea && detailPanel?.classList.contains('show')) {
                     showDetails(selectedArea, scoreFor(selectedArea, layer), layer);
+                    updateSelectionRing(selectedArea);
                 }
             };
 
@@ -830,6 +950,15 @@
                     button.setAttribute('aria-pressed', 'true');
                     renderLayer(button.dataset.layer);
                 });
+            });
+
+            focusSelect?.addEventListener('change', () => {
+                if (!focusSelect.value) return;
+                focusArea(focusSelect.value);
+            });
+
+            document.querySelectorAll('[data-focus-barangay]').forEach((button) => {
+                button.addEventListener('click', () => focusArea(button.dataset.focusBarangay));
             });
         });
     </script>
