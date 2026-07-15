@@ -1,18 +1,50 @@
 <x-app-layout>
     <style>
-        .feed-wrap { --feed-ink:#0d1f18; --feed-muted:#607468; --feed-line:rgba(153,185,160,.7); --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#1677b8; --feed-gold:#f4b63f; }
-        .feed-hero { border-radius:8px; padding:1.25rem; color:#fff; background:linear-gradient(135deg,#0d1f18,#146b78 52%,#0d6a41); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
+        .feed-wrap { --feed-ink:#0d1f18; --feed-muted:#6b8f71; --feed-line:#e8e0d0; --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#2f6f8f; --feed-gold:#e8a73d; }
+        .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:#fff; background:linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
+        .feed-hero::before {
+            content:"";
+            position:absolute; inset:0;
+            background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
+                radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.16) 0%, transparent 60%);
+            pointer-events:none;
+        }
+        .feed-hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:7px; background:linear-gradient(90deg,#e8a73d,#52b788,#2f6f8f); }
+        .feed-hero > * { position:relative; z-index:1; }
+        .feed-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:#fff; }
+        .feed-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.12em; color:#74c69d; margin-bottom:.4rem; }
+        .feed-eyebrow::before { content:''; display:block; width:18px; height:1px; background:#74c69d; }
+        .feed-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem .85rem; background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); font-family:'DM Mono', monospace; font-size:.76rem; font-weight:500; letter-spacing:.02em; }
+        .feed-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .feed-grid { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:1rem; align-items:start; margin-top:1rem; }
-        .feed-card { border:1px solid var(--feed-line); border-radius:8px; background:#fff; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; }
+        .feed-card { border:1.5px solid #e8e0d0; border-radius:18px; background:#fff; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; }
         .feed-card-body { padding:1rem; }
-        .feed-composer { background:linear-gradient(145deg,#fff,#f2f8f3); }
+        .feed-composer { background:linear-gradient(135deg,#f5f0e8,#edf7e7); }
+        .feed-composer .feed-card-body { background:linear-gradient(145deg,#fff,#f2f8f3); border-radius:16px; margin:.15rem; }
+        .field-box { background:#fff; border:1px solid #e8e0d0; border-radius:10px; padding:.6rem .75rem .5rem; height:100%; }
+        .field-box-label { display:block; font-family:'DM Mono', monospace; font-size:.64rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#6b8f71; margin-bottom:.35rem; }
+        .field-box .form-control, .field-box .form-select { border:0; padding:0; background:transparent; }
+        .field-box .form-control:focus, .field-box .form-select:focus { box-shadow:none; }
         .feed-author { display:flex; gap:.75rem; align-items:center; }
-        .avatar { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; background:#d8f3dc; color:#1f6f4a; font-weight:900; flex:0 0 auto; }
-        .feed-title { color:var(--feed-ink); font-weight:900; margin:0; }
-        .feed-meta { color:var(--feed-muted); font-size:.82rem; }
-        .feed-badge { display:inline-flex; border-radius:999px; padding:.32rem .6rem; background:#d8f3dc; color:#1f6f4a; font-size:.76rem; font-weight:900; }
-        .feed-badge.archived { background:#f1f3f2; color:#607468; border:1px solid #d4edda; }
+        .avatar { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; background:#f0f7f4; border:1px solid #d8f3dc; color:#2d6a4f; font-family:'DM Mono', monospace; font-weight:700; flex:0 0 auto; }
+        .feed-title { color:var(--feed-ink); margin:0; }
+        .feed-meta { color:var(--feed-muted); font-family:'DM Mono', monospace; font-size:.72rem; letter-spacing:.02em; }
+        .feed-badge { display:inline-flex; border-radius:999px; padding:.32rem .62rem; background:#d8f3dc; color:#2d6a4f; font-family:'DM Mono', monospace; font-size:.64rem; font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+        .feed-badge.archived { background:#f1f3f2; color:#6b8f71; border:1px solid #e8e0d0; }
         .post-actions { display:flex; flex-wrap:wrap; gap:.45rem; justify-content:flex-end; align-items:center; }
+        .manage-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:flex-start; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(153,185,160,.4); }
+        .manage-panel { flex:0 1 auto; border:1px solid rgba(153,185,160,.55); border-radius:10px; background:#f7fbf8; overflow:hidden; }
+        .manage-panel[open] { flex-basis:100%; }
+        .manage-panel summary { display:inline-flex; cursor:pointer; list-style:none; margin:.75rem .85rem; border:1.5px solid #2d6a4f; border-radius:999px; background:#fff; color:#2d6a4f; padding:.48rem .85rem; font-family:'DM Mono', monospace; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.03em; transition:transform .18s ease, box-shadow .18s ease; }
+        .manage-panel summary:hover { transform:translateY(-1px); box-shadow:0 .5rem 1rem rgba(45,106,79,.18); }
+        .manage-panel summary::-webkit-details-marker { display:none; }
+        .manage-panel-body { padding:.85rem; border-top:1px solid rgba(153,185,160,.55); }
+        .media-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; margin-top:.85rem; }
+        .media-grid img, .media-grid video { width:100%; border-radius:8px; border:1px solid rgba(153,185,160,.55); background:#0d1f18; max-height:330px; object-fit:cover; }
+        .file-tile { display:flex; align-items:center; gap:.7rem; padding:.85rem; border:1px solid rgba(153,185,160,.55); border-radius:8px; background:#f7fbf8; color:inherit; text-decoration:none; font-weight:800; }
+        .reaction-row { display:flex; flex-wrap:wrap; gap:.45rem; padding:.8rem 1rem; border-top:1px solid rgba(153,185,160,.4); border-bottom:1px solid rgba(153,185,160,.4); background:#fbfdfb; }
+        .reaction-row button { border:1px solid rgba(153,185,160,.55); border-radius:999px; background:#fff; padding:.35rem .65rem; font-size:.82rem; font-weight:800; color:var(--feed-ink); }
+        .reaction-row button.text-success { color:#2d6a4f !important; border-color:#b7e4c7; background:#d8f3dc; }
         .manage-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:1rem; padding-top:1rem; border-top:1px solid #edf3ee; }
         .manage-actions > form { margin:0; }
         .manage-panel { flex:0 0 auto; border:0; border-radius:8px; background:transparent; overflow:visible; }
@@ -95,8 +127,14 @@
             100% { transform:translateY(0) scale(1); opacity:1; }
         }
         .comment { display:flex; gap:.65rem; margin-top:.75rem; }
-        .comment-bubble { background:#f0f7f4; border:1px solid #d4edda; border-radius:8px; padding:.6rem .75rem; flex:1; }
-        .side-panel { border:1px solid var(--feed-line); border-radius:8px; background:linear-gradient(145deg,#f7fbf8,#edf7e7); padding:1rem; }
+        .comment-bubble { background:#f0f7f4; border:1px solid rgba(153,185,160,.55); border-radius:8px; padding:.6rem .75rem; flex:1; }
+        .side-panel { border:1.5px solid #e8e0d0; border-radius:18px; background:linear-gradient(145deg,#f7fbf8,#edf7e7); padding:1.1rem; position:sticky; top:88px; transition:box-shadow .2s ease, border-color .2s ease; }
+        .feed-empty { text-align:center; padding:2.75rem 1.25rem; }
+        .feed-empty-icon { width:56px; height:56px; border-radius:50%; background:#f0f7f4; border:1px solid #d8f3dc; color:#2d6a4f; display:grid; place-items:center; margin:0 auto 1rem; }
+        .feed-empty strong { display:block; font-family:'DM Serif Display', serif; font-weight:400; font-size:1.15rem; color:var(--feed-ink); margin-bottom:.4rem; }
+        .feed-empty p { color:var(--feed-muted); font-size:.88rem; margin:0; }
+        .side-panel:hover { box-shadow:0 1rem 2rem rgba(13,31,24,.1); border-color:#b7e4c7; }
+        .side-panel h2 { margin-bottom:.5rem; }
         @media (max-width:1199.98px) { .feed-grid { grid-template-columns:1fr; } }
         @media (max-width:767.98px) { .media-grid { grid-template-columns:1fr; } }
     </style>
@@ -105,11 +143,14 @@
         <section class="feed-hero">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
                 <div>
-                    <div class="small text-white-50 fw-bold text-uppercase mb-1">Community Feed</div>
-                    <h1 class="h3 fw-bold mb-1">MAO updates, programs, activities, and farmer discussions</h1>
+                    <div class="feed-eyebrow">Community Feed</div>
+                    <h1 class="h3 mb-1">MAO updates, programs, activities, and farmer discussions</h1>
                     <p class="mb-0 text-white-50">Farmers can react and comment on official MAO posts with photos, videos, and files.</p>
                 </div>
-                <a href="{{ route('messages.index') }}" class="btn btn-light fw-bold">Open Messages</a>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="feed-chip"><span class="feed-pulse"></span> Live MAO Board</span>
+                    <a href="{{ route('messages.index') }}" class="btn btn-light fw-bold">Open Messages</a>
+                </div>
             </div>
         </section>
 
@@ -122,27 +163,54 @@
                 @if($canPost)
                     <section class="feed-card feed-composer">
                         <div class="feed-card-body">
-                            <h2 class="h5 fw-bold mb-3">Create MAO Post</h2>
+                            <div class="feed-eyebrow" style="color:#2d6a4f;">New Post</div>
+                            <h2 class="h5 mb-3">Create MAO Post</h2>
                             <form method="POST" action="{{ route('community-feed.store') }}" enctype="multipart/form-data">
                                 @csrf
                                 <div class="row g-3">
-                                    <div class="col-md-8"><input name="title" class="form-control" placeholder="Post title" required></div>
-                                    <div class="col-md-4">
-                                        <select name="category" class="form-select" required>
-                                            @foreach(['Update','Program','Activity','Training','Advisory','Announcement'] as $category)
-                                                <option value="{{ $category }}">{{ $category }}</option>
-                                            @endforeach
-                                        </select>
+                                    <div class="col-md-8">
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerTitle">Post Title</label>
+                                            <input id="composerTitle" name="title" class="form-control" placeholder="Post title" required>
+                                        </div>
                                     </div>
-                                    <div class="col-12"><textarea name="body" class="form-control" rows="4" placeholder="Share details, schedules, instructions, or reminders..." required></textarea></div>
-                                    <div class="col-md-4"><input name="event_date" type="datetime-local" class="form-control"></div>
                                     <div class="col-md-4">
-                                        <select name="visibility" class="form-select" required>
-                                            <option value="All Farmers">All Farmers</option>
-                                            <option value="All Users">All Users</option>
-                                        </select>
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerCategory">Category</label>
+                                            <select id="composerCategory" name="category" class="form-select" required>
+                                                @foreach(['Update','Program','Activity','Training','Advisory','Announcement'] as $category)
+                                                    <option value="{{ $category }}">{{ $category }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4"><input name="attachments[]" type="file" class="form-control" multiple accept="image/*,video/*,.pdf,.doc,.docx"></div>
+                                    <div class="col-12">
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerBody">Post Details</label>
+                                            <textarea id="composerBody" name="body" class="form-control" rows="4" placeholder="Share details, schedules, instructions, or reminders..." required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerEventDate">Event Date (Optional)</label>
+                                            <input id="composerEventDate" name="event_date" type="datetime-local" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerVisibility">Visibility</label>
+                                            <select id="composerVisibility" name="visibility" class="form-select" required>
+                                                <option value="All Farmers">All Farmers</option>
+                                                <option value="All Users">All Users</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="field-box">
+                                            <label class="field-box-label" for="composerAttachments">Attachments (Optional)</label>
+                                            <input id="composerAttachments" name="attachments[]" type="file" class="form-control" multiple accept="image/*,video/*,.pdf,.doc,.docx">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mt-3"><button class="btn btn-primary fw-bold" type="submit">Publish Post</button></div>
                             </form>
@@ -318,14 +386,25 @@
                         </div>
                     </article>
                 @empty
-                    <div class="feed-card"><div class="feed-card-body text-center text-muted">No community posts yet.</div></div>
+                    <div class="feed-card">
+                        <div class="feed-card-body">
+                            <div class="feed-empty">
+                                <div class="feed-empty-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                </div>
+                                <strong>No community posts yet.</strong>
+                                <p>Once the MAO shares an update, it will appear here for farmers to view and discuss.</p>
+                            </div>
+                        </div>
+                    </div>
                 @endforelse
 
                 {{ $posts->links() }}
             </main>
 
             <aside class="side-panel">
-                <h2 class="h5 fw-bold mb-2">What Farmers Can Do</h2>
+                <div class="feed-eyebrow" style="color:#2d6a4f;">Farmer Toolkit</div>
+                <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary fw-bold" href="{{ route('messages.index') }}">Start Conversation</a>

@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
                 'address' => 'Lian, Batangas',
                 'barangay' => 'Matabungkay',
                 'status' => User::STATUS_ACTIVE,
+                'email_verified_at' => now(),
             ],
         );
 
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
                 'address' => 'Municipal Agriculture Office, Lian, Batangas',
                 'barangay' => 'Poblacion',
                 'status' => User::STATUS_ACTIVE,
+                'email_verified_at' => now(),
             ],
         );
 
@@ -61,6 +63,7 @@ class DatabaseSeeder extends Seeder
                 'address' => 'Lian, Batangas',
                 'barangay' => 'Poblacion',
                 'status' => User::STATUS_ACTIVE,
+                'email_verified_at' => now(),
             ],
         );
 

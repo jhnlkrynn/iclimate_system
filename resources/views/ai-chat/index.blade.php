@@ -1,7 +1,7 @@
 <x-app-layout>
     <style>
         .ai-console { --ai-ink:#0d1f18; --ai-muted:#5f7569; --ai-green:#2d6a4f; --ai-mint:#52b788; --ai-blue:#1677b8; --ai-gold:#f4b63f; --ai-red:#d85b45; --ai-line:rgba(153,185,160,.72); width:100%; max-width:100%; overflow-x:hidden; }
-        .ai-hero { position:relative; overflow:hidden; border-radius:8px; padding:1.35rem; margin-bottom:1.25rem; color:#fff; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.26), transparent 30%), linear-gradient(135deg,#0d1f18 0%,#146b78 48%,#0d6a41 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.18); }
+        .ai-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.35rem; margin-bottom:1.25rem; color:#fff; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.26), transparent 30%), linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.18); }
         .ai-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.06) 1px,transparent 1px); background-size:38px 38px; mask-image:linear-gradient(90deg,rgba(0,0,0,.78),transparent 88%); }
         .ai-hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:7px; background:linear-gradient(90deg,var(--ai-gold),var(--ai-mint),var(--ai-blue),var(--ai-red)); }
         .ai-hero > * { position:relative; z-index:1; }
@@ -10,7 +10,7 @@
         .ai-hero p { max-width:min(820px,100%); }
         .ai-hero-actions { display:flex; justify-content:flex-end; width:auto; }
         .ai-shell { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:1rem; align-items:start; min-width:0; }
-        .ai-panel { border:1px solid var(--ai-line); border-radius:8px; background:linear-gradient(145deg,rgba(244,250,239,.98),rgba(232,244,230,.98)); box-shadow:0 .9rem 2rem rgba(20,32,51,.07); overflow:hidden; }
+        .ai-panel { border:1px solid var(--ai-line); border-radius:18px; background:linear-gradient(145deg,rgba(244,250,239,.98),rgba(232,244,230,.98)); box-shadow:0 .9rem 2rem rgba(20,32,51,.07); overflow:hidden; }
         .ai-panel-header { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1rem; border-bottom:1px solid rgba(153,185,160,.58); background:rgba(226,241,219,.58); }
         .ai-panel-title { margin:0; color:var(--ai-ink); font-size:1rem; font-weight:900; }
         .ai-panel-sub { margin:.15rem 0 0; color:var(--ai-muted); font-size:.82rem; }
