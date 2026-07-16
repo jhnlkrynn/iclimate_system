@@ -522,7 +522,7 @@
 
     <div class="lpl-inner">
       <a href="{{ url('/') }}" class="lpl-logo">
-        <img src="{{ asset('images/iClimate.png') }}" alt="iClimate" class="auth-logo-img">
+        <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="auth-logo-img">
       </a>
 
       <div class="lpl-body">

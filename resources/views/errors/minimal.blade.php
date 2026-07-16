@@ -48,7 +48,7 @@
 
   <div class="err-card">
     <a href="{{ url('/') }}" class="err-logo">
-      <img src="{{ asset('images/iClimate.png') }}" alt="iClimate">
+      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
     </a>
 
     <div class="err-code">Error {{ $code }}</div>

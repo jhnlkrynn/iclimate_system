@@ -23,7 +23,7 @@ class KnowledgeBaseService
             })
             ->latest('verified')
             ->latest('times_used')
-            ->take(20)
+            ->take(80)
             ->get();
 
         $best = null;
@@ -38,7 +38,9 @@ class KnowledgeBaseService
             }
         }
 
-        if (! $best || $bestScore < 2) {
+        $minRequired = count($keywords) >= 2 ? 2 : 1;
+
+        if (! $best || $bestScore < $minRequired) {
             return null;
         }
 
@@ -119,7 +121,12 @@ class KnowledgeBaseService
 
         return collect($words)
             ->filter(fn (string $word): bool => strlen($word) >= 3)
-            ->reject(fn (string $word): bool => in_array($word, ['the', 'and', 'for', 'with', 'how', 'what', 'when', 'should'], true))
+            ->reject(fn (string $word): bool => in_array($word, [
+                'the', 'and', 'for', 'with', 'how', 'what', 'when', 'should',
+                'you', 'your', 'can', 'will', 'about', 'have', 'has', 'was', 'were', 'this', 'that', 'into', 'than', 'which', 'does',
+                'ang', 'mga', 'ba', 'po', 'sa', 'na', 'ng', 'mo', 'ko', 'sila', 'din', 'rin', 'kasi', 'kapag', 'ako',
+                'para', 'kung', 'may', 'wala', 'yan', 'yun', 'ito', 'niya', 'namin', 'natin', 'kayo', 'siya', 'daw', 'raw',
+            ], true))
             ->unique()
             ->take(12)
             ->values()

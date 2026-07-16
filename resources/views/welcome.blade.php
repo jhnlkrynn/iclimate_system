@@ -432,202 +432,154 @@
     }
 
     /* ===============================================
-       LIVE YIELD CALCULATOR
+       ABOUT PHOTO + MISSION CARD
     =============================================== */
-    .yield-calc {
-      background: var(--sand);
-      border: 1px solid var(--sand-dark);
-      border-radius: var(--radius-lg);
-      padding: 28px;
-      box-shadow: var(--shadow-md);
-    }
-    .yc-header {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 20px;
-    }
-    .yc-live-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--green-500);
-      box-shadow: 0 0 0 0 rgba(82,183,136,0.5);
-      animation: ycPulse 2s infinite;
-      flex-shrink: 0;
-    }
-    @keyframes ycPulse {
-      0%   { box-shadow: 0 0 0 0 rgba(82,183,136,0.5); }
-      70%  { box-shadow: 0 0 0 6px rgba(82,183,136,0); }
-      100% { box-shadow: 0 0 0 0 rgba(82,183,136,0); }
-    }
-    .yc-header span.yc-title {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--ink-mid);
-    }
-    .yc-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .yc-field {
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
-      border-radius: var(--radius-md);
-      padding: 13px 16px 15px;
-    }
-    .yc-field-top {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .yc-field-label {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--ink-mid);
-    }
-    .yc-field-label svg { color: var(--green-500); flex-shrink: 0; }
-    .yc-field-val {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--ink);
-      background: var(--green-50);
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-    }
-    .yc-slider {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 5px;
-      border-radius: var(--radius-pill);
-      background: var(--green-100);
-      outline: none;
-      cursor: pointer;
-    }
-    .yc-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: var(--green-500);
-      border: 2px solid var(--white);
-      box-shadow: 0 1px 4px rgba(13,31,24,0.25);
-      cursor: pointer;
-    }
-    .yc-slider::-moz-range-thumb {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: var(--green-500);
-      border: 2px solid var(--white);
-      box-shadow: 0 1px 4px rgba(13,31,24,0.25);
-      cursor: pointer;
-    }
-    .yc-select {
-      width: 100%;
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
-      border-radius: var(--radius-md);
-      padding: 10px 14px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--ink);
-      outline: none;
-      cursor: pointer;
-    }
-    .yc-select:focus { border-color: var(--green-500); }
-    .yc-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-      margin: 18px 0 20px;
-    }
-    .yc-stat {
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-    }
-    .yc-stat.yc-stat-highlight {
-      background: var(--green-100);
-      border-color: var(--green-200);
-    }
-    .yc-stat-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--ink-light);
-      margin-bottom: 6px;
-    }
-    .yc-stat-value {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.3rem;
-      color: var(--ink);
-      letter-spacing: -0.02em;
-      line-height: 1;
-    }
-    .yc-chart-card {
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
-      border-radius: var(--radius-md);
-      padding: 16px 18px 10px;
-    }
-    .yc-chart-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-light);
-      margin-bottom: 8px;
-    }
-    .yc-chart-svg { width: 100%; height: auto; display: block; }
-    .yc-chart-axis {
-      display: flex; justify-content: space-between;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
-      color: var(--ink-light);
-      margin-top: 4px;
-    }
     .about-text { display: flex; flex-direction: column; gap: 20px; }
     .about-text .section-title { margin-bottom: 4px; }
+    .about-text .section-title em { font-style: italic; color: var(--green-700); }
     .about-text p { font-size: 0.975rem; line-height: 1.8; }
-    .pillars { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-    .pillar {
-      display: flex; align-items: center; gap: 16px;
-      padding: 16px 20px;
+    .about-tagline {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green-700);
+    }
+    .about-photo {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 420px;
+      background:
+        linear-gradient(160deg, rgba(13,31,24,0.15), rgba(13,31,24,0.55)),
+        linear-gradient(135deg, var(--green-700), var(--green-900));
+      box-shadow: var(--shadow-lg);
+    }
+    .about-photo::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 420'%3E%3Cpath d='M0 300 Q100 250 200 290 T400 270 V420 H0 Z' fill='%2374C69D' fill-opacity='0.18'/%3E%3Cpath d='M0 340 Q120 300 220 330 T400 320 V420 H0 Z' fill='%2352B788' fill-opacity='0.22'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: bottom;
+    }
+    .mission-card {
+      position: absolute;
+      right: 20px; bottom: 20px; left: 20px;
+      max-width: 340px;
+      margin-left: auto;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 22px 24px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .mission-icon {
+      flex-shrink: 0;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--green-100);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mission-card strong { display: block; font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: var(--ink-mid); }
+
+    /* ===============================================
+       PILLARS ROW (5 cards)
+    =============================================== */
+    .pillars-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 64px;
+    }
+    .pillar-card {
       background: var(--green-50);
-      border-radius: var(--radius-pill);
       border: 1px solid var(--green-100);
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      text-align: center;
       transition: box-shadow 0.2s var(--ease), border-color 0.2s;
     }
-    .pillar:hover { box-shadow: var(--shadow-sm); border-color: var(--green-200); }
-    .pillar-icon {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.6rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      flex-shrink: 0;
-      width: 52px; height: 52px;
+    .pillar-card:hover { box-shadow: var(--shadow-sm); border-color: var(--green-200); }
+    .pillar-card .pillar-icon {
+      width: 48px; height: 48px;
       border-radius: 50%;
       background: var(--green-700);
-      color: var(--white);
       display: flex; align-items: center; justify-content: center;
-      text-align: center;
+      margin: 0 auto 14px;
     }
-    .pillar-body strong {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--ink);
-      margin-bottom: 3px;
+    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--ink); margin-bottom: 6px; }
+    .pillar-card p { font-size: 0.78rem; line-height: 1.5; color: var(--ink-light); }
+    @media (max-width: 900px) {
+      .pillars-row { grid-template-columns: repeat(2, 1fr); }
     }
-    .pillar-body p {
-      font-size: 0.85rem;
-      color: var(--ink-light);
-      line-height: 1.55;
+    @media (max-width: 560px) {
+      .pillars-row { grid-template-columns: 1fr; }
+    }
+
+    /* ===============================================
+       WHO WE ARE / BUILT FOR LIAN, BATANGAS
+    =============================================== */
+    .who-we-are {
+      position: relative;
+      overflow: hidden;
+      margin-top: 72px;
+      background: var(--green-900);
+      border-radius: var(--radius-xl);
+      padding: 56px;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1.4fr);
+      gap: 48px;
+      align-items: center;
+    }
+    .who-we-are::before {
+      content: "";
+      position: absolute; left: -40px; bottom: -40px;
+      width: 260px; height: 200px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%2352B788' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%2374C69D' stroke-opacity='0.4' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      opacity: 0.8;
+    }
+    .who-we-are-text { position: relative; z-index: 1; }
+    .who-we-are-text .eyebrow { color: var(--green-400); }
+    .who-we-are-text h2 { color: var(--white); margin: 10px 0 14px; }
+    .who-we-are-text p { color: rgba(255,255,255,0.65); font-size: 0.92rem; line-height: 1.7; }
+    .wwa-grid {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .wwa-stat { display: flex; flex-direction: column; gap: 10px; }
+    .wwa-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(232,167,61,0.12);
+      border: 1px solid rgba(232,167,61,0.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wwa-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+    .wwa-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.64rem;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+    .wwa-desc {
+      font-size: 0.76rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+      .who-we-are { grid-template-columns: 1fr; padding: 36px 28px; }
+      .wwa-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     /* ===============================================
@@ -1514,7 +1466,7 @@
 <nav class="navbar" id="navbar">
   <div class="nav-container">
     <a href="{{ url('/') }}" class="nav-logo">
-      <img src="{{ asset('images/iClimate.png') }}" alt="iClimate" class="brand-logo-img">
+      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" class="nav-link active">Home</a></li>
@@ -1548,7 +1500,7 @@
         <span class="hero-title-italic">rice farming.</span>
       </h1>
       <p class="hero-subtitle fade-up fade-up-2">iClimate Decision Support System</p>
-      <p class="hero-desc fade-up fade-up-3">A web-based weather impact analysis and rice yield prediction platform for Lian, Batangas &mdash; built for farmers, MAO personnel, and IT experts.</p>
+      <p class="hero-desc fade-up fade-up-3">A web-based weather impact analysis and rice yield prediction platform for Lian, Batangas &mdash; built for rice farmers, MAO staff with technicians, and IT personnel.</p>
       <div class="hero-actions fade-up fade-up-3">
         <a href="{{ route('login') }}" class="btn btn-primary btn-lg">Get Started</a>
         <a href="{{ route('register') }}" class="btn-ghost-light btn">
@@ -1613,145 +1565,88 @@
 <section class="about-section" id="about">
   <div class="container">
     <div class="about-grid">
+      <div class="about-text">
+        <div>
+          <span class="eyebrow">About iClimate</span>
+          <h2 class="section-title">About <em>iClimate</em></h2>
+          <p class="about-tagline">Understand today. Prepare tomorrow.</p>
+        </div>
+        <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed, data-driven decisions for better agricultural outcomes in Lian, Batangas.</p>
+      </div>
+
       <div class="about-visual">
-        <div class="yield-calc" id="yieldCalc">
-          <div class="yc-header">
-            <span class="yc-live-dot"></span>
-            <span class="yc-title">Live Rice Yield Forecast</span>
-          </div>
-
-          <div class="yc-grid">
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M1 5h12M5 1v12" stroke="currentColor" stroke-width="1.2"/></svg>
-                  Field area (ha)
-                </span>
-                <span class="yc-field-val" id="ycAreaVal">8</span>
-              </div>
-              <input type="range" class="yc-slider" id="ycArea" min="1" max="50" step="1" value="8">
+        <div class="about-photo">
+          <div class="mission-card">
+            <div class="mission-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#2D6A4F" stroke-width="1.6"/></svg>
             </div>
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><ellipse cx="7" cy="7" rx="3" ry="6" stroke="currentColor" stroke-width="1.3"/></svg>
-                  Seed rate (kg/ha)
-                </span>
-                <span class="yc-field-val" id="ycSeedVal">80</span>
-              </div>
-              <input type="range" class="yc-slider" id="ycSeed" min="20" max="160" step="5" value="80">
-            </div>
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1c2.2 3 4 5.3 4 7.5A4 4 0 1 1 3 8.5C3 6.3 4.8 4 7 1z" stroke="currentColor" stroke-width="1.3"/></svg>
-                  Growing season rainfall (mm)
-                </span>
-                <span class="yc-field-val" id="ycRainVal">1000</span>
-              </div>
-              <input type="range" class="yc-slider" id="ycRain" min="300" max="1800" step="10" value="1000">
-            </div>
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 13V7M7 13V3M10 13V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                  Nitrogen fertilizer (kg/ha)
-                </span>
-                <span class="yc-field-val" id="ycNitroVal">90</span>
-              </div>
-              <input type="range" class="yc-slider" id="ycNitro" min="0" max="160" step="5" value="90">
-            </div>
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 5h12M1 8h12M1 11h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                  Soil quality
-                </span>
-              </div>
-              <select class="yc-select" id="ycSoil">
-                <option value="poor">Poor</option>
-                <option value="average" selected>Average</option>
-                <option value="good">Good</option>
-                <option value="excellent">Excellent</option>
-              </select>
-            </div>
-            <div class="yc-field">
-              <div class="yc-field-top">
-                <span class="yc-field-label">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                  Pest / disease pressure
-                </span>
-              </div>
-              <select class="yc-select" id="ycPest">
-                <option value="low" selected>Low</option>
-                <option value="moderate">Moderate</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="yc-stats">
-            <div class="yc-stat yc-stat-highlight">
-              <div class="yc-stat-label">Yield per hectare</div>
-              <div class="yc-stat-value"><span id="ycYieldPerHa">4.9</span> t/ha</div>
-            </div>
-            <div class="yc-stat">
-              <div class="yc-stat-label">Total forecast yield</div>
-              <div class="yc-stat-value"><span id="ycTotalYield">39</span> t</div>
-            </div>
-            <div class="yc-stat">
-              <div class="yc-stat-label">Confidence range</div>
-              <div class="yc-stat-value" id="ycConfidence">4.4&ndash;5.4</div>
-            </div>
-          </div>
-
-          <div class="yc-chart-card">
-            <div class="yc-chart-label">Yield sensitivity &middot; Rainfall (mm)</div>
-            <svg class="yc-chart-svg" id="ycChart" viewBox="0 0 400 130" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="ycFillGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#52B788" stop-opacity="0.28"/>
-                  <stop offset="100%" stop-color="#52B788" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <g stroke="#E8E0D0" stroke-width="1">
-                <line x1="0" y1="30" x2="400" y2="30"/>
-                <line x1="0" y1="70" x2="400" y2="70"/>
-                <line x1="0" y1="110" x2="400" y2="110"/>
-              </g>
-              <path id="ycCurveFill" fill="url(#ycFillGrad)" stroke="none"/>
-              <path id="ycCurveLine" fill="none" stroke="#52B788" stroke-width="2"/>
-              <circle id="ycMarker" r="5.5" fill="#E8A73D" stroke="#FFFFFF" stroke-width="2"/>
-            </svg>
-            <div class="yc-chart-axis">
-              <span>300mm</span><span>1050mm</span><span>1800mm</span>
+            <div>
+              <strong>Our Mission</strong>
+              <p>To empower the farming community of Lian, Batangas through accurate climate information, smart analytics, and practical recommendations.</p>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="about-text">
-        <div>
-          <span class="eyebrow">About iClimate</span>
-          <h2 class="section-title">Climate-informed rice production</h2>
+    <div class="pillars-row">
+      <div class="pillar-card">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#fff"/></svg></div>
+        <strong>Climate-Informed</strong>
+        <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#fff" stroke-width="1.5"/></svg></div>
+        <strong>Rice-Focused</strong>
+        <p>Specialized in rice production analysis, yield prediction, and planting recommendations.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#fff"/><rect x="8.5" y="6" width="3" height="11" fill="#fff" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#fff" opacity="0.6"/></svg></div>
+        <strong>Data-Driven</strong>
+        <p>Using historical records and analytics to generate accurate insights and reports.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#fff" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#fff" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <strong>Community-Centered</strong>
+        <p>Built for farmers, supported by MAO staff and technicians, and optimized by IT personnel.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+        <strong>Secure &amp; Reliable</strong>
+        <p>Ensuring data security, system reliability, and continuous improvement.</p>
+      </div>
+    </div>
+
+    <div class="who-we-are">
+      <div class="who-we-are-text">
+        <span class="eyebrow">Who We Are</span>
+        <h2>Built for Lian, Batangas</h2>
+        <p>iClimate is developed to address the unique agricultural challenges of Lian, Batangas. By combining local knowledge with modern technology, we help our community adapt to climate variability and build a more resilient future.</p>
+      </div>
+      <div class="wwa-grid">
+        <div class="wwa-stat">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.2" stroke="#E8A73D" stroke-width="1.3"/><circle cx="12" cy="7" r="1.8" stroke="#E8A73D" stroke-width="1.3"/><path d="M2 15c.4-2.7 1.8-4 4.5-4s4 1.3 4.5 4" stroke="#E8A73D" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 15c.3-2 1.5-3.2 3-3.2s2.7.9 3 2.9" stroke="#E8A73D" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+          <div class="wwa-num">3</div>
+          <div class="wwa-label">User Roles</div>
+          <p class="wwa-desc">Rice Farmers, MAO Staff with Technician, and IT Personnel</p>
         </div>
-        <p>Rice production in Lian, Batangas underpins local food security and farmer livelihoods. Yet rainfall variability, shifting temperatures, droughts, and typhoons increasingly disrupt planting schedules and harvests.</p>
-        <p>iClimate integrates PAGASA climate data with local rice records from the Municipal Agricultural Office (MAO) to deliver weather analysis, planting recommendations, and decision-support analytics.</p>
-        <div class="pillars">
-          <div class="pillar">
-            <span class="pillar-icon">Rice</span>
-            <div class="pillar-body">
-              <strong>Built for Farmers</strong>
-              <p>Designed around local context, seasonal cycles, and the way farmers actually make decisions.</p>
-            </div>
-          </div>
-          <div class="pillar">
-            <span class="pillar-icon">Data</span>
-            <div class="pillar-body">
-              <strong>Data-Driven</strong>
-              <p>Designed to organize PAGASA-sourced entries and historical crop records from the MAO.</p>
-            </div>
-          </div>
+        <div class="wwa-stat">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="10" width="2.6" height="5" fill="#E8A73D"/><rect x="7.7" y="6" width="2.6" height="9" fill="#E8A73D" opacity="0.85"/><rect x="12.4" y="3" width="2.6" height="12" fill="#E8A73D" opacity="0.6"/></svg></div>
+          <div class="wwa-num">24/7</div>
+          <div class="wwa-label">Real-Time Monitoring</div>
+          <p class="wwa-desc">Continuous weather and climate updates</p>
+        </div>
+        <div class="wwa-stat">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#E8A73D" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+          <div class="wwa-num">PAGASA</div>
+          <div class="wwa-label">Verified Data Source</div>
+          <p class="wwa-desc">Trusted climate data from PAGASA</p>
+        </div>
+        <div class="wwa-stat">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#E8A73D" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#E8A73D" stroke-width="1.2"/></svg></div>
+          <div class="wwa-num">1 Goal</div>
+          <div class="wwa-label">Stronger Farming Community</div>
+          <p class="wwa-desc">Better decisions for better harvests</p>
         </div>
       </div>
     </div>
@@ -1880,17 +1775,17 @@
     <div class="section-header">
       <span class="eyebrow">User Roles</span>
       <h2>Who Uses iClimate?</h2>
-      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Personnel, and IT Experts, each designed to support climate-informed agricultural planning and decision-making.</p>
+      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Staff with Technician, and IT Personnel, each designed to support climate-informed agricultural planning and decision-making.</p>
     </div>
     <div class="roles-grid">
 
       <!-- Rice Farmers -->
       <div class="role-card">
         <div class="role-icon-wrap role-icon-wrap--img">
-          <img src="{{ asset('images/rice farmer.png') }}" alt="Rice Farmer" class="role-logo-img">
+          <img src="{{ asset('images/rice-farmer.png') }}" alt="Rice Farmers" class="role-logo-img">
         </div>
         <div class="role-workspace-label">Workspace 01</div>
-        <h3>Rice Farmer</h3>
+        <h3>Rice Farmers</h3>
         <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -1928,7 +1823,7 @@
           <img src="{{ asset('images/da.png') }}" alt="Department of Agriculture" class="role-logo-img">
         </div>
         <div class="role-workspace-label">Workspace 02</div>
-        <h3>MAO Personnel</h3>
+        <h3>MAO Staff with Technician</h3>
         <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -1963,10 +1858,10 @@
       <!-- IT Expert -->
       <div class="role-card">
         <div class="role-icon-wrap role-icon-wrap--img">
-          <img src="{{ asset('images/it-personnel.png') }}" alt="IT Expert" class="role-logo-img">
+          <img src="{{ asset('images/it-personnel.png') }}" alt="IT Personnel" class="role-logo-img">
         </div>
         <div class="role-workspace-label">Workspace 03</div>
-        <h3>IT Expert</h3>
+        <h3>IT Personnel</h3>
         <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -2008,7 +1903,7 @@
           <div class="connect-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3>Rice Farmer</h3>
+          <h3>Rice Farmers</h3>
           <p>Follows planting advisories and weather alerts in the field.</p>
         </div>
         <div class="connect-arrow">&rarr;</div>
@@ -2016,7 +1911,7 @@
           <div class="connect-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11L11 4l8 7" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19h12V9.5" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3>MAO Personnel</h3>
+          <h3>MAO Staff with Technician</h3>
           <p>Validates records and turns data into reports for planning.</p>
         </div>
         <div class="connect-arrow">&rarr;</div>
@@ -2024,7 +1919,7 @@
           <div class="connect-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V5l8-3z" stroke="#52B788" stroke-width="1.6" stroke-linejoin="round"/></svg>
           </div>
-          <h3>IT Expert</h3>
+          <h3>IT Personnel</h3>
           <p>Keeps accounts, access, and system records secure for everyone.</p>
         </div>
       </div>
@@ -2076,7 +1971,7 @@
       <div class="contact-info">
         <span class="eyebrow">Contact Us</span>
         <h2>Have questions about iClimate?</h2>
-        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support farmers, MAO personnel, and IT experts using the platform.</p>
+        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support rice farmers, MAO staff with technicians, and IT personnel using the platform.</p>
         <div class="contact-details">
           <div class="cd-item">
             <div class="cd-icon-wrap">
@@ -2139,9 +2034,9 @@
           <div class="form-group">
             <label>Role</label>
             <select class="form-input">
-              <option>Rice Farmer</option>
-              <option>MAO Personnel</option>
-              <option>IT Expert</option>
+              <option>Rice Farmers</option>
+              <option>MAO Staff with Technician</option>
+              <option>IT Personnel</option>
               <option>Other</option>
             </select>
           </div>
@@ -2166,9 +2061,9 @@
       <!-- Column 1: Brand -->
       <div class="footer-brand">
         <a href="{{ url('/') }}" class="nav-logo footer-logo">
-          <img src="{{ asset('images/iClimate.png') }}" alt="iClimate" class="brand-logo-img">
+          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
-        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts through forecasting, monitoring, and analytics.<br>Serving Lian, Batangas.</p>
+        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support rice farmers, MAO staff with technicians, and IT personnel through forecasting, monitoring, and analytics.<br>Serving Lian, Batangas.</p>
       </div>
 
       <!-- Column 2: Platform -->
@@ -2198,8 +2093,8 @@
           <ul>
             <li><a href="{{ route('login') }}">Login</a></li>
             <li><a href="{{ route('register') }}">Create Account</a></li>
-            <li><a href="{{ route('login') }}">Rice Farmer Dashboard</a></li>
-            <li><a href="{{ route('login') }}">MAO Personnel Dashboard</a></li>
+            <li><a href="{{ route('login') }}">Rice Farmers Dashboard</a></li>
+            <li><a href="{{ route('login') }}">MAO Staff with Technician Dashboard</a></li>
             <li><a href="{{ route('login') }}">IT Personnel Dashboard</a></li>
           </ul>
         </div>
@@ -2221,92 +2116,8 @@
 
     hamburger?.addEventListener('click', () => navLinks?.classList.toggle('open'));
     links.forEach(link => link.addEventListener('click', () => navLinks?.classList.remove('open')));
-
-    initYieldCalculator();
   });
 
-  function initYieldCalculator() {
-    const areaInput = document.getElementById('ycArea');
-    if (!areaInput) return;
-
-    const seedInput = document.getElementById('ycSeed');
-    const rainInput = document.getElementById('ycRain');
-    const nitroInput = document.getElementById('ycNitro');
-    const soilInput = document.getElementById('ycSoil');
-    const pestInput = document.getElementById('ycPest');
-
-    const areaVal = document.getElementById('ycAreaVal');
-    const seedVal = document.getElementById('ycSeedVal');
-    const rainVal = document.getElementById('ycRainVal');
-    const nitroVal = document.getElementById('ycNitroVal');
-    const yieldPerHaOut = document.getElementById('ycYieldPerHa');
-    const totalYieldOut = document.getElementById('ycTotalYield');
-    const confidenceOut = document.getElementById('ycConfidence');
-    const curveFill = document.getElementById('ycCurveFill');
-    const curveLine = document.getElementById('ycCurveLine');
-    const marker = document.getElementById('ycMarker');
-
-    const SOIL_MULTIPLIER = { poor: 0.85, average: 1.0, good: 1.1, excellent: 1.2 };
-    const PEST_PENALTY = { low: 0, moderate: 0.4, high: 0.9 };
-    const RAIN_MIN = 300, RAIN_MAX = 1800;
-
-    function yieldPerHectare(rain, seed, nitro, soil, pest) {
-      const rainFactor = Math.exp(-Math.pow((rain - 1000) / 500, 2));
-      const seedFactor = Math.exp(-Math.pow((seed - 80) / 60, 2));
-      let y = 2.2 + rainFactor * 1.6 + seedFactor * 0.5 + (Math.min(nitro, 140) / 140) * 0.9;
-      y *= SOIL_MULTIPLIER[soil] ?? 1.0;
-      y -= PEST_PENALTY[pest] ?? 0;
-      return Math.max(1.2, Math.min(8.5, y));
-    }
-
-    function render() {
-      const area = Number(areaInput.value);
-      const seed = Number(seedInput.value);
-      const rain = Number(rainInput.value);
-      const nitro = Number(nitroInput.value);
-      const soil = soilInput.value;
-      const pest = pestInput.value;
-
-      areaVal.textContent = area;
-      seedVal.textContent = seed;
-      rainVal.textContent = rain;
-      nitroVal.textContent = nitro;
-
-      const yph = yieldPerHectare(rain, seed, nitro, soil, pest);
-      const total = yph * area;
-      const spread = 0.4 + (PEST_PENALTY[pest] ?? 0) * 0.25;
-
-      yieldPerHaOut.textContent = yph.toFixed(1);
-      totalYieldOut.textContent = Math.round(total);
-      confidenceOut.textContent = `${Math.max(0, yph - spread).toFixed(1)}–${(yph + spread).toFixed(1)}`;
-
-      const W = 400, H = 130, PAD = 8, steps = 40;
-      let minY = Infinity, maxY = -Infinity;
-      const points = [];
-      for (let i = 0; i <= steps; i++) {
-        const r = RAIN_MIN + (RAIN_MAX - RAIN_MIN) * (i / steps);
-        const y = yieldPerHectare(r, seed, nitro, soil, pest);
-        points.push([r, y]);
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-      const yRange = Math.max(0.4, maxY - minY);
-      const toX = r => ((r - RAIN_MIN) / (RAIN_MAX - RAIN_MIN)) * W;
-      const toY = y => H - PAD - ((y - minY) / yRange) * (H - PAD * 2);
-
-      const linePath = points.map(([r, y], i) => `${i === 0 ? 'M' : 'L'}${toX(r).toFixed(1)} ${toY(y).toFixed(1)}`).join(' ');
-      curveLine.setAttribute('d', linePath);
-      curveFill.setAttribute('d', `${linePath} L${W} ${H} L0 ${H} Z`);
-      marker.setAttribute('cx', toX(rain).toFixed(1));
-      marker.setAttribute('cy', toY(yph).toFixed(1));
-    }
-
-    [areaInput, seedInput, rainInput, nitroInput, soilInput, pestInput].forEach(el => {
-      el.addEventListener('input', render);
-      el.addEventListener('change', render);
-    });
-    render();
-  }
 </script>
 </body>
 </html>
