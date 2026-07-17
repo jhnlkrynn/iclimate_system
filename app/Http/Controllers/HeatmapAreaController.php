@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HeatmapArea;
 use App\Services\HeatmapRiskService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -44,7 +45,13 @@ class HeatmapAreaController extends CrudController
     public function index(Request $request): View
     {
         $this->authorizeView($request);
-        app(HeatmapRiskService::class)->refresh();
+        $shouldRefresh = $request->boolean('refresh')
+            || ! HeatmapArea::query()->whereNotNull('latitude')->whereNotNull('longitude')->exists();
+
+        if ($shouldRefresh) {
+            app(HeatmapRiskService::class)->refresh();
+            Cache::put('heatmap:last-refresh', now()->toDateTimeString(), now()->addDay());
+        }
 
         $query = $this->baseQuery($request);
         $search = trim((string) $request->query('search', ''));
@@ -73,6 +80,20 @@ class HeatmapAreaController extends CrudController
         return view('heatmap-areas.index', [
             'records' => $recordsQuery->latest()->paginate(12)->withQueryString(),
             'mapAreas' => $mapAreasQuery
+                ->select([
+                    'id',
+                    'barangay',
+                    'latitude',
+                    'longitude',
+                    'risk_level',
+                    'risk_type',
+                    'risk_score',
+                    'predicted_yield',
+                    'rainfall_status',
+                    'planting_advisory',
+                    'irrigation_recommendation',
+                    'description',
+                ])
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->orderBy('barangay')

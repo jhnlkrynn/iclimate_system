@@ -19,7 +19,19 @@ class CommunityFeedController extends Controller
 
         return view('community-feed.index', [
             'posts' => FeedPost::query()
-                ->with(['author', 'media', 'comments.user', 'reactions'])
+                ->with([
+                    'author',
+                    'media',
+                    'comments.user',
+                    'reactions' => fn ($query) => $query->where('user_id', $request->user()->id),
+                ])
+                ->withCount([
+                    'reactions as like_reactions_count' => fn ($query) => $query->where('type', 'Like'),
+                    'reactions as love_reactions_count' => fn ($query) => $query->where('type', 'Love'),
+                    'reactions as care_reactions_count' => fn ($query) => $query->where('type', 'Care'),
+                    'reactions as wow_reactions_count' => fn ($query) => $query->where('type', 'Wow'),
+                    'reactions as helpful_reactions_count' => fn ($query) => $query->where('type', 'Helpful'),
+                ])
                 ->when(! $canPost, fn ($query) => $query->whereNull('archived_at'))
                 ->latest()
                 ->paginate(10),

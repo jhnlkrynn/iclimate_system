@@ -5,7 +5,11 @@
     $isIt = $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $dashboardRoute = $user->dashboardRoute();
     $unreadNotifications = $isFarmer
-        ? \App\Models\Notification::query()->where('user_id', $user->id)->where('is_read', false)->count()
+        ? \Illuminate\Support\Facades\Cache::remember(
+            'sidebar:unread-notifications:'.$user->id,
+            now()->addSeconds(20),
+            fn () => \App\Models\Notification::query()->where('user_id', $user->id)->where('is_read', false)->count()
+        )
         : 0;
 
     $sidebarIcon = function (string $key): string {

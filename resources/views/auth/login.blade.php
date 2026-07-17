@@ -1,6 +1,6 @@
 @php
     $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
-    $latestClimate = \App\Models\ClimateRecord::query()->latest('record_date')->first();
+    $latestClimate = \App\Support\ClimateSnapshot::latest();
     $rainfall = (float) ($latestClimate->rainfall ?? 2.4);
     $condition = match (true) {
         $rainfall >= 300 => ['Heavy Rain', '&#127783;&#65039;'],

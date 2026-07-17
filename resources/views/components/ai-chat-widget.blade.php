@@ -1,13 +1,5 @@
 @php
-    $widgetChats = auth()->check()
-        ? \App\Models\AIChat::query()
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->take(8)
-            ->get()
-            ->reverse()
-            ->values()
-        : collect();
+    $widgetChats = collect();
 @endphp
 
 <style>

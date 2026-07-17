@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindScrollSpy();
     bindPasswordToggles();
     bindRegisterNameSync();
+    bindFastNavigation();
     bindLoadingForms();
     bindDeleteConfirmations();
 });
@@ -114,12 +115,89 @@ function bindLoadingForms() {
         form.dataset.loadingBound = 'true';
 
         form.addEventListener('submit', () => {
+            form.dataset.submitting = 'true';
             overlay?.classList.add('show');
-            form.querySelectorAll('button[type="submit"]').forEach((button) => {
-                button.disabled = true;
-                if (button.dataset.loadingText) button.textContent = button.dataset.loadingText;
-            });
+            lockSubmitButtons(form);
         });
+    });
+}
+
+function bindFastNavigation() {
+    const progress = document.getElementById('pageProgress');
+    const prefetched = new Set();
+    const maxPrefetches = 10;
+    const samePage = (link) => {
+        const url = new URL(link.href, window.location.href);
+
+        return url.origin === window.location.origin
+            && url.pathname === window.location.pathname
+            && url.search === window.location.search
+            && url.hash !== '';
+    };
+    const canWarm = (link) => {
+        if (link.target && link.target !== '_self') return false;
+        if (link.hasAttribute('download') || link.href.startsWith('mailto:') || link.href.startsWith('tel:')) return false;
+        if (samePage(link)) return false;
+
+        const url = new URL(link.href, window.location.href);
+
+        return url.origin === window.location.origin;
+    };
+    const warmLink = (link) => {
+        if (!canWarm(link) || prefetched.size >= maxPrefetches || prefetched.has(link.href)) return;
+
+        prefetched.add(link.href);
+        const prefetch = document.createElement('link');
+        prefetch.rel = 'prefetch';
+        prefetch.href = link.href;
+        prefetch.as = 'document';
+        document.head.appendChild(prefetch);
+    };
+
+    document.querySelectorAll('a[href]').forEach((link) => {
+        if (link.dataset.fastNavBound === 'true') return;
+        link.dataset.fastNavBound = 'true';
+
+        link.addEventListener('mouseenter', () => warmLink(link), { passive: true });
+        link.addEventListener('focus', () => warmLink(link), { passive: true });
+        link.addEventListener('touchstart', () => warmLink(link), { passive: true });
+        link.addEventListener('click', () => {
+            if (!canWarm(link)) return;
+
+            progress?.classList.add('show');
+            link.classList.add('is-loading-action');
+        });
+    });
+
+    document.querySelectorAll('form').forEach((form) => {
+        if (form.dataset.fastSubmitBound === 'true') return;
+        form.dataset.fastSubmitBound = 'true';
+
+        form.addEventListener('submit', () => {
+            if (form.dataset.submitting === 'true') return;
+            form.dataset.submitting = 'true';
+
+            const method = (form.getAttribute('method') || 'GET').toUpperCase();
+            progress?.classList.add('show');
+            lockSubmitButtons(form);
+
+            if (method !== 'GET') {
+                form.classList.add('is-loading-action');
+            }
+        });
+    });
+
+    window.addEventListener('pageshow', () => {
+        progress?.classList.remove('show');
+        document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
+        document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
+    });
+}
+
+function lockSubmitButtons(form) {
+    form.querySelectorAll('button[type="submit"]').forEach((button) => {
+        button.disabled = true;
+        if (button.dataset.loadingText) button.textContent = button.dataset.loadingText;
     });
 }
 

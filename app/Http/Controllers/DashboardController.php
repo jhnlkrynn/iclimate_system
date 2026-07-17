@@ -14,6 +14,7 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\WeatherApiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -72,13 +73,7 @@ class DashboardController extends Controller
             'latestFeedPosts' => FeedPost::query()->with('author')->whereNull('archived_at')->latest()->take(4)->get(),
             'latestHeatmapAreas' => HeatmapArea::query()->latest()->take(5)->get(),
             'latestReports' => Report::query()->with('generatedBy')->latest()->take(4)->get(),
-            'riceProductionTotal' => RiceProduction::query()->sum('total_production'),
-            'riceAreaTotal' => RiceProduction::query()->sum('area_hectares'),
-            'profileCount' => FarmerProfile::count(),
-            'reportCount' => Report::count(),
-            'heatMapCount' => HeatmapArea::count(),
-            'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', 'Published')->count(),
-            'communityPostCount' => FeedPost::query()->whereNull('archived_at')->count(),
+            ...$this->maoAggregates(),
             'weatherChartData' => $weatherChartData,
             'weatherDataSource' => $weatherDataSource,
             'liveWeather' => $liveWeather,
@@ -108,6 +103,30 @@ class DashboardController extends Controller
     public function admin(): View
     {
         return view('dashboards.it-expert', $this->stats() + [
+            ...$this->adminAggregates(),
+            'latestLogs' => SystemLog::query()->with('user')->latest()->take(6)->get(),
+            'latestUsers' => User::query()->latest()->take(5)->get(),
+            'latestReports' => Report::query()->with('generatedBy')->latest()->take(5)->get(),
+        ]);
+    }
+
+    private function maoAggregates(): array
+    {
+        return Cache::remember('dashboard:mao-aggregates', now()->addSeconds(45), fn () => [
+            'riceProductionTotal' => RiceProduction::query()->sum('total_production'),
+            'riceAreaTotal' => RiceProduction::query()->sum('area_hectares'),
+            'avgYield' => RiceProduction::query()->avg('yield_per_hectare') ?: 0,
+            'profileCount' => FarmerProfile::count(),
+            'reportCount' => Report::count(),
+            'heatMapCount' => HeatmapArea::count(),
+            'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', 'Published')->count(),
+            'communityPostCount' => FeedPost::query()->whereNull('archived_at')->count(),
+        ]);
+    }
+
+    private function adminAggregates(): array
+    {
+        return Cache::remember('dashboard:admin-aggregates', now()->addSeconds(45), fn () => [
             'userCount' => User::count(),
             'activeUsers' => User::query()->where('status', User::STATUS_ACTIVE)->count(),
             'inactiveUsers' => User::query()->where('status', User::STATUS_INACTIVE)->count(),
@@ -127,15 +146,12 @@ class DashboardController extends Controller
                 'Heat Map Areas' => HeatmapArea::count(),
                 'Reports' => Report::count(),
             ],
-            'latestLogs' => SystemLog::query()->with('user')->latest()->take(6)->get(),
-            'latestUsers' => User::query()->latest()->take(5)->get(),
-            'latestReports' => Report::query()->with('generatedBy')->latest()->take(5)->get(),
         ]);
     }
 
     private function stats(): array
     {
-        return [
+        return Cache::remember('dashboard:shared-stats', now()->addSeconds(45), fn () => [
             'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
             'totalClimateRecords' => ClimateRecord::count(),
             'totalRiceProductions' => RiceProduction::count(),
@@ -144,6 +160,6 @@ class DashboardController extends Controller
             'totalNotifications' => UserNotification::count(),
             'totalHeatMapAreas' => HeatmapArea::count(),
             'highRiskHeatMapAreas' => HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count(),
-        ];
+        ]);
     }
 }

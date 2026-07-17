@@ -169,6 +169,15 @@
             .loading-overlay { position: fixed; inset: 0; background: rgba(240,247,244,.68); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; }
             .loading-overlay.show { display: flex; }
             .loading-overlay .card { min-width: 220px; }
+            .page-progress { position: fixed; inset: 0 0 auto; height: 3px; z-index: 2100; pointer-events: none; background: transparent; opacity: 0; transition: opacity .12s ease; }
+            .page-progress::before { content: ""; display: block; width: 42%; height: 100%; background: linear-gradient(90deg, var(--ic-green-500), var(--ic-gold)); transform: translateX(-100%); animation: pageProgress 1s ease-in-out infinite; }
+            .page-progress.show { opacity: 1; }
+            .is-loading-action { opacity: .72; pointer-events: none; }
+            @keyframes pageProgress {
+                0% { transform: translateX(-110%); }
+                55% { transform: translateX(80vw); }
+                100% { transform: translateX(110vw); }
+            }
             .bg-white, .table-light { background-color: #ffffff !important; }
             .text-bg-light { color: var(--ic-ink) !important; background-color: var(--ic-green-50) !important; }
             .border-top, .border-bottom, .border-start, .border-end, .border { border-color: rgba(212,237,218,.98) !important; }
@@ -239,23 +248,10 @@
         <div id="loadingOverlay" class="loading-overlay">
             <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3"><div class="spinner-border text-primary" role="status" aria-hidden="true"></div><div class="fw-semibold">Loading...</div></div></div>
         </div>
+        <div id="pageProgress" class="page-progress" aria-hidden="true"></div>
         @auth
             @include('components.ai-chat-widget')
         @endauth
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const overlay = document.getElementById('loadingOverlay');
-                document.querySelectorAll('form[data-loading="true"]').forEach((form) => {
-                    form.addEventListener('submit', () => {
-                        overlay.classList.add('show');
-                        form.querySelectorAll('button[type="submit"]').forEach((button) => {
-                            button.disabled = true;
-                            if (button.dataset.loadingText) button.textContent = button.dataset.loadingText;
-                        });
-                    });
-                });
-            });
-        </script>
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>

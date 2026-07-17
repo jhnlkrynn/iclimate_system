@@ -1,5 +1,5 @@
 @php
-    $heroClimate = \App\Models\ClimateRecord::query()->latest('record_date')->first();
+    $heroClimate = \App\Support\ClimateSnapshot::latest();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">

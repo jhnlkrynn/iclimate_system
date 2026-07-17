@@ -46,6 +46,15 @@ return [
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
     ],
 
+    'open_meteo' => [
+        'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
+        'latitude' => env('ICLIMATE_LATITUDE', 14.033),
+        'longitude' => env('ICLIMATE_LONGITUDE', 120.650),
+        'timezone' => env('ICLIMATE_TIMEZONE', 'Asia/Manila'),
+        'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
+        'timeout' => env('OPEN_METEO_TIMEOUT', 10),
+    ],
+
     'farming_ai' => [
         'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:5001'),
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),

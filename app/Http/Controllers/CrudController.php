@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -186,13 +187,17 @@ abstract class CrudController extends Controller
 
     protected function userOptions(array $roles = []): array
     {
-        $query = User::query()->orderBy('name');
+        $key = 'crud:user-options:'.($roles === [] ? 'all' : implode('-', $roles));
 
-        if ($roles !== []) {
-            $query->whereIn('role', $roles);
-        }
+        return Cache::remember($key, now()->addSeconds(30), function () use ($roles): array {
+            $query = User::query()->orderBy('name');
 
-        return $query->pluck('name', 'id')->toArray();
+            if ($roles !== []) {
+                $query->whereIn('role', $roles);
+            }
+
+            return $query->pluck('name', 'id')->toArray();
+        });
     }
 
     protected function userRules(?int $id = null): array

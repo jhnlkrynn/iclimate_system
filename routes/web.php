@@ -56,6 +56,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('rice-productions', RiceProductionController::class);
 
+        Route::get('management/advisories', [PlantingAdvisoryController::class, 'adminIndex'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.index');
+
+        Route::post('management/advisories/refresh-weather', [PlantingAdvisoryController::class, 'refreshWeather'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.refresh-weather');
+
+        Route::post('management/advisories/regenerate', [PlantingAdvisoryController::class, 'regenerate'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.regenerate');
+
+        Route::post('management/advisories/{advisory}/approve', [PlantingAdvisoryController::class, 'approve'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.approve');
+
+        Route::post('management/advisories/{advisory}/reject', [PlantingAdvisoryController::class, 'reject'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.reject');
+
+        Route::post('management/advisories/{advisory}/publish', [PlantingAdvisoryController::class, 'publish'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.publish');
+
+        Route::post('management/advisories/{advisory}/archive', [PlantingAdvisoryController::class, 'archive'])
+            ->middleware('role:' . User::ROLE_MAO . ',' . User::ROLE_IT_EXPERT)
+            ->name('management.advisories.archive');
+
         Route::resource('planting-advisories', PlantingAdvisoryController::class);
 
         Route::redirect('announcements', 'community-feed')

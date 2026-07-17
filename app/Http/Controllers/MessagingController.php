@@ -15,7 +15,7 @@ class MessagingController extends Controller
     public function index(Request $request): View
     {
         $conversations = $this->conversationQuery($request->user())
-            ->with(['participantOne', 'participantTwo', 'messages' => fn ($query) => $query->latest()->take(1)])
+            ->with(['participantOne', 'participantTwo', 'latestMessage'])
             ->orderByDesc('last_message_at')
             ->get();
 
@@ -38,7 +38,7 @@ class MessagingController extends Controller
 
         return view('messages.index', [
             'conversations' => $this->conversationQuery($request->user())
-                ->with(['participantOne', 'participantTwo', 'messages' => fn ($query) => $query->latest()->take(1)])
+                ->with(['participantOne', 'participantTwo', 'latestMessage'])
                 ->orderByDesc('last_message_at')
                 ->get(),
             'activeConversation' => $conversation->load(['participantOne', 'participantTwo']),

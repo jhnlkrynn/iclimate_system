@@ -20,9 +20,7 @@ class RoleMiddleware
         }
 
         if (! in_array($user->role, $roles, true)) {
-            return redirect()
-                ->route($user->dashboardRoute())
-                ->with('error', "You don't have access to that page.");
+            abort(Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

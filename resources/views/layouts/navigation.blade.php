@@ -1,5 +1,10 @@
 @php
-    $unreadCount = auth()->user()->userNotifications()->where('is_read', false)->count();
+    $user = auth()->user();
+    $unreadCount = \Illuminate\Support\Facades\Cache::remember(
+        'sidebar:unread-notifications:'.$user->id,
+        now()->addSeconds(20),
+        fn () => $user->userNotifications()->where('is_read', false)->count()
+    );
 @endphp
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
     <div class="container-fluid px-0 gap-3 topbar-inner">

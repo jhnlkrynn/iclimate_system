@@ -2,12 +2,18 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
 class WeatherApiService
 {
     public function forecast(): ?array
+    {
+        return Cache::remember('weather-api:forecast:lian', now()->addMinutes(10), fn () => $this->fetchForecast());
+    }
+
+    private function fetchForecast(): ?array
     {
         if (! config('services.weather_api.enabled', true)) {
             return null;

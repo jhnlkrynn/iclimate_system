@@ -5,12 +5,22 @@ namespace App\Services\MachineLearning;
 use App\Models\ClimateRecord;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class MonthlyWeatherRandomForest
 {
     private const TARGETS = ['rainfall', 'temperature', 'humidity', 'wind_speed'];
 
     public function predict(CarbonImmutable $targetMonth): array
+    {
+        return Cache::remember(
+            'weather-random-forest:'.$targetMonth->format('Y-m'),
+            now()->addMinutes(15),
+            fn () => $this->buildPrediction($targetMonth)
+        );
+    }
+
+    private function buildPrediction(CarbonImmutable $targetMonth): array
     {
         $monthly = $this->monthlyClimateRecords();
 

@@ -216,7 +216,6 @@
 
     @php
         $latestSeason = $latestClimate?->season ?? 'N/A';
-        $avgYield = $totalRiceProductions > 0 ? \App\Models\RiceProduction::query()->avg('yield_per_hectare') : 0;
     @endphp
 
     <div class="mao-console">

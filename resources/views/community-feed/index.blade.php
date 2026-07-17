@@ -221,7 +221,13 @@
                 @forelse($posts as $post)
                     @php
                         $userReaction = $post->reactions->firstWhere('user_id', auth()->id());
-                        $counts = $post->reactions->groupBy('type')->map->count();
+                        $counts = collect([
+                            'Like' => $post->like_reactions_count,
+                            'Love' => $post->love_reactions_count,
+                            'Care' => $post->care_reactions_count,
+                            'Wow' => $post->wow_reactions_count,
+                            'Helpful' => $post->helpful_reactions_count,
+                        ])->filter();
                         $canManagePost = $canPost;
                         $isArchived = $post->archived_at !== null;
                     @endphp

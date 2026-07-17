@@ -90,6 +90,9 @@ class DatabaseSeeder extends Seeder
         Report::factory()->count(2)->create(['generated_by' => $mao->id]);
         SystemLog::factory()->count(3)->create(['user_id' => $itExpert->id]);
 
-        $this->call(KnowledgeBaseSeeder::class);
+        $this->call([
+            KnowledgeBaseSeeder::class,
+            AdvisoryRuleSeeder::class,
+        ]);
     }
 }

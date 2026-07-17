@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class NotificationController extends CrudController
@@ -43,6 +44,7 @@ class NotificationController extends CrudController
                 'type' => $data['type'],
                 'is_read' => false,
             ]);
+            Cache::forget('sidebar:unread-notifications:'.$user->id);
         }
 
         return redirect()->route('notifications.index')->with('success', 'Notification sent to '.$recipients->count().' recipient(s).');
@@ -76,6 +78,7 @@ class NotificationController extends CrudController
             ->findOrFail($notification);
 
         $record->update(['is_read' => true]);
+        Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
 
         return back()->with('success', 'Notification marked as read.');
     }
@@ -86,6 +89,7 @@ class NotificationController extends CrudController
             ->where('user_id', $request->user()->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
+        Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
 
         return back()->with('success', 'All notifications marked as read.');
     }

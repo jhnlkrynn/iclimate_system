@@ -104,7 +104,7 @@
                     @forelse($conversations as $conversation)
                         @php
                             $other = $conversation->otherParticipant(auth()->user());
-                            $latest = $conversation->messages->first();
+                            $latest = $conversation->latestMessage;
                         @endphp
                         <a class="thread-link {{ $activeConversation?->id === $conversation->id ? 'active' : '' }}" href="{{ route('messages.show', $conversation) }}">
                             <div class="d-flex gap-2 align-items-start">

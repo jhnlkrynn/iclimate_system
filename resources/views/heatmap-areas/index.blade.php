@@ -20,7 +20,8 @@
 @endphp
 
 <x-app-layout>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="preload" as="style" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
     <style>
         .heatmap-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr); gap: 1rem; align-items: stretch; }
         .heatmap-main { display: flex; flex-direction: column; gap: 1rem; min-height: 100%; }
@@ -34,19 +35,23 @@
                 radial-gradient(circle at 70% 38%, rgba(255, 24, 18, .35), transparent 18rem),
                 linear-gradient(135deg, #0736a8, #15cfe0 28%, #59f03d 48%, #fff118 62%, #ff850f 78%, #f71912);
         }
-        .thermo-map .leaflet-tile-pane { filter: saturate(1.65) contrast(1.05); opacity: .22; }
+        .thermo-map .leaflet-tile-pane { filter: saturate(1.08) contrast(1.04); }
         .thermo-map .leaflet-overlay-pane canvas {
-            mix-blend-mode: multiply;
-            filter: saturate(1.55) contrast(1.08);
+            mix-blend-mode: screen;
+            filter: saturate(1.45) contrast(1.04);
+            opacity: .72;
         }
         .thermo-point {
-            width: 12px;
-            height: 12px;
+            position: relative;
+            display: block;
+            width: 14px;
+            height: 14px;
             border-radius: 999px;
-            border: 2px solid rgba(13,31,24,.78);
-            background: rgba(255,255,255,.86);
-            box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24);
+            border: 2px solid rgba(255,255,255,.92);
+            background: var(--marker-color, #52b788);
+            box-shadow: 0 0 0 5px rgba(255,255,255,.2), 0 0 0 10px var(--marker-glow, rgba(82,183,136,.18)), 0 .45rem .9rem rgba(13,31,24,.38);
         }
+        .thermo-point::after { content: ""; position: absolute; inset: 2px; border-radius: inherit; background: rgba(255,255,255,.28); }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
         .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .map-insight::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
@@ -62,6 +67,15 @@
         .map-toolbar > * { pointer-events: auto; }
         .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
+        .basemap-btn { background: rgba(13,31,24,.78); border-color: rgba(255,255,255,.22); color: #fff; }
+        .basemap-btn.active { background: #e8a73d; border-color: #e8a73d; color: #0d1f18; }
+        .readability-btn { background: rgba(255,255,255,.96); border-color: #95d5b2; color: #1f6f4a; }
+        .readability-btn.active { background: #1f6f4a; border-color: #1f6f4a; color: #fff; }
+        .map-atmosphere { position: absolute; inset: 0; z-index: 410; pointer-events: none; background: radial-gradient(circle at 23% 24%, rgba(255,255,255,.16), transparent 18rem), radial-gradient(circle at 76% 68%, rgba(13,31,24,.22), transparent 22rem), linear-gradient(180deg, rgba(13,31,24,.08), rgba(13,31,24,.16)); mix-blend-mode: soft-light; }
+        .leaflet-container { font-family: 'Inter', system-ui, sans-serif; }
+        .leaflet-control-attribution { background: rgba(255,255,255,.78) !important; color: #315044 !important; backdrop-filter: blur(10px); border-radius: 8px 0 0 0; }
+        .realistic-map .leaflet-overlay-pane path { transition: fill-opacity .18s ease, stroke-width .18s ease, filter .18s ease; }
+        .field-zone { stroke: rgba(255,255,255,.82); stroke-width: 1.5; stroke-dasharray: 4 5; filter: drop-shadow(0 4px 10px rgba(13,31,24,.22)); }
         .map-control-panel {
             position: absolute;
             z-index: 510;
@@ -187,7 +201,32 @@
             padding: .24rem .5rem;
             box-shadow: 0 .45rem 1rem rgba(13,31,24,.16);
         }
+        .barangay-tooltip.easy-read {
+            border: 2px solid rgba(255,255,255,.88);
+            background: var(--label-bg, rgba(13,31,24,.9));
+            color: var(--label-color, #fff);
+            box-shadow: 0 .5rem 1.25rem rgba(13,31,24,.28);
+        }
         .barangay-tooltip::before { display: none; }
+        .easy-read-marker {
+            min-width: 108px;
+            border: 2px solid rgba(255,255,255,.92);
+            border-radius: 10px;
+            background: var(--label-bg, #2c7bb6);
+            color: var(--label-color, #fff);
+            padding: .32rem .45rem;
+            box-shadow: 0 .55rem 1.25rem rgba(13,31,24,.28);
+            text-align: center;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+        .easy-read-marker small {
+            display: block;
+            margin-top: .12rem;
+            font-size: .62rem;
+            font-weight: 800;
+            opacity: .92;
+        }
         @media (max-width: 1199.98px) {
             .map-insight-strip { grid-template-columns: 1fr; }
             .heatmap-grid { grid-template-columns: 1fr; }
@@ -262,7 +301,7 @@
 
     <div class="card filter-panel no-lift mb-4">
         <div class="card-body">
-            <form class="row g-3 align-items-end" method="GET" data-loading="true">
+            <form class="row g-3 align-items-end" method="GET">
                 <div class="col-lg-4">
                     <label class="form-label fw-semibold">Search</label>
                     <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search barangay, rainfall, advisory">
@@ -286,8 +325,11 @@
                     </select>
                 </div>
                 <div class="col-lg-auto d-flex gap-2">
-                    <button class="btn btn-outline-primary btn-lg" type="submit" data-loading-text="Filtering...">Apply</button>
+                    <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
                     <a class="btn btn-outline-secondary btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
+                    @if($canManage)
+                        <a class="btn btn-outline-success btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -316,6 +358,10 @@
                     <button class="layer-btn" type="button" data-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
                     <button class="layer-btn" type="button" data-layer="yield" aria-pressed="false">Rice Yield</button>
                     <button class="layer-btn" type="button" data-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                    <button class="layer-btn basemap-btn active" type="button" data-basemap="satellite" aria-pressed="true">Satellite</button>
+                    <button class="layer-btn basemap-btn" type="button" data-basemap="terrain" aria-pressed="false">Terrain</button>
+                    <button class="layer-btn basemap-btn" type="button" data-basemap="street" aria-pressed="false">Street</button>
+                    <button class="layer-btn readability-btn" type="button" id="easyReadToggle" aria-pressed="false">Easy Colors</button>
                 </div>
                 <div class="map-control-panel">
                     <label class="risk-label mb-2 d-block" for="mapBarangayFocus">Focus Barangay</label>
@@ -338,6 +384,7 @@
                     <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
                 </aside>
                 <div id="barangayRiskMap"></div>
+                <div class="map-atmosphere" aria-hidden="true"></div>
             </div>
         </div>
 
@@ -378,12 +425,12 @@
             <div class="risk-stat">
                 <div class="risk-label mb-3">Legend</div>
                 <div class="d-grid gap-2">
-                    <div class="legend-row"><span class="legend-swatch" style="background:#123cba"></span> Cold / low impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#17d8dc"></span> Light risk zone</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#69f23a"></span> Watch zone</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#fff118"></span> Moderate impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#ff7a0f"></span> High impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#f71912"></span> Hot / severe impact</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Cold / low impact</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#2ec7c9"></span> Light risk zone</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#2cba6c"></span> Watch zone</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate impact</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High impact</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Hot / severe impact</div>
                 </div>
             </div>
             @if ($riskSource)
@@ -520,24 +567,42 @@
         </div>
     @endif
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            if (typeof L === 'undefined') {
+                document.getElementById('boundaryNotice')?.classList.remove('d-none');
+                return;
+            }
+
             const areas = @json($mapPayload);
             const areaByBarangay = new Map(areas.map((area) => [area.barangay.toLowerCase(), area]));
             const boundaryUrl = "{{ asset('geojson/lian-barangays.geojson') }}";
-            const map = L.map('barangayRiskMap', { scrollWheelZoom: false }).setView([14.015, 120.65], 12);
-            document.getElementById('barangayRiskMap')?.classList.add('thermo-map');
-            const colorFor = (value) => value >= .82 ? '#f71912' : value >= .68 ? '#ff7a0f' : value >= .54 ? '#fff118' : value >= .38 ? '#69f23a' : value >= .22 ? '#17d8dc' : '#123cba';
+            const map = L.map('barangayRiskMap', {
+                scrollWheelZoom: false,
+                zoomControl: true,
+                preferCanvas: true,
+            }).setView([14.015, 120.65], 12);
+            document.getElementById('barangayRiskMap')?.classList.add('thermo-map', 'realistic-map');
+            const colorFor = (value) => value >= .88 ? '#7f0000' : value >= .74 ? '#d7191c' : value >= .58 ? '#fdae21' : value >= .42 ? '#fff34d' : value >= .26 ? '#2cba6c' : value >= .12 ? '#2ec7c9' : '#2c7bb6';
+            const rgbaFor = (value, alpha = .42) => {
+                const hex = colorFor(value).replace('#', '');
+                const bigint = parseInt(hex, 16);
+                const red = (bigint >> 16) & 255;
+                const green = (bigint >> 8) & 255;
+                const blue = bigint & 255;
+
+                return `rgba(${red},${green},${blue},${alpha})`;
+            };
             const thermographicGradient = {
-                .05: '#123cba',
-                .18: '#1769d1',
-                .32: '#17d8dc',
-                .48: '#69f23a',
-                .62: '#fff118',
-                .78: '#ff7a0f',
-                1: '#f71912',
+                .00: '#2c7bb6',
+                .16: '#2ec7c9',
+                .32: '#2cba6c',
+                .50: '#fff34d',
+                .68: '#fdae21',
+                .84: '#d7191c',
+                1.00: '#7f0000',
             };
             const yieldScore = (area) => area.predicted_yield === null ? .5 : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
             const rainfallScore = (area) => String(area.rainfall_status || '').toLowerCase().includes('low') ? .9 : (String(area.rainfall_status || '').toLowerCase().includes('high') ? .65 : .3);
@@ -545,21 +610,45 @@
             const impactScore = (area) => Number(area.risk_score || 0);
             const scoreFor = (area, layer) => ({ rainfall: rainfallScore, yield: yieldScore, irrigation: irrigationScore, impact: impactScore }[layer] || impactScore)(area);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 18,
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+            const baseLayers = {
+                satellite: L.layerGroup([
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        maxZoom: 19,
+                        attribution: 'Tiles &copy; Esri',
+                    }),
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 20,
+                        opacity: .9,
+                        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                    }),
+                ]),
+                terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 17,
+                    attribution: '&copy; OpenTopoMap &copy; OpenStreetMap contributors',
+                }),
+                street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors',
+                }),
+            };
+            let activeBaseLayer = baseLayers.satellite.addTo(map);
 
             let geoLayer = null;
             let heatLayer = null;
+            let fieldLayer = null;
             let pointLayer = null;
             let barangayBoundaries = null;
             let activeLayer = 'impact';
             let selectedArea = null;
             let selectedRing = null;
+            let easyReadMode = false;
             const focusSelect = document.getElementById('mapBarangayFocus');
             const selectedLabel = document.getElementById('selectedBarangayLabel');
             const activeLayerLabel = document.getElementById('activeLayerLabel');
+            const easyReadToggle = document.getElementById('easyReadToggle');
+            const updateLayerLabel = () => {
+                if (activeLayerLabel) activeLayerLabel.textContent = `${layerTitle(activeLayer)}${easyReadMode ? ' - Easy colors' : ''}`;
+            };
 
             const plainRiskMessage = (area) => {
                 if (['High', 'Severe'].includes(area.risk_level)) {
@@ -617,6 +706,18 @@
                 yield: 'Rice yield',
                 irrigation: 'Irrigation priority',
             }[layer] || 'Climate impact');
+
+            const readabilityLabel = (score) => {
+                if (score >= .88) return 'Severe';
+                if (score >= .74) return 'High';
+                if (score >= .58) return 'Elevated';
+                if (score >= .42) return 'Moderate';
+                if (score >= .26) return 'Watch';
+                if (score >= .12) return 'Light';
+                return 'Low';
+            };
+
+            const readableTextColor = (score) => (score >= .42 && score < .74) ? '#0d1f18' : '#fff';
 
             const layerTakeaway = (area, layer) => {
                 if (layer === 'rainfall') return plainRain(area);
@@ -843,9 +944,10 @@
 
             const renderLayer = (layer = 'impact') => {
                 activeLayer = layer;
-                if (activeLayerLabel) activeLayerLabel.textContent = layerTitle(layer);
+                updateLayerLabel();
                 if (geoLayer) map.removeLayer(geoLayer);
                 if (heatLayer) map.removeLayer(heatLayer);
+                if (fieldLayer) map.removeLayer(fieldLayer);
                 if (pointLayer) map.removeLayer(pointLayer);
                 if (selectedRing) {
                     map.removeLayer(selectedRing);
@@ -862,27 +964,49 @@
 
                 geoLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
                     style: (feature) => ({
-                        color: '#0d1f18',
-                        weight: 1,
+                        color: 'rgba(255,255,255,.88)',
+                        weight: easyReadMode ? 2.2 : 1.4,
+                        opacity: .92,
                         fillColor: colorFor(feature.properties.score),
-                        fillOpacity: .62,
+                        fillOpacity: easyReadMode ? .72 : .38,
+                        dashArray: easyReadMode ? null : '5 5',
                     }),
                     onEachFeature: (feature, polygon) => {
-                        polygon.on('click', () => showDetails(feature.properties.area, feature.properties.score, layer));
+                        polygon.on({
+                            click: () => showDetails(feature.properties.area, feature.properties.score, layer),
+                            mouseover: () => polygon.setStyle({ weight: 2.8, fillOpacity: easyReadMode ? .82 : .5 }),
+                            mouseout: () => polygon.setStyle({ weight: easyReadMode ? 2.2 : 1.4, fillOpacity: easyReadMode ? .72 : .38 }),
+                        });
                         polygon.bindTooltip(feature.properties.area.barangay, {
                             permanent: true,
                             direction: 'center',
-                            className: 'barangay-tooltip',
+                            className: `barangay-tooltip ${easyReadMode ? 'easy-read' : ''}`,
+                            opacity: easyReadMode ? 1 : .92,
                         });
                     }
                 }).addTo(map);
 
-                if (L.heatLayer) {
+                fieldLayer = L.featureGroup(areas.map((area) => {
+                    const score = scoreFor(area, layer);
+                    const radius = 850 + (score * 1350);
+
+                    return L.circle([area.latitude, area.longitude], {
+                        radius,
+                        className: 'field-zone',
+                        color: rgbaFor(score, .78),
+                        fillColor: rgbaFor(score, .46),
+                        fillOpacity: .28,
+                        opacity: .78,
+                        interactive: false,
+                    });
+                })).addTo(map);
+
+                if (L.heatLayer && !easyReadMode) {
                     heatLayer = L.heatLayer(areas.map((area) => [area.latitude, area.longitude, Math.max(.12, scoreFor(area, layer))]), {
-                        radius: 70,
-                        blur: 42,
+                        radius: 62,
+                        blur: 38,
                         maxZoom: 14,
-                        minOpacity: .42,
+                        minOpacity: .25,
                         gradient: thermographicGradient,
                     }).addTo(map);
                 }
@@ -898,20 +1022,24 @@
                     const marker = L.marker([area.latitude, area.longitude], {
                         icon: L.divIcon({
                             className: '',
-                            html: '<span class="thermo-point"></span>',
-                            iconSize: [12, 12],
-                            iconAnchor: [6, 6],
+                            html: easyReadMode
+                                ? `<span class="easy-read-marker" style="--label-bg:${colorFor(score)};--label-color:${readableTextColor(score)}">${area.barangay}<small>${readabilityLabel(score)}</small></span>`
+                                : `<span class="thermo-point" style="--marker-color:${colorFor(score)};--marker-glow:${rgbaFor(score, .26)}"></span>`,
+                            iconSize: easyReadMode ? [112, 42] : [14, 14],
+                            iconAnchor: easyReadMode ? [56, 21] : [7, 7],
                         }),
                     });
 
                     clickZone.on('click', () => showDetails(area, score, layer));
                     marker.on('click', () => showDetails(area, score, layer));
-                    marker.bindTooltip(area.barangay, {
-                        permanent: true,
-                        direction: 'top',
-                        offset: [0, -12],
-                        className: 'barangay-tooltip',
-                    });
+                    if (!easyReadMode) {
+                        marker.bindTooltip(area.barangay, {
+                            permanent: true,
+                            direction: 'top',
+                            offset: [0, -12],
+                            className: 'barangay-tooltip',
+                        });
+                    }
 
                     return [clickZone, marker];
                 })).addTo(map);
@@ -950,6 +1078,32 @@
                     button.setAttribute('aria-pressed', 'true');
                     renderLayer(button.dataset.layer);
                 });
+            });
+
+            document.querySelectorAll('[data-basemap]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const layerName = button.dataset.basemap;
+                    const nextLayer = baseLayers[layerName];
+                    if (!nextLayer || nextLayer === activeBaseLayer) return;
+
+                    map.removeLayer(activeBaseLayer);
+                    activeBaseLayer = nextLayer.addTo(map);
+                    document.querySelectorAll('[data-basemap]').forEach((item) => {
+                        item.classList.remove('active');
+                        item.setAttribute('aria-pressed', 'false');
+                    });
+                    button.classList.add('active');
+                    button.setAttribute('aria-pressed', 'true');
+                });
+            });
+
+            easyReadToggle?.addEventListener('click', () => {
+                easyReadMode = !easyReadMode;
+                easyReadToggle.classList.toggle('active', easyReadMode);
+                easyReadToggle.setAttribute('aria-pressed', easyReadMode ? 'true' : 'false');
+                easyReadToggle.textContent = easyReadMode ? 'Real Heat' : 'Easy Colors';
+                updateLayerLabel();
+                renderLayer(activeLayer);
             });
 
             focusSelect?.addEventListener('change', () => {

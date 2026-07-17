@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -88,3 +89,15 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
 
     return self::SUCCESS;
 })->purpose('Import Ambulong monthly climate CSV data into climate_records');
+
+Schedule::command('iclimate:fetch-weather')
+    ->hourly()
+    ->withoutOverlapping();
+
+Schedule::command('iclimate:generate-advisories')
+    ->hourlyAt(5)
+    ->withoutOverlapping();
+
+Schedule::command('iclimate:expire-advisories')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();
