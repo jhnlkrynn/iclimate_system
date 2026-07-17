@@ -33,6 +33,9 @@
     .ic-ai-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .5rem; padding: .7rem; border-top: 1px solid #d4edda; background: #fff; }
     .ic-ai-form textarea { min-height: 42px; max-height: 110px; resize: vertical; font-size: .88rem; }
     .ic-ai-send { min-width: 72px; font-weight: 900; }
+    .ic-ai-chips { display: flex; flex-wrap: wrap; gap: .4rem; padding: .5rem .7rem 0; background: #fff; }
+    .ic-ai-chip { border: 1px solid #d4edda; background: #f7fbf8; color: #1f6f4a; border-radius: 999px; padding: .3rem .6rem; font-size: .72rem; font-weight: 600; }
+    .ic-ai-chip:hover { background: #edf7e7; }
     @media (max-width: 575.98px) {
         .ic-ai-widget { right: .65rem; bottom: .65rem; }
         .ic-ai-panel { width: calc(100vw - 1.3rem); height: min(590px, calc(100vh - 6rem)); }
@@ -70,6 +73,18 @@
             @endforelse
         </div>
         <div id="icAiTyping" class="ic-ai-typing">Assistant is checking iClimate...</div>
+        @php
+            $icAiChips = match (auth()->user()->role) {
+                \App\Models\User::ROLE_MAO => ['Which barangay has the highest yield?', 'Show a production summary for this season', 'How many active planting advisories are there?', 'Latest announcement'],
+                \App\Models\User::ROLE_IT_EXPERT => ['How many users are registered?', 'Is the database connected?', 'Is the farming AI API online?', 'Any recent errors in the system?'],
+                default => ['Will it rain this week?', 'What is my predicted rice yield?', 'When should I plant?', 'My rice leaves are turning yellow'],
+            };
+        @endphp
+        <div class="ic-ai-chips">
+            @foreach($icAiChips as $chip)
+                <button type="button" class="ic-ai-chip">{{ $chip }}</button>
+            @endforeach
+        </div>
         <form id="icAiForm" class="ic-ai-form">
             @csrf
             <textarea id="icAiInput" class="form-control" placeholder="Ask about iClimate..." required></textarea>
@@ -106,6 +121,13 @@
             const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
             return `<div class="ic-ai-results">${resultCard('Weather', weather)}${resultCard('Yield', yieldValue)}${resultCard('Planting', planting)}${resultCard('Irrigation', irrigation)}</div>`;
         };
+
+        widget.querySelectorAll('.ic-ai-chip').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                input.value = btn.textContent;
+                input.focus();
+            });
+        });
 
         toggle.addEventListener('click', () => {
             widget.classList.toggle('open');

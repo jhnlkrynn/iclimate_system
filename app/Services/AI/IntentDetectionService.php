@@ -18,6 +18,9 @@ class IntentDetectionService
     public const GENERAL_AGRICULTURE = 'General Agriculture';
     public const GENERAL_CONVERSATION = 'General Conversation';
     public const GENERAL_KNOWLEDGE = 'General Knowledge';
+    public const BARANGAY_INFO = 'Barangay Info';
+    public const MAO_REPORTS = 'MAO Reports';
+    public const IT_SYSTEM_STATUS = 'IT System Status';
 
     public function detect(string $question, array $memory = []): array
     {
@@ -36,15 +39,52 @@ class IntentDetectionService
             self::RICE_YIELD_PREDICTION => $this->score($text, ['yield', 'harvest', 'production', 'ani', 'aanihin', 'anihin', 'tons', 'tonelada', 'palay', 'expected yield']),
             self::PLANTING_RECOMMENDATION => $this->score($text, ['plant', 'planting', 'transplant', 'seedling', 'sow', 'punla', 'tanim', 'magtanim', 'itanim']) + (str_contains($text, 'should i plant') ? 2 : 0) + (str_contains($text, 'magtanim') ? 3 : 0),
             self::IRRIGATION_RECOMMENDATION => $this->score($text, ['irrigat', 'water', 'tubig', 'patubig', 'dilig', 'diligan', 'canal', 'rainfed', 'irrigated']) + (str_contains($text, 'should i irrigate') ? 3 : 0),
-            self::CLIMATE_RISK => $this->score($text, ['risk', 'warning', 'babala', 'drought', 'flood', 'heat', 'tagtuyot', 'baha', 'init', 'water shortage']),
-            self::FARMING_ADVISORY => $this->score($text, ['advisory', 'fertilizer', 'soil', 'nitrogen', 'urea', 'compost', 'abono', 'pataba', 'pest', 'disease', 'sakit', 'peste']),
+            self::CLIMATE_RISK => $this->score($text, ['risk', 'warning', 'babala', 'drought', 'flood', 'heat', 'tagtuyot', 'baha', 'init', 'water shortage']) - (str_contains($text, 'heat map') || str_contains($text, 'heatmap') ? 1 : 0),
+            self::FARMING_ADVISORY => $this->score($text, [
+                'advisory', 'fertilizer', 'soil', 'nitrogen', 'urea', 'compost', 'abono', 'pataba', 'pest', 'disease', 'sakit', 'peste',
+                'complete fertilizer', 'organic fertilizer', 'potassium', 'phosphorus', 'npk', 'basal application', 'topdress', 'soil ph', 'soil test',
+                'water retention', 'soil moisture', 'soil fertility', 'soil type',
+                'brown planthopper', 'stem borer', 'rice bug', 'leaf folder', 'armyworm', 'putakti', 'uod', 'tipaklong',
+                'rice blast', 'bacterial leaf blight', 'sheath blight', 'tungro',
+                'yellow leaves', 'yellowing', 'turning yellow', 'dilaw na dahon', 'namumula', 'wilting', 'lanta',
+                'holes in leaves', 'butas ng dahon', 'spots on leaves', 'batik sa dahon', 'stunted growth', 'hindi lumalaki',
+                'insects on my rice', 'may insekto', 'namamatay ang palay',
+            ]) + (str_contains($text, 'yellow') ? 2 : 0),
             self::ANNOUNCEMENT => $this->score($text, ['announcement', 'announcements', 'anunsyo', 'post', 'community feed']),
             self::NOTIFICATION => $this->score($text, ['notification', 'notifications', 'alert', 'mark read', 'unread']),
             self::CALENDAR => $this->score($text, ['calendar', 'schedule', 'planting calendar', 'date', 'month']),
-            self::USER_PROFILE => $this->score($text, ['profile', 'account', 'barangay', 'farm area', 'contact number', 'password', 'reset password']),
-            self::SYSTEM_HELP => $this->score($text, ['register', 'login', 'log in', 'logout', 'how do i', 'help', 'feedback', 'dashboard', 'iclimate']),
-            self::GENERAL_AGRICULTURE => $this->score($text, ['rice', 'palay', 'farm', 'farmer', 'crop', 'agriculture', 'bukid', 'sakahan']),
+            self::USER_PROFILE => $this->score($text, ['profile', 'account', 'farm area', 'contact number', 'password', 'reset password']),
+            self::SYSTEM_HELP => $this->score($text, [
+                'register', 'login', 'log in', 'logout', 'how do i', 'help', 'feedback', 'dashboard', 'iclimate',
+                'chart', 'graph', 'map legend', 'heat map', 'heatmap', 'how to read', 'explain the dashboard',
+                'random forest', 'linear regression', 'gradient boosting', 'rmse', 'mae', 'r2', 'r-squared', 'confidence score',
+                'how accurate', 'accuracy', 'algorithm', 'machine learning model', 'change password', 'update profile', 'forgot password',
+            ]) + (str_contains($text, 'heat map') || str_contains($text, 'heatmap') ? 2 : 0),
+            self::GENERAL_AGRICULTURE => $this->score($text, [
+                'rice', 'palay', 'farm', 'farmer', 'crop', 'agriculture', 'bukid', 'sakahan',
+                'growth stage', 'variety', 'varieties', 'psb rc', 'nsic rc',
+                'el nino', 'la nina', 'el niño', 'la niña', 'climate change', 'seasonal pattern', 'rainfall trend', 'temperature trend',
+                'typhoon', 'bagyo preparation', 'disaster preparedness', 'paghahanda sa bagyo', 'flood preparation',
+                'rcef', 'philrice', 'palaycheck', 'da program', 'government program', 'gobyerno program', 'subsidy', 'binhi program',
+            ]),
             self::GENERAL_CONVERSATION => $this->score($text, ['hello', 'hi', 'kumusta', 'salamat', 'thanks', 'good morning']),
+            self::BARANGAY_INFO => $this->score($text, [
+                'barangay', 'brgy', 'which barangay', 'anong barangay',
+                ...array_map(static fn (string $barangay): string => strtolower($barangay), \App\Support\LianBarangays::all()),
+            ]),
+            self::MAO_REPORTS => $this->score($text, [
+                'generate report', 'production summary', 'annual report', 'yield report', 'weather report',
+                'farmer report', 'highest yield', 'lowest yield', 'pinakamataas na ani', 'pinakamababang ani',
+                'report generation', 'gumawa ng ulat', 'buod ng produksyon',
+                'how many farmer', 'ilang farmer', 'registered farmer', 'farmer count', 'number of farmers',
+            ]) + (str_contains($text, 'summary') ? 2 : 0) + (str_contains($text, 'report') ? 2 : 0) + (str_contains($text, 'farmer') && str_contains($text, 'many') ? 2 : 0),
+            self::IT_SYSTEM_STATUS => $this->score($text, [
+                'number of users', 'user count', 'how many users', 'database status', 'db status', 'api status',
+                'server status', 'system status', 'backup', 'error log', 'maintenance mode', 'system maintenance',
+                'ilang user', 'status ng database', 'status ng server',
+                'database', 'db okay', 'db connected', 'server', 'is the api', 'api online', 'api working',
+                'system online', 'system okay', 'recent error', 'any errors', 'maintenance',
+            ]) + (str_contains($text, 'how many users') ? 3 : 0) + (str_contains($text, 'api') ? 2 : 0) + (str_contains($text, 'database') ? 2 : 0),
             self::GENERAL_KNOWLEDGE => 1,
         ];
 
@@ -147,6 +187,19 @@ class IntentDetectionService
             'paano mo pinipredict',
             'paano mo hinuhulaan',
             'paano hinuhulaan',
+            'what algorithm',
+            'how accurate is',
+            'what is rmse',
+            'what is mae',
+            'what is r2',
+            'what is r-squared',
+            'explain the machine learning model',
+            'why random forest',
+            'why is random forest used',
+            'how was my prediction calculated',
+            'how is my prediction calculated',
+            'prediction calculated',
+            'how was this calculated',
         ]);
     }
 }

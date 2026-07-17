@@ -89,5 +89,7 @@ class DatabaseSeeder extends Seeder
         Notification::factory()->count(3)->create(['user_id' => $farmer->id]);
         Report::factory()->count(2)->create(['generated_by' => $mao->id]);
         SystemLog::factory()->count(3)->create(['user_id' => $itExpert->id]);
+
+        $this->call(KnowledgeBaseSeeder::class);
     }
 }

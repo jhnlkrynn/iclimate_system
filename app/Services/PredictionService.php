@@ -13,6 +13,7 @@ use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
+use App\Services\AI\RoleAssistantService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use RuntimeException;
@@ -24,6 +25,7 @@ class PredictionService
         private readonly DecisionSupportService $decisionSupport,
         private readonly IntentDetectionService $intentDetector,
         private readonly KnowledgeBaseService $knowledgeBase,
+        private readonly RoleAssistantService $roleAssistant,
     ) {
     }
 
@@ -105,7 +107,7 @@ class PredictionService
 
     private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt): array
     {
-        if ($domainAnswer = $this->domainRecordAnswer($user, $question, $intent)) {
+        if ($domainAnswer = $this->domainRecordAnswer($user, $question, $intent, $language)) {
             return $this->textResponse($domainAnswer['answer'], $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
                 'source_name' => $domainAnswer['source_name'],
@@ -169,7 +171,7 @@ class PredictionService
             'last_intent' => $latest->first()?->intent,
             'recent_questions' => $latest->pluck('question')->all(),
             'recent_facts' => $latest
-                ->pluck('memory')
+                ->pluck('intent')
                 ->filter()
                 ->take(3)
                 ->values()
@@ -177,9 +179,47 @@ class PredictionService
         ];
     }
 
-    private function domainRecordAnswer(User $user, string $question, string $intent): ?array
+    private function domainRecordAnswer(User $user, string $question, string $intent, string $language): ?array
     {
         $text = str($question)->lower()->toString();
+
+        if ($intent === IntentDetectionService::BARANGAY_INFO || str_contains($text, 'barangay')) {
+            if ($answer = $this->roleAssistant->barangayAnswer($user, $question, $language)) {
+                return $answer;
+            }
+        }
+
+        $mentionsMaoReport = str_contains($text, 'how many farmer') || str_contains($text, 'registered farmer')
+            || str_contains($text, 'production summary') || str_contains($text, 'generate report')
+            || (str_contains($text, 'farmer') && str_contains($text, 'many'));
+
+        if ($intent === IntentDetectionService::MAO_REPORTS || $mentionsMaoReport) {
+            if ($user->role !== User::ROLE_MAO) {
+                return [
+                    'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_MAO, $user->role),
+                    'source_name' => 'iClimate Assistant',
+                    'confidence' => 85,
+                ];
+            }
+
+            if ($answer = $this->roleAssistant->maoAnswer($user, $question, $intent, $language)) {
+                return $answer;
+            }
+        }
+
+        if ($intent === IntentDetectionService::IT_SYSTEM_STATUS) {
+            if ($user->role !== User::ROLE_IT_EXPERT) {
+                return [
+                    'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_IT_EXPERT, $user->role),
+                    'source_name' => 'iClimate Assistant',
+                    'confidence' => 85,
+                ];
+            }
+
+            if ($answer = $this->roleAssistant->itAnswer($question, $intent, $language)) {
+                return $answer;
+            }
+        }
 
         if ($intent === IntentDetectionService::ANNOUNCEMENT || str_contains($text, 'announcement')) {
             $announcement = Announcement::query()->where('status', 'Published')->latest()->first();
@@ -245,6 +285,10 @@ class PredictionService
             IntentDetectionService::USER_PROFILE,
             IntentDetectionService::FARMING_ADVISORY,
             IntentDetectionService::GENERAL_AGRICULTURE,
+            IntentDetectionService::BARANGAY_INFO,
+            IntentDetectionService::MAO_REPORTS,
+            IntentDetectionService::IT_SYSTEM_STATUS,
+            IntentDetectionService::GENERAL_CONVERSATION,
         ], true)) {
             return true;
         }
@@ -263,21 +307,44 @@ class PredictionService
             'climate record',
             'heat map',
             'report',
+            'barangay',
+            'database',
+            'server',
+            'backup',
+            'maintenance',
+            'fertilizer',
+            'soil',
+            'pest',
+            'disease',
+            'random forest',
+            'rmse',
         ]);
     }
 
     private function unsupportedAnswer(string $language): string
     {
         if (str_contains($language, 'Tagalog')) {
-            return 'Makakatulong ako tungkol sa iClimate lang: weather prediction, rice yield prediction, planting at irrigation advice, climate risk, announcements, notifications, profile, calendar, reports, at kung paano gamitin ang system.';
+            return 'Makakatulong ako tungkol sa iClimate lang: weather prediction, rice yield prediction, planting at irrigation advice, climate risk, fertilizer, pest at disease, soil, barangay information, announcements, notifications, profile, calendar, reports, at kung paano gamitin ang system.';
         }
 
-        return 'I can help with iClimate only: weather prediction, rice yield prediction, planting and irrigation advice, climate risk, announcements, notifications, profile, calendar, reports, and how to use the system.';
+        return 'I can help with iClimate only: weather prediction, rice yield prediction, planting and irrigation advice, climate risk, fertilizer, pest and disease guidance, soil information, barangay information, announcements, notifications, profile, calendar, reports, and how to use the system.';
     }
 
     private function localSystemAnswer(string $intent, string $question, string $language): string
     {
         $text = str($question)->lower()->toString();
+
+        if ($intent === IntentDetectionService::GENERAL_CONVERSATION) {
+            if (str_contains($text, 'thank')|| str_contains($text, 'salamat')) {
+                return str_contains($language, 'Tagalog')
+                    ? 'Walang anuman! Tanong lang kung may kailangan ka pang malaman tungkol sa iClimate.'
+                    : "You're welcome! Ask me anytime about weather, yield, planting, advisories, or your iClimate account.";
+            }
+
+            return str_contains($language, 'Tagalog')
+                ? 'Kumusta! Ako ang iClimate Assistant. Puwede kang magtanong tungkol sa panahon, ani, pagtatanim, irigasyon, advisory, o sistema.'
+                : 'Hello! I am the iClimate Assistant. Ask me about weather, yield, planting, irrigation, advisories, or how to use the system.';
+        }
 
         if ($intent === IntentDetectionService::FARMING_ADVISORY || str_contains($text, 'fertilizer')) {
             return str_contains($language, 'Tagalog')
@@ -291,7 +358,9 @@ class PredictionService
                 : 'I can help with rice farming when it is connected to iClimate, such as rainfall, yield, planting, irrigation, climate risk, and advisories.';
         }
 
-        return $this->unsupportedAnswer($language);
+        return str_contains($language, 'Tagalog')
+            ? 'Naiintindihan ko ang tanong pero wala pa akong partikular na sagot na naka-save dito. Subukan ulit nang mas detalyado, o kumpirmahin sa MAO o IT staff.'
+            : 'I understand the topic, but I do not have a specific saved answer for that yet. Try rephrasing with more detail, or confirm with your MAO or IT staff.';
     }
 
     private function textResponse(string $answer, string $intent, string $language, array $memory, float $startedAt, array $metadata): array
