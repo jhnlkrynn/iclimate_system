@@ -1,3 +1,6 @@
+@php
+    $heroClimate = \App\Models\ClimateRecord::query()->latest('record_date')->first();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
 <head>
@@ -38,7 +41,7 @@
       --shadow-md: 0 4px 20px rgba(13,31,24,0.12);
       --shadow-lg: 0 16px 56px rgba(13,31,24,0.18);
       --shadow-gold: 0 10px 28px rgba(232,167,61,0.35);
-      --nav-h: 108px;
+      --nav-h: 92px;
       --ease: cubic-bezier(0.4,0,0.2,1);
     }
 
@@ -137,22 +140,19 @@
        NAVBAR
     =============================================== */
     .navbar {
-      position: absolute;
+      position: sticky;
       top: 0; left: 0; right: 0;
       z-index: 100;
       height: var(--nav-h);
-      background: transparent;
-      padding: 14px 0;
+      background: var(--green-950);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .nav-container {
       max-width: 1120px; margin: 0 auto;
-      padding: 10px 16px 10px 24px;
+      padding: 0 24px;
       height: 100%;
       display: flex; align-items: center; gap: 40px;
-      background: var(--green-950);
-      border-radius: var(--radius-pill);
-      box-shadow: 0 8px 32px rgba(13,31,24,0.28);
-      transition: box-shadow 0.3s var(--ease);
+      background: transparent;
     }
     .nav-logo {
       display: flex; align-items: center; gap: 10px;
@@ -177,6 +177,7 @@
       margin-left: auto;
     }
     .nav-link {
+      position: relative;
       padding: 6px 14px;
       border-radius: var(--radius-sm);
       font-size: 0.875rem;
@@ -184,7 +185,20 @@
       color: rgba(255,255,255,0.6);
       transition: color 0.2s, background 0.2s;
     }
-    .nav-link:hover, .nav-link.active { color: var(--white); }
+    .nav-link:hover { color: var(--white); }
+    .nav-link.active {
+      color: var(--green-400);
+      font-weight: 600;
+    }
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      left: 50%; bottom: -2px;
+      transform: translateX(-50%);
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--green-400);
+    }
     .nav-actions { display: flex; align-items: center; gap: 10px; }
     .nav-login {
       padding: 9px 20px;
@@ -230,7 +244,7 @@
     .hero {
       position: relative;
       background: var(--green-950);
-      min-height: 100vh;
+      min-height: calc(100vh - var(--nav-h));
       display: flex; flex-direction: column;
       overflow: hidden;
     }
@@ -256,7 +270,7 @@
       width: 100%;
       margin: 0 auto;
       padding: 0 24px;
-      padding-top: calc(var(--nav-h) + 56px);
+      padding-top: 72px;
       padding-bottom: 100px;
       display: grid;
       grid-template-columns: 1fr 420px;
@@ -303,6 +317,20 @@
       display: flex; align-items: center; gap: 20px;
       flex-wrap: wrap; margin-bottom: 0;
     }
+    .hero-text .trust-grid {
+      margin-top: 40px;
+      margin-bottom: 0;
+    }
+    .hero-photo-band {
+      position: absolute; left: 0; bottom: 0;
+      width: 56%; max-width: 620px; height: 300px;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to top, black 40%, transparent 100%);
+      mask-image: linear-gradient(to top, black 40%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero-photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     /* ===============================================
        HERO VISUAL (location map panel)
@@ -341,12 +369,12 @@
       top: 30%; left: 50%;
       transform: translateX(-50%);
       width: 270px;
-      background: rgba(13,31,24,0.85);
-      border: 1px solid rgba(82,183,136,0.22);
+      background: rgba(15,31,23,.68);
+      border: 1.5px solid rgba(149,213,178,.24);
       border-radius: var(--radius-md);
       padding: 14px 20px;
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 45px rgba(0,0,0,.32);
     }
     .hmc-location {
       font-family: 'DM Mono', monospace;
@@ -361,27 +389,47 @@
       color: var(--white);
     }
 
-    /* Trust / stats band */
-    .trust-band {
-      position: relative;
-      z-index: 2;
-      background: var(--green-900);
-      padding-top: 40px;
+    /* Weather stat strip (bottom of hero map panel) */
+    .hero-weather-strip {
+      position: absolute;
+      left: 20px; right: 20px; bottom: 20px;
+      display: flex; gap: 12px; flex-wrap: wrap;
     }
+    .hws-item {
+      flex: 1 1 120px;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(15,31,23,.6);
+      border: 1.5px solid rgba(149,213,178,.2);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+    }
+    .hws-icon { color: var(--green-400); flex-shrink: 0; }
+    .hws-val { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--white); line-height: 1; }
+    .hws-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+
+    /* Trust / stats band */
     .trust-grid {
       display: flex;
       justify-content: space-between;
-      gap: 24px;
+      gap: 16px;
       flex-wrap: wrap;
-      margin-bottom: 40px;
     }
     .trust-item {
-      display: flex; align-items: center; gap: 16px;
+      display: flex; align-items: center; gap: 12px;
       flex: 1;
-      min-width: 180px;
+      min-width: 150px;
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid rgba(149,213,178,.16);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      backdrop-filter: blur(10px);
+      transition: background .2s ease, border-color .2s ease;
     }
+    .trust-item:hover { background: rgba(255,255,255,.065); border-color: rgba(149,213,178,.32); }
     .trust-icon {
-      width: 52px; height: 52px;
+      width: 40px; height: 40px;
       flex-shrink: 0;
       border-radius: 50%;
       background: rgba(232,167,61,0.12);
@@ -390,37 +438,47 @@
     }
     .trust-num {
       font-family: 'DM Serif Display', serif;
-      font-size: 1.6rem;
+      font-size: 1.25rem;
       color: var(--white);
       line-height: 1;
       letter-spacing: -0.02em;
     }
     .trust-label {
       font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
+      font-size: 0.6rem;
       color: rgba(255,255,255,0.45);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-top: 5px;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
     }
-    @media (max-width: 768px) {
+    @media (max-width: 480px) {
       .trust-grid { flex-direction: column; }
     }
-
-    /* Hero wave */
-    .hero-wave {
-      position: relative; z-index: 1;
-      line-height: 0;
-    }
-    .hero-wave svg { width: 100%; }
 
     /* ===============================================
        ABOUT
     =============================================== */
     .about-section {
-      background: var(--white);
+      position: relative;
+      background: var(--green-950);
       padding: 120px 0;
+      overflow: hidden;
     }
+    .about-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: 0.5;
+    }
+    .about-section::after {
+      content: '';
+      position: absolute;
+      top: -15%; left: -10%;
+      width: 60%; height: 70%;
+      background: radial-gradient(ellipse at center, rgba(82,183,136,0.09) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .about-section > .container { position: relative; z-index: 1; }
     .about-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -435,53 +493,70 @@
        ABOUT PHOTO + MISSION CARD
     =============================================== */
     .about-text { display: flex; flex-direction: column; gap: 20px; }
-    .about-text .section-title { margin-bottom: 4px; }
-    .about-text .section-title em { font-style: italic; color: var(--green-700); }
-    .about-text p { font-size: 0.975rem; line-height: 1.8; }
+    .about-text .hero-location { margin-bottom: 0; }
+    .about-text .section-title { margin-bottom: 4px; color: var(--white); }
+    .about-text .section-title em { font-style: italic; color: var(--green-400); }
+    .about-text p { font-size: 0.975rem; line-height: 1.8; color: rgba(255,255,255,0.55); }
     .about-tagline {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--green-700);
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--green-400);
     }
+    .tagline-flourish {
+      position: relative;
+      width: 22px; height: 1px;
+      background: var(--green-700);
+      flex-shrink: 0;
+    }
+    .tagline-flourish::after {
+      content: '';
+      position: absolute; top: 50%;
+      transform: translateY(-50%);
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--green-400);
+    }
+    .tagline-flourish:first-child::after { right: -9px; }
+    .tagline-flourish:last-child::after { left: -9px; }
     .about-photo {
       position: relative;
       border-radius: var(--radius-lg);
       overflow: hidden;
       min-height: 420px;
-      background:
-        linear-gradient(160deg, rgba(13,31,24,0.15), rgba(13,31,24,0.55)),
-        linear-gradient(135deg, var(--green-700), var(--green-900));
       box-shadow: var(--shadow-lg);
     }
-    .about-photo::before {
-      content: "";
+    .about-photo-scene {
       position: absolute; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 420'%3E%3Cpath d='M0 300 Q100 250 200 290 T400 270 V420 H0 Z' fill='%2374C69D' fill-opacity='0.18'/%3E%3Cpath d='M0 340 Q120 300 220 330 T400 320 V420 H0 Z' fill='%2352B788' fill-opacity='0.22'/%3E%3C/svg%3E");
-      background-size: cover;
-      background-position: bottom;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .mission-card {
       position: absolute;
       right: 20px; bottom: 20px; left: 20px;
       max-width: 340px;
       margin-left: auto;
-      background: var(--white);
+      background: rgba(15,31,23,.72);
+      border: 1.5px solid rgba(149,213,178,.24);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 20px 45px rgba(0,0,0,.32);
+      backdrop-filter: blur(16px);
       padding: 22px 24px;
       display: flex; gap: 14px; align-items: flex-start;
+      z-index: 1;
     }
     .mission-icon {
       flex-shrink: 0;
       width: 42px; height: 42px;
       border-radius: 50%;
-      background: var(--green-100);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
       display: flex; align-items: center; justify-content: center;
     }
-    .mission-card strong { display: block; font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
-    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: var(--ink-mid); }
+    .mission-card strong { display: block; font-size: 0.95rem; color: var(--white); margin-bottom: 4px; }
+    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: rgba(255,255,255,0.65); }
 
     /* ===============================================
        PILLARS ROW (5 cards)
@@ -493,23 +568,25 @@
       margin-top: 64px;
     }
     .pillar-card {
-      background: var(--green-50);
-      border: 1px solid var(--green-100);
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid rgba(149,213,178,.16);
       border-radius: var(--radius-lg);
       padding: 22px 18px;
       text-align: center;
-      transition: box-shadow 0.2s var(--ease), border-color 0.2s;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s ease, border-color 0.2s ease;
     }
-    .pillar-card:hover { box-shadow: var(--shadow-sm); border-color: var(--green-200); }
+    .pillar-card:hover { background: rgba(255,255,255,.065); border-color: rgba(149,213,178,.32); }
     .pillar-card .pillar-icon {
       width: 48px; height: 48px;
       border-radius: 50%;
-      background: var(--green-700);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 14px;
     }
-    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--ink); margin-bottom: 6px; }
-    .pillar-card p { font-size: 0.78rem; line-height: 1.5; color: var(--ink-light); }
+    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--white); margin-bottom: 6px; }
+    .pillar-card p { font-size: 0.78rem; line-height: 1.5; color: rgba(255,255,255,0.55); }
     @media (max-width: 900px) {
       .pillars-row { grid-template-columns: repeat(2, 1fr); }
     }
@@ -586,9 +663,33 @@
        FEATURES
     =============================================== */
     .features-section {
-      background: var(--sand);
+      position: relative;
+      background: var(--green-950);
       padding: 120px 0;
+      overflow: hidden;
     }
+    .features-section::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 340px; height: 340px;
+      background-image: radial-gradient(rgba(149,213,178,0.3) 1.5px, transparent 1.5px);
+      background-size: 22px 22px;
+      -webkit-mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .features-hero-media {
+      position: absolute; top: 0; right: 0;
+      width: 60%; height: 620px;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 32%);
+      mask-image: linear-gradient(to right, transparent 0%, black 32%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .features-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .features-section > .container { position: relative; z-index: 1; }
     .section-header {
       max-width: 560px;
       margin-bottom: 56px;
@@ -604,17 +705,15 @@
     }
     .features-section > .container > .section-header .eyebrow {
       justify-content: center;
+      color: var(--green-400);
     }
-    .features-top {
+    .features-section > .container > .section-header h2 { color: var(--white); }
+    .features-section > .container > .section-header h2 em { font-style: italic; color: var(--green-400); }
+    .features-section > .container > .section-header p { color: rgba(255,255,255,0.6); }
+    .features-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-    .features-bottom {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 20px;
     }
     .feature-card {
       background: var(--white);
@@ -631,15 +730,6 @@
       box-shadow: var(--shadow-md);
       border-color: var(--green-200);
     }
-    .feature-card--dark {
-      background: var(--green-950);
-      border-color: var(--green-900);
-    }
-    .feature-card--dark:hover { border-color: var(--green-800); }
-    .feature-card.feature-card--dark h3 { color: var(--white); }
-    .feature-card.feature-card--dark p { color: rgba(255,255,255,0.55); }
-    .feature-card.feature-card--dark .fc-icon-wrap { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
-    .feature-card.feature-card--dark .fc-badge { background: rgba(82,183,136,0.16); color: var(--green-400); }
     .fc-icon-wrap {
       width: 52px; height: 52px;
       background: var(--green-50);
@@ -672,23 +762,35 @@
     }
 
     /* How it works */
-    .how-block { margin-top: 96px; }
+    .how-block {
+      position: relative;
+      overflow: hidden;
+      margin-top: 96px;
+      background: var(--green-900);
+      border-radius: var(--radius-xl);
+      padding: 56px;
+    }
+    .how-block::after {
+      content: '';
+      position: absolute; right: 20px; bottom: -16px;
+      width: 200px; height: 400px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 400'%3E%3Cpath d='M104 400 C98 300 94 210 108 100' stroke='%232D6A4F' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M104 260 C70 250 50 220 40 180 C74 186 100 206 108 240Z' fill='%2352B788' fill-opacity='0.35'/%3E%3Cpath d='M110 320 C146 312 168 284 178 246 C142 250 116 272 108 306Z' fill='%2352B788' fill-opacity='0.3'/%3E%3Cg fill='%2374C69D' fill-opacity='0.55'%3E%3Cellipse cx='108' cy='95' rx='7' ry='14' transform='rotate(-10 108 95)'/%3E%3Cellipse cx='120' cy='78' rx='7' ry='14' transform='rotate(-4 120 78)'/%3E%3Cellipse cx='128' cy='58' rx='7' ry='14' transform='rotate(4 128 58)'/%3E%3Cellipse cx='130' cy='36' rx='7' ry='14' transform='rotate(10 130 36)'/%3E%3Cellipse cx='94' cy='82' rx='7' ry='14' transform='rotate(-22 94 82)'/%3E%3Cellipse cx='88' cy='60' rx='7' ry='14' transform='rotate(-28 88 60)'/%3E%3Cellipse cx='86' cy='38' rx='7' ry='14' transform='rotate(-32 86 38)'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: bottom right;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .how-block > * { position: relative; z-index: 1; }
     .how-block .section-header { margin-bottom: 56px; }
+    .how-block .eyebrow { color: var(--green-400); }
+    .how-block .section-header h2 { color: var(--white); }
+    .how-block .section-header h2 em { font-style: italic; color: var(--green-400); }
     .how-steps {
       display: flex;
       justify-content: space-between;
       gap: 20px;
       position: relative;
-    }
-    .how-steps::before {
-      content: '';
-      position: absolute;
-      top: 20px;
-      left: 6%;
-      right: 6%;
-      height: 0;
-      border-top: 2px dotted var(--green-200);
-      z-index: 0;
     }
     .how-step {
       flex: 1;
@@ -699,29 +801,47 @@
       position: relative;
       z-index: 1;
     }
-    .how-step-num {
-      width: 40px; height: 40px;
+    .how-step-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .how-step-icon {
+      width: 44px; height: 44px;
       border-radius: 50%;
-      background: var(--white);
-      border: 1.5px solid var(--green-200);
-      color: var(--green-700);
-      font-family: 'DM Mono', monospace;
-      font-weight: 600;
-      font-size: 0.85rem;
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
+      color: var(--green-400);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+    }
+    .how-step-num {
+      font-family: 'DM Mono', monospace;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--green-400);
+    }
+    .how-step:not(:last-child) .how-step-top::after {
+      content: '';
+      flex: 1;
+      height: 0;
+      border-top: 2px dotted rgba(149,213,178,.35);
+      margin-left: 6px;
     }
     .how-step h3 {
       font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .how-step p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: var(--ink-light);
+      color: rgba(255,255,255,0.55);
+    }
+    @media (max-width: 1024px) {
+      .how-block { padding: 36px 28px; }
     }
 
     /* ===============================================
@@ -857,14 +977,27 @@
        CONTACT
     =============================================== */
     .contact-section {
-      background: var(--sand);
+      position: relative;
+      background: var(--green-950);
       padding: 120px 0;
+      overflow: hidden;
     }
+    .contact-hero-media {
+      position: absolute; left: 0; bottom: 0;
+      width: 46%; height: 360px;
+      max-width: 560px;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to top, black 45%, transparent 100%);
+      mask-image: linear-gradient(to top, black 45%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .contact-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .contact-section > .container { position: relative; z-index: 1; }
     .contact-methods {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-bottom: 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
     .contact-method {
       background: var(--white);
@@ -914,64 +1047,37 @@
       align-items: center;
       gap: 6px;
     }
-    .contact-method.contact-method--dark {
-      background: var(--green-950);
-      border-color: var(--green-900);
-    }
-    .contact-method.contact-method--dark:hover { border-color: var(--green-800); }
-    .contact-method.contact-method--dark h3 { color: var(--white); }
-    .contact-method.contact-method--dark p { color: rgba(255,255,255,0.55); }
-    .contact-method.contact-method--dark .contact-method-icon { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
-    .contact-method.contact-method--dark .contact-method-link { color: var(--green-400); border-top-color: rgba(255,255,255,0.1); }
-
     .contact-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
+      grid-template-columns: 0.95fr 1.2fr 0.85fr;
+      gap: 40px;
       align-items: start;
     }
     .contact-info { display: flex; flex-direction: column; gap: 0; }
-    .contact-info h2 { margin-bottom: 14px; }
-    .contact-info > p { font-size: 0.975rem; margin-bottom: 36px; }
-    .contact-details { display: flex; flex-direction: column; gap: 16px; }
+    .contact-info .hero-location { margin-bottom: 18px; }
+    .contact-info h2 { color: var(--white); margin-bottom: 10px; }
+    .contact-info h2 em { font-style: italic; color: var(--green-400); }
+    .contact-info .about-tagline { margin-bottom: 18px; }
+    .contact-info > p { font-size: 0.9rem; color: rgba(255,255,255,0.55); margin-bottom: 28px; }
+    .contact-details { display: flex; flex-direction: column; gap: 18px; }
     .cd-item {
       display: flex; align-items: flex-start; gap: 14px;
     }
     .cd-icon-wrap {
       width: 40px; height: 40px;
       border-radius: 50%;
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       font-size: 1rem;
     }
-    .cd-text strong { font-size: 0.8rem; font-weight: 700; display: block; color: var(--ink); margin-bottom: 2px; }
-    .cd-text span { font-size: 0.875rem; color: var(--ink-light); }
-
-    .contact-hours {
-      margin-top: 28px;
-      padding-top: 24px;
-      border-top: 1px solid var(--sand-dark);
-    }
-    .contact-hours-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ink-light);
-      margin-bottom: 10px;
-    }
-    .contact-hours-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 9px 0;
-      font-size: 0.875rem;
-      border-bottom: 1px solid var(--sand-dark);
-    }
-    .contact-hours-row:last-child { border-bottom: none; }
-    .contact-hours-row span:first-child { color: var(--ink-mid); }
-    .contact-hours-row span:last-child { color: var(--ink); font-weight: 600; }
+    .cd-text strong { font-size: 0.8rem; font-weight: 700; display: block; color: var(--white); margin-bottom: 2px; }
+    .cd-text span { font-size: 0.875rem; color: rgba(255,255,255,0.55); }
+    .cd-hours { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+    .cd-hours-row { display: flex; justify-content: space-between; gap: 20px; font-size: 0.8rem; }
+    .cd-hours-row span:first-child { color: rgba(255,255,255,0.5); }
+    .cd-hours-row span:last-child { color: rgba(255,255,255,0.85); font-weight: 600; }
 
     .contact-form-card {
       background: var(--white);
@@ -980,18 +1086,29 @@
       border: 1px solid var(--sand-dark);
       box-shadow: var(--shadow-sm);
     }
+    .cfc-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .cfc-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--green-50);
+      border: 1px solid var(--green-100);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
     .contact-form-card h3 {
       font-family: 'DM Serif Display', serif;
       font-size: 1.4rem;
       font-weight: 400;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
       color: var(--ink);
       letter-spacing: -0.01em;
     }
     .contact-form-sub {
       font-size: 0.85rem;
       color: var(--ink-light);
-      margin-bottom: 24px;
     }
     .form-row {
       display: grid;
@@ -1026,7 +1143,7 @@
       box-shadow: 0 0 0 3px rgba(82,183,136,0.12);
     }
     .form-input::placeholder { color: #B0C0B8; }
-    .btn-dark { background: var(--ink); color: var(--white); }
+    .btn-dark { background: var(--green-800); color: var(--white); }
     .btn-dark:hover {
       background: var(--green-950);
       transform: translateY(-1px);
@@ -1042,12 +1159,32 @@
     }
     .footer-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 2fr;
+      grid-template-columns: 2fr 1fr 2fr 1fr;
       gap: 48px;
       margin-bottom: 56px;
       padding-bottom: 56px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
+    .footer-social h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .footer-social-icons { display: flex; gap: 12px; }
+    .footer-social-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--white);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .footer-social-icon:hover { background: rgba(82,183,136,0.16); border-color: rgba(149,213,178,.3); }
     .footer-col-pair {
       display: grid;
       grid-template-columns: 1fr 1.5fr;
@@ -1098,14 +1235,18 @@
       .about-grid { grid-template-columns: 1fr; gap: 40px; }
       .about-visual { order: 2; }
       .about-text { order: 1; }
-      .features-bottom { grid-template-columns: 1fr 1fr; }
+      .features-hero-media { display: none; }
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
       .how-steps { flex-wrap: wrap; }
-      .how-steps::before { display: none; }
+      .how-step-top::after { display: none; }
       .how-step { flex: 1 1 45%; }
-      .contact-methods { grid-template-columns: 1fr 1fr; }
+      .contact-hero-media { display: none; }
       .contact-grid { grid-template-columns: 1fr; gap: 48px; }
+      .contact-methods { flex-direction: row; flex-wrap: wrap; }
+      .contact-methods .contact-method { flex: 1 1 240px; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
       .footer-brand { grid-column: span 2; }
+      .footer-social { grid-column: span 2; }
       .footer-col-pair { grid-template-columns: 1fr 1.5fr; column-gap: 24px; }
       .dm-widgets { grid-template-columns: repeat(2,1fr); }
       .dmw-wide { grid-column: span 2; }
@@ -1129,10 +1270,9 @@
       }
       .hamburger { display: flex; }
       .nav-login { display: none; }
-      .features-top { grid-template-columns: 1fr; }
-      .features-bottom { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
       .how-step { flex: 1 1 100%; }
-      .contact-methods { grid-template-columns: 1fr; }
+      .contact-methods { flex-direction: column; }
       .form-row { grid-template-columns: 1fr; gap: 0; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-brand { grid-column: span 1; }
@@ -1164,9 +1304,41 @@
        USER ROLES
     =============================================== */
     .roles-section {
-      background: var(--green-50);
+      position: relative;
+      background: var(--green-950);
       padding: 120px 0;
+      overflow: hidden;
     }
+    .roles-hero-media {
+      position: absolute; top: 0; right: 0;
+      width: 46%; height: 100%;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40%);
+      mask-image: linear-gradient(to right, transparent 0%, black 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .roles-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .roles-leaf-deco {
+      position: absolute; left: -30px; bottom: -20px;
+      width: 300px; height: 480px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 480'%3E%3Cpath d='M40 480 C36 340 42 220 70 90' stroke='%2352B788' stroke-width='2.5' fill='none' stroke-opacity='0.35'/%3E%3Cpath d='M62 380 C110 368 142 336 156 292 C104 296 68 328 56 372Z' fill='none' stroke='%2352B788' stroke-width='2' stroke-opacity='0.3'/%3E%3Cpath d='M56 300 C104 292 138 262 154 220 C102 222 66 252 52 292Z' fill='none' stroke='%2352B788' stroke-width='2' stroke-opacity='0.3'/%3E%3Cpath d='M52 220 C98 210 130 182 146 142 C96 144 62 172 48 212Z' fill='none' stroke='%2352B788' stroke-width='2' stroke-opacity='0.25'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .roles-section::before {
+      content: '';
+      position: absolute; top: 8%; left: 4%;
+      width: 300px; height: 300px;
+      background-image: radial-gradient(rgba(149,213,178,0.22) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .roles-section > .container { position: relative; z-index: 1; }
     .roles-section .section-header {
       text-align: center;
       margin-left: auto;
@@ -1174,6 +1346,10 @@
       max-width: 620px;
       margin-bottom: 64px;
     }
+    .roles-section .section-header .eyebrow { justify-content: center; color: var(--green-400); }
+    .roles-section .section-header h2 { color: var(--white); }
+    .roles-section .section-header h2 em { font-style: italic; color: var(--green-400); }
+    .roles-section .section-header p { color: rgba(255,255,255,0.6); }
     .roles-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1189,6 +1365,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
+      box-shadow: var(--shadow-lg);
       transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s;
     }
     .role-card:hover {
@@ -1235,85 +1412,92 @@
 
     /* How the roles connect */
     .roles-connect {
-      background: var(--green-950);
+      background: var(--green-900);
+      border: 1px solid rgba(149,213,178,.14);
       border-radius: var(--radius-xl);
-      padding: 48px 44px;
+      padding: 32px 40px;
       margin-top: 64px;
     }
-    .roles-connect .eyebrow { color: var(--green-400); margin-bottom: 12px; }
-    .roles-connect .eyebrow::before { background: var(--green-400); }
-    .roles-connect h2 { color: var(--white); max-width: 460px; }
-    .connect-flow {
+    .connect-bar {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-top: 44px;
-    }
-    .connect-step {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      text-align: center;
-      gap: 10px;
+    }
+    .connect-intro {
+      display: flex; align-items: center; gap: 16px;
+      flex: 1 1 260px;
+      min-width: 0;
+      padding-right: 32px;
+    }
+    .connect-intro h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+    .connect-divider {
+      width: 1px;
+      align-self: stretch;
+      background: rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .connect-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 0 28px;
     }
     .connect-icon {
-      width: 56px; height: 56px;
+      width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
+      color: var(--green-400);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .connect-step h3 {
+    .connect-icon-lg { width: 52px; height: 52px; }
+    .connect-item h4 {
       font-family: 'Inter', sans-serif;
       font-size: 0.9rem;
       font-weight: 700;
       color: var(--white);
       letter-spacing: -0.01em;
+      margin-bottom: 4px;
     }
-    .connect-step p {
-      font-size: 0.8rem;
-      line-height: 1.55;
-      color: rgba(255,255,255,0.5);
-      max-width: 200px;
+    .connect-item p {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.55);
     }
-    .connect-arrow {
-      color: var(--green-500);
-      font-size: 1.1rem;
-      padding-top: 16px;
-      flex-shrink: 0;
+    @media (max-width: 900px) {
+      .roles-connect { padding: 28px 24px; }
+      .connect-bar { flex-direction: column; align-items: stretch; gap: 20px; }
+      .connect-intro { padding-right: 0; }
+      .connect-divider { width: 100%; height: 1px; }
+      .connect-item { padding: 0; }
     }
-    @media (max-width: 768px) {
-      .roles-connect { padding: 36px 24px; }
-      .connect-flow { flex-direction: column; align-items: stretch; gap: 24px; }
-      .connect-arrow { display: none; }
-    }
-    /* Standard SVG icon wrap */
-    .role-icon-wrap {
-      width: 72px; height: 72px;
-      background: var(--green-700);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 28px;
-      flex-shrink: 0;
-    }
-    /* Image logo wrap - white bg, larger, no crop */
+    /* Image logo wrap - real role images, contained in a white circle */
     .role-icon-wrap--img {
       width: 96px; height: 96px;
-      background: transparent;
-      border: none;
-      border-radius: 0;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 20px;
       flex-shrink: 0;
+      border: 3px solid var(--white);
+      box-shadow: 0 0 0 4px rgba(82,183,136,0.16), var(--shadow-sm);
+    }
+    .role-card--highlight .role-icon-wrap--img {
+      border-color: rgba(255,255,255,0.14);
+      box-shadow: 0 0 0 4px rgba(232,167,61,0.24), 0 10px 24px rgba(0,0,0,0.3);
     }
     .role-icon-wrap--img img {
-      width: 96px;
-      height: 96px;
+      width: 100%; height: 100%;
       object-fit: contain;
+      padding: 6px;
       display: block;
     }
     .role-card h3 {
@@ -1442,20 +1626,10 @@
       object-fit: contain;
       display: block;
     }
-    .role-logo-img {
-      width: 118px;
-      height: 118px;
-      object-fit: contain;
-      display: block;
-    }
     @media (max-width: 640px) {
       .brand-logo-img {
         height: 58px;
         max-width: 230px;
-      }
-      .role-logo-img {
-        width: 104px;
-        height: 104px;
       }
     }
   </style>
@@ -1487,6 +1661,9 @@
 
 <!-- HERO -->
 <section class="hero" id="home">
+  <div class="hero-photo-band" aria-hidden="true">
+    <img src="{{ asset('images/rice-hero-aerial.jpg') }}" alt="" loading="lazy">
+  </div>
   <div class="hero-inner">
     <div class="hero-text">
       <div class="hero-location fade-up fade-up-1">
@@ -1502,11 +1679,43 @@
       <p class="hero-subtitle fade-up fade-up-2">iClimate Decision Support System</p>
       <p class="hero-desc fade-up fade-up-3">A web-based weather impact analysis and rice yield prediction platform for Lian, Batangas &mdash; built for rice farmers, MAO staff with technicians, and IT personnel.</p>
       <div class="hero-actions fade-up fade-up-3">
-        <a href="{{ route('login') }}" class="btn btn-primary btn-lg">Get Started</a>
-        <a href="{{ route('register') }}" class="btn-ghost-light btn">
-          Create Account
+        <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#0D1F18" stroke-width="1.6"/></svg>
+          Get Started
+        </a>
+        <a href="#about" class="btn-ghost-light btn">
+          Learn More
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
+      </div>
+      <div class="trust-grid fade-up fade-up-4">
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">3</div>
+            <div class="trust-label">User Roles</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">24/7</div>
+            <div class="trust-label">Real-Time Monitoring</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">PAGASA</div>
+            <div class="trust-label">Verified Data Source</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1517,47 +1726,26 @@
           <div class="hmc-location">Lian, Batangas</div>
           <div class="hmc-office">Municipal Agricultural Office</div>
         </div>
+        <div class="hero-weather-strip">
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature) : 26 }}&deg;C</div><div class="hws-label">Temperature</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c1.6 2.2 3 4.3 3 6.1A3 3 0 1 1 7 8.1C7 6.3 8.4 4.2 10 2Z" stroke="currentColor" stroke-width="1.4"/></svg>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->humidity) : 78 }}%</div><div class="hws-label">Humidity</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 11.5h12.2a2.4 2.4 0 1 1-2.4 2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed) : 10 }} km/h</div><div class="hws-label">Wind Speed</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="2.6" height="11" rx="1" fill="currentColor"/><rect x="8.7" y="6" width="2.6" height="8" rx="1" fill="currentColor" opacity=".7"/><rect x="13.4" y="8.5" width="2.6" height="5.5" rx="1" fill="currentColor" opacity=".5"/></svg>
+            <div><div class="hws-val">{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1) : '2.4' }} mm</div><div class="hws-label">Rainfall Today</div></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- TRUST / STATS BAND -->
-<section class="trust-band">
-  <div class="container trust-grid">
-    <div class="trust-item">
-      <div class="trust-icon">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div>
-        <div class="trust-num">3</div>
-        <div class="trust-label">User Roles</div>
-      </div>
-    </div>
-    <div class="trust-item">
-      <div class="trust-icon">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="trust-num">24/7</div>
-        <div class="trust-label">Real-Time Monitoring</div>
-      </div>
-    </div>
-    <div class="trust-item">
-      <div class="trust-icon">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <div class="trust-num">PAGASA</div>
-        <div class="trust-label">Verified Data Source</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="hero-wave">
-    <svg viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-      <path d="M0,36 C240,72 480,0 720,36 C960,72 1200,0 1440,36 L1440,72 L0,72Z" fill="#FFFFFF"/>
-    </svg>
   </div>
 </section>
 
@@ -1567,18 +1755,24 @@
     <div class="about-grid">
       <div class="about-text">
         <div>
-          <span class="eyebrow">About iClimate</span>
+          <div class="hero-location fade-up fade-up-1">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+              <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/>
+            </svg>
+            Lian, Batangas &mdash; Philippines
+          </div>
           <h2 class="section-title">About <em>iClimate</em></h2>
-          <p class="about-tagline">Understand today. Prepare tomorrow.</p>
+          <p class="about-tagline"><span class="tagline-flourish"></span>Understand today. Prepare tomorrow.<span class="tagline-flourish"></span></p>
         </div>
         <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed, data-driven decisions for better agricultural outcomes in Lian, Batangas.</p>
       </div>
 
       <div class="about-visual">
         <div class="about-photo">
+          <img class="about-photo-scene" src="{{ asset('images/rice-about-farmer.jpg') }}" alt="" loading="lazy">
           <div class="mission-card">
             <div class="mission-icon">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#2D6A4F" stroke-width="1.6"/></svg>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#74C69D" stroke-width="1.6"/></svg>
             </div>
             <div>
               <strong>Our Mission</strong>
@@ -1655,14 +1849,17 @@
 
 <!-- FEATURES -->
 <section class="features-section" id="features">
+  <div class="features-hero-media" aria-hidden="true">
+    <img src="{{ asset('images/rice-features-paddy.jpg') }}" alt="" loading="lazy">
+  </div>
   <div class="container">
     <div class="section-header">
-      <span class="eyebrow">Key Features</span>
-      <h2>Six tools, one growing cycle</h2>
-      <p>Each module maps to a real stage of rice farming, from watching the sky to filing the season&rsquo;s final report.</p>
+      <span class="eyebrow">Features</span>
+      <h2>Six tools, one <em>growing</em> cycle</h2>
+      <p>Each module helps you plan, monitor, and decide with confidence &mdash; from planting to harvest.</p>
     </div>
 
-    <div class="features-top">
+    <div class="features-grid">
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -1672,10 +1869,10 @@
           </svg>
         </div>
         <h3>Weather Analysis</h3>
-        <p>Rainfall, temperature, humidity, wind, and seasonal climate records for Lian, Batangas, sourced from PAGASA.</p>
+        <p>Access real-time and historical climate data including rainfall, temperature, humidity, wind, and more from PAGASA.</p>
         <span class="fc-badge">Climate Records</span>
       </div>
-      <div class="feature-card feature-card--dark">
+      <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <rect x="2" y="14" width="4" height="6" rx="1" fill="#52B788"/>
@@ -1685,12 +1882,9 @@
           </svg>
         </div>
         <h3>Rice Production</h3>
-        <p>Organized production records and report-ready summaries for municipal planning and forecasting.</p>
+        <p>View and analyze local rice production records and forecasts to support planning and food security.</p>
         <span class="fc-badge">Records</span>
       </div>
-    </div>
-
-    <div class="features-bottom">
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -1699,7 +1893,7 @@
           </svg>
         </div>
         <h3>Planting Advisory</h3>
-        <p>Season-specific dates, seed varieties, and fertilizer schedules.</p>
+        <p>Get data-driven planting recommendations based on season, rainfall outlook, and soil conditions.</p>
         <span class="fc-badge">Advisory</span>
       </div>
       <div class="feature-card">
@@ -1710,18 +1904,17 @@
           </svg>
         </div>
         <h3>Climate Monitoring</h3>
-        <p>Track long-term trends, detect anomalies, and observe pattern shifts.</p>
+        <p>Monitor long-term climate trends and detect anomalies that affect farming and productivity.</p>
         <span class="fc-badge">Monitoring</span>
       </div>
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <rect x="2" y="2" width="18" height="18" rx="3" stroke="#52B788" stroke-width="1.8"/>
-            <path d="M5 11h3v7H5zM9.5 7h3v11h-3zM14 9h3v9h-3z" fill="#52B788" opacity="0.5"/>
+            <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#52B788" stroke-width="1.8"/>
           </svg>
         </div>
         <h3>Heat Map</h3>
-        <p>Barangay risk records using flood, drought, typhoon, and heat categories.</p>
+        <p>Visualize risk levels of flood, drought, typhoon, and heat across barangays using interactive maps.</p>
         <span class="fc-badge">Risk Records</span>
       </div>
       <div class="feature-card">
@@ -1733,7 +1926,7 @@
           </svg>
         </div>
         <h3>Reports &amp; Analytics</h3>
-        <p>Downloadable seasonal reports and shareable insights for LGU stakeholders.</p>
+        <p>Generate and download seasonal reports, yield forecasts, and analytics for smarter decision-making.</p>
         <span class="fc-badge">Analytics</span>
       </div>
     </div>
@@ -1741,28 +1934,48 @@
     <div class="how-block">
       <div class="section-header">
         <span class="eyebrow">How It Works</span>
-        <h2>From records to harvest, in four steps</h2>
+        <h2>From records to<br>harvest, in <em>four steps</em></h2>
       </div>
       <div class="how-steps">
         <div class="how-step">
-          <div class="how-step-num">01</div>
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 13.5A3 3 0 0 1 4 7.6a4 4 0 0 1 7.7-1.2A2.7 2.7 0 0 1 13.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 15V8.5M6.5 11l2.5-2.5L11.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="how-step-num">01</span>
+          </div>
           <h3>Log climate data</h3>
-          <p>MAO staff enter or sync PAGASA rainfall, temperature, and wind records.</p>
+          <p>We collect real-time and historical climate data from trusted sources like PAGASA.</p>
         </div>
         <div class="how-step">
-          <div class="how-step-num">02</div>
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.7 2.7 3.6 4.8 3.6 6.75A3.6 3.6 0 1 1 5.4 8.75C5.4 6.8 6.3 4.7 9 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <span class="how-step-num">02</span>
+          </div>
           <h3>Get advisories</h3>
-          <p>Farmers receive planting windows and fertilizer guidance for the season.</p>
+          <p>Our system analyzes the data to provide planting and fertilizer recommendations.</p>
         </div>
         <div class="how-step">
-          <div class="how-step-num">03</div>
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11.3 11.3 15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <span class="how-step-num">03</span>
+          </div>
           <h3>Monitor risk</h3>
-          <p>Heat maps flag flood, drought, typhoon, and heat exposure by barangay.</p>
+          <p>We track weather risks and climate patterns that may impact your crops.</p>
         </div>
         <div class="how-step">
-          <div class="how-step-num">04</div>
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <span class="how-step-num">04</span>
+          </div>
           <h3>Report outcomes</h3>
-          <p>Generate seasonal reports and yield comparisons for LGU planning.</p>
+          <p>Generate reports and yield forecasts to guide better farming decisions.</p>
         </div>
       </div>
     </div>
@@ -1771,21 +1984,25 @@
 
 <!-- USER ROLES -->
 <section class="roles-section" id="roles">
+  <div class="roles-hero-media" aria-hidden="true">
+    <img src="{{ asset('images/rice-roles-terrace.png') }}" alt="" loading="lazy">
+  </div>
+  <div class="roles-leaf-deco" aria-hidden="true"></div>
   <div class="container">
     <div class="section-header">
       <span class="eyebrow">User Roles</span>
-      <h2>Who Uses iClimate?</h2>
-      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Staff with Technician, and IT Personnel, each designed to support climate-informed agricultural planning and decision-making.</p>
+      <h2>Who Uses <em>iClimate?</em></h2>
+      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Personnel, and IT Experts, each designed to support climate-informed agricultural planning and decision-making.</p>
     </div>
     <div class="roles-grid">
 
-      <!-- Rice Farmers -->
+      <!-- Rice Farmer -->
       <div class="role-card">
-        <div class="role-icon-wrap role-icon-wrap--img">
-          <img src="{{ asset('images/rice-farmer.png') }}" alt="Rice Farmers" class="role-logo-img">
+        <div class="role-icon-wrap--img">
+          <img src="{{ asset('images/rice-farmer-avatar.png') }}" alt="Rice Farmer">
         </div>
         <div class="role-workspace-label">Workspace 01</div>
-        <h3>Rice Farmers</h3>
+        <h3>Rice Farmer</h3>
         <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -1819,11 +2036,11 @@
 
       <!-- MAO Personnel -->
       <div class="role-card role-card--highlight">
-        <div class="role-icon-wrap role-icon-wrap--img">
-          <img src="{{ asset('images/da.png') }}" alt="Department of Agriculture" class="role-logo-img">
+        <div class="role-icon-wrap--img">
+          <img src="{{ asset('images/da.png') }}" alt="MAO Personnel">
         </div>
         <div class="role-workspace-label">Workspace 02</div>
-        <h3>MAO Staff with Technician</h3>
+        <h3>MAO Personnel</h3>
         <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -1857,11 +2074,11 @@
 
       <!-- IT Expert -->
       <div class="role-card">
-        <div class="role-icon-wrap role-icon-wrap--img">
-          <img src="{{ asset('images/it-personnel.png') }}" alt="IT Personnel" class="role-logo-img">
+        <div class="role-icon-wrap--img">
+          <img src="{{ asset('images/it-personnel.png') }}" alt="IT Expert">
         </div>
         <div class="role-workspace-label">Workspace 03</div>
-        <h3>IT Personnel</h3>
+        <h3>IT Expert</h3>
         <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key Features</div>
@@ -1896,31 +2113,42 @@
     </div>
 
     <div class="roles-connect">
-      <span class="eyebrow">How the roles connect</span>
-      <h2>One climate picture, three vantage points</h2>
-      <div class="connect-flow">
-        <div class="connect-step">
-          <div class="connect-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="connect-bar">
+        <div class="connect-intro">
+          <div class="connect-icon connect-icon-lg">
+            <svg width="24" height="24" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3>Rice Farmers</h3>
-          <p>Follows planting advisories and weather alerts in the field.</p>
+          <h3>One climate picture, three vantage points</h3>
         </div>
-        <div class="connect-arrow">&rarr;</div>
-        <div class="connect-step">
+        <div class="connect-divider"></div>
+        <div class="connect-item">
           <div class="connect-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11L11 4l8 7" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V19h12V9.5" stroke="#52B788" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3>MAO Staff with Technician</h3>
-          <p>Validates records and turns data into reports for planning.</p>
+          <div>
+            <h4>Rice Farmer</h4>
+            <p>Follows planting advisories and weather alerts in the field.</p>
+          </div>
         </div>
-        <div class="connect-arrow">&rarr;</div>
-        <div class="connect-step">
+        <div class="connect-divider"></div>
+        <div class="connect-item">
           <div class="connect-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V5l8-3z" stroke="#52B788" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="7.5" cy="6" r="3" fill="currentColor"/><path d="M2.5 17c.5-4.5 2.7-7 5-7s4.5 2.5 5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="15.5" cy="7.5" r="2.7" fill="currentColor" opacity="0.7"/><path d="M11.5 18c.4-3.5 2.3-5.5 4-5.5s3.6 2 4 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/></svg>
           </div>
-          <h3>IT Personnel</h3>
-          <p>Keeps accounts, access, and system records secure for everyone.</p>
+          <div>
+            <h4>MAO Personnel</h4>
+            <p>Validates records and turns data into reports for planning.</p>
+          </div>
+        </div>
+        <div class="connect-divider"></div>
+        <div class="connect-item">
+          <div class="connect-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6 5l-4 6 4 6M16 5l4 6-4 6M13 3L9 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h4>IT Expert</h4>
+            <p>Keeps accounts, access, and system records secure for everyone.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1929,53 +2157,25 @@
 
 <!-- CONTACT -->
 <section class="contact-section" id="contact">
+  <div class="contact-hero-media" aria-hidden="true">
+    <img src="{{ asset('images/rice-contact-golden.jpg') }}" alt="" loading="lazy">
+  </div>
   <div class="container">
-
-    <div class="contact-methods">
-      <div class="contact-method">
-        <div class="contact-method-icon">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <h3>+63 43 456 7890</h3>
-        <p>Speak with the MAO front desk about records, dashboard access, or general inquiries.</p>
-        <a href="tel:+63434567890" class="contact-method-link">
-          Call During Office Hours
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
-      <div class="contact-method contact-method--dark">
-        <div class="contact-method-icon">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#52B788" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#52B788" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <h3>maolian@iclimate.ph</h3>
-        <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
-        <a href="mailto:maolian@iclimate.ph" class="contact-method-link">
-          Send An Email
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
-      <div class="contact-method">
-        <div class="contact-method-icon">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
-        </div>
-        <h3>Lian, Batangas, PH</h3>
-        <p>Visit the Municipal Agricultural Office to consult on-site during standard hours.</p>
-        <a href="#contact" class="contact-method-link">
-          Get Directions
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
-    </div>
-
     <div class="contact-grid">
       <div class="contact-info">
-        <span class="eyebrow">Contact Us</span>
-        <h2>Have questions about iClimate?</h2>
-        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support rice farmers, MAO staff with technicians, and IT personnel using the platform.</p>
+        <div class="hero-location">
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+            <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/>
+          </svg>
+          Lian, Batangas &mdash; Philippines
+        </div>
+        <h2>Have questions about <em>iClimate?</em></h2>
+        <p class="about-tagline"><span class="tagline-flourish"></span>We&rsquo;re here to help.<span class="tagline-flourish"></span></p>
+        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support farmers, MAO personnel, and IT experts using the platform.</p>
         <div class="contact-details">
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#74C69D" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#74C69D" stroke-width="1.4"/></svg>
             </div>
             <div class="cd-text">
               <strong>Address</strong>
@@ -1984,7 +2184,7 @@
           </div>
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#74C69D" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="cd-text">
               <strong>Email</strong>
@@ -1993,50 +2193,55 @@
           </div>
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="cd-text">
               <strong>Phone</strong>
-              <span>+63 49 123 4567</span>
+              <span>+63 917 123 4567</span>
             </div>
           </div>
-        </div>
-
-        <div class="contact-hours">
-          <div class="contact-hours-label">Office Hours</div>
-          <div class="contact-hours-row">
-            <span>Monday to Friday</span>
-            <span>8:00 AM to 5:00 PM</span>
-          </div>
-          <div class="contact-hours-row">
-            <span>Saturday</span>
-            <span>By appointment</span>
-          </div>
-          <div class="contact-hours-row">
-            <span>Sunday</span>
-            <span>Closed</span>
+          <div class="cd-item">
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#74C69D" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cd-text">
+              <strong>Office Hours</strong>
+              <div class="cd-hours">
+                <div class="cd-hours-row"><span>Monday to Friday</span><span>8:00 AM to 5:00 PM</span></div>
+                <div class="cd-hours-row"><span>Saturday</span><span>By appointment</span></div>
+                <div class="cd-hours-row"><span>Sunday</span><span>Closed</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="contact-form-card">
-        <h3>Send a message</h3>
-        <p class="contact-form-sub">We typically respond within one business day.</p>
+        <div class="cfc-header">
+          <div class="cfc-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h3>Send us a message</h3>
+            <p class="contact-form-sub">We typically respond within one business day.</p>
+          </div>
+        </div>
         <div class="form-group">
           <label>Full Name</label>
-          <input type="text" class="form-input" placeholder="Juan dela Cruz"/>
+          <input type="text" class="form-input" placeholder="Juan Dela Cruz"/>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Email Address</label>
-            <input type="email" class="form-input" placeholder="juan@email.com"/>
+            <input type="email" class="form-input" placeholder="juan@gmail.com"/>
           </div>
           <div class="form-group">
             <label>Role</label>
             <select class="form-input">
-              <option>Rice Farmers</option>
-              <option>MAO Staff with Technician</option>
-              <option>IT Personnel</option>
+              <option value="" selected disabled>Select your role</option>
+              <option>Rice Farmer</option>
+              <option>MAO Personnel</option>
+              <option>IT Expert</option>
               <option>Other</option>
             </select>
           </div>
@@ -2049,6 +2254,42 @@
           Send Message
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+      </div>
+
+      <div class="contact-methods">
+        <div class="contact-method">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Call Us</h3>
+          <p>Speak with the MAO front desk about records, advisories, or general inquiries.</p>
+          <a href="tel:+639171234567" class="contact-method-link">
+            Call During Office Hours
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="contact-method">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Email Us</h3>
+          <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
+          <a href="mailto:maolian@iclimate.ph" class="contact-method-link">
+            Send An Email
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="contact-method">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
+          </div>
+          <h3>Visit Us</h3>
+          <p>Visit the Municipal Agricultural Office to consult on-site during standard business hours.</p>
+          <a href="#contact" class="contact-method-link">
+            Get Directions
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -2063,7 +2304,7 @@
         <a href="{{ url('/') }}" class="nav-logo footer-logo">
           <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
-        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support rice farmers, MAO staff with technicians, and IT personnel through forecasting, monitoring, and analytics.<br>Serving Lian, Batangas.</p>
+        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
       </div>
 
       <!-- Column 2: Platform -->
@@ -2093,16 +2334,32 @@
           <ul>
             <li><a href="{{ route('login') }}">Login</a></li>
             <li><a href="{{ route('register') }}">Create Account</a></li>
-            <li><a href="{{ route('login') }}">Rice Farmers Dashboard</a></li>
-            <li><a href="{{ route('login') }}">MAO Staff with Technician Dashboard</a></li>
+            <li><a href="{{ route('login') }}">Rice Farmer Dashboard</a></li>
+            <li><a href="{{ route('login') }}">MAO Personnel Dashboard</a></li>
             <li><a href="{{ route('login') }}">IT Personnel Dashboard</a></li>
           </ul>
+        </div>
+      </div>
+
+      <!-- Column 5: Follow Us -->
+      <div class="footer-social">
+        <h4>Follow Us</h4>
+        <div class="footer-social-icons">
+          <a href="#" class="footer-social-icon" aria-label="Facebook">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg>
+          </a>
+          <a href="#" class="footer-social-icon" aria-label="Twitter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 5.9c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1-.7-.8-1.8-1.3-3-1.3-2.3 0-4.1 1.9-4.1 4.1 0 .3 0 .6.1.9-3.4-.2-6.4-1.8-8.4-4.3-.4.6-.6 1.3-.6 2.1 0 1.4.7 2.7 1.8 3.4-.7 0-1.3-.2-1.9-.5v.1c0 2 1.4 3.7 3.3 4-.3.1-.7.2-1.1.2-.3 0-.5 0-.8-.1.5 1.7 2.1 2.9 3.9 2.9-1.4 1.1-3.2 1.8-5.2 1.8-.3 0-.7 0-1-.1 1.8 1.2 4 1.9 6.3 1.9 7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2.1-2.1z"/></svg>
+          </a>
+          <a href="mailto:maolian@iclimate.ph" class="footer-social-icon" aria-label="Email">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
         </div>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University ARASOF-Nasugbu</p>
+      <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University</p>
       <span class="footer-badge">Lian &middot; Batangas &middot; PH</span>
     </div>
   </div>
@@ -2116,6 +2373,18 @@
 
     hamburger?.addEventListener('click', () => navLinks?.classList.toggle('open'));
     links.forEach(link => link.addEventListener('click', () => navLinks?.classList.remove('open')));
+
+    const sections = document.querySelectorAll('section[id]');
+    const spyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.getAttribute('id');
+        links.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+    sections.forEach(section => spyObserver.observe(section));
   });
 
 </script>
