@@ -25,7 +25,7 @@
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     a { color: inherit; }
     button, input { font: inherit; }
-    .field-error { color: #ffb4a6; font-size: .78rem; font-weight: 600; margin-top: 7px; }
+    .field-error { color: #ffb4a6; font-size: .78rem; font-weight: 600; margin-top: 6px; }
     .form-input.is-invalid { border-color: #e57a68; box-shadow: 0 0 0 3px rgba(229,122,104,.14); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
 
@@ -33,157 +33,147 @@
     body.login-page {
       min-height: 100vh;
       background:
-        linear-gradient(180deg, rgba(6,16,12,.55), rgba(6,16,12,.82)),
-        linear-gradient(160deg, #0f2318 0%, #1a3a2a 45%, #2d5a3f 75%, #142e20 100%);
+        linear-gradient(180deg, rgba(8,18,13,.72), rgba(8,18,13,.88)),
+        url('{{ asset('images/rice-hero-aerial.jpg') }}') center/cover no-repeat fixed;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 22px 20px;
+      padding: 16px;
       position: relative;
       overflow-x: hidden;
-    }
-    .scene-hills {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' preserveAspectRatio='none'%3E%3Cpath d='M0 620 Q250 540 500 600 T1000 580 T1600 610 V900 H0Z' fill='%23234a34' fill-opacity='0.55'/%3E%3Cpath d='M0 700 Q300 650 600 690 T1200 680 T1600 700 V900 H0Z' fill='%231b3a29' fill-opacity='0.65'/%3E%3Cpath d='M0 780 Q350 740 700 770 T1400 760 T1600 780 V900 H0Z' fill='%2513291d' fill-opacity='0.8'/%3E%3C/svg%3E");
-      background-size: cover;
-      background-position: bottom;
     }
     .scene-glow {
       position: fixed; z-index: 0; pointer-events: none; border-radius: 50%; filter: blur(90px);
     }
-    .scene-glow-1 { width: 480px; height: 480px; background: rgba(82,183,136,.16); top: -120px; left: -100px; }
-    .scene-glow-2 { width: 360px; height: 360px; background: rgba(232,167,61,.1); bottom: -80px; right: -60px; }
+    .scene-glow-1 { width: 420px; height: 420px; background: rgba(82,183,136,.14); top: -110px; left: -90px; }
+    .scene-glow-2 { width: 320px; height: 320px; background: rgba(232,167,61,.09); bottom: -70px; right: -50px; }
 
     .scene-content {
       position: relative; z-index: 1;
-      display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap;
-      width: 100%; max-width: 1120px;
+      display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap;
+      width: 100%; max-width: 1080px;
     }
 
     /* -- BACK TO HOME LINK -------------------------------- */
     .back-link-top {
-      position: fixed; top: 28px; left: 32px; z-index: 2;
-      display: inline-flex; align-items: center; gap: 6px; font-size: .87rem; font-weight: 600;
+      position: fixed; top: 20px; left: 24px; z-index: 2;
+      display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600;
       color: #95D5B2; text-decoration: none; transition: color .2s;
     }
     .back-link-top:hover { color: #74C69D; }
 
     /* -- LOGIN CARD -------------------------------------- */
     .login-card {
-      flex: 0 1 480px;
-      background: rgba(15,31,23,.62);
+      flex: 0 1 440px;
+      background: rgba(15,31,23,.68);
       border: 1.5px solid rgba(149,213,178,.22);
-      border-radius: 22px;
-      box-shadow: 0 30px 70px rgba(0,0,0,.4);
+      border-radius: 20px;
+      box-shadow: 0 26px 60px rgba(0,0,0,.42);
       backdrop-filter: blur(18px);
-      padding: 32px 36px 28px;
+      padding: 24px 28px 20px;
     }
-    .card-logo { text-align: center; margin-bottom: 16px; }
-    .card-logo img { width: 92px; height: auto; margin: 0 auto 8px; display: block; }
-    .card-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.6rem; color: #74C69D; letter-spacing: -0.01em; }
-    .card-logo-underline { width: 62px; height: 2px; background: #52B788; border-radius: 2px; position: relative; margin: 6px auto 0; }
-    .card-logo-underline::after { content: ''; position: absolute; right: -3px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #74C69D; }
+    .card-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .card-logo img { width: 42px; height: auto; display: block; }
+    .card-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: #74C69D; letter-spacing: -0.01em; }
 
-    .login-form-header { text-align: center; margin-bottom: 20px; }
+    .login-form-header { text-align: center; margin-bottom: 14px; }
     .login-form-header h1 {
-      font-family: 'DM Serif Display', Georgia, serif; font-size: 1.9rem; font-weight: 400; color: #fff; margin-bottom: 5px; letter-spacing: -0.02em;
+      font-family: 'DM Serif Display', Georgia, serif; font-size: 1.65rem; font-weight: 400; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;
     }
-    .login-form-header p { font-size: .92rem; color: rgba(255,255,255,.55); }
+    .login-form-header p { font-size: .88rem; color: rgba(255,255,255,.55); }
     .login-form-header p em { font-style: normal; color: #74C69D; font-weight: 600; }
 
-    .auth-status { background: rgba(82,183,136,.14); border: 1px solid rgba(82,183,136,.35); color: #d8f3dc; border-radius: 10px; padding: 10px 12px; font-size: .84rem; margin-bottom: 14px; }
+    .auth-status { background: rgba(82,183,136,.14); border: 1px solid rgba(82,183,136,.35); color: #d8f3dc; border-radius: 10px; padding: 9px 12px; font-size: .82rem; margin-bottom: 12px; }
 
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: .84rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 7px; }
+    .form-group { margin-bottom: 11px; }
+    .form-group label { display: block; font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 6px; }
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 11px;
-      padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: .93rem; color: #fff; transition: all .2s; outline: none;
+      width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 10px;
+      padding: 9px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: all .2s; outline: none;
     }
-    .form-input.has-icon { padding-left: 42px; }
+    .form-input.has-icon { padding-left: 40px; }
     .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); }
     .form-input::placeholder { color: rgba(255,255,255,.35); }
     .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #74C69D; }
     .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.55); background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
     .pwd-toggle:hover { color: #74C69D; }
 
-    .form-row-split { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-    .checkbox-label { display: flex; align-items: center; gap: 9px; font-size: .87rem; color: rgba(255,255,255,.8); cursor: pointer; user-select: none; }
+    .form-row-split { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .checkbox-label { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: rgba(255,255,255,.8); cursor: pointer; user-select: none; }
     .custom-checkbox { display: none; }
-    .checkbox-custom { width: 18px; height: 18px; border: 2px solid rgba(149,213,178,.4); border-radius: 5px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
+    .checkbox-custom { width: 17px; height: 17px; border: 2px solid rgba(149,213,178,.4); border-radius: 5px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
     .custom-checkbox:checked + .checkbox-custom { background: #52B788; border-color: #52B788; }
     .custom-checkbox:checked + .checkbox-custom::after { content: ''; width: 9px; height: 5px; border: 2px solid white; border-top: none; border-right: none; transform: rotate(-45deg) translateY(-1px); display: block; }
-    .forgot-link { font-size: .87rem; font-weight: 600; color: #74C69D; text-decoration: none; transition: color .2s; }
+    .forgot-link { font-size: .85rem; font-weight: 600; color: #74C69D; text-decoration: none; transition: color .2s; }
     .forgot-link:hover { color: #95D5B2; }
 
     .btn-login {
-      width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;
-      background: #E8A73D; color: #1a3a2a; border: none; border-radius: 11px; font-family: 'Inter', sans-serif;
-      font-size: .96rem; font-weight: 800; cursor: pointer; transition: all .2s; margin-bottom: 16px;
-      box-shadow: 0 10px 28px rgba(232,167,61,.28);
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px;
+      background: #E8A73D; color: #1a3a2a; border: none; border-radius: 10px; font-family: 'Inter', sans-serif;
+      font-size: .95rem; font-weight: 800; cursor: pointer; transition: all .2s; margin-bottom: 12px;
+      box-shadow: 0 10px 24px rgba(232,167,61,.28);
     }
-    .btn-login:hover { background: #f0b559; transform: translateY(-1px); box-shadow: 0 12px 32px rgba(232,167,61,.4); }
+    .btn-login:hover { background: #f0b559; transform: translateY(-1px); box-shadow: 0 12px 28px rgba(232,167,61,.4); }
 
-    .form-divider { display: flex; align-items: center; gap: 12px; margin: 2px 0 16px; color: rgba(255,255,255,.35); font-size: .82rem; }
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
     .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
 
-    .login-register { text-align: center; font-size: .88rem; color: rgba(255,255,255,.55); margin: 0; }
+    .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); margin: 0; }
     .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #f0b559; }
 
-    .demo-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .demo-row { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
     .demo-pill {
-      font-family: 'DM Mono', monospace; font-size: .66rem; font-weight: 500; letter-spacing: .03em; text-transform: uppercase;
+      font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 500; letter-spacing: .03em; text-transform: uppercase;
       color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); border: 1px solid rgba(149,213,178,.2);
-      border-radius: 100px; padding: 6px 12px; cursor: pointer; transition: all .15s;
+      border-radius: 100px; padding: 5px 11px; cursor: pointer; transition: all .15s;
     }
     .demo-pill:hover { color: #fff; background: rgba(82,183,136,.18); border-color: rgba(82,183,136,.4); }
 
     /* -- WEATHER WIDGET ---------------------------------- */
     .weather-card {
-      flex: 0 1 280px;
-      background: rgba(15,31,23,.58);
+      flex: 0 1 260px;
+      background: rgba(15,31,23,.64);
       border: 1.5px solid rgba(149,213,178,.2);
-      border-radius: 20px;
-      box-shadow: 0 24px 56px rgba(0,0,0,.35);
+      border-radius: 18px;
+      box-shadow: 0 20px 48px rgba(0,0,0,.38);
       backdrop-filter: blur(16px);
-      padding: 20px 22px 18px;
+      padding: 16px 18px 14px;
       color: #fff;
     }
-    .weather-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.2rem; margin-bottom: 4px; }
-    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: #74C69D; font-weight: 600; margin-bottom: 14px; }
-    .weather-main { text-align: center; margin-bottom: 12px; }
-    .weather-emoji { font-size: 2.2rem; line-height: 1; margin-bottom: 6px; }
-    .weather-temp { font-family: 'DM Serif Display', Georgia, serif; font-size: 2.1rem; color: #fff; line-height: 1; }
-    .weather-cond { font-size: .86rem; color: #95D5B2; font-weight: 600; margin-top: 3px; }
-    .weather-divider { height: 1px; background: rgba(149,213,178,.18); margin: 2px 0 12px; }
-    .weather-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .weather-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.1rem; margin-bottom: 3px; }
+    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #74C69D; font-weight: 600; margin-bottom: 12px; }
+    .weather-main { text-align: center; margin-bottom: 10px; }
+    .weather-emoji { font-size: 2rem; line-height: 1; margin-bottom: 5px; }
+    .weather-temp { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.9rem; color: #fff; line-height: 1; }
+    .weather-cond { font-size: .84rem; color: #95D5B2; font-weight: 600; margin-top: 3px; }
+    .weather-divider { height: 1px; background: rgba(149,213,178,.18); margin: 2px 0 10px; }
+    .weather-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
     .weather-row { display: flex; align-items: center; gap: 12px; }
     .weather-row-icon { color: #74C69D; flex-shrink: 0; width: 20px; }
-    .weather-row-val { font-weight: 700; font-size: .95rem; color: #fff; }
-    .weather-row-label { font-size: .74rem; color: rgba(255,255,255,.5); }
-    .weather-updated { display: flex; align-items: center; gap: 6px; font-size: .74rem; color: rgba(255,255,255,.4); }
+    .weather-row-val { font-weight: 700; font-size: .93rem; color: #fff; }
+    .weather-row-label { font-size: .72rem; color: rgba(255,255,255,.5); }
+    .weather-updated { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: rgba(255,255,255,.4); }
     .weather-updated-dot { width: 6px; height: 6px; border-radius: 50%; background: #52B788; box-shadow: 0 0 6px rgba(82,183,136,.7); }
 
     /* -- BELOW-CARD TAGLINE ------------------------------ */
-    .scene-tagline { position: relative; z-index: 1; text-align: center; margin-top: 16px; width: 100%; }
-    .scene-tagline-row { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.62); font-size: .92rem; font-weight: 600; }
-    .scene-copyright { margin-top: 6px; font-size: .78rem; color: rgba(255,255,255,.32); }
+    .scene-tagline { position: relative; z-index: 1; text-align: center; margin-top: 12px; width: 100%; }
+    .scene-tagline-row { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.62); font-size: .88rem; font-weight: 600; }
+    .scene-copyright { margin-top: 5px; font-size: .76rem; color: rgba(255,255,255,.32); }
 
     @media (max-width: 820px) {
-      .scene-content { flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+      .scene-content { flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
       .login-card, .weather-card { flex: 0 1 auto; width: 100%; }
-      .weather-card { max-width: 480px; }
+      .weather-card { max-width: 440px; }
     }
     @media (max-width: 540px) {
-      .login-card { padding: 32px 24px 28px; }
-      .back-link-top { position: absolute; top: 16px; left: 16px; }
+      .login-card { padding: 24px 20px 20px; }
+      .back-link-top { position: absolute; top: 14px; left: 14px; }
     }
   </style>
 </head>
 <body class="login-page">
-  <div class="scene-hills"></div>
   <div class="scene-glow scene-glow-1"></div>
   <div class="scene-glow scene-glow-2"></div>
 
@@ -195,9 +185,8 @@
   <div class="scene-content">
     <div class="login-card">
       <div class="card-logo">
-        <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
+        <img src="{{ asset('images/iclimate-icon.png') }}" alt="iClimate">
         <div class="card-logo-word">iClimate</div>
-        <div class="card-logo-underline"></div>
       </div>
 
       <div class="login-form-header">
@@ -301,7 +290,7 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1c2.4 3.4 4.4 6.2 4.4 8.9A4.4 4.4 0 1 1 3.6 9.9C3.6 7.2 5.6 4.4 8 1z" stroke="#74C69D" stroke-width="1.4"/></svg>
       iClimate Decision Support System
     </div>
-    <div class="scene-copyright">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Masungki</div>
+    <div class="scene-copyright">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
   </div>
 
 <script>

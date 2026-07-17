@@ -2359,7 +2359,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University</p>
+      <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University ARASOF-Nasugbu</p>
       <span class="footer-badge">Lian &middot; Batangas &middot; PH</span>
     </div>
   </div>

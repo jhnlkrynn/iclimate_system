@@ -148,28 +148,12 @@
 @endphp
 
 <aside class="sidebar-fixed d-none d-lg-flex flex-column">
-    @if ($isFarmer)
-        <div class="sidebar-brand sidebar-brand--large p-4 pb-2">
-            <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="sidebar-logo-large">
-            <div class="sidebar-wordmark-lg">iClimate</div>
-            <div class="sidebar-brand-underline"></div>
-        </div>
-    @else
-        <div class="sidebar-brand p-4 pb-2">
-            <div class="sidebar-brand-row">
-                <img src="{{ asset('images/iclimate-logo.png') }}" alt="" class="sidebar-logo-icon">
-                <span class="sidebar-wordmark">iClimate</span>
-            </div>
-            <div class="sidebar-brand-underline"></div>
-            <div class="sidebar-location"><span class="pulse-dot"></span> Lian, Batangas</div>
-            <div class="sidebar-tagline pe-2">Weather Impact and Rice Yield System</div>
-        </div>
-    @endif
+    @include('layouts.partials.sidebar-brand')
     <div class="px-3 flex-grow-1 overflow-auto">
         {!! $renderSidebarNav() !!}
     </div>
     {!! $renderAiCard() !!}
-    <div class="sidebar-foot">&copy; 2026 iClimate &middot; Lian, Batangas</div>
+    <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
 </aside>
 
 <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
@@ -178,27 +162,11 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-green-950);">
-        @if ($isFarmer)
-            <div class="sidebar-brand sidebar-brand--large p-4 pb-2">
-                <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="sidebar-logo-large">
-                <div class="sidebar-wordmark-lg">iClimate</div>
-                <div class="sidebar-brand-underline"></div>
-            </div>
-        @else
-            <div class="sidebar-brand p-4 pb-2">
-                <div class="sidebar-brand-row">
-                    <img src="{{ asset('images/iclimate-logo.png') }}" alt="" class="sidebar-logo-icon">
-                    <span class="sidebar-wordmark">iClimate</span>
-                </div>
-                <div class="sidebar-brand-underline"></div>
-                <div class="sidebar-location"><span class="pulse-dot"></span> Lian, Batangas</div>
-                <div class="sidebar-tagline">Weather Impact and Rice Yield System</div>
-            </div>
-        @endif
+        @include('layouts.partials.sidebar-brand')
         <div class="px-3 flex-grow-1 overflow-auto">
             {!! $renderSidebarNav() !!}
         </div>
         {!! $renderAiCard() !!}
-        <div class="sidebar-foot">&copy; 2026 iClimate &middot; Lian, Batangas</div>
+        <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
     </div>
 </div>
