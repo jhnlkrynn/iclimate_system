@@ -37,7 +37,7 @@
     $routeDefs = [
         'dashboard' => [$dashboardRoute, [$dashboardRoute]],
         'advisories' => ['planting-advisories.index', ['planting-advisories.*']],
-        'calendar' => ['planting-advisories.index', ['planting-advisories.*']],
+        'calendar' => ['calendar.index', ['calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],

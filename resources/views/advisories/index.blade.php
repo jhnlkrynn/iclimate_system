@@ -1,4 +1,6 @@
 <x-app-layout>
+    @include('layouts.partials.dark-workspace')
+    <div class="dark-workspace">
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
@@ -138,4 +140,5 @@
             <p class="text-muted mb-0">The system will display new guidance when relevant weather conditions are detected.</p>
         </div>
     @endif
+    </div>
 </x-app-layout>

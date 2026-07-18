@@ -9,7 +9,6 @@
                 radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.16) 0%, transparent 60%);
             pointer-events:none;
         }
-        .feed-hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:7px; background:linear-gradient(90deg,#e8a73d,#52b788,#2f6f8f); }
         .feed-hero > * { position:relative; z-index:1; }
         .feed-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:#fff; }
         .feed-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.12em; color:#74c69d; margin-bottom:.4rem; }
@@ -46,8 +45,6 @@
         .media-grid img, .media-grid video { width:100%; border-radius:8px; border:1px solid rgba(153,185,160,.55); background:#0d1f18; max-height:330px; object-fit:cover; }
         .file-tile { display:flex; align-items:center; gap:.7rem; padding:.85rem; border:1px solid rgba(153,185,160,.55); border-radius:8px; background:#f7fbf8; color:inherit; text-decoration:none; font-weight:800; }
         .reaction-row { display:flex; flex-wrap:wrap; gap:.45rem; padding:.8rem 1rem; border-top:1px solid rgba(153,185,160,.4); border-bottom:1px solid rgba(153,185,160,.4); background:#fbfdfb; }
-        .reaction-row button { border:1px solid rgba(153,185,160,.55); border-radius:999px; background:#fff; padding:.35rem .65rem; font-size:.82rem; font-weight:800; color:var(--feed-ink); }
-        .reaction-row button.text-success { color:#2d6a4f !important; border-color:#b7e4c7; background:#d8f3dc; }
         .manage-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:1rem; padding-top:1rem; border-top:1px solid #edf3ee; }
         .manage-actions > form { margin:0; }
         .manage-panel { flex:0 0 auto; border:0; border-radius:8px; background:transparent; overflow:visible; }
@@ -175,6 +172,50 @@
                 padding-bottom:4.7rem;
             }
         }
+
+        /* -- dark theme overrides -- */
+        .feed-wrap { color: rgba(255,255,255,.85) !important; }
+        .feed-card { border-color: rgba(255,255,255,.1) !important; background: #0D1F18 !important; }
+        .feed-composer {
+            background: linear-gradient(135deg,#f5f0e8,#edf7e7) !important;
+        }
+        .feed-composer .feed-card-body {
+            background: linear-gradient(145deg,#fff,#f2f8f3) !important;
+            border-radius: 16px;
+            margin: .15rem;
+            color: #0d1f18 !important;
+        }
+        .feed-composer h2 { color: #0d1f18 !important; }
+        .field-box { background: #fff !important; border-color: #e8e0d0 !important; }
+        .field-box-label { color: #0d1f18 !important; }
+        .field-box .form-control, .field-box .form-select { color: #0d1f18 !important; background: transparent !important; }
+        .field-box .form-select option { color: #0d1f18; }
+        .avatar { background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.3); color: #74c69d; }
+        .feed-title { color: #fff !important; }
+        .feed-body-text { color: rgba(255,255,255,.85) !important; }
+        .feed-meta { color: rgba(255,255,255,.5); }
+        .feed-badge { background: rgba(82,183,136,.16); color: #74c69d; }
+        .feed-badge.archived { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border-color: rgba(255,255,255,.15); }
+        .manage-actions { border-top-color: rgba(255,255,255,.1); }
+        .manage-panel summary { border-color: #74c69d; background: rgba(82,183,136,.12); color: #74c69d; }
+        .manage-panel summary:hover, .manage-panel[open] summary { background: rgba(82,183,136,.2); }
+        .manage-panel-body { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
+        .file-tile { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: rgba(255,255,255,.85); }
+        .reaction-row { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.02); }
+        .reaction-trigger { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
+        .reaction-trigger.active { color: #74c69d; background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.4); }
+        .reaction-count-pill { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: rgba(255,255,255,.7); }
+        .comment-bubble { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.85); }
+        .side-panel { border-color: rgba(255,255,255,.1); background: var(--ic-green-950); position: sticky; }
+        .feed-empty-icon { background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.3); color: #74c69d; }
+        .feed-empty strong { color: #fff; }
+        .feed-empty p { color: rgba(255,255,255,.55); }
+        .feed-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
+        .feed-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
+        .feed-wrap .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
+        .feed-wrap .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
+        .feed-wrap .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
+        .feed-wrap .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
     </style>
 
     <div class="feed-wrap">
@@ -201,7 +242,7 @@
                 @if($canPost)
                     <section class="feed-card feed-composer">
                         <div class="feed-card-body">
-                            <div class="feed-eyebrow" style="color:#2d6a4f;">New Post</div>
+                            <div class="feed-eyebrow" style="color:#0d1f18;">New Post</div>
                             <h2 class="h5 mb-3">Create MAO Post</h2>
                             <form method="POST" action="{{ route('community-feed.store') }}" enctype="multipart/form-data">
                                 @csrf
@@ -286,7 +327,7 @@
                                     <span class="feed-badge">{{ $post->category }}</span>
                                 </div>
                             </div>
-                            <p class="mt-3 mb-0" style="white-space:pre-line;">{{ $post->body }}</p>
+                            <p class="feed-body-text mt-3 mb-0" style="white-space:pre-line;">{{ $post->body }}</p>
 
                             @if($post->media->isNotEmpty())
                                 <div class="media-grid">
@@ -447,7 +488,7 @@
             </main>
 
             <aside class="side-panel">
-                <div class="feed-eyebrow" style="color:#2d6a4f;">Farmer Toolkit</div>
+                <div class="feed-eyebrow" style="color:#74c69d;">Farmer Toolkit</div>
                 <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
                 <div class="d-grid gap-2">

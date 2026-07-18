@@ -21,16 +21,22 @@
             <span class="badge text-bg-light border text-muted">{{ auth()->user()->roleLabel() }}</span>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-            <a class="btn btn-sm btn-outline-primary position-relative" href="{{ route('notifications.index') }}" aria-label="Open notifications">
+            <a class="btn btn-sm btn-outline-primary position-relative d-inline-flex align-items-center gap-2" href="{{ route('notifications.index') }}" aria-label="Open notifications">
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 14.5a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                 Alerts
                 @if ($unreadCount > 0)
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ $unreadCount }}</span>
                 @endif
             </a>
-            <a class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">Profile</a>
-            <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?">
+            @unless($user->role === \App\Models\User::ROLE_FARMER)
+                <a class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">Profile</a>
+            @endunless
+            <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?" data-loading="true">
                 @csrf
-                <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Logging out...">Logout</button>
+                <button class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-2" type="submit" data-loading-text="Logging out...">
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M7 2.5H4a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 4 15.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5.5l3.5 3.5-3.5 3.5M14.3 9H6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Logout
+                </button>
             </form>
         </div>
     </div>

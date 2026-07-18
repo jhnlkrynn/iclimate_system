@@ -19,15 +19,6 @@
             background: repeating-linear-gradient(130deg, rgba(255,255,255,.12) 0 1px, transparent 1px 24px);
             opacity: .8;
         }
-        .lf-hero::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 7px;
-            background: linear-gradient(90deg, #ffd166, #52b788, #95d5b2, #d85b45);
-        }
         .lf-hero > * { position: relative; z-index: 1; }
         .lf-eyebrow {
             font-size: .72rem;
@@ -228,8 +219,29 @@
             .lf-map-toolbar .btn, .lf-map-search, .lf-map-search .form-select { width: 100%; }
             .lf-model-grid { grid-template-columns: 1fr; }
         }
+
+        /* -- dark theme overrides (matches farmer dashboard palette) -- */
+        .lf-page { color: rgba(255,255,255,.85); }
+        .lf-map-toolbar { background: linear-gradient(90deg, #0d1f18, #16281f); border-bottom-color: rgba(255,255,255,.1); }
+        .lf-label { color: rgba(255,255,255,.5); }
+        .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li {
+            background: var(--ic-green-950, #0D1F18);
+            border-color: rgba(255,255,255,.12);
+        }
+        .lf-value { color: #fff; }
+        .lf-model-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.1); }
+        .lf-model-number { color: #fff; }
+        .lf-model-unit { color: rgba(255,255,255,.55); }
+        .lf-insight-list li { color: rgba(255,255,255,.85); }
+        .lf-popup-note { background: rgba(82,183,136,.12); border-left-color: #52b788; color: rgba(255,255,255,.85); }
+        .lf-source-note { background: rgba(47,111,143,.22); color: #7ec8e3; }
+        .lf-barangay-panel { background: var(--ic-green-950, #0D1F18); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 1rem; }
+        .lf-barangay-chip { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.85); }
+        .lf-barangay-chip:hover, .lf-barangay-chip:focus { background: rgba(82,183,136,.14); border-color: #52b788; }
+        .lf-page .text-muted { color: rgba(255,255,255,.5) !important; }
     </style>
 
+    <div class="lf-page">
     <section class="lf-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
             <div>
@@ -306,22 +318,22 @@
             @if($modelForecast['ready'] ?? false)
                 @php($predictions = $modelForecast['predictions'])
                 <div class="lf-model-grid">
-                    <div class="lf-model-card" style="--accent:#1677b8;">
+                    <div class="lf-model-card">
                         <div class="lf-label">Rainfall</div>
                         <div class="lf-model-number">{{ number_format($predictions['rainfall'] ?? 0, 2) }}</div>
                         <div class="lf-model-unit">mm</div>
                     </div>
-                    <div class="lf-model-card" style="--accent:#d85b45;">
+                    <div class="lf-model-card">
                         <div class="lf-label">Temperature</div>
                         <div class="lf-model-number">{{ number_format($predictions['temperature'] ?? 0, 2) }}</div>
                         <div class="lf-model-unit">C</div>
                     </div>
-                    <div class="lf-model-card" style="--accent:#52b788;">
+                    <div class="lf-model-card">
                         <div class="lf-label">Humidity</div>
                         <div class="lf-model-number">{{ number_format($predictions['humidity'] ?? 0, 2) }}</div>
                         <div class="lf-model-unit">%</div>
                     </div>
-                    <div class="lf-model-card" style="--accent:#f4b63f;">
+                    <div class="lf-model-card">
                         <div class="lf-label">Wind Speed</div>
                         <div class="lf-model-number">{{ number_format($predictions['wind_speed'] ?? 0, 2) }}</div>
                         <div class="lf-model-unit">km/h</div>
@@ -381,6 +393,7 @@
             @endforeach
         </div>
     </section>
+    </div>
 
     <div class="modal fade" id="barangayForecastModal" tabindex="-1" aria-labelledby="barangayForecastModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -415,17 +428,17 @@
                         </div>
                     </div>
                     <div class="d-grid gap-2">
-                        <div>
+                        <div class="lf-popup-item">
                             <div class="lf-label">Planting Guidance</div>
-                            <p class="mb-0 text-muted fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
                         </div>
-                        <div>
+                        <div class="lf-popup-item">
                             <div class="lf-label">Irrigation Guidance</div>
-                            <p class="mb-0 text-muted fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
                         </div>
-                        <div>
+                        <div class="lf-popup-item">
                             <div class="lf-label">Local Note</div>
-                            <p class="mb-0 text-muted fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
                         </div>
                     </div>
                 </div>

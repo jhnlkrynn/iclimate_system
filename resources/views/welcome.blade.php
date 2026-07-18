@@ -1000,23 +1000,25 @@
       gap: 20px;
     }
     .contact-method {
-      background: var(--white);
-      border: 1px solid var(--sand-dark);
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid rgba(149,213,178,.16);
       border-radius: var(--radius-lg);
       padding: 28px 26px;
       display: flex; flex-direction: column; gap: 8px;
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
     }
     .contact-method:hover {
       transform: translateY(-5px);
       box-shadow: var(--shadow-md);
-      border-color: var(--green-200);
+      background: rgba(255,255,255,.065);
+      border-color: rgba(149,213,178,.32);
     }
     .contact-method-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: var(--green-50);
-      border: 1px solid var(--green-100);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 6px;
       flex-shrink: 0;
@@ -1025,24 +1027,24 @@
       font-family: 'Inter', sans-serif;
       font-size: 1rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .contact-method p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: var(--ink-light);
+      color: rgba(255,255,255,0.55);
     }
     .contact-method-link {
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid var(--sand-dark);
+      border-top: 1px solid rgba(149,213,178,.16);
       font-family: 'DM Mono', monospace;
       font-size: 0.66rem;
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--green-700);
+      color: var(--green-400);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -1051,7 +1053,7 @@
       display: grid;
       grid-template-columns: 0.95fr 1.2fr 0.85fr;
       gap: 40px;
-      align-items: start;
+      align-items: stretch;
     }
     .contact-info { display: flex; flex-direction: column; gap: 0; }
     .contact-info .hero-location { margin-bottom: 18px; }
@@ -1080,11 +1082,15 @@
     .cd-hours-row span:last-child { color: rgba(255,255,255,0.85); font-weight: 600; }
 
     .contact-form-card {
-      background: var(--white);
+      background: rgba(255,255,255,.04);
       border-radius: var(--radius-xl);
       padding: 40px;
-      border: 1px solid var(--sand-dark);
+      border: 1.5px solid rgba(149,213,178,.16);
+      backdrop-filter: blur(10px);
       box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     .cfc-header {
       display: flex; align-items: center; gap: 14px;
@@ -1093,8 +1099,8 @@
     .cfc-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: var(--green-50);
-      border: 1px solid var(--green-100);
+      background: rgba(82,183,136,0.16);
+      border: 1px solid rgba(149,213,178,.3);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1103,12 +1109,12 @@
       font-size: 1.4rem;
       font-weight: 400;
       margin-bottom: 2px;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .contact-form-sub {
       font-size: 0.85rem;
-      color: var(--ink-light);
+      color: rgba(255,255,255,0.55);
     }
     .form-row {
       display: grid;
@@ -1116,33 +1122,43 @@
       gap: 16px;
     }
     .form-group { margin-bottom: 18px; }
+    .contact-form-card .form-group:has(textarea) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .contact-form-card .form-group:has(textarea) textarea.form-input {
+      flex: 1;
+      resize: none;
+    }
     .form-group label {
       display: block;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--ink);
+      color: var(--white);
       margin-bottom: 7px;
       letter-spacing: 0.01em;
     }
     .form-input {
       width: 100%;
-      background: var(--white);
-      border: 1.5px solid #D8E0DC;
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(149,213,178,.24);
       border-radius: var(--radius-md);
       padding: 10px 14px;
       font-family: 'Inter', sans-serif;
       font-size: 0.9rem;
-      color: var(--ink);
+      color: var(--white);
       transition: all 0.2s;
       outline: none;
       resize: vertical;
     }
     select.form-input { cursor: pointer; }
+    select.form-input option { color: var(--ink); }
     .form-input:focus {
       border-color: var(--green-500);
       box-shadow: 0 0 0 3px rgba(82,183,136,0.12);
     }
-    .form-input::placeholder { color: #B0C0B8; }
+    .form-input::placeholder { color: rgba(255,255,255,0.35); }
     .btn-dark { background: var(--green-800); color: var(--white); }
     .btn-dark:hover {
       background: var(--green-950);
@@ -1699,9 +1715,6 @@
 
 <!-- HERO -->
 <section class="hero" id="home">
-  <div class="hero-photo-band" aria-hidden="true">
-    <img src="{{ asset('images/rice-hero-aerial.jpg') }}" alt="" loading="lazy">
-  </div>
   <div class="hero-inner">
     <div class="hero-text">
       <div class="hero-location fade-up fade-up-1">
@@ -2195,9 +2208,6 @@
 
 <!-- CONTACT -->
 <section class="contact-section" id="contact">
-  <div class="contact-hero-media" aria-hidden="true">
-    <img src="{{ asset('images/rice-contact-golden.jpg') }}" alt="" loading="lazy">
-  </div>
   <div class="container">
     <div class="contact-grid">
       <div class="contact-info">
@@ -2226,7 +2236,7 @@
             </div>
             <div class="cd-text">
               <strong>Email</strong>
-              <span>maolian@iclimate.ph</span>
+              <span>mao@lianbatangas.gov.ph</span>
             </div>
           </div>
           <div class="cd-item">
@@ -2257,7 +2267,7 @@
       <div class="contact-form-card">
         <div class="cfc-header">
           <div class="cfc-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#74C69D" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div>
             <h3>Send us a message</h3>
@@ -2297,7 +2307,7 @@
       <div class="contact-methods">
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Call Us</h3>
           <p>Speak with the MAO front desk about records, advisories, or general inquiries.</p>
@@ -2308,18 +2318,18 @@
         </div>
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#2D6A4F" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#2D6A4F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#74C69D" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#74C69D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Email Us</h3>
           <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
-          <a href="mailto:maolian@iclimate.ph" class="contact-method-link">
+          <a href="mailto:mao@lianbatangas.gov.ph" class="contact-method-link">
             Send An Email
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#2D6A4F" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#2D6A4F" stroke-width="1.4"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#74C69D" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#74C69D" stroke-width="1.4"/></svg>
           </div>
           <h3>Visit Us</h3>
           <p>Visit the Municipal Agricultural Office to consult on-site during standard business hours.</p>
@@ -2389,7 +2399,7 @@
           <a href="#" class="footer-social-icon" aria-label="Twitter">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 5.9c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1-.7-.8-1.8-1.3-3-1.3-2.3 0-4.1 1.9-4.1 4.1 0 .3 0 .6.1.9-3.4-.2-6.4-1.8-8.4-4.3-.4.6-.6 1.3-.6 2.1 0 1.4.7 2.7 1.8 3.4-.7 0-1.3-.2-1.9-.5v.1c0 2 1.4 3.7 3.3 4-.3.1-.7.2-1.1.2-.3 0-.5 0-.8-.1.5 1.7 2.1 2.9 3.9 2.9-1.4 1.1-3.2 1.8-5.2 1.8-.3 0-.7 0-1-.1 1.8 1.2 4 1.9 6.3 1.9 7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2.1-2.1z"/></svg>
           </a>
-          <a href="mailto:maolian@iclimate.ph" class="footer-social-icon" aria-label="Email">
+          <a href="mailto:mao@lianbatangas.gov.ph" class="footer-social-icon" aria-label="Email">
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
