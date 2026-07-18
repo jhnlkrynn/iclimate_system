@@ -32,15 +32,6 @@
             background-size: 38px 38px;
             mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 88%);
         }
-        .it-hero::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 7px;
-            background: linear-gradient(90deg, var(--it-gold), var(--it-green-bright), var(--it-blue), var(--it-red));
-        }
         .it-hero > * { position: relative; z-index: 1; }
         .it-eyebrow {
             font-size: .72rem;
@@ -83,26 +74,23 @@
             border-radius: 18px;
             background: linear-gradient(145deg, rgba(244,250,239,.96), rgba(229,242,226,.96));
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
+            width: 100%;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease;
         }
         .it-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); }
+        .it-card:focus-visible { outline: 2px solid var(--it-green-bright); outline-offset: 2px; }
+        .it-tap-hint { color: var(--it-green-bright); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
+        .it-card:hover .it-tap-hint, .it-card:focus-visible .it-tap-hint { opacity: 1; transform: translateY(0); }
+        .it-modal-content { border-radius: 18px; background: var(--ic-green-950, #0D1F18); color: rgba(255,255,255,.85); }
+        .it-modal-content .modal-footer { border-top-color: rgba(255,255,255,.1); }
+        .it-modal-header { background: linear-gradient(90deg, #0d1f18, #1a3a2a); color: #fff; }
+        .it-modal-header .modal-title { color: #fff; }
+        .it-modal-headline { font-size: 1.6rem; font-weight: 900; color: #fff; }
+        .it-modal-sub { color: rgba(255,255,255,.55); font-size: .85rem; margin: .3rem 0 .9rem; }
         .it-card-body { padding: 1rem; position: relative; z-index: 1; }
-        .it-card::before {
-            content: "";
-            position: absolute;
-            inset: 0 0 auto;
-            height: 5px;
-            background: var(--accent, var(--it-green-bright));
-        }
-        .it-card::after {
-            content: "";
-            position: absolute;
-            right: -26px;
-            bottom: -28px;
-            width: 96px;
-            height: 96px;
-            border-radius: 999px;
-            background: color-mix(in srgb, var(--accent, var(--it-green-bright)) 18%, transparent);
-        }
         .it-label {
             color: var(--it-muted);
             font-size: .72rem;
@@ -124,16 +112,12 @@
             border-radius: 10px;
             display: grid;
             place-items: center;
-            border: 1px solid color-mix(in srgb, var(--accent, var(--it-green-bright)) 28%, #eaf5e6);
-            background: color-mix(in srgb, var(--accent, var(--it-green-bright)) 13%, #edf7e7);
-            color: var(--accent, var(--it-green-bright));
+            border: 1px solid rgba(116,198,157,.28);
+            background: rgba(82,183,136,.13);
+            color: var(--it-green-bright);
             font-weight: 900;
             font-size: .78rem;
         }
-        .tone-green { --accent: var(--it-green-bright); }
-        .tone-blue { --accent: var(--it-blue); }
-        .tone-gold { --accent: var(--it-gold); }
-        .tone-red { --accent: var(--it-red); }
         .it-panel {
             border: 1px solid var(--it-line);
             border-radius: 18px;
@@ -272,6 +256,42 @@
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } }
+
+        /* -- dark theme overrides (matches farmer dashboard palette) -- */
+        .it-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.14); }
+        .it-card:hover { border-color: rgba(149,213,178,.4); }
+        .it-label { color: rgba(255,255,255,.5); }
+        .it-value { color: #fff; }
+        .it-note { color: rgba(255,255,255,.55); }
+        .it-panel { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .it-panel-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.08); }
+        .it-panel-title { color: #fff; }
+        .it-panel-sub { color: rgba(255,255,255,.55); }
+        .module-link { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+        .module-link:hover { border-color: rgba(116,198,157,.4); background: rgba(255,255,255,.07); }
+        .module-name { color: #fff; }
+        .module-count { color: var(--it-green-bright); }
+        .module-meter { background: rgba(255,255,255,.1); }
+        .role-row + .role-row, .log-row + .log-row, .user-row + .user-row, .report-row + .report-row { border-top-color: rgba(255,255,255,.08); }
+        .log-dot { background: rgba(82,183,136,.16); color: var(--it-green-bright); }
+        .row-title { color: #fff; }
+        .row-sub { color: rgba(255,255,255,.55); }
+        .quick-action { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+        .quick-action:hover { border-color: rgba(116,198,157,.4); background: rgba(255,255,255,.07); }
+        .quick-action strong { color: #fff; }
+        .quick-action span { color: rgba(255,255,255,.55); }
+        .status-pill { background: rgba(82,183,136,.16); color: var(--it-green-bright); }
+        .status-pill.muted { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); }
+        .section-title { color: #fff; }
+        .section-note { color: rgba(255,255,255,.55); }
+        .dashboard-group { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.1); }
+        .dashboard-group > summary { background: rgba(255,255,255,.03); }
+        .dashboard-group-title { color: #fff; }
+        .dashboard-group-note { color: rgba(255,255,255,.55); }
+        .dashboard-group-toggle { color: var(--it-green-bright); }
+        .it-console .text-muted { color: rgba(255,255,255,.5) !important; }
+        .it-console .empty-state { background: var(--ic-green-950, #0D1F18); border: 1px dashed rgba(255,255,255,.18); color: rgba(255,255,255,.7); border-radius: 8px; }
+        .it-console .empty-state .fw-bold { color: #fff; }
     </style>
 
     @php
@@ -314,52 +334,203 @@
         </div>
 
         <section class="it-stat-grid">
-            <a class="it-card tone-blue text-decoration-none" href="{{ route('users.index') }}">
+            <button type="button" class="it-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#itStatUsers">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
                         <div><div class="it-label">Total Users</div><div class="it-value">{{ number_format($userCount) }}</div></div>
                         <div class="it-icon">USR</div>
                     </div>
                     <div class="it-note">{{ number_format($activeUsers) }} active, {{ number_format($inactiveUsers) }} inactive</div>
+                    <div class="it-tap-hint">View details &rarr;</div>
                 </div>
-            </a>
-            <a class="it-card tone-green text-decoration-none" href="{{ route('farmer-profiles.index') }}">
+            </button>
+            <button type="button" class="it-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#itStatFarmers">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
                         <div><div class="it-label">Farmers</div><div class="it-value">{{ number_format($totalFarmers) }}</div></div>
                         <div class="it-icon">FRM</div>
                     </div>
                     <div class="it-note">Registered farmer access accounts</div>
+                    <div class="it-tap-hint">View details &rarr;</div>
                 </div>
-            </a>
-            <a class="it-card tone-gold text-decoration-none" href="{{ route('system-logs.index') }}">
+            </button>
+            <button type="button" class="it-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#itStatLogs">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
                         <div><div class="it-label">System Logs</div><div class="it-value">{{ number_format($logCount) }}</div></div>
                         <div class="it-icon">LOG</div>
                     </div>
                     <div class="it-note">Audit trail events recorded</div>
+                    <div class="it-tap-hint">View details &rarr;</div>
                 </div>
-            </a>
-            <a class="it-card tone-red text-decoration-none" href="{{ route('heatmap-areas.index') }}">
+            </button>
+            <button type="button" class="it-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#itStatHeatmap">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
                         <div><div class="it-label">Heat Map Areas</div><div class="it-value">{{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }}</div></div>
                         <div class="it-icon">MAP</div>
                     </div>
                     <div class="it-note">{{ number_format($highRiskHeatMapAreas) }} high or severe risk areas</div>
+                    <div class="it-tap-hint">View details &rarr;</div>
                 </div>
-            </a>
-            <a class="it-card tone-red text-decoration-none" href="{{ route('reports.index') }}">
+            </button>
+            <button type="button" class="it-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#itStatReports">
                 <div class="it-card-body">
                     <div class="d-flex justify-content-between gap-3">
                         <div><div class="it-label">Reports</div><div class="it-value">{{ number_format($moduleCounts['Reports'] ?? 0) }}</div></div>
                         <div class="it-icon">RPT</div>
                     </div>
                     <div class="it-note">Generated report history</div>
+                    <div class="it-tap-hint">View details &rarr;</div>
                 </div>
-            </a>
+            </button>
         </section>
+
+        <div class="modal fade" id="itStatUsers" tabindex="-1" aria-labelledby="itStatUsersLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 it-modal-content">
+                    <div class="modal-header it-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="itStatUsersLabel">Total Users</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="it-modal-headline">{{ number_format($userCount) }} accounts</div>
+                        <p class="it-modal-sub">{{ number_format($activeUsers) }} active &middot; {{ number_format($inactiveUsers) }} inactive.</p>
+                        @foreach($roleCounts as $role => $count)
+                            <div class="role-row">
+                                <div class="avatar-soft">{{ collect(explode(' ', $role))->map(fn ($part) => $part[0] ?? '')->take(2)->implode('') }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $role }}</div>
+                                    <div class="row-sub">{{ number_format($count) }} account{{ $count === 1 ? '' : 's' }}</div>
+                                </div>
+                                <span class="status-pill muted">{{ $userCount ? round(($count / $userCount) * 100) : 0 }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('users.index') }}">Manage Users</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="itStatFarmers" tabindex="-1" aria-labelledby="itStatFarmersLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 it-modal-content">
+                    <div class="modal-header it-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="itStatFarmersLabel">Farmer Accounts</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="it-modal-headline">{{ number_format($totalFarmers) }} registered</div>
+                        <p class="it-modal-sub">Most recently created farmer accounts.</p>
+                        @forelse($recentFarmers as $user)
+                            <div class="user-row">
+                                <div class="avatar-soft">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $user->name }}</div>
+                                    <div class="row-sub">{{ $user->email }} &middot; {{ $user->barangay ?? 'Barangay not set' }}</div>
+                                </div>
+                                <span class="status-pill {{ $user->status === 'Active' ? '' : 'muted' }}">{{ $user->status }}</span>
+                            </div>
+                        @empty
+                            <div class="empty-state text-center p-4"><div class="fw-bold">No farmer accounts yet</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('farmer-profiles.index') }}">Open Farmer Profiles</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="itStatLogs" tabindex="-1" aria-labelledby="itStatLogsLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 it-modal-content">
+                    <div class="modal-header it-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="itStatLogsLabel">System Logs</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="it-modal-headline">{{ number_format($logCount) }} events</div>
+                        <p class="it-modal-sub">Most recent audit trail activity.</p>
+                        @forelse($latestLogs as $log)
+                            <div class="log-row">
+                                <div class="log-dot">EVT</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $log->action }}</div>
+                                    <div class="row-sub">{{ $log->user?->name ?? 'System' }} &middot; {{ $log->created_at?->format('M d, Y h:i A') }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-state text-center p-4"><div class="fw-bold">No logs yet</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('system-logs.index') }}">Open Logs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="itStatHeatmap" tabindex="-1" aria-labelledby="itStatHeatmapLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 it-modal-content">
+                    <div class="modal-header it-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="itStatHeatmapLabel">Heat Map Areas</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="it-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
+                        <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records.</p>
+                        @forelse($highRiskAreasList as $area)
+                            <div class="log-row">
+                                <div class="log-dot">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="row-sub">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-state text-center p-4"><div class="fw-bold">No high risk barangays</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="itStatReports" tabindex="-1" aria-labelledby="itStatReportsLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 it-modal-content">
+                    <div class="modal-header it-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="itStatReportsLabel">Reports</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="it-modal-headline">{{ number_format($moduleCounts['Reports'] ?? 0) }} generated</div>
+                        <p class="it-modal-sub">Most recent report history.</p>
+                        @forelse($latestReports as $report)
+                            <div class="report-row">
+                                <div class="log-dot">PDF</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $report->title }}</div>
+                                    <div class="row-sub">{{ $report->report_type }} &middot; {{ $report->generatedBy?->name ?? 'System' }} &middot; {{ $report->created_at?->format('M d, Y') }}</div>
+                                </div>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a>
+                            </div>
+                        @empty
+                            <div class="empty-state text-center p-4"><div class="fw-bold">No reports yet</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('reports.index') }}">Open Reports</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="dashboard-focus-grid">
         <details class="dashboard-group" open>

@@ -36,6 +36,7 @@
         linear-gradient(180deg, rgba(8,18,13,.72), rgba(8,18,13,.88)),
         url('{{ asset('images/rice-hero-aerial.jpg') }}') center/cover no-repeat fixed;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 16px;
@@ -64,13 +65,13 @@
 
     /* -- LOGIN CARD -------------------------------------- */
     .login-card {
-      flex: 0 1 440px;
+      flex: 0 1 560px;
       background: rgba(15,31,23,.68);
       border: 1.5px solid rgba(149,213,178,.22);
-      border-radius: 20px;
+      border-radius: 22px;
       box-shadow: 0 26px 60px rgba(0,0,0,.42);
       backdrop-filter: blur(18px);
-      padding: 24px 28px 20px;
+      padding: 34px 40px 30px;
     }
     .card-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
     .card-logo img { width: 42px; height: auto; display: block; }
@@ -133,13 +134,13 @@
 
     /* -- WEATHER WIDGET ---------------------------------- */
     .weather-card {
-      flex: 0 1 260px;
+      flex: 0 1 420px;
       background: rgba(15,31,23,.64);
       border: 1.5px solid rgba(149,213,178,.2);
-      border-radius: 18px;
+      border-radius: 22px;
       box-shadow: 0 20px 48px rgba(0,0,0,.38);
       backdrop-filter: blur(16px);
-      padding: 16px 18px 14px;
+      padding: 30px 32px 26px;
       color: #fff;
     }
     .weather-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.1rem; margin-bottom: 3px; }

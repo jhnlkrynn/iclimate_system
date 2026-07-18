@@ -29,8 +29,7 @@
     <style>
         .wp-hero { position: relative; overflow: hidden; border-radius: 32px; padding: 1.35rem; margin-bottom: 1.25rem; color: #fff; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.24), transparent 30%), linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%); box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18); }
         .wp-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(90deg, rgba(0,0,0,.8), transparent 86%); }
-        .wp-hero::after, .wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
-        .wp-hero::after { top: auto; bottom: 0; height: 7px; background: linear-gradient(90deg, #ffd166, #52b788, #95d5b2, #d85b45); }
+        .wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
         .wp-hero > * { position: relative; z-index: 1; }
         .wp-eyebrow { font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.7); }
         .wp-panel, .wp-metric, .wp-input-card, .wp-result-card { position: relative; overflow: hidden; border: 1px solid rgba(212,237,218,.98); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(247,251,248,.96)); box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
@@ -79,8 +78,50 @@
         @media (max-width: 991.98px) { .wp-flow { grid-template-columns: 1fr; } }
         @media (max-width: 1199.98px) { .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .ds-grid { grid-template-columns: 1fr; } .wp-input-row { display: grid; } .wp-input-card .form-control { max-width: none; text-align: left; } }
+
+        /* -- dark theme overrides -- */
+        .wp-page { color: rgba(255,255,255,.85); }
+        .wp-panel, .wp-metric, .wp-input-card, .wp-result-card {
+            border-color: rgba(255,255,255,.12);
+            background: var(--ic-green-950);
+        }
+        .wp-panel-header { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
+        .wp-label { color: rgba(255,255,255,.5); }
+        .wp-value { color: #fff; }
+        .wp-unit, .wp-note, .wp-help { color: rgba(255,255,255,.55); }
+        .tone-green { --accent: #52b788; --status-color: #74c69d; --status-bg: rgba(82,183,136,.16); }
+        .tone-blue { --accent: #6fb8e0; --status-color: #6fb8e0; --status-bg: rgba(47,111,143,.22); }
+        .tone-amber { --accent: #ffd166; --status-color: #ffd166; --status-bg: rgba(255,209,102,.16); }
+        .tone-red { --accent: #f0917c; --status-color: #f0917c; --status-bg: rgba(216,91,69,.2); }
+        .wp-step { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .wp-input-card .form-control { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.18); color: #fff; }
+        .wp-preset { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: #fff; }
+        .wp-preset:hover { border-color: #52b788; background: rgba(82,183,136,.12); }
+        .wp-advisory { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+        .wp-feature-pill { background: rgba(82,183,136,.16); color: #74c69d; }
+        .wp-score-bar { background: rgba(255,255,255,.08); }
+        .ds-card { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+        .ds-card.primary { background: rgba(82,183,136,.08); }
+        .ds-title { color: rgba(255,255,255,.5); }
+        .ds-value { color: #fff; }
+        .ds-note { color: rgba(255,255,255,.55); }
+        .ds-notifications li { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
+        .smart-list li { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
+        .stress-chip { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+        .wp-page .text-muted { color: rgba(255,255,255,.5) !important; }
+        .wp-page .text-dark { color: #fff !important; }
+        .wp-page .text-success { color: #74c69d !important; }
+        .wp-page .text-primary { color: #6fb8e0 !important; }
+        .wp-page code { color: rgba(255,255,255,.6); }
+
+        /* -- plain, uniform page (matches farmer dashboard, no tone variation) -- */
+        .wp-metric::before, .wp-panel::before { background: #52b788 !important; }
+        .wp-metric .wp-status { color: #74c69d !important; background: rgba(82,183,136,.16) !important; }
+        .ds-card.primary { border-left-color: #52b788 !important; }
+        .stress-chip { border-left-color: #52b788 !important; }
     </style>
 
+    <div class="wp-page">
     <section class="wp-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
             <div>
@@ -329,6 +370,7 @@
             </div>
         @endif
     @endif
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

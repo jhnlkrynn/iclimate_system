@@ -21,8 +21,33 @@
             .report-mobile-list, .history-card-list { display: grid; }
             .report-mobile-row { grid-template-columns: 1fr; gap: .2rem; }
         }
+
+        /* -- dark theme overrides (matches farmer dashboard palette) -- */
+        .report-page { color: rgba(255,255,255,.85); }
+        .report-stat, .report-mobile-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .report-stat-label, .report-mobile-label { color: rgba(255,255,255,.5); }
+        .report-stat-value, .report-mobile-value { color: #fff; }
+        .report-page .text-muted { color: rgba(255,255,255,.5) !important; }
+        .report-page .card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
+        .report-page .card-header { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.08) !important; }
+        .report-page .table { color: rgba(255,255,255,.82); }
+        .report-page .table thead th { background: rgba(255,255,255,.04) !important; color: rgba(255,255,255,.5) !important; border-color: rgba(255,255,255,.08); }
+        .report-page .table td, .report-page .table th { color: rgba(255,255,255,.82) !important; border-color: rgba(255,255,255,.08); }
+        .report-page .table-hover tbody tr:hover { background: rgba(255,255,255,.05) !important; }
+        .report-page .form-control, .report-page .form-select {
+            background-color: rgba(255,255,255,.05);
+            border-color: rgba(255,255,255,.18);
+            color: #fff;
+        }
+        .report-page .form-control::placeholder { color: rgba(255,255,255,.35); }
+        .report-page .form-select option { color: var(--ic-ink, #0d1f18); }
+        .report-page .form-label { color: rgba(255,255,255,.55); }
+        .report-page .badge.text-bg-light { background: rgba(255,255,255,.08) !important; color: rgba(255,255,255,.75) !important; }
+        .report-page .btn-outline-secondary { color: #fff; border-color: rgba(255,255,255,.28); }
+        .report-page .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
     </style>
 
+    <div class="report-page">
     <section class="page-hero">
         <div>
             <div class="eyebrow mb-2">Analytics Workspace</div>
@@ -133,6 +158,7 @@
             @endforelse
         </div>
         <div class="card-body border-top d-flex justify-content-end">{{ $history->links() }}</div>
+    </div>
     </div>
     </div>
 </x-app-layout>

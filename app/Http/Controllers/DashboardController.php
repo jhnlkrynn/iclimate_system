@@ -32,6 +32,12 @@ class DashboardController extends Controller
             'advisories' => PlantingAdvisory::query()->where('status', 'Published')->latest()->take(5)->get(),
             'notifications' => UserNotification::query()->where('user_id', $request->user()->id)->latest()->take(5)->get(),
             'climateSummary' => ClimateRecord::query()->latest('record_date')->first(),
+            'recentClimateRecords' => ClimateRecord::query()->latest('record_date')->take(5)->get(),
+            'highRiskAreasList' => HeatmapArea::query()
+                ->whereIn('risk_level', ['High', 'Severe'])
+                ->orderByDesc('risk_score')
+                ->take(8)
+                ->get(),
         ]);
     }
 
@@ -73,6 +79,12 @@ class DashboardController extends Controller
             'latestFeedPosts' => FeedPost::query()->with('author')->whereNull('archived_at')->latest()->take(4)->get(),
             'latestHeatmapAreas' => HeatmapArea::query()->latest()->take(5)->get(),
             'latestReports' => Report::query()->with('generatedBy')->latest()->take(4)->get(),
+            'recentFarmerProfiles' => FarmerProfile::query()->latest()->take(6)->get(),
+            'highRiskAreasList' => HeatmapArea::query()
+                ->whereIn('risk_level', ['High', 'Severe'])
+                ->orderByDesc('risk_score')
+                ->take(8)
+                ->get(),
             ...$this->maoAggregates(),
             'weatherChartData' => $weatherChartData,
             'weatherDataSource' => $weatherDataSource,
@@ -106,7 +118,13 @@ class DashboardController extends Controller
             ...$this->adminAggregates(),
             'latestLogs' => SystemLog::query()->with('user')->latest()->take(6)->get(),
             'latestUsers' => User::query()->latest()->take(5)->get(),
+            'recentFarmers' => User::query()->where('role', User::ROLE_FARMER)->latest()->take(6)->get(),
             'latestReports' => Report::query()->with('generatedBy')->latest()->take(5)->get(),
+            'highRiskAreasList' => HeatmapArea::query()
+                ->whereIn('risk_level', ['High', 'Severe'])
+                ->orderByDesc('risk_score')
+                ->take(8)
+                ->get(),
         ]);
     }
 

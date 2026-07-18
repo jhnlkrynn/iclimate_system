@@ -33,15 +33,6 @@
             background-size: 38px 38px;
             mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 88%);
         }
-        .mao-hero::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 7px;
-            background: linear-gradient(90deg, var(--mao-gold), var(--mao-green-bright), var(--mao-blue), var(--mao-red));
-        }
         .mao-hero > * { position: relative; z-index: 1; }
         .mao-eyebrow {
             font-size: .72rem;
@@ -75,15 +66,25 @@
             background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(229,242,226,.97));
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+            width: 100%;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
         }
         .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(31,143,85,.42); }
-        .mao-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, var(--mao-green-bright)); }
-        .mao-card::after { content: ""; position: absolute; right: -28px; bottom: -30px; width: 98px; height: 98px; border-radius: 999px; background: color-mix(in srgb, var(--accent, var(--mao-green-bright)) 18%, transparent); }
+        .mao-card:focus-visible { outline: 2px solid var(--mao-green-bright); outline-offset: 2px; }
+        .mao-tap-hint { color: var(--mao-green-bright); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
+        .mao-card:hover .mao-tap-hint, .mao-card:focus-visible .mao-tap-hint { opacity: 1; transform: translateY(0); }
+        .mao-modal-content { border-radius: 18px; background: var(--ic-green-950, #0D1F18); color: rgba(255,255,255,.85); }
+        .mao-modal-content .modal-footer { border-top-color: rgba(255,255,255,.1); }
+        .mao-modal-header { background: linear-gradient(90deg, #0d1f18, #1a3a2a); color: #fff; }
+        .mao-modal-header .modal-title { color: #fff; }
+        .mao-modal-headline { font-size: 1.6rem; font-weight: 900; color: #fff; }
+        .mao-modal-sub { color: rgba(255,255,255,.55); font-size: .85rem; margin: .3rem 0 .9rem; }
         .mao-card-body { padding: 1rem; position: relative; z-index: 1; }
         .mao-label { color: var(--mao-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .mao-value { margin-top: .35rem; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 900; color: var(--mao-ink); }
         .mao-note { color: var(--mao-muted); font-size: .84rem; margin-top: .65rem; }
-        .tone-green { --accent: var(--mao-green-bright); } .tone-blue { --accent: var(--mao-blue); } .tone-gold { --accent: var(--mao-gold); } .tone-red { --accent: var(--mao-red); }
         .mao-panel {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
@@ -212,6 +213,47 @@
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+
+        /* -- dark theme overrides (matches farmer dashboard palette) -- */
+        .mao-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.14); }
+        .mao-card:hover { border-color: rgba(149,213,178,.4); }
+        .mao-label { color: rgba(255,255,255,.5); }
+        .mao-value { color: #fff; }
+        .mao-note { color: rgba(255,255,255,.55); }
+        .mao-panel { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .mao-panel-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.08); }
+        .mao-panel-title { color: #fff; }
+        .mao-panel-sub { color: rgba(255,255,255,.55); }
+        .mao-list-item + .mao-list-item { border-top-color: rgba(255,255,255,.08); }
+        .list-mark { background: rgba(82,183,136,.16); color: var(--mao-green-bright); }
+        .row-title { color: #fff; }
+        .row-text { color: rgba(255,255,255,.55); }
+        .row-meta { color: rgba(255,255,255,.4); }
+        .status-pill { background: rgba(82,183,136,.16); color: var(--mao-green-bright); }
+        .status-pill.muted { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); }
+        .quick-action { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+        .quick-action:hover { border-color: rgba(116,198,157,.4); background: rgba(255,255,255,.07); }
+        .quick-action strong { color: #fff; }
+        .quick-action span { color: rgba(255,255,255,.55); }
+        .risk-card { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+        .risk-card.severe, .risk-card.high { background: rgba(216,91,69,.14); border-color: rgba(216,91,69,.45); }
+        .live-weather-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .source-badge { background: rgba(47,111,143,.22); border-color: rgba(126,200,227,.35); color: #7ec8e3; }
+        .chart-box { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .chart-title { color: #fff; }
+        .chart-note { color: rgba(255,255,255,.55); }
+        .risk-level-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
+        .risk-level-value { color: #fff; }
+        .empty-soft { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.7); }
+        .empty-soft strong { color: #fff; }
+        .section-title { color: #fff; }
+        .section-note { color: rgba(255,255,255,.55); }
+        .dashboard-group { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.1); }
+        .dashboard-group > summary { background: rgba(255,255,255,.03); }
+        .dashboard-group-title { color: #fff; }
+        .dashboard-group-note { color: rgba(255,255,255,.55); }
+        .dashboard-group-toggle { color: var(--mao-green-bright); }
+        .mao-console .text-muted { color: rgba(255,255,255,.5) !important; }
     </style>
 
     @php
@@ -243,11 +285,131 @@
         </div>
 
         <section class="mao-stat-grid">
-            <a class="mao-card tone-green text-decoration-none" href="{{ route('farmer-profiles.index') }}"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div></div></a>
-            <a class="mao-card tone-blue text-decoration-none" href="{{ route('climate-records.index') }}"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div></div></a>
-            <a class="mao-card tone-gold text-decoration-none" href="{{ route('rice-productions.index') }}"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div></div></a>
-            <a class="mao-card tone-red text-decoration-none" href="{{ route('heatmap-areas.index') }}"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div></div></a>
+            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
         </section>
+
+        <div class="modal fade" id="maoStatFarmers" tabindex="-1" aria-labelledby="maoStatFarmersLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatFarmersLabel">Farmer Profiles</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($profileCount) }} registered</div>
+                        <p class="mao-modal-sub">Most recently registered farmer profiles.</p>
+                        @forelse($recentFarmerProfiles as $profile)
+                            <div class="mao-list-item">
+                                <div class="list-mark">FAR</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $profile->full_name }}</div>
+                                    <div class="row-text">{{ $profile->barangay }} &middot; {{ number_format($profile->farm_area, 2) }} ha &middot; {{ $profile->farm_type }}</div>
+                                    <div class="row-meta">{{ $profile->contact_number }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No farmer profiles yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('farmer-profiles.index') }}">Open Farmer Profiles</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="maoStatClimate" tabindex="-1" aria-labelledby="maoStatClimateLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatClimateLabel">Climate Records</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($totalClimateRecords) }} recorded</div>
+                        <p class="mao-modal-sub">Latest entry: {{ $latestClimate?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $latestClimate?->source ?? 'N/A' }}</p>
+                        @forelse($recentClimateRecords as $record)
+                            <div class="mao-list-item">
+                                <div class="list-mark">CLI</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
+                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
+                                    <div class="row-meta">Source: {{ $record->source }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No climate records yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="maoStatRice" tabindex="-1" aria-labelledby="maoStatRiceLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatRiceLabel">Rice Production</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} total production</div>
+                        <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
+                        @forelse($recentRiceProductions as $production)
+                            <div class="mao-list-item">
+                                <div class="list-mark">RIC</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $production->barangay }} &middot; {{ $production->season }} {{ $production->year }}</div>
+                                    <div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div>
+                                    <div class="row-meta">{{ $production->irrigation_type }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No production records yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('rice-productions.index') }}">Open Rice Production</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="maoStatRisk" tabindex="-1" aria-labelledby="maoStatRiskLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatRiskLabel">Heat Map Risks</h2>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
+                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
+                        @forelse($highRiskAreasList as $area)
+                            <div class="mao-list-item">
+                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="row-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No high risk barangays</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="dashboard-focus-grid">
         <details class="dashboard-group" open>
@@ -547,8 +709,8 @@
                     },
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true } },
-                    y: { beginAtZero: true, grid: { color: 'rgba(153,185,160,.28)' } },
+                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, color: 'rgba(255,255,255,.55)' } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,.1)' }, ticks: { color: 'rgba(255,255,255,.55)' } },
                 },
             });
 
