@@ -60,4 +60,41 @@ class WeatherPredictionTest extends TestCase
             ->assertSee('Predicted Rice Yield')
             ->assertDontSee('Prediction error:');
     }
+
+    public function test_rice_yield_prediction_rejects_unrealistic_inputs(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($user)
+            ->from(route('weather-predictions.index'))
+            ->post(route('weather-predictions.predict'), [
+                'rainfall' => 999,
+                'temp_avg' => 55,
+                'temp_range' => 40,
+                'area' => -1,
+                'previous_rainfall' => -5,
+                'previous_temp' => 10,
+                'rainfall_6m' => 900,
+                'temp_3m' => 45,
+                'temp_6m' => 8,
+                'seasonal_rainfall' => 5000,
+                'seasonal_temp' => 41,
+                'season' => 'Wet',
+                'farm_type' => 'Rainfed',
+            ])
+            ->assertRedirect(route('weather-predictions.index'))
+            ->assertSessionHasErrors([
+                'rainfall',
+                'temp_avg',
+                'temp_range',
+                'area',
+                'previous_rainfall',
+                'previous_temp',
+                'rainfall_6m',
+                'temp_3m',
+                'temp_6m',
+                'seasonal_rainfall',
+                'seasonal_temp',
+            ]);
+    }
 }

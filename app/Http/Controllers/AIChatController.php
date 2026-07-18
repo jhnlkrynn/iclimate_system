@@ -38,6 +38,6 @@ class AIChatController extends Controller
     {
         AIChat::query()->where('user_id', $request->user()->id)->delete();
 
-        return back()->with('status', 'AI Farming Assistant conversation cleared.');
+        return back()->with('status', 'PalayPilot conversation cleared.');
     }
 }

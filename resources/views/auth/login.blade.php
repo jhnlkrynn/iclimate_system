@@ -84,6 +84,23 @@
     .login-form-header p em { font-style: normal; color: #74C69D; font-weight: 600; }
 
     .auth-status { background: rgba(82,183,136,.14); border: 1px solid rgba(82,183,136,.35); color: #d8f3dc; border-radius: 10px; padding: 9px 12px; font-size: .82rem; margin-bottom: 12px; }
+    .auth-popup { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-start; justify-content: center; padding: 18px; background: radial-gradient(circle at 50% 0, rgba(82,183,136,.22), transparent 22rem), rgba(8,18,13,.34); backdrop-filter: blur(5px); }
+    .auth-popup.show { display: flex; }
+    .auth-popup-card { width: min(430px, 100%); margin-top: 22px; border: 1.5px solid rgba(149,213,178,.34); border-radius: 20px; overflow: hidden; background: linear-gradient(145deg, rgba(255,255,255,.99), rgba(240,247,244,.99)); box-shadow: 0 24px 58px rgba(0,0,0,.42); animation: authPopupIn .24s ease-out; }
+    .auth-popup-card.success { --popup-accent: #52B788; }
+    .auth-popup-card.error { --popup-accent: #e57a68; }
+    .auth-popup-card.info { --popup-accent: #E8A73D; }
+    .auth-popup-card::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--popup-accent), #E8A73D, #74C69D); }
+    .auth-popup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; padding: 16px 16px 13px; }
+    .auth-popup-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--popup-accent); box-shadow: 0 12px 24px color-mix(in srgb, var(--popup-accent) 36%, transparent); font-weight: 900; }
+    .auth-popup-title { margin: 0 0 5px; color: #0d1f18; font-size: 1rem; font-weight: 900; }
+    .auth-popup-message { margin: 0; color: #3d5a48; line-height: 1.45; }
+    .auth-popup-close { width: 100%; border: 0; border-top: 1px solid #d4edda; padding: 11px 14px; background: #f0f7f4; color: #1a3a2a; font-weight: 900; cursor: pointer; }
+    .auth-popup-close:hover { background: #d8f3dc; }
+    .auth-popup-timer { height: 3px; background: color-mix(in srgb, var(--popup-accent) 24%, #fff); }
+    .auth-popup-timer span { display: block; height: 100%; background: var(--popup-accent); animation: authPopupTimer 5.2s linear forwards; }
+    @keyframes authPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes authPopupTimer { from { width: 100%; } to { width: 0%; } }
 
     .form-group { margin-bottom: 11px; }
     .form-group label { display: block; font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 6px; }
@@ -174,6 +191,26 @@
   </style>
 </head>
 <body class="login-page">
+  @php
+    $popupType = $errors->any() ? 'error' : (session('success') ? 'success' : (session('status') ? 'info' : null));
+    $popupTitle = $popupType === 'error' ? 'Login failed' : ($popupType === 'success' ? 'Action successful' : 'Notice');
+    $popupMessage = session('success') ?: session('status') ?: ($errors->any() ? $errors->first() : null);
+  @endphp
+  @if($popupType && $popupMessage)
+    <div id="authActionPopup" class="auth-popup show" role="alertdialog" aria-modal="true" aria-labelledby="authPopupTitle">
+      <div class="auth-popup-card {{ $popupType }}">
+        <div class="auth-popup-body">
+          <div class="auth-popup-icon" aria-hidden="true">{{ $popupType === 'success' ? '✓' : ($popupType === 'error' ? '!' : 'i') }}</div>
+          <div>
+            <h2 id="authPopupTitle" class="auth-popup-title">{{ $popupTitle }}</h2>
+            <p class="auth-popup-message">{{ $popupMessage }}</p>
+          </div>
+        </div>
+        <button type="button" class="auth-popup-close" data-auth-popup-close>OK</button>
+        <div class="auth-popup-timer" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+  @endif
   <div class="scene-glow scene-glow-1"></div>
   <div class="scene-glow scene-glow-2"></div>
 
@@ -241,11 +278,13 @@
 
       <p class="login-register">Don't have an account? <a href="{{ route('register') }}">Create Account</a></p>
 
-      <div class="demo-row">
-        <span class="demo-pill" onclick="fillDemo('farmer@iclimate.com','password123')">Farmer</span>
-        <span class="demo-pill" onclick="fillDemo('mao@iclimate.com','password123')">MAO</span>
-        <span class="demo-pill" onclick="fillDemo('admin@iclimate.com','password123')">IT Expert</span>
-      </div>
+      @if (app()->environment('local'))
+        <div class="demo-row">
+          <span class="demo-pill" onclick="fillDemo('farmer@iclimate.com','password123')">Farmer</span>
+          <span class="demo-pill" onclick="fillDemo('mao@iclimate.com','password123')">MAO</span>
+          <span class="demo-pill" onclick="fillDemo('admin@iclimate.com','password123')">IT Expert</span>
+        </div>
+      @endif
     </div>
 
     <div class="weather-card">
@@ -294,10 +333,12 @@
   </div>
 
 <script>
-  function fillDemo(email, pass) {
-    document.getElementById('email').value = email;
-    document.getElementById('password').value = pass;
-  }
+  @if (app()->environment('local'))
+    function fillDemo(email, pass) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = pass;
+    }
+  @endif
 
   document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password');
@@ -315,6 +356,16 @@
       loginBtn.disabled = true;
       loginBtn.innerHTML = 'Signing in...';
     });
+
+    const popup = document.getElementById('authActionPopup');
+    if (popup) {
+      const close = () => popup.classList.remove('show');
+      popup.querySelector('[data-auth-popup-close]')?.addEventListener('click', close);
+      popup.addEventListener('click', (event) => {
+        if (event.target === popup) close();
+      });
+      setTimeout(close, 5200);
+    }
   });
 </script>
 </body>

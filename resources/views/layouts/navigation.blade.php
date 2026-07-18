@@ -7,20 +7,20 @@
     );
 @endphp
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
-    <div class="container-fluid px-0 gap-3 topbar-inner">
+    <div class="container-fluid px-0 gap-3 topbar-inner flex-wrap">
         <button class="btn btn-outline-primary d-lg-none fw-bold" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation menu">
             Menu
         </button>
-        <div class="me-auto d-flex align-items-center gap-3">
-            <div class="d-none d-sm-block">
+        <div class="me-auto d-flex align-items-center gap-3 min-w-0">
+            <div class="d-none d-sm-block min-w-0">
                 <div class="small text-muted">Signed in as</div>
-                <div class="fw-bold">{{ auth()->user()->name }}</div>
+                <div class="fw-bold text-truncate" style="max-width: min(38vw, 320px);">{{ auth()->user()->name }}</div>
             </div>
         </div>
         <div class="d-none d-md-flex align-items-center gap-2 me-2">
             <span class="badge text-bg-light border text-muted">{{ auth()->user()->roleLabel() }}</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
             <a class="btn btn-sm btn-outline-primary position-relative" href="{{ route('notifications.index') }}" aria-label="Open notifications">
                 Alerts
                 @if ($unreadCount > 0)
@@ -28,7 +28,7 @@
                 @endif
             </a>
             <a class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">Profile</a>
-            <form method="POST" action="{{ route('logout') }}" data-loading="true">
+            <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?">
                 @csrf
                 <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Logging out...">Logout</button>
             </form>

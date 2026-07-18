@@ -1633,8 +1633,46 @@
       }
     }
   </style>
+  <style>
+    .home-popup { position: fixed; inset: 0; z-index: 10000; display: none; align-items: flex-start; justify-content: center; padding: 18px; background: radial-gradient(circle at 50% 0, rgba(82,183,136,.2), transparent 22rem), rgba(8,18,13,.28); backdrop-filter: blur(4px); }
+    .home-popup.show { display: flex; }
+    .home-popup-card { width: min(430px, 100%); margin-top: 20px; border: 1.5px solid rgba(149,213,178,.38); border-radius: 20px; overflow: hidden; background: linear-gradient(145deg, rgba(255,255,255,.99), rgba(240,247,244,.99)); box-shadow: 0 24px 58px rgba(0,0,0,.32); animation: homePopupIn .24s ease-out; }
+    .home-popup-card.success { --popup-accent: #52B788; }
+    .home-popup-card.error { --popup-accent: #D85B45; }
+    .home-popup-card::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--popup-accent), #E8A73D, #74C69D); }
+    .home-popup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; padding: 16px 16px 13px; }
+    .home-popup-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--popup-accent); box-shadow: 0 12px 24px color-mix(in srgb, var(--popup-accent) 36%, transparent); font-weight: 900; }
+    .home-popup-title { margin: 0 0 5px; color: #0D1F18; font-size: 1rem; font-weight: 900; }
+    .home-popup-message { margin: 0; color: #3D5A48; line-height: 1.45; }
+    .home-popup-close { width: 100%; border: 0; border-top: 1px solid #D8F3DC; padding: 11px 14px; background: #F0F7F4; color: #1A3A2A; font-weight: 900; cursor: pointer; }
+    .home-popup-close:hover { background: #D8F3DC; }
+    .home-popup-timer { height: 3px; background: color-mix(in srgb, var(--popup-accent) 24%, #fff); }
+    .home-popup-timer span { display: block; height: 100%; background: var(--popup-accent); animation: homePopupTimer 5.2s linear forwards; }
+    @keyframes homePopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes homePopupTimer { from { width: 100%; } to { width: 0%; } }
+  </style>
 </head>
 <body>
+@php
+  $homePopupType = session('error') ? 'error' : (session('success') ? 'success' : null);
+  $homePopupTitle = $homePopupType === 'error' ? 'Action failed' : 'Action successful';
+  $homePopupMessage = session('error') ?: session('success');
+@endphp
+@if($homePopupType && $homePopupMessage)
+  <div id="homeActionPopup" class="home-popup show" role="alertdialog" aria-modal="true" aria-labelledby="homePopupTitle">
+    <div class="home-popup-card {{ $homePopupType }}">
+      <div class="home-popup-body">
+        <div class="home-popup-icon" aria-hidden="true">{{ $homePopupType === 'success' ? '✓' : '!' }}</div>
+        <div>
+          <h2 id="homePopupTitle" class="home-popup-title">{{ $homePopupTitle }}</h2>
+          <p class="home-popup-message">{{ $homePopupMessage }}</p>
+        </div>
+      </div>
+      <button type="button" class="home-popup-close" data-home-popup-close>OK</button>
+      <div class="home-popup-timer" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+@endif
 
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">
@@ -2385,6 +2423,16 @@
       });
     }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
     sections.forEach(section => spyObserver.observe(section));
+
+    const popup = document.getElementById('homeActionPopup');
+    if (popup) {
+      const close = () => popup.classList.remove('show');
+      popup.querySelector('[data-home-popup-close]')?.addEventListener('click', close);
+      popup.addEventListener('click', (event) => {
+        if (event.target === popup) close();
+      });
+      setTimeout(close, 5200);
+    }
   });
 
 </script>

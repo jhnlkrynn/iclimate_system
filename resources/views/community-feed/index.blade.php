@@ -18,6 +18,9 @@
         .feed-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .feed-grid { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:1rem; align-items:start; margin-top:1rem; }
         .feed-card { border:1.5px solid #e8e0d0; border-radius:18px; background:#fff; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; }
+        .feed-post-card { overflow:visible; }
+        .feed-post-card > .feed-card-body:first-child { border-top-left-radius:18px; border-top-right-radius:18px; background:#fff; }
+        .feed-post-card > .feed-card-body:last-child { border-bottom-left-radius:18px; border-bottom-right-radius:18px; background:#fff; }
         .feed-card-body { padding:1rem; }
         .feed-composer { background:linear-gradient(135deg,#f5f0e8,#edf7e7); }
         .feed-composer .feed-card-body { background:linear-gradient(145deg,#fff,#f2f8f3); border-radius:16px; margin:.15rem; }
@@ -56,14 +59,14 @@
         .media-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; margin-top:.85rem; }
         .media-grid img, .media-grid video { width:100%; border-radius:8px; border:1px solid #d4edda; background:#0d1f18; max-height:330px; object-fit:cover; }
         .file-tile { display:flex; align-items:center; gap:.7rem; padding:.85rem; border:1px solid #d4edda; border-radius:8px; background:#f7fbf8; color:inherit; text-decoration:none; font-weight:800; }
-        .reaction-row { display:flex; flex-wrap:wrap; gap:.45rem; padding:.8rem 1rem; border-top:1px solid #edf3ee; border-bottom:1px solid #edf3ee; background:#fbfdfb; }
-        .reaction-picker { position:relative; display:inline-flex; align-items:center; }
+        .reaction-row { position:relative; z-index:5; display:flex; flex-wrap:wrap; gap:.55rem; align-items:center; justify-content:space-between; padding:.8rem 1rem; border-top:1px solid #edf3ee; border-bottom:1px solid #edf3ee; background:#fbfdfb; overflow:visible; }
+        .reaction-picker { position:relative; z-index:30; display:inline-flex; align-items:center; flex:0 0 auto; }
         .reaction-trigger { border:1px solid #d4edda; border-radius:999px; background:#fff; color:var(--feed-ink); padding:.42rem .8rem; font-size:.86rem; font-weight:900; min-width:86px; }
         .reaction-trigger.active { color:#1f6f4a; background:#f0f7f4; border-color:#95d5b2; }
         .reaction-menu {
             position:absolute;
             left:0;
-            bottom:calc(100% + .5rem);
+            top:calc(100% + .5rem);
             display:flex;
             gap:.42rem;
             padding:.42rem .5rem;
@@ -73,8 +76,8 @@
             box-shadow:0 .75rem 1.7rem rgba(13,31,24,.28);
             opacity:0;
             visibility:hidden;
-            transform:translateY(.35rem) scale(.96);
-            transform-origin:bottom left;
+            transform:translateY(-.25rem) scale(.96);
+            transform-origin:top left;
             transition:opacity .15s ease, transform .15s ease, visibility .15s ease;
             z-index:25;
             white-space:nowrap;
@@ -84,6 +87,10 @@
             opacity:1;
             visibility:visible;
             transform:translateY(0) scale(1);
+        }
+        .reaction-row:has(.reaction-picker:hover),
+        .reaction-row:has(.reaction-picker:focus-within) {
+            padding-bottom:4.35rem;
         }
         .reaction-picker:hover .reaction-option,
         .reaction-picker:focus-within .reaction-option {
@@ -101,12 +108,12 @@
             content:"";
             position:absolute;
             left:1.1rem;
-            bottom:-.38rem;
+            top:-.38rem;
             width:.7rem;
             height:.7rem;
             background:#23272d;
-            border-right:1px solid rgba(13,31,24,.35);
-            border-bottom:1px solid rgba(13,31,24,.35);
+            border-left:1px solid rgba(13,31,24,.35);
+            border-top:1px solid rgba(13,31,24,.35);
             transform:rotate(45deg);
         }
         .reaction-option { position:relative; z-index:1; width:42px; height:42px; display:grid; place-items:center; border:0; border-radius:999px; background:var(--reaction-bg,#2f80ed); padding:0; color:#fff; font-size:0; font-weight:900; box-shadow:inset 0 -5px 10px rgba(0,0,0,.16), 0 .28rem .65rem rgba(0,0,0,.2); transition:transform .14s ease, filter .14s ease; }
@@ -119,7 +126,7 @@
         .reaction-option.helpful { --reaction-bg:linear-gradient(145deg,#63d7a2,#168a5a); }
         .reaction-option.text-success { outline:3px solid rgba(255,255,255,.72); outline-offset:2px; }
         .reaction-display-icon { display:inline-grid; place-items:center; width:1.35rem; height:1.35rem; border-radius:999px; margin-right:.28rem; background:#f0f7f4; font-size:.95rem; line-height:1; vertical-align:-.18rem; }
-        .reaction-counts { display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; color:var(--feed-muted); font-size:.8rem; font-weight:800; }
+        .reaction-counts { display:flex; flex:1 1 220px; flex-wrap:wrap; gap:.35rem; align-items:center; justify-content:flex-end; min-width:0; color:var(--feed-muted); font-size:.8rem; font-weight:800; }
         .reaction-count-pill { display:inline-flex; align-items:center; border:1px solid #d4edda; border-radius:999px; background:#fff; padding:.25rem .55rem .25rem .35rem; }
         @keyframes reactionFloat {
             0% { transform:translateY(.42rem) scale(.72); opacity:0; }
@@ -136,7 +143,38 @@
         .side-panel:hover { box-shadow:0 1rem 2rem rgba(13,31,24,.1); border-color:#b7e4c7; }
         .side-panel h2 { margin-bottom:.5rem; }
         @media (max-width:1199.98px) { .feed-grid { grid-template-columns:1fr; } }
-        @media (max-width:767.98px) { .media-grid { grid-template-columns:1fr; } }
+        @media (max-width:767.98px) {
+            .media-grid { grid-template-columns:1fr; }
+            .reaction-row { align-items:flex-start; flex-direction:column; }
+            .reaction-counts { justify-content:flex-start; width:100%; }
+            .reaction-menu { left:0; right:auto; max-width:calc(100vw - 2rem); border-radius:18px; padding:.5rem; }
+        }
+        @media (max-width:575.98px) {
+            .reaction-picker { width:100%; }
+            .reaction-trigger { width:100%; }
+            .reaction-menu {
+                position:absolute;
+                left:50%;
+                right:auto;
+                top:calc(100% + .5rem);
+                bottom:auto;
+                width:max-content;
+                max-width:100%;
+                justify-content:center;
+                transform:translate(-50%, -.25rem) scale(.98);
+                transform-origin:center top;
+                z-index:40;
+            }
+            .reaction-picker:hover .reaction-menu,
+            .reaction-picker:focus-within .reaction-menu {
+                transform:translate(-50%, 0) scale(1);
+            }
+            .reaction-menu::after { left:50%; transform:translateX(-50%) rotate(45deg); }
+            .reaction-row:has(.reaction-picker:hover),
+            .reaction-row:has(.reaction-picker:focus-within) {
+                padding-bottom:4.7rem;
+            }
+        }
     </style>
 
     <div class="feed-wrap">
@@ -231,7 +269,7 @@
                         $canManagePost = $canPost;
                         $isArchived = $post->archived_at !== null;
                     @endphp
-                    <article class="feed-card">
+                    <article class="feed-card feed-post-card">
                         <div class="feed-card-body">
                             <div class="d-flex justify-content-between gap-3">
                                 <div class="feed-author">

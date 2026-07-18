@@ -1,3 +1,20 @@
+@php
+    $assistantName = 'PalayPilot';
+    $assistantSubtitle = 'iClimate rice guidance powered by Groq llama-3.3 and Predict.py';
+    $predictionCards = function ($chat): array {
+        $intent = (string) ($chat->intent ?? '');
+
+        return match ($intent) {
+            'Weather Prediction' => ['weather'],
+            'Rice Yield Prediction' => ['yield'],
+            'Planting Recommendation' => ['planting'],
+            'Irrigation Recommendation' => ['irrigation'],
+            'Climate Risk' => ['weather'],
+            default => [],
+        };
+    };
+@endphp
+
 <x-app-layout>
     <style>
         .ai-console { --ai-ink:#0d1f18; --ai-muted:#5f7569; --ai-green:#2d6a4f; --ai-mint:#52b788; --ai-blue:#1677b8; --ai-gold:#f4b63f; --ai-red:#d85b45; --ai-line:rgba(153,185,160,.72); width:100%; max-width:100%; overflow-x:hidden; }
@@ -71,9 +88,9 @@
         <section class="ai-hero">
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
                 <div>
-                    <div class="ai-eyebrow mb-2">AI Farming Assistant</div>
+                    <div class="ai-eyebrow mb-2">{{ $assistantName }}</div>
                     <h1 class="h2 fw-bold mb-2">Chat with climate-aware rice guidance</h1>
-                    <p class="mb-0 text-white-50" style="max-width:820px;">Ask natural farming questions and get weather prediction, rice yield estimation, planting advice, irrigation guidance, warnings, and plain explanations.</p>
+                    <p class="mb-0 text-white-50" style="max-width:820px;">{{ $assistantSubtitle }}. Ask natural farming questions and get weather, yield, planting, irrigation, and warning guidance.</p>
                 </div>
                 <div class="ai-hero-actions">
                     <form method="POST" action="{{ route('ai-chat.clear') }}">
@@ -94,7 +111,7 @@
                 <div class="ai-panel-header">
                     <div>
                         <h2 class="ai-panel-title">Conversation</h2>
-                        <p class="ai-panel-sub">Predictions use the existing weather and rice-yield models through the Farming AI API.</p>
+                        <p class="ai-panel-sub">Guidance combines Groq responses, Predict.py yield estimation, weather inputs, and iClimate decision rules.</p>
                     </div>
                 </div>
                 <div id="chatWindow" class="ai-chat-window">
@@ -105,26 +122,37 @@
                         <div class="ai-message assistant">
                             <div class="ai-bubble">
                                 {{ $chat->answer }}
-                                @if($chat->weather_prediction || $chat->rice_yield_prediction || $chat->planting_recommendation || $chat->irrigation_recommendation)
+                                @php
+                                    $visibleCards = $predictionCards($chat);
+                                @endphp
+                                @if($visibleCards)
                                     <div class="ai-result-grid">
-                                        <div class="ai-result-card"><div class="ai-result-label">Weather</div><div class="ai-result-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
-                                        <div class="ai-result-card ai-yield"><div class="ai-result-label">Yield</div><div class="ai-result-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
-                                        <div class="ai-result-card"><div class="ai-result-label">Planting</div><div class="ai-result-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
-                                        <div class="ai-result-card ai-irrigation"><div class="ai-result-label">Irrigation</div><div class="ai-result-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
+                                        @if(in_array('weather', $visibleCards, true))
+                                            <div class="ai-result-card"><div class="ai-result-label">Weather</div><div class="ai-result-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
+                                        @endif
+                                        @if(in_array('yield', $visibleCards, true))
+                                            <div class="ai-result-card ai-yield"><div class="ai-result-label">Yield</div><div class="ai-result-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
+                                        @endif
+                                        @if(in_array('planting', $visibleCards, true))
+                                            <div class="ai-result-card"><div class="ai-result-label">Planting</div><div class="ai-result-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
+                                        @endif
+                                        @if(in_array('irrigation', $visibleCards, true))
+                                            <div class="ai-result-card ai-irrigation"><div class="ai-result-label">Irrigation</div><div class="ai-result-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
+                                        @endif
                                     </div>
                                 @endif
                             </div>
                         </div>
                     @empty
                         <div class="ai-message assistant">
-                            <div class="ai-bubble">Hello. Ask me about planting, irrigation, rainfall, drought, fertilizer, climate warnings, or rice yield. I will combine the machine learning models with farming decision rules and explain the answer clearly.</div>
+                            <div class="ai-bubble">Hello, I am {{ $assistantName }}. Ask me about planting, irrigation, rainfall, drought, fertilizer, climate warnings, or rice yield.</div>
                         </div>
                     @endforelse
                 </div>
-                <div id="typingIndicator" class="ai-typing">Assistant is checking the models<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+                <div id="typingIndicator" class="ai-typing">{{ $assistantName }} is checking the models<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
                 <form id="chatForm" class="ai-form">
                     @csrf
-                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask: Should I plant rice next week?" required></textarea>
+                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask PalayPilot: Should I plant rice next week?" required></textarea>
                     <button id="sendButton" class="btn btn-primary ai-send" type="submit">Send</button>
                 </form>
             </section>
@@ -188,6 +216,16 @@
             const scrollToBottom = () => { chatWindow.scrollTop = chatWindow.scrollHeight; };
             const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
             const resultCard = (label, value, extra = '') => `<div class="ai-result-card ${extra}"><div class="ai-result-label">${label}</div><div class="ai-result-value">${escapeHtml(String(value || 'N/A'))}</div></div>`;
+            const relevantPredictionCards = (chat) => {
+                switch (chat.intent) {
+                    case 'Weather Prediction': return ['weather'];
+                    case 'Rice Yield Prediction': return ['yield'];
+                    case 'Planting Recommendation': return ['planting'];
+                    case 'Irrigation Recommendation': return ['irrigation'];
+                    case 'Climate Risk': return ['weather'];
+                    default: return [];
+                }
+            };
             const addUser = (question) => {
                 chatWindow.insertAdjacentHTML('beforeend', `<div class="ai-message user"><div class="ai-bubble">${escapeHtml(question)}<div class="ai-meta">Just now</div></div></div>`);
                 scrollToBottom();
@@ -197,9 +235,13 @@
                 const yieldValue = chat.rice_yield_prediction?.predicted_yield !== null && chat.rice_yield_prediction?.predicted_yield !== undefined ? `${Number(chat.rice_yield_prediction.predicted_yield).toFixed(2)} t/ha` : 'N/A';
                 const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'N/A';
                 const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
-                const source = chat.source_type || 'Machine Learning';
-                const hasPrediction = chat.weather_prediction || chat.rice_yield_prediction || chat.planting_recommendation || chat.irrigation_recommendation;
-                const resultGrid = hasPrediction ? `<div class="ai-result-grid">${resultCard('Weather', weather)}${resultCard('Yield', yieldValue, 'ai-yield')}${resultCard('Planting', planting)}${resultCard('Irrigation', irrigation, 'ai-irrigation')}</div>` : '';
+                const visibleCards = relevantPredictionCards(chat);
+                const cards = [];
+                if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));
+                if (visibleCards.includes('yield')) cards.push(resultCard('Yield', yieldValue, 'ai-yield'));
+                if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
+                if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation, 'ai-irrigation'));
+                const resultGrid = cards.length ? `<div class="ai-result-grid">${cards.join('')}</div>` : '';
                 chatWindow.insertAdjacentHTML('beforeend', `<div class="ai-message assistant"><div class="ai-bubble">${escapeHtml(chat.answer)}
                     ${resultGrid}
                 </div></div>`);

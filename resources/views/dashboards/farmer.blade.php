@@ -429,8 +429,8 @@
 
         <section class="priority-grid">
             <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}">
-                <div><strong>AI Farming Assistant</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
-                <span class="status-pill">Open Assistant</span>
+                <div><strong>PalayPilot</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
+                <span class="status-pill">Open PalayPilot</span>
             </a>
             <a class="priority-card" href="{{ route('heatmap-areas.index') }}">
                 <div><strong>Barangay Heat Map</strong><span class="desc">Check risk areas before planning field work, irrigation, and harvest movement.</span></div>
@@ -620,7 +620,7 @@
                 <div class="quick-grid">
                     <a class="quick-action" href="{{ route('climate-records.index') }}"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
                     <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
-                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>AI Farming Assistant</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
+                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>PalayPilot</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
                     <a class="quick-action" href="{{ route('planting-advisories.index') }}"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
                     <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
                     <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>

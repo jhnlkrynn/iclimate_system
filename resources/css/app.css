@@ -20,6 +20,9 @@
     --iclimate-shadow-sm: 0 1px 3px rgba(26, 58, 42, .08);
     --iclimate-shadow-md: 0 4px 16px rgba(26, 58, 42, .12);
     --iclimate-shadow-lg: 0 16px 48px rgba(26, 58, 42, .18);
+    --iclimate-motion-fast: 140ms cubic-bezier(.2, .8, .2, 1);
+    --iclimate-motion-med: 240ms cubic-bezier(.2, .8, .2, 1);
+    --iclimate-motion-slow: 420ms cubic-bezier(.16, 1, .3, 1);
 }
 
 ::selection {
@@ -29,16 +32,289 @@
 
 html {
     scroll-behavior: smooth;
+    width: 100%;
+    overflow-x: clip;
 }
 
 body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body,
+.app-main,
+.page-shell {
+    animation: ic-page-enter var(--iclimate-motion-slow) both;
+}
+
+a,
+button,
+.btn,
+.card,
+.glass-card,
+.module-tile,
+.climate-chip,
+.risk-card,
+.stat-card,
+.sidebar-link,
+.sidebar-ai-card,
+.ai-chip,
+.ic-ai-chip,
+.quick-action,
+.priority-card,
+.form-control,
+.form-select {
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+.btn,
+button,
+.sidebar-link,
+.sidebar-ai-card,
+.ai-chip,
+.ic-ai-chip,
+.quick-action,
+.priority-card {
+    position: relative;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.btn:hover,
+.sidebar-link:hover,
+.sidebar-ai-card:hover,
+.ai-chip:hover,
+.ic-ai-chip:hover,
+.quick-action:hover,
+.priority-card:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active,
+button:active,
+.sidebar-link:active,
+.sidebar-ai-card:active,
+.ai-chip:active,
+.ic-ai-chip:active,
+.quick-action:active,
+.priority-card:active {
+    transform: translateY(0) scale(.985);
+}
+
+.card,
+.glass-card,
+.module-tile,
+.climate-chip,
+.risk-card,
+.stat-card,
+.soft-section,
+.filter-panel {
+    will-change: transform;
+}
+
+.card:hover,
+.glass-card:hover,
+.module-tile:hover,
+.climate-chip:hover,
+.risk-card:hover,
+.stat-card:hover,
+.soft-section:hover {
+    transform: translateY(-4px);
+}
+
+.form-control,
+.form-select {
+    transition-property: border-color, box-shadow, background-color, transform;
+}
+
+.form-control:focus,
+.form-select:focus {
+    transform: translateY(-1px);
+}
+
+.table tbody tr {
+    transition: background-color var(--iclimate-motion-fast), transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast);
+}
+
+.table-hover tbody tr:hover {
+    box-shadow: inset 4px 0 0 rgba(82, 183, 136, .48);
+}
+
+.loading-overlay.show .card,
+.modal.show .modal-dialog,
+.offcanvas.show,
+.dropdown-menu.show,
+.alert {
+    animation: ic-soft-rise var(--iclimate-motion-med) both;
+}
+
+.ic-ripple {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    pointer-events: none;
+    background: rgba(255, 255, 255, .42);
+    transform: translate(-50%, -50%) scale(0);
+    animation: ic-ripple 520ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.btn-outline-primary .ic-ripple,
+.btn-outline-secondary .ic-ripple,
+.btn-outline-danger .ic-ripple,
+.sidebar-link .ic-ripple,
+.quick-action .ic-ripple,
+.priority-card .ic-ripple {
+    background: rgba(82, 183, 136, .2);
+}
+
+@keyframes ic-page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes ic-soft-rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes ic-ripple {
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(18);
+    }
 }
 
 img,
-svg {
+svg,
+video,
+canvas,
+iframe {
     max-width: 100%;
+    height: auto;
+}
+
+.app-main,
+.page-shell,
+.container,
+.container-fluid,
+.row,
+.card,
+.card-body,
+.glass-card,
+.soft-section,
+.filter-panel,
+.modal-content,
+.offcanvas,
+.table-responsive,
+.ai-console,
+.ai-shell,
+.wp-flow,
+.ds-grid {
+    min-width: 0;
+}
+
+.card-body > *,
+.glass-card > *,
+.soft-section > *,
+.filter-panel > *,
+.page-hero > *,
+.topbar-inner > *,
+.ai-shell > *,
+.wp-flow > *,
+.ds-grid > * {
+    min-width: 0;
+}
+
+.page-shell,
+.card,
+.glass-card,
+.soft-section,
+.filter-panel,
+.module-tile,
+.climate-chip,
+.risk-card,
+.stat-card,
+.alert,
+.modal-content,
+.offcanvas,
+.ai-bubble,
+.ic-ai-bubble {
+    overflow-wrap: anywhere;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+}
+
+.table-responsive > .table {
+    margin-bottom: 0;
+}
+
+.btn,
+.badge,
+.dropdown-item,
+.form-control,
+.form-select {
+    max-width: 100%;
+}
+
+.btn,
+.badge {
+    white-space: normal;
+}
+
+.modal-dialog {
+    max-width: calc(100vw - 1rem);
+}
+
+.offcanvas {
+    max-width: min(92vw, 380px);
+}
+
+.topbar .container-fluid,
+.topbar-inner,
+.page-hero .d-flex,
+.filter-panel .row,
+.action-cluster,
+.card-header,
+.modal-footer {
+    min-width: 0;
+}
+
+.topbar .navbar-text,
+.topbar .dropdown-toggle,
+.weather-strip {
+    min-width: 0;
+}
+
+.topbar .navbar-text,
+.weather-strip,
+.card-header,
+.page-hero,
+.filter-panel {
+    overflow-wrap: anywhere;
 }
 
 :focus-visible {
@@ -128,5 +404,148 @@ svg {
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: .01ms !important;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .page-hero .d-flex,
+    .card-header.d-flex,
+    .filter-panel .row,
+    .topbar-inner {
+        flex-wrap: wrap;
+    }
+
+    .table-responsive > .table {
+        min-width: 760px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .app-main {
+        margin-left: 0 !important;
+    }
+
+    .sidebar-fixed {
+        display: none !important;
+    }
+
+    .page-shell {
+        padding-inline: clamp(.75rem, 2.5vw, 1rem) !important;
+    }
+
+    .offcanvas-body {
+        max-height: 100dvh;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    .page-hero {
+        border-radius: 18px !important;
+    }
+
+    .page-hero h1,
+    .page-hero .h1 {
+        font-size: clamp(1.35rem, 8vw, 2rem);
+        line-height: 1.12;
+    }
+
+    .card-header.d-flex,
+    .card-body.d-flex,
+    .modal-footer,
+    .action-cluster {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .action-cluster,
+    .action-cluster .btn,
+    .filter-panel .btn,
+    .filter-panel a.btn,
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    .btn {
+        min-height: 42px;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        margin-inline: -.35rem;
+        width: calc(100% + .7rem);
+    }
+
+    .table-responsive > .table {
+        min-width: 680px;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+        gap: .25rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body {
+        font-size: .95rem;
+    }
+
+    .page-shell {
+        padding-inline: .65rem !important;
+    }
+
+    .topbar {
+        padding-inline: .65rem !important;
+    }
+
+    .topbar .container-fluid {
+        align-items: stretch !important;
+    }
+
+    .topbar-inner {
+        gap: .5rem !important;
+    }
+
+    .weather-strip {
+        display: none !important;
+    }
+
+    .card-body,
+    .card-header,
+    .modal-body {
+        padding: .9rem !important;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dropdown .btn,
+    .topbar .btn,
+    .btn-close,
+    .ic-ai-close {
+        width: auto;
+    }
+
+    .ic-ai-widget {
+        inset: auto .6rem .6rem auto !important;
+    }
+
+    .ic-ai-panel {
+        position: fixed !important;
+        inset: auto .6rem 4.6rem .6rem !important;
+        width: auto !important;
+        height: min(620px, calc(100dvh - 5.5rem)) !important;
+    }
+
+    .ic-ai-results,
+    .ai-result-grid,
+    .ds-grid {
+        grid-template-columns: 1fr !important;
     }
 }

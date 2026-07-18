@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\DecisionSupportService;
+use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
@@ -31,17 +31,17 @@ class WeatherPredictionController extends Controller
     public function predict(Request $request, MonthlyWeatherRandomForest $forest, DecisionSupportService $decisionSupport): View
     {
         $validated = $request->validate([
-            'rainfall' => ['required', 'numeric'],
-            'temp_avg' => ['required', 'numeric'],
-            'temp_range' => ['required', 'numeric'],
-            'area' => ['required', 'numeric'],
-            'previous_rainfall' => ['required', 'numeric'],
-            'previous_temp' => ['required', 'numeric'],
-            'rainfall_6m' => ['required', 'numeric'],
-            'temp_3m' => ['required', 'numeric'],
-            'temp_6m' => ['required', 'numeric'],
-            'seasonal_rainfall' => ['required', 'numeric'],
-            'seasonal_temp' => ['required', 'numeric'],
+            'rainfall' => ['required', 'numeric', 'min:0', 'max:600'],
+            'temp_avg' => ['required', 'numeric', 'min:18', 'max:40'],
+            'temp_range' => ['required', 'numeric', 'min:0', 'max:20'],
+            'area' => ['required', 'numeric', 'min:0.01', 'max:10000'],
+            'previous_rainfall' => ['required', 'numeric', 'min:0', 'max:600'],
+            'previous_temp' => ['required', 'numeric', 'min:18', 'max:40'],
+            'rainfall_6m' => ['required', 'numeric', 'min:0', 'max:600'],
+            'temp_3m' => ['required', 'numeric', 'min:18', 'max:40'],
+            'temp_6m' => ['required', 'numeric', 'min:18', 'max:40'],
+            'seasonal_rainfall' => ['required', 'numeric', 'min:0', 'max:3000'],
+            'seasonal_temp' => ['required', 'numeric', 'min:18', 'max:40'],
             'season' => ['required', 'in:Wet,Dry'],
             'farm_type' => ['required', 'in:Rainfed,Irrigated'],
         ]);

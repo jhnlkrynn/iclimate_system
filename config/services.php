@@ -60,4 +60,12 @@ return [
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),
     ],
 
+    'groq' => [
+        'enabled' => env('GROQ_ENABLED', env('GROQ_API_KEY') !== null),
+        'key' => env('GROQ_API_KEY'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+        'timeout' => env('GROQ_TIMEOUT', 12),
+    ],
+
 ];

@@ -1,5 +1,19 @@
 @php
     $widgetChats = collect();
+    $assistantName = 'PalayPilot';
+    $assistantSubtitle = 'iClimate rice guidance powered by Groq llama-3.3 and Predict.py';
+    $widgetPredictionCards = function ($chat): array {
+        $intent = (string) ($chat->intent ?? '');
+
+        return match ($intent) {
+            'Weather Prediction' => ['weather'],
+            'Rice Yield Prediction' => ['yield'],
+            'Planting Recommendation' => ['planting'],
+            'Irrigation Recommendation' => ['irrigation'],
+            'Climate Risk' => ['weather'],
+            default => [],
+        };
+    };
 @endphp
 
 <style>
@@ -36,11 +50,11 @@
 </style>
 
 <div id="icAiWidget" class="ic-ai-widget" data-message-url="{{ route('ai-chat.message') }}">
-    <div class="ic-ai-panel" role="dialog" aria-label="iClimate assistant">
+    <div class="ic-ai-panel" role="dialog" aria-label="{{ $assistantName }} assistant">
         <div class="ic-ai-head">
             <div>
-                <div class="ic-ai-title">iClimate Assistant</div>
-                <div class="ic-ai-sub">System help and farmer-friendly prediction guidance</div>
+                <div class="ic-ai-title">{{ $assistantName }}</div>
+                <div class="ic-ai-sub">{{ $assistantSubtitle }}</div>
             </div>
             <button type="button" class="ic-ai-close" aria-label="Close assistant">x</button>
         </div>
@@ -50,21 +64,32 @@
                 <div class="ic-ai-msg assistant">
                     <div class="ic-ai-bubble">
                         {{ $chat->answer }}
-                        @if($chat->weather_prediction || $chat->rice_yield_prediction || $chat->planting_recommendation || $chat->irrigation_recommendation)
+                        @php
+                            $visibleCards = $widgetPredictionCards($chat);
+                        @endphp
+                        @if($visibleCards)
                             <div class="ic-ai-results">
-                                <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
-                                <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
-                                <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
-                                <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
+                                @if(in_array('weather', $visibleCards, true))
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
+                                @endif
+                                @if(in_array('yield', $visibleCards, true))
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
+                                @endif
+                                @if(in_array('planting', $visibleCards, true))
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
+                                @endif
+                                @if(in_array('irrigation', $visibleCards, true))
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
+                                @endif
                             </div>
                         @endif
                     </div>
                 </div>
             @empty
-                <div class="ic-ai-msg assistant"><div class="ic-ai-bubble">Hello. Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.</div></div>
+                <div class="ic-ai-msg assistant"><div class="ic-ai-bubble">Hello, I am {{ $assistantName }}. Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.</div></div>
             @endforelse
         </div>
-        <div id="icAiTyping" class="ic-ai-typing">Assistant is checking iClimate...</div>
+        <div id="icAiTyping" class="ic-ai-typing">{{ $assistantName }} is checking iClimate tools...</div>
         @php
             $icAiChips = match (auth()->user()->role) {
                 \App\Models\User::ROLE_MAO => ['Which barangay has the highest yield?', 'Show a production summary for this season', 'How many active planting advisories are there?', 'Latest announcement'],
@@ -79,11 +104,11 @@
         </div>
         <form id="icAiForm" class="ic-ai-form">
             @csrf
-            <textarea id="icAiInput" class="form-control" placeholder="Ask about iClimate..." required></textarea>
+            <textarea id="icAiInput" class="form-control" placeholder="Ask PalayPilot about iClimate..." required></textarea>
             <button id="icAiSend" type="submit" class="btn btn-primary ic-ai-send">Send</button>
         </form>
     </div>
-    <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">AI</button>
+    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName }} assistant">PP</button>
 </div>
 
 <script>
@@ -104,14 +129,29 @@
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scroll = () => { body.scrollTop = body.scrollHeight; };
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
-        const hasPrediction = (chat) => chat.weather_prediction || chat.rice_yield_prediction || chat.planting_recommendation || chat.irrigation_recommendation;
+        const relevantPredictionCards = (chat) => {
+            switch (chat.intent) {
+                case 'Weather Prediction': return ['weather'];
+                case 'Rice Yield Prediction': return ['yield'];
+                case 'Planting Recommendation': return ['planting'];
+                case 'Irrigation Recommendation': return ['irrigation'];
+                case 'Climate Risk': return ['weather'];
+                default: return [];
+            }
+        };
         const predictionGrid = (chat) => {
-            if (!hasPrediction(chat)) return '';
+            const visibleCards = relevantPredictionCards(chat);
+            if (!visibleCards.length) return '';
             const weather = chat.weather_prediction?.predicted_weather || 'N/A';
             const yieldValue = chat.rice_yield_prediction?.predicted_yield !== null && chat.rice_yield_prediction?.predicted_yield !== undefined ? `${Number(chat.rice_yield_prediction.predicted_yield).toFixed(2)} t/ha` : 'N/A';
             const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'N/A';
             const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
-            return `<div class="ic-ai-results">${resultCard('Weather', weather)}${resultCard('Yield', yieldValue)}${resultCard('Planting', planting)}${resultCard('Irrigation', irrigation)}</div>`;
+            const cards = [];
+            if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));
+            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', yieldValue));
+            if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
+            if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
+            return cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
         };
 
         widget.querySelectorAll('.ic-ai-chip').forEach((btn) => {
