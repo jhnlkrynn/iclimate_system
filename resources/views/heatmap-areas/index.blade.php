@@ -284,8 +284,37 @@
             .map-popup-box, .map-popup-advice, .map-popup-takeaway { padding: .58rem .62rem; }
             .map-popup-source { word-break: break-word; }
         }
-    </style>
 
+        /* -- dark theme overrides (page chrome only; map/overlay controls kept self-contained) -- */
+        .heatmap-page { color: rgba(255,255,255,.85); }
+        .map-shell { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .map-insight { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .risk-label { color: rgba(255,255,255,.5); }
+        .risk-value { color: #fff; }
+        .risk-help { color: rgba(255,255,255,.6); }
+        .legend-row { color: rgba(255,255,255,.65); }
+        .priority-item { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .priority-item .fw-bold { color: #fff; }
+        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #74c69d; }
+        .risk-stat { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .barangay-card { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
+        .barangay-card-head { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.1); }
+        .barangay-name { color: #fff; }
+        .risk-info-box { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+        .risk-info-box.primary { background: rgba(82,183,136,.08); }
+        .risk-info-label { color: rgba(255,255,255,.5); }
+        .risk-info-value { color: #fff; }
+        .risk-advice { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+        .heatmap-page .empty-state { background: var(--ic-green-950); border-color: rgba(255,255,255,.16); color: rgba(255,255,255,.7); }
+        .heatmap-page .text-muted { color: rgba(255,255,255,.5) !important; }
+        .heatmap-page .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
+        .heatmap-page .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
+        .heatmap-page .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
+        .heatmap-page .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
+    </style>
+    @include('layouts.partials.dark-workspace')
+
+    <div class="dark-workspace heatmap-page">
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
@@ -566,6 +595,7 @@
             <div class="text-muted">Try changing filters or create a new barangay risk area.</div>
         </div>
     @endif
+    </div>
 
     <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script defer src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>

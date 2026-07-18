@@ -138,7 +138,6 @@
                     radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.16) 0%, transparent 60%);
                 pointer-events: none;
             }
-            .page-hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, var(--ic-gold), var(--ic-green-500), var(--ic-green-300), var(--ic-coral)); }
             .page-hero > * { position: relative; z-index: 1; }
             .page-hero h1, .sidebar-brand .h4 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
             .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--ic-green-400); }
@@ -185,7 +184,6 @@
             .soft-section { background: linear-gradient(135deg, #ffffff, #f5f9f6); border: 1.5px solid var(--ic-sand-dark); border-radius: var(--ic-radius-md); box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.05); }
             .action-cluster { background: rgba(240,247,244,.76); border: 1.5px solid var(--ic-sand-dark); border-radius: var(--ic-radius-md); padding: .35rem; }
             .risk-card { position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-            .risk-card::after { content: ""; position: absolute; inset: auto 0 0; height: 7px; background: linear-gradient(90deg, var(--ic-green-500), var(--ic-amber), var(--ic-coral)); }
             .details-list dt { color: #496071; font-family: 'DM Mono', monospace; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
             .details-list dd { background: rgba(240,247,244,.75); border: 1.5px solid var(--ic-sand-dark); border-radius: var(--ic-radius-md); padding: .7rem .85rem; }
             .interactive-card { cursor: default; }

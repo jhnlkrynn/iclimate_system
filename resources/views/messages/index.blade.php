@@ -1,6 +1,6 @@
 <x-app-layout>
     <style>
-        .msg-wrap { --msg-ink:#0d1f18; --msg-muted:#6b8f71; --msg-line:#e8e0d0; --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; }
+        .msg-wrap { --msg-ink:#0d1f18; --msg-muted:rgba(255,255,255,.5); --msg-line:rgba(255,255,255,.1); --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; color: rgba(255,255,255,.85); }
         .msg-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:#fff; background:linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
         .msg-hero::before {
             content:"";
@@ -9,7 +9,6 @@
                 radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.16) 0%, transparent 60%);
             pointer-events:none;
         }
-        .msg-hero::after { content:""; position:absolute; left:0; right:0; bottom:0; height:7px; background:linear-gradient(90deg,#e8a73d,#52b788,#2f6f8f); }
         .msg-hero > * { position:relative; z-index:1; }
         .msg-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:#fff; }
         .msg-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.12em; color:#74c69d; margin-bottom:.4rem; }
@@ -17,26 +16,29 @@
         .msg-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem .85rem; background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); font-family:'DM Mono', monospace; font-size:.76rem; font-weight:500; letter-spacing:.02em; }
         .msg-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .msg-shell { display:grid; grid-template-columns:340px minmax(0,1fr); gap:1rem; margin-top:1rem; align-items:stretch; min-height:clamp(620px, calc(100vh - 210px), 860px); }
-        .msg-panel { border:1.5px solid #e8e0d0; border-radius:18px; background:#fff; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; display:flex; flex-direction:column; min-height:0; }
-        .msg-head { padding:1rem; border-bottom:1px solid rgba(153,185,160,.4); background:linear-gradient(145deg,#fff,#f2f8f3); }
-        .field-box { background:#fff; border:1px solid #e8e0d0; border-radius:10px; padding:.55rem .7rem .45rem; }
-        .field-box-label { display:block; font-family:'DM Mono', monospace; font-size:.62rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#6b8f71; margin-bottom:.3rem; }
-        .field-box .form-control, .field-box .form-select { border:0; padding:0; background:transparent; }
+        .msg-panel { border:1.5px solid rgba(255,255,255,.1); border-radius:18px; background:#0D1F18; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+        .msg-head { padding:1rem; border-bottom:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); }
+        .field-box { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.16); border-radius:10px; padding:.55rem .7rem .45rem; }
+        .field-box-label { display:block; font-family:'DM Mono', monospace; font-size:.62rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-bottom:.3rem; }
+        .field-box .form-control, .field-box .form-select { border:0; padding:0; background:transparent; color:#fff; }
         .field-box .form-control:focus, .field-box .form-select:focus { box-shadow:none; }
+        .field-box .form-select option { color:#0d1f18; }
         .thread-list { flex:1 1 auto; min-height:0; overflow:auto; }
-        .thread-link { display:block; padding:.85rem 1rem; border-bottom:1px solid rgba(153,185,160,.4); color:inherit; text-decoration:none; border-left:4px solid transparent; transition:background .15s ease, border-color .15s ease; }
-        .thread-link.active { background:#fbebcf; border-left-color:#e8a73d; }
-        .thread-link:hover { background:#edf7e7; }
-        .avatar { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:#f0f7f4; border:1px solid #d8f3dc; color:#2d6a4f; font-family:'DM Mono', monospace; font-weight:700; flex:0 0 auto; }
-        .chat-window { flex:1 1 auto; min-height:0; overflow:auto; padding:1rem; background:linear-gradient(180deg,#f7fbf8,#edf7e7); }
+        .thread-link { display:block; padding:.85rem 1rem; border-bottom:1px solid rgba(255,255,255,.08); color:inherit; text-decoration:none; border-left:4px solid transparent; transition:background .15s ease, border-color .15s ease; }
+        .thread-link.active { background:rgba(232,167,61,.14); border-left-color:#e8a73d; }
+        .thread-link:hover { background:rgba(255,255,255,.05); }
+        .avatar { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:rgba(82,183,136,.16); border:1px solid rgba(149,213,178,.3); color:#74c69d; font-family:'DM Mono', monospace; font-weight:700; flex:0 0 auto; }
+        .chat-window { flex:1 1 auto; min-height:0; overflow:auto; padding:1rem; background:rgba(255,255,255,.02); }
         .bubble-row { display:flex; margin-bottom:.8rem; }
         .bubble-row.mine { justify-content:flex-end; }
-        .bubble { max-width:min(680px,82%); border:1px solid rgba(153,185,160,.55); border-radius:14px; background:#fff; padding:.7rem .85rem; }
+        .bubble { max-width:min(680px,82%); border:1px solid rgba(255,255,255,.12); border-radius:14px; background:rgba(255,255,255,.05); color:#fff; padding:.7rem .85rem; }
         .mine .bubble { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
         .msg-meta { color:var(--msg-muted); font-family:'DM Mono', monospace; font-size:.7rem; letter-spacing:.02em; margin-top:.3rem; }
         .mine .msg-meta { color:rgba(255,255,255,.72); }
-        .msg-compose { padding:1rem; border-top:1px solid rgba(153,185,160,.4); background:#fff; }
+        .msg-compose { padding:1rem; border-top:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); }
         .msg-empty { flex:1 1 auto; min-height:420px; display:grid; place-items:center; padding:2rem; }
+        .msg-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
+        .msg-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
         @media (max-width:1199.98px) {
             .msg-shell { grid-template-columns:1fr; min-height:auto; }
             .msg-panel { min-height:auto; }
@@ -76,7 +78,7 @@
         <div class="msg-shell">
             <aside class="msg-panel">
                 <div class="msg-head">
-                    <div class="msg-eyebrow" style="color:#2d6a4f;">Start a thread</div>
+                    <div class="msg-eyebrow" style="color:#74c69d;">Start a thread</div>
                     <h2 class="h5 mb-3">New Message</h2>
                     <form method="POST" action="{{ route('messages.store') }}" enctype="multipart/form-data" class="d-grid gap-2">
                         @csrf
@@ -159,7 +161,7 @@
                     </form>
                 @else
                     <div class="msg-empty text-center text-muted">
-                        <h2 class="h5 fw-bold text-dark">Select or start a conversation</h2>
+                        <h2 class="h5 fw-bold" style="color:#fff;">Select or start a conversation</h2>
                         <p class="mb-0">Use messages for private farmer concerns, MAO coordination, and follow-up questions.</p>
                     </div>
                 @endif

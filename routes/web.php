@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
@@ -85,6 +86,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('management.advisories.archive');
 
         Route::resource('planting-advisories', PlantingAdvisoryController::class);
+
+        Route::get('calendar', [CalendarController::class, 'index'])
+            ->name('calendar.index');
 
         Route::redirect('announcements', 'community-feed')
             ->name('announcements.index');
