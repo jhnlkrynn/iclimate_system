@@ -12,6 +12,15 @@ use Throwable;
 
 class OpenMeteoService
 {
+    private const CURRENT = [
+        'temperature_2m',
+        'relative_humidity_2m',
+        'precipitation',
+        'rain',
+        'weather_code',
+        'wind_speed_10m',
+    ];
+
     private const HOURLY = [
         'temperature_2m',
         'relative_humidity_2m',
@@ -57,7 +66,7 @@ class OpenMeteoService
                 'message' => 'The latest seven-day forecast was retrieved successfully.',
             ];
 
-            Cache::put('open-meteo:last-fetch-result', $result, now()->addMinutes(50));
+            Cache::put('open-meteo:last-fetch-result', $result, now()->addMinutes((int) config('services.open_meteo.refresh_minutes', 10)));
 
             return $result;
         } catch (Throwable $exception) {
@@ -106,6 +115,7 @@ class OpenMeteoService
             ->get($baseUrl.'/forecast', [
                 'latitude' => config('services.open_meteo.latitude'),
                 'longitude' => config('services.open_meteo.longitude'),
+                'current' => implode(',', self::CURRENT),
                 'hourly' => implode(',', self::HOURLY),
                 'daily' => implode(',', self::DAILY),
                 'timezone' => config('services.open_meteo.timezone', 'Asia/Manila'),
@@ -162,6 +172,7 @@ class OpenMeteoService
                     'evapotranspiration_mm' => $daily['et0_fao_evapotranspiration'][$index] ?? null,
                     'raw_response' => [
                         'daily' => collect($daily)->map(fn ($values) => is_array($values) ? ($values[$index] ?? null) : null)->all(),
+                        'current' => $payload['current'] ?? [],
                         'hourly' => $hourlyForDate,
                         'source_payload_meta' => [
                             'latitude' => $payload['latitude'] ?? null,

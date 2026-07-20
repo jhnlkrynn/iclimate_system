@@ -142,6 +142,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('messages/{conversation}', [MessagingController::class, 'reply'])
             ->name('messages.reply');
 
+        Route::delete('messages/{conversation}/messages/{message}', [MessagingController::class, 'destroyMessage'])
+            ->name('messages.destroy-message');
+
         Route::resource('heatmap-areas', HeatmapAreaController::class);
 
         Route::get('ai-farming-assistant', [AIChatController::class, 'index'])

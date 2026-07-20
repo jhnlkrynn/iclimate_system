@@ -13,14 +13,31 @@ use App\Models\RiceProduction;
 use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\WeatherApiService;
+use App\Services\Weather\OpenMeteoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request): View
+    public function farmer(Request $request, OpenMeteoService $openMeteo): View
     {
+        $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
+        $today = now($weatherTimezone)->toDateString();
+        $forecastResult = $openMeteo->fetchForecast();
+        $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
+        $latestForecast = $forecastRecords
+            ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
+            ?? $forecastRecords->first();
+
+        if (! $latestForecast || empty(data_get($latestForecast->raw_response, 'current'))) {
+            $forecastResult = $openMeteo->fetchForecast(true);
+            $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
+            $latestForecast = $forecastRecords
+                ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
+                ?? $forecastRecords->first();
+        }
+
         return view('dashboards.farmer', $this->stats() + [
             'feedPosts' => FeedPost::query()
                 ->with('author')
@@ -33,6 +50,8 @@ class DashboardController extends Controller
             'notifications' => UserNotification::query()->where('user_id', $request->user()->id)->latest()->take(5)->get(),
             'climateSummary' => ClimateRecord::query()->latest('record_date')->first(),
             'recentClimateRecords' => ClimateRecord::query()->latest('record_date')->take(5)->get(),
+            'latestForecast' => $latestForecast,
+            'forecastResult' => $forecastResult,
             'highRiskAreasList' => HeatmapArea::query()
                 ->whereIn('risk_level', ['High', 'Severe'])
                 ->orderByDesc('risk_score')

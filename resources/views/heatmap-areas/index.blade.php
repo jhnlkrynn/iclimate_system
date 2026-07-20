@@ -82,31 +82,46 @@
             left: 1rem;
             top: 4.85rem;
             width: min(360px, calc(100% - 2rem));
-            border: 1px solid #d4edda;
+            border: 1px solid rgba(149,213,178,.38);
             border-radius: 8px;
-            background: rgba(255,255,255,.96);
-            box-shadow: 0 .7rem 1.5rem rgba(13,31,24,.12);
+            background: rgba(13,31,24,.92);
+            color: rgba(255,255,255,.88);
+            box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.32);
+            backdrop-filter: blur(10px);
             padding: .75rem;
         }
-        .map-control-panel .form-select { font-weight: 800; }
+        .map-control-panel .risk-label { color: rgba(255,255,255,.58); }
+        .map-control-panel .form-select {
+            border-color: rgba(149,213,178,.32);
+            background-color: rgba(255,255,255,.08);
+            color: #fff;
+            font-weight: 800;
+        }
+        .map-control-panel .form-select:hover,
+        .map-control-panel .form-select:focus {
+            border-color: #74c69d;
+            background-color: rgba(255,255,255,.12);
+            box-shadow: 0 0 0 .2rem rgba(116,198,157,.16);
+        }
+        .map-control-panel .form-select option { color: #0d1f18; background: #fff; }
         .map-live-status {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: .65rem;
             margin-top: .58rem;
-            color: #5a7a64;
+            color: rgba(255,255,255,.64);
             font-size: .78rem;
             font-weight: 800;
         }
-        .map-live-status strong { color: #0d1f18; }
+        .map-live-status strong { color: rgba(255,255,255,.82); }
         .map-selected-pill {
             display: inline-flex;
             align-items: center;
             max-width: 100%;
             border-radius: 999px;
-            background: #d8f3dc;
-            color: #1f6f4a;
+            background: rgba(116,198,157,.18);
+            color: #b7e4c7;
             padding: .28rem .55rem;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -244,8 +259,8 @@
                 overflow-x: auto;
                 flex-wrap: nowrap;
                 pointer-events: auto;
-                background: #fff;
-                border-bottom: 1px solid #d4edda;
+                background: rgba(13,31,24,.94);
+                border-bottom: 1px solid rgba(149,213,178,.26);
                 -webkit-overflow-scrolling: touch;
             }
             .map-control-panel {

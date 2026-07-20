@@ -53,6 +53,7 @@ return [
         'timezone' => env('ICLIMATE_TIMEZONE', 'Asia/Manila'),
         'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),
+        'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
     ],
 
     'farming_ai' => [

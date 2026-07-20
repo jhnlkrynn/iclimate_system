@@ -59,6 +59,7 @@
                 width: 100%;
                 max-width: 100%;
                 overflow-x: hidden;
+                transform: none !important;
                 background:
                     linear-gradient(115deg, rgba(240,247,244,.96), rgba(245,240,232,.9)),
                     radial-gradient(circle at top right, rgba(82,183,136,.14), transparent 32rem),
@@ -78,9 +79,11 @@
             .app-main { margin-left: var(--sidebar-width); min-height: 100vh; min-width: 0; }
             .page-shell { padding: 1.25rem; min-width: 0; max-width: 100%; }
             .sidebar-fixed {
-                position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); z-index: 1030; overflow-y: auto;
+                position: fixed !important; top: 0; left: 0; bottom: 0; width: var(--sidebar-width); height: 100vh; height: 100dvh; z-index: 1030; overflow: hidden;
                 background: var(--ic-green-950);
             }
+            .sidebar-nav-scroll { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
+            .sidebar-nav-scroll::-webkit-scrollbar { display: none; }
             .sidebar-brand { position: relative; }
             .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-400); }
             .sidebar-location .pulse-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ic-green-400); box-shadow: 0 0 0 4px rgba(116,198,157,.2); flex-shrink: 0; }
@@ -230,6 +233,12 @@
             .sidebar-link, .sidebar-ai-card, .card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .filter-panel, .quick-action, .priority-card, .btn, .form-control, .form-select { transition-timing-function: cubic-bezier(.2,.8,.2,1) !important; transition-duration: 220ms !important; }
             .sidebar-link:hover, .sidebar-ai-card:hover, .btn:hover, .quick-action:hover, .priority-card:hover { transform: translateY(-2px); }
             .sidebar-link:active, .sidebar-ai-card:active, .btn:active, .quick-action:active, .priority-card:active { transform: translateY(0) scale(.985); }
+            .sidebar-fixed .sidebar-link:hover,
+            .sidebar-fixed .sidebar-link:active,
+            .sidebar-fixed .sidebar-ai-card:hover,
+            .sidebar-fixed .sidebar-ai-card:active {
+                transform: none;
+            }
             .form-control:focus, .form-select:focus { transform: translateY(-1px); }
             .loading-overlay.show .card { animation: icSoftRise var(--ic-motion-med) both; }
             .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover, .ic-action-close:hover { transform: translateY(-1px); }

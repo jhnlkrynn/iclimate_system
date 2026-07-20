@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -76,6 +78,28 @@ class MessagingController extends Controller
         $this->createMessage($request, $conversation, $validated['body'] ?? null);
 
         return redirect()->route('messages.show', $conversation);
+    }
+
+    public function destroyMessage(Request $request, Conversation $conversation, ConversationMessage $message): RedirectResponse
+    {
+        $this->authorizeConversation($request->user(), $conversation);
+
+        abort_unless($message->conversation_id === $conversation->id, 404);
+        abort_unless($message->sender_id === $request->user()->id, 403);
+
+        DB::transaction(function () use ($conversation, $message): void {
+            if ($message->attachment_path) {
+                Storage::disk('public')->delete($message->attachment_path);
+            }
+
+            $message->delete();
+
+            $conversation->update([
+                'last_message_at' => $conversation->messages()->latest()->value('created_at'),
+            ]);
+        });
+
+        return redirect()->route('messages.show', $conversation)->with('success', 'Message unsent.');
     }
 
     private function createMessage(Request $request, Conversation $conversation, ?string $body): void

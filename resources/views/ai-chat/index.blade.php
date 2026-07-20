@@ -51,6 +51,12 @@
         .ai-prompt-sections { display:grid; gap:0; }
         .ai-typing { display:none; padding:0 1rem 1rem; color:var(--ai-muted); font-weight:800; }
         .ai-typing.show { display:block; }
+        .ai-save-choice { margin-top:.75rem; display:grid; gap:.5rem; }
+        .ai-save-choice-label { color:#3d5a48; font-weight:900; font-size:.86rem; }
+        .ai-save-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
+        .ai-save-btn { border:1px solid #95d5b2; border-radius:999px; background:#fff; color:#1f6f4a; padding:.4rem .75rem; font-weight:900; }
+        .ai-save-btn.active { background:#1f6f4a; border-color:#1f6f4a; color:#fff; }
+        .ai-privacy-note { padding:.75rem 1rem; border-top:1px solid var(--ai-line); background:#f7fbf8; color:var(--ai-muted); font-weight:800; font-size:.84rem; }
         .dot { display:inline-block; width:.42rem; height:.42rem; border-radius:999px; background:var(--ai-mint); margin-left:.2rem; animation:pulse 1s infinite alternate; }
         .dot:nth-child(2) { animation-delay:.15s; } .dot:nth-child(3) { animation-delay:.3s; }
         @keyframes pulse { from { opacity:.35; transform:translateY(0); } to { opacity:1; transform:translateY(-3px); } }
@@ -142,11 +148,21 @@
                         </div>
                     @empty
                         <div class="ai-message assistant">
-                            <div class="ai-bubble">Hello, I am {{ $assistantName }}. Ask me about planting, irrigation, rainfall, drought, fertilizer, climate warnings, or rice yield.</div>
+                            <div class="ai-bubble">
+                                Hello, I am {{ $assistantName }}. Ask me about planting, irrigation, rainfall, drought, fertilizer, climate warnings, or rice yield.
+                                <div class="ai-save-choice" data-ai-save-choice>
+                                    <div class="ai-save-choice-label">Should this AI conversation be saved for memory and history?</div>
+                                    <div class="ai-save-actions">
+                                        <button type="button" class="ai-save-btn" data-save-mode="1">Save conversation</button>
+                                        <button type="button" class="ai-save-btn" data-save-mode="0">Do not save</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     @endforelse
                 </div>
                 <div id="typingIndicator" class="ai-typing">{{ $assistantName }} is checking the models<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+                <div id="aiPrivacyNote" class="ai-privacy-note"></div>
                 <form id="chatForm" class="ai-form">
                     @csrf
                     <textarea id="questionInput" name="question" class="form-control" placeholder="Ask PalayPilot: Should I plant rice next week?" required></textarea>
@@ -210,6 +226,8 @@
             const typing = document.getElementById('typingIndicator');
             const sendButton = document.getElementById('sendButton');
             const token = document.querySelector('input[name="_token"]').value;
+            const privacyNote = document.getElementById('aiPrivacyNote');
+            const saveStorageKey = 'iclimate_ai_save_conversation';
             const scrollToBottom = () => { chatWindow.scrollTop = chatWindow.scrollHeight; };
             const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
             const resultCard = (label, value, extra = '') => `<div class="ai-result-card ${extra}"><div class="ai-result-label">${label}</div><div class="ai-result-value">${escapeHtml(String(value || 'N/A'))}</div></div>`;
@@ -223,6 +241,30 @@
                     default: return [];
                 }
             };
+            const selectedSaveMode = () => localStorage.getItem(saveStorageKey);
+            const shouldSaveConversation = () => selectedSaveMode() !== '0';
+            const renderSaveChoice = () => {
+                const mode = selectedSaveMode();
+                document.querySelectorAll('[data-save-mode]').forEach((btn) => {
+                    btn.classList.toggle('active', btn.dataset.saveMode === mode);
+                });
+                if (!privacyNote) return;
+                if (mode === '0') {
+                    privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
+                } else if (mode === '1') {
+                    privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                } else {
+                    privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                }
+            };
+            document.querySelectorAll('[data-save-mode]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    localStorage.setItem(saveStorageKey, button.dataset.saveMode);
+                    renderSaveChoice();
+                    input.focus();
+                });
+            });
+            renderSaveChoice();
             const addUser = (question) => {
                 chatWindow.insertAdjacentHTML('beforeend', `<div class="ai-message user"><div class="ai-bubble">${escapeHtml(question)}<div class="ai-meta">Just now</div></div></div>`);
                 scrollToBottom();
@@ -264,7 +306,7 @@
                     const response = await fetch('{{ route('ai-chat.message') }}', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                        body: JSON.stringify({ question }),
+                        body: JSON.stringify({ question, save_conversation: shouldSaveConversation() }),
                         signal: controller.signal,
                     });
                     const data = await response.json();

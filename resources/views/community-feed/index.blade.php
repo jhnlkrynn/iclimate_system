@@ -27,9 +27,11 @@
         .field-box-label { display:block; font-family:'DM Mono', monospace; font-size:.64rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#6b8f71; margin-bottom:.35rem; }
         .field-box .form-control, .field-box .form-select { border:0; padding:0; background:transparent; }
         .field-box .form-control:focus, .field-box .form-select:focus { box-shadow:none; }
+        .feed-post-head { margin:-1rem -1rem 1rem; padding:1rem; border-top-left-radius:18px; border-top-right-radius:18px; background:#0d1f18; }
         .feed-author { display:flex; gap:.75rem; align-items:center; }
         .avatar { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; background:#f0f7f4; border:1px solid #d8f3dc; color:#2d6a4f; font-family:'DM Mono', monospace; font-weight:700; flex:0 0 auto; }
         .feed-title { color:var(--feed-ink); margin:0; }
+        .feed-post-heading { color:var(--feed-ink); font-weight:900; font-size:1.05rem; line-height:1.32; margin:1rem 0 .35rem; }
         .feed-meta { color:var(--feed-muted); font-family:'DM Mono', monospace; font-size:.72rem; letter-spacing:.02em; }
         .feed-badge { display:inline-flex; border-radius:999px; padding:.32rem .62rem; background:#d8f3dc; color:#2d6a4f; font-family:'DM Mono', monospace; font-size:.64rem; font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
         .feed-badge.archived { background:#f1f3f2; color:#6b8f71; border:1px solid #e8e0d0; }
@@ -63,7 +65,8 @@
         .reaction-menu {
             position:absolute;
             left:0;
-            top:calc(100% + .5rem);
+            top:auto;
+            bottom:calc(100% + .5rem);
             display:flex;
             gap:.42rem;
             padding:.42rem .5rem;
@@ -73,8 +76,8 @@
             box-shadow:0 .75rem 1.7rem rgba(13,31,24,.28);
             opacity:0;
             visibility:hidden;
-            transform:translateY(-.25rem) scale(.96);
-            transform-origin:top left;
+            transform:translateY(.25rem) scale(.96);
+            transform-origin:bottom left;
             transition:opacity .15s ease, transform .15s ease, visibility .15s ease;
             z-index:25;
             white-space:nowrap;
@@ -87,7 +90,7 @@
         }
         .reaction-row:has(.reaction-picker:hover),
         .reaction-row:has(.reaction-picker:focus-within) {
-            padding-bottom:4.35rem;
+            padding-top:4.35rem;
         }
         .reaction-picker:hover .reaction-option,
         .reaction-picker:focus-within .reaction-option {
@@ -105,12 +108,13 @@
             content:"";
             position:absolute;
             left:1.1rem;
-            top:-.38rem;
+            top:auto;
+            bottom:-.38rem;
             width:.7rem;
             height:.7rem;
             background:#23272d;
-            border-left:1px solid rgba(13,31,24,.35);
-            border-top:1px solid rgba(13,31,24,.35);
+            border-right:1px solid rgba(13,31,24,.35);
+            border-bottom:1px solid rgba(13,31,24,.35);
             transform:rotate(45deg);
         }
         .reaction-option { position:relative; z-index:1; width:42px; height:42px; display:grid; place-items:center; border:0; border-radius:999px; background:var(--reaction-bg,#2f80ed); padding:0; color:#fff; font-size:0; font-weight:900; box-shadow:inset 0 -5px 10px rgba(0,0,0,.16), 0 .28rem .65rem rgba(0,0,0,.2); transition:transform .14s ease, filter .14s ease; }
@@ -153,13 +157,13 @@
                 position:absolute;
                 left:50%;
                 right:auto;
-                top:calc(100% + .5rem);
-                bottom:auto;
+                top:auto;
+                bottom:calc(100% + .5rem);
                 width:max-content;
                 max-width:100%;
                 justify-content:center;
-                transform:translate(-50%, -.25rem) scale(.98);
-                transform-origin:center top;
+                transform:translate(-50%, .25rem) scale(.98);
+                transform-origin:center bottom;
                 z-index:40;
             }
             .reaction-picker:hover .reaction-menu,
@@ -169,7 +173,7 @@
             .reaction-menu::after { left:50%; transform:translateX(-50%) rotate(45deg); }
             .reaction-row:has(.reaction-picker:hover),
             .reaction-row:has(.reaction-picker:focus-within) {
-                padding-bottom:4.7rem;
+                padding-top:4.7rem;
             }
         }
 
@@ -201,7 +205,7 @@
         .manage-panel summary:hover, .manage-panel[open] summary { background: rgba(82,183,136,.2); }
         .manage-panel-body { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
         .file-tile { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: rgba(255,255,255,.85); }
-        .reaction-row { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.02); }
+        .reaction-row { border-color: #edf3ee; background: #fbfdfb; }
         .reaction-trigger { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
         .reaction-trigger.active { color: #74c69d; background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.4); }
         .reaction-count-pill { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: rgba(255,255,255,.7); }
@@ -216,6 +220,311 @@
         .feed-wrap .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
         .feed-wrap .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
         .feed-wrap .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
+
+        .feed-post-card > .feed-card-body {
+            color: #0d1f18 !important;
+        }
+        .feed-post-card .feed-post-head {
+            color: rgba(255,255,255,.85) !important;
+            background: #0d1f18;
+        }
+        .feed-post-card .feed-title {
+            color: #fff !important;
+        }
+        .feed-post-card .feed-post-heading {
+            color: #0d1f18 !important;
+        }
+        .feed-post-card .feed-body-text {
+            color: #243a30 !important;
+        }
+        .feed-post-card .feed-meta {
+            color: rgba(183,228,199,.72) !important;
+        }
+        .feed-post-card .feed-badge {
+            background: rgba(82,183,136,.16);
+            color: #74c69d;
+        }
+        .feed-post-card .feed-badge.archived {
+            background: rgba(255,255,255,.06);
+            color: rgba(255,255,255,.65);
+            border-color: rgba(255,255,255,.15);
+        }
+        .feed-post-card .reaction-row {
+            border-color: #edf3ee !important;
+            background: #fbfdfb !important;
+        }
+        .feed-post-card .reaction-trigger {
+            border-color: #d4edda;
+            background: #fff;
+            color: #0d1f18;
+        }
+        .feed-post-card .reaction-trigger.active {
+            color: #1f6f4a;
+            background: #f0f7f4;
+            border-color: #95d5b2;
+        }
+        .feed-post-card .reaction-count-pill {
+            border-color: #d4edda;
+            background: #fff;
+            color: #3d5a48;
+        }
+        .feed-post-card .comment-bubble {
+            background: #f0f7f4;
+            border-color: rgba(153,185,160,.55);
+            color: #0d1f18;
+        }
+        .feed-post-card .comment-bubble .fw-bold {
+            color: #0d1f18;
+        }
+        .feed-post-card .feed-card-body .form-control {
+            background-color: #fff;
+            border-color: #e8e0d0;
+            color: #0d1f18;
+        }
+        .feed-post-card .feed-card-body .form-control::placeholder {
+            color: #6c757d;
+        }
+        .feed-post-card .feed-card-body .text-muted {
+            color: #6b8f71 !important;
+        }
+
+        /* Community feed final layout pass */
+        .feed-wrap .feed-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+            gap: 1rem;
+        }
+        .feed-wrap main.d-grid {
+            align-content: start;
+        }
+        .feed-wrap .feed-post-card {
+            overflow: hidden;
+            background: #fff !important;
+            border: 1.5px solid rgba(13,31,24,.34) !important;
+            border-radius: 18px;
+            box-shadow: 0 .55rem 1.15rem rgba(13,31,24,.06);
+        }
+        .feed-wrap .feed-post-card:hover {
+            transform: none;
+            box-shadow: 0 .75rem 1.55rem rgba(13,31,24,.09);
+        }
+        .feed-post-card > .feed-card-body {
+            background: #fff !important;
+            padding: 1rem;
+        }
+        .feed-post-card > .feed-card-body:first-child,
+        .feed-post-card > .feed-card-body:last-child {
+            border-radius: 0;
+        }
+        .feed-post-card .feed-post-head {
+            margin: -1rem -1rem 1rem;
+            padding: 1rem;
+            border-radius: 16px 16px 0 0;
+            background: linear-gradient(135deg, #0d1f18, #183c2b) !important;
+            color: #fff !important;
+            align-items: flex-start;
+        }
+        .feed-post-card .feed-author {
+            min-width: 0;
+            align-items: center;
+        }
+        .feed-post-card .avatar {
+            background: rgba(116,198,157,.18);
+            border-color: rgba(183,228,199,.42);
+            color: #b7e4c7;
+        }
+        .feed-post-card .feed-title {
+            color: #fff !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+        .feed-post-card .feed-meta {
+            color: rgba(216,243,220,.72) !important;
+            line-height: 1.35;
+            margin-top: .18rem;
+        }
+        .feed-post-card .post-actions {
+            flex: 0 0 auto;
+            padding-top: .15rem;
+        }
+        .feed-post-card .feed-badge {
+            background: rgba(116,198,157,.17);
+            border: 1px solid rgba(183,228,199,.22);
+            color: #95d5b2;
+        }
+        .feed-post-card .feed-post-heading {
+            margin: 0 0 .35rem;
+            color: #0d1f18 !important;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.02rem;
+            font-weight: 850;
+            line-height: 1.3;
+        }
+        .feed-post-card .feed-body-text {
+            color: #1c3027 !important;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+        }
+        .feed-post-card .reaction-row {
+            min-height: 64px;
+            margin: 0;
+            padding: .75rem 1rem;
+            gap: .5rem;
+            justify-content: flex-start;
+            border-top: 1px solid #e4efe8 !important;
+            border-bottom: 1px solid #e4efe8 !important;
+            background: #f8fbf9 !important;
+        }
+        .feed-post-card .reaction-row:has(.reaction-picker:hover),
+        .feed-post-card .reaction-row:has(.reaction-picker:focus-within) {
+            padding-top: 4.35rem;
+            padding-bottom: .75rem;
+        }
+        .feed-post-card .reaction-picker {
+            flex: 0 0 auto;
+        }
+        .feed-post-card .reaction-trigger {
+            min-height: 38px;
+            border: 1px solid #cfe8d7;
+            background: #fff;
+            color: #0d1f18;
+            box-shadow: none;
+        }
+        .feed-post-card .reaction-trigger.active {
+            background: #edf8f1;
+            color: #1f6f4a;
+            border-color: #95d5b2;
+        }
+        .feed-post-card .reaction-counts {
+            flex: 0 1 auto;
+            justify-content: flex-start;
+            color: #3d5a48;
+        }
+        .feed-post-card .reaction-count-pill {
+            min-height: 34px;
+            background: #fff;
+            border-color: #d4edda;
+            color: #274438;
+        }
+        .feed-post-card .feed-card-body.pt-0 {
+            padding-top: .9rem !important;
+        }
+        .feed-post-card .comment {
+            align-items: flex-start;
+            margin-top: .65rem;
+        }
+        .feed-post-card .comment .avatar {
+            background: #edf8f1;
+            border-color: #cfe8d7;
+            color: #2d6a4f;
+        }
+        .feed-post-card .comment-bubble {
+            background: #f4faf6;
+            border-color: #d4edda;
+            color: #0d1f18;
+            min-width: 0;
+        }
+        .feed-post-card form.d-flex {
+            align-items: stretch;
+        }
+        .feed-post-card form.d-flex .form-control {
+            min-height: 44px;
+        }
+        .feed-post-card form.d-flex .btn {
+            min-width: 104px;
+            white-space: normal;
+        }
+        .feed-wrap .side-panel {
+            background: #0d1f18;
+            border-color: rgba(255,255,255,.1);
+            box-shadow: 0 .7rem 1.4rem rgba(13,31,24,.08);
+            position: sticky;
+            top: 1rem;
+            align-self: start;
+            min-height: calc(100vh - 2rem);
+            min-height: calc(100dvh - 2rem);
+            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .toolkit-list {
+            display: grid;
+            gap: .55rem;
+            margin: .75rem 0 .75rem;
+        }
+        .toolkit-item {
+            border: 1px solid rgba(183,228,199,.14);
+            border-radius: 8px;
+            background: rgba(255,255,255,.04);
+            padding: .62rem .7rem;
+        }
+        .toolkit-item strong {
+            display: block;
+            color: #fff;
+            font-size: .84rem;
+            line-height: 1.25;
+            margin-bottom: .2rem;
+        }
+        .toolkit-item span {
+            display: block;
+            color: rgba(255,255,255,.58);
+            font-size: .76rem;
+            line-height: 1.38;
+        }
+        .toolkit-note {
+            border-top: 1px solid rgba(183,228,199,.14);
+            padding-top: .7rem;
+            margin-top: auto;
+            color: rgba(255,255,255,.62);
+            font-size: .76rem;
+            line-height: 1.4;
+        }
+        @media (max-width: 1199.98px) {
+            .feed-wrap .feed-grid {
+                grid-template-columns: 1fr;
+            }
+            .feed-wrap .side-panel {
+                position: static;
+                min-height: auto;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .feed-hero {
+                border-radius: 20px;
+                padding: 1.1rem;
+            }
+            .feed-post-card .feed-post-head {
+                flex-direction: column;
+                gap: .75rem;
+            }
+            .feed-post-card .post-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .feed-post-card .reaction-row {
+                min-height: auto;
+                align-items: flex-start;
+            }
+            .feed-post-card .reaction-row:has(.reaction-picker:hover),
+            .feed-post-card .reaction-row:has(.reaction-picker:focus-within) {
+                padding-top: 4.7rem;
+            }
+            .feed-post-card .reaction-counts {
+                justify-content: flex-start;
+            }
+            .feed-post-card form.d-flex {
+                flex-direction: column;
+            }
+            .feed-post-card form.d-flex .btn {
+                width: 100%;
+            }
+        }
     </style>
 
     <div class="feed-wrap">
@@ -312,12 +621,12 @@
                     @endphp
                     <article class="feed-card feed-post-card">
                         <div class="feed-card-body">
-                            <div class="d-flex justify-content-between gap-3">
+                            <div class="feed-post-head d-flex justify-content-between gap-3">
                                 <div class="feed-author">
                                     <div class="avatar">{{ str($post->author?->name ?? 'M')->substr(0, 1)->upper() }}</div>
                                     <div>
-                                        <h2 class="feed-title h5">{{ $post->title }}</h2>
-                                        <div class="feed-meta">{{ $post->author?->name ?? 'MAO' }} | {{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->format('M d, Y h:i A') }} @endif</div>
+                                        <h2 class="feed-title h5">{{ $post->author?->name ?? 'MAO' }}</h2>
+                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->format('M d, Y h:i A') }} @endif</div>
                                     </div>
                                 </div>
                                 <div class="post-actions">
@@ -327,7 +636,8 @@
                                     <span class="feed-badge">{{ $post->category }}</span>
                                 </div>
                             </div>
-                            <p class="feed-body-text mt-3 mb-0" style="white-space:pre-line;">{{ $post->body }}</p>
+                            <div class="feed-post-heading">{{ $post->title }}</div>
+                            <p class="feed-body-text mt-1 mb-0" style="white-space:pre-line;">{{ $post->body }}</p>
 
                             @if($post->media->isNotEmpty())
                                 <div class="media-grid">
@@ -491,6 +801,28 @@
                 <div class="feed-eyebrow" style="color:#74c69d;">Farmer Toolkit</div>
                 <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
+                <div class="toolkit-list">
+                    <div class="toolkit-item">
+                        <strong>Check Official Updates</strong>
+                        <span>Review posts for schedules, program requirements, advisory changes, and activity reminders from MAO personnel.</span>
+                    </div>
+                    <div class="toolkit-item">
+                        <strong>Use Reactions for Quick Feedback</strong>
+                        <span>Mark posts as helpful, liked, or important so the MAO can see which updates farmers are using most.</span>
+                    </div>
+                    <div class="toolkit-item">
+                        <strong>Ask Public Questions</strong>
+                        <span>Comment when your question can help other farmers, such as clarification about dates, locations, or instructions.</span>
+                    </div>
+                    <div class="toolkit-item">
+                        <strong>Message Private Concerns</strong>
+                        <span>Use messages for farm-specific issues, personal records, crop damage details, or concerns that need direct assistance.</span>
+                    </div>
+                </div>
+                <div class="toolkit-note mb-3">
+                    Before joining an activity, confirm the event date, prepare any listed documents, and follow the latest advisory if weather conditions change.
+                    For urgent crop or weather concerns, send a direct message with your barangay, crop stage, and photos when available.
+                </div>
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary fw-bold" href="{{ route('messages.index') }}">Start Conversation</a>
                     <a class="btn btn-outline-primary fw-bold" href="{{ route('planting-advisories.index') }}">Planting Advisories</a>

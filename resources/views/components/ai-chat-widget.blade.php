@@ -42,6 +42,13 @@
     .ic-ai-chips { display: flex; flex-wrap: wrap; gap: .4rem; padding: .5rem .7rem 0; background: #fff; }
     .ic-ai-chip { border: 1px solid #d4edda; background: #f7fbf8; color: #1f6f4a; border-radius: 999px; padding: .3rem .6rem; font-size: .72rem; font-weight: 600; }
     .ic-ai-chip:hover { background: #edf7e7; }
+    .ic-ai-save-choice { margin-top: .65rem; display: grid; gap: .42rem; }
+    .ic-ai-save-choice-label { color: #3d5a48; font-size: .78rem; font-weight: 800; line-height: 1.35; }
+    .ic-ai-save-actions { display: flex; flex-wrap: wrap; gap: .42rem; }
+    .ic-ai-save-btn { border: 1px solid #95d5b2; border-radius: 999px; background: #fff; color: #1f6f4a; padding: .32rem .6rem; font-size: .76rem; font-weight: 800; }
+    .ic-ai-save-btn.active { background: #1f6f4a; border-color: #1f6f4a; color: #fff; }
+    .ic-ai-privacy-note { padding: .45rem .7rem; background: #fff; border-top: 1px solid #d4edda; color: #5f7569; font-size: .72rem; font-weight: 700; display: none; }
+    .ic-ai-privacy-note.show { display: block; }
     @media (max-width: 575.98px) {
         .ic-ai-widget { right: .65rem; bottom: .65rem; }
         .ic-ai-panel { width: calc(100vw - 1.3rem); height: min(590px, calc(100vh - 6rem)); }
@@ -86,10 +93,22 @@
                     </div>
                 </div>
             @empty
-                <div class="ic-ai-msg assistant"><div class="ic-ai-bubble">Hello, I am {{ $assistantName }}. Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.</div></div>
+                <div class="ic-ai-msg assistant">
+                    <div class="ic-ai-bubble">
+                        Hello, I am {{ $assistantName }}. Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.
+                        <div class="ic-ai-save-choice" data-ai-save-choice>
+                            <div class="ic-ai-save-choice-label">Should this AI conversation be saved for memory and history?</div>
+                            <div class="ic-ai-save-actions">
+                                <button type="button" class="ic-ai-save-btn" data-save-mode="1">Save conversation</button>
+                                <button type="button" class="ic-ai-save-btn" data-save-mode="0">Do not save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @endforelse
         </div>
         <div id="icAiTyping" class="ic-ai-typing">{{ $assistantName }} is checking iClimate tools...</div>
+        <div id="icAiPrivacyNote" class="ic-ai-privacy-note"></div>
         @php
             $icAiChips = match (auth()->user()->role) {
                 \App\Models\User::ROLE_MAO => ['Which barangay has the highest yield?', 'Show a production summary for this season', 'How many active planting advisories are there?', 'Latest announcement'],
@@ -123,8 +142,10 @@
         const body = document.getElementById('icAiBody');
         const typing = document.getElementById('icAiTyping');
         const send = document.getElementById('icAiSend');
+        const privacyNote = document.getElementById('icAiPrivacyNote');
         const token = widget.querySelector('input[name="_token"]').value;
         const messageUrl = widget.dataset.messageUrl;
+        const saveStorageKey = 'iclimate_ai_save_conversation';
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scroll = () => { body.scrollTop = body.scrollHeight; };
@@ -153,6 +174,34 @@
             if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
             return cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
         };
+        const selectedSaveMode = () => localStorage.getItem(saveStorageKey);
+        const shouldSaveConversation = () => selectedSaveMode() !== '0';
+        const renderSaveChoice = () => {
+            const mode = selectedSaveMode();
+            widget.querySelectorAll('[data-save-mode]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.saveMode === mode);
+            });
+            if (!privacyNote) return;
+            if (mode === '0') {
+                privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
+                privacyNote.classList.add('show');
+            } else if (mode === '1') {
+                privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                privacyNote.classList.add('show');
+            } else {
+                privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                privacyNote.classList.add('show');
+            }
+        };
+
+        widget.querySelectorAll('[data-save-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                localStorage.setItem(saveStorageKey, btn.dataset.saveMode);
+                renderSaveChoice();
+                input.focus();
+            });
+        });
+        renderSaveChoice();
 
         widget.querySelectorAll('.ic-ai-chip').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -188,7 +237,7 @@
                 const response = await fetch(messageUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ question }),
+                    body: JSON.stringify({ question, save_conversation: shouldSaveConversation() }),
                     signal: controller.signal,
                 });
                 const data = await response.json();

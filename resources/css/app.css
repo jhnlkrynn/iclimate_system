@@ -44,8 +44,6 @@ body {
     overflow-x: hidden;
 }
 
-body,
-.app-main,
 .page-shell {
     animation: ic-page-enter var(--iclimate-motion-slow) both;
 }
@@ -85,8 +83,6 @@ button,
 }
 
 .btn:hover,
-.sidebar-link:hover,
-.sidebar-ai-card:hover,
 .ai-chip:hover,
 .ic-ai-chip:hover,
 .quick-action:hover,
@@ -96,13 +92,41 @@ button,
 
 .btn:active,
 button:active,
-.sidebar-link:active,
-.sidebar-ai-card:active,
 .ai-chip:active,
 .ic-ai-chip:active,
 .quick-action:active,
 .priority-card:active {
     transform: translateY(0) scale(.985);
+}
+
+.sidebar-fixed {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden !important;
+}
+
+.sidebar-nav-scroll {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar-nav-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar-fixed .sidebar-link:hover,
+.sidebar-fixed .sidebar-link:active,
+.sidebar-fixed .sidebar-ai-card:hover,
+.sidebar-fixed .sidebar-ai-card:active {
+    transform: none;
 }
 
 .card,

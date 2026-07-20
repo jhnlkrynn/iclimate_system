@@ -153,7 +153,7 @@
 
 <aside class="sidebar-fixed d-none d-lg-flex flex-column">
     @include('layouts.partials.sidebar-brand')
-    <div class="px-3 flex-grow-1 overflow-auto">
+    <div class="px-3 flex-grow-1 sidebar-nav-scroll">
         {!! $renderSidebarNav() !!}
     </div>
     {!! $renderAiCard() !!}
