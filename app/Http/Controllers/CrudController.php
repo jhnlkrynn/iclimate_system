@@ -14,14 +14,23 @@ use Illuminate\View\View;
 abstract class CrudController extends Controller
 {
     protected string $model;
+
     protected string $routeName;
+
     protected string $title;
+
     protected array $fields = [];
+
     protected array $columns = [];
+
     protected array $searchable = [];
+
     protected array $filterable = [];
+
     protected array $manageableRoles = [User::ROLE_MAO, User::ROLE_IT_EXPERT];
+
     protected bool $farmerOwnRecordsOnly = false;
+
     protected bool $viewOnly = false;
 
     public function index(Request $request): View

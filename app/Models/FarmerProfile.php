@@ -11,6 +11,7 @@ class FarmerProfile extends Model
     use HasFactory;
 
     public const FARM_TYPE_RAINFED = 'Rainfed';
+
     public const FARM_TYPE_IRRIGATED = 'Irrigated';
 
     protected $fillable = [

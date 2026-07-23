@@ -6,6 +6,25 @@
         .report-stat-label { color: #5a7a64; font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
         .report-stat-value { color: #0d1f18; font-size: 1.8rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .report-action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+        .report-live-strip { display: grid; grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr)); gap: .75rem; }
+        .report-live-item { border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.04); padding: .85rem; min-width: 0; }
+        .report-live-item strong { display: block; color: #fff; font-size: 1.25rem; line-height: 1.1; }
+        .report-live-item span { display: block; color: rgba(255,255,255,.55); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+        .report-empty-state { border: 1px dashed rgba(116,198,157,.34); border-radius: 18px; background: rgba(255,255,255,.04); color: #fff; }
+        .report-empty-state .h5 { color: #fff; }
+        .report-empty-state .text-muted { color: rgba(255,255,255,.62) !important; }
+        .report-page .report-white-action {
+            color: #fff !important;
+            border-color: rgba(255,255,255,.48) !important;
+            background: rgba(255,255,255,.06) !important;
+        }
+        .report-page .report-white-action:hover,
+        .report-page .report-white-action:focus {
+            color: #0d1f18 !important;
+            border-color: #fff !important;
+            background: #fff !important;
+            box-shadow: 0 .65rem 1.2rem rgba(255,255,255,.12);
+        }
         .report-table th { white-space: nowrap; }
         .report-mobile-list { display: none; gap: .75rem; }
         .report-mobile-card { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .9rem; }
@@ -14,12 +33,17 @@
         .report-mobile-label { color: #5a7a64; font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
         .report-mobile-value { color: #0d1f18; font-weight: 700; overflow-wrap: anywhere; }
         .history-card-list { display: none; gap: .75rem; }
-        @media (max-width: 991.98px) { .report-summary-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 991.98px) {
+            .report-summary-grid { grid-template-columns: 1fr; }
+            .report-live-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .report-live-item:first-child { grid-column: 1 / -1; }
+        }
         @media (max-width: 767.98px) {
             .report-action-bar, .report-action-bar .btn { width: 100%; }
             .report-results-table, .report-history-table { display: none; }
             .report-mobile-list, .history-card-list { display: grid; }
             .report-mobile-row { grid-template-columns: 1fr; gap: .2rem; }
+            .report-live-strip { grid-template-columns: 1fr; }
         }
 
         /* -- dark theme overrides (matches farmer dashboard palette) -- */
@@ -52,11 +76,27 @@
         <div>
             <div class="eyebrow mb-2">Analytics Workspace</div>
             <h1 class="h2 fw-bold mb-2">Reports</h1>
-            <p class="mb-0 text-white-50">Generate filtered reports, print layouts, export CSV, and review report history.</p>
+            <p class="mb-0 text-white-50">Generate filtered reports from current iClimate records. Dummy report history is excluded.</p>
         </div>
     </section>
 
     <div class="report-shell">
+    <div class="card no-lift">
+        <div class="card-body p-3">
+            <div class="report-live-strip">
+                <div class="report-live-item">
+                    <strong>Live app data</strong>
+                    <span>Refreshed {{ $sourceStats['last_refreshed']->format('M d, Y h:i A') }}</span>
+                </div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['climate_records']) }}</strong><span>Climate</span></div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['rice_production']) }}</strong><span>Rice rows</span></div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['farmers']) }}</strong><span>Farmers</span></div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['advisories']) }}</strong><span>Advisories</span></div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['community_posts']) }}</strong><span>Posts</span></div>
+            </div>
+        </div>
+    </div>
+
     <div class="card filter-panel no-lift">
         <div class="card-body p-4">
             <form method="POST" action="{{ route('reports.generate') }}" class="row g-3" data-loading="true">
@@ -83,8 +123,8 @@
                 <div class="col-lg-8 report-action-bar align-self-end">
                     <button class="btn btn-primary" type="submit" data-loading-text="Generating...">Generate Report</button>
                     @if ($selected)
-                        <button class="btn btn-outline-primary" formaction="{{ route('reports.print') }}" formmethod="GET" formtarget="_blank" type="submit">Print Report</button>
-                        <button class="btn btn-outline-secondary" formaction="{{ route('reports.export') }}" formmethod="GET" type="submit">Export CSV</button>
+                        <button class="btn report-white-action" formaction="{{ route('reports.print') }}" formmethod="GET" formtarget="_blank" type="submit">Print Report</button>
+                        <button class="btn report-white-action" formaction="{{ route('reports.export') }}" formmethod="GET" type="submit">Export CSV</button>
                     @endif
                 </div>
             </form>
@@ -101,8 +141,26 @@
         <div class="card no-lift">
             <div class="card-header border-0 py-3">
                 <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
-                    <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the generated rows below, then print or export using the buttons above.</div></div>
-                    <span class="badge text-bg-light border align-self-start">{{ number_format($rows->count()) }} row(s)</span>
+                    <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the generated rows below, then download the shown report as CSV.</div></div>
+                    <div class="report-result-actions d-flex flex-wrap gap-2 align-items-start">
+                        <span class="badge text-bg-light border align-self-start">{{ number_format($rows->count()) }} row(s)</span>
+                        <form method="GET" action="{{ route('reports.print') }}" target="_blank">
+                            @foreach ($filters as $key => $value)
+                                @if (! blank($value))
+                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                @endif
+                            @endforeach
+                            <button class="btn btn-sm fw-bold report-white-action" type="submit">Print Report</button>
+                        </form>
+                        <form method="GET" action="{{ route('reports.export') }}">
+                            @foreach ($filters as $key => $value)
+                                @if (! blank($value))
+                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                @endif
+                            @endforeach
+                            <button class="btn btn-sm fw-bold report-white-action" type="submit">Download CSV</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             @if ($rows->count())
@@ -125,13 +183,18 @@
                     @endforeach
                 </div>
             @else
-                <div class="card-body"><div class="empty-state text-center p-5"><div class="h5">No report records found</div><div class="text-muted">Try changing filters.</div></div></div>
+                <div class="card-body">
+                    <div class="report-empty-state text-center p-5">
+                        <div class="h5 mb-2">No report records found</div>
+                        <div class="text-muted">No current iClimate records match the selected filters. Try widening the date range or choosing All Barangays.</div>
+                    </div>
+                </div>
             @endif
         </div>
     @endif
 
     <div class="card no-lift">
-        <div class="card-header border-0 py-3"><h2 class="h5 mb-1">Report History</h2><div class="small text-muted">Saved generated reports and CSV exports.</div></div>
+        <div class="card-header border-0 py-3"><h2 class="h5 mb-1">Report History</h2><div class="small text-muted">Only real reports generated from current iClimate records are shown.</div></div>
         <div class="table-responsive report-history-table">
             <table class="table table-hover report-table mb-0">
                 <thead><tr><th>Type</th><th>Title</th><th>Generated By</th><th>Date</th><th>Rows</th></tr></thead>

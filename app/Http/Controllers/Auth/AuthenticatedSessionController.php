@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Security\CaptchaService;
+use App\Services\Weather\OpenMeteoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,9 +16,24 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request, CaptchaService $captcha, OpenMeteoService $weather): View
     {
-        return view('auth.login');
+        $forecastResult = $weather->fetchForecast($request->boolean('refresh_weather'));
+        $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
+        $today = now($weatherTimezone)->toDateString();
+        $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
+        $latestForecast = $forecastRecords
+            ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
+            ?? $forecastRecords->first();
+
+        return view('auth.login', [
+            'captcha' => $captcha->challenge($request, 'login'),
+            'loginWeather' => [
+                'forecast' => $latestForecast,
+                'result' => $forecastResult,
+                'timezone' => $weatherTimezone,
+            ],
+        ]);
     }
 
     /**

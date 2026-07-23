@@ -63,8 +63,7 @@ class HeatmapRiskService
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly WeatherApiService $weatherApi,
         private readonly DecisionSupportService $decisionSupport,
-    ) {
-    }
+    ) {}
 
     public function refresh(): void
     {

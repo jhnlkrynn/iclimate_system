@@ -43,6 +43,7 @@
         'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
         'weather' => ['weather-predictions.index', ['weather-predictions.*']],
+        'model-evaluation' => ['model-evaluation.index', ['model-evaluation.*']],
         'live-forecasting' => ['live-forecasting.index', ['live-forecasting.*']],
         'heatmap' => ['heatmap-areas.index', ['heatmap-areas.*']],
         'rice-production' => ['rice-productions.index', ['rice-productions.*']],
@@ -69,7 +70,7 @@
         ];
         $moreGroup = [
             $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Weather Forecast', 'weather', 'weather'),
+            $navLink('Weather & Yield', 'weather', 'weather'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
@@ -103,6 +104,7 @@
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Weather Prediction', 'weather', 'weather'),
+            $navLink('Model Evaluation', 'model-evaluation', 'weather'),
             $navLink('Live Forecasting', 'live-forecasting', 'live-forecasting'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
             $navLink('Heat Map Areas', 'heatmap', 'heatmap'),

@@ -51,8 +51,17 @@
     .ic-ai-privacy-note.show { display: block; }
     @media (max-width: 575.98px) {
         .ic-ai-widget { right: .65rem; bottom: .65rem; }
-        .ic-ai-panel { width: calc(100vw - 1.3rem); height: min(590px, calc(100vh - 6rem)); }
+        .ic-ai-panel { position: fixed; inset: auto .65rem 4.8rem .65rem; width: auto; height: min(590px, calc(100dvh - 6rem)); }
+        .ic-ai-form { grid-template-columns: 1fr; }
+        .ic-ai-send { width: 100%; }
+        .ic-ai-bubble { max-width: 92%; }
         .ic-ai-results { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 380px) {
+        .ic-ai-head { align-items: flex-start; padding: .75rem; }
+        .ic-ai-sub { font-size: .62rem; }
+        .ic-ai-chips { padding-inline: .55rem; }
+        .ic-ai-chip { width: 100%; text-align: center; }
     }
 </style>
 

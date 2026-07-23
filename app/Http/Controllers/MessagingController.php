@@ -9,11 +9,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MessagingController extends Controller
 {
+    private const ATTACHMENT_RULES = [
+        'nullable',
+        'file',
+        'max:51200',
+        'mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
     public function index(Request $request): View
     {
         $conversations = $this->conversationQuery($request->user())
@@ -54,7 +60,7 @@ class MessagingController extends Controller
         $validated = $request->validate([
             'recipient_id' => ['required', 'exists:users,id'],
             'body' => ['required_without:attachment', 'nullable', 'string', 'max:5000'],
-            'attachment' => ['nullable', 'file', 'max:51200'],
+            'attachment' => self::ATTACHMENT_RULES,
         ]);
 
         $recipient = User::query()->findOrFail($validated['recipient_id']);
@@ -72,7 +78,7 @@ class MessagingController extends Controller
 
         $validated = $request->validate([
             'body' => ['required_without:attachment', 'nullable', 'string', 'max:5000'],
-            'attachment' => ['nullable', 'file', 'max:51200'],
+            'attachment' => self::ATTACHMENT_RULES,
         ]);
 
         $this->createMessage($request, $conversation, $validated['body'] ?? null);

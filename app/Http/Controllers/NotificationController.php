@@ -13,10 +13,15 @@ use Illuminate\Validation\Rule;
 class NotificationController extends CrudController
 {
     protected string $model = UserNotification::class;
+
     protected string $routeName = 'notifications';
+
     protected string $title = 'Notification';
+
     protected array $columns = ['title' => 'Title', 'type' => 'Type', 'is_read' => 'Read'];
+
     protected array $searchable = ['title', 'message', 'type'];
+
     protected array $filterable = ['type' => ['Announcement', 'Advisory', 'Warning'], 'is_read' => [0 => 'Unread', 1 => 'Read']];
 
     public function __construct()

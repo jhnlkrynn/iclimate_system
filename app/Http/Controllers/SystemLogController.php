@@ -9,10 +9,15 @@ use Illuminate\Http\Request;
 class SystemLogController extends CrudController
 {
     protected string $model = SystemLog::class;
+
     protected string $routeName = 'system-logs';
+
     protected string $title = 'System Log';
+
     protected array $columns = ['action' => 'Action', 'details' => 'Details', 'created_at' => 'Date'];
+
     protected array $searchable = ['action', 'details'];
+
     protected bool $viewOnly = true;
 
     protected function authorizeView(Request $request): void

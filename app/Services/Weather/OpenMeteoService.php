@@ -119,7 +119,7 @@ class OpenMeteoService
                 'hourly' => implode(',', self::HOURLY),
                 'daily' => implode(',', self::DAILY),
                 'timezone' => config('services.open_meteo.timezone', 'Asia/Manila'),
-                'forecast_days' => 7,
+                'forecast_days' => (int) config('services.open_meteo.forecast_days', 16),
             ]);
 
         if (! $response->successful()) {

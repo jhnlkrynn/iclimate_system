@@ -1,6 +1,42 @@
 import './bootstrap';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import {
+    Chart,
+    ArcElement,
+    BarController,
+    BarElement,
+    CategoryScale,
+    DoughnutController,
+    Filler,
+    Legend,
+    LinearScale,
+    LineController,
+    LineElement,
+    PointElement,
+    Tooltip,
+} from 'chart.js';
+import L from 'leaflet';
 
 import Alpine from 'alpinejs';
+
+Chart.register(
+    ArcElement,
+    BarController,
+    BarElement,
+    CategoryScale,
+    DoughnutController,
+    Filler,
+    Legend,
+    LinearScale,
+    LineController,
+    LineElement,
+    PointElement,
+    Tooltip,
+);
+
+window.Chart = Chart;
+window.L = L;
+await import('leaflet.heat');
 
 window.Alpine = Alpine;
 
@@ -18,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindPasswordToggles();
     bindRegisterNameSync();
     bindGestureFeedback();
+    bindRevealMotion();
     bindLogoutConfirmations();
     bindFastNavigation();
     bindLoadingForms();
@@ -31,6 +68,45 @@ function bindNavbarState() {
     const update = () => navbar.classList.toggle('scrolled', window.scrollY > 10);
     update();
     window.addEventListener('scroll', update, { passive: true });
+}
+
+function bindRevealMotion() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const selectors = [
+        '.page-hero',
+        '.alert',
+        '.card',
+        '.glass-card',
+        '.module-tile',
+        '.climate-chip',
+        '.risk-card',
+        '.stat-card',
+        '.soft-section',
+        '.filter-panel',
+        '.table-responsive',
+    ].join(',');
+
+    const elements = [...document.querySelectorAll(selectors)]
+        .filter((element) => !element.closest('.modal, .offcanvas, .ic-ai-panel'));
+
+    elements.slice(0, 36).forEach((element, index) => {
+        if (element.dataset.revealBound === 'true') return;
+        element.dataset.revealBound = 'true';
+        element.classList.add('ic-reveal');
+        element.style.setProperty('--ic-reveal-delay', `${Math.min(index * 38, 260)}ms`);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+
+    elements.forEach((element) => observer.observe(element));
 }
 
 function bindGestureFeedback() {
@@ -267,6 +343,7 @@ function bindFastNavigation() {
             if (!canWarm(link)) return;
 
             progress?.classList.add('show');
+            document.body.classList.add('ic-page-leaving');
             link.classList.add('is-loading-action');
         });
     });
@@ -288,6 +365,7 @@ function bindFastNavigation() {
             lockSubmitButtons(form);
 
             if (method !== 'GET') {
+                document.body.classList.add('ic-page-leaving');
                 form.classList.add('is-loading-action');
             }
         });
@@ -295,6 +373,7 @@ function bindFastNavigation() {
 
     window.addEventListener('pageshow', () => {
         progress?.classList.remove('show');
+        document.body.classList.remove('ic-page-leaving');
         document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
     });

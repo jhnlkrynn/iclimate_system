@@ -11,20 +11,37 @@ use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Models\SystemLog;
+use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
-use App\Services\WeatherApiService;
+use App\Services\TyphoonSafetyService;
 use App\Services\Weather\OpenMeteoService;
+use App\Services\WeatherApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request, OpenMeteoService $openMeteo): View
+    public function farmer(Request $request, OpenMeteoService $openMeteo, TyphoonSafetyService $typhoonSafety): View
     {
         $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
         $today = now($weatherTimezone)->toDateString();
-        $forecastResult = $openMeteo->fetchForecast();
+        if ($request->boolean('refresh_weather')) {
+            $forecastResult = $openMeteo->fetchForecast(true);
+        } else {
+            $storedForecast = $openMeteo->latestStoredForecast();
+            $forecastResult = [
+                'ok' => true,
+                'source' => 'Open-Meteo',
+                'freshness' => $storedForecast->first()?->freshnessLabel() ?? 'unavailable',
+                'records' => $storedForecast,
+                'records_saved' => 0,
+                'fetched_at' => $storedForecast->first()?->fetched_at,
+                'message' => 'Using the latest stored Open-Meteo weather update for faster dashboard loading.',
+                'cached_dashboard_load' => true,
+            ];
+        }
         $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
         $latestForecast = $forecastRecords
             ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
@@ -38,7 +55,11 @@ class DashboardController extends Controller
                 ?? $forecastRecords->first();
         }
 
-        return view('dashboards.farmer', $this->stats() + [
+        $dashboardData = $this->stats();
+        $dashboardData['highRiskHeatMapAreas'] = HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count();
+        $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
+
+        return view('dashboards.farmer', $dashboardData + [
             'feedPosts' => FeedPost::query()
                 ->with('author')
                 ->whereIn('visibility', ['All Farmers', 'All Users'])
@@ -48,6 +69,7 @@ class DashboardController extends Controller
                 ->get(),
             'advisories' => PlantingAdvisory::query()->where('status', 'Published')->latest()->take(5)->get(),
             'notifications' => UserNotification::query()->where('user_id', $request->user()->id)->latest()->take(5)->get(),
+            'unreadNotificationCount' => UserNotification::query()->where('user_id', $request->user()->id)->where('is_read', false)->count(),
             'climateSummary' => ClimateRecord::query()->latest('record_date')->first(),
             'recentClimateRecords' => ClimateRecord::query()->latest('record_date')->take(5)->get(),
             'latestForecast' => $latestForecast,
@@ -57,10 +79,17 @@ class DashboardController extends Controller
                 ->orderByDesc('risk_score')
                 ->take(8)
                 ->get(),
+            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
+            'typhoonSafetyResponse' => $this->hasTyphoonSafetyTable() && $activeTyphoonSafetyEvent
+                ? TyphoonSafetyResponse::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('event_key', $activeTyphoonSafetyEvent['key'])
+                    ->first()
+                : null,
         ]);
     }
 
-    public function mao(WeatherApiService $weatherApi): View
+    public function mao(WeatherApiService $weatherApi, TyphoonSafetyService $typhoonSafety): View
     {
         $climateChartRecords = ClimateRecord::query()
             ->orderByDesc('record_date')
@@ -89,6 +118,15 @@ class DashboardController extends Controller
         $weatherDataSource = $liveWeather
             ? 'Live '.data_get($liveWeather, 'source', 'OpenWeather').' forecast for '.data_get($liveWeather, 'location', 'Lian, Batangas')
             : 'Stored climate records';
+        $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
+        $typhoonSafetyResponses = $this->hasTyphoonSafetyTable() && $activeTyphoonSafetyEvent
+            ? TyphoonSafetyResponse::query()
+                ->with('farmer')
+                ->where('event_key', $activeTyphoonSafetyEvent['key'])
+                ->latest('responded_at')
+                ->get()
+            : collect();
+        $farmerCount = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count();
 
         return view('dashboards.mao', $this->stats() + [
             'latestClimate' => ClimateRecord::query()->latest('record_date')->first(),
@@ -114,6 +152,11 @@ class DashboardController extends Controller
                 'High' => (clone $heatmapAreas)->where('risk_level', 'High')->count(),
                 'Severe' => (clone $heatmapAreas)->where('risk_level', 'Severe')->count(),
             ],
+            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
+            'typhoonSafetyResponses' => $typhoonSafetyResponses,
+            'typhoonSafetySafeCount' => $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count(),
+            'typhoonSafetyNeedsHelpCount' => $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count(),
+            'typhoonSafetyNoResponseCount' => max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count()),
             'dashboardMapAreas' => $heatmapAreas->map(fn (HeatmapArea $area) => [
                 'barangay' => $area->barangay,
                 'latitude' => (float) $area->latitude,
@@ -198,5 +241,10 @@ class DashboardController extends Controller
             'totalHeatMapAreas' => HeatmapArea::count(),
             'highRiskHeatMapAreas' => HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count(),
         ]);
+    }
+
+    private function hasTyphoonSafetyTable(): bool
+    {
+        return Schema::hasTable('typhoon_safety_responses');
     }
 }

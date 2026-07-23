@@ -240,8 +240,7 @@ class RandomForestRegressor
         private readonly int $maxDepth = 6,
         private readonly int $minSamplesSplit = 2,
         private readonly int $seed = 1234,
-    ) {
-    }
+    ) {}
 
     public function train(array $samples, string $target): void
     {
@@ -294,8 +293,7 @@ class DecisionTreeRegressor
         private readonly int $maxDepth,
         private readonly int $minSamplesSplit,
         private readonly int $featureSubsetSize,
-    ) {
-    }
+    ) {}
 
     public function train(array $samples, array $features, string $target): void
     {

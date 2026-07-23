@@ -1,3 +1,6 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'leaflet/dist/leaflet.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,9 +23,11 @@
     --iclimate-shadow-sm: 0 1px 3px rgba(26, 58, 42, .08);
     --iclimate-shadow-md: 0 4px 16px rgba(26, 58, 42, .12);
     --iclimate-shadow-lg: 0 16px 48px rgba(26, 58, 42, .18);
-    --iclimate-motion-fast: 140ms cubic-bezier(.2, .8, .2, 1);
-    --iclimate-motion-med: 240ms cubic-bezier(.2, .8, .2, 1);
-    --iclimate-motion-slow: 420ms cubic-bezier(.16, 1, .3, 1);
+    --iclimate-ease-out: cubic-bezier(.16, 1, .3, 1);
+    --iclimate-ease-smooth: cubic-bezier(.22, .61, .36, 1);
+    --iclimate-motion-fast: 160ms var(--iclimate-ease-smooth);
+    --iclimate-motion-med: 260ms var(--iclimate-ease-smooth);
+    --iclimate-motion-slow: 520ms var(--iclimate-ease-out);
 }
 
 ::selection {
@@ -44,8 +49,17 @@ body {
     overflow-x: hidden;
 }
 
+body.ic-page-leaving {
+    cursor: progress;
+}
+
 .page-shell {
     animation: ic-page-enter var(--iclimate-motion-slow) both;
+    transform-origin: 50% 16px;
+}
+
+body.ic-page-leaving .page-shell {
+    animation: ic-page-exit 180ms var(--iclimate-ease-smooth) both;
 }
 
 a,
@@ -65,8 +79,8 @@ button,
 .priority-card,
 .form-control,
 .form-select {
-    transition-duration: 220ms;
-    transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+    transition-duration: 260ms;
+    transition-timing-function: var(--iclimate-ease-smooth);
 }
 
 .btn,
@@ -82,12 +96,34 @@ button,
     touch-action: manipulation;
 }
 
+.btn,
+.sidebar-link,
+.sidebar-ai-card,
+.card,
+.glass-card,
+.module-tile,
+.climate-chip,
+.risk-card,
+.stat-card,
+.soft-section,
+.filter-panel,
+.quick-action,
+.priority-card,
+.form-control,
+.form-select,
+.dropdown-menu,
+.alert,
+.modal-content,
+.offcanvas {
+    transition-property: transform, box-shadow, border-color, background-color, color, opacity, filter;
+}
+
 .btn:hover,
 .ai-chip:hover,
 .ic-ai-chip:hover,
 .quick-action:hover,
 .priority-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 }
 
 .btn:active,
@@ -138,6 +174,7 @@ button:active,
 .soft-section,
 .filter-panel {
     will-change: transform;
+    backface-visibility: hidden;
 }
 
 .card:hover,
@@ -147,7 +184,7 @@ button:active,
 .risk-card:hover,
 .stat-card:hover,
 .soft-section:hover {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
 }
 
 .form-control,
@@ -161,7 +198,7 @@ button:active,
 }
 
 .table tbody tr {
-    transition: background-color var(--iclimate-motion-fast), transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast);
+    transition: background-color var(--iclimate-motion-fast), transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast), opacity var(--iclimate-motion-fast);
 }
 
 .table-hover tbody tr:hover {
@@ -174,6 +211,16 @@ button:active,
 .dropdown-menu.show,
 .alert {
     animation: ic-soft-rise var(--iclimate-motion-med) both;
+}
+
+.ic-reveal {
+    opacity: 0;
+    transform: translateY(14px) scale(.992);
+}
+
+.ic-reveal.is-visible {
+    animation: ic-soft-rise 560ms var(--iclimate-ease-out) both;
+    animation-delay: var(--ic-reveal-delay, 0ms);
 }
 
 .ic-ripple {
@@ -199,24 +246,42 @@ button:active,
 @keyframes ic-page-enter {
     from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(10px) scale(.992);
+        filter: blur(2px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes ic-page-exit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(6px) scale(.996);
+        filter: blur(1px);
     }
 }
 
 @keyframes ic-soft-rise {
     from {
         opacity: 0;
-        transform: translateY(10px) scale(.985);
+        transform: translateY(14px) scale(.985);
+        filter: blur(2px);
     }
 
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
+        filter: blur(0);
     }
 }
 
@@ -234,6 +299,24 @@ canvas,
 iframe {
     max-width: 100%;
     height: auto;
+}
+
+textarea,
+input,
+select,
+button {
+    min-width: 0;
+}
+
+textarea {
+    resize: vertical;
+}
+
+[class*="col-"],
+.row > *,
+.d-flex > *,
+.d-inline-flex > * {
+    min-width: 0;
 }
 
 .app-main,
@@ -296,6 +379,27 @@ iframe {
     margin-bottom: 0;
 }
 
+.table .badge,
+.table .btn {
+    width: auto;
+    min-width: max-content;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+}
+
+.table .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.table td.text-end,
+.table th.text-end {
+    white-space: nowrap;
+}
+
 .btn,
 .badge,
 .dropdown-item,
@@ -306,6 +410,15 @@ iframe {
 
 .btn,
 .badge {
+    white-space: normal;
+}
+
+.dropdown-menu {
+    max-width: min(92vw, 360px);
+    overflow-wrap: anywhere;
+}
+
+.dropdown-item {
     white-space: normal;
 }
 
@@ -497,6 +610,13 @@ iframe {
         min-height: 42px;
     }
 
+    .btn-group,
+    .btn-toolbar,
+    .action-cluster,
+    .d-flex.flex-wrap {
+        min-width: 0;
+    }
+
     .table-responsive {
         border-radius: 8px;
         margin-inline: -.35rem;
@@ -551,9 +671,14 @@ iframe {
 
     .dropdown .btn,
     .topbar .btn,
+    .pagination .page-link,
     .btn-close,
     .ic-ai-close {
         width: auto;
+    }
+
+    .dropdown-menu {
+        width: min(92vw, 360px);
     }
 
     .ic-ai-widget {
@@ -571,5 +696,24 @@ iframe {
     .ai-result-grid,
     .ds-grid {
         grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .page-shell {
+        padding-inline: .55rem !important;
+    }
+
+    .card,
+    .glass-card,
+    .soft-section,
+    .filter-panel,
+    .page-hero {
+        border-radius: 14px !important;
+    }
+
+    .table-responsive {
+        margin-inline: 0;
+        width: 100%;
     }
 }

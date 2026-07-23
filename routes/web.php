@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
+use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
@@ -9,26 +10,30 @@ use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\ModelEvaluationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\TyphoonSafetyController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WeatherPredictionController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route(auth()->user()->dashboardRoute())
-        : view('welcome');
+    return view('welcome');
 });
 
 Route::get('/dashboard', function () {
     return redirect()->route(request()->user()->dashboardRoute());
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/captcha/{context}', CaptchaImageController::class)
+    ->middleware('throttle:20,1')
+    ->name('captcha.image');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -147,6 +152,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('heatmap-areas', HeatmapAreaController::class);
 
+        Route::post('typhoon-safety', [TyphoonSafetyController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('typhoon-safety.store');
+
         Route::get('ai-farming-assistant', [AIChatController::class, 'index'])
             ->name('ai-chat.index');
 
@@ -167,6 +176,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions',
             [WeatherPredictionController::class, 'index']
         )->name('weather-predictions.index');
+
+        Route::get(
+            'model-evaluation',
+            [ModelEvaluationController::class, 'index']
+        )->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->name('model-evaluation.index');
 
         Route::post(
             'weather-predictions/predict',

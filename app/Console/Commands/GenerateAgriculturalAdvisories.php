@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class GenerateAgriculturalAdvisories extends Command
 {
     protected $signature = 'iclimate:generate-advisories {--fetch-weather : Fetch weather before generating} {--force-weather : Force the weather API call}';
+
     protected $description = 'Generate agricultural advisories from stored or freshly fetched weather data.';
 
     public function handle(AdvisoryGenerationService $service): int

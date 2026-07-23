@@ -54,6 +54,16 @@ return [
         'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),
         'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
+        'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
+    ],
+
+    'pagasa' => [
+        'enabled' => env('PAGASA_ADVISORIES_ENABLED', true),
+        'regional_forecast_url' => env('PAGASA_REGIONAL_FORECAST_URL', 'https://bagong.pagasa.dost.gov.ph/regional-forecast/ncrprsd'),
+        'weekly_outlook_url' => env('PAGASA_WEEKLY_OUTLOOK_URL', 'https://pagasa.dost.gov.ph/weather/weather-outlook-weekly'),
+        'timeout' => env('PAGASA_TIMEOUT', 12),
+        'cache_minutes' => env('PAGASA_CACHE_MINUTES', 30),
+        'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),
     ],
 
     'farming_ai' => [

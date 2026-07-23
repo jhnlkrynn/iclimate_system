@@ -11,9 +11,9 @@
                     @csrf
                     <button class="btn btn-light" data-loading-text="Refreshing..." type="submit">Refresh Weather Data</button>
                 </form>
-                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" onsubmit="return confirm('Generate advisories from the latest stored forecast?');">
+                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" onsubmit="return confirm('Fetch live Lian, Batangas weather and generate hourly, daily, weekly, and monthly advisories now?');">
                     @csrf
-                    <button class="btn btn-outline-light" data-loading-text="Generating..." type="submit">Regenerate Advisories</button>
+                    <button class="btn btn-outline-light" data-loading-text="Generating..." type="submit">Generate Live Advisories</button>
                 </form>
             </div>
         </div>
@@ -42,12 +42,13 @@
         @if($advisories->count())
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th>Title</th><th>Type</th><th>Severity</th><th>Target</th><th>Status</th><th>Valid Until</th><th class="text-end">Actions</th></tr></thead>
+                    <thead><tr><th>Title</th><th>Type</th><th>Window</th><th>Severity</th><th>Target</th><th>Status</th><th>Valid Until</th><th class="text-end">Actions</th></tr></thead>
                     <tbody>
                         @foreach($advisories as $advisory)
                             <tr>
                                 <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->summary }}</div></td>
                                 <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
+                                <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>

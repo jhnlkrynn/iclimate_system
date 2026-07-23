@@ -1,9 +1,24 @@
 @php
     $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
     $latestClimate = \App\Support\ClimateSnapshot::latest();
-    $rainfall = (float) ($latestClimate->rainfall ?? 2.4);
+    $loginWeather = $loginWeather ?? [];
+    $weatherForecast = $loginWeather['forecast'] ?? null;
+    $weatherResult = $loginWeather['result'] ?? [];
+    $weatherTimezone = $loginWeather['timezone'] ?? config('services.open_meteo.timezone', 'Asia/Manila');
+    $currentWeather = $weatherForecast?->raw_response['current'] ?? [];
+    $weatherCode = data_get($currentWeather, 'weather_code') ?? $weatherForecast?->weather_code;
+    $temperature = data_get($currentWeather, 'temperature_2m') ?? $weatherForecast?->temperature ?? $latestClimate?->temperature ?? 26;
+    $humidity = data_get($currentWeather, 'relative_humidity_2m') ?? $weatherForecast?->humidity ?? $latestClimate?->humidity ?? 78;
+    $windSpeed = data_get($currentWeather, 'wind_speed_10m') ?? $weatherForecast?->wind_speed ?? $latestClimate?->wind_speed ?? 10;
+    $rainfall = (float) ($weatherForecast?->rainfall_mm ?? $latestClimate->rainfall ?? 2.4);
+    $weatherUpdatedAt = $weatherForecast?->fetched_at?->timezone($weatherTimezone) ?? $latestClimate?->updated_at ?? now($weatherTimezone);
     $condition = match (true) {
-        $rainfall >= 300 => ['Heavy Rain', '&#127783;&#65039;'],
+        in_array((int) $weatherCode, [95, 96, 99], true) => ['Thunderstorm', '&#9928;&#65039;'],
+        in_array((int) $weatherCode, [80, 81, 82, 61, 63, 65, 66, 67], true) => ['Rain', '&#127783;&#65039;'],
+        in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Drizzle', '&#127783;&#65039;'],
+        in_array((int) $weatherCode, [45, 48], true) => ['Foggy', '&#127787;&#65039;'],
+        in_array((int) $weatherCode, [1, 2, 3], true) => ['Cloudy', '&#9925;&#65039;'],
+        (int) $weatherCode === 0 => ['Clear', '&#9728;&#65039;'],
         $rainfall >= 120 => ['Rain', '&#127783;&#65039;'],
         $rainfall >= 70 => ['Cloudy', '&#9925;&#65039;'],
         $rainfall >= 30 => ['Partly Cloudy', '&#127780;&#65039;'],
@@ -21,6 +36,13 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --auth-ease-out: cubic-bezier(.16,1,.3,1);
+      --auth-ease-smooth: cubic-bezier(.22,.61,.36,1);
+      --auth-motion-fast: 160ms var(--auth-ease-smooth);
+      --auth-motion-med: 260ms var(--auth-ease-smooth);
+      --auth-motion-slow: 560ms var(--auth-ease-out);
+    }
     html, body { margin: 0; min-height: 100%; }
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     a { color: inherit; }
@@ -53,6 +75,7 @@
       position: relative; z-index: 1;
       display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap;
       width: 100%; max-width: 1080px;
+      animation: authSceneEnter var(--auth-motion-slow) both;
     }
 
     /* -- BACK TO HOME LINK -------------------------------- */
@@ -72,7 +95,10 @@
       box-shadow: 0 26px 60px rgba(0,0,0,.42);
       backdrop-filter: blur(18px);
       padding: 34px 40px 30px;
+      transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
+      transform: translateZ(0);
     }
+    .login-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(0,0,0,.46); border-color: rgba(149,213,178,.34); }
     .card-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
     .card-logo img { width: 42px; height: auto; display: block; }
     .card-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: #74C69D; letter-spacing: -0.01em; }
@@ -102,20 +128,35 @@
     .auth-popup-timer span { display: block; height: 100%; background: var(--popup-accent); animation: authPopupTimer 5.2s linear forwards; }
     @keyframes authPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes authPopupTimer { from { width: 100%; } to { width: 0%; } }
+    @keyframes authSceneEnter { from { opacity: 0; transform: translateY(16px) scale(.992); filter: blur(2px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
     .form-group { margin-bottom: 11px; }
     .form-group label { display: block; font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 6px; }
     .input-wrap { position: relative; }
     .form-input {
       width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 10px;
-      padding: 9px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: all .2s; outline: none;
+      padding: 9px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
     }
     .form-input.has-icon { padding-left: 40px; }
-    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); }
+    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); transform: translateY(-1px); }
     .form-input::placeholder { color: rgba(255,255,255,.35); }
     .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #74C69D; }
     .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.55); background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
     .pwd-toggle:hover { color: #74C69D; }
+    .captcha-card {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
+      background: rgba(82,183,136,.1); border: 1.5px solid rgba(149,213,178,.24); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 11px;
+    }
+    .captcha-icon {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: rgba(82,183,136,.18); color: #74C69D; border: 1px solid rgba(149,213,178,.3);
+    }
+    .captcha-label { font-size: .76rem; font-weight: 800; color: rgba(255,255,255,.72); margin-bottom: 5px; }
+    .captcha-image {
+      display: block; width: 100%; height: 64px; border-radius: 13px;
+      border: 1px solid rgba(149,213,178,.34); margin-bottom: 8px; background: #eef8f2;
+    }
 
     .form-row-split { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .checkbox-label { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: rgba(255,255,255,.8); cursor: pointer; user-select: none; }
@@ -129,10 +170,11 @@
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px;
       background: #E8A73D; color: #1a3a2a; border: none; border-radius: 10px; font-family: 'Inter', sans-serif;
-      font-size: .95rem; font-weight: 800; cursor: pointer; transition: all .2s; margin-bottom: 12px;
+      font-size: .95rem; font-weight: 800; cursor: pointer; transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med); margin-bottom: 12px;
       box-shadow: 0 10px 24px rgba(232,167,61,.28);
     }
-    .btn-login:hover { background: #f0b559; transform: translateY(-1px); box-shadow: 0 12px 28px rgba(232,167,61,.4); }
+    .btn-login:hover { background: #f0b559; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
+    .btn-login:active { transform: translateY(0) scale(.985); }
 
     .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
     .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
@@ -140,14 +182,6 @@
     .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); margin: 0; }
     .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #f0b559; }
-
-    .demo-row { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-    .demo-pill {
-      font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 500; letter-spacing: .03em; text-transform: uppercase;
-      color: rgba(255,255,255,.5); background: rgba(255,255,255,.05); border: 1px solid rgba(149,213,178,.2);
-      border-radius: 100px; padding: 5px 11px; cursor: pointer; transition: all .15s;
-    }
-    .demo-pill:hover { color: #fff; background: rgba(82,183,136,.18); border-color: rgba(82,183,136,.4); }
 
     /* -- WEATHER WIDGET ---------------------------------- */
     .weather-card {
@@ -159,7 +193,11 @@
       backdrop-filter: blur(16px);
       padding: 30px 32px 26px;
       color: #fff;
+      animation: authSceneEnter 680ms var(--auth-ease-out) both;
+      animation-delay: 90ms;
+      transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), border-color var(--auth-motion-med);
     }
+    .weather-card:hover { transform: translateY(-4px); box-shadow: 0 26px 58px rgba(0,0,0,.42); border-color: rgba(149,213,178,.34); }
     .weather-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.1rem; margin-bottom: 3px; }
     .weather-loc { display: flex; align-items: center; gap: 6px; font-size: .8rem; color: #74C69D; font-weight: 600; margin-bottom: 12px; }
     .weather-main { text-align: center; margin-bottom: 10px; }
@@ -188,6 +226,17 @@
     @media (max-width: 540px) {
       .login-card { padding: 24px 20px 20px; }
       .back-link-top { position: absolute; top: 14px; left: 14px; }
+      .captcha-card { grid-template-columns: 1fr; }
+      .captcha-icon { display: none; }
+      .form-row-split { align-items: flex-start; flex-direction: column; gap: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
     }
   </style>
 </head>
@@ -260,6 +309,18 @@
           @error('password')<div class="field-error">{{ $message }}</div>@enderror
         </div>
 
+        <div class="captcha-card">
+          <div class="captcha-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <label for="captcha_answer" class="captcha-label">Security Check</label>
+            <img class="captcha-image" src="{{ route('captcha.image', ['context' => 'login', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
+            <input type="text" id="captcha_answer" name="captcha_answer" class="form-input @error('captcha_answer') is-invalid @enderror" placeholder="Enter the code shown above" autocomplete="off" autocapitalize="characters" spellcheck="false" required/>
+            @error('captcha_answer')<div class="field-error">{{ $message }}</div>@enderror
+          </div>
+        </div>
+
         <div class="form-row-split">
           <label class="checkbox-label">
             <input type="checkbox" id="remember_me" name="remember" class="custom-checkbox" checked/>
@@ -279,13 +340,6 @@
 
       <p class="login-register">Don't have an account? <a href="{{ route('register') }}">Create Account</a></p>
 
-      @if (app()->environment('local'))
-        <div class="demo-row">
-          <span class="demo-pill" onclick="fillDemo('farmer@iclimate.com','password123')">Farmer</span>
-          <span class="demo-pill" onclick="fillDemo('mao@iclimate.com','password123')">MAO</span>
-          <span class="demo-pill" onclick="fillDemo('admin@iclimate.com','password123')">IT Expert</span>
-        </div>
-      @endif
     </div>
 
     <div class="weather-card">
@@ -297,7 +351,7 @@
 
       <div class="weather-main">
         <div class="weather-emoji">{!! $condition[1] !!}</div>
-        <div class="weather-temp">{{ $latestClimate ? round((float) $latestClimate->temperature) : 26 }}&deg;C</div>
+        <div class="weather-temp">{{ round((float) $temperature) }}&deg;C</div>
         <div class="weather-cond">{{ $condition[0] }}</div>
       </div>
 
@@ -306,11 +360,11 @@
       <div class="weather-rows">
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2c1.4 2 2.7 3.9 2.7 5.8A2.7 2.7 0 1 1 6.3 7.8C6.3 5.9 7.6 4 9 2Z" stroke="currentColor" stroke-width="1.4"/></svg></span>
-          <span><span class="weather-row-val">{{ $latestClimate ? round((float) $latestClimate->humidity) : 78 }}%</span><br><span class="weather-row-label">Humidity</span></span>
+          <span><span class="weather-row-val">{{ round((float) $humidity) }}%</span><br><span class="weather-row-label">Humidity</span></span>
         </div>
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 6h8a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 10h11a2.2 2.2 0 1 1-2.2 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
-          <span><span class="weather-row-val">{{ $latestClimate ? round((float) $latestClimate->wind_speed) : 10 }} km/h</span><br><span class="weather-row-label">Wind Speed</span></span>
+          <span><span class="weather-row-val">{{ round((float) $windSpeed) }} km/h</span><br><span class="weather-row-label">Wind Speed</span></span>
         </div>
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="4" y="2" width="2.4" height="10" rx="1" fill="currentColor"/><rect x="8" y="5" width="2.4" height="7" rx="1" fill="currentColor" opacity=".7"/><rect x="12" y="7.5" width="2.4" height="4.5" rx="1" fill="currentColor" opacity=".5"/></svg></span>
@@ -320,7 +374,7 @@
 
       <div class="weather-updated">
         <span class="weather-updated-dot"></span>
-        Updated {{ $latestClimate?->updated_at?->format('g:i A') ?? now()->format('g:i A') }}
+        Updated {{ $weatherUpdatedAt->format('g:i A') }}
       </div>
     </div>
   </div>
@@ -334,13 +388,6 @@
   </div>
 
 <script>
-  @if (app()->environment('local'))
-    function fillDemo(email, pass) {
-      document.getElementById('email').value = email;
-      document.getElementById('password').value = pass;
-    }
-  @endif
-
   document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('password');
     const toggle = document.getElementById('pwdToggle');

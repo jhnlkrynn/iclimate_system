@@ -171,7 +171,7 @@
         /* -- STAT / FIELD CARDS ------------------------------ */
         .climate-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 1rem;
             margin-bottom: .5rem;
         }
@@ -429,12 +429,13 @@
     </style>
 
     @php
-        $unreadNotifications = $notifications->where('is_read', false)->count();
+        $unreadNotifications = $unreadNotificationCount ?? $notifications->where('is_read', false)->count();
         $latestAdvisory = $advisories->first();
         $profile = auth()->user()->farmerProfile;
         $weatherTimezone = config('services.open_meteo.timezone', 'Asia/Manila');
         $weatherNow = now($weatherTimezone);
         $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
+        $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
         $weatherFreshness = $latestForecast
             ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
             : 'Stored Record';
@@ -458,11 +459,14 @@
             ? $weatherSource.' forecast'.($weatherFetchedAt ? ' - Updated '.$weatherFetchedAt : '')
             : 'Recorded: '.$weatherSource;
         $weatherTimingLabel = $currentWeather !== []
-            ? 'Current weather - '.$currentWeatherTimeLabel
+            ? 'Current weather reading - '.$currentWeatherTimeLabel
             : ($latestForecast ? 'Hourly forecast - '.$forecastHourLabel : 'Stored Record');
         $weatherDisplayDate = $currentWeather !== []
             ? $currentWeatherDate
             : $weatherDate;
+        $weatherUpdateLine = $weatherFetchedAt
+            ? 'Updated '.$weatherFetchedAt
+            : $weatherDataMode;
         $temperatureValue = data_get($currentWeather, 'temperature_2m') ?? $hourlyTemperature ?? $latestForecast?->temperature ?? $climateSummary?->temperature;
         $rainfallValue = data_get($currentWeather, 'rain') ?? data_get($currentWeather, 'precipitation') ?? $hourlyRainfall ?? $latestForecast?->rainfall_mm ?? $climateSummary?->rainfall;
         $humidityValue = data_get($currentWeather, 'relative_humidity_2m') ?? $hourlyHumidity ?? $latestForecast?->humidity ?? $climateSummary?->humidity;
@@ -482,7 +486,7 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F d, Y') }}</span></span>
-                    <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
+                    <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
                 </div>
@@ -501,7 +505,7 @@
                 <div class="field-note">{{ $weatherNoteLabel }}</div>
                 <div class="field-source">
                     Source: {{ $weatherSource }}
-                    <span>{{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }}</span>
+                    <span>{{ $weatherUpdateLine }}</span>
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
@@ -512,7 +516,7 @@
                 <div class="field-note">Use advisories before fertilizer application</div>
                 <div class="field-source">
                     Source: {{ $weatherSource }}
-                    <span>{{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }}</span>
+                    <span>{{ $weatherUpdateLine }}</span>
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
@@ -523,16 +527,8 @@
                 <div class="field-note">Monitor crop disease risk after rain</div>
                 <div class="field-source">
                     Source: {{ $weatherSource }}
-                    <span>{{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }}</span>
+                    <span>{{ $weatherUpdateLine }}</span>
                 </div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalAlerts">
-                <div class="field-icon">ALT</div>
-                <div class="field-label">Weather Alerts</div>
-                <div class="field-value">{{ number_format($unreadNotifications) }}</div>
-                <div class="field-note">Legacy alerts kept for records</div>
-                <div class="field-source">Source: Notifications</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalRisk">
@@ -558,7 +554,7 @@
                     </div>
                     <div class="modal-body fc-modal-body">
                         <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather time: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
                         <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
                     </div>
@@ -578,7 +574,7 @@
                     </div>
                     <div class="modal-body fc-modal-body">
                         <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather time: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
                         <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
                     </div>
@@ -598,7 +594,7 @@
                     </div>
                     <div class="modal-body fc-modal-body">
                         <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather time: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
                         <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
                     </div>

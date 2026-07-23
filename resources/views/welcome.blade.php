@@ -716,11 +716,11 @@
       gap: 20px;
     }
     .feature-card {
-      background: var(--white);
+      background: linear-gradient(180deg, rgba(240,247,244,.98), rgba(216,243,220,.94));
       padding: 32px 28px;
       display: flex; flex-direction: column; gap: 12px;
       border-radius: var(--radius-lg);
-      border: 1px solid var(--sand-dark);
+      border: 1px solid rgba(183,228,199,.72);
       transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
       position: relative;
       min-width: 0;
@@ -728,26 +728,26 @@
     .feature-card:hover {
       transform: translateY(-5px);
       box-shadow: var(--shadow-md);
-      border-color: var(--green-200);
+      border-color: rgba(116,198,157,.88);
     }
     .fc-icon-wrap {
       width: 52px; height: 52px;
-      background: var(--green-50);
+      background: rgba(255,255,255,.42);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 4px;
-      border: 1px solid var(--green-100);
+      border: 1px solid rgba(82,183,136,.18);
       flex-shrink: 0;
     }
     .feature-card h3 {
       font-family: 'Inter', sans-serif;
       font-size: 0.975rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--green-950);
       line-height: 1.3;
       letter-spacing: -0.01em;
     }
-    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: var(--ink-light); }
+    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: var(--green-700); }
     .fc-badge {
       display: inline-block; margin-top: auto;
       font-family: 'DM Mono', monospace;
@@ -755,7 +755,7 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--green-500);
-      background: var(--green-100);
+      background: rgba(82,183,136,.18);
       padding: 3px 10px;
       border-radius: var(--radius-pill);
       width: fit-content;
@@ -1051,8 +1051,8 @@
     }
     .contact-grid {
       display: grid;
-      grid-template-columns: 0.95fr 1.2fr 0.85fr;
-      gap: 40px;
+      grid-template-columns: minmax(290px, 1.05fr) minmax(360px, 1.28fr) minmax(260px, .82fr);
+      gap: 36px;
       align-items: stretch;
     }
     .contact-info { display: flex; flex-direction: column; gap: 0; }
@@ -1074,17 +1074,18 @@
       flex-shrink: 0;
       font-size: 1rem;
     }
+    .cd-text { min-width: 0; flex: 1; }
     .cd-text strong { font-size: 0.8rem; font-weight: 700; display: block; color: var(--white); margin-bottom: 2px; }
     .cd-text span { font-size: 0.875rem; color: rgba(255,255,255,0.55); }
     .cd-hours { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
-    .cd-hours-row { display: flex; justify-content: space-between; gap: 20px; font-size: 0.8rem; }
+    .cd-hours-row { display: grid; grid-template-columns: minmax(110px, 1fr) max-content; gap: 18px; align-items: baseline; font-size: 0.8rem; }
     .cd-hours-row span:first-child { color: rgba(255,255,255,0.5); }
-    .cd-hours-row span:last-child { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .cd-hours-row span:last-child { color: rgba(255,255,255,0.85); font-weight: 600; white-space: nowrap; text-align: right; }
 
     .contact-form-card {
       background: rgba(255,255,255,.04);
       border-radius: var(--radius-xl);
-      padding: 40px;
+      padding: 40px 40px 38px;
       border: 1.5px solid rgba(149,213,178,.16);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow-sm);
@@ -1118,7 +1119,7 @@
     }
     .form-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, .72fr);
       gap: 16px;
     }
     .form-group { margin-bottom: 18px; }
@@ -1373,8 +1374,8 @@
       align-items: stretch;
     }
     .role-card {
-      background: var(--white);
-      border: 1.5px solid var(--green-100);
+      background: linear-gradient(180deg, rgba(240,247,244,.98), rgba(216,243,220,.94));
+      border: 1.5px solid rgba(183,228,199,.72);
       border-radius: var(--radius-xl);
       padding: 40px 32px 32px;
       display: flex;
@@ -1387,7 +1388,7 @@
     .role-card:hover {
       box-shadow: var(--shadow-md);
       transform: translateY(-4px);
-      border-color: var(--green-200);
+      border-color: rgba(116,198,157,.88);
     }
     .role-workspace-label {
       font-family: 'DM Mono', monospace;
@@ -1520,20 +1521,20 @@
       font-family: 'Inter', sans-serif;
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--green-950);
       margin-bottom: 12px;
       letter-spacing: -0.01em;
     }
     .role-card > p {
       font-size: 0.875rem;
       line-height: 1.75;
-      color: var(--ink-light);
+      color: var(--green-700);
       margin-bottom: 24px;
     }
     .role-divider {
       width: 100%;
       height: 1px;
-      background: var(--green-100);
+      background: rgba(82,183,136,.24);
       margin-bottom: 20px;
     }
     .role-features-label {
@@ -1541,7 +1542,7 @@
       font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--ink-light);
+      color: rgba(45,106,79,.72);
       margin-bottom: 14px;
     }
     .role-features {
@@ -1554,7 +1555,7 @@
     .role-feature-item {
       display: flex; align-items: center; gap: 10px;
       font-size: 0.875rem;
-      color: var(--ink-mid);
+      color: var(--green-800);
     }
     .role-feature-item svg { flex-shrink: 0; color: var(--green-500); }
     .role-cta {
@@ -1646,6 +1647,184 @@
       .brand-logo-img {
         height: 58px;
         max-width: 230px;
+      }
+    }
+
+    /* Responsive hardening: keep the landing page stable on narrow screens. */
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      text-rendering: optimizeLegibility;
+    }
+    .container,
+    .nav-container,
+    .hero-inner,
+    section,
+    .navbar,
+    .footer,
+    .dashboard-mockup,
+    .contact-form-card,
+    .role-card,
+    .feature-card,
+    .pillar-card {
+      min-width: 0;
+    }
+    .btn,
+    .nav-login,
+    .nav-cta,
+    .role-cta,
+    input,
+    textarea,
+    select,
+    button {
+      max-width: 100%;
+    }
+    input,
+    textarea,
+    select {
+      min-width: 0;
+    }
+    h1,
+    h2,
+    h3,
+    p,
+    .btn,
+    .nav-link,
+    .role-card,
+    .feature-card,
+    .contact-method,
+    .footer-links {
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 768px) {
+      :root { --nav-h: 76px; }
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+      .nav-container {
+        gap: 14px;
+        justify-content: space-between;
+      }
+      .nav-actions {
+        margin-left: auto;
+      }
+      .nav-links.open {
+        max-height: calc(100dvh - var(--nav-h));
+        overflow-y: auto;
+      }
+      .nav-link {
+        width: 100%;
+        padding: 11px 4px;
+      }
+      .hero {
+        min-height: auto;
+      }
+      .hero-inner {
+        padding-top: 42px;
+        padding-bottom: 56px;
+      }
+      .hero-desc {
+        max-width: none;
+      }
+      .hero-photo-band,
+      .roles-hero-media,
+      .features-hero-media,
+      .contact-hero-media {
+        display: none;
+      }
+      .about-section,
+      .roles-section {
+        padding: 72px 0;
+      }
+      .mission-card {
+        position: relative;
+        inset: auto;
+        max-width: none;
+        margin: -96px 16px 0;
+      }
+      .about-photo {
+        min-height: 340px;
+      }
+      .dashboard-mockup {
+        width: 100%;
+        overflow: hidden;
+      }
+      .dm-sidebar,
+      .dms-nav {
+        min-width: 0;
+      }
+    }
+    @media (max-width: 560px) {
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .brand-logo-img {
+        height: 48px;
+        max-width: min(210px, 56vw);
+      }
+      .nav-actions {
+        gap: 6px;
+      }
+      .hamburger {
+        flex: 0 0 auto;
+      }
+      .hero-actions,
+      .contact-methods,
+      .footer-col-pair {
+        width: 100%;
+      }
+      .btn,
+      .role-cta {
+        white-space: normal;
+        text-align: center;
+      }
+      .footer-col-pair {
+        grid-template-columns: 1fr;
+        row-gap: 28px;
+      }
+      .roles-connect,
+      .contact-form-card,
+      .role-card {
+        border-radius: 18px;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      .mission-card {
+        display: block;
+        padding: 18px;
+      }
+      .mission-icon {
+        margin-bottom: 12px;
+      }
+    }
+    @media (max-width: 380px) {
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .brand-logo-img {
+        max-width: 52vw;
+      }
+      .home-popup {
+        padding: 10px;
+      }
+      .home-popup-body {
+        grid-template-columns: 1fr;
+      }
+      .home-popup-icon {
+        width: 40px;
+        height: 40px;
       }
     }
   </style>

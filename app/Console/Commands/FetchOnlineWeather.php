@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class FetchOnlineWeather extends Command
 {
     protected $signature = 'iclimate:fetch-weather {--force : Ignore the short cache and call Open-Meteo now}';
+
     protected $description = 'Fetch and store the latest Open-Meteo seven-day forecast for iClimate.';
 
     public function handle(OpenMeteoService $weather): int

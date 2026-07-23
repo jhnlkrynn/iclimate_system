@@ -8,7 +8,6 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             :root {
@@ -61,9 +60,9 @@
                 overflow-x: hidden;
                 transform: none !important;
                 background:
-                    linear-gradient(115deg, rgba(240,247,244,.96), rgba(245,240,232,.9)),
-                    radial-gradient(circle at top right, rgba(82,183,136,.14), transparent 32rem),
-                    linear-gradient(140deg, #f5f9f6 0%, #eef7ec 54%, #f5f0e8 100%);
+                    radial-gradient(circle at 86% 0%, rgba(82,183,136,.18), transparent 30rem),
+                    radial-gradient(circle at 14% 18%, rgba(183,228,199,.34), transparent 24rem),
+                    linear-gradient(145deg, #f7fff9 0%, #edf8ef 48%, #f4fbf3 100%);
             }
             body::before {
                 content: "";
@@ -72,11 +71,18 @@
                 pointer-events: none;
                 z-index: -1;
                 background:
-                    radial-gradient(rgba(82,183,136,.14) 1px, transparent 1px);
+                    radial-gradient(rgba(82,183,136,.11) 1px, transparent 1px);
                 background-size: 30px 30px;
                 mask-image: linear-gradient(90deg, transparent, #000 18%, #000 100%);
             }
-            .app-main { margin-left: var(--sidebar-width); min-height: 100vh; min-width: 0; }
+            .app-main {
+                margin-left: var(--sidebar-width);
+                min-height: 100vh;
+                min-width: 0;
+                background:
+                    linear-gradient(180deg, rgba(247,255,249,.96), rgba(238,249,239,.98)),
+                    radial-gradient(circle at 70% 10%, rgba(116,198,157,.12), transparent 28rem);
+            }
             .page-shell { padding: 1.25rem; min-width: 0; max-width: 100%; }
             .sidebar-fixed {
                 position: fixed !important; top: 0; left: 0; bottom: 0; width: var(--sidebar-width); height: 100vh; height: 100dvh; z-index: 1030; overflow: hidden;
@@ -325,7 +331,7 @@
             <div id="icActionPopup" class="ic-action-popup show" role="alertdialog" aria-modal="true" aria-labelledby="icActionTitle">
                 <div class="ic-action-dialog {{ $popupType }}">
                     <div class="ic-action-body">
-                        <div class="ic-action-icon" aria-hidden="true">{{ $popupType === 'success' ? '✓' : ($popupType === 'error' ? '!' : 'i') }}</div>
+                        <div class="ic-action-icon" aria-hidden="true">{{ $popupType === 'success' ? 'OK' : ($popupType === 'error' ? '!' : 'i') }}</div>
                         <div>
                             <h2 id="icActionTitle" class="ic-action-title">{{ $popupTitle }}</h2>
                             <p class="ic-action-message">{{ $popupMessage }}</p>
@@ -356,7 +362,6 @@
         @auth
             @include('components.ai-chat-widget')
         @endauth
-        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const popup = document.getElementById('icActionPopup');

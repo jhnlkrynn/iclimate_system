@@ -67,7 +67,14 @@
             .thread-list { max-height:300px; }
             .bubble { max-width:92%; overflow-wrap:anywhere; }
             .msg-compose { padding:.75rem; }
+            .msg-compose .row > * { width:100%; }
             .msg-empty { min-height:300px; padding:1.25rem; }
+        }
+        @media (max-width:420px) {
+            .msg-hero { border-radius:18px; }
+            .msg-shell { gap:.75rem; }
+            .bubble { max-width:100%; }
+            .unsend-actions { grid-template-columns:1fr; }
         }
     </style>
 

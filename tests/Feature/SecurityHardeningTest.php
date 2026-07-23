@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\Security\CaptchaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
@@ -36,12 +38,28 @@ class SecurityHardeningTest extends TestCase
             'status' => User::STATUS_INACTIVE,
         ]);
 
-        $this->post('/login', [
+        $this->withSession($this->captchaSession('login', '7'))->post('/login', [
             'email' => $user->email,
             'password' => 'password',
+            'captcha_answer' => '7',
         ])
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function captchaSession(string $context, string $answer): array
+    {
+        return [
+            CaptchaService::SESSION_KEY => [
+                'context' => $context,
+                'question' => 'What is 3 + 4?',
+                'answer_hash' => Hash::make($answer),
+                'created_at' => now()->timestamp,
+            ],
+        ];
     }
 }
