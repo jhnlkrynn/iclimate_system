@@ -13,48 +13,116 @@
         'planting_advisory' => $area->planting_advisory,
         'irrigation_recommendation' => $area->irrigation_recommendation,
         'description' => $area->description,
+        'data_quality' => str_contains(strtolower((string) $area->description), 'auto-updated from')
+            ? 'Calculated from weather, yield, and local exposure inputs'
+            : 'Baseline barangay location; refresh needed for live risk',
+        'is_baseline' => ! str_contains(strtolower((string) $area->description), 'auto-updated from'),
+        'updated_at' => $area->updated_at?->format('M d, Y g:i A'),
     ])->values();
     $riskSource = optional($mapAreas->first())->description;
     $priorityAreas = $mapAreas->sortByDesc('risk_score')->take(5)->values();
     $topPriority = $priorityAreas->first();
+    $pagasaSignal = $latestPagasaAdvisory ? [
+        'title' => $latestPagasaAdvisory->title,
+        'severity' => $latestPagasaAdvisory->severityLabel(),
+        'summary' => $latestPagasaAdvisory->summary ?: $latestPagasaAdvisory->message,
+        'source' => 'PAGASA',
+        'source_url' => $latestPagasaAdvisory->source_url,
+        'updated_at' => $latestPagasaAdvisory->valid_from?->format('M d, Y g:i A') ?: $latestPagasaAdvisory->created_at?->format('M d, Y g:i A'),
+        'freshness' => 'Official PAGASA online advisory cached in iClimate',
+    ] : [
+        'title' => 'No active PAGASA signal for Lian/Batangas',
+        'severity' => 'None',
+        'summary' => 'No active PAGASA advisory record is stored for Lian or Batangas right now. Use the official PAGASA map link for external verification.',
+        'source' => 'PAGASA External Reference',
+        'source_url' => $pagasaMapUrl,
+        'updated_at' => 'No stored PAGASA match',
+        'freshness' => 'External reference only',
+    ];
 @endphp
 
 <x-app-layout>
-    <link rel="preload" as="style" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
     <style>
-        .heatmap-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr); gap: 1rem; align-items: stretch; }
+        .heatmap-grid { display: grid; grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+        .heatmap-grid > .heatmap-main { grid-column: 2; grid-row: 1; }
+        .heatmap-grid > .risk-side { grid-column: 1; grid-row: 1; }
         .heatmap-main { display: flex; flex-direction: column; gap: 1rem; min-height: 100%; }
-        .map-shell { position: relative; overflow: hidden; display: flex; flex: 1 1 auto; flex-direction: column; border: 1.5px solid #e8e0d0; border-radius: 18px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); min-height: 0; }
+        .map-shell { position: relative; overflow: hidden; display: flex; flex: 1 1 auto; flex-direction: column; border: 1.5px solid #e8e0d0; border-radius: 12px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); min-height: 0; }
         #barangayRiskMap {
+            position: relative;
             flex: 1 1 auto;
             height: auto;
-            min-height: 560px;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(16, 77, 196, .45), transparent 20rem),
-                radial-gradient(circle at 70% 38%, rgba(255, 24, 18, .35), transparent 18rem),
-                linear-gradient(135deg, #0736a8, #15cfe0 28%, #59f03d 48%, #fff118 62%, #ff850f 78%, #f71912);
+            min-height: 640px;
+            overflow: hidden;
+            background: #07160f;
         }
-        .thermo-map .leaflet-tile-pane { filter: saturate(1.08) contrast(1.04); }
-        .thermo-map .leaflet-overlay-pane canvas {
-            mix-blend-mode: screen;
-            filter: saturate(1.45) contrast(1.04);
-            opacity: .72;
+        .api-map-tiles,
+        .api-heatmap-canvas,
+        .api-heatmap-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
         }
-        .thermo-point {
-            position: relative;
-            display: block;
-            width: 14px;
-            height: 14px;
-            border-radius: 999px;
-            border: 2px solid rgba(255,255,255,.92);
-            background: var(--marker-color, #52b788);
-            box-shadow: 0 0 0 5px rgba(255,255,255,.2), 0 0 0 10px var(--marker-glow, rgba(82,183,136,.18)), 0 .45rem .9rem rgba(13,31,24,.38);
+        .api-map-tiles {
+            z-index: 0;
+            overflow: hidden;
+            background: #d8e6df;
         }
-        .thermo-point::after { content: ""; position: absolute; inset: 2px; border-radius: inherit; background: rgba(255,255,255,.28); }
+        .api-map-tile {
+            position: absolute;
+            width: 256px;
+            height: 256px;
+            image-rendering: auto;
+            user-select: none;
+        }
+        .api-map-tile.street { filter: saturate(.98) contrast(1.02) brightness(.98); }
+        .api-map-attribution {
+            position: absolute;
+            right: .45rem;
+            bottom: .35rem;
+            z-index: 4;
+            border-radius: 6px;
+            background: rgba(255,255,255,.82);
+            color: #315044;
+            padding: .16rem .35rem;
+            font-size: .68rem;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .api-heatmap-canvas { z-index: 1; filter: blur(10px) saturate(1.45) contrast(1.08); opacity: .72; mix-blend-mode: multiply; transform: scale(1.035); }
+        .api-heatmap-svg { z-index: 2; }
+        .api-heatmap-region {
+            cursor: pointer;
+            stroke: rgba(20,20,20,.28);
+            stroke-width: .0015;
+            vector-effect: non-scaling-stroke;
+            transition: fill-opacity .16s ease, stroke-width .16s ease, stroke .16s ease;
+        }
+        .api-heatmap-region:hover,
+        .api-heatmap-region.is-selected {
+            stroke: rgba(20,20,20,.72);
+            stroke-width: .003;
+            fill-opacity: .08;
+        }
+        .api-heatmap-label {
+            pointer-events: none;
+            fill: #111827;
+            paint-order: stroke;
+            stroke: rgba(255,255,255,.92);
+            stroke-width: .005;
+            font-size: .0105px;
+            font-weight: 900;
+            opacity: 1;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .api-heatmap-label.is-selected { font-size: .014px; stroke-width: .006; }
+        .easy-read-map .api-heatmap-label { font-size: .012px; stroke-width: .0055; }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
         .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .map-insight::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
+        .map-summary-card { display: none; }
         .map-summary-card .risk-value { font-size: 1.55rem; line-height: 1.12; margin-top: .32rem; }
         .map-summary-card .risk-help { margin-top: .35rem; }
         .priority-list { display: grid; grid-template-columns: 1fr; gap: .42rem; margin: 0; padding: 0; list-style: none; }
@@ -63,57 +131,126 @@
         .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #2d6a4f; text-decoration: underline; }
         .priority-item .fw-bold, .priority-item .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .priority-score { min-width: 3.6rem; text-align: center; border-radius: 999px; padding: .35rem .55rem; background: var(--chip-bg, #d8f3dc); color: var(--chip-color, #2d6a4f); font-weight: 900; }
+        .accuracy-badge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; border: 1px solid rgba(149,213,178,.38); background: rgba(82,183,136,.13); color: #b7e4c7; padding: .3rem .52rem; font-size: .72rem; font-weight: 900; }
+        .accuracy-badge.baseline { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.13); color: #ffe8a3; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
         .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
-        .basemap-btn { background: rgba(13,31,24,.78); border-color: rgba(255,255,255,.22); color: #fff; }
-        .basemap-btn.active { background: #e8a73d; border-color: #e8a73d; color: #0d1f18; }
-        .readability-btn { background: rgba(255,255,255,.96); border-color: #95d5b2; color: #1f6f4a; }
-        .readability-btn.active { background: #1f6f4a; border-color: #1f6f4a; color: #fff; }
-        .map-atmosphere { position: absolute; inset: 0; z-index: 410; pointer-events: none; background: radial-gradient(circle at 23% 24%, rgba(255,255,255,.16), transparent 18rem), radial-gradient(circle at 76% 68%, rgba(13,31,24,.22), transparent 22rem), linear-gradient(180deg, rgba(13,31,24,.08), rgba(13,31,24,.16)); mix-blend-mode: soft-light; }
-        .leaflet-container { font-family: 'Inter', system-ui, sans-serif; }
-        .leaflet-control-attribution { background: rgba(255,255,255,.78) !important; color: #315044 !important; backdrop-filter: blur(10px); border-radius: 8px 0 0 0; }
-        .realistic-map .leaflet-overlay-pane path { transition: fill-opacity .18s ease, stroke-width .18s ease, filter .18s ease; }
-        .field-zone { stroke: rgba(255,255,255,.82); stroke-width: 1.5; stroke-dasharray: 4 5; filter: drop-shadow(0 4px 10px rgba(13,31,24,.22)); }
+        .map-atmosphere { position: absolute; inset: 0; z-index: 320; pointer-events: none; background: radial-gradient(circle at 23% 24%, rgba(255,255,255,.11), transparent 18rem), radial-gradient(circle at 76% 68%, rgba(13,31,24,.12), transparent 22rem), linear-gradient(180deg, rgba(13,31,24,.04), rgba(13,31,24,.08)); mix-blend-mode: soft-light; }
         .map-control-panel {
             position: absolute;
             z-index: 510;
             left: 1rem;
-            top: 4.85rem;
-            width: min(360px, calc(100% - 2rem));
-            border: 1px solid #d4edda;
+            top: auto;
+            bottom: 5.15rem;
+            width: min(340px, calc(100% - 2rem));
+            border: 1px solid rgba(149,213,178,.38);
             border-radius: 8px;
-            background: rgba(255,255,255,.96);
-            box-shadow: 0 .7rem 1.5rem rgba(13,31,24,.12);
+            background: rgba(13,31,24,.92);
+            color: rgba(255,255,255,.88);
+            box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.32);
+            backdrop-filter: blur(10px);
             padding: .75rem;
         }
-        .map-control-panel .form-select { font-weight: 800; }
+        .map-control-panel .risk-label { color: rgba(255,255,255,.58); }
+        .map-control-panel .form-select {
+            border-color: rgba(149,213,178,.32);
+            background-color: rgba(255,255,255,.08);
+            color: #fff;
+            font-weight: 800;
+        }
+        .map-control-panel .form-select:hover,
+        .map-control-panel .form-select:focus {
+            border-color: #74c69d;
+            background-color: rgba(255,255,255,.12);
+            box-shadow: 0 0 0 .2rem rgba(116,198,157,.16);
+        }
+        .map-control-panel .form-select option { color: #0d1f18; background: #fff; }
         .map-live-status {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: .65rem;
             margin-top: .58rem;
-            color: #5a7a64;
+            color: rgba(255,255,255,.64);
             font-size: .78rem;
             font-weight: 800;
         }
-        .map-live-status strong { color: #0d1f18; }
+        .map-live-status strong { color: rgba(255,255,255,.82); }
         .map-selected-pill {
             display: inline-flex;
             align-items: center;
             max-width: 100%;
             border-radius: 999px;
-            background: #d8f3dc;
-            color: #1f6f4a;
+            background: rgba(116,198,157,.18);
+            color: #b7e4c7;
             padding: .28rem .55rem;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        .risk-side { display: flex; flex-direction: column; gap: 1rem; }
-        .risk-stat { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .pagasa-source-strip {
+            position: absolute;
+            z-index: 505;
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            border: 1px solid rgba(149,213,178,.34);
+            border-radius: 8px;
+            background: rgba(13,31,24,.9);
+            color: rgba(255,255,255,.76);
+            padding: .65rem .75rem;
+            box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.24);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        .pagasa-official-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            border: 1px solid rgba(116,198,157,.45);
+            border-radius: 999px;
+            background: rgba(82,183,136,.16);
+            color: #b7e4c7;
+            padding: .38rem .62rem;
+            font-size: .76rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+        .pagasa-source-copy { min-width: 0; font-size: .78rem; font-weight: 800; line-height: 1.25; }
+        .pagasa-source-copy strong { display: block; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pagasa-map-link {
+            flex: 0 0 auto;
+            border-radius: 8px;
+            border: 1px solid #f0c36a;
+            background: #e8a73d;
+            color: #0d1f18;
+            padding: .52rem .7rem;
+            font-size: .78rem;
+            font-weight: 900;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .pagasa-map-link:hover { color: #0d1f18; filter: brightness(1.05); transform: translateY(-2px); }
+        .risk-side { display: flex; flex-direction: column; gap: .85rem; min-height: 100%; }
+        .risk-side::before {
+            content: "Heat Mapping Tool";
+            display: block;
+            border: 1px solid rgba(149,213,178,.18);
+            border-radius: 12px;
+            background: rgba(13,31,24,.96);
+            color: #fff;
+            padding: .95rem 1rem;
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.18rem;
+            box-shadow: 0 .7rem 1.6rem rgba(13,31,24,.12);
+        }
+        .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1px solid rgba(149,213,178,.18); border-radius: 12px; background: rgba(13,31,24,.96); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
@@ -137,8 +274,6 @@
         .risk-low { --accent: #52b788; --chip-bg: #d8f3dc; --chip-color: #2d6a4f; }
         .risk-moderate { --accent: #ffd166; --chip-bg: #fff4cf; --chip-color: #8a5a00; }
         .risk-high, .risk-severe { --accent: #d85b45; --chip-bg: #fde8e2; --chip-color: #9f3728; }
-        .leaflet-popup-content { width: min(320px, calc(100vw - 4.5rem)) !important; min-width: 0; margin: .85rem; }
-        .leaflet-popup-content-wrapper { border-radius: 8px; }
         .map-popup { color: #1b2b23; font-size: .86rem; line-height: 1.35; }
         .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
         .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
@@ -230,8 +365,9 @@
         @media (max-width: 1199.98px) {
             .map-insight-strip { grid-template-columns: 1fr; }
             .heatmap-grid { grid-template-columns: 1fr; }
+            .heatmap-grid > .heatmap-main, .heatmap-grid > .risk-side { grid-column: auto; grid-row: auto; }
             .risk-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            #barangayRiskMap { height: 480px; }
+            #barangayRiskMap { height: 520px; min-height: 520px; }
         }
         @media (max-width: 767.98px) {
             .map-shell { overflow: visible; }
@@ -244,8 +380,8 @@
                 overflow-x: auto;
                 flex-wrap: nowrap;
                 pointer-events: auto;
-                background: #fff;
-                border-bottom: 1px solid #d4edda;
+                background: rgba(13,31,24,.94);
+                border-bottom: 1px solid rgba(149,213,178,.26);
                 -webkit-overflow-scrolling: touch;
             }
             .map-control-panel {
@@ -261,6 +397,13 @@
                 max-height: 320px;
                 margin: .75rem;
             }
+            .pagasa-source-strip {
+                position: relative;
+                inset: auto;
+                display: grid;
+                margin: .75rem;
+            }
+            .pagasa-map-link { width: 100%; text-align: center; }
             .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; }
             .risk-side { grid-template-columns: 1fr; }
             .priority-list { grid-template-columns: 1fr; }
@@ -271,18 +414,16 @@
             .barangay-card-head, .risk-actions { display: grid; justify-content: stretch; }
             .risk-summary-grid, .risk-advice-grid { grid-template-columns: 1fr; }
             .risk-actions .btn, .risk-actions form, .risk-actions button { width: 100%; }
-            .leaflet-popup { max-width: calc(100vw - 1rem) !important; }
-            .leaflet-popup-content { width: calc(100vw - 4rem) !important; margin: .65rem; }
             .map-popup-title { display: grid; gap: .5rem; }
             .map-popup-badge { justify-self: start; }
             .barangay-tooltip { font-size: .68rem; max-width: 120px; white-space: normal; text-align: center; }
         }
         @media (max-width: 420px) {
-            .leaflet-popup-content { width: calc(100vw - 3rem) !important; }
             .map-popup { font-size: .86rem; }
             .map-popup-name { font-size: 1rem; }
             .map-popup-box, .map-popup-advice, .map-popup-takeaway { padding: .58rem .62rem; }
             .map-popup-source { word-break: break-word; }
+            .pagasa-official-badge { width: 100%; justify-content: center; }
         }
 
         /* -- dark theme overrides (page chrome only; map/overlay controls kept self-contained) -- */
@@ -320,11 +461,14 @@
             <div>
                 <div class="eyebrow mb-2">Barangay Agricultural Risk Map</div>
                 <h1 class="h2 fw-bold mb-2">Heat Map Areas</h1>
-                <p class="mb-0 text-white-50">Interactive Leaflet map for rainfall risk, rice yield, irrigation priority, and combined climate impact.</p>
+                <p class="mb-0 text-white-50">API-rendered Lian barangay heatmap, with PAGASA used as the official weather reference source.</p>
             </div>
-            @if ($canManage)
-                <a class="btn btn-light align-self-start align-self-lg-end" href="{{ route('heatmap-areas.create') }}">Create Risk Area</a>
-            @endif
+            <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-end action-cluster">
+                <a class="btn btn-warning" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
+                @if ($canManage)
+                    <a class="btn btn-light" href="{{ route('heatmap-areas.create') }}">Create Risk Area</a>
+                @endif
+            </div>
         </div>
     </section>
 
@@ -383,14 +527,11 @@
 
             <div class="map-shell">
                 <div class="map-toolbar" aria-label="Heat map layer controls">
+                    <span class="pagasa-official-badge">PAGASA Official Source</span>
                     <button class="layer-btn active" type="button" data-layer="impact" aria-pressed="true">Climate Impact</button>
                     <button class="layer-btn" type="button" data-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                    <button class="layer-btn" type="button" data-layer="yield" aria-pressed="false">Rice Yield</button>
+                    <button class="layer-btn" type="button" data-layer="farm_type" aria-pressed="false">Farm Type</button>
                     <button class="layer-btn" type="button" data-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
-                    <button class="layer-btn basemap-btn active" type="button" data-basemap="satellite" aria-pressed="true">Satellite</button>
-                    <button class="layer-btn basemap-btn" type="button" data-basemap="terrain" aria-pressed="false">Terrain</button>
-                    <button class="layer-btn basemap-btn" type="button" data-basemap="street" aria-pressed="false">Street</button>
-                    <button class="layer-btn readability-btn" type="button" id="easyReadToggle" aria-pressed="false">Easy Colors</button>
                 </div>
                 <div class="map-control-panel">
                     <label class="risk-label mb-2 d-block" for="mapBarangayFocus">Focus Barangay</label>
@@ -406,13 +547,21 @@
                     </div>
                 </div>
                 <div id="boundaryNotice" class="alert alert-warning position-absolute m-3 bottom-0 start-0 end-0 d-none" style="z-index: 500;">
-                    Add official Lian barangay boundaries to <code>public/geojson/lian-barangays.geojson</code> to render exact barangay polygons.
+                    Loading the Lian barangay heatmap API. If the official boundary API is unavailable, iClimate will use its local fallback boundary file.
                 </div>
                 <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite">
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
                     <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
                 </aside>
                 <div id="barangayRiskMap"></div>
+                <div class="pagasa-source-strip">
+                    <span class="pagasa-official-badge">PAGASA Reference</span>
+                    <div class="pagasa-source-copy">
+                        <strong>{{ $pagasaSignal['title'] }}</strong>
+                        {{ $pagasaSignal['freshness'] }} | Last signal: {{ $pagasaSignal['updated_at'] }}
+                    </div>
+                    <a class="pagasa-map-link" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
+                </div>
                 <div class="map-atmosphere" aria-hidden="true"></div>
             </div>
         </div>
@@ -439,7 +588,7 @@
             <div class="risk-stat risk-high">
                 <div class="risk-label">Mapped Barangays</div>
                 <div class="risk-value">{{ number_format($mapAreas->count()) }}</div>
-                <div class="text-muted small mt-2">Records with coordinates available for Leaflet display.</div>
+                <div class="text-muted small mt-2">Records available for the Lian barangay heatmap API.</div>
             </div>
             <div class="risk-stat risk-moderate">
                 <div class="risk-label">High Priority Areas</div>
@@ -454,20 +603,33 @@
             <div class="risk-stat">
                 <div class="risk-label mb-3">Legend</div>
                 <div class="d-grid gap-2">
-                    <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Cold / low impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#2ec7c9"></span> Light risk zone</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#2cba6c"></span> Watch zone</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High impact</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Hot / severe impact</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Low risk</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate risk</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High risk</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Critical / severe risk</div>
+                    <div class="risk-label mt-2">Farm Type Layer</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#2563eb"></span> Rainfed</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#16a34a"></span> Irrigated</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#a855f7"></span> Mixed</div>
+                    <div class="legend-row"><span class="legend-swatch" style="background:#6b7280"></span> Unknown</div>
+                </div>
+            </div>
+            <div class="risk-stat risk-low">
+                <div class="risk-label">PAGASA Official Signal</div>
+                <div class="risk-info-value mt-2">{{ $pagasaSignal['title'] }}</div>
+                <div class="text-muted small mt-2">{{ $pagasaSignal['summary'] }}</div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a class="btn btn-outline-primary btn-sm" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="{{ $pagasaRadarUrl }}" target="_blank" rel="noopener">Radar</a>
                 </div>
             </div>
             @if ($riskSource)
-                <div class="risk-stat">
-                    <div class="risk-label">Risk Source</div>
-                    <div class="small text-muted mt-2">{{ $riskSource }}</div>
-                </div>
-            @endif
+            <div class="risk-stat">
+                <div class="risk-label">Risk Source</div>
+                <div class="small text-muted mt-2">{{ $riskSource }}</div>
+                <div class="small text-muted mt-2">Accuracy note: barangay colors are advisory estimates from stored rice records, weather inputs, and local exposure rules. Validate high-risk areas with MAO field observation and official PAGASA warnings.</div>
+            </div>
+        @endif
         </aside>
     </div>
 
@@ -517,6 +679,11 @@
                             </div>
                             <div class="d-flex flex-column align-items-start align-items-lg-end gap-2">
                                 <span class="risk-chip {{ $riskClass }}">{{ $record->risk_level }} Risk</span>
+                                @if(str_contains(strtolower((string) $record->description), 'auto-updated from'))
+                                    <span class="accuracy-badge">Calculated input</span>
+                                @else
+                                    <span class="accuracy-badge baseline">Baseline location</span>
+                                @endif
                                 <div class="risk-help text-lg-end m-0">Score {{ number_format($riskScore, 2) }}. {{ $scoreMeaning }}</div>
                             </div>
                         </div>
@@ -597,506 +764,606 @@
     @endif
     </div>
 
-    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script defer src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof L === 'undefined') {
-                document.getElementById('boundaryNotice')?.classList.remove('d-none');
-                return;
-            }
-
-            const areas = @json($mapPayload);
-            const areaByBarangay = new Map(areas.map((area) => [area.barangay.toLowerCase(), area]));
-            const boundaryUrl = "{{ asset('geojson/lian-barangays.geojson') }}";
-            const map = L.map('barangayRiskMap', {
-                scrollWheelZoom: false,
-                zoomControl: true,
-                preferCanvas: true,
-            }).setView([14.015, 120.65], 12);
-            document.getElementById('barangayRiskMap')?.classList.add('thermo-map', 'realistic-map');
-            const colorFor = (value) => value >= .88 ? '#7f0000' : value >= .74 ? '#d7191c' : value >= .58 ? '#fdae21' : value >= .42 ? '#fff34d' : value >= .26 ? '#2cba6c' : value >= .12 ? '#2ec7c9' : '#2c7bb6';
-            const rgbaFor = (value, alpha = .42) => {
-                const hex = colorFor(value).replace('#', '');
-                const bigint = parseInt(hex, 16);
-                const red = (bigint >> 16) & 255;
-                const green = (bigint >> 8) & 255;
-                const blue = bigint & 255;
-
-                return `rgba(${red},${green},${blue},${alpha})`;
-            };
-            const thermographicGradient = {
-                .00: '#2c7bb6',
-                .16: '#2ec7c9',
-                .32: '#2cba6c',
-                .50: '#fff34d',
-                .68: '#fdae21',
-                .84: '#d7191c',
-                1.00: '#7f0000',
-            };
-            const yieldScore = (area) => area.predicted_yield === null ? .5 : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
-            const rainfallScore = (area) => String(area.rainfall_status || '').toLowerCase().includes('low') ? .9 : (String(area.rainfall_status || '').toLowerCase().includes('high') ? .65 : .3);
-            const irrigationScore = (area) => String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/) ? .9 : (area.risk_score || .3);
-            const impactScore = (area) => Number(area.risk_score || 0);
-            const scoreFor = (area, layer) => ({ rainfall: rainfallScore, yield: yieldScore, irrigation: irrigationScore, impact: impactScore }[layer] || impactScore)(area);
-
-            const baseLayers = {
-                satellite: L.layerGroup([
-                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        maxZoom: 19,
-                        attribution: 'Tiles &copy; Esri',
-                    }),
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 20,
-                        opacity: .9,
-                        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                    }),
-                ]),
-                terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 17,
-                    attribution: '&copy; OpenTopoMap &copy; OpenStreetMap contributors',
-                }),
-                street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors',
-                }),
-            };
-            let activeBaseLayer = baseLayers.satellite.addTo(map);
-
-            let geoLayer = null;
-            let heatLayer = null;
-            let fieldLayer = null;
-            let pointLayer = null;
-            let barangayBoundaries = null;
-            let activeLayer = 'impact';
-            let selectedArea = null;
-            let selectedRing = null;
-            let easyReadMode = false;
+            const apiUrl = "{{ url('/api/heatmaps/lian-barangays') }}";
+            const mapEl = document.getElementById('barangayRiskMap');
+            const detailPanel = document.getElementById('mapDetailPanel');
             const focusSelect = document.getElementById('mapBarangayFocus');
             const selectedLabel = document.getElementById('selectedBarangayLabel');
             const activeLayerLabel = document.getElementById('activeLayerLabel');
-            const easyReadToggle = document.getElementById('easyReadToggle');
-            const updateLayerLabel = () => {
-                if (activeLayerLabel) activeLayerLabel.textContent = `${layerTitle(activeLayer)}${easyReadMode ? ' - Easy colors' : ''}`;
-            };
+            const boundaryNotice = document.getElementById('boundaryNotice');
+            const pagasaSignal = @json($pagasaSignal);
+            let activeLayer = 'impact';
+            const easyReadMode = false;
+            let heatmapData = null;
+            let selectedBarangay = '';
 
-            const plainRiskMessage = (area) => {
-                if (['High', 'Severe'].includes(area.risk_level)) {
-                    return 'Please check this barangay first. Farms here may need help soon.';
-                }
+            if (!mapEl) return;
 
-                if (area.risk_level === 'Moderate') {
-                    return 'Keep watch. Conditions can still change, especially after rain or hot days.';
-                }
+            mapEl.innerHTML = '<div class="api-map-tiles" aria-hidden="true"></div><canvas class="api-heatmap-canvas" aria-hidden="true"></canvas><svg class="api-heatmap-svg" role="img" aria-label="Lian barangay risk heatmap"></svg><a class="api-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap contributors</a>';
+            const tileLayer = mapEl.querySelector('.api-map-tiles');
+            const canvas = mapEl.querySelector('canvas');
+            const svg = mapEl.querySelector('svg');
 
-                return 'Looks okay for now. Continue normal field checking.';
-            };
-
-            const plainConcern = (area) => {
-                const concern = String(area.risk_type || '').toLowerCase();
-                if (concern.includes('flood')) return 'Flooding or poor drainage';
-                if (concern.includes('drought')) return 'Low water / drought';
-                if (concern.includes('typhoon') || concern.includes('storm')) return 'Strong wind or storm';
-                if (concern.includes('heat')) return 'Too much heat';
-                return area.risk_type || 'Field condition';
-            };
-
-            const plainYield = (area) => {
-                if (area.predicted_yield === null) return 'No harvest estimate yet';
-                const yieldValue = Number(area.predicted_yield);
-                if (yieldValue < 3) return 'Possible low harvest';
-                if (yieldValue < 4) return 'Average harvest expected';
-                return 'Good harvest outlook';
-            };
-
-            const harvestEstimate = (area) => area.predicted_yield === null
-                ? 'No estimate yet'
-                : `${Number(area.predicted_yield).toFixed(2)} t/ha`;
-
-            const harvestSource = (area) => area.predicted_yield === null
-                ? 'The model needs enough weather and farm area inputs.'
-                : `${area.predicted_yield_source || 'Trained rice yield model'} estimate.`;
-
-            const plainRain = (area) => {
-                const rainfall = String(area.rainfall_status || '').toLowerCase();
-                if (rainfall.includes('low')) return 'Rain may be too low. Water support may be needed.';
-                if (rainfall.includes('high')) return 'Rain may be too much. Watch drainage and low areas.';
-                return 'Rain looks manageable for now.';
-            };
-
-            const plainAction = (area) => {
-                return area.irrigation_recommendation
-                    || area.planting_advisory
-                    || 'Visit or contact farmers in this barangay before major field work.';
-            };
+            const escapeHtml = (value) => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
 
             const layerTitle = (layer) => ({
                 impact: 'Climate impact',
                 rainfall: 'Rainfall risk',
                 yield: 'Rice yield',
+                farm_type: 'Farm type',
                 irrigation: 'Irrigation priority',
             }[layer] || 'Climate impact');
 
-            const readabilityLabel = (score) => {
-                if (score >= .88) return 'Severe';
-                if (score >= .74) return 'High';
-                if (score >= .58) return 'Elevated';
-                if (score >= .42) return 'Moderate';
-                if (score >= .26) return 'Watch';
-                if (score >= .12) return 'Light';
-                return 'Low';
+            const colorFor = (value, alpha = 1) => {
+                const stops = value >= .88 ? [127, 0, 0]
+                    : value >= .74 ? [215, 25, 28]
+                    : value >= .58 ? [253, 174, 33]
+                    : value >= .42 ? [255, 243, 77]
+                    : value >= .26 ? [44, 186, 108]
+                    : value >= .12 ? [46, 199, 201]
+                    : [44, 123, 182];
+
+                return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
             };
 
-            const readableTextColor = (score) => (score >= .42 && score < .74) ? '#0d1f18' : '#fff';
+            const visualScoreFor = (area, layer, features) => {
+                const raw = scoreFor(area, layer);
+                const scores = features
+                    .map((feature) => scoreFor(featureArea(feature), layer))
+                    .filter((score) => Number.isFinite(score));
+                const min = Math.min(...scores);
+                const max = Math.max(...scores);
+
+                if (!Number.isFinite(min) || !Number.isFinite(max) || max - min < .04) {
+                    return Math.max(.18, Math.min(.86, raw));
+                }
+
+                return .16 + ((raw - min) / (max - min)) * .76;
+            };
+
+            const heatColorFor = (value, alpha = .82) => {
+                const score = Math.max(0, Math.min(1, value));
+                const stops = score >= .82 ? [185, 28, 28]
+                    : score >= .64 ? [239, 68, 68]
+                    : score >= .48 ? [249, 115, 22]
+                    : score >= .32 ? [250, 204, 21]
+                    : [34, 197, 94];
+
+                return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
+            };
+
+            const farmTypeColorFor = (area, alpha = .82) => {
+                const farmType = String(area?.farm_system || '').toLowerCase();
+                const color = farmType.includes('mixed') ? [168, 85, 247]
+                    : farmType.includes('rainfed') ? [37, 99, 235]
+                    : farmType.includes('irrigated') ? [22, 163, 74]
+                    : [107, 114, 128];
+
+                return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`;
+            };
+
+            const heatSamplesFor = (feature, project, rect, score) => {
+                const [lng, lat] = centroidFor(feature);
+                const offsets = [
+                    [0, 0, 1],
+                    [.0034, .0016, .52],
+                    [-.0028, .0022, .46],
+                    [.0018, -.003, .42],
+                    [-.0032, -.0018, .38],
+                ];
+
+                return offsets.map(([lngOffset, latOffset, weight]) => {
+                    const [nx, ny] = project([lng + lngOffset, lat + latOffset]);
+
+                    return {
+                        x: nx * rect.width,
+                        y: ny * rect.height,
+                        score: Math.max(.08, Math.min(1, score * weight)),
+                    };
+                });
+            };
+
+            const scoreFor = (area, layer) => {
+                if (!area) return 0;
+                if (layer === 'rainfall') {
+                    const rainfall = String(area.live_weather?.rainfall_status || area.rainfall_status || '').toLowerCase();
+                    const rain24h = Number(area.live_weather?.rainfall_24h_mm);
+                    const rain7d = Number(area.live_weather?.rainfall_7d_mm);
+                    if (Number.isFinite(rain24h) || Number.isFinite(rain7d)) {
+                        if (rain24h >= 80 || rain7d >= 180) return .9;
+                        if (rain24h >= 25 || rain7d >= 70) return .48;
+                        return .82;
+                    }
+                    if (rainfall.includes('low')) return .9;
+                    if (rainfall.includes('high')) return .65;
+                    return .3;
+                }
+                if (layer === 'yield') {
+                    const yieldValue = area.recorded_yield_latest !== null && area.recorded_yield_latest !== undefined
+                        ? Number(area.recorded_yield_latest)
+                        : null;
+                    if (!Number.isFinite(yieldValue)) return .5;
+                    if (yieldValue < 3) return .9;
+                    if (yieldValue < 4) return .6;
+                    return .25;
+                }
+                if (layer === 'farm_type') {
+                    const farmType = String(area.farm_system || '').toLowerCase();
+                    if (farmType.includes('mixed')) return .55;
+                    if (farmType.includes('rainfed')) return .78;
+                    if (farmType.includes('irrigated')) return .32;
+                    return .44;
+                }
+                if (layer === 'irrigation') {
+                    return String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/)
+                        ? .9
+                        : Number(area.risk_score || .3);
+                }
+
+                return Number(area.risk_score || 0);
+            };
+
+            const liveWeather = (area) => area?.live_weather && area.live_weather.status !== 'unavailable'
+                ? area.live_weather
+                : null;
+
+            const mmText = (value) => value === null || value === undefined || !Number.isFinite(Number(value))
+                ? 'No live value'
+                : `${Number(value).toFixed(1)} mm`;
+
+            const percentText = (value) => value === null || value === undefined || !Number.isFinite(Number(value))
+                ? 'No live value'
+                : `${Number(value).toFixed(0)}%`;
+
+            const weatherTimeText = (weather) => {
+                if (!weather?.observed_at) return 'No observation time from provider.';
+
+                return `Observed ${weather.observed_at}; fetched ${weather.fetched_at || 'recently'}.`;
+            };
+
+            const farmTypeText = (area) => area?.farm_system || 'Unknown';
+
+            const farmTypeNote = (area) => {
+                const rainfed = Number(area?.rainfed_record_count || 0);
+                const irrigated = Number(area?.irrigated_record_count || 0);
+                const rainfedArea = Number(area?.rainfed_area_hectares || 0);
+                const irrigatedArea = Number(area?.irrigated_area_hectares || 0);
+                if (area?.farm_system_basis === 'farm_type_location_workbook') {
+                    return `${rainfedArea.toFixed(2)} ha rainfed, ${irrigatedArea.toFixed(2)} ha irrigated from ${Number(area.farm_association_count || 0)} association record(s).`;
+                }
+                if (rainfed || irrigated) {
+                    return `${rainfed} rainfed record(s), ${irrigated} irrigated record(s). Latest: ${area.farm_system_latest || 'not set'}${area.farm_system_year ? `, ${area.farm_system_season || 'season not set'} ${area.farm_system_year}` : ''}.`;
+                }
+
+                return 'No rice production record has an irrigation type for this barangay yet.';
+            };
+
+            const plainConcern = (area) => {
+                const concern = String(area?.risk_type || '').toLowerCase();
+                if (concern.includes('flood')) return 'Flooding or poor drainage';
+                if (concern.includes('drought')) return 'Low water / drought';
+                if (concern.includes('typhoon') || concern.includes('storm')) return 'Strong wind or storm';
+                if (concern.includes('heat')) return 'Too much heat';
+                return area?.risk_type || 'Field condition';
+            };
+
+            const plainRain = (area) => {
+                const weather = liveWeather(area);
+                const rainfall = String(weather?.rainfall_status || area?.rainfall_status || '').toLowerCase();
+                if (weather) {
+                    if (rainfall.includes('low')) return `Low forecast rain: ${mmText(weather.rainfall_24h_mm)} in 24h and ${mmText(weather.rainfall_7d_mm)} in 7 days.`;
+                    if (rainfall.includes('high')) return `Heavy rain signal: ${mmText(weather.rainfall_24h_mm)} in 24h and ${mmText(weather.rainfall_7d_mm)} in 7 days.`;
+                    return `Manageable forecast rain: ${mmText(weather.rainfall_24h_mm)} in 24h and ${mmText(weather.rainfall_7d_mm)} in 7 days.`;
+                }
+                if (rainfall.includes('low')) return 'Rain may be too low. Water support may be needed.';
+                if (rainfall.includes('high')) return 'Rain may be too much. Watch drainage and low areas.';
+                return 'Rain looks manageable for now.';
+            };
+
+            const harvestEstimate = (area) => area?.predicted_yield === null || area?.predicted_yield === undefined
+                ? 'No estimate yet'
+                : `${Number(area.predicted_yield).toFixed(2)} t/ha`;
+
+            const hasYieldRecord = (area) => Number(area?.production_record_count || 0) > 0;
+
+            const recordedYield = (area) => area?.recorded_yield_latest === null || area?.recorded_yield_latest === undefined
+                ? null
+                : `${Number(area.recorded_yield_latest).toFixed(2)} t/ha`;
+
+            const averageRecordedYield = (area) => area?.recorded_yield_avg === null || area?.recorded_yield_avg === undefined
+                ? null
+                : `${Number(area.recorded_yield_avg).toFixed(2)} t/ha`;
+
+            const yieldHeadline = (area) => {
+                const latest = recordedYield(area);
+                if (latest) return `Latest recorded yield: ${latest}.`;
+                if (area?.predicted_yield !== null && area?.predicted_yield !== undefined) return `No barangay yield record is stored yet. Estimate is based on the trained model: ${harvestEstimate(area)}.`;
+
+                return 'No barangay yield record is stored yet. No trained-model estimate is available.';
+            };
+
+            const yieldSourceNote = (area) => {
+                if (recordedYield(area)) {
+                    return `${area.production_record_count || 1} production record(s); latest ${area.recorded_yield_year || 'year not set'}${area.recorded_yield_season ? `, ${area.recorded_yield_season} season` : ''}.`;
+                }
+
+                return 'No stored harvest record for this barangay; iClimate is using the trained model estimate until local yield data is added.';
+            };
 
             const layerTakeaway = (area, layer) => {
                 if (layer === 'rainfall') return plainRain(area);
-                if (layer === 'yield') {
-                    if (area.predicted_yield === null) return 'No harvest estimate yet. Use field reports and recent weather for now.';
-                    return `${plainYield(area)}. Estimated harvest is ${harvestEstimate(area)}.`;
-                }
-                if (layer === 'irrigation') return plainAction(area);
-                return plainRiskMessage(area);
+                if (layer === 'yield') return yieldHeadline(area);
+                if (layer === 'farm_type') return `${farmTypeText(area)} rice farm record.`;
+                if (layer === 'irrigation') return area?.irrigation_recommendation || area?.planting_advisory || 'Check farmers before major field work.';
+                if (['High', 'Severe'].includes(area?.risk_level)) return 'Please check this barangay first. Farms here may need help soon.';
+                if (area?.risk_level === 'Moderate') return 'Keep watch. Conditions can still change after rain or hot days.';
+                return 'Looks okay for now. Continue normal field checking.';
             };
 
-            const layerMainDetail = (area, layer) => {
-                if (layer === 'rainfall') {
-                    return {
-                        label: 'Rain condition',
-                        value: area.rainfall_status || 'Not recorded',
-                        note: plainRain(area),
-                    };
-                }
+            const exposureText = (area) => {
+                const description = String(area?.description || '');
+                const match = description.match(/Barangay exposure:\s*([^.]+)/i);
 
-                if (layer === 'yield') {
-                    return {
-                        label: 'Estimated harvest',
-                        value: harvestEstimate(area),
-                        note: harvestSource(area),
-                    };
-                }
+                return match ? match[1].trim() : 'Not specified';
+            };
 
-                if (layer === 'irrigation') {
-                    return {
-                        label: 'Water support',
-                        value: area.irrigation_recommendation ? 'Action needed' : 'No urgent water note',
-                        note: plainAction(area),
-                    };
-                }
+            const confidenceText = (area) => {
+                const description = String(area?.description || '');
+                const match = description.match(/Recommendation confidence:\s*([^.]+)/i);
+                const confidence = match ? match[1].trim() : 'Not specified';
+
+                return confidence.replace(/\s*confidence$/i, '');
+            };
+
+            const supportScoreText = (area) => {
+                const description = String(area?.description || '');
+                const match = description.match(/Decision support score:\s*([^.]+)/i);
+
+                return match ? match[1].trim() : 'No support score recorded';
+            };
+
+            const localDifferenceText = (area) => {
+                const score = Number(area?.risk_score || 0);
+                const exposure = exposureText(area);
+
+                if (score >= .5) return `This barangay has ${exposure} exposure, so it ranks higher than lower-score barangays even under the same municipal forecast.`;
+                if (score >= .45) return `This barangay has ${exposure} exposure, so it remains on watch while conditions are generally manageable.`;
+
+                return `This barangay has ${exposure} exposure and a lower local risk score, so routine monitoring is enough for now.`;
+            };
+
+            const pagasaSignalText = () => pagasaSignal?.title
+                ? `${pagasaSignal.title} (${pagasaSignal.severity || 'No severity'})`
+                : 'No active PAGASA signal stored for Lian/Batangas.';
+
+            const popupMetricCards = (area, layer) => {
+                const weather = liveWeather(area);
+                const cards = {
+                    impact: [
+                        ['Main risk reason', plainConcern(area), `Local score ${Number(area?.risk_score || 0).toFixed(2)}.`],
+                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
+                        ['Decision support', supportScoreText(area), `${confidenceText(area)} confidence.`],
+                    ],
+                    rainfall: [
+                        ['Live rainfall status', weather?.rainfall_status || area.rainfall_status || 'Not recorded', plainRain(area)],
+                        ['Rain now', mmText(weather?.rainfall_now_mm), weather ? weatherTimeText(weather) : 'No live barangay forecast is available right now.'],
+                        ['Next 24 hours', mmText(weather?.rainfall_24h_mm), weather ? `${percentText(weather.precip_probability_percent)} max precipitation probability.` : 'Using stored rainfall status only.'],
+                        ['Next 7 days', mmText(weather?.rainfall_7d_mm), weather?.source || 'No weather API source available.'],
+                        ['Main field concern', plainConcern(area), `Local score ${Number(scoreFor(area, 'rainfall')).toFixed(2)} for this layer.`],
+                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
+                    ],
+                    yield: [
+                        ['Latest recorded yield', recordedYield(area) || 'No barangay record', yieldSourceNote(area)],
+                        ['Average recorded yield', averageRecordedYield(area) || 'No barangay average', area?.production_record_count ? `Computed from ${area.production_record_count} rice production record(s).` : 'Add rice production records for this barangay to make this accurate.'],
+                        ['Trained model estimate', harvestEstimate(area), hasYieldRecord(area) ? 'Forecast support value; use recorded yield above when available.' : 'Used because no barangay yield record is stored yet.'],
+                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
+                    ],
+                    farm_type: [
+                        ['Farm type', farmTypeText(area), farmTypeNote(area)],
+                        ['Rainfed area', area.rainfed_area_hectares !== null && area.rainfed_area_hectares !== undefined ? `${Number(area.rainfed_area_hectares).toFixed(2)} ha` : `${Number(area.rainfed_record_count || 0)} record(s)`, 'Non-irrigated/rainfed farm type from the location dataset when available.'],
+                        ['Irrigated area', area.irrigated_area_hectares !== null && area.irrigated_area_hectares !== undefined ? `${Number(area.irrigated_area_hectares).toFixed(2)} ha` : `${Number(area.irrigated_record_count || 0)} record(s)`, 'Irrigated farm type from the location dataset when available.'],
+                        ['Data basis', area.farm_system_basis === 'farm_type_location_workbook' ? 'Farm type location workbook' : (area.farm_system_basis === 'rice_production_irrigation_type' ? 'Rice production records' : 'No local farm-type record'), area.farm_system_source || 'Add farm type location data to improve this layer.'],
+                    ],
+                    irrigation: [
+                        ['Water action', area.irrigation_recommendation || 'No irrigation note recorded', area.planting_advisory || 'Use local field checks before changing water schedules.'],
+                        ['Live rainfall status', weather?.rainfall_status || area.rainfall_status || 'Not recorded', plainRain(area)],
+                        ['Next 24 hours', mmText(weather?.rainfall_24h_mm), weather ? `${weather.source}; ${weather.observed_at || 'time not supplied'}.` : 'No live barangay forecast is available right now.'],
+                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
+                    ],
+                }[layer] || [];
+
+                return [
+                    ...cards,
+                    ['Latest PAGASA signal', pagasaSignalText(), 'Official advisory reference.'],
+                ].map(([label, value, note]) => `
+                    <div class="map-popup-box">
+                        <div class="map-popup-label">${escapeHtml(label)}</div>
+                        <div class="map-popup-value">${escapeHtml(value)}</div>
+                        <div class="map-popup-note">${escapeHtml(note)}</div>
+                    </div>
+                `).join('');
+            };
+
+            const updateLayerLabel = () => {
+                if (activeLayerLabel) activeLayerLabel.textContent = layerTitle(activeLayer);
+                mapEl.classList.toggle('easy-read-map', easyReadMode);
+            };
+
+            const featureArea = (feature) => feature?.properties?.heatmap || null;
+            const featureName = (feature) => featureArea(feature)?.barangay || feature?.properties?.barangay || '';
+
+            const ringsFor = (geometry) => {
+                if (!geometry) return [];
+                if (geometry.type === 'Polygon') return geometry.coordinates || [];
+                if (geometry.type === 'MultiPolygon') return (geometry.coordinates || []).flat();
+                return [];
+            };
+
+            const allPoints = (features) => features.flatMap((feature) => ringsFor(feature.geometry).flat());
+            const mercatorPoint = ([lng, lat]) => {
+                const clampedLat = Math.max(Math.min(Number(lat), 85.05112878), -85.05112878);
+                const sin = Math.sin((clampedLat * Math.PI) / 180);
+
+                return [
+                    (Number(lng) + 180) / 360,
+                    .5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI),
+                ];
+            };
+
+            const boundsFor = (features) => {
+                const points = allPoints(features);
+                if (!points.length) return [120.59, 13.94, 120.73, 14.08];
+
+                const lngs = points.map((point) => Number(point[0]));
+                const lats = points.map((point) => Number(point[1]));
+                const minLng = Math.min(...lngs);
+                const maxLng = Math.max(...lngs);
+                const minLat = Math.min(...lats);
+                const maxLat = Math.max(...lats);
+                const padLng = Math.max((maxLng - minLng) * .08, .004);
+                const padLat = Math.max((maxLat - minLat) * .08, .004);
+
+                return [minLng - padLng, minLat - padLat, maxLng + padLng, maxLat + padLat];
+            };
+
+            const centroidFor = (feature) => {
+                const ring = ringsFor(feature.geometry)[0] || [];
+                if (!ring.length) return [0, 0];
+                const total = ring.reduce((carry, point) => [carry[0] + Number(point[0]), carry[1] + Number(point[1])], [0, 0]);
+                return [total[0] / ring.length, total[1] / ring.length];
+            };
+
+            const rendererFor = (features) => {
+                const [minLng, minLat, maxLng, maxLat] = boundsFor(features);
+                const [minX, maxY] = mercatorPoint([minLng, minLat]);
+                const [maxX, minY] = mercatorPoint([maxLng, maxLat]);
+                const width = Math.max(maxX - minX, .000001);
+                const height = Math.max(maxY - minY, .000001);
 
                 return {
-                    label: 'Main thing to watch',
-                    value: plainConcern(area),
-                    note: plainRiskMessage(area),
+                    bounds: [minLng, minLat, maxLng, maxLat],
+                    mercatorBounds: [minX, minY, maxX, maxY],
+                    project: (point) => {
+                        const [x, y] = mercatorPoint(point);
+
+                        return [
+                            (x - minX) / width,
+                            (y - minY) / height,
+                        ];
+                    },
+                    viewBox: `0 0 1 1`,
                 };
             };
 
-            const layerSecondDetail = (area, layer) => {
-                if (layer === 'rainfall') {
-                    return { label: 'Field concern', value: plainConcern(area), note: 'Check low fields first after strong rain.' };
-                }
+            const pathFor = (feature, project) => ringsFor(feature.geometry).map((ring) => ring.map((point, index) => {
+                const [x, y] = project(point);
+                return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
+            }).join(' ') + ' Z').join(' ');
 
-                if (layer === 'yield') {
-                    return { label: 'Field concern', value: plainConcern(area), note: 'This may affect the expected harvest.' };
-                }
+            const drawHeat = (features, project) => {
+                const rect = mapEl.getBoundingClientRect();
+                const scale = window.devicePixelRatio || 1;
+                canvas.width = Math.max(Math.floor(rect.width * scale), 1);
+                canvas.height = Math.max(Math.floor(rect.height * scale), 1);
+                canvas.style.width = `${rect.width}px`;
+                canvas.style.height = `${rect.height}px`;
 
-                if (layer === 'irrigation') {
-                    return { label: 'Rain condition', value: area.rainfall_status || 'Not recorded', note: plainRain(area) };
-                }
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(scale, 0, 0, scale, 0, 0);
+                ctx.clearRect(0, 0, rect.width, rect.height);
+                ctx.globalCompositeOperation = 'source-over';
 
-                return { label: 'Risk level', value: `${area.risk_level} Risk`, note: 'Use this for follow-up priority.' };
+                features
+                    .slice()
+                    .sort((a, b) => scoreFor(featureArea(a), activeLayer) - scoreFor(featureArea(b), activeLayer))
+                    .forEach((feature) => {
+                        const area = featureArea(feature);
+                        const baseScore = Math.max(.08, Math.min(1, visualScoreFor(area, activeLayer, features)));
+                        heatSamplesFor(feature, project, rect, baseScore).forEach((sample) => {
+                            const radius = Math.max(rect.width, rect.height) * (.12 + sample.score * .12);
+                            const heat = ctx.createRadialGradient(sample.x, sample.y, 0, sample.x, sample.y, radius);
+                            const heatColor = (score, alpha) => activeLayer === 'farm_type'
+                                ? farmTypeColorFor(area, alpha)
+                                : heatColorFor(score, alpha);
+
+                            heat.addColorStop(0, heatColor(baseScore, easyReadMode ? .38 : .28));
+                            heat.addColorStop(.38, heatColor(Math.max(baseScore - .08, .12), easyReadMode ? .28 : .2));
+                            heat.addColorStop(.78, heatColor(Math.max(baseScore - .18, .08), easyReadMode ? .12 : .08));
+                            heat.addColorStop(1, 'rgba(255,255,255,0)');
+                            ctx.fillStyle = heat;
+                            ctx.fillRect(sample.x - radius, sample.y - radius, radius * 2, radius * 2);
+                        });
+                    });
+
+                ctx.globalCompositeOperation = 'source-over';
             };
 
-            const layerAction = (area, layer) => {
-                if (layer === 'rainfall') return 'Check water level and drainage before advising farmers.';
-                if (layer === 'yield') return area.planting_advisory || 'Check crop stage and field condition before harvest planning.';
-                if (layer === 'irrigation') return plainAction(area);
-                return plainAction(area);
-            };
+            const renderTiles = (renderer) => {
+                if (!tileLayer) return;
 
-            const popupStyle = (area) => {
-                if (['High', 'Severe'].includes(area.risk_level)) {
-                    return '--popup-accent:#d85b45;--popup-bg:#fde8e2;--popup-color:#9f3728;';
+                const rect = mapEl.getBoundingClientRect();
+                const zoom = rect.width > 1100 ? 14 : 13;
+                const tilesAtZoom = 2 ** zoom;
+                const [minX, minY, maxX, maxY] = renderer.mercatorBounds;
+                const tileMinX = Math.floor(minX * tilesAtZoom);
+                const tileMaxX = Math.floor(maxX * tilesAtZoom);
+                const tileMinY = Math.floor(minY * tilesAtZoom);
+                const tileMaxY = Math.floor(maxY * tilesAtZoom);
+                const width = Math.max(maxX - minX, .000001);
+                const height = Math.max(maxY - minY, .000001);
+                const parts = [];
+
+                for (let x = tileMinX; x <= tileMaxX; x += 1) {
+                    for (let y = tileMinY; y <= tileMaxY; y += 1) {
+                        const left = (((x / tilesAtZoom) - minX) / width) * rect.width;
+                        const top = (((y / tilesAtZoom) - minY) / height) * rect.height;
+                        const sizeX = (1 / tilesAtZoom / width) * rect.width;
+                        const sizeY = (1 / tilesAtZoom / height) * rect.height;
+                        const wrappedX = ((x % tilesAtZoom) + tilesAtZoom) % tilesAtZoom;
+
+                        const style = `left:${left.toFixed(2)}px;top:${top.toFixed(2)}px;width:${sizeX.toFixed(2)}px;height:${sizeY.toFixed(2)}px;`;
+                        parts.push(`<img class="api-map-tile street" src="https://tile.openstreetmap.org/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style}">`);
+                        parts.push(`<img class="api-map-tile street" src="https://a.basemaps.cartocdn.com/light_only_labels/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style};z-index:1;opacity:.95;">`);
+                    }
                 }
 
-                if (area.risk_level === 'Moderate') {
-                    return '--popup-accent:#ffd166;--popup-bg:#fff4cf;--popup-color:#8a5a00;';
-                }
-
-                return '--popup-accent:#52b788;--popup-bg:#d8f3dc;--popup-color:#2d6a4f;';
+                tileLayer.innerHTML = parts.join('');
             };
 
-            const popup = (area, score, layer = activeLayer) => {
-                const mainDetail = layerMainDetail(area, layer);
-                const secondDetail = layerSecondDetail(area, layer);
-
-                return `
-                <div class="map-popup" style="${popupStyle(area)}">
-                    <div class="map-popup-title">
-                        <div>
-                            <div class="map-popup-label">Barangay</div>
-                            <div class="map-popup-name">${area.barangay}</div>
-                            <div class="map-popup-note">Showing: ${layerTitle(layer)}</div>
-                        </div>
-                        <span class="map-popup-badge">${area.risk_level} Risk</span>
-                    </div>
-
-                    <div class="map-popup-takeaway">${layerTakeaway(area, layer)}</div>
-
-                    <div class="map-popup-grid">
-                        <div class="map-popup-box">
-                            <div class="map-popup-label">${mainDetail.label}</div>
-                            <div class="map-popup-value">${mainDetail.value}</div>
-                            <div class="map-popup-note">${mainDetail.note}</div>
-                        </div>
-                        <div class="map-popup-box">
-                            <div class="map-popup-label">${secondDetail.label}</div>
-                            <div class="map-popup-value">${secondDetail.value}</div>
-                            <div class="map-popup-note">${secondDetail.note}</div>
-                        </div>
-                        <div class="map-popup-box">
-                            <div class="map-popup-label">Rice harvest</div>
-                            <div class="map-popup-value">${harvestEstimate(area)}</div>
-                            <div class="map-popup-note">${plainYield(area)}</div>
-                        </div>
-                    </div>
-
-                    <div class="map-popup-advice">
-                        <div class="map-popup-label">What to do now</div>
-                        <div class="map-popup-value">${layerAction(area, layer)}</div>
-                    </div>
-                </div>
-            `;
-            };
-            const detailPanel = document.getElementById('mapDetailPanel');
-            const showDetails = (area, score, layer = activeLayer) => {
-                if (!detailPanel) return;
-
-                selectedArea = area;
+            const showDetails = (area) => {
+                if (!detailPanel || !area) return;
+                selectedBarangay = area.barangay;
                 if (selectedLabel) selectedLabel.textContent = area.barangay;
                 if (focusSelect && focusSelect.value !== area.barangay) focusSelect.value = area.barangay;
+
                 detailPanel.innerHTML = `
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                    ${popup(area, score, layer)}
+                    <div class="map-popup" style="--popup-accent:${colorFor(scoreFor(area, activeLayer), 1)};--popup-bg:#f7fbf8;--popup-color:#0d1f18;">
+                        <div class="map-popup-title">
+                            <div>
+                                <div class="map-popup-label">Barangay</div>
+                                <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
+                                <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(activeLayer))}</div>
+                            </div>
+                            <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
+                        </div>
+                        <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, activeLayer))}</div>
+                        <div class="map-popup-grid">${popupMetricCards(area, activeLayer)}</div>
+                        <div class="map-popup-advice"><div class="map-popup-label">What to do now</div><div class="map-popup-value">${escapeHtml(area.irrigation_recommendation || area.planting_advisory || 'Visit or contact farmers in this barangay before major field work.')}</div></div>
+                    </div>
                 `;
                 detailPanel.classList.add('show');
-                detailPanel.querySelector('.map-detail-close')?.addEventListener('click', () => {
-                    detailPanel.classList.remove('show');
-                    selectedArea = null;
-                    if (selectedLabel) selectedLabel.textContent = 'No barangay selected';
-                    if (focusSelect) focusSelect.value = '';
-                    if (selectedRing) {
-                        map.removeLayer(selectedRing);
-                        selectedRing = null;
-                    }
-                    detailPanel.innerHTML = `
-                        <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                        <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
-                    `;
-                });
+                detailPanel.querySelector('.map-detail-close')?.addEventListener('click', clearSelection);
+                renderMap();
             };
-            detailPanel?.querySelector('.map-detail-close')?.addEventListener('click', () => {
-                detailPanel.classList.remove('show');
-                selectedArea = null;
+
+            const clearSelection = () => {
+                selectedBarangay = '';
                 if (selectedLabel) selectedLabel.textContent = 'No barangay selected';
                 if (focusSelect) focusSelect.value = '';
-                if (selectedRing) {
-                    map.removeLayer(selectedRing);
-                    selectedRing = null;
-                }
-            });
-
-            const updateSelectionRing = (area) => {
-                if (selectedRing) map.removeLayer(selectedRing);
-
-                selectedRing = L.marker([area.latitude, area.longitude], {
-                    interactive: false,
-                    icon: L.divIcon({
-                        className: '',
-                        html: '<span class="selection-ring"></span>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15],
-                    }),
-                }).addTo(map);
+                detailPanel?.classList.remove('show');
+                renderMap();
             };
 
-            const focusArea = (barangay, zoom = 13) => {
-                const area = areaByBarangay.get(String(barangay || '').toLowerCase());
-                if (!area) return;
+            const labelTextFor = (name) => {
+                return name
+                    .replace('Barangay ', 'Brgy. ')
+                    .replace(' (Pob.)', '')
+                    .replace('Puting-Kahoy', 'Puting Kahoy');
+            };
 
-                const score = scoreFor(area, activeLayer);
-                selectedArea = area;
-                updateSelectionRing(area);
-                showDetails(area, score, activeLayer);
-                map.flyTo([area.latitude, area.longitude], Math.max(map.getZoom(), zoom), {
-                    animate: true,
-                    duration: .65,
+            const labelLayoutFor = (items, rect) => {
+                const boxes = [];
+
+                return items.map((item) => {
+                    const text = labelTextFor(item.area.barangay);
+                    const selected = selectedBarangay === item.area.barangay;
+                    const width = Math.max(46, text.length * (easyReadMode || selected ? 8.2 : 6.8));
+                    const height = easyReadMode || selected ? 19 : 16;
+                    const box = {
+                        left: (item.x * rect.width) - (width / 2),
+                        right: (item.x * rect.width) + (width / 2),
+                        top: (item.y * rect.height) - (height / 2),
+                        bottom: (item.y * rect.height) + (height / 2),
+                    };
+                    const collides = boxes.some((existing) => !(
+                        box.right < existing.left ||
+                        box.left > existing.right ||
+                        box.bottom < existing.top ||
+                        box.top > existing.bottom
+                    ));
+
+                    if (!collides || selected) {
+                        boxes.push(box);
+
+                        return { ...item, text, selected, visible: true };
+                    }
+
+                    return { ...item, text, selected, visible: false };
                 });
             };
 
-            const featureName = (feature) => {
-                const props = feature.properties || {};
-                return String(
-                    props.barangay ||
-                    props.BARANGAY ||
-                    props.brgy ||
-                    props.BRGY ||
-                    props.name ||
-                    props.NAME ||
-                    props.ADM4_EN ||
-                    props.ADM4_PCODE ||
-                    ''
-                ).trim();
-            };
-
-            const boundaryFeatures = () => {
-                if (!barangayBoundaries || !Array.isArray(barangayBoundaries.features)) {
-                    return [];
+            const renderMap = () => {
+                const features = heatmapData?.features || [];
+                if (!features.length) {
+                    boundaryNotice?.classList.remove('d-none');
+                    return;
                 }
 
-                return barangayBoundaries.features
-                    .map((feature) => {
-                        const name = featureName(feature);
-                        const area = areaByBarangay.get(name.toLowerCase());
-                        if (!area) return null;
-
-                        return {
-                            ...feature,
-                            properties: {
-                                ...(feature.properties || {}),
-                                area,
-                                score: 0,
-                            },
-                        };
-                    })
-                    .filter(Boolean);
-            };
-
-            const renderLayer = (layer = 'impact') => {
-                activeLayer = layer;
+                boundaryNotice?.classList.add('d-none');
                 updateLayerLabel();
-                if (geoLayer) map.removeLayer(geoLayer);
-                if (heatLayer) map.removeLayer(heatLayer);
-                if (fieldLayer) map.removeLayer(fieldLayer);
-                if (pointLayer) map.removeLayer(pointLayer);
-                if (selectedRing) {
-                    map.removeLayer(selectedRing);
-                    selectedRing = null;
-                }
+                const renderer = rendererFor(features);
+                svg.setAttribute('viewBox', renderer.viewBox);
+                renderTiles(renderer);
+                drawHeat(features, renderer.project);
 
-                const features = boundaryFeatures().map((feature) => ({
-                    ...feature,
-                    properties: {
-                        ...feature.properties,
-                        score: scoreFor(feature.properties.area, layer),
-                    },
-                }));
+                const rect = mapEl.getBoundingClientRect();
+                const items = features.map((feature) => {
+                    const area = featureArea(feature);
+                    const score = visualScoreFor(area, activeLayer, features);
+                    const [lng, lat] = centroidFor(feature);
+                    const [x, y] = renderer.project([lng, lat]);
 
-                geoLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
-                    style: (feature) => ({
-                        color: 'rgba(255,255,255,.88)',
-                        weight: easyReadMode ? 2.2 : 1.4,
-                        opacity: .92,
-                        fillColor: colorFor(feature.properties.score),
-                        fillOpacity: easyReadMode ? .72 : .38,
-                        dashArray: easyReadMode ? null : '5 5',
-                    }),
-                    onEachFeature: (feature, polygon) => {
-                        polygon.on({
-                            click: () => showDetails(feature.properties.area, feature.properties.score, layer),
-                            mouseover: () => polygon.setStyle({ weight: 2.8, fillOpacity: easyReadMode ? .82 : .5 }),
-                            mouseout: () => polygon.setStyle({ weight: easyReadMode ? 2.2 : 1.4, fillOpacity: easyReadMode ? .72 : .38 }),
-                        });
-                        polygon.bindTooltip(feature.properties.area.barangay, {
-                            permanent: true,
-                            direction: 'center',
-                            className: `barangay-tooltip ${easyReadMode ? 'easy-read' : ''}`,
-                            opacity: easyReadMode ? 1 : .92,
-                        });
-                    }
-                }).addTo(map);
+                    return { feature, area, score, x, y };
+                });
+                const labels = labelLayoutFor(items, rect);
 
-                fieldLayer = L.featureGroup(areas.map((area) => {
-                    const score = scoreFor(area, layer);
-                    const radius = 850 + (score * 1350);
+                svg.innerHTML = labels.map((item) => {
+                    const selected = item.selected;
+                    const fill = activeLayer === 'farm_type'
+                        ? farmTypeColorFor(item.area, easyReadMode ? .28 : .08)
+                        : colorFor(item.score, easyReadMode ? .06 : .004);
+                    return `
+                        <path class="api-heatmap-region ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" d="${pathFor(item.feature, renderer.project)}" fill="${fill}"></path>
+                        ${item.visible ? `<text class="api-heatmap-label ${selected ? 'is-selected' : ''}" x="${item.x.toFixed(6)}" y="${item.y.toFixed(6)}">${escapeHtml(item.text)}</text>` : ''}
+                    `;
+                }).join('');
 
-                    return L.circle([area.latitude, area.longitude], {
-                        radius,
-                        className: 'field-zone',
-                        color: rgbaFor(score, .78),
-                        fillColor: rgbaFor(score, .46),
-                        fillOpacity: .28,
-                        opacity: .78,
-                        interactive: false,
+                svg.querySelectorAll('.api-heatmap-region').forEach((path) => {
+                    path.addEventListener('click', () => {
+                        const feature = features.find((item) => featureName(item) === path.dataset.barangay);
+                        showDetails(featureArea(feature));
                     });
-                })).addTo(map);
-
-                if (L.heatLayer && !easyReadMode) {
-                    heatLayer = L.heatLayer(areas.map((area) => [area.latitude, area.longitude, Math.max(.12, scoreFor(area, layer))]), {
-                        radius: 62,
-                        blur: 38,
-                        maxZoom: 14,
-                        minOpacity: .25,
-                        gradient: thermographicGradient,
-                    }).addTo(map);
-                }
-
-                pointLayer = L.featureGroup(areas.flatMap((area) => {
-                    const score = scoreFor(area, layer);
-                    const clickZone = L.circleMarker([area.latitude, area.longitude], {
-                        radius: 34,
-                        stroke: false,
-                        fillOpacity: 0,
-                        interactive: true,
-                    });
-                    const marker = L.marker([area.latitude, area.longitude], {
-                        icon: L.divIcon({
-                            className: '',
-                            html: easyReadMode
-                                ? `<span class="easy-read-marker" style="--label-bg:${colorFor(score)};--label-color:${readableTextColor(score)}">${area.barangay}<small>${readabilityLabel(score)}</small></span>`
-                                : `<span class="thermo-point" style="--marker-color:${colorFor(score)};--marker-glow:${rgbaFor(score, .26)}"></span>`,
-                            iconSize: easyReadMode ? [112, 42] : [14, 14],
-                            iconAnchor: easyReadMode ? [56, 21] : [7, 7],
-                        }),
-                    });
-
-                    clickZone.on('click', () => showDetails(area, score, layer));
-                    marker.on('click', () => showDetails(area, score, layer));
-                    if (!easyReadMode) {
-                        marker.bindTooltip(area.barangay, {
-                            permanent: true,
-                            direction: 'top',
-                            offset: [0, -12],
-                            className: 'barangay-tooltip',
-                        });
-                    }
-
-                    return [clickZone, marker];
-                })).addTo(map);
-
-                if (features.length > 0) {
-                    map.fitBounds(geoLayer.getBounds().pad(.18));
-                    document.getElementById('boundaryNotice')?.classList.add('d-none');
-                } else if (areas.length > 0) {
-                    map.fitBounds(pointLayer.getBounds().pad(.24));
-                    document.getElementById('boundaryNotice')?.classList.add('d-none');
-                } else {
-                    document.getElementById('boundaryNotice')?.classList.remove('d-none');
-                }
-
-                if (selectedArea && detailPanel?.classList.contains('show')) {
-                    showDetails(selectedArea, scoreFor(selectedArea, layer), layer);
-                    updateSelectionRing(selectedArea);
-                }
+                });
             };
 
-            fetch(boundaryUrl)
-                .then((response) => response.ok ? response.json() : null)
-                .then((geojson) => {
-                    barangayBoundaries = geojson;
-                    renderLayer();
+            fetch(apiUrl, { headers: { Accept: 'application/json' } })
+                .then((response) => response.ok ? response.json() : Promise.reject(response))
+                .then((data) => {
+                    heatmapData = data;
+                    renderMap();
                 })
-                .catch(() => renderLayer());
+                .catch(() => {
+                    boundaryNotice?.classList.remove('d-none');
+                    boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap API right now.';
+                });
 
             document.querySelectorAll('[data-layer]').forEach((button) => {
                 button.addEventListener('click', () => {
@@ -1106,44 +1373,29 @@
                     });
                     button.classList.add('active');
                     button.setAttribute('aria-pressed', 'true');
-                    renderLayer(button.dataset.layer);
+                    activeLayer = button.dataset.layer;
+                    renderMap();
+                    if (selectedBarangay) {
+                        const feature = (heatmapData?.features || []).find((item) => featureName(item) === selectedBarangay);
+                        if (feature) showDetails(featureArea(feature));
+                    }
                 });
-            });
-
-            document.querySelectorAll('[data-basemap]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const layerName = button.dataset.basemap;
-                    const nextLayer = baseLayers[layerName];
-                    if (!nextLayer || nextLayer === activeBaseLayer) return;
-
-                    map.removeLayer(activeBaseLayer);
-                    activeBaseLayer = nextLayer.addTo(map);
-                    document.querySelectorAll('[data-basemap]').forEach((item) => {
-                        item.classList.remove('active');
-                        item.setAttribute('aria-pressed', 'false');
-                    });
-                    button.classList.add('active');
-                    button.setAttribute('aria-pressed', 'true');
-                });
-            });
-
-            easyReadToggle?.addEventListener('click', () => {
-                easyReadMode = !easyReadMode;
-                easyReadToggle.classList.toggle('active', easyReadMode);
-                easyReadToggle.setAttribute('aria-pressed', easyReadMode ? 'true' : 'false');
-                easyReadToggle.textContent = easyReadMode ? 'Real Heat' : 'Easy Colors';
-                updateLayerLabel();
-                renderLayer(activeLayer);
             });
 
             focusSelect?.addEventListener('change', () => {
                 if (!focusSelect.value) return;
-                focusArea(focusSelect.value);
+                const feature = (heatmapData?.features || []).find((item) => featureName(item) === focusSelect.value);
+                showDetails(featureArea(feature));
             });
 
             document.querySelectorAll('[data-focus-barangay]').forEach((button) => {
-                button.addEventListener('click', () => focusArea(button.dataset.focusBarangay));
+                button.addEventListener('click', () => {
+                    const feature = (heatmapData?.features || []).find((item) => featureName(item) === button.dataset.focusBarangay);
+                    showDetails(featureArea(feature));
+                });
             });
+
+            window.addEventListener('resize', () => renderMap(), { passive: true });
         });
     </script>
 </x-app-layout>

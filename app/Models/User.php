@@ -16,10 +16,13 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     public const ROLE_FARMER = 'Farmer';
+
     public const ROLE_MAO = 'MAO Personnel';
+
     public const ROLE_IT_EXPERT = 'IT Expert';
 
     public const STATUS_ACTIVE = 'Active';
+
     public const STATUS_INACTIVE = 'Inactive';
 
     /**
@@ -56,6 +59,11 @@ class User extends Authenticatable
     public function userNotifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function typhoonSafetyResponses(): HasMany
+    {
+        return $this->hasMany(TyphoonSafetyResponse::class);
     }
 
     public function reports(): HasMany

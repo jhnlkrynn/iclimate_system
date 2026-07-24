@@ -1,5 +1,4 @@
 <x-app-layout>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         .mao-console {
             --mao-ink: #0d1f18;
@@ -687,9 +686,6 @@
         </details>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const chartData = @json($weatherChartData);
@@ -783,6 +779,12 @@
 
                     return 'Looks okay for now. Continue normal field checking.';
                 };
+                const escapeHtml = (value) => String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
                 const plainConcern = (area) => {
                     const concern = String(area.risk_type || '').toLowerCase();
                     if (concern.includes('flood')) return 'Flooding or poor drainage';
@@ -870,32 +872,32 @@
                             <div class="map-popup-title">
                                 <div>
                                     <div class="map-popup-label">Barangay</div>
-                                    <div class="map-popup-name">${area.barangay}</div>
-                                    <div class="map-popup-note">Showing: ${layerTitle(layer)}</div>
+                                    <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
+                                    <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(layer))}</div>
                                 </div>
-                                <span class="map-popup-badge">${area.risk_level} Risk</span>
+                                <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
                             </div>
-                            <div class="map-popup-takeaway">${layerTakeaway(area, layer)}</div>
+                            <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, layer))}</div>
                             <div class="map-popup-grid">
                                 <div class="map-popup-box">
-                                    <div class="map-popup-label">${mainDetail.label}</div>
-                                    <div class="map-popup-value">${mainDetail.value}</div>
-                                    <div class="map-popup-note">${mainDetail.note}</div>
+                                    <div class="map-popup-label">${escapeHtml(mainDetail.label)}</div>
+                                    <div class="map-popup-value">${escapeHtml(mainDetail.value)}</div>
+                                    <div class="map-popup-note">${escapeHtml(mainDetail.note)}</div>
                                 </div>
                                 <div class="map-popup-box">
-                                    <div class="map-popup-label">${secondDetail.label}</div>
-                                    <div class="map-popup-value">${secondDetail.value}</div>
-                                    <div class="map-popup-note">${secondDetail.note}</div>
+                                    <div class="map-popup-label">${escapeHtml(secondDetail.label)}</div>
+                                    <div class="map-popup-value">${escapeHtml(secondDetail.value)}</div>
+                                    <div class="map-popup-note">${escapeHtml(secondDetail.note)}</div>
                                 </div>
                                 <div class="map-popup-box">
                                     <div class="map-popup-label">Rice harvest</div>
-                                    <div class="map-popup-value">${harvestEstimate(area)}</div>
-                                    <div class="map-popup-note">${plainYield(area)}</div>
+                                    <div class="map-popup-value">${escapeHtml(harvestEstimate(area))}</div>
+                                    <div class="map-popup-note">${escapeHtml(plainYield(area))}</div>
                                 </div>
                             </div>
                             <div class="map-popup-advice">
                                 <div class="map-popup-label">What to do now</div>
-                                <div class="map-popup-value">${layerAction(area, layer)}</div>
+                                <div class="map-popup-value">${escapeHtml(layerAction(area, layer))}</div>
                             </div>
                         </div>
                     `;

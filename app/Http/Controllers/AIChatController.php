@@ -19,18 +19,31 @@ class AIChatController extends Controller
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:1000'],
+            'save_conversation' => ['sometimes', 'boolean'],
         ]);
 
         $result = $predictionService->answer($request->user(), $validated['question']);
 
-        $chat = AIChat::query()->create([
-            'user_id' => $request->user()->id,
-            'question' => $validated['question'],
-            ...$result,
-        ]);
+        $shouldSave = (bool) ($validated['save_conversation'] ?? true);
+
+        $chat = $shouldSave
+            ? AIChat::query()->create([
+                'user_id' => $request->user()->id,
+                'question' => $validated['question'],
+                ...$result,
+            ])
+            : [
+                'id' => null,
+                'user_id' => $request->user()->id,
+                'question' => $validated['question'],
+                'created_at' => now()->toISOString(),
+                'saved' => false,
+                ...$result,
+            ];
 
         return response()->json([
             'chat' => $chat,
+            'saved' => $shouldSave,
         ]);
     }
 
@@ -38,6 +51,6 @@ class AIChatController extends Controller
     {
         AIChat::query()->where('user_id', $request->user()->id)->delete();
 
-        return back()->with('status', 'AI Farming Assistant conversation cleared.');
+        return back()->with('status', 'PalayPilot conversation cleared.');
     }
 }

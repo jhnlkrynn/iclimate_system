@@ -10,6 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --auth-ease-out: cubic-bezier(.16,1,.3,1);
+      --auth-ease-smooth: cubic-bezier(.22,.61,.36,1);
+      --auth-motion-fast: 160ms var(--auth-ease-smooth);
+      --auth-motion-med: 260ms var(--auth-ease-smooth);
+      --auth-motion-slow: 560ms var(--auth-ease-out);
+    }
     html, body { margin: 0; min-height: 100%; }
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     a { color: inherit; }
@@ -37,6 +44,7 @@
     .register-grid {
       width: 100%; max-width: 1100px;
       display: grid; grid-template-columns: 42% 58%; gap: 32px; align-items: start;
+      animation: authSceneEnter var(--auth-motion-slow) both;
     }
 
     /* -- LEFT: MARKETING COLUMN -------------------------- */
@@ -58,7 +66,9 @@
     .perk-card {
       background: rgba(82,183,136,.1); border: 1px solid rgba(82,183,136,.24); border-radius: 14px;
       padding: 16px 18px; margin-bottom: 14px;
+      transition: transform var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
     }
+    .perk-card:hover { transform: translateY(-3px); border-color: rgba(116,198,157,.42); background: rgba(82,183,136,.14); }
     .perk-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .perk-icon {
       width: 36px; height: 36px; border-radius: 10px; background: rgba(82,183,136,.18); border: 1px solid rgba(82,183,136,.35);
@@ -73,7 +83,9 @@
     .notice-card {
       display: flex; gap: 10px; padding: 12px 14px; background: rgba(232,167,61,.08);
       border: 1px solid rgba(232,167,61,.22); border-radius: 12px;
+      transition: transform var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
     }
+    .notice-card:hover { transform: translateY(-3px); border-color: rgba(232,167,61,.38); background: rgba(232,167,61,.11); }
     .notice-icon { flex-shrink: 0; margin-top: 1px; color: #E8A73D; }
     .notice-card p { font-size: .82rem; color: rgba(255,255,255,.6); line-height: 1.5; margin: 0; }
     .notice-card strong { color: #f0c674; font-weight: 700; }
@@ -82,7 +94,10 @@
     .form-card {
       background: rgba(15,31,23,.68); border: 1.5px solid rgba(149,213,178,.22); border-radius: 20px;
       box-shadow: 0 26px 60px rgba(0,0,0,.4); backdrop-filter: blur(18px); padding: 26px 30px;
+      transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
+      transform: translateZ(0);
     }
+    .form-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(0,0,0,.45); border-color: rgba(149,213,178,.34); }
     .form-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
     .form-card-icon {
       width: 40px; height: 40px; border-radius: 50%; background: rgba(82,183,136,.16); border: 1px solid rgba(82,183,136,.35);
@@ -104,14 +119,28 @@
     .input-wrap { position: relative; }
     .form-input {
       width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 11px;
-      padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: all .2s; outline: none;
+      padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
     }
     .form-input.has-icon { padding-left: 40px; }
-    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); }
+    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); transform: translateY(-1px); }
     .form-input::placeholder { color: rgba(255,255,255,.35); }
     .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #74C69D; }
     .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.55); background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
     .pwd-toggle:hover { color: #74C69D; }
+    .captcha-card {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
+      background: rgba(82,183,136,.1); border: 1.5px solid rgba(149,213,178,.24); border-radius: 12px;
+      padding: 10px 12px; margin-bottom: 12px;
+    }
+    .captcha-icon {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: rgba(82,183,136,.18); color: #74C69D; border: 1px solid rgba(149,213,178,.3);
+    }
+    .captcha-label { font-size: .76rem; font-weight: 800; color: rgba(255,255,255,.72); margin-bottom: 5px; }
+    .captcha-image {
+      display: block; width: 100%; height: 64px; border-radius: 13px;
+      border: 1px solid rgba(149,213,178,.34); margin-bottom: 8px; background: #eef8f2;
+    }
 
     .pwd-strength { margin-top: 7px; display: flex; gap: 4px; }
     .pwd-strength-bar { height: 3px; flex: 1; border-radius: 2px; background: rgba(149,213,178,.25); transition: background .3s; }
@@ -139,14 +168,17 @@
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;
       background: #E8A73D; color: #1a3a2a; border: none; border-radius: 11px; font-family: 'Inter', sans-serif;
-      font-size: .96rem; font-weight: 800; cursor: pointer; transition: all .2s; margin-bottom: 14px;
+      font-size: .96rem; font-weight: 800; cursor: pointer; transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med); margin-bottom: 14px;
       box-shadow: 0 10px 24px rgba(232,167,61,.28);
     }
-    .btn-login:hover { background: #f0b559; transform: translateY(-1px); box-shadow: 0 12px 28px rgba(232,167,61,.4); }
+    .btn-login:hover { background: #f0b559; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
+    .btn-login:active { transform: translateY(0) scale(.985); }
 
     .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); }
     .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #f0b559; }
+
+    @keyframes authSceneEnter { from { opacity: 0; transform: translateY(16px) scale(.992); filter: blur(2px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
     /* -- FOOTER BAR --------------------------------------- */
     .register-foot {
@@ -173,7 +205,17 @@
     @media (max-width: 540px) {
       .form-card { padding: 22px 18px; }
       .form-row-2col { grid-template-columns: 1fr; gap: 0; }
+      .captcha-card { grid-template-columns: 1fr; }
+      .captcha-icon { display: none; }
       .register-foot { flex-direction: column; align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
     }
   </style>
 </head>
@@ -300,6 +342,18 @@
             </div>
           </div>
           @error('password_confirmation')<div class="field-error">{{ $message }}</div>@enderror
+
+          <div class="captcha-card">
+            <div class="captcha-icon" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <label for="captcha_answer" class="captcha-label">Security Check</label>
+              <img class="captcha-image" src="{{ route('captcha.image', ['context' => 'register', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
+              <input type="text" id="captcha_answer" name="captcha_answer" class="form-input @error('captcha_answer') is-invalid @enderror" placeholder="Enter the code shown above" autocomplete="off" autocapitalize="characters" spellcheck="false" required/>
+              @error('captcha_answer')<div class="field-error">{{ $message }}</div>@enderror
+            </div>
+          </div>
 
           <div class="terms-row">
             <input type="checkbox" id="agreeTerms" class="custom-checkbox" required/>

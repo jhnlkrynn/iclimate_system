@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class ExpireAgriculturalAdvisories extends Command
 {
     protected $signature = 'iclimate:expire-advisories';
+
     protected $description = 'Mark agricultural advisories as expired after their validity period.';
 
     public function handle(AdvisoryGenerationService $service): int

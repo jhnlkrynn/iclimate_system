@@ -92,8 +92,17 @@
     }
     @media (max-width: 575.98px) {
         .ic-ai-widget { right: .65rem; bottom: .65rem; }
-        .ic-ai-panel { width: calc(100vw - 1.3rem); height: min(590px, calc(100vh - 6rem)); }
+        .ic-ai-panel { position: fixed; inset: auto .65rem 4.8rem .65rem; width: auto; height: min(590px, calc(100dvh - 6rem)); }
+        .ic-ai-form { grid-template-columns: 1fr; }
+        .ic-ai-send { width: 100%; }
+        .ic-ai-bubble { max-width: 92%; }
         .ic-ai-results { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 380px) {
+        .ic-ai-head { align-items: flex-start; padding: .75rem; }
+        .ic-ai-sub { font-size: .62rem; }
+        .ic-ai-chips { padding-inline: .55rem; }
+        .ic-ai-chip { width: 100%; text-align: center; }
     }
 </style>
 
@@ -184,7 +193,7 @@
             </form>
         </div>
     </div>
-    <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">AI</button>
+    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName }} assistant">PP</button>
 </div>
 
 <script>
@@ -199,22 +208,67 @@
         const body = document.getElementById('icAiBody');
         const typing = document.getElementById('icAiTyping');
         const send = document.getElementById('icAiSend');
+        const privacyNote = document.getElementById('icAiPrivacyNote');
         const token = widget.querySelector('input[name="_token"]').value;
         const messageUrl = widget.dataset.messageUrl;
+        const saveStorageKey = 'iclimate_ai_save_conversation';
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scroll = () => { body.scrollTop = body.scrollHeight; };
         const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
-        const hasPrediction = (chat) => chat.weather_prediction || chat.rice_yield_prediction || chat.planting_recommendation || chat.irrigation_recommendation;
+        const relevantPredictionCards = (chat) => {
+            switch (chat.intent) {
+                case 'Weather Prediction': return ['weather'];
+                case 'Rice Yield Prediction': return ['yield'];
+                case 'Planting Recommendation': return ['planting'];
+                case 'Irrigation Recommendation': return ['irrigation'];
+                case 'Climate Risk': return ['weather'];
+                default: return [];
+            }
+        };
         const predictionGrid = (chat) => {
-            if (!hasPrediction(chat)) return '';
+            const visibleCards = relevantPredictionCards(chat);
+            if (!visibleCards.length) return '';
             const weather = chat.weather_prediction?.predicted_weather || 'N/A';
             const yieldValue = chat.rice_yield_prediction?.predicted_yield !== null && chat.rice_yield_prediction?.predicted_yield !== undefined ? `${Number(chat.rice_yield_prediction.predicted_yield).toFixed(2)} t/ha` : 'N/A';
             const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'N/A';
             const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
-            return `<div class="ic-ai-results">${resultCard('Weather', weather)}${resultCard('Yield', yieldValue)}${resultCard('Planting', planting)}${resultCard('Irrigation', irrigation)}</div>`;
+            const cards = [];
+            if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));
+            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', yieldValue));
+            if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
+            if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
+            return cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
         };
+        const selectedSaveMode = () => localStorage.getItem(saveStorageKey);
+        const shouldSaveConversation = () => selectedSaveMode() !== '0';
+        const renderSaveChoice = () => {
+            const mode = selectedSaveMode();
+            widget.querySelectorAll('[data-save-mode]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.saveMode === mode);
+            });
+            if (!privacyNote) return;
+            if (mode === '0') {
+                privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
+                privacyNote.classList.add('show');
+            } else if (mode === '1') {
+                privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                privacyNote.classList.add('show');
+            } else {
+                privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                privacyNote.classList.add('show');
+            }
+        };
+
+        widget.querySelectorAll('[data-save-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                localStorage.setItem(saveStorageKey, btn.dataset.saveMode);
+                renderSaveChoice();
+                input.focus();
+            });
+        });
+        renderSaveChoice();
 
         widget.querySelectorAll('.ic-ai-chip').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -250,7 +304,7 @@
                 const response = await fetch(messageUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ question }),
+                    body: JSON.stringify({ question, save_conversation: shouldSaveConversation() }),
                     signal: controller.signal,
                 });
                 const data = await response.json();

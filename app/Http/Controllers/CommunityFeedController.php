@@ -23,7 +23,7 @@ class CommunityFeedController extends Controller
                     'author',
                     'media',
                     'comments.user',
-                    'reactions' => fn ($query) => $query->where('user_id', $request->user()->id),
+                    'reactions.user',
                 ])
                 ->withCount([
                     'reactions as like_reactions_count' => fn ($query) => $query->where('type', 'Like'),
@@ -53,6 +53,7 @@ class CommunityFeedController extends Controller
             'visibility' => $validated['visibility'],
             'user_id' => $request->user()->id,
             'event_date' => $validated['event_date'] ?? null,
+            'show_on_calendar' => $request->boolean('show_on_calendar') && ! empty($validated['event_date']),
         ]);
 
         foreach ($request->file('attachments', []) as $file) {
@@ -74,6 +75,7 @@ class CommunityFeedController extends Controller
             'category' => $validated['category'],
             'visibility' => $validated['visibility'],
             'event_date' => $validated['event_date'] ?? null,
+            'show_on_calendar' => $request->boolean('show_on_calendar') && ! empty($validated['event_date']),
         ]);
 
         foreach ($request->file('attachments', []) as $file) {
@@ -155,6 +157,7 @@ class CommunityFeedController extends Controller
             'category' => ['required', Rule::in(['Update', 'Program', 'Activity', 'Training', 'Advisory', 'Announcement'])],
             'visibility' => ['required', Rule::in(['All Farmers', 'All Users'])],
             'event_date' => ['nullable', 'date'],
+            'show_on_calendar' => ['nullable', 'boolean'],
             'attachments' => ['nullable', 'array', 'max:6'],
             'attachments.*' => ['file', 'max:51200', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         ]);

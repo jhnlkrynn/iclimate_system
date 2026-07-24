@@ -4,33 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\ExternalWeatherData;
 use App\Models\PlantingAdvisory;
+use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\Advisories\AdvisoryGenerationService;
+use App\Services\TyphoonSafetyService;
 use App\Services\Weather\OpenMeteoService;
 use App\Support\LianBarangays;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PlantingAdvisoryController extends Controller
 {
     private const TYPES = ['climate', 'planting', 'harvesting', 'irrigation'];
+
     private const SEVERITIES = ['information', 'low', 'moderate', 'high', 'critical'];
+
     private const STATUSES = ['pending_review', 'published', 'expired', 'rejected', 'archived'];
 
-    public function index(Request $request): View
+    public function index(Request $request, TyphoonSafetyService $typhoonSafety): View
     {
         $query = $this->filteredQuery($request)
             ->when($request->user()->role === User::ROLE_FARMER, function ($query) use ($request) {
                 $query->active()->forBarangay($request->user()->barangay);
             });
+        $activeTyphoonSafetyEvent = $request->user()->role === User::ROLE_FARMER
+            ? $typhoonSafety->activeEvent()
+            : null;
 
         return view('advisories.index', [
             'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
+            'latestPagasaAdvisory' => PlantingAdvisory::query()->where('source', 'PAGASA')->latest('created_at')->first(),
+            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
+            'typhoonSafetyResponse' => Schema::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
+                ? TyphoonSafetyResponse::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('event_key', $activeTyphoonSafetyEvent['key'])
+                    ->first()
+                : null,
             'activeCount' => PlantingAdvisory::query()->active()->count(),
+            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->where('source', 'PAGASA')->count(),
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
@@ -46,7 +63,9 @@ class PlantingAdvisoryController extends Controller
         return view('advisories.management', [
             'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(10)->withQueryString(),
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
+            'latestPagasaAdvisory' => PlantingAdvisory::query()->where('source', 'PAGASA')->latest('created_at')->first(),
             'activeCount' => PlantingAdvisory::query()->active()->count(),
+            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->where('source', 'PAGASA')->count(),
             'pendingCount' => PlantingAdvisory::query()->pendingReview()->count(),
             'highRiskCount' => PlantingAdvisory::query()->whereIn('severity', ['high', 'critical'])->whereIn('status', ['published', 'pending_review'])->count(),
             'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->whereDate('updated_at', today())->count(),
@@ -205,7 +224,7 @@ class PlantingAdvisoryController extends Controller
     public function regenerate(Request $request, AdvisoryGenerationService $service): RedirectResponse
     {
         $this->authorizeManage($request);
-        $summary = $service->generate(fetchWeather: false);
+        $summary = $service->generate(fetchWeather: true, forceWeather: true);
         $message = "{$summary['advisories_created']} advisories were created, {$summary['advisories_skipped_as_duplicates']} duplicates were skipped, and {$summary['advisories_expired']} expired advisory records were updated.";
 
         if ($summary['errors']) {

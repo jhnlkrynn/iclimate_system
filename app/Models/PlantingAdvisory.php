@@ -12,20 +12,31 @@ class PlantingAdvisory extends Model
     use HasFactory;
 
     public const TYPE_CLIMATE = 'climate';
+
     public const TYPE_PLANTING = 'planting';
+
     public const TYPE_HARVESTING = 'harvesting';
+
     public const TYPE_IRRIGATION = 'irrigation';
 
     public const STATUS_PENDING_REVIEW = 'pending_review';
+
     public const STATUS_PUBLISHED = 'published';
+
     public const STATUS_EXPIRED = 'expired';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_ARCHIVED = 'archived';
 
     public const SEVERITY_INFORMATION = 'information';
+
     public const SEVERITY_LOW = 'low';
+
     public const SEVERITY_MODERATE = 'moderate';
+
     public const SEVERITY_HIGH = 'high';
+
     public const SEVERITY_CRITICAL = 'critical';
 
     protected $fillable = [
@@ -151,6 +162,11 @@ class PlantingAdvisory extends Model
     public function statusLabel(): string
     {
         return str((string) $this->status)->replace('_', ' ')->headline()->toString();
+    }
+
+    public function horizonLabel(): string
+    {
+        return (string) data_get($this->metadata, 'advisory_horizon_label', 'Forecast');
     }
 
     public function targetLabel(): string

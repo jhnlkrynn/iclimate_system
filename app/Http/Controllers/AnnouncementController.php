@@ -13,10 +13,15 @@ use Illuminate\Validation\Rule;
 class AnnouncementController extends CrudController
 {
     protected string $model = Announcement::class;
+
     protected string $routeName = 'announcements';
+
     protected string $title = 'Announcement';
+
     protected array $columns = ['title' => 'Title', 'category' => 'Category', 'status' => 'Status'];
+
     protected array $searchable = ['title', 'content', 'category', 'status'];
+
     protected array $filterable = ['category' => ['News', 'Event', 'Training', 'Seed Distribution', 'Fertilizer Distribution'], 'status' => ['Draft', 'Published']];
 
     public function __construct()
@@ -32,6 +37,7 @@ class AnnouncementController extends CrudController
     protected function prepareData(Request $request, array $data): array
     {
         $data['posted_by'] = $request->user()->id;
+
         return $data;
     }
 

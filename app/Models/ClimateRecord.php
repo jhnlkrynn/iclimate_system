@@ -10,6 +10,7 @@ class ClimateRecord extends Model
     use HasFactory;
 
     public const SEASON_WET = 'Wet';
+
     public const SEASON_DRY = 'Dry';
 
     protected $fillable = [

@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $title }}</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        @vite(['resources/css/app.css'])
         <style>
             body { color: #1b2b23; }
             .print-header { border-bottom: 3px solid #2d6a4f; padding-bottom: 1rem; margin-bottom: 1rem; }

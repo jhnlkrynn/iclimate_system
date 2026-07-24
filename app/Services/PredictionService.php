@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Announcement;
 use App\Models\AIChat;
+use App\Models\Announcement;
 use App\Models\ClimateRecord;
+use App\Models\ExternalWeatherData;
 use App\Models\FarmerProfile;
-use App\Models\KnowledgeBase;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\User;
+use App\Services\AI\GroqChatService;
 use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
 use App\Services\AI\RoleAssistantService;
@@ -25,9 +26,9 @@ class PredictionService
         private readonly DecisionSupportService $decisionSupport,
         private readonly IntentDetectionService $intentDetector,
         private readonly KnowledgeBaseService $knowledgeBase,
+        private readonly GroqChatService $groqChat,
         private readonly RoleAssistantService $roleAssistant,
-    ) {
-    }
+    ) {}
 
     public function answer(User $user, string $question): array
     {
@@ -56,7 +57,10 @@ class PredictionService
         }
 
         $weather = $pythonResult['weather_prediction'] ?? $this->fallbackWeather($context);
-        $yield = $pythonResult['rice_yield_prediction'] ?? ['predicted_yield' => null, 'unit' => 'tons/hectare'];
+        $yield = $pythonResult['rice_yield_prediction'] ?? null;
+        $yield = is_array($yield) && Arr::get($yield, 'predicted_yield') !== null
+            ? $yield
+            : $this->fallbackYield($context, is_array($yield) ? $yield : []);
         $calibration = $this->calibrateYield($yield, $context);
         $yield = $calibration['yield'];
         $predictedYield = Arr::get($yield, 'predicted_yield');
@@ -73,12 +77,17 @@ class PredictionService
         $explanation = $this->explanation($weather, $yield, $insights, $apiError, $language);
         $confidence = $this->adjustedConfidence($pythonResult, $decision, $quality);
         $answer = $this->composeAnswer($intent, $weather, $yield, $decision, $warnings, $insights, $explanation, 'Machine Learning + Decision Support', $confidence, $language);
+        $groqFallback = $this->groqPredictionFallback($user, $question, $intent, $language, $memory, $context, $weather, $yield, $decision, $warnings, $quality, $apiError, $pythonResult);
+
+        if ($groqFallback) {
+            $answer = $groqFallback['answer'];
+        }
 
         return [
             'intent' => $intent,
             'answer' => $answer,
-            'source_type' => 'Machine Learning',
-            'source_name' => 'Local Python ML models + iClimate decision rules',
+            'source_type' => $groqFallback ? 'Machine Learning + Generative AI' : 'Machine Learning',
+            'source_name' => $groqFallback ? 'Predict.py fallback + '.$groqFallback['source_name'] : 'Local Python ML models + iClimate decision rules',
             'source_url' => null,
             'language' => $language,
             'memory' => $memory,
@@ -92,6 +101,12 @@ class PredictionService
                 'conversation_memory' => $memory,
                 'api_error' => $apiError,
                 'intent_detection' => $intentResult,
+                'generative_ai' => $groqFallback ? [
+                    'provider' => 'Groq',
+                    'model' => $groqFallback['model'],
+                    'usage' => $groqFallback['usage'],
+                    'reason' => 'Python model output was unavailable or low-confidence, so Groq explained the iClimate fallback result.',
+                ] : null,
                 'answer_source' => 'Prediction values came from trained machine-learning models and iClimate decision rules.',
             ],
             'weather_prediction' => $weather,
@@ -103,6 +118,38 @@ class PredictionService
             'confidence_score' => $confidence,
             'response_time_ms' => (int) round((microtime(true) - $startedAt) * 1000),
         ];
+    }
+
+    private function groqPredictionFallback(User $user, string $question, string $intent, string $language, array $memory, array $context, array $weather, array $yield, array $decision, array $warnings, array $quality, ?string $apiError, ?array $pythonResult): ?array
+    {
+        if (! $this->shouldAskGroqForPredictionFallback($quality, $apiError, $pythonResult)) {
+            return null;
+        }
+
+        return $this->groqChat->predictionFallback($user, $question, $intent, $language, $memory, [
+            'inputs_used' => Arr::only($context, ['rainfall', 'temp_avg', 'humidity', 'wind_speed', 'season', 'farm_type', 'area', 'barangay']),
+            'weather_prediction' => $weather,
+            'rice_yield_prediction' => $yield,
+            'risk' => $decision['risk'] ?? null,
+            'score' => $decision['score'] ?? null,
+            'planting_recommendation' => $decision['planting'] ?? null,
+            'irrigation_recommendation' => $decision['irrigation'] ?? null,
+            'yield_advisory' => $decision['yield'] ?? null,
+            'warnings' => $warnings,
+            'quality' => $quality,
+            'python_api_error' => $apiError,
+            'fallback_used' => $apiError !== null || ! $pythonResult || (($yield['fallback'] ?? false) === true),
+        ]);
+    }
+
+    private function shouldAskGroqForPredictionFallback(array $quality, ?string $apiError, ?array $pythonResult): bool
+    {
+        return $this->groqChat->available()
+            && (
+                $apiError !== null
+                || ! $pythonResult
+                || (($quality['score'] ?? 100) < 70)
+            );
     }
 
     private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt): array
@@ -138,10 +185,35 @@ class PredictionService
             ]);
         }
 
+        if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
+            return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Knowledge Base',
+                'source_name' => 'PalayPilot',
+                'source_url' => null,
+                'confidence_score' => 82,
+                'intent_detection' => $intentResult,
+            ]);
+        }
+
+        if ($groqAnswer = $this->groqChat->answer($user, $question, $intent, $language, $memory)) {
+            return $this->textResponse($groqAnswer['answer'], $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Generative AI',
+                'source_name' => $groqAnswer['source_name'],
+                'source_url' => null,
+                'confidence_score' => $groqAnswer['confidence'],
+                'intent_detection' => $intentResult,
+                'generative_ai' => [
+                    'provider' => 'Groq',
+                    'model' => $groqAnswer['model'],
+                    'usage' => $groqAnswer['usage'],
+                ],
+            ]);
+        }
+
         if (! $this->isSupportedNonPredictionQuestion($intent, $question)) {
             return $this->textResponse($this->unsupportedAnswer($language), $intent, $language, $memory, $startedAt, [
                 'source_type' => 'System Scope',
-                'source_name' => 'iClimate Assistant',
+                'source_name' => 'PalayPilot',
                 'source_url' => null,
                 'confidence_score' => 80,
                 'intent_detection' => $intentResult,
@@ -152,11 +224,26 @@ class PredictionService
 
         return $this->textResponse($localAnswer, $intent, $language, $memory, $startedAt, [
             'source_type' => 'Knowledge Base',
-            'source_name' => 'iClimate Assistant',
+            'source_name' => 'PalayPilot',
             'source_url' => null,
             'confidence_score' => 76,
             'intent_detection' => $intentResult,
         ]);
+    }
+
+    private function shouldUseLocalSystemAnswer(string $intent, string $question): bool
+    {
+        $text = str($question)->lower()->toString();
+
+        return $intent === IntentDetectionService::SYSTEM_HELP
+            && str($text)->contains([
+                'how do you gather',
+                'how do you get',
+                'how do you collect',
+                'where do you get',
+                'weather source',
+                'weather data source',
+            ]);
     }
 
     private function conversationMemory(User $user): array
@@ -197,7 +284,7 @@ class PredictionService
             if ($user->role !== User::ROLE_MAO) {
                 return [
                     'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_MAO, $user->role),
-                    'source_name' => 'iClimate Assistant',
+                    'source_name' => 'PalayPilot',
                     'confidence' => 85,
                 ];
             }
@@ -211,7 +298,7 @@ class PredictionService
             if ($user->role !== User::ROLE_IT_EXPERT) {
                 return [
                     'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_IT_EXPERT, $user->role),
-                    'source_name' => 'iClimate Assistant',
+                    'source_name' => 'PalayPilot',
                     'confidence' => 85,
                 ];
             }
@@ -335,15 +422,21 @@ class PredictionService
         $text = str($question)->lower()->toString();
 
         if ($intent === IntentDetectionService::GENERAL_CONVERSATION) {
-            if (str_contains($text, 'thank')|| str_contains($text, 'salamat')) {
+            if (str_contains($text, 'thank') || str_contains($text, 'salamat')) {
                 return str_contains($language, 'Tagalog')
                     ? 'Walang anuman! Tanong lang kung may kailangan ka pang malaman tungkol sa iClimate.'
                     : "You're welcome! Ask me anytime about weather, yield, planting, advisories, or your iClimate account.";
             }
 
             return str_contains($language, 'Tagalog')
-                ? 'Kumusta! Ako ang iClimate Assistant. Puwede kang magtanong tungkol sa panahon, ani, pagtatanim, irigasyon, advisory, o sistema.'
-                : 'Hello! I am the iClimate Assistant. Ask me about weather, yield, planting, irrigation, advisories, or how to use the system.';
+                ? 'Kumusta! Ako si PalayPilot, ang iClimate rice guidance assistant. Puwede kang magtanong tungkol sa panahon, ani, pagtatanim, irigasyon, advisory, o sistema.'
+                : 'Hello! I am PalayPilot, the iClimate rice guidance assistant. Ask me about weather, yield, planting, irrigation, advisories, or how to use the system.';
+        }
+
+        if ($intent === IntentDetectionService::SYSTEM_HELP && str($text)->contains(['weather', 'forecast', 'prediction'])) {
+            return str_contains($language, 'Tagalog')
+                ? 'Kinukuha ng iClimate ang weather inputs mula sa latest Open-Meteo forecast kapag available, at gumagamit din ng naka-save na climate records sa system bilang fallback o context. Pagkatapos, ipinapasa ang rainfall, temperature, humidity, wind speed, season, farm type, at farm area sa Predict.py/Python model at iClimate decision rules. Kung hindi maabot ang Python Farming AI API, gumagamit ang system ng local fallback rules para makapagbigay pa rin ng guidance. Hindi ako gumagawa ng sariling raw weather data; ipinapaliwanag at inaayos ko ang datos mula sa mga tool ng iClimate.'
+                : 'iClimate gathers weather inputs from the latest Open-Meteo forecast when available, then uses saved climate records in the system as fallback or context. It passes rainfall, temperature, humidity, wind speed, season, farm type, and farm area into Predict.py/Python models and iClimate decision rules. If the Python Farming AI API cannot be reached, the system uses local fallback rules so guidance is still available. I do not create raw weather data myself; I explain and organize the data from iClimate tools.';
         }
 
         if ($intent === IntentDetectionService::FARMING_ADVISORY || str_contains($text, 'fertilizer')) {
@@ -384,7 +477,10 @@ class PredictionService
             'prediction_result' => [
                 'intent_detection' => $metadata['intent_detection'] ?? null,
                 'knowledge_base_id' => $metadata['knowledge_base_id'] ?? null,
-                'answer_source' => 'Answered from iClimate system knowledge, saved records, or built-in rules.',
+                'generative_ai' => $metadata['generative_ai'] ?? null,
+                'answer_source' => isset($metadata['generative_ai'])
+                    ? 'Answered by Groq using the PalayPilot iClimate instructions.'
+                    : 'Answered from iClimate system knowledge, saved records, or built-in rules.',
             ],
             'weather_prediction' => null,
             'rice_yield_prediction' => null,
@@ -434,6 +530,7 @@ class PredictionService
 
     private function contextFor(User $user, string $question, array $memory = []): array
     {
+        $forecast = $this->latestWeatherForecast();
         $latest = ClimateRecord::query()->latest('record_date')->first();
         $previous = ClimateRecord::query()->latest('record_date')->skip(1)->first();
         $records = ClimateRecord::query()->latest('record_date')->take(6)->get();
@@ -442,8 +539,12 @@ class PredictionService
         $numbers = $this->numbersFrom($question);
         $conditions = $this->conditionsFrom($memoryText);
 
-        $rainfall = $numbers['rainfall'] ?? (float) ($latest?->rainfall ?? 180);
-        $temperature = $numbers['temperature'] ?? $conditions['temperature'] ?? (float) ($latest?->temperature ?? 29);
+        $rainfall = $numbers['rainfall'] ?? (float) ($forecast?->rainfall_mm ?? $latest?->rainfall ?? 180);
+        $temperature = $numbers['temperature'] ?? $conditions['temperature'] ?? (float) ($forecast?->temperature ?? $latest?->temperature ?? 29);
+        $humidity = $numbers['humidity'] ?? (float) ($forecast?->humidity ?? $latest?->humidity ?? 78);
+        $windSpeed = $numbers['wind_speed'] ?? (float) ($forecast?->wind_speed ?? $latest?->wind_speed ?? 8);
+        $season = $conditions['season']
+            ?? (string) ($latest?->season ?? $this->seasonForDate($forecast?->forecast_date?->toImmutable() ?? CarbonImmutable::now()));
 
         return [
             'rainfall' => $rainfall,
@@ -452,21 +553,51 @@ class PredictionService
             'area' => $numbers['area'] ?? (float) ($profile?->farm_area ?? 1),
             'previous_rainfall' => (float) ($previous?->rainfall ?? $rainfall),
             'previous_temp' => (float) ($previous?->temperature ?? $temperature),
-            'previous_humidity' => (float) ($previous?->humidity ?? $latest?->humidity ?? 78),
-            'previous_wind_speed' => (float) ($previous?->wind_speed ?? $latest?->wind_speed ?? 8),
+            'previous_humidity' => (float) ($previous?->humidity ?? $humidity),
+            'previous_wind_speed' => (float) ($previous?->wind_speed ?? $windSpeed),
             'rainfall_6m' => round((float) ($records->avg('rainfall') ?: $rainfall), 2),
             'temp_3m' => round((float) ($records->take(3)->avg('temperature') ?: $temperature), 2),
             'temp_6m' => round((float) ($records->avg('temperature') ?: $temperature), 2),
             'seasonal_rainfall' => round((float) (($records->sum('rainfall') ?: $rainfall * 6)), 2),
             'seasonal_temp' => round((float) ($records->avg('temperature') ?: $temperature), 2),
-            'humidity' => $numbers['humidity'] ?? (float) ($latest?->humidity ?? 78),
-            'wind_speed' => $numbers['wind_speed'] ?? (float) ($latest?->wind_speed ?? 8),
-            'season' => $conditions['season'] ?? (string) ($latest?->season ?? ClimateRecord::SEASON_WET),
+            'humidity' => $humidity,
+            'wind_speed' => $windSpeed,
+            'season' => $season,
             'farm_type' => $conditions['farm_type'] ?? (string) ($profile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED),
             'barangay' => (string) ($profile?->barangay ?? $user->barangay ?? ''),
             'month_num' => CarbonImmutable::now()->month,
-            'source_notes' => $this->sourceNotes($numbers, $conditions, $latest),
+            'source_notes' => $this->sourceNotes($numbers, $conditions, $latest, $forecast),
         ];
+    }
+
+    private function latestWeatherForecast(): ?ExternalWeatherData
+    {
+        $latestFetch = ExternalWeatherData::query()
+            ->where('source', 'Open-Meteo')
+            ->max('fetched_at');
+
+        if (! $latestFetch) {
+            return null;
+        }
+
+        return ExternalWeatherData::query()
+            ->where('source', 'Open-Meteo')
+            ->where('fetched_at', $latestFetch)
+            ->whereDate('forecast_date', '>=', CarbonImmutable::today())
+            ->orderBy('forecast_date')
+            ->first()
+            ?? ExternalWeatherData::query()
+                ->where('source', 'Open-Meteo')
+                ->where('fetched_at', $latestFetch)
+                ->orderByDesc('forecast_date')
+                ->first();
+    }
+
+    private function seasonForDate(CarbonImmutable $date): string
+    {
+        return $date->month >= 5 && $date->month <= 10
+            ? ClimateRecord::SEASON_WET
+            : ClimateRecord::SEASON_DRY;
     }
 
     private function numbersFrom(string $question): array
@@ -524,7 +655,7 @@ class PredictionService
         return $conditions;
     }
 
-    private function sourceNotes(array $numbers, array $conditions, ?ClimateRecord $latest): array
+    private function sourceNotes(array $numbers, array $conditions, ?ClimateRecord $latest, ?ExternalWeatherData $forecast): array
     {
         $notes = [];
 
@@ -540,9 +671,13 @@ class PredictionService
             }
         }
 
-        $notes[] = $latest
-            ? 'Missing weather values used the latest climate record from '.$latest->record_date?->format('M d, Y').'.'
-            : 'Missing weather values used safe default planning values.';
+        if ($forecast) {
+            $notes[] = 'Missing weather values used the latest Open-Meteo forecast for '.$forecast->forecast_date?->format('M d, Y').', fetched '.$forecast->fetched_at?->format('M d, Y H:i').'.';
+        } elseif ($latest) {
+            $notes[] = 'Missing weather values used the latest climate record from '.$latest->record_date?->format('M d, Y').'.';
+        } else {
+            $notes[] = 'Missing weather values used safe default planning values.';
+        }
 
         return $notes;
     }
@@ -561,6 +696,85 @@ class PredictionService
             'predicted_weather' => $weather,
             'confidence' => 62,
             'explanation' => 'Generated from decision rules because the Python Flask API could not provide the weather model output.',
+        ];
+    }
+
+    private function fallbackYield(array $context, array $modelYield = []): array
+    {
+        $records = RiceProduction::query()
+            ->when($context['barangay'] !== '', fn ($query) => $query->where('barangay', $context['barangay']))
+            ->where('season', $context['season'])
+            ->whereNotNull('yield_per_hectare')
+            ->latest('year')
+            ->take(5)
+            ->get();
+
+        if ($records->isEmpty()) {
+            $records = RiceProduction::query()
+                ->where('season', $context['season'])
+                ->whereNotNull('yield_per_hectare')
+                ->latest('year')
+                ->take(8)
+                ->get();
+        }
+
+        $baseYield = $records->isNotEmpty()
+            ? (float) $records->avg('yield_per_hectare')
+            : (strtolower((string) $context['season']) === 'dry' ? 3.6 : 4.1);
+
+        $adjustment = 0.0;
+        $rainfall = (float) $context['rainfall'];
+        $temperature = (float) $context['temp_avg'];
+        $humidity = (float) $context['humidity'];
+        $windSpeed = (float) $context['wind_speed'];
+        $farmType = strtolower((string) $context['farm_type']);
+        $season = strtolower((string) $context['season']);
+
+        $adjustment += match (true) {
+            $rainfall < 80 => -0.8,
+            $rainfall < 120 => -0.35,
+            $rainfall >= 180 && $rainfall <= 280 => 0.25,
+            $rainfall > 350 => -0.65,
+            $rainfall > 300 => -0.35,
+            default => 0.0,
+        };
+
+        $adjustment += match (true) {
+            $temperature > 34 => -0.4,
+            $temperature > 32 => -0.2,
+            $temperature < 22 => -0.25,
+            default => 0.0,
+        };
+
+        if ($humidity > 92) {
+            $adjustment -= 0.15;
+        }
+
+        if ($windSpeed > 30) {
+            $adjustment -= 0.25;
+        } elseif ($windSpeed > 20) {
+            $adjustment -= 0.1;
+        }
+
+        if ($farmType === 'irrigated') {
+            $adjustment += 0.15;
+        } elseif ($farmType === 'rainfed' && $season === 'dry') {
+            $adjustment -= 0.25;
+        }
+
+        $predictedYield = max(1.2, min(6.5, $baseYield + $adjustment));
+
+        return [
+            ...$modelYield,
+            'predicted_yield' => round($predictedYield, 2),
+            'unit' => $modelYield['unit'] ?? 'tons/hectare',
+            'confidence' => $records->count() >= 2 ? 68 : 56,
+            'fallback' => true,
+            'fallback_note' => 'Estimated locally because the Python yield model did not return a numeric value.',
+            'explanation' => 'Fallback estimate based on recent rice production records when available, then adjusted for rainfall, temperature, humidity, wind, farm type, and season.',
+            'records_used' => $records->count(),
+            'base_yield' => round($baseYield, 2),
+            'climate_adjustment' => round($adjustment, 2),
         ];
     }
 
@@ -589,6 +803,22 @@ class PredictionService
                 'metadata' => [
                     'applied' => false,
                     'reason' => 'No numeric model yield was returned.',
+                ],
+            ];
+        }
+
+        if (($yield['fallback'] ?? false) === true) {
+            return [
+                'yield' => [
+                    ...$yield,
+                    'raw_predicted_yield' => round((float) $predicted, 2),
+                    'calibrated' => false,
+                ],
+                'metadata' => [
+                    'applied' => false,
+                    'records_used' => $yield['records_used'] ?? 0,
+                    'reason' => 'Yield was estimated by local fallback rules because no numeric model yield was returned.',
+                    'fallback' => true,
                 ],
             ];
         }
@@ -661,7 +891,9 @@ class PredictionService
             $issues[] = 'No direct machine-learning response was available.';
         }
 
-        if (($calibration['metadata']['applied'] ?? false) === false) {
+        if (($calibration['metadata']['fallback'] ?? false) === true) {
+            $issues[] = $calibration['metadata']['reason'] ?? 'Local fallback yield estimate was used.';
+        } elseif (($calibration['metadata']['applied'] ?? false) === false) {
             $issues[] = $calibration['metadata']['reason'] ?? 'No local calibration was applied.';
         }
 
@@ -771,9 +1003,17 @@ class PredictionService
         $tagalog = $this->isTagalog($language);
         $parts = [];
         $parts[] = $tagalog ? 'Sinuri ko ang tanong gamit ang mga input na ito: '.$insights['input_summary'] : 'I checked the question against these inputs: '.$insights['input_summary'];
+        $yieldPhrase = ($yield['fallback'] ?? false) === true
+            ? (isset($yield['predicted_yield']) && $yield['predicted_yield'] !== null
+                ? ($tagalog ? 'gumamit ng fallback estimate na ' : 'used a fallback estimate of ').number_format((float) $yield['predicted_yield'], 2).' tons/hectare'
+                : ($tagalog ? 'gumamit ng fallback estimate pero walang numeric value' : 'used fallback rules but did not produce a numeric value'))
+            : (isset($yield['predicted_yield']) && $yield['predicted_yield'] !== null
+                ? ($tagalog ? 'nag-estimate ng ' : 'estimated ').number_format((float) $yield['predicted_yield'], 2).' tons/hectare'
+                : ($tagalog ? 'walang naibalik na numeric yield estimate' : 'did not return a numeric yield estimate'));
+
         $parts[] = $tagalog
-            ? 'Ayon sa weather model, '.$this->weatherLabel($weather['predicted_weather'] ?? null, $language).' ang kondisyon; ang yield model naman ay '.(isset($yield['predicted_yield']) && $yield['predicted_yield'] !== null ? 'nag-estimate ng '.number_format((float) $yield['predicted_yield'], 2).' tons/hectare' : 'walang naibalik na numeric yield estimate').'.'
-            : 'The weather model indicates '.$weather['predicted_weather'].', while the yield model '.(isset($yield['predicted_yield']) && $yield['predicted_yield'] !== null ? 'estimated '.number_format((float) $yield['predicted_yield'], 2).' tons/hectare' : 'did not return a numeric yield estimate').'.';
+            ? 'Ayon sa weather model, '.$this->weatherLabel($weather['predicted_weather'] ?? null, $language).' ang kondisyon; ang yield model naman ay '.$yieldPhrase.'.'
+            : 'The weather model indicates '.$weather['predicted_weather'].', while the yield model '.$yieldPhrase.'.';
         $parts[] = $tagalog ? 'Sinuri rin ng decision rules ang tagtuyot, malakas na ulan, init, humidity, pangangailangan sa patubig, inaasahang ani, at stress factors bago pumili ng rekomendasyon.' : 'The decision rules checked drought, heavy rainfall, heat, humidity, irrigation need, expected yield, and stress factors before choosing the recommendation.';
 
         if ($insights['reasons'] !== []) {

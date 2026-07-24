@@ -7,6 +7,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Advisories\AdvisoryGenerationService;
 use App\Services\Advisories\AdvisoryRuleEngine;
+use App\Services\Advisories\PagasaAdvisoryService;
 use App\Services\Weather\OpenMeteoService;
 use Database\Seeders\AdvisoryRuleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -98,6 +99,152 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
             'title' => 'Potentially Favorable Planting Conditions',
             'advisory_type' => 'planting',
         ]);
+    }
+
+    public function test_realtime_generation_creates_hourly_daily_weekly_and_monthly_advisory_horizons(): void
+    {
+        User::factory()->maoPersonnel()->create();
+        $this->seed(AdvisoryRuleSeeder::class);
+
+        $records = collect(range(1, 16))->map(fn ($day) => ExternalWeatherData::query()->create($this->weatherRecord([
+            'forecast_date' => now()->addDays($day - 1)->toDateString(),
+            'rainfall_mm' => 38,
+            'precipitation_probability' => 86,
+        ])));
+
+        $result = app(AdvisoryRuleEngine::class)->generate($records, [
+            'weather_freshness' => 'fresh',
+            'harvest_ready' => false,
+            'advisory_horizons' => ['hourly', 'daily', 'weekly', 'monthly'],
+        ]);
+
+        $this->assertGreaterThanOrEqual(4, $result['advisories_created']);
+
+        foreach (['hourly', 'daily', 'weekly', 'monthly'] as $horizon) {
+            $this->assertDatabaseHas('planting_advisories', [
+                'advisory_type' => 'climate',
+                'generated_automatically' => true,
+            ]);
+
+            $this->assertTrue(
+                PlantingAdvisory::query()->where('metadata->advisory_horizon', $horizon)->exists(),
+                "Expected an advisory for the {$horizon} horizon."
+            );
+        }
+    }
+
+    public function test_realtime_generation_populates_baseline_advisories_when_no_rule_matches(): void
+    {
+        User::factory()->maoPersonnel()->create();
+        $this->seed(AdvisoryRuleSeeder::class);
+
+        $records = collect(range(1, 16))->map(fn ($day) => ExternalWeatherData::query()->create($this->weatherRecord([
+            'forecast_date' => now()->addDays($day - 1)->toDateString(),
+            'rainfall_mm' => 0,
+            'precipitation_probability' => 5,
+            'temperature_max' => 29,
+            'evapotranspiration_mm' => 2,
+            'soil_moisture' => 0.25,
+        ])));
+
+        $result = app(AdvisoryRuleEngine::class)->generate($records, [
+            'weather_freshness' => 'fresh',
+            'harvest_ready' => false,
+            'advisory_horizons' => ['hourly', 'daily', 'weekly', 'monthly'],
+        ]);
+
+        $this->assertSame(4, $result['advisories_created']);
+
+        foreach (['hourly', 'daily', 'weekly', 'monthly'] as $horizon) {
+            $this->assertTrue(
+                PlantingAdvisory::query()
+                    ->where('metadata->advisory_horizon', $horizon)
+                    ->where('metadata->baseline_advisory', true)
+                    ->exists(),
+                "Expected a baseline advisory for the {$horizon} horizon."
+            );
+        }
+    }
+
+    public function test_pagasa_service_stores_official_lian_batangas_online_advisory(): void
+    {
+        User::factory()->maoPersonnel()->create();
+
+        Http::fake([
+            'bagong.pagasa.dost.gov.ph/*' => Http::response('<html><body>Heavy Rainfall Warning No. 5 ORANGE WARNING LEVEL: Batangas(Lian, Nasugbu, Tuy). ASSOCIATED HAZARD: FLOODING is THREATENING in low lying areas.</body></html>', 200),
+            'pagasa.dost.gov.ph/*' => Http::response('<html><body>Weather outlook for Batangas: cloudy skies with scattered rainshowers and thunderstorms.</body></html>', 200),
+        ]);
+
+        $result = app(PagasaAdvisoryService::class)->fetchAndStore(true);
+
+        $this->assertSame(2, $result['advisories_created']);
+        $this->assertDatabaseHas('planting_advisories', [
+            'source' => 'PAGASA',
+            'advisory_type' => 'climate',
+            'status' => 'published',
+        ]);
+        $this->assertTrue(PlantingAdvisory::query()->where('metadata->official_source', true)->exists());
+        $this->assertTrue(PlantingAdvisory::query()->where('metadata->pagasa_location_match', 'Lian, Batangas')->exists());
+    }
+
+    public function test_pagasa_service_ignores_online_content_without_lian_or_batangas(): void
+    {
+        User::factory()->maoPersonnel()->create();
+
+        Http::fake([
+            'bagong.pagasa.dost.gov.ph/*' => Http::response('<html><body>Rainfall advisory for Metro Manila only.</body></html>', 200),
+            'pagasa.dost.gov.ph/*' => Http::response('<html><body>Weather outlook for Northern Luzon.</body></html>', 200),
+        ]);
+
+        $result = app(PagasaAdvisoryService::class)->fetchAndStore(true);
+
+        $this->assertSame(0, $result['advisories_created']);
+        $this->assertSame(2, $result['sources_without_lian_batangas_match']);
+        $this->assertDatabaseMissing('planting_advisories', [
+            'source' => 'PAGASA',
+        ]);
+    }
+
+    public function test_pagasa_service_targets_one_lian_barangay_when_named_online(): void
+    {
+        User::factory()->maoPersonnel()->create();
+
+        Http::fake([
+            'bagong.pagasa.dost.gov.ph/*' => Http::response('<html><body>Thunderstorm Advisory: Moderate to heavy rainshowers are expected over Lian, Batangas, especially Matabungkay, within the next 2 hours.</body></html>', 200),
+            'pagasa.dost.gov.ph/*' => Http::response('<html><body>No Batangas outlook today.</body></html>', 200),
+        ]);
+
+        app(PagasaAdvisoryService::class)->fetchAndStore(true);
+
+        $this->assertDatabaseHas('planting_advisories', [
+            'source' => 'PAGASA',
+            'target_barangay' => 'Matabungkay',
+            'target_scope' => 'barangay',
+        ]);
+        $this->assertContains(
+            'Matabungkay',
+            PlantingAdvisory::query()->where('target_barangay', 'Matabungkay')->firstOrFail()->metadata['pagasa_barangay_matches']
+        );
+    }
+
+    public function test_pagasa_service_keeps_all_barangays_when_multiple_lian_barangays_are_named_online(): void
+    {
+        User::factory()->maoPersonnel()->create();
+
+        Http::fake([
+            'bagong.pagasa.dost.gov.ph/*' => Http::response('<html><body>Rainfall Advisory: Lian, Batangas barangays Matabungkay and Binubusan may experience moderate to heavy rainfall.</body></html>', 200),
+            'pagasa.dost.gov.ph/*' => Http::response('<html><body>No Batangas outlook today.</body></html>', 200),
+        ]);
+
+        app(PagasaAdvisoryService::class)->fetchAndStore(true);
+
+        $this->assertDatabaseHas('planting_advisories', [
+            'source' => 'PAGASA',
+            'target_barangay' => null,
+            'target_scope' => 'municipality',
+        ]);
+        $this->assertTrue(PlantingAdvisory::query()->whereJsonContains('metadata->pagasa_barangay_matches', 'Matabungkay')->exists());
+        $this->assertTrue(PlantingAdvisory::query()->whereJsonContains('metadata->pagasa_barangay_matches', 'Binubusan')->exists());
     }
 
     public function test_harvest_advisory_is_not_generated_without_harvest_ready_crop_data(): void

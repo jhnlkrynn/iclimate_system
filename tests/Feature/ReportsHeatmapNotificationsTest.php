@@ -6,7 +6,7 @@ use App\Models\ClimateRecord;
 use App\Models\FeedPost;
 use App\Models\HeatmapArea;
 use App\Models\Notification;
-use App\Models\Report;
+use App\Models\PlantingAdvisory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,17 +36,51 @@ class ReportsHeatmapNotificationsTest extends TestCase
         ]))->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     }
 
+    public function test_rice_production_rejects_invalid_barangay_season_and_irrigation(): void
+    {
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($mao)->post(route('rice-productions.store'), [
+            'barangay' => 'Not A Lian Barangay',
+            'season' => 'Summer',
+            'irrigation_type' => 'Unknown',
+            'yield_per_hectare' => 4.2,
+            'area_hectares' => 10,
+            'total_production' => 42,
+            'year' => 2026,
+        ])->assertSessionHasErrors(['barangay', 'season', 'irrigation_type']);
+    }
+
     public function test_heatmap_index_displays_risk_cards(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         HeatmapArea::factory()->create(['barangay' => 'Matabungkay', 'risk_level' => 'Severe', 'risk_type' => 'Flood']);
+        PlantingAdvisory::query()->create([
+            'title' => 'PAGASA Lian Heavy Rainfall Advisory',
+            'content' => 'Official PAGASA advisory detected for Lian, Batangas.',
+            'message' => 'Official PAGASA advisory detected for Lian, Batangas.',
+            'type' => 'Climate',
+            'advisory_type' => 'climate',
+            'summary' => 'Official PAGASA advisory detected for Lian, Batangas.',
+            'severity' => 'high',
+            'target_scope' => 'municipality',
+            'source' => 'PAGASA',
+            'source_url' => 'https://www.pagasa.dost.gov.ph/?vm=r',
+            'status' => 'published',
+            'valid_from' => now()->subMinute(),
+            'valid_until' => now()->addHours(6),
+            'posted_by' => $mao->id,
+        ]);
 
         $this->actingAs($mao)
             ->get(route('heatmap-areas.index'))
             ->assertOk()
             ->assertSee('Matabungkay')
             ->assertSee('Severe')
-            ->assertSee('Flood');
+            ->assertSee('Flood')
+            ->assertSee('PAGASA Official Source')
+            ->assertSee('View PAGASA Map')
+            ->assertSee('PAGASA Lian Heavy Rainfall Advisory');
     }
 
     public function test_mao_can_send_notifications_to_farmers_and_farmer_can_mark_read(): void

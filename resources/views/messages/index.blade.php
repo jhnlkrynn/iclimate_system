@@ -35,8 +35,23 @@
         .mine .bubble { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
         .msg-meta { color:var(--msg-muted); font-family:'DM Mono', monospace; font-size:.7rem; letter-spacing:.02em; margin-top:.3rem; }
         .mine .msg-meta { color:rgba(255,255,255,.72); }
+        .msg-actions { display:flex; justify-content:flex-end; margin-top:.5rem; }
+        .msg-unsend { border:1px solid rgba(255,255,255,.52); border-radius:999px; background:rgba(255,255,255,.14); color:#fff; font-family:'DM Mono', monospace; font-size:.68rem; font-weight:700; padding:.22rem .55rem; line-height:1.2; }
+        .msg-unsend:hover { background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.82); color:#fff; text-decoration:none; }
         .msg-compose { padding:1rem; border-top:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); }
         .msg-empty { flex:1 1 auto; min-height:420px; display:grid; place-items:center; padding:2rem; }
+        .unsend-confirm { position:fixed; inset:0; z-index:2300; display:none; place-items:center; padding:1rem; background:rgba(13,31,24,.48); backdrop-filter:blur(5px); }
+        .unsend-confirm.show { display:grid; }
+        .unsend-card { width:min(420px,100%); overflow:hidden; border:1px solid rgba(212,237,218,.9); border-radius:20px; background:linear-gradient(145deg,#fff,#f7fbf8); box-shadow:0 1.4rem 3.4rem rgba(13,31,24,.34); }
+        .unsend-card::before { content:""; display:block; height:7px; background:linear-gradient(90deg,#d85b45,#e8a73d,#52b788); }
+        .unsend-body { display:grid; grid-template-columns:auto minmax(0,1fr); gap:.85rem; padding:1.05rem; }
+        .unsend-icon { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:#fff0ea; color:#d85b45; font-weight:900; font-size:1.25rem; }
+        .unsend-title { margin:0 0 .3rem; color:#0d1f18; font-size:1.08rem; font-weight:900; }
+        .unsend-text { margin:0; color:#3d5a48; line-height:1.45; }
+        .unsend-actions { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; padding:0 1.05rem 1.05rem; }
+        .unsend-cancel, .unsend-submit { border:0; border-radius:999px; padding:.72rem 1rem; font-weight:900; }
+        .unsend-cancel { background:#f0f7f4; color:#1a3a2a; }
+        .unsend-submit { background:#d85b45; color:#fff; box-shadow:0 .75rem 1.45rem rgba(216,91,69,.22); }
         .msg-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
         .msg-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
         @media (max-width:1199.98px) {
@@ -52,7 +67,14 @@
             .thread-list { max-height:300px; }
             .bubble { max-width:92%; overflow-wrap:anywhere; }
             .msg-compose { padding:.75rem; }
+            .msg-compose .row > * { width:100%; }
             .msg-empty { min-height:300px; padding:1.25rem; }
+        }
+        @media (max-width:420px) {
+            .msg-hero { border-radius:18px; }
+            .msg-shell { gap:.75rem; }
+            .bubble { max-width:100%; }
+            .unsend-actions { grid-template-columns:1fr; }
         }
     </style>
 
@@ -147,6 +169,13 @@
                                         <a class="{{ $message->sender_id === auth()->id() ? 'text-white' : '' }}" href="{{ asset('storage/'.$message->attachment_path) }}" target="_blank">{{ $message->attachment_name }}</a>
                                     @endif
                                     <div class="msg-meta">{{ $message->sender?->name }} | {{ $message->created_at?->format('M d, h:i A') }}</div>
+                                    @if($message->sender_id === auth()->id())
+                                        <form class="msg-actions" method="POST" action="{{ route('messages.destroy-message', [$activeConversation, $message]) }}" data-unsend-form>
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="msg-unsend" type="submit">Unsend</button>
+                                        </form>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -168,10 +197,57 @@
             </main>
         </div>
     </div>
+    <div id="unsendConfirm" class="unsend-confirm" role="alertdialog" aria-modal="true" aria-labelledby="unsendConfirmTitle">
+        <div class="unsend-card">
+            <div class="unsend-body">
+                <div class="unsend-icon" aria-hidden="true">!</div>
+                <div>
+                    <h2 id="unsendConfirmTitle" class="unsend-title">Unsend this message?</h2>
+                    <p class="unsend-text">This will permanently delete your message from this conversation. Attachments sent with it will also be removed.</p>
+                </div>
+            </div>
+            <div class="unsend-actions">
+                <button type="button" class="unsend-cancel" data-unsend-cancel>Cancel</button>
+                <button type="button" class="unsend-submit" data-unsend-submit>Unsend Message</button>
+            </div>
+        </div>
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const chat = document.getElementById('chatWindow');
             if (chat) chat.scrollTop = chat.scrollHeight;
+
+            const modal = document.getElementById('unsendConfirm');
+            const cancel = modal?.querySelector('[data-unsend-cancel]');
+            const submit = modal?.querySelector('[data-unsend-submit]');
+            let pendingForm = null;
+
+            const close = () => {
+                modal?.classList.remove('show');
+                pendingForm = null;
+            };
+
+            document.querySelectorAll('[data-unsend-form]').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    if (form.dataset.confirmed === 'true') return;
+                    event.preventDefault();
+                    pendingForm = form;
+                    modal?.classList.add('show');
+                });
+            });
+
+            cancel?.addEventListener('click', close);
+            modal?.addEventListener('click', (event) => {
+                if (event.target === modal) close();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && modal?.classList.contains('show')) close();
+            });
+            submit?.addEventListener('click', () => {
+                if (!pendingForm) return;
+                pendingForm.dataset.confirmed = 'true';
+                pendingForm.submit();
+            });
         });
     </script>
 </x-app-layout>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ClimateRecord;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -10,12 +11,14 @@ Artisan::command('inspire', function () {
 Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly Data CSV}', function (string $path): int {
     if (! is_file($path)) {
         $this->error("CSV file not found: {$path}");
+
         return self::FAILURE;
     }
 
     $handle = fopen($path, 'rb');
     if ($handle === false) {
         $this->error("Unable to open CSV file: {$path}");
+
         return self::FAILURE;
     }
 
@@ -23,6 +26,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
     if ($header === false) {
         fclose($handle);
         $this->error('CSV file is empty.');
+
         return self::FAILURE;
     }
 
@@ -33,6 +37,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
     if ($missing !== []) {
         fclose($handle);
         $this->error('Missing required CSV columns: '.implode(', ', $missing));
+
         return self::FAILURE;
     }
 
@@ -47,6 +52,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
 
             if ($year < 1900 || $month < 1 || $month > 12) {
                 $skipped++;
+
                 continue;
             }
 
@@ -57,7 +63,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
             $windSpeed = (float) ($row[$indexes['WIND_SPEED']] ?? 0);
             $recordDate = sprintf('%04d-%02d-01', $year, $month);
 
-            \App\Models\ClimateRecord::query()->updateOrCreate(
+            ClimateRecord::query()->updateOrCreate(
                 [
                     'record_date' => $recordDate,
                     'source' => 'PAGASA Lian Monthly Data',
@@ -68,8 +74,8 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
                     'humidity' => $humidity,
                     'wind_speed' => $windSpeed,
                     'season' => in_array($month, [5, 6, 7, 8, 9, 10], true)
-                        ? \App\Models\ClimateRecord::SEASON_WET
-                        : \App\Models\ClimateRecord::SEASON_DRY,
+                        ? ClimateRecord::SEASON_WET
+                        : ClimateRecord::SEASON_DRY,
                 ],
             );
 
@@ -90,14 +96,19 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
     return self::SUCCESS;
 })->purpose('Import Ambulong monthly climate CSV data into climate_records');
 
-Schedule::command('iclimate:fetch-weather')
-    ->hourly()
-    ->withoutOverlapping();
+$automationLog = storage_path('logs/automation.log');
 
-Schedule::command('iclimate:generate-advisories')
-    ->hourlyAt(5)
-    ->withoutOverlapping();
-
-Schedule::command('iclimate:expire-advisories')
+Schedule::command('iclimate:automation-run --force-weather')
     ->everyThirtyMinutes()
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
+
+Schedule::command('iclimate:refresh-lian-weather')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
+
+Schedule::command('iclimate:refresh-lian-boundaries')
+    ->daily()
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);

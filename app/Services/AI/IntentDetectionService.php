@@ -2,24 +2,42 @@
 
 namespace App\Services\AI;
 
+use App\Support\LianBarangays;
+
 class IntentDetectionService
 {
     public const WEATHER_PREDICTION = 'Weather Prediction';
+
     public const RICE_YIELD_PREDICTION = 'Rice Yield Prediction';
+
     public const PLANTING_RECOMMENDATION = 'Planting Recommendation';
+
     public const IRRIGATION_RECOMMENDATION = 'Irrigation Recommendation';
+
     public const CLIMATE_RISK = 'Climate Risk';
+
     public const FARMING_ADVISORY = 'Farming Advisory';
+
     public const ANNOUNCEMENT = 'Announcement';
+
     public const NOTIFICATION = 'Notification';
+
     public const CALENDAR = 'Calendar';
+
     public const USER_PROFILE = 'User Profile';
+
     public const SYSTEM_HELP = 'System Help';
+
     public const GENERAL_AGRICULTURE = 'General Agriculture';
+
     public const GENERAL_CONVERSATION = 'General Conversation';
+
     public const GENERAL_KNOWLEDGE = 'General Knowledge';
+
     public const BARANGAY_INFO = 'Barangay Info';
+
     public const MAO_REPORTS = 'MAO Reports';
+
     public const IT_SYSTEM_STATUS = 'IT System Status';
 
     public function detect(string $question, array $memory = []): array
@@ -36,7 +54,11 @@ class IntentDetectionService
 
         $scores = [
             self::WEATHER_PREDICTION => $this->score($text, ['rain', 'rainfall', 'weather', 'forecast', 'ulan', 'uulan', 'maulan', 'bagyo', 'storm', 'wind', 'hangin', 'humidity', 'temperature', 'will it rain']),
-            self::RICE_YIELD_PREDICTION => $this->score($text, ['yield', 'harvest', 'production', 'ani', 'aanihin', 'anihin', 'tons', 'tonelada', 'palay', 'expected yield']),
+            self::RICE_YIELD_PREDICTION => $this->score($text, ['yield', 'harvest', 'production', 'ani', 'aanihin', 'anihin', 'tons', 'tonelada', 'palay', 'expected yield'])
+                + (str_contains($text, 'predicted rice yield') ? 6 : 0)
+                + (str_contains($text, 'predicted yield') ? 3 : 0)
+                + (str_contains($text, 'rice yield') ? 3 : 0)
+                + (str_contains($text, 'my rice yield') ? 3 : 0),
             self::PLANTING_RECOMMENDATION => $this->score($text, ['plant', 'planting', 'transplant', 'seedling', 'sow', 'punla', 'tanim', 'magtanim', 'itanim']) + (str_contains($text, 'should i plant') ? 2 : 0) + (str_contains($text, 'magtanim') ? 3 : 0),
             self::IRRIGATION_RECOMMENDATION => $this->score($text, ['irrigat', 'water', 'tubig', 'patubig', 'dilig', 'diligan', 'canal', 'rainfed', 'irrigated']) + (str_contains($text, 'should i irrigate') ? 3 : 0),
             self::CLIMATE_RISK => $this->score($text, ['risk', 'warning', 'babala', 'drought', 'flood', 'heat', 'tagtuyot', 'baha', 'init', 'water shortage']) - (str_contains($text, 'heat map') || str_contains($text, 'heatmap') ? 1 : 0),
@@ -70,7 +92,7 @@ class IntentDetectionService
             self::GENERAL_CONVERSATION => $this->score($text, ['hello', 'hi', 'kumusta', 'salamat', 'thanks', 'good morning']),
             self::BARANGAY_INFO => $this->score($text, [
                 'barangay', 'brgy', 'which barangay', 'anong barangay',
-                ...array_map(static fn (string $barangay): string => strtolower($barangay), \App\Support\LianBarangays::all()),
+                ...array_map(static fn (string $barangay): string => strtolower($barangay), LianBarangays::all()),
             ]),
             self::MAO_REPORTS => $this->score($text, [
                 'generate report', 'production summary', 'annual report', 'yield report', 'weather report',
@@ -176,6 +198,17 @@ class IntentDetectionService
     {
         return str($text)->contains([
             'how do you predict',
+            'how do you gather',
+            'how does iclimate gather',
+            'how does the system gather',
+            'where do you get weather',
+            'where does iclimate get weather',
+            'where does the system get weather',
+            'how do you get weather',
+            'how do you collect weather',
+            'how does iclimate collect weather',
+            'weather data source',
+            'weather source',
             'how does iclimate predict',
             'how does the system predict',
             'how is weather predicted',

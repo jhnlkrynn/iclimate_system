@@ -1,12 +1,92 @@
 <x-app-layout>
     @include('layouts.partials.dark-workspace')
+    <style>
+        .advisory-safety-card {
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            border: 1px solid rgba(255,209,102,.48);
+            border-radius: 14px;
+            background:
+                linear-gradient(135deg, rgba(232,167,61,.24) 0%, rgba(18,43,32,.98) 42%, rgba(7,25,18,.99) 100%),
+                #0d1f18;
+            color: #fff;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(13,31,24,.12);
+        }
+        .advisory-safety-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 8% 35%, rgba(255,232,163,.16), transparent 18rem),
+                radial-gradient(circle at 92% 85%, rgba(82,183,136,.22), transparent 16rem);
+        }
+        .advisory-safety-card > * { position: relative; z-index: 1; }
+        .advisory-safety-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #74c69d;
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+        .advisory-safety-eyebrow::before {
+            content: "";
+            width: 20px;
+            height: 1px;
+            background: #74c69d;
+        }
+        .advisory-safety-card h2 {
+            color: #fff;
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.1rem;
+            margin: .75rem 0 .35rem;
+        }
+        .advisory-safety-card p {
+            color: rgba(255,255,255,.68);
+            line-height: 1.55;
+            margin: 0;
+        }
+        .advisory-safety-status {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .42rem .7rem;
+            background: rgba(82,183,136,.18);
+            color: #74c69d;
+            font-size: .78rem;
+            font-weight: 900;
+        }
+        .advisory-safety-status.needs-help {
+            background: rgba(255,209,102,.16);
+            color: #ffe8a3;
+        }
+        .advisory-safety-note {
+            min-height: 74px;
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 10px;
+            background: rgba(255,255,255,.06);
+            color: #fff;
+            padding: .7rem .85rem;
+        }
+        .advisory-safety-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .6rem;
+        }
+    </style>
     <div class="dark-workspace">
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
                 <div class="eyebrow mb-2">Forecast-Based Guidance</div>
                 <h1 class="h2 fw-bold mb-2">Agricultural Advisories</h1>
-                <p class="mb-0 text-white-50">View climate, planting, harvesting, and irrigation guidance based on current forecast conditions.</p>
+                <p class="mb-0 text-white-50">View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
             </div>
             @if($canManage)
                 <div class="d-flex flex-wrap gap-2 action-cluster">
@@ -21,11 +101,14 @@
         <div class="col-lg-4">
             <div class="card no-lift h-100">
                 <div class="card-body">
-                    <div class="stat-label">Last Weather Update</div>
-                    <div class="h5 fw-bold mt-2 mb-1">{{ $lastWeather?->fetched_at?->format('F d, Y, g:i A') ?? 'No weather data yet' }}</div>
-                    <div class="text-muted small">Forecast source: Open-Meteo</div>
+                    <div class="stat-label">Latest PAGASA Online Advisory</div>
+                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->format('F d, Y, g:i A') ?? 'No PAGASA match yet' }}</div>
+                    <div class="text-muted small">Official source: PAGASA, filtered for Lian/Batangas</div>
                     @if($lastWeather)
-                        <span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }} mt-2">{{ str($lastWeather->freshnessLabel())->headline() }}</span>
+                        <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->format('M d, g:i A') }}</div>
+                    @endif
+                    @if($latestPagasaAdvisory)
+                        <span class="badge text-bg-success mt-2">PAGASA Active</span>
                     @endif
                 </div>
             </div>
@@ -35,17 +118,41 @@
                 <div class="card-body">
                     <div class="stat-label">Advisories Generated</div>
                     <div class="h3 fw-bold mt-2 mb-1">{{ number_format($activeCount) }}</div>
-                    <div class="text-muted small">Active published advisories available now.</div>
+                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} active advisory records are from PAGASA.</div>
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="card no-lift h-100">
-                <div class="card-body">
-                    <div class="stat-label">Safety Reminder</div>
-                    <div class="text-muted mt-2">Generated advisories support planning. Follow official PAGASA and LGU warnings during severe weather.</div>
+            @if($activeTyphoonSafetyEvent)
+                <div class="advisory-safety-card" aria-labelledby="typhoonSafetyTitle">
+                    <div class="advisory-safety-eyebrow">Typhoon safety check</div>
+                    <h2 id="typhoonSafetyTitle">Are you safe right now?</h2>
+                    <p>{{ $activeTyphoonSafetyEvent['title'] }} | {{ $activeTyphoonSafetyEvent['severity'] }}</p>
+                    @if($typhoonSafetyResponse)
+                        <div class="mt-3">
+                            <span class="advisory-safety-status {{ $typhoonSafetyResponse->status === 'needs_help' ? 'needs-help' : '' }}">
+                                Current response: {{ $typhoonSafetyResponse->statusLabel() }}
+                            </span>
+                        </div>
+                    @endif
+                    <form class="d-grid gap-2 mt-3" method="POST" action="{{ route('typhoon-safety.store') }}" data-loading="true">
+                        @csrf
+                        <input type="hidden" name="event_key" value="{{ $activeTyphoonSafetyEvent['key'] }}">
+                        <textarea class="advisory-safety-note" name="note" rows="2" placeholder="Optional note for MAO.">{{ old('note', $typhoonSafetyResponse?->note) }}</textarea>
+                        <div class="advisory-safety-actions">
+                            <button class="btn btn-warning fw-bold rounded-pill px-4" type="submit" name="status" value="safe">I am safe</button>
+                            <button class="btn btn-outline-light fw-bold rounded-pill px-4" type="submit" name="status" value="needs_help">I need help</button>
+                        </div>
+                    </form>
                 </div>
-            </div>
+            @else
+                <div class="card no-lift h-100">
+                    <div class="card-body">
+                        <div class="stat-label">Safety Reminder</div>
+                        <div class="text-muted mt-2">Generated advisories support planning. Follow official PAGASA and LGU warnings during severe weather.</div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -108,6 +215,7 @@
                         <tr>
                             <th>Title</th>
                             <th>Type</th>
+                            <th>Window</th>
                             <th>Target Barangay</th>
                             <th>Severity</th>
                             <th>Source</th>
@@ -121,6 +229,7 @@
                             <tr>
                                 <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->summary }}</div></td>
                                 <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
+                                <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
                                 <td>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</td>

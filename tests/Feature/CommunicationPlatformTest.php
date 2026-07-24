@@ -163,4 +163,20 @@ class CommunicationPlatformTest extends TestCase
             'body' => 'Yes, please visit the MAO desk this week.',
         ]);
     }
+
+    public function test_message_attachments_reject_unsafe_file_types(): void
+    {
+        Storage::fake('public');
+
+        $farmer = User::factory()->farmer()->create();
+        $mao = User::factory()->maoPersonnel()->create();
+
+        $this->actingAs($farmer)->post(route('messages.store'), [
+            'recipient_id' => $mao->id,
+            'body' => 'Please review this attachment.',
+            'attachment' => UploadedFile::fake()->create('payload.php', 5, 'application/x-php'),
+        ])->assertSessionHasErrors('attachment');
+
+        $this->assertDatabaseCount('conversation_messages', 0);
+    }
 }

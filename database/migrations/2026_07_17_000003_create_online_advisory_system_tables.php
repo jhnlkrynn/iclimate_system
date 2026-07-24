@@ -2,8 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -89,7 +91,7 @@ return new class extends Migration
             ->orderBy('id')
             ->get()
             ->each(function (object $record): void {
-                $createdAt = $record->created_at ? \Illuminate\Support\Carbon::parse($record->created_at) : now();
+                $createdAt = $record->created_at ? Carbon::parse($record->created_at) : now();
                 $status = match ($record->status) {
                     'Published' => 'published',
                     'Draft' => 'pending_review',
@@ -101,7 +103,7 @@ return new class extends Migration
                     ->update([
                         'advisory_type' => strtolower((string) $record->type),
                         'message' => $record->content,
-                        'summary' => \Illuminate\Support\Str::limit((string) $record->content, 180),
+                        'summary' => Str::limit((string) $record->content, 180),
                         'severity' => 'information',
                         'target_scope' => 'municipality',
                         'source' => 'MAO-Reviewed Advisory',

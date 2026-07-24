@@ -9,10 +9,15 @@ use Illuminate\Validation\Rule;
 class ClimateRecordController extends CrudController
 {
     protected string $model = ClimateRecord::class;
+
     protected string $routeName = 'climate-records';
+
     protected string $title = 'Climate Record';
+
     protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'wind_speed' => 'Wind Speed', 'season' => 'Season', 'source' => 'Source'];
+
     protected array $searchable = ['record_date', 'season', 'source'];
+
     protected array $filterable = ['season' => ['Wet', 'Dry'], 'source' => ['PAGASA']];
 
     public function __construct()

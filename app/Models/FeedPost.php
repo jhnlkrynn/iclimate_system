@@ -18,11 +18,13 @@ class FeedPost extends Model
         'category',
         'visibility',
         'event_date',
+        'show_on_calendar',
         'archived_at',
     ];
 
     protected $casts = [
         'event_date' => 'datetime',
+        'show_on_calendar' => 'boolean',
         'archived_at' => 'datetime',
     ];
 

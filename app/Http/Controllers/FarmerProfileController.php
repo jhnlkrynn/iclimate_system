@@ -10,11 +10,17 @@ use Illuminate\Validation\Rule;
 class FarmerProfileController extends CrudController
 {
     protected string $model = FarmerProfile::class;
+
     protected string $routeName = 'farmer-profiles';
+
     protected string $title = 'Farmer Profile';
+
     protected array $columns = ['full_name' => 'Full Name', 'contact_number' => 'Contact', 'barangay' => 'Barangay', 'farm_area' => 'Farm Area', 'farm_type' => 'Farm Type'];
+
     protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type'];
+
     protected array $filterable = ['barangay' => ['Binubusan', 'Lumaniag', 'Malaruhatan', 'Matabungkay', 'Poblacion', 'Prenza'], 'farm_type' => ['Rainfed', 'Irrigated']];
+
     protected bool $farmerOwnRecordsOnly = true;
 
     public function __construct()
