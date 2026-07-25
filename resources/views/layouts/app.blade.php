@@ -8,7 +8,6 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             :root {
@@ -46,17 +45,24 @@
                 --ic-shadow-md: 0 4px 20px rgba(13,31,24,.12);
                 --ic-shadow-lg: 0 16px 56px rgba(13,31,24,.18);
                 --ic-shadow-gold: 0 10px 28px rgba(232,167,61,.32);
+                --ic-motion-fast: 140ms cubic-bezier(.2,.8,.2,1);
+                --ic-motion-med: 240ms cubic-bezier(.2,.8,.2,1);
+                --ic-motion-slow: 420ms cubic-bezier(.16,1,.3,1);
                 --sidebar-width: 300px;
             }
-            html { background: var(--ic-green-50); }
+            html { background: var(--ic-green-50); width: 100%; overflow-x: clip; }
             body {
                 font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 min-height: 100vh;
                 color: var(--ic-ink);
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                transform: none !important;
                 background:
-                    linear-gradient(115deg, rgba(240,247,244,.96), rgba(245,240,232,.9)),
-                    radial-gradient(circle at top right, rgba(82,183,136,.14), transparent 32rem),
-                    linear-gradient(140deg, #f5f9f6 0%, #eef7ec 54%, #f5f0e8 100%);
+                    radial-gradient(circle at 86% 0%, rgba(82,183,136,.18), transparent 30rem),
+                    radial-gradient(circle at 14% 18%, rgba(183,228,199,.34), transparent 24rem),
+                    linear-gradient(145deg, #f7fff9 0%, #edf8ef 48%, #f4fbf3 100%);
             }
             body::before {
                 content: "";
@@ -65,16 +71,25 @@
                 pointer-events: none;
                 z-index: -1;
                 background:
-                    radial-gradient(rgba(82,183,136,.14) 1px, transparent 1px);
+                    radial-gradient(rgba(82,183,136,.11) 1px, transparent 1px);
                 background-size: 30px 30px;
                 mask-image: linear-gradient(90deg, transparent, #000 18%, #000 100%);
             }
-            .app-main { margin-left: var(--sidebar-width); min-height: 100vh; }
-            .page-shell { padding: 1.25rem; }
+            .app-main {
+                margin-left: var(--sidebar-width);
+                min-height: 100vh;
+                min-width: 0;
+                background:
+                    linear-gradient(180deg, rgba(247,255,249,.96), rgba(238,249,239,.98)),
+                    radial-gradient(circle at 70% 10%, rgba(116,198,157,.12), transparent 28rem);
+            }
+            .page-shell { padding: 1.25rem; min-width: 0; max-width: 100%; }
             .sidebar-fixed {
-                position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); z-index: 1030; overflow-y: auto;
+                position: fixed !important; top: 0; left: 0; bottom: 0; width: var(--sidebar-width); height: 100vh; height: 100dvh; z-index: 1030; overflow: hidden;
                 background: var(--ic-green-950);
             }
+            .sidebar-nav-scroll { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
+            .sidebar-nav-scroll::-webkit-scrollbar { display: none; }
             .sidebar-brand { position: relative; }
             .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-400); }
             .sidebar-location .pulse-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ic-green-400); box-shadow: 0 0 0 4px rgba(116,198,157,.2); flex-shrink: 0; }
@@ -110,7 +125,7 @@
             .sidebar-ai-title { color: #fff; font-weight: 700; font-size: .88rem; }
             .sidebar-ai-sub { color: rgba(255,255,255,.5); font-size: .74rem; }
             .topbar { position: sticky; top: 0; z-index: 1020; background: rgba(245,249,246,.88); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(212,237,218,.95); box-shadow: 0 .55rem 1.4rem rgba(13,31,24,.05); }
-            .topbar-inner { min-height: 74px; }
+            .topbar-inner { min-height: 74px; min-width: 0; }
             .weather-strip { display: flex; align-items: center; gap: .65rem; padding: .52rem .75rem; border: 1px solid rgba(183,228,199,.9); border-radius: 8px; background: linear-gradient(90deg, #ffffff, var(--ic-green-50)); }
             .weather-strip .pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--ic-green-500); box-shadow: 0 0 0 5px rgba(82,183,136,.14); }
             h1, h2, h3, h4, .card-header .fw-semibold, .card-header .fw-bold { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
@@ -158,6 +173,8 @@
             .update-list > * + * { border-top: 1px solid var(--ic-border); }
             .climate-chip { border: 1.5px solid var(--ic-sand-dark); border-radius: var(--ic-radius-md); padding: 1rem; min-height: 112px; background: linear-gradient(145deg, #ffffff, var(--chip-bg, var(--ic-green-50))); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
             .table { --bs-table-bg: transparent; }
+            .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
+            .table-responsive > .table { margin-bottom: 0; }
             .table thead th { color: var(--ic-muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 500; white-space: nowrap; background: var(--ic-green-50); }
             .table td, .table th { vertical-align: middle; padding: .95rem 1rem; }
             .table-hover tbody tr { transition: background .12s ease; }
@@ -172,6 +189,36 @@
             .page-progress::before { content: ""; display: block; width: 42%; height: 100%; background: linear-gradient(90deg, var(--ic-green-500), var(--ic-gold)); transform: translateX(-100%); animation: pageProgress 1s ease-in-out infinite; }
             .page-progress.show { opacity: 1; }
             .is-loading-action { opacity: .72; pointer-events: none; }
+            .ic-action-popup { position: fixed; inset: 0; z-index: 2200; display: none; align-items: flex-start; justify-content: center; padding: 1.25rem; background: radial-gradient(circle at 50% 0, rgba(82,183,136,.2), transparent 22rem), rgba(13,31,24,.28); backdrop-filter: blur(4px); }
+            .ic-action-popup.show { display: flex; }
+            .ic-action-dialog { width: min(460px, 100%); margin-top: 1.25rem; border: 1px solid rgba(212,237,218,.98); border-radius: 20px; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1.4rem 3.2rem rgba(13,31,24,.28); overflow: hidden; animation: icPopupIn .24s ease-out; }
+            .ic-action-dialog.success { --popup-accent: var(--ic-green-500); }
+            .ic-action-dialog.error { --popup-accent: var(--ic-coral); }
+            .ic-action-dialog.info { --popup-accent: var(--ic-gold); }
+            .ic-action-dialog::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--popup-accent), var(--ic-gold), var(--ic-green-400)); }
+            .ic-action-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .85rem; padding: 1rem 1rem .9rem; }
+            .ic-action-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--popup-accent); box-shadow: 0 .7rem 1.4rem color-mix(in srgb, var(--popup-accent) 34%, transparent); font-weight: 900; }
+            .ic-action-title { margin: 0 0 .3rem; color: var(--ic-ink); font-weight: 900; font-size: 1.04rem; }
+            .ic-action-message { margin: 0; color: var(--ic-ink-mid); line-height: 1.45; }
+            .ic-action-close { border: 0; border-top: 1px solid var(--ic-border); width: 100%; padding: .78rem 1rem; background: var(--ic-green-50); color: var(--ic-green-800); font-weight: 900; }
+            .ic-action-close:hover { background: var(--ic-green-100); }
+            .ic-action-timer { height: 3px; background: color-mix(in srgb, var(--popup-accent) 24%, #fff); }
+            .ic-action-timer span { display: block; height: 100%; background: var(--popup-accent); animation: icPopupTimer 4.8s linear forwards; }
+            .ic-logout-confirm { position: fixed; inset: 0; z-index: 10000; display: none; place-items: center; padding: 1rem; overflow-y: auto; background: radial-gradient(circle at 50% 10%, rgba(232,167,61,.2), transparent 22rem), rgba(13,31,24,.42); backdrop-filter: blur(5px); }
+            .ic-logout-confirm.show { display: grid !important; }
+            body.ic-modal-open { overflow: hidden; }
+            .ic-logout-card { position: relative; z-index: 1; display: block; width: min(430px, calc(100vw - 2rem)); border: 1px solid rgba(212,237,218,.9); border-radius: 22px; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1.4rem 3.4rem rgba(13,31,24,.34); overflow: hidden; opacity: 1; visibility: visible; animation: icPopupIn .22s ease-out; }
+            .ic-logout-card::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--ic-gold), var(--ic-green-500), var(--ic-coral)); }
+            .ic-logout-body { padding: 1.1rem; text-align: center; }
+            .ic-logout-icon { width: 58px; height: 58px; margin: 0 auto .75rem; border-radius: 18px; display: grid; place-items: center; color: var(--ic-ink); background: var(--ic-gold-light); box-shadow: 0 .9rem 1.5rem rgba(232,167,61,.24); font-size: 1.45rem; font-weight: 900; }
+            .ic-logout-title { margin: 0 0 .35rem; color: var(--ic-ink); font-weight: 900; font-size: 1.15rem; }
+            .ic-logout-message { margin: 0; color: var(--ic-ink-mid); line-height: 1.45; }
+            .ic-logout-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; padding: 0 1.1rem 1.1rem; }
+            .ic-logout-actions button { border: 0; border-radius: 999px; padding: .75rem 1rem; font-weight: 900; }
+            .ic-logout-cancel { background: var(--ic-green-50); color: var(--ic-green-800); }
+            .ic-logout-confirm-btn { background: var(--ic-coral); color: #fff; box-shadow: 0 .75rem 1.45rem rgba(216,91,69,.22); }
+            @keyframes icPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes icPopupTimer { from { width: 100%; } to { width: 0%; } }
             @keyframes pageProgress {
                 0% { transform: translateX(-110%); }
                 55% { transform: translateX(80vw); }
@@ -188,7 +235,33 @@
             .details-list dd { background: rgba(240,247,244,.75); border: 1.5px solid var(--ic-sand-dark); border-radius: var(--ic-radius-md); padding: .7rem .85rem; }
             .interactive-card { cursor: default; }
             .interactive-card:hover .stat-label, .module-tile:hover .small { color: var(--ic-green-700) !important; }
+            .page-shell { animation: icPageEnter var(--ic-motion-slow) both; }
+            .sidebar-link, .sidebar-ai-card, .card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .filter-panel, .quick-action, .priority-card, .btn, .form-control, .form-select { transition-timing-function: cubic-bezier(.2,.8,.2,1) !important; transition-duration: 220ms !important; }
+            .sidebar-link:hover, .sidebar-ai-card:hover, .btn:hover, .quick-action:hover, .priority-card:hover { transform: translateY(-2px); }
+            .sidebar-link:active, .sidebar-ai-card:active, .btn:active, .quick-action:active, .priority-card:active { transform: translateY(0) scale(.985); }
+            .sidebar-fixed .sidebar-link:hover,
+            .sidebar-fixed .sidebar-link:active,
+            .sidebar-fixed .sidebar-ai-card:hover,
+            .sidebar-fixed .sidebar-ai-card:active {
+                transform: none;
+            }
+            .form-control:focus, .form-select:focus { transform: translateY(-1px); }
+            .loading-overlay.show .card { animation: icSoftRise var(--ic-motion-med) both; }
+            .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover, .ic-action-close:hover { transform: translateY(-1px); }
+            .ic-logout-cancel:active, .ic-logout-confirm-btn:active, .ic-action-close:active { transform: translateY(0) scale(.985); }
+            @keyframes icPageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes icSoftRise { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @media (prefers-reduced-motion: reduce) {
+                .page-shell, .loading-overlay.show .card, .ic-action-dialog, .ic-logout-card { animation: none !important; }
+                .sidebar-link, .sidebar-ai-card, .card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .filter-panel, .quick-action, .priority-card, .btn, .form-control, .form-select { transition-duration: .01ms !important; }
+            }
             @media (min-width: 1400px) { .page-shell { padding: 1.75rem 2rem; } }
+            .card, .glass-card, .soft-section, .filter-panel, .module-tile, .climate-chip, .risk-card, .stat-card, .alert, .modal-content, .offcanvas, .page-hero, .weather-strip { min-width: 0; overflow-wrap: anywhere; }
+            .card-body > *, .glass-card > *, .soft-section > *, .filter-panel > *, .page-hero > *, .topbar-inner > * { min-width: 0; }
+            .btn, .badge { white-space: normal; }
+            .modal-dialog { max-width: calc(100vw - 1rem); }
+            .offcanvas { max-width: min(92vw, 380px); }
+            @media (max-width: 1199.98px) { .page-hero .d-flex, .card-header.d-flex, .filter-panel .row, .topbar-inner { flex-wrap: wrap; } .table-responsive > .table { min-width: 760px; } }
             @media (max-width: 991.98px) { .app-main { margin-left: 0; } .sidebar-fixed { display: none; } .page-shell { padding: .9rem; } .topbar-inner { min-height: 64px; } .page-hero { padding: 1rem; } }
             @media (max-width: 767.98px) {
                 body { background: linear-gradient(180deg, #f7fbf8, #eef7ec); }
@@ -197,9 +270,11 @@
                 .page-shell { padding: .75rem; }
                 .page-hero h1 { font-size: 1.45rem; line-height: 1.15; }
                 .card-body { padding: 1rem; }
-                .table-responsive { border-radius: 8px; }
+                .table-responsive { border-radius: 8px; margin-inline: -.35rem; width: calc(100% + .7rem); }
+                .table-responsive > .table { min-width: 680px; }
+                .card-header.d-flex, .card-body.d-flex, .modal-footer { align-items: stretch !important; flex-direction: column; }
                 .action-cluster { display: grid !important; gap: .35rem; }
-                .action-cluster .btn { width: 100%; }
+                .action-cluster .btn, .modal-footer .btn { width: 100%; }
                 .stat-value { font-size: 1.65rem; }
             }
             @media (max-width: 575.98px) {
@@ -210,6 +285,7 @@
                 .page-hero .btn, .filter-panel .btn, .filter-panel a.btn { width: 100%; }
                 .filter-panel form > [class*="col-"] { width: 100%; }
                 .card, .glass-card, .module-tile, .climate-chip, .soft-section { box-shadow: 0 .45rem 1rem rgba(13,31,24,.06); }
+                .ic-logout-actions { grid-template-columns: 1fr; }
             }
         </style>
     </head>
@@ -243,6 +319,42 @@
                 {{ $slot }}
             </main>
         </div>
+        @php
+            $popupType = session('error') || $errors->any() ? 'error' : (session('success') ? 'success' : (session('status') ? 'info' : null));
+            $popupTitle = $popupType === 'error' ? 'Action failed' : ($popupType === 'success' ? 'Action successful' : 'Notice');
+            $popupMessage = session('error')
+                ?: session('success')
+                ?: session('status')
+                ?: ($errors->any() ? $errors->first() : null);
+        @endphp
+        @if($popupType && $popupMessage)
+            <div id="icActionPopup" class="ic-action-popup show" role="alertdialog" aria-modal="true" aria-labelledby="icActionTitle">
+                <div class="ic-action-dialog {{ $popupType }}">
+                    <div class="ic-action-body">
+                        <div class="ic-action-icon" aria-hidden="true">{{ $popupType === 'success' ? 'OK' : ($popupType === 'error' ? '!' : 'i') }}</div>
+                        <div>
+                            <h2 id="icActionTitle" class="ic-action-title">{{ $popupTitle }}</h2>
+                            <p class="ic-action-message">{{ $popupMessage }}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="ic-action-close" data-popup-close>OK</button>
+                    <div class="ic-action-timer" aria-hidden="true"><span></span></div>
+                </div>
+            </div>
+        @endif
+        <div id="icLogoutConfirm" class="ic-logout-confirm" role="dialog" aria-modal="true" aria-labelledby="icLogoutTitle">
+            <div class="ic-logout-card">
+                <div class="ic-logout-body">
+                    <div class="ic-logout-icon" aria-hidden="true">?</div>
+                    <h2 id="icLogoutTitle" class="ic-logout-title">Log out of iClimate?</h2>
+                    <p class="ic-logout-message">Your current session will close, and you will return to the home page.</p>
+                </div>
+                <div class="ic-logout-actions">
+                    <button type="button" class="ic-logout-cancel" data-logout-cancel>Stay logged in</button>
+                    <button type="button" class="ic-logout-confirm-btn" data-logout-confirm-submit>Log out</button>
+                </div>
+            </div>
+        </div>
         <div id="loadingOverlay" class="loading-overlay">
             <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3"><div class="spinner-border text-primary" role="status" aria-hidden="true"></div><div class="fw-semibold">Loading...</div></div></div>
         </div>
@@ -250,6 +362,17 @@
         @auth
             @include('components.ai-chat-widget')
         @endauth
-        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const popup = document.getElementById('icActionPopup');
+                if (!popup) return;
+                const close = () => popup.classList.remove('show');
+                popup.querySelector('[data-popup-close]')?.addEventListener('click', close);
+                popup.addEventListener('click', (event) => {
+                    if (event.target === popup) close();
+                });
+                setTimeout(close, 4800);
+            });
+        </script>
     </body>
 </html>

@@ -10,14 +10,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AdvisoryRule extends Model
 {
     public const TYPE_CLIMATE = 'climate';
+
     public const TYPE_PLANTING = 'planting';
+
     public const TYPE_HARVESTING = 'harvesting';
+
     public const TYPE_IRRIGATION = 'irrigation';
 
     public const SEVERITY_INFORMATION = 'information';
+
     public const SEVERITY_LOW = 'low';
+
     public const SEVERITY_MODERATE = 'moderate';
+
     public const SEVERITY_HIGH = 'high';
+
     public const SEVERITY_CRITICAL = 'critical';
 
     protected $fillable = [

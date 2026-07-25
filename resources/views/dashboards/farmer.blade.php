@@ -171,7 +171,7 @@
         /* -- STAT / FIELD CARDS ------------------------------ */
         .climate-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 1rem;
             margin-bottom: .5rem;
         }
@@ -205,15 +205,33 @@
         .field-card:hover .field-tap-hint, .field-card:focus-visible .field-tap-hint { opacity: 1; transform: translateY(0); }
 
         /* -- STAT DETAIL MODALS ------------------------------- */
-        .fc-modal-content { background: var(--fc-green-950); color: rgba(255,255,255,.85); border: 1px solid var(--fc-green-900); border-radius: var(--radius-lg); }
+        .fc-stat-modal {
+            --fc-green-950: #0D1F18;
+            --fc-green-900: #122B20;
+            --fc-green-800: #1A3A2A;
+            --fc-green-700: #2D6A4F;
+            --fc-green-400: #74C69D;
+            --fc-gold: #E8A73D;
+            --fc-gold-dark: #C6872A;
+            --fc-ink: #0D1F18;
+            --radius-lg: 18px;
+            --radius-pill: 100px;
+            --shadow-gold: 0 10px 28px rgba(232,167,61,.32);
+            --ease: cubic-bezier(.4,0,.2,1);
+        }
+        .fc-stat-modal .modal-dialog { width: calc(100% - 2rem) !important; max-width: 760px !important; margin: var(--fc-stat-modal-top, 7rem) auto 0 !important; }
+        .fc-stat-modal .modal-dialog-centered { display: block; min-height: 0; }
+        body.fc-stat-modal-open .modal-backdrop.show { background-color: #07130f; opacity: .78; }
+        .fc-modal-content { background: var(--fc-green-950); color: rgba(255,255,255,.85); border: 1px solid var(--fc-green-900); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(0,0,0,.34); overflow: hidden; }
         .fc-modal-header { background: linear-gradient(90deg, var(--fc-green-950), var(--fc-green-800)); border-bottom: 1px solid rgba(255,255,255,.1); color: #fff; }
         .fc-modal-header .modal-title { color: #fff; font-family: 'DM Serif Display', serif; }
-        .fc-modal-body { max-height: 60vh; overflow-y: auto; }
-        .fc-modal-footer { border-top: 1px solid rgba(255,255,255,.1); }
-        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: #fff; }
-        .fc-modal-sub { color: rgba(255,255,255,.55); font-size: .82rem; margin: .3rem 0 .9rem; }
-        .fc-modal-note { color: rgba(255,255,255,.65); font-size: .85rem; line-height: 1.6; margin-bottom: 1rem; }
+        .fc-modal-body { max-height: min(330px, calc(100vh - var(--fc-stat-modal-top, 7rem) - 9.5rem)); overflow-y: auto; background: var(--fc-green-950); padding: 1rem; }
+        .fc-modal-footer { border-top: 1px solid rgba(255,255,255,.1); background: var(--fc-green-950); padding: .8rem 1rem; }
+        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: #fff; }
+        .fc-modal-sub { color: rgba(255,255,255,.55); font-size: .8rem; margin: .25rem 0 .75rem; }
+        .fc-modal-note { color: rgba(255,255,255,.65); font-size: .82rem; line-height: 1.55; margin-bottom: .85rem; }
         .fc-modal-table { color: rgba(255,255,255,.8); }
+        .fc-modal-table.table { min-width: 620px; }
         .fc-modal-table thead th { background: rgba(255,255,255,.04) !important; color: rgba(255,255,255,.5) !important; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-color: rgba(255,255,255,.1); font-weight: 600; }
         .fc-modal-table td { color: rgba(255,255,255,.8) !important; border-color: rgba(255,255,255,.08); }
         .fc-modal-table-highlight { color: var(--fc-green-400) !important; font-weight: 700; }
@@ -244,6 +262,16 @@
             letter-spacing: -.02em;
         }
         .field-note { color: rgba(255,255,255,.55); font-size: .78rem; line-height: 1.5; }
+        .field-source {
+            color: rgba(116,198,157,.75);
+            font-family: 'DM Mono', monospace;
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            line-height: 1.35;
+        }
+        .field-source span { display: block; color: rgba(255,255,255,.45); margin-top: .1rem; }
 
         /* -- PANELS ------------------------------------------ */
         .farmer-panel {
@@ -393,14 +421,58 @@
         @media (max-width: 767.98px) {
             .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
             .farmer-hero { padding: 1.5rem; }
+            .fc-stat-modal .modal-dialog { width: calc(100vw - 1rem) !important; max-width: calc(100vw - 1rem) !important; }
+            .fc-modal-body { max-height: min(360px, calc(100vh - var(--fc-stat-modal-top, 6rem) - 8rem)); }
+            .fc-modal-table.table { min-width: 560px; }
             .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
         }
     </style>
 
     @php
-        $unreadNotifications = $notifications->where('is_read', false)->count();
+        $unreadNotifications = $unreadNotificationCount ?? $notifications->where('is_read', false)->count();
         $latestAdvisory = $advisories->first();
         $profile = auth()->user()->farmerProfile;
+        $weatherTimezone = config('services.open_meteo.timezone', 'Asia/Manila');
+        $weatherNow = now($weatherTimezone);
+        $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
+        $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
+        $weatherFreshness = $latestForecast
+            ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
+            : 'Stored Record';
+        $weatherFetchedAt = $latestForecast?->fetched_at?->timezone($weatherTimezone)->format('M d, Y g:i A');
+        $weatherDate = $latestForecast?->forecast_date?->format('M d, Y') ?? $climateSummary?->record_date?->format('M d, Y');
+        $forecastHour = $weatherNow->hour;
+        $forecastHourLabel = $weatherNow->format('g A');
+        $currentWeather = $latestForecast?->raw_response['current'] ?? [];
+        $currentWeatherTime = data_get($currentWeather, 'time');
+        $currentWeatherTimeLabel = $currentWeatherTime
+            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('g:i A')
+            : $weatherNow->format('g:i A');
+        $currentWeatherDate = $currentWeatherTime
+            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('M d, Y')
+            : $weatherNow->format('M d, Y');
+        $hourlyWeather = $latestForecast?->raw_response['hourly'] ?? [];
+        $hourlyTemperature = $hourlyWeather['temperature_2m'][$forecastHour] ?? null;
+        $hourlyHumidity = $hourlyWeather['relative_humidity_2m'][$forecastHour] ?? null;
+        $hourlyRainfall = $hourlyWeather['rain'][$forecastHour] ?? $hourlyWeather['precipitation'][$forecastHour] ?? null;
+        $weatherSourceLine = $latestForecast
+            ? $weatherSource.' forecast'.($weatherFetchedAt ? ' - Updated '.$weatherFetchedAt : '')
+            : 'Recorded: '.$weatherSource;
+        $weatherTimingLabel = $currentWeather !== []
+            ? 'Current weather reading - '.$currentWeatherTimeLabel
+            : ($latestForecast ? 'Hourly forecast - '.$forecastHourLabel : 'Stored Record');
+        $weatherDisplayDate = $currentWeather !== []
+            ? $currentWeatherDate
+            : $weatherDate;
+        $weatherUpdateLine = $weatherFetchedAt
+            ? 'Updated '.$weatherFetchedAt
+            : $weatherDataMode;
+        $temperatureValue = data_get($currentWeather, 'temperature_2m') ?? $hourlyTemperature ?? $latestForecast?->temperature ?? $climateSummary?->temperature;
+        $rainfallValue = data_get($currentWeather, 'rain') ?? data_get($currentWeather, 'precipitation') ?? $hourlyRainfall ?? $latestForecast?->rainfall_mm ?? $climateSummary?->rainfall;
+        $humidityValue = data_get($currentWeather, 'relative_humidity_2m') ?? $hourlyHumidity ?? $latestForecast?->humidity ?? $climateSummary?->humidity;
+        $weatherNoteLabel = $currentWeather !== []
+            ? 'Current Open-Meteo weather for Lian'
+            : ($latestForecast ? 'Latest Open-Meteo forecast for Lian' : 'Latest recorded field climate data');
     @endphp
 
     <div class="farmer-console">
@@ -413,8 +485,8 @@
                     <p>Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, community updates, and messages for Lian, Batangas.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ now()->format('l, F d, Y') }}</span></span>
-                    <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
+                    <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F d, Y') }}</span></span>
+                    <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
                 </div>
@@ -429,29 +501,34 @@
             <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalTemperature">
                 <div class="field-icon">TMP</div>
                 <div class="field-label">Temperature</div>
-                <div class="field-value">{{ $climateSummary?->temperature !== null ? number_format($climateSummary->temperature, 1).' C' : 'N/A' }}</div>
-                <div class="field-note">Latest recorded field climate data</div>
+                <div class="field-value">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' C' : 'N/A' }}</div>
+                <div class="field-note">{{ $weatherNoteLabel }}</div>
+                <div class="field-source">
+                    Source: {{ $weatherSource }}
+                    <span>{{ $weatherUpdateLine }}</span>
+                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalRainfall">
                 <div class="field-icon">RAIN</div>
                 <div class="field-label">Rainfall</div>
-                <div class="field-value">{{ $climateSummary?->rainfall !== null ? number_format($climateSummary->rainfall, 1).' mm' : 'N/A' }}</div>
+                <div class="field-value">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'N/A' }}</div>
                 <div class="field-note">Use advisories before fertilizer application</div>
+                <div class="field-source">
+                    Source: {{ $weatherSource }}
+                    <span>{{ $weatherUpdateLine }}</span>
+                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalHumidity">
                 <div class="field-icon">HUM</div>
                 <div class="field-label">Humidity</div>
-                <div class="field-value">{{ $climateSummary?->humidity !== null ? number_format($climateSummary->humidity, 1).'%' : 'N/A' }}</div>
+                <div class="field-value">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'N/A' }}</div>
                 <div class="field-note">Monitor crop disease risk after rain</div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalAlerts">
-                <div class="field-icon">ALT</div>
-                <div class="field-label">Weather Alerts</div>
-                <div class="field-value">{{ number_format($unreadNotifications) }}</div>
-                <div class="field-note">Legacy alerts kept for records</div>
+                <div class="field-source">
+                    Source: {{ $weatherSource }}
+                    <span>{{ $weatherUpdateLine }}</span>
+                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalRisk">
@@ -459,6 +536,7 @@
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
                 <div class="field-note">High or severe barangay risk areas</div>
+                <div class="field-source">Source: Heat Map Records</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
         </section>
@@ -467,7 +545,7 @@
             $fcModalTrend = fn () => $recentClimateRecords->reverse()->values();
         @endphp
 
-        <div class="modal fade" id="statModalTemperature" tabindex="-1" aria-labelledby="statModalTemperatureLabel" aria-hidden="true">
+        <div class="modal fade fc-stat-modal" id="statModalTemperature" tabindex="-1" aria-labelledby="statModalTemperatureLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
@@ -475,9 +553,9 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $climateSummary?->temperature !== null ? number_format($climateSummary->temperature, 1).' °C' : 'No data recorded yet' }}</div>
-                        <p class="fc-modal-sub">Recorded {{ $climateSummary?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $climateSummary?->source ?? 'N/A' }} &middot; Season: {{ $climateSummary?->season ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. Compare with recent readings below before scheduling irrigation or fertilizer application.</p>
+                        <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
@@ -487,7 +565,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="statModalRainfall" tabindex="-1" aria-labelledby="statModalRainfallLabel" aria-hidden="true">
+        <div class="modal fade fc-stat-modal" id="statModalRainfall" tabindex="-1" aria-labelledby="statModalRainfallLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
@@ -495,9 +573,9 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $climateSummary?->rainfall !== null ? number_format($climateSummary->rainfall, 1).' mm' : 'No data recorded yet' }}</div>
-                        <p class="fc-modal-sub">Recorded {{ $climateSummary?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $climateSummary?->source ?? 'N/A' }} &middot; Season: {{ $climateSummary?->season ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. Check advisories before applying inputs or irrigating.</p>
+                        <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
@@ -507,7 +585,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="statModalHumidity" tabindex="-1" aria-labelledby="statModalHumidityLabel" aria-hidden="true">
+        <div class="modal fade fc-stat-modal" id="statModalHumidity" tabindex="-1" aria-labelledby="statModalHumidityLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
@@ -515,9 +593,9 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $climateSummary?->humidity !== null ? number_format($climateSummary->humidity, 1).'%' : 'No data recorded yet' }}</div>
-                        <p class="fc-modal-sub">Recorded {{ $climateSummary?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $climateSummary?->source ?? 'N/A' }} &middot; Season: {{ $climateSummary?->season ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. Monitor fields closely when humidity stays elevated for several days.</p>
+                        <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
@@ -527,7 +605,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="statModalAlerts" tabindex="-1" aria-labelledby="statModalAlertsLabel" aria-hidden="true">
+        <div class="modal fade fc-stat-modal" id="statModalAlerts" tabindex="-1" aria-labelledby="statModalAlertsLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
@@ -557,7 +635,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="statModalRisk" tabindex="-1" aria-labelledby="statModalRiskLabel" aria-hidden="true">
+        <div class="modal fade fc-stat-modal" id="statModalRisk" tabindex="-1" aria-labelledby="statModalRiskLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
@@ -593,8 +671,8 @@
 
         <section class="priority-grid">
             <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}">
-                <div><strong>AI Farming Assistant</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
-                <span class="status-pill">Open Assistant</span>
+                <div><strong>PalayPilot</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
+                <span class="status-pill">Open PalayPilot</span>
             </a>
             <a class="priority-card" href="{{ route('heatmap-areas.index') }}">
                 <div><strong>Barangay Heat Map</strong><span class="desc">Check risk areas before planning field work, irrigation, and harvest movement.</span></div>
@@ -798,7 +876,7 @@
                 <div class="quick-grid">
                     <a class="quick-action" href="{{ route('climate-records.index') }}"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
                     <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
-                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>AI Farming Assistant</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
+                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>PalayPilot</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
                     <a class="quick-action" href="{{ route('planting-advisories.index') }}"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
                     <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
                     <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>
@@ -813,6 +891,23 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const dateTarget = document.querySelector('[data-current-date]');
+            document.querySelectorAll('.fc-stat-modal').forEach((modal) => {
+                document.body.appendChild(modal);
+                modal.addEventListener('show.bs.modal', () => document.body.classList.add('fc-stat-modal-open'));
+                modal.addEventListener('hidden.bs.modal', () => document.body.classList.remove('fc-stat-modal-open'));
+            });
+            document.querySelectorAll('.field-card[data-bs-target]').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const modal = document.querySelector(card.dataset.bsTarget);
+                    const grid = card.closest('.climate-grid');
+                    if (!modal || !grid) return;
+
+                    const gridTop = grid.getBoundingClientRect().top;
+                    const top = Math.max(88, Math.min(gridTop + 6, window.innerHeight - 420));
+                    modal.style.setProperty('--fc-stat-modal-top', `${top}px`);
+                });
+            });
+
             if (!dateTarget) return;
 
             const formatter = new Intl.DateTimeFormat('en-US', {
@@ -820,6 +915,7 @@
                 month: 'long',
                 day: '2-digit',
                 year: 'numeric',
+                timeZone: @json($weatherTimezone),
             });
 
             const refreshDate = () => {
@@ -828,6 +924,14 @@
 
             refreshDate();
             setInterval(refreshDate, 60000);
+
+            const weatherRefreshMs = @json(max(1, (int) config('services.open_meteo.refresh_minutes', 10)) * 60 * 1000);
+            setInterval(() => {
+                if (document.visibilityState !== 'visible') return;
+                if (document.querySelector('.modal.show')) return;
+
+                window.location.reload();
+            }, weatherRefreshMs);
         });
     </script>
 </x-app-layout>

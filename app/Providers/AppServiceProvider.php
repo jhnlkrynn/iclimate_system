@@ -55,6 +55,10 @@ class AppServiceProvider extends ServiceProvider
         $charset = config('database.connections.mysql.charset', 'utf8mb4');
         $collation = config('database.connections.mysql.collation', 'utf8mb4_unicode_ci');
 
+        if (! preg_match('/^[A-Za-z0-9_]+$/', $charset) || ! preg_match('/^[A-Za-z0-9_]+$/', $collation)) {
+            return;
+        }
+
         $pdo = new PDO(
             "mysql:host={$host};port={$port}",
             $username,

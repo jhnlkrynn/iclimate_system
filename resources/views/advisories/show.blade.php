@@ -1,4 +1,29 @@
 <x-app-layout>
+    <style>
+        .advisory-hero-actions {
+            background: transparent;
+            border: 0;
+            padding: 0;
+        }
+        .advisory-back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            min-width: 112px;
+            white-space: nowrap;
+            border-color: rgba(255,255,255,.58) !important;
+            background: rgba(255,255,255,.12) !important;
+            color: #fff !important;
+            box-shadow: 0 .75rem 1.6rem rgba(0,0,0,.16);
+        }
+        .advisory-back-btn:hover,
+        .advisory-back-btn:focus {
+            background: rgba(255,255,255,.2) !important;
+            border-color: rgba(255,255,255,.9) !important;
+            color: #fff !important;
+        }
+    </style>
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
@@ -6,8 +31,11 @@
                 <h1 class="h2 fw-bold mb-2">{{ $advisory->title }}</h1>
                 <p class="mb-0 text-white-50">{{ $advisory->summary }}</p>
             </div>
-            <div class="d-flex gap-2 action-cluster">
-                <a class="btn btn-outline-light" href="{{ url()->previous() }}">Back</a>
+            <div class="d-flex flex-wrap gap-2 advisory-hero-actions">
+                <a class="btn btn-outline-light advisory-back-btn" href="{{ url()->previous() }}">
+                    <span aria-hidden="true">&larr;</span>
+                    <span>Back</span>
+                </a>
                 @if($canManage)
                     <a class="btn btn-light" href="{{ route('planting-advisories.edit', $advisory) }}">Edit</a>
                 @endif
@@ -21,6 +49,7 @@
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span>
+                        <span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span>
                         <span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span>
                         <span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span>
                     </div>
@@ -53,6 +82,7 @@
                     <div class="details-list">
                         <dt>Target location</dt><dd>{{ $advisory->targetLabel() }}</dd>
                         <dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>
+                        <dt>Advisory window</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
                         <dt>Generated date</dt><dd>{{ $advisory->created_at?->format('F d, Y g:i A') }}</dd>
                         <dt>Validity period</dt><dd>{{ $advisory->valid_from?->format('M d, Y g:i A') }} to {{ $advisory->valid_until?->format('M d, Y g:i A') }}</dd>
                         <dt>Review status</dt><dd>{{ $advisory->approved_at ? 'Approved by '.$advisory->approvedBy?->name : $advisory->statusLabel() }}</dd>

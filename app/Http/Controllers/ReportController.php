@@ -8,7 +8,6 @@ use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,10 +18,15 @@ use Illuminate\View\View;
 class ReportController extends CrudController
 {
     protected string $model = Report::class;
+
     protected string $routeName = 'reports';
+
     protected string $title = 'Report';
+
     protected array $columns = ['report_type' => 'Report Type', 'title' => 'Title'];
+
     protected array $searchable = ['report_type', 'title'];
+
     protected array $filterable = ['report_type' => ['Climate Records', 'Rice Production', 'Farmer Registration', 'Advisory', 'Community Feed']];
 
     public const REPORT_TYPES = [
@@ -48,9 +52,10 @@ class ReportController extends CrudController
 
         return view('reports.index', [
             'reportTypes' => self::REPORT_TYPES,
-            'history' => Report::query()->with('generatedBy')->latest()->paginate(10),
+            'history' => $this->reportHistory()->paginate(10),
             'barangays' => $this->barangays(),
             'seasons' => ['Wet', 'Dry'],
+            'sourceStats' => $this->sourceStats(),
             'selected' => null,
             'rows' => collect(),
             'columns' => [],
@@ -78,9 +83,10 @@ class ReportController extends CrudController
 
         return view('reports.index', [
             'reportTypes' => self::REPORT_TYPES,
-            'history' => Report::query()->with('generatedBy')->latest()->paginate(10),
+            'history' => $this->reportHistory()->paginate(10),
             'barangays' => $this->barangays(),
             'seasons' => ['Wet', 'Dry'],
+            'sourceStats' => $this->sourceStats(),
             'selected' => $label,
             'rows' => $rows,
             'columns' => $columns,
@@ -137,6 +143,7 @@ class ReportController extends CrudController
         if (isset($data['payload']) && is_string($data['payload'])) {
             $data['payload'] = json_decode($data['payload'], true) ?: ['notes' => $data['payload']];
         }
+
         return $data;
     }
 
@@ -271,5 +278,25 @@ class ReportController extends CrudController
             ->sort()
             ->values()
             ->all();
+    }
+
+    private function reportHistory(): Builder
+    {
+        return Report::query()
+            ->with('generatedBy')
+            ->whereIn('report_type', array_values(self::REPORT_TYPES))
+            ->latest();
+    }
+
+    private function sourceStats(): array
+    {
+        return [
+            'climate_records' => ClimateRecord::query()->count(),
+            'rice_production' => RiceProduction::query()->count(),
+            'farmers' => FarmerProfile::query()->count(),
+            'advisories' => PlantingAdvisory::query()->count(),
+            'community_posts' => FeedPost::query()->count(),
+            'last_refreshed' => now(),
+        ];
     }
 }

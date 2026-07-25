@@ -8,13 +8,13 @@ use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
-use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -25,11 +25,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $defaultPassword = (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', Str::password(24));
+
         $farmer = User::query()->updateOrCreate(
             ['email' => 'farmer@iclimate.com'],
             [
                 'name' => 'Default Farmer',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($defaultPassword),
                 'role' => User::ROLE_FARMER,
                 'contact_number' => '09170000001',
                 'address' => 'Lian, Batangas',
@@ -43,7 +45,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'mao@iclimate.com'],
             [
                 'name' => 'Default MAO Personnel',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($defaultPassword),
                 'role' => User::ROLE_MAO,
                 'contact_number' => '09170000002',
                 'address' => 'Municipal Agriculture Office, Lian, Batangas',
@@ -57,7 +59,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@iclimate.com'],
             [
                 'name' => 'Default IT Expert',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($defaultPassword),
                 'role' => User::ROLE_IT_EXPERT,
                 'contact_number' => '09170000003',
                 'address' => 'Lian, Batangas',
@@ -87,7 +89,6 @@ class DatabaseSeeder extends Seeder
         PlantingAdvisory::factory()->count(3)->create(['posted_by' => $mao->id, 'status' => 'Published']);
 
         Notification::factory()->count(3)->create(['user_id' => $farmer->id]);
-        Report::factory()->count(2)->create(['generated_by' => $mao->id]);
         SystemLog::factory()->count(3)->create(['user_id' => $itExpert->id]);
 
         $this->call([

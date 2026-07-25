@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HeatmapArea;
+use App\Models\PlantingAdvisory;
 use App\Services\HeatmapRiskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -12,8 +13,11 @@ use Illuminate\View\View;
 class HeatmapAreaController extends CrudController
 {
     protected string $model = HeatmapArea::class;
+
     protected string $routeName = 'heatmap-areas';
+
     protected string $title = 'Heat Map Area';
+
     protected array $columns = [
         'barangay' => 'Barangay',
         'predicted_yield' => 'Predicted Rice Yield',
@@ -22,7 +26,9 @@ class HeatmapAreaController extends CrudController
         'planting_advisory' => 'Planting Advisory',
         'irrigation_recommendation' => 'Irrigation Recommendation',
     ];
+
     protected array $searchable = ['barangay', 'risk_level', 'risk_type', 'rainfall_status', 'planting_advisory', 'irrigation_recommendation', 'description'];
+
     protected array $filterable = ['risk_level' => ['Low', 'Moderate', 'High', 'Severe'], 'risk_type' => ['Flood', 'Drought', 'Typhoon', 'Heat']];
 
     public function __construct()
@@ -77,6 +83,12 @@ class HeatmapAreaController extends CrudController
         $recordsQuery = clone $query;
         $mapAreasQuery = clone $query;
 
+        $latestPagasaAdvisory = PlantingAdvisory::query()
+            ->active()
+            ->where('source', 'PAGASA')
+            ->latest('valid_from')
+            ->first();
+
         return view('heatmap-areas.index', [
             'records' => $recordsQuery->latest()->paginate(12)->withQueryString(),
             'mapAreas' => $mapAreasQuery
@@ -104,6 +116,9 @@ class HeatmapAreaController extends CrudController
             'riskLevels' => ['Low', 'Moderate', 'High', 'Severe'],
             'riskTypes' => ['Flood', 'Drought', 'Typhoon', 'Heat'],
             'search' => $search,
+            'latestPagasaAdvisory' => $latestPagasaAdvisory,
+            'pagasaMapUrl' => 'https://www.pagasa.dost.gov.ph/?vm=r',
+            'pagasaRadarUrl' => 'https://www.pagasa.dost.gov.ph/radar',
         ]);
     }
 

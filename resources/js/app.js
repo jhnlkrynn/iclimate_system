@@ -1,6 +1,42 @@
 import './bootstrap';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import {
+    Chart,
+    ArcElement,
+    BarController,
+    BarElement,
+    CategoryScale,
+    DoughnutController,
+    Filler,
+    Legend,
+    LinearScale,
+    LineController,
+    LineElement,
+    PointElement,
+    Tooltip,
+} from 'chart.js';
+import L from 'leaflet';
 
 import Alpine from 'alpinejs';
+
+Chart.register(
+    ArcElement,
+    BarController,
+    BarElement,
+    CategoryScale,
+    DoughnutController,
+    Filler,
+    Legend,
+    LinearScale,
+    LineController,
+    LineElement,
+    PointElement,
+    Tooltip,
+);
+
+window.Chart = Chart;
+window.L = L;
+await import('leaflet.heat');
 
 window.Alpine = Alpine;
 
@@ -17,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     bindScrollSpy();
     bindPasswordToggles();
     bindRegisterNameSync();
+    bindGestureFeedback();
+    bindRevealMotion();
+    bindLogoutConfirmations();
     bindFastNavigation();
     bindLoadingForms();
     bindDeleteConfirmations();
@@ -29,6 +68,75 @@ function bindNavbarState() {
     const update = () => navbar.classList.toggle('scrolled', window.scrollY > 10);
     update();
     window.addEventListener('scroll', update, { passive: true });
+}
+
+function bindRevealMotion() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const selectors = [
+        '.page-hero',
+        '.alert',
+        '.card',
+        '.glass-card',
+        '.module-tile',
+        '.climate-chip',
+        '.risk-card',
+        '.stat-card',
+        '.soft-section',
+        '.filter-panel',
+        '.table-responsive',
+    ].join(',');
+
+    const elements = [...document.querySelectorAll(selectors)]
+        .filter((element) => !element.closest('.modal, .offcanvas, .ic-ai-panel'));
+
+    elements.slice(0, 36).forEach((element, index) => {
+        if (element.dataset.revealBound === 'true') return;
+        element.dataset.revealBound = 'true';
+        element.classList.add('ic-reveal');
+        element.style.setProperty('--ic-reveal-delay', `${Math.min(index * 38, 260)}ms`);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+
+    elements.forEach((element) => observer.observe(element));
+}
+
+function bindGestureFeedback() {
+    const selectors = [
+        '.btn',
+        '.sidebar-link',
+        '.sidebar-ai-card',
+        '.ai-chip',
+        '.ic-ai-chip',
+        '.quick-action',
+        '.priority-card',
+    ].join(',');
+
+    document.querySelectorAll(selectors).forEach((element) => {
+        if (element.dataset.gestureBound === 'true') return;
+        element.dataset.gestureBound = 'true';
+
+        element.addEventListener('pointerdown', (event) => {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            if (element.classList.contains('disabled') || element.hasAttribute('disabled')) return;
+
+            const rect = element.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'ic-ripple';
+            ripple.style.left = `${event.clientX - rect.left}px`;
+            ripple.style.top = `${event.clientY - rect.top}px`;
+            element.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+        }, { passive: true });
+    });
 }
 
 function bindMobileNavigation() {
@@ -115,9 +223,79 @@ function bindLoadingForms() {
         form.dataset.loadingBound = 'true';
 
         form.addEventListener('submit', () => {
+            if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
+                return;
+            }
+
             form.dataset.submitting = 'true';
             overlay?.classList.add('show');
             lockSubmitButtons(form);
+        });
+    });
+}
+
+function bindLogoutConfirmations() {
+    const modal = document.getElementById('icLogoutConfirm');
+    const cancelButton = modal?.querySelector('[data-logout-cancel]');
+    const confirmButton = modal?.querySelector('[data-logout-confirm-submit]');
+    const overlay = document.getElementById('loadingOverlay');
+    const progress = document.getElementById('pageProgress');
+    let pendingForm = null;
+
+    const close = () => {
+        modal?.classList.remove('show');
+        document.body.classList.remove('ic-modal-open');
+        pendingForm = null;
+    };
+
+    const open = (form) => {
+        pendingForm = form;
+        form.classList.remove('is-loading-action');
+        delete form.dataset.submitting;
+        overlay?.classList.remove('show');
+        progress?.classList.remove('show');
+        modal?.classList.add('show');
+        document.body.classList.add('ic-modal-open');
+        cancelButton?.focus();
+    };
+
+    cancelButton?.addEventListener('click', close);
+    modal?.addEventListener('click', (event) => {
+        if (event.target === modal) close();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal?.classList.contains('show')) close();
+    });
+    confirmButton?.addEventListener('click', () => {
+        if (!pendingForm) return;
+
+        const form = pendingForm;
+        pendingForm = null;
+        form.dataset.logoutConfirmed = 'true';
+        modal?.classList.remove('show');
+        confirmButton.disabled = true;
+        confirmButton.textContent = 'Logging out...';
+        HTMLFormElement.prototype.submit.call(form);
+    });
+
+    document.querySelectorAll('form[data-logout-confirm]').forEach((form) => {
+        if (form.dataset.logoutConfirmBound === 'true') return;
+        form.dataset.logoutConfirmBound = 'true';
+
+        form.addEventListener('submit', (event) => {
+            if (form.dataset.logoutConfirmed === 'true') {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            if (modal) {
+                open(form);
+            } else if (window.confirm(form.dataset.logoutConfirm || 'Are you sure you want to log out?')) {
+                form.dataset.logoutConfirmed = 'true';
+                HTMLFormElement.prototype.submit.call(form);
+            }
         });
     });
 }
@@ -165,6 +343,7 @@ function bindFastNavigation() {
             if (!canWarm(link)) return;
 
             progress?.classList.add('show');
+            document.body.classList.add('ic-page-leaving');
             link.classList.add('is-loading-action');
         });
     });
@@ -174,6 +353,10 @@ function bindFastNavigation() {
         form.dataset.fastSubmitBound = 'true';
 
         form.addEventListener('submit', () => {
+            if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
+                return;
+            }
+
             if (form.dataset.submitting === 'true') return;
             form.dataset.submitting = 'true';
 
@@ -182,6 +365,7 @@ function bindFastNavigation() {
             lockSubmitButtons(form);
 
             if (method !== 'GET') {
+                document.body.classList.add('ic-page-leaving');
                 form.classList.add('is-loading-action');
             }
         });
@@ -189,6 +373,7 @@ function bindFastNavigation() {
 
     window.addEventListener('pageshow', () => {
         progress?.classList.remove('show');
+        document.body.classList.remove('ic-page-leaving');
         document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
     });

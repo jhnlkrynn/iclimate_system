@@ -11,8 +11,7 @@ class AdvisoryGenerationService
     public function __construct(
         private readonly OpenMeteoService $weather,
         private readonly AdvisoryRuleEngine $rules,
-    ) {
-    }
+    ) {}
 
     public function generate(bool $fetchWeather = false, bool $forceWeather = false): array
     {
@@ -34,6 +33,7 @@ class AdvisoryGenerationService
         $ruleSummary = $this->rules->generate($weatherResult['records'], [
             'weather_freshness' => $weatherResult['freshness'] ?? 'fresh',
             'harvest_ready' => false,
+            'advisory_horizons' => ['hourly', 'daily', 'weekly', 'monthly'],
         ]);
 
         $summary = [

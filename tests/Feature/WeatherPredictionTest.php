@@ -30,7 +30,7 @@ class WeatherPredictionTest extends TestCase
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['target_month' => '2026-07']))
             ->assertOk()
-            ->assertSee('Monthly Weather Prediction')
+            ->assertSee('Rice Yield Forecast')
             ->assertSee('Random Forest')
             ->assertSee('Rainfall');
     }
@@ -41,23 +41,28 @@ class WeatherPredictionTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('weather-predictions.predict'), [
-                'rainfall' => 180,
-                'temp_avg' => 29,
-                'temp_range' => 8,
-                'area' => 120,
-                'previous_rainfall' => 150,
-                'previous_temp' => 28.5,
-                'rainfall_6m' => 170,
-                'temp_3m' => 29,
-                'temp_6m' => 28.8,
-                'seasonal_rainfall' => 900,
-                'seasonal_temp' => 29,
-                'season' => 'Wet',
+                'prediction_date' => '2026-07-15',
                 'farm_type' => 'Rainfed',
             ])
             ->assertOk()
-            ->assertSee('Rice Yield Prediction Result')
-            ->assertSee('Predicted Rice Yield')
+            ->assertSee('Prediction Result')
+            ->assertSee('Estimated Rice Yield')
             ->assertDontSee('Prediction error:');
+    }
+
+    public function test_rice_yield_prediction_rejects_unrealistic_inputs(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($user)
+            ->from(route('weather-predictions.index'))
+            ->post(route('weather-predictions.predict'), [
+                'prediction_date' => 'not-a-date',
+                'farm_type' => 'Rainfed',
+            ])
+            ->assertRedirect(route('weather-predictions.index'))
+            ->assertSessionHasErrors([
+                'prediction_date',
+            ]);
     }
 }

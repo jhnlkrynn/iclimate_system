@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -32,6 +33,14 @@ class CalendarController extends Controller
             ->orderBy('valid_from')
             ->get();
 
+        $feedEvents = FeedPost::query()
+            ->where('show_on_calendar', true)
+            ->whereNull('archived_at')
+            ->whereNotNull('event_date')
+            ->whereBetween('event_date', [$gridStart, $gridEnd])
+            ->orderBy('event_date')
+            ->get();
+
         $eventsByDay = [];
         foreach ($advisories as $advisory) {
             $start = ($advisory->valid_from?->copy() ?? $gridStart->copy())->startOfDay();
@@ -45,8 +54,12 @@ class CalendarController extends Controller
             }
 
             for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
-                $eventsByDay[$day->toDateString()][] = $advisory;
+                $eventsByDay[$day->toDateString()][] = $this->advisoryCalendarEvent($advisory);
             }
+        }
+
+        foreach ($feedEvents as $post) {
+            $eventsByDay[$post->event_date->toDateString()][] = $this->feedCalendarEvent($post);
         }
 
         $weeks = [];
@@ -60,9 +73,17 @@ class CalendarController extends Controller
             $weeks[] = $week;
         }
 
-        $upcoming = $advisories
+        $upcomingAdvisories = $advisories
             ->filter(fn (PlantingAdvisory $advisory) => ($advisory->valid_until ?? $advisory->valid_from) && ($advisory->valid_until ?? $advisory->valid_from)->gte($today))
-            ->sortBy('valid_from')
+            ->map(fn (PlantingAdvisory $advisory) => $this->advisoryCalendarEvent($advisory));
+
+        $upcomingFeedEvents = $feedEvents
+            ->filter(fn (FeedPost $post) => $post->event_date && $post->event_date->copy()->endOfDay()->gte($today))
+            ->map(fn (FeedPost $post) => $this->feedCalendarEvent($post));
+
+        $upcoming = $upcomingAdvisories
+            ->concat($upcomingFeedEvents)
+            ->sortBy('starts_at')
             ->take(6);
 
         $previous = $current->copy()->subMonth();
@@ -79,5 +100,31 @@ class CalendarController extends Controller
             'nextMonth' => $next->month,
             'nextYear' => $next->year,
         ]);
+    }
+
+    private function advisoryCalendarEvent(PlantingAdvisory $advisory): array
+    {
+        return [
+            'title' => $advisory->title,
+            'summary' => $advisory->summary,
+            'url' => route('planting-advisories.show', $advisory),
+            'starts_at' => $advisory->valid_from,
+            'type_key' => $advisory->advisory_type ?: $advisory->type,
+            'type_label' => $advisory->typeLabel(),
+            'badge_class' => $advisory->typeBadgeClass(),
+        ];
+    }
+
+    private function feedCalendarEvent(FeedPost $post): array
+    {
+        return [
+            'title' => $post->title,
+            'summary' => str($post->body)->limit(130)->toString(),
+            'url' => route('community-feed.index').'#post-'.$post->id,
+            'starts_at' => $post->event_date,
+            'type_key' => 'community',
+            'type_label' => 'Event',
+            'badge_class' => 'text-bg-light',
+        ];
     }
 }

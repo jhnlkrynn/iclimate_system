@@ -8,9 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    /**
-     * @param  string  ...$roles
-     */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();

@@ -1,5 +1,29 @@
 {
   "type": "FeatureCollection",
   "name": "lian-barangays",
-  "features": []
+  "metadata": {
+    "source": "Generated from iClimate barangay centroid coordinates using local Voronoi-style zones.",
+    "accuracy": "Approximate operational heatmap polygons; replace with official LGU/PSA barangay boundaries when available."
+  },
+  "features": [
+    {"type":"Feature","properties":{"barangay":"Bagong Pook","name":"Bagong Pook"},"geometry":{"type":"Polygon","coordinates":[[[120.6550027,14.0198254],[120.6480838,14.0249815],[120.6451229,14.0264176],[120.608268,14.0121929],[120.6093941,14.0113534],[120.6460323,14.0037681],[120.651684,14.0060766],[120.6550027,14.0198254]]]}},
+    {"type":"Feature","properties":{"barangay":"Balibago","name":"Balibago"},"geometry":{"type":"Polygon","coordinates":[[[120.6767588,13.9896248],[120.651684,14.0060766],[120.6460323,14.0037681],[120.6406855,13.9714967],[120.6696418,13.9433],[120.7034846,13.9433],[120.6767588,13.9896248]]]}},
+    {"type":"Feature","properties":{"barangay":"Barangay 1 (Pob.)","name":"Barangay 1 (Pob.)"},"geometry":{"type":"Polygon","coordinates":[[[120.6490295,14.0366558],[120.650651,14.0342235],[120.6522975,14.0355707],[120.6509519,14.0386656],[120.6490295,14.0366558]]]}},
+    {"type":"Feature","properties":{"barangay":"Barangay 2 (Pob.)","name":"Barangay 2 (Pob.)"},"geometry":{"type":"Polygon","coordinates":[[[120.6674981,14.0345473],[120.6528202,14.0458275],[120.6509519,14.0386656],[120.6522975,14.0355707],[120.6674156,14.0332085],[120.6674981,14.0345473]]]}},
+    {"type":"Feature","properties":{"barangay":"Barangay 3 (Pob.)","name":"Barangay 3 (Pob.)"},"geometry":{"type":"Polygon","coordinates":[[[120.641266,14.0355141],[120.6451229,14.0264176],[120.6480838,14.0249815],[120.650651,14.0342235],[120.6490295,14.0366558],[120.641266,14.0355141]]]}},
+    {"type":"Feature","properties":{"barangay":"Barangay 4 (Pob.)","name":"Barangay 4 (Pob.)"},"geometry":{"type":"Polygon","coordinates":[[[120.6449259,14.0564355],[120.6373565,14.0409066],[120.641266,14.0355141],[120.6490295,14.0366558],[120.6509519,14.0386656],[120.6528202,14.0458275],[120.6449259,14.0564355]]]}},
+    {"type":"Feature","properties":{"barangay":"Barangay 5 (Pob.)","name":"Barangay 5 (Pob.)"},"geometry":{"type":"Polygon","coordinates":[[[120.667656,14.0281076],[120.6674156,14.0332085],[120.6522975,14.0355707],[120.650651,14.0342235],[120.6480838,14.0249815],[120.6550027,14.0198254],[120.667656,14.0281076]]]}},
+    {"type":"Feature","properties":{"barangay":"Binubusan","name":"Binubusan"},"geometry":{"type":"Polygon","coordinates":[[[120.5938,14.0222057],[120.5938,14.0192687],[120.608268,14.0121929],[120.6451229,14.0264176],[120.641266,14.0355141],[120.6373565,14.0409066],[120.5938,14.0222057]]]}},
+    {"type":"Feature","properties":{"barangay":"Bungahan","name":"Bungahan"},"geometry":{"type":"Polygon","coordinates":[[[120.5938,14.0222057],[120.6373565,14.0409066],[120.6449259,14.0564355],[120.6449724,14.0717],[120.5938,14.0717],[120.5938,14.0222057]]]}},
+    {"type":"Feature","properties":{"barangay":"Cumba","name":"Cumba"},"geometry":{"type":"Polygon","coordinates":[[[120.693171,14.0212809],[120.7225,13.9738103],[120.7225,14.0316324],[120.693171,14.0212809]]]}},
+    {"type":"Feature","properties":{"barangay":"Humayingan","name":"Humayingan"},"geometry":{"type":"Polygon","coordinates":[[[120.693171,14.0212809],[120.6892054,14.0240482],[120.6783408,14.0211214],[120.6767588,13.9896248],[120.7034846,13.9433],[120.7225,13.9433],[120.7225,13.9738103],[120.693171,14.0212809]]]}},
+    {"type":"Feature","properties":{"barangay":"Kapito","name":"Kapito"},"geometry":{"type":"Polygon","coordinates":[[[120.6730379,14.0437363],[120.6978996,14.050683],[120.7203458,14.0717],[120.6586882,14.0717],[120.6730379,14.0437363]]]}},
+    {"type":"Feature","properties":{"barangay":"Lumaniag","name":"Lumaniag"},"geometry":{"type":"Polygon","coordinates":[[[120.6449259,14.0564355],[120.6528202,14.0458275],[120.6674981,14.0345473],[120.6730379,14.0437363],[120.6586882,14.0717],[120.6449724,14.0717],[120.6449259,14.0564355]]]}},
+    {"type":"Feature","properties":{"barangay":"Luyahan","name":"Luyahan"},"geometry":{"type":"Polygon","coordinates":[[[120.6293063,13.9758707],[120.6406855,13.9714967],[120.6460323,14.0037681],[120.6093941,14.0113534],[120.6293063,13.9758707]]]}},
+    {"type":"Feature","properties":{"barangay":"Malaruhatan","name":"Malaruhatan"},"geometry":{"type":"Polygon","coordinates":[[[120.6783408,14.0211214],[120.667656,14.0281076],[120.6550027,14.0198254],[120.651684,14.0060766],[120.6767588,13.9896248],[120.6783408,14.0211214]]]}},
+    {"type":"Feature","properties":{"barangay":"Matabungkay","name":"Matabungkay"},"geometry":{"type":"Polygon","coordinates":[[[120.6406855,13.9714967],[120.6293063,13.9758707],[120.5938,13.9565198],[120.5938,13.9433],[120.6696418,13.9433],[120.6406855,13.9714967]]]}},
+    {"type":"Feature","properties":{"barangay":"Prenza","name":"Prenza"},"geometry":{"type":"Polygon","coordinates":[[[120.6978996,14.050683],[120.6730379,14.0437363],[120.6674981,14.0345473],[120.6674156,14.0332085],[120.667656,14.0281076],[120.6783408,14.0211214],[120.6892054,14.0240482],[120.6978996,14.050683]]]}},
+    {"type":"Feature","properties":{"barangay":"Puting-Kahoy","name":"Puting-Kahoy"},"geometry":{"type":"Polygon","coordinates":[[[120.6978996,14.050683],[120.6892054,14.0240482],[120.693171,14.0212809],[120.7225,14.0316324],[120.7225,14.0717],[120.7203458,14.0717],[120.6978996,14.050683]]]}},
+    {"type":"Feature","properties":{"barangay":"San Diego","name":"San Diego"},"geometry":{"type":"Polygon","coordinates":[[[120.6293063,13.9758707],[120.6093941,14.0113534],[120.608268,14.0121929],[120.5938,14.0192687],[120.5938,13.9565198],[120.6293063,13.9758707]]]}}
+  ]
 }

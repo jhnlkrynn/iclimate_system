@@ -3,7 +3,9 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Services\Security\CaptchaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -15,9 +17,43 @@ class AuthenticationTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200);
+        $response->assertSee(route('captcha.image', ['context' => 'login']), false);
+    }
+
+    public function test_authenticated_users_can_still_open_login_screen_from_landing_page(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/login');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('auth.login');
+    }
+
+    public function test_login_captcha_image_can_be_rendered(): void
+    {
+        $response = $this->get('/captcha/login');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'image/svg+xml; charset=UTF-8');
+        $response->assertSee('<svg', false);
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('farmer.dashboard', absolute: false));
+    }
+
+    public function test_login_fails_when_captcha_is_missing(): void
     {
         $user = User::factory()->create();
 
@@ -26,18 +62,32 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('farmer.dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertSessionHasErrors('captcha_answer');
     }
 
+    public function test_login_fails_when_captcha_is_invalid(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'captcha_answer' => '8',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('captcha_answer');
+    }
 
     public function test_mao_personnel_is_redirected_after_login(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $response = $this->post('/login', [
+        $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
             'email' => $user->email,
             'password' => 'password',
+            'captcha_answer' => '7',
         ]);
 
         $this->assertAuthenticated();
@@ -48,21 +98,24 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $response = $this->post('/login', [
+        $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
             'email' => $user->email,
             'password' => 'password',
+            'captcha_answer' => '7',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('admin.dashboard', absolute: false));
     }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();
 
-        $this->post('/login', [
+        $this->withSession($this->captchaSession('login', '7'))->post('/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
+            'captcha_answer' => '7',
         ]);
 
         $this->assertGuest();
@@ -76,5 +129,20 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function captchaSession(string $context, string $answer): array
+    {
+        return [
+            CaptchaService::SESSION_KEY => [
+                'context' => $context,
+                'question' => 'What is 3 + 4?',
+                'answer_hash' => Hash::make($answer),
+                'created_at' => now()->timestamp,
+            ],
+        ];
     }
 }
