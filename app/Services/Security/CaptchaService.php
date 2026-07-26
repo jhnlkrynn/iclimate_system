@@ -10,11 +10,23 @@ class CaptchaService
 {
     public const SESSION_KEY = 'security.captcha';
 
+    /**
+     * Number of consecutive failed login attempts after which the CAPTCHA is shown.
+     */
+    public const FAILED_ATTEMPTS_THRESHOLD = 3;
+
     private const TTL_SECONDS = 600;
 
     private const CODE_LENGTH = 5;
 
     private const CODE_CHARACTERS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+    /**
+     * Kept out from under the "security.captcha" node: that key is replaced wholesale
+     * every time the challenge rotates (Laravel session keys nest on dots), which would
+     * wipe a sibling counter stored underneath it.
+     */
+    private const ATTEMPTS_SESSION_PREFIX = 'security.captcha_attempts.';
 
     /**
      * Return the current challenge for the context, or create a new one.
@@ -133,6 +145,48 @@ class CaptchaService
   {$letterSvg}
 </svg>
 SVG;
+    }
+
+    /**
+     * Determine whether the CAPTCHA should be shown for the given context, based on
+     * the number of consecutive failed attempts recorded for it in the session.
+     */
+    public function requiresCaptcha(Request $request, string $context): bool
+    {
+        return $this->failedAttempts($request, $context) >= self::FAILED_ATTEMPTS_THRESHOLD;
+    }
+
+    public function failedAttempts(Request $request, string $context): int
+    {
+        return (int) $request->session()->get(self::ATTEMPTS_SESSION_PREFIX.$context, 0);
+    }
+
+    /**
+     * The session key used to store the failed-attempt counter for a context.
+     */
+    public static function attemptsSessionKey(string $context): string
+    {
+        return self::ATTEMPTS_SESSION_PREFIX.$context;
+    }
+
+    /**
+     * Record a failed attempt for the given context and return the updated count.
+     */
+    public function recordFailedAttempt(Request $request, string $context): int
+    {
+        $count = $this->failedAttempts($request, $context) + 1;
+
+        $request->session()->put(self::ATTEMPTS_SESSION_PREFIX.$context, $count);
+
+        return $count;
+    }
+
+    /**
+     * Clear the failed-attempt counter for the given context (e.g. after a successful login).
+     */
+    public function resetAttempts(Request $request, string $context): void
+    {
+        $request->session()->forget(self::ATTEMPTS_SESSION_PREFIX.$context);
     }
 
     /**
