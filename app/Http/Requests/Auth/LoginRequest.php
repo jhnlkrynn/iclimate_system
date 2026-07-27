@@ -29,10 +29,12 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
+        $requiresCaptcha = app(CaptchaService::class)->requiresCaptcha($this, 'login');
+
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            'captcha_answer' => ['required', 'string', 'max:20'],
+            'captcha_answer' => [$requiresCaptcha ? 'required' : 'nullable', 'string', 'max:20'],
         ];
     }
 
@@ -58,8 +60,12 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! app(CaptchaService::class)->validate($this, 'login', $this->input('captcha_answer'))) {
+        $captcha = app(CaptchaService::class);
+        $requiresCaptcha = $captcha->requiresCaptcha($this, 'login');
+
+        if ($requiresCaptcha && ! $captcha->validate($this, 'login', $this->input('captcha_answer'))) {
             RateLimiter::hit($this->throttleKey());
+            $captcha->recordFailedAttempt($this, 'login');
 
             throw ValidationException::withMessages([
                 'captcha_answer' => 'The security check answer is incorrect. Please try again.',
@@ -68,6 +74,7 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            $captcha->recordFailedAttempt($this, 'login');
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -77,6 +84,7 @@ class LoginRequest extends FormRequest
         if (Auth::user()?->status !== User::STATUS_ACTIVE) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
+            $captcha->recordFailedAttempt($this, 'login');
 
             throw ValidationException::withMessages([
                 'email' => 'This account is inactive. Please contact the administrator.',
@@ -84,6 +92,7 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+        $captcha->resetAttempts($this, 'login');
     }
 
     /**

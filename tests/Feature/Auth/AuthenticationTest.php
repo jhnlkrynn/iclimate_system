@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use App\Services\Security\CaptchaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -15,6 +16,16 @@ class AuthenticationTest extends TestCase
     public function test_login_screen_can_be_rendered(): void
     {
         $response = $this->get('/login');
+
+        $response->assertStatus(200);
+        $response->assertDontSee(route('captcha.image', ['context' => 'login']), false);
+    }
+
+    public function test_login_screen_shows_captcha_after_three_failed_attempts(): void
+    {
+        $response = $this->withSession([
+            CaptchaService::attemptsSessionKey('login') => 3,
+        ])->get('/login');
 
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'login']), false);
@@ -53,11 +64,14 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('farmer.dashboard', absolute: false));
     }
 
-    public function test_login_fails_when_captcha_is_missing(): void
+    public function test_login_fails_when_captcha_is_missing_after_threshold_reached(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->post('/login', [
+        $response = $this->withSession([
+            ...$this->captchaSession('login', '7'),
+            CaptchaService::attemptsSessionKey('login') => 3,
+        ])->post('/login', [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -66,11 +80,14 @@ class AuthenticationTest extends TestCase
         $response->assertSessionHasErrors('captcha_answer');
     }
 
-    public function test_login_fails_when_captcha_is_invalid(): void
+    public function test_login_fails_when_captcha_is_invalid_after_threshold_reached(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
+        $response = $this->withSession([
+            ...$this->captchaSession('login', '7'),
+            CaptchaService::attemptsSessionKey('login') => 3,
+        ])->post('/login', [
             'email' => $user->email,
             'password' => 'password',
             'captcha_answer' => '8',
@@ -78,6 +95,88 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
         $response->assertSessionHasErrors('captcha_answer');
+    }
+
+    public function test_login_does_not_require_captcha_before_three_failed_attempts(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
+        $response->assertSessionDoesntHaveErrors('captcha_answer');
+    }
+
+    public function test_failed_login_attempts_below_threshold_still_allow_retry_without_captcha(): void
+    {
+        $user = User::factory()->create();
+
+        // Two failed attempts should not yet require the CAPTCHA.
+        for ($i = 0; $i < 2; $i++) {
+            $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ])->assertSessionHasErrors('email');
+        }
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('farmer.dashboard', absolute: false));
+    }
+
+    public function test_captcha_is_required_after_three_consecutive_failed_attempts(): void
+    {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ]);
+        }
+
+        $response = $this->get('/login');
+        $response->assertSee(route('captcha.image', ['context' => 'login']), false);
+
+        $failedLoginResponse = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $failedLoginResponse->assertSessionHasErrors('captcha_answer');
+    }
+
+    public function test_successful_login_resets_the_failed_attempt_counter(): void
+    {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ]);
+        }
+
+        $this->withSession($this->captchaSession('login', '7'))->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertAuthenticated();
+        Auth::logout();
+
+        $response = $this->get('/login');
+        $response->assertDontSee(route('captcha.image', ['context' => 'login']), false);
     }
 
     public function test_mao_personnel_is_redirected_after_login(): void

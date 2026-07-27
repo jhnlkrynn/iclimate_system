@@ -31,7 +31,8 @@
 
 <style>
     .ic-ai-widget { position: fixed; right: 1rem; bottom: 1rem; z-index: 2050; font-family: 'Inter', system-ui, sans-serif; }
-    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; }
+    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; padding: 0; overflow: hidden; }
+    .ic-ai-toggle img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
     .ic-ai-panel {
         position: absolute; right: 0; bottom: 4.5rem;
         width: min(920px, calc(100vw - 2rem)); height: min(660px, calc(100vh - 7rem));
@@ -193,7 +194,9 @@
             </form>
         </div>
     </div>
-    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName }} assistant">PP</button>
+    <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
+        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
+    </button>
 </div>
 
 <script>
