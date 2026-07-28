@@ -3,27 +3,30 @@
     $predictions = $weatherReady ? $result['predictions'] : [];
     $targetLabel = $targetMonth->format('F Y');
     $targetDate = $targetDate ?? $targetMonth;
-    $modelInput = $mlResult['model_input'] ?? [];
+    $modelInput = $mlResult['model_input'] ?? ($defaultModelInput ?? []);
     $seasonValue = $modelInput['season'] ?? ($predictions['season'] ?? 'Wet');
 
-    $rainfall = (float) ($modelInput['rainfall'] ?? ($predictions['rainfall'] ?? 180));
-    $tempAvg = (float) ($modelInput['temp_avg'] ?? ($predictions['temperature'] ?? 29));
-    $tempRange = (float) ($modelInput['temp_range'] ?? 8);
-    $area = (float) ($modelInput['area'] ?? 120);
-    $previousRainfall = (float) ($modelInput['previous_rainfall'] ?? max(0, $rainfall * 0.9));
+    $rainfall = (float) ($modelInput['rainfall'] ?? ($predictions['rainfall'] ?? 0));
+    $tempAvg = (float) ($modelInput['temp_avg'] ?? ($predictions['temperature'] ?? 0));
+    $tempRange = (float) ($modelInput['temp_range'] ?? 0);
+    $area = (float) ($modelInput['area'] ?? 0);
+    $previousRainfall = (float) ($modelInput['previous_rainfall'] ?? $rainfall);
     $previousTemp = (float) ($modelInput['previous_temp'] ?? $tempAvg);
     $rainfall6m = (float) ($modelInput['rainfall_6m'] ?? $rainfall);
     $temp3m = (float) ($modelInput['temp_3m'] ?? $tempAvg);
     $temp6m = (float) ($modelInput['temp_6m'] ?? $tempAvg);
-    $seasonalRainfall = (float) ($modelInput['seasonal_rainfall'] ?? max(0, $rainfall * 6));
+    $seasonalRainfall = (float) ($modelInput['seasonal_rainfall'] ?? $rainfall);
     $seasonalTemp = (float) ($modelInput['seasonal_temp'] ?? $tempAvg);
 
     $rainfallStatus = $rainfall < 120 ? ['Dry', 'Rainfall may be limited for rainfed fields.', 'tone-amber'] : ($rainfall > 280 ? ['Very Wet', 'Watch for flooding and drainage issues.', 'tone-red'] : ['Favorable', 'Rainfall is within a workable planning range.', 'tone-green']);
     $temperatureStatus = $tempAvg > 32 ? ['Hot', 'Heat stress may reduce crop performance.', 'tone-red'] : ($tempAvg < 24 ? ['Cool', 'Growth may be slower than expected.', 'tone-amber'] : ['Favorable', 'Temperature is suitable for rice growth.', 'tone-green']);
-    $humidityStatus = ($predictions['humidity'] ?? 75) > 88 ? ['Humid', 'Monitor for disease pressure.', 'tone-amber'] : ['Balanced', 'Humidity is manageable.', 'tone-green'];
-    $windStatus = ($predictions['wind_speed'] ?? 8) > 18 ? ['Windy', 'Secure field materials and monitor lodging risk.', 'tone-amber'] : ['Calm', 'Wind speed is not a major concern.', 'tone-green'];
+    $humidity = (float) ($modelInput['humidity'] ?? ($predictions['humidity'] ?? 75));
+    $windSpeed = (float) ($modelInput['wind_speed'] ?? ($predictions['wind_speed'] ?? 8));
+    $humidityStatus = $humidity > 88 ? ['Humid', 'Monitor for disease pressure.', 'tone-amber'] : ['Balanced', 'Humidity is manageable.', 'tone-green'];
+    $windStatus = $windSpeed > 18 ? ['Windy', 'Secure field materials and monitor lodging risk.', 'tone-amber'] : ['Calm', 'Wind speed is not a major concern.', 'tone-green'];
     $weatherConfidence = $result['confidence'] ?? ['value' => 0, 'label' => 'Not ready', 'note' => 'Add more climate records.'];
     $weatherInsights = $result['insights'] ?? [];
+    $activeWeatherTab = request()->isMethod('post') || isset($mlResult) && $mlResult ? 'rice-yield' : 'weather-forecast';
 @endphp
 
 <x-app-layout>
@@ -153,8 +156,8 @@
     </section>
 
     <div class="wp-tabs" role="tablist" aria-label="Weather prediction sections">
-        <button class="wp-tab-button active" type="button" role="tab" aria-selected="true" data-weather-tab="weather-forecast">Weather Forecast</button>
-        <button class="wp-tab-button" type="button" role="tab" aria-selected="false" data-weather-tab="rice-yield">Rice Yield</button>
+        <button class="wp-tab-button {{ $activeWeatherTab === 'weather-forecast' ? 'active' : '' }}" type="button" role="tab" aria-selected="{{ $activeWeatherTab === 'weather-forecast' ? 'true' : 'false' }}" data-weather-tab="weather-forecast">Weather Forecast</button>
+        <button class="wp-tab-button {{ $activeWeatherTab === 'rice-yield' ? 'active' : '' }}" type="button" role="tab" aria-selected="{{ $activeWeatherTab === 'rice-yield' ? 'true' : 'false' }}" data-weather-tab="rice-yield">Rice Yield</button>
     </div>
 
     @if (isset($error) && $error)
@@ -164,7 +167,7 @@
         </div>
     @endif
 
-    <div class="wp-tab-panel" data-weather-panel="weather-forecast">
+    <div class="wp-tab-panel" data-weather-panel="weather-forecast" @if($activeWeatherTab !== 'weather-forecast') hidden @endif>
         @if (isset($result) && $result && ! $result['ready'])
             <div class="alert alert-warning shadow-sm">
                 <strong>Weather model not ready.</strong>
@@ -175,20 +178,29 @@
             <div class="row g-4 mb-4">
                 <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $rainfallStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Rainfall</div><div class="wp-value">{{ number_format($predictions['rainfall'], 2) }} <span class="wp-unit">mm</span></div><div class="wp-status">{{ $rainfallStatus[0] }}</div><div class="wp-note">{{ $rainfallStatus[1] }}</div></div></div></div>
                 <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $temperatureStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Temperature</div><div class="wp-value">{{ number_format($predictions['temperature'], 2) }} <span class="wp-unit">&deg;C</span></div><div class="wp-status">{{ $temperatureStatus[0] }}</div><div class="wp-note">{{ $temperatureStatus[1] }}</div></div></div></div>
-                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $humidityStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Humidity</div><div class="wp-value">{{ number_format($predictions['humidity'], 2) }}<span class="wp-unit">%</span></div><div class="wp-status">{{ $humidityStatus[0] }}</div><div class="wp-note">{{ $humidityStatus[1] }}</div></div></div></div>
-                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $windStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Wind Speed</div><div class="wp-value">{{ number_format($predictions['wind_speed'], 2) }}</div><div class="wp-status">{{ $windStatus[0] }}</div><div class="wp-note">{{ $windStatus[1] }}</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $humidityStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Humidity</div><div class="wp-value">{{ number_format($humidity, 2) }}<span class="wp-unit">%</span></div><div class="wp-status">{{ $humidityStatus[0] }}</div><div class="wp-note">{{ $humidityStatus[1] }}</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $windStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Wind Speed</div><div class="wp-value">{{ number_format($windSpeed, 2) }}</div><div class="wp-status">{{ $windStatus[0] }}</div><div class="wp-note">{{ $windStatus[1] }}</div></div></div></div>
             </div>
 
             <div class="wp-panel mb-4 tone-green">
                 <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Forecast Summary</h2><div class="small text-muted">{{ $targetLabel }} | {{ $predictions['season'] }} season | {{ $weatherConfidence['label'] }}</div></div>
                 <div class="wp-panel-body">
                     <p class="mb-0 text-muted">{{ $result['message'] }}</p>
+                    @if(isset($mlResult) && $mlResult)
+                        <div class="mt-3">
+                            <span class="wp-feature-pill">{{ $mlResult['source'] ?? 'Trained Random Forest model' }}</span>
+                            <span class="wp-feature-pill">Yield: {{ number_format((float) $mlResult['predicted_yield'], 2) }} {{ $mlResult['unit'] ?? 'tons/hectare' }}</span>
+                            @if(! empty($mlResult['api_response_time_ms']))
+                                <span class="wp-feature-pill">API {{ number_format((float) $mlResult['api_response_time_ms']) }} ms</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         @endif
     </div>
 
-    <div class="wp-tab-panel" data-weather-panel="rice-yield" hidden>
+    <div class="wp-tab-panel" data-weather-panel="rice-yield" @if($activeWeatherTab !== 'rice-yield') hidden @endif>
         <div class="wp-panel mb-4 tone-green">
             <div class="wp-panel-header">
                 <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
@@ -211,7 +223,7 @@
                             <button class="btn btn-primary fw-bold px-4 w-100" type="submit" data-loading-text="Predicting...">Predict</button>
                         </div>
                         <div class="col-xl-5">
-                            <div class="small text-muted">Using {{ number_format($rainfall, 2) }} mm rainfall, {{ number_format($tempAvg, 2) }} &deg;C, and {{ $seasonValue }} season.</div>
+                            <div class="small text-muted">Using {{ number_format($rainfall, 2) }} mm rainfall, {{ number_format($tempAvg, 2) }} &deg;C, {{ number_format($humidity, 2) }}% humidity, {{ number_format($windSpeed, 2) }} wind speed, and {{ $seasonValue }} season.</div>
                         </div>
                     </div>
                 </form>
@@ -228,7 +240,7 @@
             $scoreTone = $score >= 90 ? 'tone-green' : ($score >= 70 ? 'tone-blue' : ($score >= 50 ? 'tone-amber' : 'tone-red'));
         @endphp
         <div class="wp-panel mb-4 {{ $yieldTone }}">
-            <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Prediction Result</h2><div class="small text-muted">Simple guidance for the selected date.</div></div>
+            <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Prediction Result</h2><div class="small text-muted">{{ $mlResult['source'] ?? 'Trained Random Forest model' }}{{ ! empty($mlResult['api_confidence']) ? ' | Confidence '.$mlResult['api_confidence'].'%' : '' }}</div></div>
             <div class="wp-panel-body">
                 <div class="row g-4">
                     <div class="col-lg-4"><div class="wp-result-card h-100"><div class="wp-label">Estimated Rice Yield</div><div class="wp-value">{{ number_format($yield, 2) }}</div><div class="wp-unit">tons/hectare</div><div class="wp-score-bar mt-3" style="--score: {{ $yieldScore }}%;"><span></span></div></div></div>
@@ -290,6 +302,8 @@
             predictionDate?.addEventListener('input', () => {
                 if (forecastDate) forecastDate.value = predictionDate.value;
             });
+
+            showTab(@json($activeWeatherTab));
         });
     </script>
 </x-app-layout>

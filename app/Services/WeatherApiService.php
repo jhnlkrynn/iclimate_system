@@ -8,9 +8,15 @@ use Throwable;
 
 class WeatherApiService
 {
-    public function forecast(): ?array
+    public function forecast(bool $refresh = false): ?array
     {
-        return Cache::remember('weather-api:forecast:lian', now()->addMinutes(10), fn () => $this->fetchForecast());
+        $realTime = (bool) config('services.weather_api.realtime', true);
+
+        if ($realTime || $refresh) {
+            return $this->fetchForecast();
+        }
+
+        return Cache::remember('weather-api:forecast:lian', now()->addMinutes((int) config('services.weather_api.refresh_minutes', 10)), fn () => $this->fetchForecast());
     }
 
     private function fetchForecast(): ?array

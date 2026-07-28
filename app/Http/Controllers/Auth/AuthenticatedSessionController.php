@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Services\Security\CaptchaService;
+use App\Services\SystemAuditLogger;
 use App\Services\Weather\OpenMeteoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request, CaptchaService $captcha, OpenMeteoService $weather): View
     {
-        $forecastResult = $weather->fetchForecast($request->boolean('refresh_weather'));
+        $forecastResult = $weather->fetchForecast(! $request->boolean('cached_weather'));
         $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
         $today = now($weatherTimezone)->toDateString();
         $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
@@ -28,6 +30,8 @@ class AuthenticatedSessionController extends Controller
 
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
+            'demoAccounts' => $this->demoAccounts(),
+            'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
             'loginWeather' => [
                 'forecast' => $latestForecast,
                 'result' => $forecastResult,
@@ -44,6 +48,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        SystemAuditLogger::record('User Login', $request);
 
         return redirect()
             ->intended(route($request->user()->dashboardRoute(), absolute: false))
@@ -55,6 +60,9 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        SystemAuditLogger::record('User Logout', $request, user: $user);
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
@@ -62,5 +70,18 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'You have logged out successfully.');
+    }
+
+    private function demoAccounts()
+    {
+        return User::query()
+            ->whereIn('email', ['farmer@iclimate.com', 'mao@iclimate.com', 'admin@iclimate.com'])
+            ->where('status', User::STATUS_ACTIVE)
+            ->orderByRaw('case role when ? then 1 when ? then 2 when ? then 3 else 4 end', [
+                User::ROLE_FARMER,
+                User::ROLE_MAO,
+                User::ROLE_IT_EXPERT,
+            ])
+            ->get(['name', 'email', 'role', 'status']);
     }
 }

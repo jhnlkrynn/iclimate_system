@@ -8,6 +8,7 @@ use App\Models\RiceProduction;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\LianFarmTypes;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -15,9 +16,10 @@ class LianHeatmapController extends Controller
 {
     private const GEORISK_QUERY_URL = 'https://portal.georisk.gov.ph/arcgis/rest/services/PSA/Barangay/MapServer/4/query';
 
-    public function __invoke(LianBarangayWeatherService $weather): JsonResponse
+    public function __invoke(Request $request, LianBarangayWeatherService $weather): JsonResponse
     {
-        $weatherByBarangay = $weather->all();
+        $refresh = ! $request->boolean('cached_weather');
+        $weatherByBarangay = $weather->all(refresh: $refresh);
         $areas = HeatmapArea::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -45,7 +47,7 @@ class LianHeatmapController extends Controller
             ], $this->productionStats($area->barangay)),
         ])->all();
 
-        [$boundaryGeojson, $boundarySource] = $this->boundaryGeojson();
+        [$boundaryGeojson, $boundarySource] = $this->boundaryGeojson(refresh: $request->boolean('refresh_boundaries'));
         $features = collect($boundaryGeojson['features'] ?? [])
             ->map(function (array $feature) use ($riskByBarangay): ?array {
                 $name = $this->featureBarangayName($feature);
@@ -75,8 +77,12 @@ class LianHeatmapController extends Controller
         ]);
     }
 
-    private function boundaryGeojson(): array
+    private function boundaryGeojson(bool $refresh = false): array
     {
+        if ($refresh) {
+            Cache::forget('heatmap:lian-boundaries-api');
+        }
+
         return Cache::remember('heatmap:lian-boundaries-api', now()->addHours(12), function (): array {
             try {
                 $geojson = Http::timeout(12)

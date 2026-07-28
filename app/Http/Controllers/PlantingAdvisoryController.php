@@ -7,6 +7,8 @@ use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\Advisories\AdvisoryGenerationService;
+use App\Services\Advisories\PagasaAdvisoryService;
+use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\OpenMeteoService;
 use App\Support\LianBarangays;
@@ -25,8 +27,9 @@ class PlantingAdvisoryController extends Controller
 
     private const STATUSES = ['pending_review', 'published', 'expired', 'rejected', 'archived'];
 
-    public function index(Request $request, TyphoonSafetyService $typhoonSafety): View
+    public function index(Request $request, TyphoonSafetyService $typhoonSafety, PagasaAdvisoryService $pagasa): View
     {
+        $pagasaSummary = $pagasa->fetchAndStore(false);
         $query = $this->filteredQuery($request)
             ->when($request->user()->role === User::ROLE_FARMER, function ($query) use ($request) {
                 $query->active()->forBarangay($request->user()->barangay);
@@ -53,6 +56,7 @@ class PlantingAdvisoryController extends Controller
             'statuses' => self::STATUSES,
             'barangays' => LianBarangays::all(),
             'canManage' => $this->canManage($request),
+            'pagasaSummary' => $pagasaSummary,
         ]);
     }
 
@@ -102,6 +106,10 @@ class PlantingAdvisoryController extends Controller
             'requires_review' => $data['status'] !== PlantingAdvisory::STATUS_PUBLISHED,
             'published_at' => $data['status'] === PlantingAdvisory::STATUS_PUBLISHED ? now() : null,
         ]);
+        SystemAuditLogger::forModel('created', $advisory, $request, [
+            'target_barangay' => $advisory->target_barangay,
+            'status' => $advisory->status,
+        ]);
 
         return redirect()->route('planting-advisories.show', $advisory)->with('success', 'Advisory saved successfully.');
     }
@@ -143,6 +151,10 @@ class PlantingAdvisoryController extends Controller
                 ? ($plantingAdvisory->published_at ?? now())
                 : $plantingAdvisory->published_at,
         ]);
+        SystemAuditLogger::forModel('updated', $plantingAdvisory, $request, [
+            'target_barangay' => $plantingAdvisory->target_barangay,
+            'status' => $plantingAdvisory->status,
+        ]);
 
         return redirect()->route('planting-advisories.show', $plantingAdvisory)->with('success', 'Advisory updated successfully.');
     }
@@ -151,6 +163,7 @@ class PlantingAdvisoryController extends Controller
     {
         $this->authorizeManage($request);
         $plantingAdvisory->update(['status' => PlantingAdvisory::STATUS_ARCHIVED]);
+        SystemAuditLogger::forModel('archived', $plantingAdvisory, $request);
 
         return redirect()->route('planting-advisories.index')->with('success', 'Advisory archived.');
     }
@@ -181,6 +194,9 @@ class PlantingAdvisoryController extends Controller
             'published_at' => now(),
             'source' => 'MAO-Reviewed Advisory',
         ]);
+        SystemAuditLogger::forModel('published', $advisory, $request, [
+            'target_barangay' => $advisory->target_barangay,
+        ]);
 
         return back()->with('success', 'Advisory Published. The advisory is now visible to selected farmers.');
     }
@@ -196,6 +212,9 @@ class PlantingAdvisoryController extends Controller
             'status' => PlantingAdvisory::STATUS_REJECTED,
             'rejection_reason' => $data['rejection_reason'],
         ]);
+        SystemAuditLogger::forModel('rejected', $advisory, $request, [
+            'reason' => $data['rejection_reason'],
+        ]);
 
         return back()->with('success', 'Advisory rejected.');
     }
@@ -209,6 +228,7 @@ class PlantingAdvisoryController extends Controller
     {
         $this->authorizeManage($request);
         $advisory->update(['status' => PlantingAdvisory::STATUS_ARCHIVED]);
+        SystemAuditLogger::forModel('archived', $advisory, $request);
 
         return back()->with('success', 'Advisory archived.');
     }
@@ -217,21 +237,54 @@ class PlantingAdvisoryController extends Controller
     {
         $this->authorizeManage($request);
         $result = $weather->fetchForecast(true);
+        SystemAuditLogger::record('Refreshed Advisory Weather', $request, [
+            'ok' => $result['ok'] ?? null,
+            'records_saved' => $result['records_saved'] ?? null,
+            'message' => $result['message'] ?? null,
+        ]);
 
         return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
     }
 
-    public function regenerate(Request $request, AdvisoryGenerationService $service): RedirectResponse
+    public function regenerate(Request $request, AdvisoryGenerationService $service, PagasaAdvisoryService $pagasa): RedirectResponse
     {
         $this->authorizeManage($request);
+        $pagasaSummary = $pagasa->fetchAndStore(true);
         $summary = $service->generate(fetchWeather: true, forceWeather: true);
-        $message = "{$summary['advisories_created']} advisories were created, {$summary['advisories_skipped_as_duplicates']} duplicates were skipped, and {$summary['advisories_expired']} expired advisory records were updated.";
+        $message = "{$pagasaSummary['advisories_created']} PAGASA advisories and {$summary['advisories_created']} forecast-based advisories were created. {$pagasaSummary['advisories_skipped_as_duplicates']} PAGASA duplicates and {$summary['advisories_skipped_as_duplicates']} forecast duplicates were skipped. {$summary['advisories_expired']} expired advisory records were updated.";
 
-        if ($summary['errors']) {
-            Log::warning('Advisory regeneration completed with errors.', $summary);
+        $errors = array_merge($pagasaSummary['errors'] ?? [], $summary['errors'] ?? []);
+
+        if ($errors) {
+            Log::warning('Advisory regeneration completed with errors.', [
+                'pagasa' => $pagasaSummary,
+                'forecast' => $summary,
+            ]);
         }
+        SystemAuditLogger::record('Generated Live Advisories', $request, [
+            'pagasa_created' => $pagasaSummary['advisories_created'] ?? 0,
+            'forecast_created' => $summary['advisories_created'] ?? 0,
+            'forecast_expired' => $summary['advisories_expired'] ?? 0,
+            'errors' => $errors,
+        ]);
 
-        return back()->with($summary['errors'] ? 'error' : 'success', $message);
+        return back()->with($errors ? 'error' : 'success', $message);
+    }
+
+    public function refreshPagasa(Request $request, PagasaAdvisoryService $pagasa, AdvisoryGenerationService $service): RedirectResponse
+    {
+        $pagasaSummary = $pagasa->fetchAndStore(true);
+        $forecastSummary = $service->generate(fetchWeather: true, forceWeather: true);
+        $errors = array_merge($pagasaSummary['errors'] ?? [], $forecastSummary['errors'] ?? []);
+        $message = "{$pagasaSummary['advisories_created']} PAGASA advisories and {$forecastSummary['advisories_created']} forecast-based advisories created. Sources checked: {$pagasaSummary['sources_checked']}.";
+        SystemAuditLogger::record('Refreshed PAGASA Advisories', $request, [
+            'sources_checked' => $pagasaSummary['sources_checked'] ?? 0,
+            'pagasa_created' => $pagasaSummary['advisories_created'] ?? 0,
+            'forecast_created' => $forecastSummary['advisories_created'] ?? 0,
+            'errors' => $errors,
+        ]);
+
+        return back()->with($errors ? 'error' : 'success', $message);
     }
 
     private function filteredQuery(Request $request)
@@ -252,7 +305,17 @@ class PlantingAdvisoryController extends Controller
             ->when($request->filled('type'), fn ($query) => $query->where('advisory_type', strtolower((string) $request->query('type'))))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->when($request->filled('severity'), fn ($query) => $query->where('severity', $request->query('severity')))
-            ->when($request->filled('target_barangay'), fn ($query) => $query->where('target_barangay', $request->query('target_barangay')));
+            ->when($request->filled('target_barangay'), function ($query) use ($request) {
+                $barangay = (string) $request->query('target_barangay');
+
+                $query->where(function ($builder) use ($barangay) {
+                    $builder->where('target_barangay', $barangay)
+                        ->orWhereNull('target_barangay')
+                        ->orWhere('target_barangay', '')
+                        ->orWhere('target_scope', 'municipality')
+                        ->orWhereJsonContains('metadata->pagasa_barangay_matches', $barangay);
+                });
+            });
     }
 
     private function validated(Request $request): array

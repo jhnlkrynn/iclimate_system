@@ -1942,8 +1942,8 @@
             <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <div class="trust-num">PAGASA</div>
-            <div class="trust-label">Verified Data Source</div>
+            <div class="trust-num">API + PAGASA</div>
+            <div class="trust-label">Forecast & Advisory Sources</div>
           </div>
         </div>
       </div>
@@ -2017,7 +2017,7 @@
       <div class="pillar-card">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#fff"/></svg></div>
         <strong>Climate-Informed</strong>
-        <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
+        <p>Combining stored climate records, Open-Meteo/OpenWeather forecasts, and PAGASA advisory references for localized guidance.</p>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#fff" stroke-width="1.5"/></svg></div>
@@ -2062,9 +2062,9 @@
         </div>
         <div class="wwa-stat">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#E8A73D" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-          <div class="wwa-num">PAGASA</div>
-          <div class="wwa-label">Verified Data Source</div>
-          <p class="wwa-desc">Trusted climate data from PAGASA</p>
+          <div class="wwa-num">API + PAGASA</div>
+          <div class="wwa-label">Weather Sources</div>
+          <p class="wwa-desc">Forecast APIs plus official PAGASA advisory references</p>
         </div>
         <div class="wwa-stat">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#E8A73D" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#E8A73D" stroke-width="1.2"/></svg></div>
@@ -2099,7 +2099,7 @@
           </svg>
         </div>
         <h3>Weather Analysis</h3>
-        <p>Access real-time and historical climate data including rainfall, temperature, humidity, wind, and more from PAGASA.</p>
+        <p>Access stored climate records and live forecast inputs for rainfall, temperature, humidity, wind, and related weather conditions.</p>
         <span class="fc-badge">Climate Records</span>
       </div>
       <div class="feature-card">
@@ -2175,7 +2175,7 @@
             <span class="how-step-num">01</span>
           </div>
           <h3>Log climate data</h3>
-          <p>We collect real-time and historical climate data from trusted sources like PAGASA.</p>
+          <p>We combine stored climate records, forecast API updates, and official PAGASA advisory references.</p>
         </div>
         <div class="how-step">
           <div class="how-step-top">
@@ -2531,7 +2531,7 @@
         <a href="{{ url('/') }}" class="nav-logo footer-logo">
           <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
-        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
+        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating stored climate records, forecast APIs, PAGASA advisory references, and local rice production records to support farmers, MAO personnel, and IT experts in Lian, Batangas.</p>
       </div>
 
       <!-- Column 2: Platform -->

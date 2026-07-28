@@ -14,10 +14,18 @@ class MonthlyWeatherRandomForest
     public function predict(CarbonImmutable $targetMonth): array
     {
         return Cache::remember(
-            'weather-random-forest:'.$targetMonth->format('Y-m'),
+            'weather-random-forest:'.$targetMonth->format('Y-m').':'.$this->climateRecordVersion(),
             now()->addMinutes(15),
             fn () => $this->buildPrediction($targetMonth)
         );
+    }
+
+    private function climateRecordVersion(): string
+    {
+        return implode(':', [
+            ClimateRecord::query()->count(),
+            (string) (ClimateRecord::query()->max('updated_at') ?? 'none'),
+        ]);
     }
 
     private function buildPrediction(CarbonImmutable $targetMonth): array

@@ -1,4 +1,5 @@
 @php
+    $assistantName = $assistantName ?? 'PalayPilot';
     $widgetChats = collect();
 
     $icAiHelpTopics = match (auth()->user()->role) {
@@ -38,11 +39,12 @@
         border: 1.5px solid #e8e0d0; border-radius: 18px; overflow: hidden;
         background: #fff; box-shadow: 0 1.4rem 3rem rgba(13,31,24,.22);
         display: none; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+        min-height: 0;
     }
     .ic-ai-widget.open .ic-ai-panel { display: grid; }
 
     /* ---- Left info panel ---- */
-    .ic-ai-left { background: linear-gradient(160deg, #0d1f18, #1a3a2a 60%, #204631); color: #fff; padding: 1.1rem 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: .9rem; }
+    .ic-ai-left { background: linear-gradient(160deg, #0d1f18, #1a3a2a 60%, #204631); color: #fff; padding: 1.1rem 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: .9rem; min-height: 0; }
     .ic-ai-left-head { display: flex; align-items: flex-start; gap: .6rem; }
     .ic-ai-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: contain; flex-shrink: 0; }
     .ic-ai-brand { font-family: 'DM Serif Display', serif; font-size: 1.15rem; line-height: 1.2; }
@@ -62,9 +64,9 @@
     .ic-ai-help-desc { font-size: .72rem; color: rgba(255,255,255,.62); margin-top: .1rem; line-height: 1.35; }
 
     /* ---- Right chat panel ---- */
-    .ic-ai-right { display: grid; grid-template-rows: minmax(0,1fr) auto auto; position: relative; background: linear-gradient(180deg, #f7fbf8, #e9f5e1); min-width: 0; }
+    .ic-ai-right { display: grid; grid-template-rows: minmax(0,1fr) auto auto auto; position: relative; background: linear-gradient(180deg, #f7fbf8, #e9f5e1); min-width: 0; min-height: 0; overflow: hidden; }
     .ic-ai-close { position: absolute; top: .7rem; right: .8rem; z-index: 2; border: 1px solid #d4edda; background: #fff; color: #0d1f18; border-radius: 999px; width: 30px; height: 30px; font-weight: 700; line-height: 1; }
-    .ic-ai-body { overflow-y: auto; padding: 1.1rem 1.1rem .6rem; }
+    .ic-ai-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.1rem 1.1rem .9rem; scrollbar-gutter: stable; }
     .ic-ai-msg { display: flex; margin-bottom: .8rem; }
     .ic-ai-msg.user { justify-content: flex-end; }
     .ic-ai-msg-col { max-width: 78%; display: flex; flex-direction: column; }
@@ -281,7 +283,7 @@
             widget.classList.toggle('open');
             if (widget.classList.contains('open')) {
                 input.focus();
-                scroll();
+                requestAnimationFrame(scroll);
             }
         });
         close.addEventListener('click', () => widget.classList.remove('open'));

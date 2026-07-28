@@ -275,16 +275,28 @@ class PagasaAdvisoryService
 
     private function sources(): array
     {
-        return [
-            [
-                'url' => (string) config('services.pagasa.regional_forecast_url'),
+        $regionalUrls = (array) config('services.pagasa.regional_forecast_urls', []);
+
+        if ($regionalUrls === []) {
+            $regionalUrls = [(string) config('services.pagasa.regional_forecast_url')];
+        }
+
+        $sources = collect($regionalUrls)
+            ->filter(fn ($url): bool => trim((string) $url) !== '')
+            ->unique()
+            ->map(fn ($url): array => [
+                'url' => (string) $url,
                 'horizon' => 'online',
-            ],
-            [
-                'url' => (string) config('services.pagasa.weekly_outlook_url'),
-                'horizon' => 'weekly',
-            ],
+            ])
+            ->values()
+            ->all();
+
+        $sources[] = [
+            'url' => (string) config('services.pagasa.weekly_outlook_url'),
+            'horizon' => 'weekly',
         ];
+
+        return array_values(array_filter($sources, fn (array $source): bool => trim($source['url']) !== ''));
     }
 
     private function summary(string $message): array

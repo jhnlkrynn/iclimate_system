@@ -175,16 +175,6 @@ class PredictionService
             ]);
         }
 
-        if ($builtIn = $this->knowledgeBase->builtInAnswer($question, $intent, $language)) {
-            return $this->textResponse($builtIn['answer'], $intent, $language, $memory, $startedAt, [
-                'source_type' => 'Knowledge Base',
-                'source_name' => $builtIn['source_name'],
-                'source_url' => null,
-                'confidence_score' => $builtIn['confidence'],
-                'intent_detection' => $intentResult,
-            ]);
-        }
-
         if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
             return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
@@ -195,7 +185,7 @@ class PredictionService
             ]);
         }
 
-        if ($groqAnswer = $this->groqChat->answer($user, $question, $intent, $language, $memory)) {
+        if ($groqAnswer = $this->groqChat->answer($user, $question, $intent, $language, $memory, $this->assistantContextForGroq($user))) {
             return $this->textResponse($groqAnswer['answer'], $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Generative AI',
                 'source_name' => $groqAnswer['source_name'],
@@ -207,6 +197,16 @@ class PredictionService
                     'model' => $groqAnswer['model'],
                     'usage' => $groqAnswer['usage'],
                 ],
+            ]);
+        }
+
+        if ($builtIn = $this->knowledgeBase->builtInAnswer($question, $intent, $language)) {
+            return $this->textResponse($builtIn['answer'], $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Knowledge Base',
+                'source_name' => $builtIn['source_name'],
+                'source_url' => null,
+                'confidence_score' => $builtIn['confidence'],
+                'intent_detection' => $intentResult,
             ]);
         }
 
@@ -358,6 +358,89 @@ class PredictionService
         }
 
         return null;
+    }
+
+    private function assistantContextForGroq(User $user): array
+    {
+        $profile = $user->farmerProfile;
+        $barangay = $profile?->barangay ?: $user->barangay;
+        $latestWeather = ExternalWeatherData::query()->latest('fetched_at')->first();
+        $latestClimate = ClimateRecord::query()->latest('record_date')->first();
+        $latestProduction = RiceProduction::query()
+            ->when($barangay, fn ($query) => $query->where('barangay', $barangay))
+            ->latest('year')
+            ->first() ?: RiceProduction::query()->latest('year')->first();
+        $latestAdvisory = PlantingAdvisory::query()
+            ->active()
+            ->forBarangay($barangay)
+            ->latest('published_at')
+            ->first();
+        $latestAnnouncement = Announcement::query()->where('status', 'Published')->latest()->first();
+        $latestNotification = Notification::query()->where('user_id', $user->id)->latest()->first();
+
+        return [
+            'current_user' => [
+                'role' => $user->role,
+                'barangay' => $barangay,
+                'farm_area_hectares' => $profile?->farm_area,
+                'farm_type' => $profile?->farm_type,
+            ],
+            'latest_weather_forecast' => $latestWeather ? [
+                'source' => $latestWeather->source,
+                'location' => $latestWeather->location_name,
+                'forecast_date' => $latestWeather->forecast_date?->toDateString(),
+                'temperature_c' => $latestWeather->temperature,
+                'rainfall_mm' => $latestWeather->rainfall_mm,
+                'humidity_percent' => $latestWeather->humidity,
+                'wind_speed' => $latestWeather->wind_speed,
+                'precipitation_probability' => $latestWeather->precipitation_probability,
+                'fetched_at' => $latestWeather->fetched_at?->toDateTimeString(),
+            ] : null,
+            'latest_climate_record' => $latestClimate ? [
+                'record_date' => $latestClimate->record_date?->toDateString(),
+                'rainfall_mm' => $latestClimate->rainfall,
+                'temperature_c' => $latestClimate->temperature,
+                'humidity_percent' => $latestClimate->humidity,
+                'wind_speed' => $latestClimate->wind_speed,
+                'season' => $latestClimate->season,
+                'source' => $latestClimate->source,
+            ] : null,
+            'latest_rice_production' => $latestProduction ? [
+                'barangay' => $latestProduction->barangay,
+                'year' => $latestProduction->year,
+                'season' => $latestProduction->season,
+                'irrigation_type' => $latestProduction->irrigation_type,
+                'yield_per_hectare' => $latestProduction->yield_per_hectare,
+                'area_hectares' => $latestProduction->area_hectares,
+                'total_production' => $latestProduction->total_production,
+            ] : null,
+            'active_planting_advisory' => $latestAdvisory ? [
+                'title' => $latestAdvisory->title,
+                'summary' => $latestAdvisory->summary,
+                'message' => $latestAdvisory->message,
+                'recommended_action' => $latestAdvisory->recommended_action,
+                'severity' => $latestAdvisory->severity,
+                'target_barangay' => $latestAdvisory->targetLabel(),
+                'source' => $latestAdvisory->source,
+                'published_at' => $latestAdvisory->published_at?->toDateTimeString(),
+            ] : null,
+            'latest_announcement' => $latestAnnouncement ? [
+                'title' => $latestAnnouncement->title,
+                'content' => str($latestAnnouncement->content)->limit(400)->toString(),
+                'published_at' => $latestAnnouncement->published_at?->toDateTimeString(),
+            ] : null,
+            'latest_notification' => $latestNotification ? [
+                'title' => $latestNotification->title,
+                'message' => $latestNotification->message,
+                'created_at' => $latestNotification->created_at?->toDateTimeString(),
+            ] : null,
+            'record_counts' => [
+                'climate_records' => ClimateRecord::query()->count(),
+                'rice_productions' => RiceProduction::query()->count(),
+                'weather_forecasts' => ExternalWeatherData::query()->count(),
+                'active_advisories' => PlantingAdvisory::query()->active()->forBarangay($barangay)->count(),
+            ],
+        ];
     }
 
     private function isSupportedNonPredictionQuestion(string $intent, string $question): bool

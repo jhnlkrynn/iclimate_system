@@ -92,7 +92,16 @@
                 <div class="d-flex flex-wrap gap-2 action-cluster">
                     <a class="btn btn-light" href="{{ route('management.advisories.index') }}">Review Workspace</a>
                     <a class="btn btn-outline-light" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
+                    <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true">
+                        @csrf
+                        <button class="btn btn-outline-light" type="submit" data-loading-text="Refreshing...">Refresh PAGASA</button>
+                    </form>
                 </div>
+            @else
+                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true" class="action-cluster">
+                    @csrf
+                    <button class="btn btn-light" type="submit" data-loading-text="Refreshing...">Refresh PAGASA</button>
+                </form>
             @endif
         </div>
     </section>
@@ -104,6 +113,13 @@
                     <div class="stat-label">Latest PAGASA Online Advisory</div>
                     <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->format('F d, Y, g:i A') ?? 'No PAGASA match yet' }}</div>
                     <div class="text-muted small">Official source: PAGASA, filtered for Lian/Batangas</div>
+                    @isset($pagasaSummary)
+                        <div class="text-muted small mt-2">
+                            PAGASA sources checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
+                            new matches: {{ number_format($pagasaSummary['advisories_created'] ?? 0) }};
+                            no Lian/Batangas match: {{ number_format($pagasaSummary['sources_without_lian_batangas_match'] ?? 0) }}
+                        </div>
+                    @endisset
                     @if($lastWeather)
                         <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->format('M d, g:i A') }}</div>
                     @endif

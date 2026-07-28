@@ -11,7 +11,7 @@ class LianWeatherController extends Controller
 {
     public function __invoke(Request $request, LianBarangayWeatherService $weather): JsonResponse
     {
-        $records = $weather->all(refresh: $request->boolean('refresh'));
+        $records = $weather->all(refresh: $request->boolean('refresh') || ! $request->boolean('cached_weather'));
 
         return response()->json([
             'source' => 'Open-Meteo Forecast API',

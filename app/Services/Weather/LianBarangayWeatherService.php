@@ -51,43 +51,17 @@ class LianBarangayWeatherService
     public function forBarangay(string $barangay, float $latitude, float $longitude, bool $refresh = false): array
     {
         $cacheKey = 'weather-api:lian-barangay:'.Str::slug($barangay);
+        $realTime = (bool) config('services.open_meteo.realtime', true);
 
-        if ($refresh) {
+        if ($refresh || $realTime) {
             Cache::forget($cacheKey);
         }
 
-        return Cache::remember($cacheKey, now()->addMinutes($this->refreshMinutes()), function () use ($barangay, $latitude, $longitude): array {
-            try {
-                $payload = $this->requestForecast($latitude, $longitude);
+        if ($refresh || $realTime) {
+            return $this->fetchBarangayWeather($barangay, $latitude, $longitude);
+        }
 
-                return $this->summarize($barangay, $latitude, $longitude, $payload);
-            } catch (Throwable $exception) {
-                Log::warning('Lian barangay weather fetch failed.', [
-                    'barangay' => $barangay,
-                    'message' => $exception->getMessage(),
-                ]);
-
-                return [
-                    'barangay' => $barangay,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'source' => 'Open-Meteo Forecast API',
-                    'status' => 'unavailable',
-                    'stale' => true,
-                    'message' => 'Live barangay weather could not be refreshed. Use stored iClimate risk data until the next scheduled update.',
-                    'observed_at' => null,
-                    'rainfall_status' => null,
-                    'rainfall_now_mm' => null,
-                    'rainfall_24h_mm' => null,
-                    'rainfall_7d_mm' => null,
-                    'precip_probability_percent' => null,
-                    'temperature_c' => null,
-                    'humidity_percent' => null,
-                    'wind_speed_kmh' => null,
-                    'fetched_at' => now()->toDateTimeString(),
-                ];
-            }
-        });
+        return Cache::remember($cacheKey, now()->addMinutes($this->refreshMinutes()), fn (): array => $this->fetchBarangayWeather($barangay, $latitude, $longitude));
     }
 
     public function refresh(): array
@@ -119,6 +93,40 @@ class LianBarangayWeatherService
         }
 
         return $json;
+    }
+
+    private function fetchBarangayWeather(string $barangay, float $latitude, float $longitude): array
+    {
+        try {
+            $payload = $this->requestForecast($latitude, $longitude);
+
+            return $this->summarize($barangay, $latitude, $longitude, $payload);
+        } catch (Throwable $exception) {
+            Log::warning('Lian barangay weather fetch failed.', [
+                'barangay' => $barangay,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [
+                'barangay' => $barangay,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'source' => 'Open-Meteo Forecast API',
+                'status' => 'unavailable',
+                'stale' => true,
+                'message' => 'Live barangay weather could not be refreshed. Use stored iClimate risk data until the next scheduled update.',
+                'observed_at' => null,
+                'rainfall_status' => null,
+                'rainfall_now_mm' => null,
+                'rainfall_24h_mm' => null,
+                'rainfall_7d_mm' => null,
+                'precip_probability_percent' => null,
+                'temperature_c' => null,
+                'humidity_percent' => null,
+                'wind_speed_kmh' => null,
+                'fetched_at' => now()->toDateTimeString(),
+            ];
+        }
     }
 
     private function summarize(string $barangay, float $latitude, float $longitude, array $payload): array

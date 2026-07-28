@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification as UserNotification;
 use App\Models\User;
+use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class NotificationController extends CrudController
 
     protected string $title = 'Notification';
 
-    protected array $columns = ['title' => 'Title', 'type' => 'Type', 'is_read' => 'Read'];
+    protected array $columns = ['title' => 'Title', 'user.name' => 'Recipient', 'type' => 'Type', 'is_read' => 'Read'];
 
     protected array $searchable = ['title', 'message', 'type'];
 
@@ -51,6 +52,12 @@ class NotificationController extends CrudController
             ]);
             Cache::forget('sidebar:unread-notifications:'.$user->id);
         }
+        SystemAuditLogger::record('Sent Notification', $request, [
+            'title' => $data['title'],
+            'type' => $data['type'],
+            'recipient_scope' => $data['recipient_scope'],
+            'recipient_count' => $recipients->count(),
+        ]);
 
         return redirect()->route('notifications.index')->with('success', 'Notification sent to '.$recipients->count().' recipient(s).');
     }
@@ -67,34 +74,45 @@ class NotificationController extends CrudController
             'type' => $data['type'],
             'is_read' => $request->boolean('is_read'),
         ]);
+        SystemAuditLogger::forModel('updated', $record, $request, [
+            'recipient_id' => $record->user_id,
+            'type' => $record->type,
+        ]);
 
         return redirect()->route('notifications.show', $record)->with('success', 'Notification updated successfully.');
     }
 
     protected function baseQuery(Request $request): Builder
     {
-        return UserNotification::query()->where('user_id', $request->user()->id);
+        $query = UserNotification::query()->with('user');
+
+        if (! in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true)) {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        return $query;
     }
 
     public function markRead(Request $request, int $notification): RedirectResponse
     {
-        $record = UserNotification::query()
-            ->where('user_id', $request->user()->id)
-            ->findOrFail($notification);
+        $record = $this->baseQuery($request)->findOrFail($notification);
 
         $record->update(['is_read' => true]);
         Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
+        SystemAuditLogger::forModel('marked read', $record, $request);
 
         return back()->with('success', 'Notification marked as read.');
     }
 
     public function markAllRead(Request $request): RedirectResponse
     {
-        UserNotification::query()
-            ->where('user_id', $request->user()->id)
+        $updated = $this->baseQuery($request)
             ->where('is_read', false)
             ->update(['is_read' => true]);
         Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
+        SystemAuditLogger::record('Marked All Notifications Read', $request, [
+            'updated_count' => $updated,
+        ]);
 
         return back()->with('success', 'All notifications marked as read.');
     }

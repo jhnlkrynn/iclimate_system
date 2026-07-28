@@ -74,6 +74,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.regenerate');
 
+        Route::post('planting-advisories/refresh-pagasa', [PlantingAdvisoryController::class, 'refreshPagasa'])
+            ->middleware('throttle:6,1')
+            ->name('planting-advisories.refresh-pagasa');
+
         Route::post('management/advisories/{advisory}/approve', [PlantingAdvisoryController::class, 'approve'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.approve');

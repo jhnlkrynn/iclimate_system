@@ -4,6 +4,7 @@ namespace App\Services\AI;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class GroqChatService
@@ -14,7 +15,59 @@ class GroqChatService
             && filled(config('services.groq.key'));
     }
 
-    public function answer(User $user, string $question, string $intent, string $language, array $memory = []): ?array
+    public function healthCheck(): array
+    {
+        if (! $this->available()) {
+            return [
+                'ok' => false,
+                'message' => 'Groq is disabled or GROQ_API_KEY is missing.',
+            ];
+        }
+
+        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
+
+        try {
+            $response = Http::withToken((string) config('services.groq.key'))
+                ->acceptJson()
+                ->connectTimeout(5)
+                ->timeout((int) config('services.groq.timeout', 12))
+                ->retry(2, 300)
+                ->post($baseUrl.'/chat/completions', [
+                    'model' => $model,
+                    'temperature' => 0,
+                    'max_completion_tokens' => 8,
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'Reply with OK only.'],
+                        ['role' => 'user', 'content' => 'health check'],
+                    ],
+                ]);
+        } catch (Throwable $exception) {
+            return [
+                'ok' => false,
+                'message' => 'Groq request failed: '.$exception->getMessage(),
+                'model' => $model,
+            ];
+        }
+
+        if (! $response->successful()) {
+            return [
+                'ok' => false,
+                'message' => 'Groq returned HTTP '.$response->status().'.',
+                'model' => $model,
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => 'Groq API is reachable.',
+            'model' => $model,
+            'reply' => trim((string) $response->json('choices.0.message.content')),
+            'usage' => $response->json('usage'),
+        ];
+    }
+
+    public function answer(User $user, string $question, string $intent, string $language, array $memory = [], array $systemContext = []): ?array
     {
         if (! $this->available()) {
             return null;
@@ -26,7 +79,9 @@ class GroqChatService
         try {
             $response = Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
+                ->connectTimeout(5)
                 ->timeout((int) config('services.groq.timeout', 12))
+                ->retry(2, 300)
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.35,
@@ -38,15 +93,26 @@ class GroqChatService
                         ],
                         [
                             'role' => 'user',
-                            'content' => $this->userPrompt($user, $question, $intent, $language, $memory),
+                            'content' => $this->userPrompt($user, $question, $intent, $language, $memory, $systemContext),
                         ],
                     ],
                 ]);
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            Log::warning('Groq assistant request failed.', [
+                'intent' => $intent,
+                'message' => $exception->getMessage(),
+            ]);
+
             return null;
         }
 
         if (! $response->successful()) {
+            Log::warning('Groq assistant returned an unsuccessful response.', [
+                'intent' => $intent,
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(500)->toString(),
+            ]);
+
             return null;
         }
 
@@ -77,7 +143,9 @@ class GroqChatService
         try {
             $response = Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
+                ->connectTimeout(5)
                 ->timeout((int) config('services.groq.timeout', 12))
+                ->retry(2, 300)
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.25,
@@ -93,11 +161,22 @@ class GroqChatService
                         ],
                     ],
                 ]);
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            Log::warning('Groq prediction fallback request failed.', [
+                'intent' => $intent,
+                'message' => $exception->getMessage(),
+            ]);
+
             return null;
         }
 
         if (! $response->successful()) {
+            Log::warning('Groq prediction fallback returned an unsuccessful response.', [
+                'intent' => $intent,
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(500)->toString(),
+            ]);
+
             return null;
         }
 
@@ -127,7 +206,7 @@ You are the iClimate Farming Assistant for rice farmers and agricultural staff i
 {$languageInstruction}
 Your main specialty is iClimate and rice-agriculture topics: weather awareness, rice farming, planting, irrigation, fertilizer, soil, pests, disease, climate risk, advisories, announcements, profiles, and system help.
 You may also answer harmless general knowledge, school, science, math, and everyday questions when the user asks them.
-Do not invent private database records, account details, exact weather forecasts, or prediction values. If exact prediction values are needed, tell the user to use iClimate prediction features.
+Use supplied iClimate database context when it is relevant. Do not invent private database records, account details, exact weather forecasts, or prediction values. If exact prediction values are needed and are not supplied, tell the user to use iClimate prediction features.
 Keep answers practical, concise, and farmer-friendly. Do not include labels like Answer, Source, Confidence, Explanation, Recommendation, or Warning.
 PROMPT;
     }
@@ -149,10 +228,13 @@ Do not include labels like Source or Confidence.
 PROMPT;
     }
 
-    private function userPrompt(User $user, string $question, string $intent, string $language, array $memory): string
+    private function userPrompt(User $user, string $question, string $intent, string $language, array $memory, array $systemContext = []): string
     {
         $recentQuestions = implode(' | ', array_slice((array) ($memory['recent_questions'] ?? []), 0, 3));
         $barangay = $user->barangay ?: 'Unknown';
+        $contextJson = $systemContext === []
+            ? 'No extra iClimate database context was supplied.'
+            : json_encode($systemContext, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return <<<PROMPT
 User role: {$user->role}
@@ -160,6 +242,9 @@ User barangay: {$barangay}
 Detected intent: {$intent}
 Detected language: {$language}
 Recent questions: {$recentQuestions}
+
+iClimate database context:
+{$contextJson}
 
 Question:
 {$question}

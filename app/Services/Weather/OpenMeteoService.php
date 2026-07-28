@@ -48,7 +48,9 @@ class OpenMeteoService
 
     public function fetchForecast(bool $force = false): array
     {
-        if (! $force && Cache::has('open-meteo:last-fetch-result')) {
+        $realTime = (bool) config('services.open_meteo.realtime', true);
+
+        if (! $realTime && ! $force && Cache::has('open-meteo:last-fetch-result')) {
             return Cache::get('open-meteo:last-fetch-result');
         }
 
@@ -66,7 +68,11 @@ class OpenMeteoService
                 'message' => 'The latest seven-day forecast was retrieved successfully.',
             ];
 
-            Cache::put('open-meteo:last-fetch-result', $result, now()->addMinutes((int) config('services.open_meteo.refresh_minutes', 10)));
+            $refreshMinutes = (int) config('services.open_meteo.refresh_minutes', 10);
+
+            if (! $realTime && $refreshMinutes > 0) {
+                Cache::put('open-meteo:last-fetch-result', $result, now()->addMinutes($refreshMinutes));
+            }
 
             return $result;
         } catch (Throwable $exception) {

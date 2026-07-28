@@ -179,6 +179,68 @@
     .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
     .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
 
+    .demo-accounts {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .demo-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: rgba(255,255,255,.7);
+      font-size: .76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .demo-password {
+      color: #E8A73D;
+      font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .demo-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .demo-account {
+      min-width: 0;
+      border: 1px solid rgba(149,213,178,.24);
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.82);
+      cursor: pointer;
+      display: grid;
+      gap: 3px;
+      padding: 8px 9px;
+      text-align: left;
+      transition: background-color var(--auth-motion-med), border-color var(--auth-motion-med), transform var(--auth-motion-med);
+    }
+    .demo-account:hover {
+      background: rgba(82,183,136,.14);
+      border-color: rgba(149,213,178,.44);
+      transform: translateY(-2px);
+    }
+    .demo-role {
+      color: #95D5B2;
+      font-size: .73rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .demo-email {
+      color: rgba(255,255,255,.54);
+      font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: .64rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); margin: 0; }
     .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #f0b559; }
@@ -229,6 +291,7 @@
       .captcha-card { grid-template-columns: 1fr; }
       .captcha-icon { display: none; }
       .form-row-split { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .demo-list { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -338,6 +401,23 @@
 
       <div class="form-divider"><span>or</span></div>
 
+      @if(($demoAccounts ?? collect())->isNotEmpty())
+        <div class="demo-accounts" aria-label="Demo accounts">
+          <div class="demo-title">
+            <span>Demo accounts</span>
+            <span class="demo-password">Password: {{ $demoPassword }}</span>
+          </div>
+          <div class="demo-list">
+            @foreach($demoAccounts as $demoAccount)
+              <button type="button" class="demo-account" data-demo-email="{{ $demoAccount->email }}" data-demo-password="{{ $demoPassword }}">
+                <span class="demo-role">{{ $demoAccount->role }}</span>
+                <span class="demo-email">{{ $demoAccount->email }}</span>
+              </button>
+            @endforeach
+          </div>
+        </div>
+      @endif
+
       <p class="login-register">Don't have an account? <a href="{{ route('register') }}">Create Account</a></p>
 
     </div>
@@ -393,11 +473,21 @@
     const toggle = document.getElementById('pwdToggle');
     const form = document.querySelector('.login-form');
     const loginBtn = document.getElementById('loginBtn');
+    const emailInput = document.getElementById('email');
 
     toggle?.addEventListener('click', () => {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
       toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+
+    document.querySelectorAll('[data-demo-email]').forEach((button) => {
+      button.addEventListener('click', () => {
+        emailInput.value = button.dataset.demoEmail || '';
+        passwordInput.value = button.dataset.demoPassword || '';
+        passwordInput.type = 'password';
+        emailInput.focus();
+      });
     });
 
     form?.addEventListener('submit', () => {
