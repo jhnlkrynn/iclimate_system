@@ -61,6 +61,9 @@ class OpenMeteoService
             $result = [
                 'ok' => true,
                 'source' => 'Open-Meteo',
+                'source_name' => 'Open-Meteo Forecast API',
+                'source_url' => 'https://open-meteo.com/',
+                'source_note' => 'Online forecast data retrieved from Open-Meteo for iClimate decision support.',
                 'freshness' => 'fresh',
                 'records' => $records,
                 'records_saved' => $records->count(),
@@ -85,6 +88,9 @@ class OpenMeteoService
             return [
                 'ok' => false,
                 'source' => 'Open-Meteo',
+                'source_name' => 'Open-Meteo Forecast API',
+                'source_url' => 'https://open-meteo.com/',
+                'source_note' => 'Stored fallback from the latest successful Open-Meteo update.',
                 'freshness' => $fallback->first()?->freshnessLabel() ?? 'unavailable',
                 'records' => $fallback,
                 'records_saved' => 0,
@@ -181,6 +187,8 @@ class OpenMeteoService
                         'current' => $payload['current'] ?? [],
                         'hourly' => $hourlyForDate,
                         'source_payload_meta' => [
+                            'source_name' => 'Open-Meteo Forecast API',
+                            'source_url' => 'https://open-meteo.com/',
                             'latitude' => $payload['latitude'] ?? null,
                             'longitude' => $payload['longitude'] ?? null,
                             'timezone' => $payload['timezone'] ?? null,

@@ -110,12 +110,12 @@
         <div class="col-lg-4">
             <div class="card no-lift h-100">
                 <div class="card-body">
-                    <div class="stat-label">Latest PAGASA Online Advisory</div>
+                    <div class="stat-label">Latest PAGASA Online Source</div>
                     <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->format('F d, Y, g:i A') ?? 'No PAGASA match yet' }}</div>
-                    <div class="text-muted small">Official source: PAGASA, filtered for Lian/Batangas</div>
+                    <div class="text-muted small">Official source: {{ $latestPagasaAdvisory?->sourceLabel() ?: 'PAGASA online advisory pages' }}, filtered for Lian/Batangas</div>
                     @isset($pagasaSummary)
                         <div class="text-muted small mt-2">
-                            PAGASA sources checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
+                            PAGASA online pages checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
                             new matches: {{ number_format($pagasaSummary['advisories_created'] ?? 0) }};
                             no Lian/Batangas match: {{ number_format($pagasaSummary['sources_without_lian_batangas_match'] ?? 0) }}
                         </div>
@@ -124,7 +124,7 @@
                         <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->format('M d, g:i A') }}</div>
                     @endif
                     @if($latestPagasaAdvisory)
-                        <span class="badge text-bg-success mt-2">PAGASA Active</span>
+                        <span class="badge text-bg-success mt-2">{{ $latestPagasaAdvisory->sourceLabel() }} Active</span>
                     @endif
                 </div>
             </div>
@@ -134,7 +134,7 @@
                 <div class="card-body">
                     <div class="stat-label">Advisories Generated</div>
                     <div class="h3 fw-bold mt-2 mb-1">{{ number_format($activeCount) }}</div>
-                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} active advisory records are from PAGASA.</div>
+                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} active advisory records are from PAGASA online advisory sources.</div>
                 </div>
             </div>
         </div>
@@ -165,7 +165,7 @@
                 <div class="card no-lift h-100">
                     <div class="card-body">
                         <div class="stat-label">Safety Reminder</div>
-                        <div class="text-muted mt-2">Generated advisories support planning. Follow official PAGASA and LGU warnings during severe weather.</div>
+                        <div class="text-muted mt-2">Generated advisories support planning. Follow official PAGASA online advisories and LGU warnings during severe weather.</div>
                     </div>
                 </div>
             @endif
@@ -248,7 +248,7 @@
                                 <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
-                                <td>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</td>
+                                <td>{{ $advisory->sourceLabel() }}</td>
                                 <td>{{ $advisory->valid_until?->format('M d, Y g:i A') ?? 'Open' }}</td>
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
                                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a></td>

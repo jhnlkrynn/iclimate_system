@@ -51,13 +51,12 @@ class LianBarangayWeatherService
     public function forBarangay(string $barangay, float $latitude, float $longitude, bool $refresh = false): array
     {
         $cacheKey = 'weather-api:lian-barangay:'.Str::slug($barangay);
-        $realTime = (bool) config('services.open_meteo.realtime', true);
 
-        if ($refresh || $realTime) {
+        if ($refresh) {
             Cache::forget($cacheKey);
         }
 
-        if ($refresh || $realTime) {
+        if ($refresh) {
             return $this->fetchBarangayWeather($barangay, $latitude, $longitude);
         }
 
@@ -112,6 +111,8 @@ class LianBarangayWeatherService
                 'latitude' => $latitude,
                 'longitude' => $longitude,
                 'source' => 'Open-Meteo Forecast API',
+                'source_url' => 'https://open-meteo.com/',
+                'source_credit' => 'Weather forecast by Open-Meteo; interpreted by iClimate.',
                 'status' => 'unavailable',
                 'stale' => true,
                 'message' => 'Live barangay weather could not be refreshed. Use stored iClimate risk data until the next scheduled update.',
@@ -144,6 +145,8 @@ class LianBarangayWeatherService
             'latitude' => $latitude,
             'longitude' => $longitude,
             'source' => 'Open-Meteo Forecast API',
+            'source_url' => 'https://open-meteo.com/',
+            'source_credit' => 'Weather forecast by Open-Meteo; interpreted by iClimate.',
             'status' => 'fresh',
             'stale' => false,
             'message' => 'Forecast is refreshed routinely from barangay coordinates. Treat it as decision support, not a rain-gauge reading.',

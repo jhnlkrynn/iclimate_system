@@ -81,7 +81,7 @@
                     <h2 class="h5">Location and Source</h2>
                     <div class="details-list">
                         <dt>Target location</dt><dd>{{ $advisory->targetLabel() }}</dd>
-                        <dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>
+                        <dt>Source</dt><dd>{{ $advisory->sourceLabel() }}</dd>
                         <dt>Advisory window</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
                         <dt>Generated date</dt><dd>{{ $advisory->created_at?->format('F d, Y g:i A') }}</dd>
                         <dt>Validity period</dt><dd>{{ $advisory->valid_from?->format('M d, Y g:i A') }} to {{ $advisory->valid_until?->format('M d, Y g:i A') }}</dd>
@@ -91,14 +91,14 @@
             </div>
             <div class="alert alert-warning shadow-sm">
                 <strong>Disclaimer.</strong>
-                {{ $advisory->metadata['disclaimer'] ?? 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA or local government warnings during severe weather.' }}
+                {{ $advisory->metadata['disclaimer'] ?? 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA online advisories or local government warnings during severe weather.' }}
             </div>
             <div class="card no-lift">
                 <div class="card-body">
                     <h2 class="h6 fw-bold">Official Advisories</h2>
                     <div class="d-grid gap-2">
-                        <a class="btn btn-outline-primary btn-sm" href="https://www.pagasa.dost.gov.ph/" target="_blank" rel="noopener">PAGASA Website</a>
-                        <a class="btn btn-outline-primary btn-sm" href="https://www.facebook.com/PAGASA.DOST.GOV.PH" target="_blank" rel="noopener">PAGASA Updates</a>
+                        <a class="btn btn-outline-primary btn-sm" href="https://www.pagasa.dost.gov.ph/" target="_blank" rel="noopener">PAGASA Official Website</a>
+                        <a class="btn btn-outline-primary btn-sm" href="https://www.facebook.com/PAGASA.DOST.GOV.PH" target="_blank" rel="noopener">PAGASA Facebook Updates</a>
                     </div>
                 </div>
             </div>

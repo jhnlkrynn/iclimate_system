@@ -16,7 +16,7 @@ class PagasaAdvisoryService
     public function fetchAndStore(bool $force = false): array
     {
         if (! (bool) config('services.pagasa.enabled', true)) {
-            return $this->summary(message: 'PAGASA advisory fetching is disabled.');
+            return $this->summary(message: 'PAGASA online advisory fetching is disabled.');
         }
 
         $cacheKey = 'pagasa-advisories:last-fetch';
@@ -25,7 +25,7 @@ class PagasaAdvisoryService
             return Cache::get($cacheKey);
         }
 
-        $summary = $this->summary(message: 'PAGASA advisories checked.');
+        $summary = $this->summary(message: 'PAGASA online advisory pages checked.');
 
         foreach ($this->sources() as $source) {
             $summary['sources_checked']++;
@@ -36,7 +36,7 @@ class PagasaAdvisoryService
                     ->get($source['url']);
 
                 if (! $response->successful()) {
-                    $summary['errors'][] = "PAGASA source returned HTTP {$response->status()}: {$source['url']}";
+                    $summary['errors'][] = "PAGASA online page returned HTTP {$response->status()}: {$source['url']}";
 
                     continue;
                 }
@@ -58,11 +58,11 @@ class PagasaAdvisoryService
                 PlantingAdvisory::query()->create($candidate);
                 $summary['advisories_created']++;
             } catch (Throwable $exception) {
-                $summary['errors'][] = "Unable to fetch PAGASA source {$source['url']}: {$exception->getMessage()}";
+                $summary['errors'][] = "Unable to fetch PAGASA online page {$source['url']}: {$exception->getMessage()}";
             }
         }
 
-        $summary['message'] = "{$summary['advisories_created']} PAGASA advisories created, {$summary['advisories_skipped_as_duplicates']} duplicates skipped.";
+        $summary['message'] = "{$summary['advisories_created']} PAGASA online advisories created, {$summary['advisories_skipped_as_duplicates']} duplicates skipped.";
 
         Cache::put($cacheKey, $summary, now()->addMinutes((int) config('services.pagasa.cache_minutes', 30)));
 
@@ -84,7 +84,10 @@ class PagasaAdvisoryService
         $validUntil = $source['horizon'] === 'weekly' ? now()->addDays(7) : now()->addHours(6);
         $title = $this->titleFrom($excerpt, $location, $source['horizon']);
         $message = $this->messageFrom($excerpt, $source['url']);
-        $horizonLabel = $source['horizon'] === 'weekly' ? 'PAGASA Weekly' : 'PAGASA Online';
+        $horizonLabel = $source['horizon'] === 'weekly' ? 'PAGASA Online Weekly Outlook' : 'PAGASA Online Advisory';
+        $sourceName = $source['horizon'] === 'weekly'
+            ? PlantingAdvisory::SOURCE_PAGASA_WEEKLY_OUTLOOK
+            : PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY;
         $matchedBarangays = $this->matchedBarangays($excerpt);
         $targetBarangay = count($matchedBarangays) === 1 ? $matchedBarangays[0] : null;
 
@@ -100,7 +103,7 @@ class PagasaAdvisoryService
             'priority' => $this->priorityForSeverity($severity),
             'target_barangay' => $targetBarangay,
             'target_scope' => $targetBarangay ? 'barangay' : 'municipality',
-            'source' => 'PAGASA',
+            'source' => $sourceName,
             'source_url' => $source['url'],
             'generation_key' => $this->generationKey($source, $excerpt),
             'generated_automatically' => true,
@@ -111,6 +114,8 @@ class PagasaAdvisoryService
             'published_at' => now(),
             'metadata' => [
                 'official_source' => true,
+                'source_type' => 'PAGASA online web page',
+                'source_name' => $sourceName,
                 'pagasa_source_url' => $source['url'],
                 'pagasa_location_match' => $location,
                 'pagasa_barangay_matches' => $matchedBarangays,
@@ -121,7 +126,7 @@ class PagasaAdvisoryService
                 'advisory_horizon' => $source['horizon'],
                 'advisory_horizon_label' => $horizonLabel,
                 'advisory_horizon_description' => 'official PAGASA online advisory filtered for Lian, Batangas',
-                'disclaimer' => 'This advisory is based on official PAGASA online content detected for Lian or Batangas. Follow PAGASA, LGU, and disaster risk reduction instructions during severe weather.',
+                'disclaimer' => 'This advisory is based on official PAGASA online content detected for Lian or Batangas. Follow PAGASA online advisories, LGU, and disaster risk reduction instructions during severe weather.',
             ],
             'posted_by' => $this->systemUserId(),
         ];
@@ -236,16 +241,16 @@ class PagasaAdvisoryService
 
     private function messageFrom(string $excerpt, string $url): string
     {
-        return "Official PAGASA online advisory detected for Lian/Batangas. Details from PAGASA: {$excerpt} Source: {$url}";
+        return "Official PAGASA online advisory page detected for Lian/Batangas. Details from PAGASA online page: {$excerpt} Source URL: {$url}";
     }
 
     private function recommendedAction(string $severity): string
     {
         if (in_array($severity, [PlantingAdvisory::SEVERITY_HIGH, PlantingAdvisory::SEVERITY_CRITICAL], true)) {
-            return 'Monitor PAGASA and LGU announcements closely, avoid risky field work during severe weather, secure farm materials, and prepare drainage or flood response actions where needed.';
+            return 'Monitor PAGASA online advisories and LGU announcements closely, avoid risky field work during severe weather, secure farm materials, and prepare drainage or flood response actions where needed.';
         }
 
-        return 'Review the PAGASA advisory, adjust farm activities based on actual field conditions, and continue monitoring official updates for Lian, Batangas.';
+        return 'Review the PAGASA online advisory, adjust farm activities based on actual field conditions, and continue monitoring official updates for Lian, Batangas.';
     }
 
     private function priorityForSeverity(string $severity): int

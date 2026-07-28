@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $modelSource = $modelForecast['source_name'] ?? 'iClimate monthly Random Forest model';
+        $modelSourceNote = $modelForecast['source_note'] ?? 'Model output trained from saved monthly climate records.';
+    @endphp
     <style>
         .lf-hero {
             position: relative;
@@ -207,27 +211,35 @@
             padding: .85rem 1rem;
             font-weight: 800;
         }
+        .lf-guide-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-bottom: 1rem; }
+        .lf-guide-step { border: 1px solid rgba(212,237,218,.98); border-radius: 8px; background: #fff; padding: .72rem; }
+        .lf-guide-step strong { display: block; color: #0d1f18; font-size: .82rem; line-height: 1.25; }
+        .lf-guide-step span { display: block; color: #5a7a64; font-size: .76rem; line-height: 1.35; margin-top: .28rem; }
         @media (max-width: 991.98px) {
             .lf-map-frame { height: 68vh; min-height: 480px; }
             .lf-meta-grid { grid-template-columns: 1fr; }
             .lf-popup-grid { grid-template-columns: 1fr; }
             .lf-model-header { align-items: stretch; flex-direction: column; }
             .lf-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .lf-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 575.98px) {
             .lf-map-frame { height: 72vh; min-height: 420px; }
             .lf-map-toolbar .btn, .lf-map-search, .lf-map-search .form-select { width: 100%; }
             .lf-model-grid { grid-template-columns: 1fr; }
+            .lf-guide-flow { grid-template-columns: 1fr; }
         }
 
         /* -- dark theme overrides (matches farmer dashboard palette) -- */
         .lf-page { color: rgba(255,255,255,.85); }
         .lf-map-toolbar { background: linear-gradient(90deg, #0d1f18, #16281f); border-bottom-color: rgba(255,255,255,.1); }
         .lf-label { color: rgba(255,255,255,.5); }
-        .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li {
+        .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li, .lf-guide-step {
             background: var(--ic-green-950, #0D1F18);
             border-color: rgba(255,255,255,.12);
         }
+        .lf-guide-step strong { color: #fff; }
+        .lf-guide-step span { color: rgba(255,255,255,.58); }
         .lf-value { color: #fff; }
         .lf-model-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.1); }
         .lf-model-number { color: #fff; }
@@ -290,11 +302,13 @@
         </div>
         <div class="lf-meta">
             <div class="lf-label">Live Map</div>
-            <div class="lf-value">Universal Weather View</div>
+            <div class="lf-value">Windy ECMWF View</div>
+            <div class="small text-muted fw-semibold mt-1">Source: Windy.com live weather embed</div>
         </div>
         <div class="lf-meta">
             <div class="lf-label">Model Source</div>
-            <div class="lf-value">Trained Random Forest</div>
+            <div class="lf-value">{{ $modelSource }}</div>
+            <div class="small text-muted fw-semibold mt-1">{{ $modelSourceNote }}</div>
         </div>
     </div>
 
@@ -313,7 +327,13 @@
             </form>
         </div>
         <div class="lf-model-body">
-            <div class="lf-source-note mb-3">Use the live map for current movement and use the trained model below for Lian-only upcoming planning. They support each other, but they are different sources.</div>
+            <div class="lf-source-note mb-3">Sources: live map by Windy.com using the selected weather layer; model values by {{ $modelSource }}. They support each other, but they are different sources.</div>
+            <div class="lf-guide-flow" aria-label="How live forecasting output is made">
+                <div class="lf-guide-step"><strong>1. View live map</strong><span>Windy shows the current weather layer and movement around Lian.</span></div>
+                <div class="lf-guide-step"><strong>2. Pick month</strong><span>iClimate uses the selected month for the Lian-only forecast.</span></div>
+                <div class="lf-guide-step"><strong>3. Run model</strong><span>The trained Random Forest predicts rainfall, temperature, humidity, and wind.</span></div>
+                <div class="lf-guide-step"><strong>4. Decide carefully</strong><span>Use the model for planning and confirm with field conditions and official warnings.</span></div>
+            </div>
 
             @if($modelForecast['ready'] ?? false)
                 @php($predictions = $modelForecast['predictions'])

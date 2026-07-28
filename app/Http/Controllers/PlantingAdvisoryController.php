@@ -41,7 +41,7 @@ class PlantingAdvisoryController extends Controller
         return view('advisories.index', [
             'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
-            'latestPagasaAdvisory' => PlantingAdvisory::query()->where('source', 'PAGASA')->latest('created_at')->first(),
+            'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('created_at')->first(),
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
             'typhoonSafetyResponse' => Schema::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
                 ? TyphoonSafetyResponse::query()
@@ -50,7 +50,7 @@ class PlantingAdvisoryController extends Controller
                     ->first()
                 : null,
             'activeCount' => PlantingAdvisory::query()->active()->count(),
-            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->where('source', 'PAGASA')->count(),
+            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
@@ -67,9 +67,9 @@ class PlantingAdvisoryController extends Controller
         return view('advisories.management', [
             'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(10)->withQueryString(),
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
-            'latestPagasaAdvisory' => PlantingAdvisory::query()->where('source', 'PAGASA')->latest('created_at')->first(),
+            'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('created_at')->first(),
             'activeCount' => PlantingAdvisory::query()->active()->count(),
-            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->where('source', 'PAGASA')->count(),
+            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
             'pendingCount' => PlantingAdvisory::query()->pendingReview()->count(),
             'highRiskCount' => PlantingAdvisory::query()->whereIn('severity', ['high', 'critical'])->whereIn('status', ['published', 'pending_review'])->count(),
             'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->whereDate('updated_at', today())->count(),
@@ -251,7 +251,7 @@ class PlantingAdvisoryController extends Controller
         $this->authorizeManage($request);
         $pagasaSummary = $pagasa->fetchAndStore(true);
         $summary = $service->generate(fetchWeather: true, forceWeather: true);
-        $message = "{$pagasaSummary['advisories_created']} PAGASA advisories and {$summary['advisories_created']} forecast-based advisories were created. {$pagasaSummary['advisories_skipped_as_duplicates']} PAGASA duplicates and {$summary['advisories_skipped_as_duplicates']} forecast duplicates were skipped. {$summary['advisories_expired']} expired advisory records were updated.";
+        $message = "{$pagasaSummary['advisories_created']} PAGASA online advisories and {$summary['advisories_created']} forecast-based advisories were created. {$pagasaSummary['advisories_skipped_as_duplicates']} PAGASA online duplicates and {$summary['advisories_skipped_as_duplicates']} forecast duplicates were skipped. {$summary['advisories_expired']} expired advisory records were updated.";
 
         $errors = array_merge($pagasaSummary['errors'] ?? [], $summary['errors'] ?? []);
 
@@ -276,8 +276,8 @@ class PlantingAdvisoryController extends Controller
         $pagasaSummary = $pagasa->fetchAndStore(true);
         $forecastSummary = $service->generate(fetchWeather: true, forceWeather: true);
         $errors = array_merge($pagasaSummary['errors'] ?? [], $forecastSummary['errors'] ?? []);
-        $message = "{$pagasaSummary['advisories_created']} PAGASA advisories and {$forecastSummary['advisories_created']} forecast-based advisories created. Sources checked: {$pagasaSummary['sources_checked']}.";
-        SystemAuditLogger::record('Refreshed PAGASA Advisories', $request, [
+        $message = "{$pagasaSummary['advisories_created']} PAGASA online advisories and {$forecastSummary['advisories_created']} forecast-based advisories created. PAGASA online pages checked: {$pagasaSummary['sources_checked']}.";
+        SystemAuditLogger::record('Refreshed PAGASA Online Advisories', $request, [
             'sources_checked' => $pagasaSummary['sources_checked'] ?? 0,
             'pagasa_created' => $pagasaSummary['advisories_created'] ?? 0,
             'forecast_created' => $forecastSummary['advisories_created'] ?? 0,

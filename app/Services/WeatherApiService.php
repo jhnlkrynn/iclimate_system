@@ -81,6 +81,9 @@ class WeatherApiService
 
         return [
             'source' => 'OpenWeather',
+            'source_name' => 'OpenWeather API',
+            'source_url' => 'https://openweathermap.org/api',
+            'source_credit' => 'Online weather data from OpenWeather; summarized by iClimate.',
             'location' => config('services.weather_api.location_name', 'Lian, Batangas'),
             'current_time' => data_get($current, 'dt') ? date('Y-m-d H:i:s', (int) data_get($current, 'dt')) : data_get($firstForecast, 'dt_txt'),
             'current_rainfall_mm' => (float) (data_get($current, 'rain.1h') ?? data_get($current, 'rain.3h') ?? 0),

@@ -80,6 +80,8 @@
     .ic-ai-card { border: 1px solid rgba(255,255,255,.2); border-left: 4px solid #52b788; border-radius: 10px; background: rgba(255,255,255,.06); padding: .5rem; }
     .ic-ai-card-label { color: rgba(255,255,255,.6); font-family: 'DM Mono', monospace; font-size: .6rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
     .ic-ai-card-value { color: #fff; font-size: .78rem; font-weight: 700; margin-top: .16rem; }
+    .ic-ai-card-source { color: rgba(255,255,255,.5); font-size: .64rem; font-weight: 700; margin-top: .22rem; line-height: 1.25; }
+    .ic-ai-flow { grid-column: 1 / -1; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: rgba(82,183,136,.1); padding: .55rem .62rem; color: rgba(255,255,255,.72); font-size: .68rem; font-weight: 700; line-height: 1.35; }
     .ic-ai-typing { display: none; color: #5f7569; font-family: 'DM Mono', monospace; font-size: .74rem; font-weight: 500; padding: 0 1.1rem .5rem; }
     .ic-ai-typing.show { display: block; }
     .ic-ai-chips { display: flex; flex-wrap: wrap; gap: .45rem; padding: 0 1.1rem .7rem; }
@@ -157,10 +159,11 @@
                                 {{ $chat->answer }}
                                 @if($chat->weather_prediction || $chat->rice_yield_prediction || $chat->planting_recommendation || $chat->irrigation_recommendation)
                                     <div class="ic-ai-results">
-                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
-                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
-                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
-                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
+                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div><div class="ic-ai-card-source">Source: {{ data_get($chat->weather_prediction, 'source_name', $chat->source_name ?: 'iClimate model/rules') }}</div></div>
+                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div><div class="ic-ai-card-source">Source: {{ data_get($chat->rice_yield_prediction, 'source_name', $chat->source_name ?: 'iClimate model/rules') }}</div></div>
+                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div><div class="ic-ai-card-source">Source: iClimate decision-support rules</div></div>
+                                        <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div><div class="ic-ai-card-source">Source: iClimate decision-support rules</div></div>
+                                        <div class="ic-ai-flow">Flow: question and farm/weather inputs -> trained model or saved records -> iClimate decision rules -> recommendation to verify with actual field condition.</div>
                                     </div>
                                 @endif
                             </div>
@@ -221,7 +224,7 @@
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scroll = () => { body.scrollTop = body.scrollHeight; };
         const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
+        const resultCard = (label, value, source) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div><div class="ic-ai-card-source">Source: ${escapeHtml(source || 'iClimate model/rules')}</div></div>`;
         const relevantPredictionCards = (chat) => {
             switch (chat.intent) {
                 case 'Weather Prediction': return ['weather'];
@@ -239,11 +242,14 @@
             const yieldValue = chat.rice_yield_prediction?.predicted_yield !== null && chat.rice_yield_prediction?.predicted_yield !== undefined ? `${Number(chat.rice_yield_prediction.predicted_yield).toFixed(2)} t/ha` : 'N/A';
             const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'N/A';
             const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
+            const weatherSource = chat.weather_prediction?.source_name || chat.source_name || 'iClimate weather model/rules';
+            const yieldSource = chat.rice_yield_prediction?.source_name || chat.source_name || 'iClimate rice yield model/rules';
             const cards = [];
-            if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));
-            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', yieldValue));
-            if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
-            if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
+            if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather, weatherSource));
+            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', yieldValue, yieldSource));
+            if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting, 'iClimate decision-support rules'));
+            if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation, 'iClimate decision-support rules'));
+            cards.push('<div class="ic-ai-flow">Flow: question and farm/weather inputs -&gt; trained model or saved records -&gt; iClimate decision rules -&gt; recommendation to verify with actual field condition.</div>');
             return cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
         };
         const selectedSaveMode = () => localStorage.getItem(saveStorageKey);

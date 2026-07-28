@@ -36,6 +36,9 @@ class MonthlyWeatherRandomForest
             return [
                 'ready' => false,
                 'message' => 'At least 4 months of climate records are required to train the monthly Random Forest model.',
+                'source_type' => 'Trained Model',
+                'source_name' => 'iClimate monthly Random Forest model',
+                'source_note' => 'Model trains from saved iClimate climate records.',
                 'months_available' => $monthly->count(),
                 'target_month' => $targetMonth,
                 'predictions' => [],
@@ -49,6 +52,9 @@ class MonthlyWeatherRandomForest
             return [
                 'ready' => false,
                 'message' => 'The available records must span at least 4 usable monthly observations.',
+                'source_type' => 'Trained Model',
+                'source_name' => 'iClimate monthly Random Forest model',
+                'source_note' => 'Model trains from saved iClimate climate records.',
                 'months_available' => $monthly->count(),
                 'target_month' => $targetMonth,
                 'predictions' => [],
@@ -78,6 +84,9 @@ class MonthlyWeatherRandomForest
         return [
             'ready' => true,
             'message' => 'Prediction generated using monthly climate history and Random Forest regression.',
+            'source_type' => 'Trained Model',
+            'source_name' => 'iClimate monthly Random Forest model',
+            'source_note' => 'Model output trained from saved monthly climate records.',
             'months_available' => $monthly->count(),
             'target_month' => $targetMonth,
             'predictions' => $predictions,

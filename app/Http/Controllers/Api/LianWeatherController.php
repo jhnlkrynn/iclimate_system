@@ -15,6 +15,8 @@ class LianWeatherController extends Controller
 
         return response()->json([
             'source' => 'Open-Meteo Forecast API',
+            'source_url' => 'https://open-meteo.com/',
+            'source_credit' => 'Online barangay forecast data by Open-Meteo; interpreted by iClimate.',
             'scope' => 'Lian, Batangas barangay coordinate forecast',
             'refresh_minutes' => max(10, (int) config('services.open_meteo.refresh_minutes', 30)),
             'generated_at' => now()->toDateTimeString(),

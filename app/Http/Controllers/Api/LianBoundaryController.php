@@ -46,6 +46,12 @@ class LianBoundaryController extends Controller
         });
 
         $geojson['source'] = $source;
+        $geojson['source_credit'] = $source === 'GeoRisk ArcGIS PSA Barangay Boundary API'
+            ? 'Barangay boundary data retrieved online from the GeoRisk ArcGIS PSA Barangay Boundary API.'
+            : 'Barangay boundary data loaded from the bundled iClimate fallback GeoJSON file.';
+        $geojson['source_url'] = $source === 'GeoRisk ArcGIS PSA Barangay Boundary API'
+            ? self::GEORISK_QUERY_URL
+            : null;
         $geojson['generated_at'] = now()->toDateTimeString();
 
         return response()->json($geojson);

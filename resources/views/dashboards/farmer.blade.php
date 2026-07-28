@@ -628,9 +628,6 @@
                             <div class="empty-soft"><strong>No alerts yet</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">Notifications will appear here when sent.</div></div>
                         @endforelse
                     </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
-                    </div>
                 </div>
             </div>
         </div>

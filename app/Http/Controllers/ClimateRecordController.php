@@ -18,7 +18,7 @@ class ClimateRecordController extends CrudController
 
     protected array $searchable = ['record_date', 'season', 'source'];
 
-    protected array $filterable = ['season' => ['Wet', 'Dry'], 'source' => ['PAGASA']];
+    protected array $filterable = ['season' => ['Wet', 'Dry'], 'source' => ['PAGASA Historical Climate Record', 'PAGASA Lian Monthly Data', 'PAGASA']];
 
     public function __construct()
     {
