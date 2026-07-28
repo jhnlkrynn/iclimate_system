@@ -1,3 +1,8 @@
+@php
+    $code = $code ?? (isset($exception) && method_exists($exception, 'getStatusCode') ? (string) $exception->getStatusCode() : '');
+    $title = $title ?? 'Something Went Wrong';
+    $message = $message ?? 'An unexpected error occurred. Please try again in a moment.';
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>

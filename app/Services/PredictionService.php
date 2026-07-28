@@ -188,7 +188,7 @@ class PredictionService
         if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
             return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
-                'source_name' => 'PalayPilot',
+                'source_name' => 'Climora AI',
                 'source_url' => null,
                 'confidence_score' => 82,
                 'intent_detection' => $intentResult,
@@ -213,7 +213,7 @@ class PredictionService
         if (! $this->isSupportedNonPredictionQuestion($intent, $question)) {
             return $this->textResponse($this->unsupportedAnswer($language), $intent, $language, $memory, $startedAt, [
                 'source_type' => 'System Scope',
-                'source_name' => 'PalayPilot',
+                'source_name' => 'Climora AI',
                 'source_url' => null,
                 'confidence_score' => 80,
                 'intent_detection' => $intentResult,
@@ -224,7 +224,7 @@ class PredictionService
 
         return $this->textResponse($localAnswer, $intent, $language, $memory, $startedAt, [
             'source_type' => 'Knowledge Base',
-            'source_name' => 'PalayPilot',
+            'source_name' => 'Climora AI',
             'source_url' => null,
             'confidence_score' => 76,
             'intent_detection' => $intentResult,
@@ -284,7 +284,7 @@ class PredictionService
             if ($user->role !== User::ROLE_MAO) {
                 return [
                     'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_MAO, $user->role),
-                    'source_name' => 'PalayPilot',
+                    'source_name' => 'Climora AI',
                     'confidence' => 85,
                 ];
             }
@@ -298,7 +298,7 @@ class PredictionService
             if ($user->role !== User::ROLE_IT_EXPERT) {
                 return [
                     'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_IT_EXPERT, $user->role),
-                    'source_name' => 'PalayPilot',
+                    'source_name' => 'Climora AI',
                     'confidence' => 85,
                 ];
             }
@@ -429,8 +429,8 @@ class PredictionService
             }
 
             return str_contains($language, 'Tagalog')
-                ? 'Kumusta! Ako si PalayPilot, ang iClimate rice guidance assistant. Puwede kang magtanong tungkol sa panahon, ani, pagtatanim, irigasyon, advisory, o sistema.'
-                : 'Hello! I am PalayPilot, the iClimate rice guidance assistant. Ask me about weather, yield, planting, irrigation, advisories, or how to use the system.';
+                ? 'Kumusta! Ako si Climora AI, ang iClimate rice guidance assistant. Puwede kang magtanong tungkol sa panahon, ani, pagtatanim, irigasyon, advisory, o sistema.'
+                : 'Hello! I am Climora AI, the iClimate rice guidance assistant. Ask me about weather, yield, planting, irrigation, advisories, or how to use the system.';
         }
 
         if ($intent === IntentDetectionService::SYSTEM_HELP && str($text)->contains(['weather', 'forecast', 'prediction'])) {
@@ -479,7 +479,7 @@ class PredictionService
                 'knowledge_base_id' => $metadata['knowledge_base_id'] ?? null,
                 'generative_ai' => $metadata['generative_ai'] ?? null,
                 'answer_source' => isset($metadata['generative_ai'])
-                    ? 'Answered by Groq using the PalayPilot iClimate instructions.'
+                    ? 'Answered by Groq using the Climora AI iClimate instructions.'
                     : 'Answered from iClimate system knowledge, saved records, or built-in rules.',
             ],
             'weather_prediction' => null,

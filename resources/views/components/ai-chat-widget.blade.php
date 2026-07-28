@@ -256,10 +256,10 @@
                 privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
                 privacyNote.classList.add('show');
             } else if (mode === '1') {
-                privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                privacyNote.textContent = 'Conversation saving is on. Climora AI can use recent saved chats as memory.';
                 privacyNote.classList.add('show');
             } else {
-                privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                privacyNote.textContent = 'Choose whether Climora AI should save this conversation.';
                 privacyNote.classList.add('show');
             }
         };

@@ -1,5 +1,5 @@
 @php
-    $assistantName = 'PalayPilot';
+    $assistantName = 'Climora AI';
     $assistantSubtitle = 'iClimate rice guidance powered by Groq llama-3.3 and Predict.py';
     $predictionCards = function ($chat): array {
         $intent = (string) ($chat->intent ?? '');
@@ -165,7 +165,7 @@
                 <div id="aiPrivacyNote" class="ai-privacy-note"></div>
                 <form id="chatForm" class="ai-form">
                     @csrf
-                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask PalayPilot: Should I plant rice next week?" required></textarea>
+                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask Climora AI: Should I plant rice next week?" required></textarea>
                     <button id="sendButton" class="btn btn-primary ai-send" type="submit">Send</button>
                 </form>
             </section>
@@ -252,9 +252,9 @@
                 if (mode === '0') {
                     privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
                 } else if (mode === '1') {
-                    privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                    privacyNote.textContent = 'Conversation saving is on. Climora AI can use recent saved chats as memory.';
                 } else {
-                    privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                    privacyNote.textContent = 'Choose whether Climora AI should save this conversation.';
                 }
             };
             document.querySelectorAll('[data-save-mode]').forEach((button) => {
