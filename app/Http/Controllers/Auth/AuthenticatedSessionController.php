@@ -28,6 +28,8 @@ class AuthenticatedSessionController extends Controller
             ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
             ?? $forecastRecords->first();
 
+        $requiresCaptcha = $captcha->requiresCaptcha($request, 'login');
+
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
             'demoAccounts' => $this->demoAccounts(),

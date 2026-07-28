@@ -372,6 +372,7 @@
           @error('password')<div class="field-error">{{ $message }}</div>@enderror
         </div>
 
+        @if($requiresCaptcha ?? false)
         <div class="captcha-card">
           <div class="captcha-icon" aria-hidden="true">
             <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -383,6 +384,7 @@
             @error('captcha_answer')<div class="field-error">{{ $message }}</div>@enderror
           </div>
         </div>
+        @endif
 
         <div class="form-row-split">
           <label class="checkbox-label">
