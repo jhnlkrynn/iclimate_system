@@ -2,13 +2,20 @@
 
 namespace App\Services;
 
+use App\Services\Risk\AgriculturalRiskScorer;
+
 class DecisionSupportService
 {
+    public function __construct(
+        private readonly AgriculturalRiskScorer $riskScorer,
+    ) {}
+
     public function evaluate(array $input): array
     {
         $rainfall = (float) ($input['rainfall'] ?? 0);
         $windSpeed = (float) ($input['wind_speed'] ?? 0);
         $humidity = (float) ($input['humidity'] ?? 0);
+        $temperature = (float) ($input['temperature'] ?? $input['temp_avg'] ?? 0);
         $yield = $input['predicted_yield'] ?? null;
         $yield = $yield !== null ? (float) $yield : null;
         $season = (string) ($input['season'] ?? 'Wet');
@@ -19,9 +26,16 @@ class DecisionSupportService
         $irrigation = $this->irrigationRecommendation($farmType, $rainfall);
         $weatherWarnings = $this->weatherWarnings($rainfall, $windSpeed, $humidity);
         $yieldAdvisory = $this->yieldAdvisory($yield);
-        $risk = $this->riskLevel($rainfall, $yield);
-        $score = $this->decisionSupportScore($rainfall, $yield, $season, $farmType);
         $stressFactors = $this->stressFactors($rainfall, $windSpeed, $humidity, $yield, $season, $farmType);
+        $risk = $this->riskScorer->score([
+            'rainfall' => $rainfall,
+            'temperature' => $temperature,
+            'predicted_yield' => $yield,
+            'farm_type' => $farmType,
+            'barangay' => $barangay,
+            'stress_factor_count' => count($stressFactors),
+        ]);
+        $score = $this->decisionSupportScore($rainfall, $yield, $season, $farmType);
         $confidence = $this->confidenceLevel($rainfall, $yield, $stressFactors);
         $notifications = $this->notifications($planting, $irrigation, $weatherWarnings, $yieldAdvisory);
 
@@ -152,23 +166,6 @@ class DecisionSupportService
             'predicted_yield' => round($yield, 2),
             'advisory' => $advisory,
         ];
-    }
-
-    private function riskLevel(float $rainfall, ?float $yield): array
-    {
-        if (($yield !== null && $yield < 3) || $rainfall > 350) {
-            return ['level' => 'High', 'label' => 'High Risk', 'color' => 'red'];
-        }
-
-        if ($rainfall > 300) {
-            return ['level' => 'Moderate', 'label' => 'Moderate Risk', 'color' => 'yellow'];
-        }
-
-        if ($rainfall >= 180 && $rainfall <= 280 && ($yield === null || $yield > 4)) {
-            return ['level' => 'Low', 'label' => 'Low Risk', 'color' => 'green'];
-        }
-
-        return ['level' => 'Moderate', 'label' => 'Moderate Risk', 'color' => 'yellow'];
     }
 
     private function stressFactors(float $rainfall, float $windSpeed, float $humidity, ?float $yield, string $season, string $farmType): array

@@ -4,7 +4,7 @@
             <div>
                 <div class="eyebrow mb-2">Record Details</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }} Details</h1>
-                <p class="mb-0 text-white-50">Record #{{ $record->id }}</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Record #{{ $record->id }}</p>
             </div>
             <div class="d-flex gap-2 align-self-start align-self-lg-end action-cluster">
                 <a class="btn btn-outline-secondary" href="{{ route($routeName.'.index') }}">Back</a>

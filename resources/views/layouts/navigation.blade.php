@@ -1,10 +1,5 @@
 @php
     $user = auth()->user();
-    $unreadCount = \Illuminate\Support\Facades\Cache::remember(
-        'sidebar:unread-notifications:'.$user->id,
-        now()->addSeconds(20),
-        fn () => $user->userNotifications()->where('is_read', false)->count()
-    );
 @endphp
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
     <div class="container-fluid px-0 gap-3 topbar-inner flex-wrap">
@@ -21,13 +16,6 @@
             <span class="badge text-bg-light border text-muted">{{ auth()->user()->roleLabel() }}</span>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-            <a class="btn btn-sm btn-outline-primary position-relative d-inline-flex align-items-center gap-2" href="{{ route('notifications.index') }}" aria-label="Open notifications">
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 14.5a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                Alerts
-                @if ($unreadCount > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ $unreadCount }}</span>
-                @endif
-            </a>
             @unless($user->role === \App\Models\User::ROLE_FARMER)
                 <a class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">Profile</a>
             @endunless

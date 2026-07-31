@@ -35,29 +35,30 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
-    body.login-page { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1f17; min-height: 100vh; display: flex; align-items: stretch; }
+    body.login-page { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f6f9f7; min-height: 100vh; display: flex; align-items: stretch; }
     .auth-logo-img { height: 48px; width: auto; max-width: 220px; object-fit: contain; display: block; }
 
     .login-layout { display: grid; grid-template-columns: 38% 62%; min-height: 100vh; width: 100%; }
 
     /* -- LEFT PANEL ------------------------------------ */
     .login-panel-left {
-      background: linear-gradient(145deg, #0f1f17 0%, #1a3a2a 60%, #163324 100%);
+      background: linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 60%, #eef5f1 100%);
+      border-right: 1px solid #e3ece6;
       position: relative; overflow: hidden; display: flex; flex-direction: column;
     }
     .lpl-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
     .lpl-blob-1 { width: 420px; height: 420px; background: rgba(82,183,136,0.13); top: -80px; left: -80px; }
-    .lpl-blob-2 { width: 320px; height: 320px; background: rgba(45,106,79,0.25); bottom: 60px; right: -60px; }
-    .lpl-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(82,183,136,0.18) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
+    .lpl-blob-2 { width: 320px; height: 320px; background: rgba(45,106,79,0.1); bottom: 60px; right: -60px; }
+    .lpl-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(45,106,79,0.14) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
     .lpl-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding: 44px 52px; }
     .lpl-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: auto; }
     .lpl-body { padding: 48px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .lpl-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #74C69D; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
-    .lpl-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: #74C69D; }
-    .lpl-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #fff; line-height: 1.2; margin-bottom: 16px; }
-    .lpl-headline em { font-style: italic; color: #74C69D; }
-    .lpl-sub { font-size: 0.97rem; color: rgba(255,255,255,0.45); line-height: 1.65; max-width: 380px; }
-    .lpl-foot { padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 0.8rem; color: rgba(255,255,255,0.25); }
+    .lpl-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+    .lpl-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: #2D6A4F; }
+    .lpl-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
+    .lpl-headline em { font-style: italic; color: #2D6A4F; }
+    .lpl-sub { font-size: 0.97rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
+    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.8rem; color: #6b7c72; }
 
     /* -- RIGHT PANEL ----------------------------------- */
     .login-panel-right { background: #f5f9f6; display: flex; align-items: center; justify-content: center; padding: 40px 48px; }

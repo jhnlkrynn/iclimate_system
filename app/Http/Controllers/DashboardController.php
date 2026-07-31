@@ -27,7 +27,7 @@ class DashboardController extends Controller
     {
         $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
         $today = now($weatherTimezone)->toDateString();
-        if ($request->boolean('refresh_weather')) {
+        if (! $request->boolean('cached_weather')) {
             $forecastResult = $openMeteo->fetchForecast(true);
         } else {
             $storedForecast = $openMeteo->latestStoredForecast();
@@ -106,7 +106,7 @@ class DashboardController extends Controller
             ->unique('barangay')
             ->values();
 
-        $liveWeather = $weatherApi->forecast();
+        $liveWeather = $weatherApi->forecast(refresh: true);
         $storedWeatherChartData = [
             'labels' => $climateChartRecords->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
             'rainfall' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->rainfall)->all(),

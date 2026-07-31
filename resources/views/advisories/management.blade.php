@@ -4,7 +4,7 @@
             <div>
                 <div class="eyebrow mb-2">MAO/Admin Workspace</div>
                 <h1 class="h2 fw-bold mb-2">Advisory Management</h1>
-                <p class="mb-0 text-white-50">Review generated advisories, refresh online weather data, and publish guidance for farmers.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Review generated advisories, refresh online weather data, and publish guidance for farmers.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 action-cluster">
                 <form method="POST" action="{{ route('management.advisories.refresh-weather') }}" data-loading="true" onsubmit="return confirm('Fetch the latest Open-Meteo forecast now?');">
@@ -23,7 +23,7 @@
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Active Advisories</div><div class="stat-value">{{ $activeCount }}</div></div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Pending Review</div><div class="stat-value">{{ $pendingCount }}</div></div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">High/Critical</div><div class="stat-value">{{ $highRiskCount }}</div></div></div></div>
-        <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Last API Update</div><div class="h6 fw-bold mt-2">{{ $lastWeather?->fetched_at?->format('M d, Y g:i A') ?? 'None' }}</div>@if($lastWeather)<span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }}">{{ str($lastWeather->freshnessLabel())->headline() }}</span>@endif</div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Last API Update</div><div class="h6 fw-bold mt-2">{{ $lastWeather?->fetched_at?->shortDateTime() ?? 'None' }}</div>@if($lastWeather)<span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }}">{{ str($lastWeather->freshnessLabel())->headline() }}</span>@endif</div></div></div>
     </div>
 
     <div class="card filter-panel no-lift mb-4">
@@ -52,7 +52,7 @@
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
-                                <td>{{ $advisory->valid_until?->format('M d, Y g:i A') }}</td>
+                                <td>{{ $advisory->valid_until?->shortDateTime() }}</td>
                                 <td class="text-end text-nowrap">
                                     <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a>
                                     <a class="btn btn-sm btn-outline-primary" href="{{ route('planting-advisories.edit', $advisory) }}">Edit</a>

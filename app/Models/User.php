@@ -25,6 +25,8 @@ class User extends Authenticatable
 
     public const STATUS_INACTIVE = 'Inactive';
 
+    public const ONLINE_WINDOW_MINUTES = 2;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -44,6 +46,11 @@ class User extends Authenticatable
     public function farmerProfile(): HasOne
     {
         return $this->hasOne(FarmerProfile::class);
+    }
+
+    public function isOnline(): bool
+    {
+        return (bool) $this->last_active_at?->gt(now()->subMinutes(self::ONLINE_WINDOW_MINUTES));
     }
 
     public function plantingAdvisories(): HasMany
@@ -110,6 +117,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_active_at' => 'datetime',
         ];
     }
 }

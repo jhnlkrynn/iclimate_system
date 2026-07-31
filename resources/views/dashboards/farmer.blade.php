@@ -21,9 +21,10 @@
             --fc-gold-light:#FBEBCF;
             --fc-blue:      #2F6F8F;
             --fc-coral:     #D85B45;
-            --fc-ink:       #0D1F18;
-            --fc-ink-mid:   #3D5A48;
-            --fc-ink-light: #6B8F71;
+            --fc-ink:       #1F2A24;
+            --fc-ink-mid:   #4A5C52;
+            --fc-ink-light: #6B7C72;
+            --fc-border:    #E3ECE6;
             --radius-sm: 4px;
             --radius-md: 10px;
             --radius-lg: 18px;
@@ -75,10 +76,10 @@
         }
         .fc-btn-gold { background: var(--fc-gold); color: var(--fc-ink); box-shadow: var(--shadow-gold); }
         .fc-btn-gold:hover { background: var(--fc-gold-dark); color: var(--fc-ink); transform: translateY(-1px); }
-        .fc-btn-outline-light { border-color: rgba(255,255,255,.32); color: rgba(255,255,255,.9); }
-        .fc-btn-outline-light:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
-        .fc-btn-outline { border-color: rgba(255,255,255,.28); color: rgba(255,255,255,.85); background: transparent; }
-        .fc-btn-outline:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
+        .fc-btn-outline-light { border-color: var(--fc-sand-dark); color: var(--fc-ink); }
+        .fc-btn-outline-light:hover { background: var(--fc-green-50); border-color: var(--fc-green-700); color: var(--fc-ink); }
+        .fc-btn-outline { border-color: var(--fc-sand-dark); color: var(--fc-ink-mid); background: transparent; }
+        .fc-btn-outline:hover { background: var(--fc-green-50); border-color: var(--fc-green-700); color: var(--fc-ink); }
 
         /* -- HERO ------------------------------------------ */
         .farmer-hero {
@@ -87,8 +88,9 @@
             border-radius: var(--radius-xl);
             padding: 2rem 2.25rem;
             margin-bottom: 1.5rem;
-            color: #fff;
-            background: var(--fc-green-950);
+            color: var(--fc-ink);
+            background: linear-gradient(145deg, var(--fc-green-50) 0%, var(--fc-green-100) 100%);
+            border: 1px solid var(--fc-border);
             box-shadow: var(--shadow-lg);
         }
         .farmer-hero::before {
@@ -116,18 +118,18 @@
             z-index: 0;
         }
         .farmer-hero > *:not(.farmer-hero-leaf) { position: relative; z-index: 1; }
-        .farmer-hero h1 { color: #fff; font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
-        .farmer-hero h1 em { font-style: italic; color: var(--fc-green-400); }
-        .farmer-hero p { color: rgba(255,255,255,.55); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
+        .farmer-hero h1 { color: var(--fc-ink); font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
+        .farmer-hero h1 em { font-style: italic; color: var(--fc-green-700); }
+        .farmer-hero p { color: var(--fc-ink-mid); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
         .field-chip {
             display: inline-flex;
             align-items: center;
             gap: .5rem;
-            border: 1px solid rgba(255,255,255,.18);
+            border: 1px solid var(--fc-border);
             border-radius: var(--radius-pill);
             padding: .5rem .85rem;
-            background: rgba(255,255,255,.06);
-            color: rgba(255,255,255,.85);
+            background: rgba(255,255,255,.6);
+            color: var(--fc-ink-mid);
             font-family: 'DM Mono', monospace;
             font-size: .76rem;
             font-weight: 500;
@@ -177,9 +179,9 @@
         }
         .field-card {
             position: relative;
-            border: 1.5px solid var(--fc-green-900);
+            border: 1.5px solid var(--fc-sand-dark);
             border-radius: var(--radius-lg);
-            background: var(--fc-green-950);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             padding: 1.15rem 1.2rem;
             text-decoration: none;
             display: flex; flex-direction: column; gap: .6rem;
@@ -189,10 +191,10 @@
             font: inherit;
             cursor: pointer;
         }
-        .field-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: rgba(116,198,157,.35); }
+        .field-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-500); }
         .field-card:focus-visible { outline: 2px solid var(--fc-green-400); outline-offset: 2px; }
         .field-tap-hint {
-            color: var(--fc-green-400);
+            color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-size: .64rem;
             font-weight: 600;
@@ -204,7 +206,7 @@
         }
         .field-card:hover .field-tap-hint, .field-card:focus-visible .field-tap-hint { opacity: 1; transform: translateY(0); }
 
-        /* -- STAT DETAIL MODALS ------------------------------- */
+        /* -- STAT DETAIL PANELS ------------------------------- */
         .fc-stat-modal {
             --fc-green-950: #0D1F18;
             --fc-green-900: #122B20;
@@ -213,41 +215,42 @@
             --fc-green-400: #74C69D;
             --fc-gold: #E8A73D;
             --fc-gold-dark: #C6872A;
-            --fc-ink: #0D1F18;
+            --fc-ink: #1F2A24;
             --radius-lg: 18px;
             --radius-pill: 100px;
             --shadow-gold: 0 10px 28px rgba(232,167,61,.32);
             --ease: cubic-bezier(.4,0,.2,1);
         }
-        .fc-stat-modal .modal-dialog { width: calc(100% - 2rem) !important; max-width: 760px !important; margin: var(--fc-stat-modal-top, 7rem) auto 0 !important; }
-        .fc-stat-modal .modal-dialog-centered { display: block; min-height: 0; }
-        body.fc-stat-modal-open .modal-backdrop.show { background-color: #07130f; opacity: .78; }
-        .fc-modal-content { background: var(--fc-green-950); color: rgba(255,255,255,.85); border: 1px solid var(--fc-green-900); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(0,0,0,.34); overflow: hidden; }
-        .fc-modal-header { background: linear-gradient(90deg, var(--fc-green-950), var(--fc-green-800)); border-bottom: 1px solid rgba(255,255,255,.1); color: #fff; }
-        .fc-modal-header .modal-title { color: #fff; font-family: 'DM Serif Display', serif; }
-        .fc-modal-body { max-height: min(330px, calc(100vh - var(--fc-stat-modal-top, 7rem) - 9.5rem)); overflow-y: auto; background: var(--fc-green-950); padding: 1rem; }
-        .fc-modal-footer { border-top: 1px solid rgba(255,255,255,.1); background: var(--fc-green-950); padding: .8rem 1rem; }
-        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: #fff; }
-        .fc-modal-sub { color: rgba(255,255,255,.55); font-size: .8rem; margin: .25rem 0 .75rem; }
-        .fc-modal-note { color: rgba(255,255,255,.65); font-size: .82rem; line-height: 1.55; margin-bottom: .85rem; }
-        .fc-modal-table { color: rgba(255,255,255,.8); }
+        .fc-stat-panel { margin-top: 1rem; }
+        .fc-stat-panel[hidden] { display: none; }
+        .fc-modal-content { background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--fc-ink-mid); border: 1px solid var(--fc-sand-dark); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(13,31,24,.18); overflow: hidden; }
+        .fc-modal-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: linear-gradient(90deg, var(--fc-green-50), var(--fc-green-100)); border-bottom: 1px solid var(--fc-border); color: var(--fc-ink); padding: .85rem 1rem; }
+        .fc-modal-header .modal-title { color: var(--fc-ink); font-family: 'DM Serif Display', serif; margin: 0; }
+        .fc-panel-close { border: 0; background: rgba(13,31,24,.06); color: var(--fc-ink); width: 30px; height: 30px; border-radius: 999px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+        .fc-panel-close:hover { background: rgba(13,31,24,.12); }
+        .fc-modal-body { max-height: 330px; overflow-y: auto; background: #ffffff; padding: 1rem; }
+        .fc-modal-footer { border-top: 1px solid var(--fc-border); background: var(--fc-green-50); padding: .8rem 1rem; }
+        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: var(--fc-ink); }
+        .fc-modal-sub { color: var(--fc-ink-light); font-size: .8rem; margin: .25rem 0 .75rem; }
+        .fc-modal-note { color: var(--fc-ink-mid); font-size: .82rem; line-height: 1.55; margin-bottom: .85rem; }
+        .fc-modal-table { color: var(--fc-ink); }
         .fc-modal-table.table { min-width: 620px; }
-        .fc-modal-table thead th { background: rgba(255,255,255,.04) !important; color: rgba(255,255,255,.5) !important; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-color: rgba(255,255,255,.1); font-weight: 600; }
-        .fc-modal-table td { color: rgba(255,255,255,.8) !important; border-color: rgba(255,255,255,.08); }
-        .fc-modal-table-highlight { color: var(--fc-green-400) !important; font-weight: 700; }
+        .fc-modal-table thead th { background: var(--fc-green-50) !important; color: var(--fc-ink-light) !important; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-color: var(--fc-border); font-weight: 600; }
+        .fc-modal-table td { color: var(--fc-ink) !important; border-color: var(--fc-border); }
+        .fc-modal-table-highlight { color: var(--fc-green-700) !important; font-weight: 700; }
         .field-icon {
             width: 40px; height: 40px;
             border-radius: 50%;
             display: grid; place-items: center;
-            background: rgba(82,183,136,.18);
+            background: rgba(82,183,136,.14);
             border: 1px solid rgba(116,198,157,.35);
-            color: var(--fc-green-400);
+            color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-size: .65rem;
             font-weight: 700;
         }
         .field-label {
-            color: rgba(255,255,255,.5);
+            color: var(--fc-ink-light);
             font-family: 'DM Mono', monospace;
             font-size: .64rem;
             font-weight: 500;
@@ -258,12 +261,12 @@
             font-family: 'DM Serif Display', serif;
             font-size: clamp(1.5rem, 2.6vw, 1.9rem);
             line-height: 1;
-            color: #fff;
+            color: var(--fc-ink);
             letter-spacing: -.02em;
         }
-        .field-note { color: rgba(255,255,255,.55); font-size: .78rem; line-height: 1.5; }
+        .field-note { color: var(--fc-ink-light); font-size: .78rem; line-height: 1.5; }
         .field-source {
-            color: rgba(116,198,157,.75);
+            color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-size: .62rem;
             font-weight: 600;
@@ -271,13 +274,13 @@
             text-transform: uppercase;
             line-height: 1.35;
         }
-        .field-source span { display: block; color: rgba(255,255,255,.45); margin-top: .1rem; }
+        .field-source span { display: block; color: var(--fc-ink-light); margin-top: .1rem; }
 
         /* -- PANELS ------------------------------------------ */
         .farmer-panel {
-            border: 1.5px solid var(--fc-green-900);
+            border: 1.5px solid var(--fc-sand-dark);
             border-radius: var(--radius-lg);
-            background: var(--fc-green-950);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
@@ -287,10 +290,10 @@
             justify-content: space-between;
             gap: 1rem;
             padding: 1.15rem 1.25rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,.08);
+            border-bottom: 1px solid var(--fc-border);
         }
-        h2.farmer-panel-title { font-size: 1.05rem; margin: 0; color: #fff; }
-        .farmer-panel-sub { margin: .25rem 0 0; color: rgba(255,255,255,.55); font-size: .82rem; font-family: 'Inter', sans-serif; }
+        h2.farmer-panel-title { font-size: 1.05rem; margin: 0; color: var(--fc-ink); }
+        .farmer-panel-sub { margin: .25rem 0 0; color: var(--fc-ink-light); font-size: .82rem; font-family: 'Inter', sans-serif; }
         .farmer-panel-body { padding: 1.25rem; }
         .farmer-list-item {
             display: flex;
@@ -298,24 +301,24 @@
             align-items: flex-start;
             padding: .85rem 0;
         }
-        .farmer-list-item + .farmer-list-item { border-top: 1px solid rgba(255,255,255,.08); }
+        .farmer-list-item + .farmer-list-item { border-top: 1px solid var(--fc-border); }
         .list-mark {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: rgba(82,183,136,.16);
+            background: rgba(82,183,136,.14);
             border: 1px solid rgba(149,213,178,.3);
-            color: var(--fc-green-400);
+            color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-weight: 700;
             font-size: .66rem;
             flex: 0 0 auto;
         }
-        .list-title { font-weight: 700; color: #fff; line-height: 1.3; font-size: .92rem; }
-        .list-text { color: rgba(255,255,255,.55); font-size: .84rem; margin-top: .2rem; line-height: 1.55; }
-        .list-meta { color: rgba(255,255,255,.45); font-family: 'DM Mono', monospace; font-size: .66rem; margin-top: .4rem; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+        .list-title { font-weight: 700; color: var(--fc-ink); line-height: 1.3; font-size: .92rem; }
+        .list-text { color: var(--fc-ink-light); font-size: .84rem; margin-top: .2rem; line-height: 1.55; }
+        .list-meta { color: var(--fc-ink-light); font-family: 'DM Mono', monospace; font-size: .66rem; margin-top: .4rem; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
         .status-pill {
             display: inline-flex;
             align-items: center;
@@ -326,18 +329,18 @@
             font-weight: 600;
             letter-spacing: .03em;
             text-transform: uppercase;
-            background: rgba(82,183,136,.16);
-            color: var(--fc-green-400);
+            background: rgba(82,183,136,.14);
+            color: var(--fc-green-700);
         }
-        .status-pill.muted { background: rgba(255,255,255,.06); color: rgba(255,255,255,.45); }
+        .status-pill.muted { background: var(--fc-green-50); color: var(--fc-ink-light); }
         .advisory-card {
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.04);
+            border: 1px solid var(--fc-border);
+            background: var(--fc-green-50);
             min-height: 100%;
         }
-        .advisory-card strong { color: #fff; display: block; margin: .5rem 0 .35rem; font-size: .95rem; }
+        .advisory-card strong { color: var(--fc-ink); display: block; margin: .5rem 0 .35rem; font-size: .95rem; }
 
         /* -- QUICK ACTIONS ------------------------------------ */
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -345,24 +348,24 @@
             min-height: 108px;
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
-            border: 1px solid rgba(255,255,255,.08);
-            background: rgba(255,255,255,.04);
+            border: 1px solid var(--fc-border);
+            background: var(--fc-green-50);
             color: inherit;
             text-decoration: none;
             display: block;
             transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s, background .2s;
         }
-        .quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: rgba(116,198,157,.4); background: rgba(255,255,255,.07); }
-        .quick-action strong { display: block; color: #fff; font-size: .92rem; font-weight: 700; }
-        .quick-action span { display: block; color: rgba(255,255,255,.55); font-size: .8rem; margin-top: .3rem; line-height: 1.5; }
+        .quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--fc-green-500); background: var(--fc-green-100); }
+        .quick-action strong { display: block; color: var(--fc-ink); font-size: .92rem; font-weight: 700; }
+        .quick-action span { display: block; color: var(--fc-ink-light); font-size: .8rem; margin-top: .3rem; line-height: 1.5; }
         .empty-soft {
-            border: 1.5px dashed rgba(255,255,255,.15);
-            background: rgba(255,255,255,.03);
+            border: 1.5px dashed var(--fc-sand-dark);
+            background: var(--fc-green-50);
             border-radius: var(--radius-md);
             padding: 1.75rem;
             text-align: center;
         }
-        .empty-soft strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.05rem; color: #fff; }
+        .empty-soft strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.05rem; color: var(--fc-ink); }
 
         /* -- PRIORITY TOOLS (role-card style) ------------------ */
         .priority-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: .5rem; }
@@ -372,26 +375,26 @@
             gap: 1rem;
             min-height: 160px;
             padding: 1.4rem 1.3rem;
-            border: 1.5px solid var(--fc-green-900);
+            border: 1.5px solid var(--fc-sand-dark);
             border-radius: var(--radius-xl);
-            background: var(--fc-green-950);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: var(--shadow-sm);
             text-decoration: none;
             color: inherit;
             transition: box-shadow .25s var(--ease), transform .25s var(--ease), border-color .25s;
         }
         .priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-700); }
-        .priority-card strong { display: block; color: #fff; font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.1rem; margin-bottom: .4rem; }
-        .priority-card span.desc { display: block; color: rgba(255,255,255,.55); font-size: .82rem; line-height: 1.55; font-family: 'Inter', sans-serif; }
+        .priority-card strong { display: block; color: var(--fc-ink); font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.1rem; margin-bottom: .4rem; }
+        .priority-card span.desc { display: block; color: var(--fc-ink-light); font-size: .82rem; line-height: 1.55; font-family: 'Inter', sans-serif; }
         .priority-card .status-pill { align-self: flex-start; }
         .priority-card.priority-highlight .status-pill { background: var(--fc-gold); color: var(--fc-ink); }
 
         /* -- COLLAPSIBLE GROUPS --------------------------------- */
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
-            border: 1.5px solid var(--fc-green-900);
+            border: 1.5px solid var(--fc-sand-dark);
             border-radius: var(--radius-lg);
-            background: var(--fc-green-950);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
@@ -403,13 +406,13 @@
             padding: 1.1rem 1.25rem;
             cursor: pointer;
             list-style: none;
-            background: rgba(255,255,255,.03);
+            background: var(--fc-green-50);
         }
         .dashboard-group > summary::-webkit-details-marker { display: none; }
         .dashboard-group-summary-main { display: flex; align-items: center; gap: .9rem; }
-        h2.dashboard-group-title { color: #fff; font-size: 1rem; margin: 0; }
-        .dashboard-group-note { color: rgba(255,255,255,.55); font-size: .82rem; margin: .15rem 0 0; font-family: 'Inter', sans-serif; }
-        .dashboard-group-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; color: var(--fc-green-400); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+        h2.dashboard-group-title { color: var(--fc-ink); font-size: 1rem; margin: 0; }
+        .dashboard-group-note { color: var(--fc-ink-light); font-size: .82rem; margin: .15rem 0 0; font-family: 'Inter', sans-serif; }
+        .dashboard-group-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; color: var(--fc-green-700); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
         .dashboard-group-toggle::before { content: "Collapse"; }
         .dashboard-group:not([open]) .dashboard-group-toggle::before { content: "Expand"; }
         .dashboard-group-body { padding: 1.25rem; }
@@ -421,15 +424,14 @@
         @media (max-width: 767.98px) {
             .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
             .farmer-hero { padding: 1.5rem; }
-            .fc-stat-modal .modal-dialog { width: calc(100vw - 1rem) !important; max-width: calc(100vw - 1rem) !important; }
-            .fc-modal-body { max-height: min(360px, calc(100vh - var(--fc-stat-modal-top, 6rem) - 8rem)); }
+            .fc-modal-body { max-height: 300px; }
             .fc-modal-table.table { min-width: 560px; }
             .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
         }
     </style>
 
     @php
-        $unreadNotifications = $unreadNotificationCount ?? $notifications->where('is_read', false)->count();
+        $unreadNotifications = $unreadNotificationCount ?? \App\Models\Notification::query()->where('user_id', auth()->id())->where('is_read', false)->count();
         $latestAdvisory = $advisories->first();
         $profile = auth()->user()->farmerProfile;
         $weatherTimezone = config('services.open_meteo.timezone', 'Asia/Manila');
@@ -439,15 +441,15 @@
         $weatherFreshness = $latestForecast
             ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
             : 'Stored Record';
-        $weatherFetchedAt = $latestForecast?->fetched_at?->timezone($weatherTimezone)->format('M d, Y g:i A');
+        $weatherFetchedAt = $latestForecast?->fetched_at?->timezone($weatherTimezone)->shortDateTime();
         $weatherDate = $latestForecast?->forecast_date?->format('M d, Y') ?? $climateSummary?->record_date?->format('M d, Y');
         $forecastHour = $weatherNow->hour;
         $forecastHourLabel = $weatherNow->format('g A');
         $currentWeather = $latestForecast?->raw_response['current'] ?? [];
         $currentWeatherTime = data_get($currentWeather, 'time');
         $currentWeatherTimeLabel = $currentWeatherTime
-            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('g:i A')
-            : $weatherNow->format('g:i A');
+            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->shortTime()
+            : $weatherNow->shortTime();
         $currentWeatherDate = $currentWeatherTime
             ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('M d, Y')
             : $weatherNow->format('M d, Y');
@@ -480,7 +482,7 @@
             <div class="farmer-hero-leaf" aria-hidden="true"></div>
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
                 <div>
-                    <div class="fc-eyebrow">Farmer field view</div>
+                    <div class="fc-eyebrow on-light">Farmer field view</div>
                     <h1>Climate-smart <em>farmer dashboard.</em></h1>
                     <p>Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, community updates, and messages for Lian, Batangas.</p>
                 </div>
@@ -498,7 +500,7 @@
         </div>
 
         <section class="climate-grid">
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalTemperature">
+            <button type="button" class="field-card" data-toggle-detail="statPanelTemperature" aria-expanded="false">
                 <div class="field-icon">TMP</div>
                 <div class="field-label">Temperature</div>
                 <div class="field-value">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' C' : 'N/A' }}</div>
@@ -509,7 +511,7 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalRainfall">
+            <button type="button" class="field-card" data-toggle-detail="statPanelRainfall" aria-expanded="false">
                 <div class="field-icon">RAIN</div>
                 <div class="field-label">Rainfall</div>
                 <div class="field-value">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'N/A' }}</div>
@@ -520,7 +522,7 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalHumidity">
+            <button type="button" class="field-card" data-toggle-detail="statPanelHumidity" aria-expanded="false">
                 <div class="field-icon">HUM</div>
                 <div class="field-label">Humidity</div>
                 <div class="field-value">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'N/A' }}</div>
@@ -531,7 +533,15 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-bs-toggle="modal" data-bs-target="#statModalRisk">
+            <button type="button" class="field-card" data-toggle-detail="statPanelAlerts" aria-expanded="false">
+                <div class="field-icon">ALT</div>
+                <div class="field-label">Weather Alerts</div>
+                <div class="field-value">{{ number_format($unreadNotifications) }} unread</div>
+                <div class="field-note">Recent notifications sent to your account</div>
+                <div class="field-source">Source: Notifications</div>
+                <div class="field-tap-hint">View details &rarr;</div>
+            </button>
+            <button type="button" class="field-card" data-toggle-detail="statPanelRisk" aria-expanded="false">
                 <div class="field-icon">RSK</div>
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
@@ -545,122 +555,112 @@
             $fcModalTrend = fn () => $recentClimateRecords->reverse()->values();
         @endphp
 
-        <div class="modal fade fc-stat-modal" id="statModalTemperature" tabindex="-1" aria-labelledby="statModalTemperatureLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalTemperatureLabel">Temperature Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
-                    </div>
+        <div class="fc-stat-panel" id="statPanelTemperature" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Temperature Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
 
-        <div class="modal fade fc-stat-modal" id="statModalRainfall" tabindex="-1" aria-labelledby="statModalRainfallLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalRainfallLabel">Rainfall Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
-                    </div>
+        <div class="fc-stat-panel" id="statPanelRainfall" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Rainfall Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
 
-        <div class="modal fade fc-stat-modal" id="statModalHumidity" tabindex="-1" aria-labelledby="statModalHumidityLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalHumidityLabel">Humidity Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
-                    </div>
+        <div class="fc-stat-panel" id="statPanelHumidity" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Humidity Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
 
-        <div class="modal fade fc-stat-modal" id="statModalAlerts" tabindex="-1" aria-labelledby="statModalAlertsLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalAlertsLabel">Weather Alerts</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ number_format($unreadNotifications) }} unread</div>
-                        <p class="fc-modal-sub">Most recent notifications sent to your account.</p>
-                        @forelse($notifications as $notification)
-                            <div class="farmer-list-item">
-                                <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
-                                <div>
-                                    <div class="list-title">{{ $notification->title }}</div>
-                                    <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
-                                    <div class="list-meta">{{ $notification->type }} &middot; {{ $notification->created_at?->format('M d, Y g:i A') }}</div>
-                                </div>
+        <div class="fc-stat-panel" id="statPanelAlerts" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Weather Alerts</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ number_format($unreadNotifications) }} unread</div>
+                    <p class="fc-modal-sub">Most recent notifications sent to your account.</p>
+                    @forelse($notifications as $notification)
+                        <div class="farmer-list-item">
+                            <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
+                            <div>
+                                <div class="list-title">{{ $notification->title }}</div>
+                                <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
+                                <div class="list-meta">{{ $notification->type }} &middot; {{ $notification->created_at?->shortDateTime() }}</div>
                             </div>
-                        @empty
-                            <div class="empty-soft"><strong>No alerts yet</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">Notifications will appear here when sent.</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
-                    </div>
+                        </div>
+                    @empty
+                        <div class="empty-soft"><strong>No alerts yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Notifications will appear here when sent.</div></div>
+                    @endforelse
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
                 </div>
             </div>
         </div>
 
-        <div class="modal fade fc-stat-modal" id="statModalRisk" tabindex="-1" aria-labelledby="statModalRiskLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalRiskLabel">High Risk Barangays</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
-                        <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
-                        @forelse($highRiskAreasList as $area)
-                            <div class="farmer-list-item">
-                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
-                                <div>
-                                    <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
-                                    <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="list-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
-                                </div>
+        <div class="fc-stat-panel" id="statPanelRisk" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">High Risk Barangays</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
+                    <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
+                    @forelse($highRiskAreasList as $area)
+                        <div class="farmer-list-item">
+                            <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                            <div>
+                                <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                <div class="list-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
                             </div>
-                        @empty
-                            <div class="empty-soft"><strong>No high risk barangays</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">All barangays are currently within normal risk levels.</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
-                    </div>
+                        </div>
+                    @empty
+                        <div class="empty-soft"><strong>No high risk barangays</strong><div class="small mt-1" style="color: var(--fc-ink-light);">All barangays are currently within normal risk levels.</div></div>
+                    @endforelse
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                 </div>
             </div>
         </div>
@@ -717,7 +717,7 @@
                                     <div class="advisory-card">
                                         <div class="d-flex justify-content-between gap-2">
                                             <span class="status-pill">{{ $advisory->type }}</span>
-                                            <span class="small mono" style="color: rgba(255,255,255,.45); font-size: .74rem;">{{ $advisory->created_at?->format('M d') }}</span>
+                                            <span class="small mono" style="color: var(--fc-ink-light); font-size: .74rem;">{{ $advisory->created_at?->format('M d') }}</span>
                                         </div>
                                         <strong>{{ $advisory->title }}</strong>
                                         <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
@@ -725,7 +725,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="col-12"><div class="empty-soft"><strong>No advisories yet</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">Published planting advisories will appear here.</div></div></div>
+                                <div class="col-12"><div class="empty-soft"><strong>No advisories yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Published planting advisories will appear here.</div></div></div>
                             @endforelse
                         </div>
                     </div>
@@ -752,7 +752,7 @@
                             <div class="list-text">Season is {{ $climateSummary->season }} with {{ $climateSummary->rainfall }} mm rainfall recorded.</div>
                             <div class="list-meta">Source: {{ $climateSummary->source }}</div>
                         @else
-                            <div class="empty-soft"><strong>No guide available</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">Advisories and climate records will appear here once published.</div></div>
+                            <div class="empty-soft"><strong>No guide available</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Advisories and climate records will appear here once published.</div></div>
                         @endif
                     </div>
                 </div>
@@ -796,7 +796,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="empty-soft"><strong>No community posts</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">MAO feed updates will appear here.</div></div>
+                            <div class="empty-soft"><strong>No community posts</strong><div class="small mt-1" style="color: var(--fc-ink-light);">MAO feed updates will appear here.</div></div>
                         @endforelse
                     </div>
                 </div>
@@ -891,20 +891,27 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const dateTarget = document.querySelector('[data-current-date]');
-            document.querySelectorAll('.fc-stat-modal').forEach((modal) => {
-                document.body.appendChild(modal);
-                modal.addEventListener('show.bs.modal', () => document.body.classList.add('fc-stat-modal-open'));
-                modal.addEventListener('hidden.bs.modal', () => document.body.classList.remove('fc-stat-modal-open'));
-            });
-            document.querySelectorAll('.field-card[data-bs-target]').forEach((card) => {
+            document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
                 card.addEventListener('click', () => {
-                    const modal = document.querySelector(card.dataset.bsTarget);
-                    const grid = card.closest('.climate-grid');
-                    if (!modal || !grid) return;
+                    const panel = document.getElementById(card.dataset.toggleDetail);
+                    if (!panel) return;
+                    const isOpen = !panel.hidden;
 
-                    const gridTop = grid.getBoundingClientRect().top;
-                    const top = Math.max(88, Math.min(gridTop + 6, window.innerHeight - 420));
-                    modal.style.setProperty('--fc-stat-modal-top', `${top}px`);
+                    document.querySelectorAll('.fc-stat-panel').forEach((other) => { other.hidden = true; });
+                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
+
+                    if (!isOpen) {
+                        panel.hidden = false;
+                        card.setAttribute('aria-expanded', 'true');
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            });
+            document.querySelectorAll('.fc-panel-close').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const panel = btn.closest('.fc-stat-panel');
+                    if (panel) panel.hidden = true;
+                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
                 });
             });
 

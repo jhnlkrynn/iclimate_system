@@ -91,7 +91,20 @@
       "Bash(curl -s -b /tmp/mao_cookies.txt http://127.0.0.1:8000/community-feed -o /tmp/feed_page.html)",
       "Bash(curl -s -b /tmp/mao_cookies.txt http://127.0.0.1:8000/community-feed -o /tmp/feed_page2.html)",
       "Bash(sed -n '/Test Post Title Visibility Check/,+3p' /tmp/feed_page2.html)",
-      "Bash(grep -n \"^p \\\\|^p{\\\\|^p,\\\\| p {\" resources/css/app.css)"
+      "Bash(grep -n \"^p \\\\|^p{\\\\|^p,\\\\| p {\" resources/css/app.css)",
+      "Bash(curl -s -b /tmp/toast_test2.txt http://127.0.0.1:8000/login -o /tmp/login_recheck.html -w \"HTTP:%{http_code}\\\\n\")",
+      "Bash(curl -s -b /tmp/toast_test4.txt -c /tmp/toast_test4.txt http://127.0.0.1:8000/login -o /tmp/toast_final.html)",
+      "Bash(node --check resources/js/app.js)",
+      "Bash(node -e \"require\\('esprima'\\)\")",
+      "Bash(node -c resources/js/app.js)",
+      "Bash(/c/php85-cli/php.exe -l /c/xampp/htdocs/iclimate_system_new/app/Providers/AppServiceProvider.php)",
+      "Bash(sed -i \"s/->format\\('F d, Y, g:i A'\\)/->shortDateTime\\('F d, Y,'\\)/\" resources/views/advisories/index.blade.php)",
+      "Bash(sed -i \"s/->format\\('M d, g:i A'\\)/->shortDateTime\\('M d,'\\)/\" resources/views/advisories/index.blade.php)",
+      "Bash(sed -i \"s/->format\\('F d, Y g:i A'\\)/->shortDateTime\\('F d, Y'\\)/\" resources/views/advisories/show.blade.php)",
+      "Bash(/c/php85-cli/php.exe -l /c/xampp/htdocs/iclimate_system_new/resources/views/components/ai-chat-widget.blade.php)",
+      "Bash(node --check /c/xampp/htdocs/iclimate_system_new/resources/js/app.js)",
+      "Bash(git -C /c/xampp/htdocs/iclimate_system_new diff --stat -- resources/views/welcome.blade.php resources/views/auth/login.blade.php resources/views/auth/register.blade.php resources/views/layouts/guest.blade.php resources/views/errors/minimal.blade.php resources/views/auth/forgot-password.blade.php resources/views/auth/reset-password.blade.php resources/views/auth/confirm-password.blade.php resources/views/auth/verify-email.blade.php)",
+      "Bash(git -C /c/xampp/htdocs/iclimate_system_new diff -- resources/views/auth/forgot-password.blade.php resources/views/auth/reset-password.blade.php resources/views/auth/confirm-password.blade.php resources/views/auth/verify-email.blade.php)"
     ],
     "additionalDirectories": [
       "C:\\xampp\\htdocs\\iclimate_system_new",

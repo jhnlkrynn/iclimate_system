@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\ServiceProvider;
 use PDO;
 
@@ -22,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        Carbon::macro('shortTime', function () {
+            /** @var CarbonInterface $this */
+            return $this->minute === 0 ? $this->format('g A') : $this->format('g:i A');
+        });
+
+        Carbon::macro('shortDateTime', function (string $dateFormat = 'M d, Y') {
+            /** @var CarbonInterface $this */
+            return trim($this->format($dateFormat).' '.$this->shortTime());
+        });
 
         $this->createMysqlDatabaseForMigrations();
     }

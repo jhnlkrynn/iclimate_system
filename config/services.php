@@ -44,6 +44,8 @@ return [
         'longitude' => env('WEATHER_API_LONGITUDE', 120.65),
         'timezone' => env('WEATHER_API_TIMEZONE', env('APP_TIMEZONE', 'Asia/Manila')),
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
+        'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 10),
+        'realtime' => env('WEATHER_API_REALTIME', true),
     ],
 
     'open_meteo' => [
@@ -55,14 +57,20 @@ return [
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),
         'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
         'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
+        'realtime' => env('OPEN_METEO_REALTIME', true),
     ],
 
     'pagasa' => [
         'enabled' => env('PAGASA_ADVISORIES_ENABLED', true),
         'regional_forecast_url' => env('PAGASA_REGIONAL_FORECAST_URL', 'https://bagong.pagasa.dost.gov.ph/regional-forecast/ncrprsd'),
+        'regional_forecast_urls' => array_filter(array_map('trim', explode(',', env(
+            'PAGASA_REGIONAL_FORECAST_URLS',
+            'https://www.pagasa.dost.gov.ph/regional-forecast/ncrprsd,https://bagong.pagasa.dost.gov.ph/regional-forecast/slprsd,https://bagong.pagasa.dost.gov.ph/ten-day-regional-agri-weather'
+        )))),
         'weekly_outlook_url' => env('PAGASA_WEEKLY_OUTLOOK_URL', 'https://pagasa.dost.gov.ph/weather/weather-outlook-weekly'),
         'timeout' => env('PAGASA_TIMEOUT', 12),
-        'cache_minutes' => env('PAGASA_CACHE_MINUTES', 30),
+        'cache_minutes' => env('PAGASA_CACHE_MINUTES', 10),
+        'realtime' => env('PAGASA_REALTIME', true),
         'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),
     ],
 

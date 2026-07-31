@@ -4,13 +4,6 @@
     $isMao = $user->role === \App\Models\User::ROLE_MAO;
     $isIt = $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $dashboardRoute = $user->dashboardRoute();
-    $unreadNotifications = $isFarmer
-        ? \Illuminate\Support\Facades\Cache::remember(
-            'sidebar:unread-notifications:'.$user->id,
-            now()->addSeconds(20),
-            fn () => \App\Models\Notification::query()->where('user_id', $user->id)->where('is_read', false)->count()
-        )
-        : 0;
 
     $sidebarIcon = function (string $key): string {
         return match ($key) {
@@ -19,7 +12,6 @@
             'calendar' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3.5" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 7.5h13M6 2v3M12 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             'community' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6.5" r="2.2" stroke="currentColor" stroke-width="1.4"/><circle cx="12.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.4"/><path d="M2 15c.5-2.7 2-4.2 4.5-4.2s4 1.5 4.5 4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 15c.4-2.2 1.6-3.4 3.2-3.4s2.8 1 3.2 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'messages' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="m2.5 5 6.5 5 6.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-            'notifications' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 14.5a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'climate-records' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 2.5h5.5L14 6v9.5H5V2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 8h4M7 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'weather' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'heatmap' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.8 0 5 2.3 5 5.2C14 11 9 16 9 16S4 11 4 7.2C4 4.3 6.2 2 9 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7.2" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>',
@@ -40,7 +32,6 @@
         'calendar' => ['calendar.index', ['calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
-        'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
         'weather' => ['weather-predictions.index', ['weather-predictions.*']],
         'model-evaluation' => ['model-evaluation.index', ['model-evaluation.*']],
@@ -66,7 +57,6 @@
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
             $navLink('Messages', 'messages', 'messages'),
-            $navLink('Notifications', 'notifications', 'notifications', $unreadNotifications ?: null),
         ];
         $moreGroup = [
             $navLink('Climate Records', 'climate-records', 'climate-records'),
@@ -162,12 +152,12 @@
     <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
 </aside>
 
-<div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header" style="background: var(--ic-green-950);">
-        <h5 class="offcanvas-title" id="mobileSidebarLabel">iClimate</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header" style="background: var(--ic-sidebar-bg); border-bottom: 1px solid var(--ic-border);">
+        <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: var(--ic-ink);">iClimate</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-green-950);">
+    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-sidebar-bg);">
         @include('layouts.partials.sidebar-brand')
         <div class="px-3 flex-grow-1 overflow-auto">
             {!! $renderSidebarNav() !!}

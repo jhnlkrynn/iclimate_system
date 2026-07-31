@@ -14,10 +14,18 @@ class MonthlyWeatherRandomForest
     public function predict(CarbonImmutable $targetMonth): array
     {
         return Cache::remember(
-            'weather-random-forest:'.$targetMonth->format('Y-m'),
+            'weather-random-forest:'.$targetMonth->format('Y-m').':'.$this->climateRecordVersion(),
             now()->addMinutes(15),
             fn () => $this->buildPrediction($targetMonth)
         );
+    }
+
+    private function climateRecordVersion(): string
+    {
+        return implode(':', [
+            ClimateRecord::query()->count(),
+            (string) (ClimateRecord::query()->max('updated_at') ?? 'none'),
+        ]);
     }
 
     private function buildPrediction(CarbonImmutable $targetMonth): array
@@ -28,6 +36,9 @@ class MonthlyWeatherRandomForest
             return [
                 'ready' => false,
                 'message' => 'At least 4 months of climate records are required to train the monthly Random Forest model.',
+                'source_type' => 'Trained Model',
+                'source_name' => 'iClimate monthly Random Forest model',
+                'source_note' => 'Model trains from saved iClimate climate records.',
                 'months_available' => $monthly->count(),
                 'target_month' => $targetMonth,
                 'predictions' => [],
@@ -41,6 +52,9 @@ class MonthlyWeatherRandomForest
             return [
                 'ready' => false,
                 'message' => 'The available records must span at least 4 usable monthly observations.',
+                'source_type' => 'Trained Model',
+                'source_name' => 'iClimate monthly Random Forest model',
+                'source_note' => 'Model trains from saved iClimate climate records.',
                 'months_available' => $monthly->count(),
                 'target_month' => $targetMonth,
                 'predictions' => [],
@@ -70,6 +84,9 @@ class MonthlyWeatherRandomForest
         return [
             'ready' => true,
             'message' => 'Prediction generated using monthly climate history and Random Forest regression.',
+            'source_type' => 'Trained Model',
+            'source_name' => 'iClimate monthly Random Forest model',
+            'source_note' => 'Model output trained from saved monthly climate records.',
             'months_available' => $monthly->count(),
             'target_month' => $targetMonth,
             'predictions' => $predictions,

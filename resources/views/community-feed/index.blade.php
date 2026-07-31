@@ -1,7 +1,7 @@
 <x-app-layout>
     <style>
-        .feed-wrap { --feed-ink:#0d1f18; --feed-muted:#6b8f71; --feed-line:#e8e0d0; --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#2f6f8f; --feed-gold:#e8a73d; }
-        .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:#fff; background:linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.16); }
+        .feed-wrap { --feed-ink:#1f2a24; --feed-muted:#6b7c72; --feed-line:#e8e0d0; --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#2f6f8f; --feed-gold:#e8a73d; }
+        .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:var(--feed-ink); background:linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .feed-hero::before {
             content:"";
             position:absolute; inset:0;
@@ -10,10 +10,10 @@
             pointer-events:none;
         }
         .feed-hero > * { position:relative; z-index:1; }
-        .feed-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:#fff; }
+        .feed-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:var(--feed-ink); }
         .feed-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.12em; color:#74c69d; margin-bottom:.4rem; }
         .feed-eyebrow::before { content:''; display:block; width:18px; height:1px; background:#74c69d; }
-        .feed-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:.5rem .85rem; background:rgba(255,255,255,.06); color:rgba(255,255,255,.85); font-family:'DM Mono', monospace; font-size:.76rem; font-weight:500; letter-spacing:.02em; }
+        .feed-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--feed-line); border-radius:999px; padding:.5rem .85rem; background:rgba(45,106,79,.06); color:var(--feed-ink); font-family:'DM Mono', monospace; font-size:.76rem; font-weight:500; letter-spacing:.02em; }
         .feed-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .feed-grid { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:1rem; align-items:start; margin-top:1rem; }
         .feed-card { border:1.5px solid #e8e0d0; border-radius:18px; background:#fff; box-shadow:0 .7rem 1.6rem rgba(20,32,51,.07); overflow:hidden; }
@@ -211,8 +211,8 @@
         }
 
         /* -- dark theme overrides -- */
-        .feed-wrap { color: rgba(255,255,255,.85) !important; }
-        .feed-card { border-color: rgba(255,255,255,.1) !important; background: #0D1F18 !important; }
+        .feed-wrap { color: var(--feed-ink) !important; }
+        .feed-card { border-color: var(--ic-sand-dark) !important; background: linear-gradient(145deg, var(--ic-paper), #f7fbf8) !important; }
         .feed-composer {
             background: linear-gradient(135deg,#f5f0e8,#edf7e7) !important;
         }
@@ -261,19 +261,19 @@
             gap: 1rem;
             margin: .75rem 0 1rem;
             padding: .9rem 1rem;
-            border: 1px solid rgba(13,31,24,.12);
+            border: 1px solid var(--ic-border);
             border-radius: 16px;
-            color: #fff;
-            background: linear-gradient(135deg, #0d1f18, #18452f 68%, #1f6f4a);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 .9rem 1.8rem rgba(13,31,24,.14);
+            color: var(--feed-ink);
+            background: linear-gradient(135deg, #f6f9f7, #e7f0ea 68%, #eaf3ee);
+            box-shadow: 0 .9rem 1.8rem rgba(31,42,36,.08);
         }
         .composer-head-main { display: flex; align-items: center; gap: .85rem; min-width: 0; }
         .composer-head-dot {
             width: 42px;
             height: 42px;
             border-radius: 14px;
-            border: 1px solid rgba(255,255,255,.22);
-            background: rgba(255,255,255,.1);
+            border: 1px solid var(--ic-border);
+            background: rgba(45,106,79,.08);
             display: grid;
             place-items: center;
             flex: 0 0 auto;
@@ -287,7 +287,7 @@
             box-shadow: 0 0 0 7px rgba(116,198,157,.16);
         }
         .composer-head-title {
-            color: #fff;
+            color: var(--feed-ink);
             font-weight: 900;
             line-height: 1.15;
             white-space: nowrap;
@@ -296,7 +296,7 @@
         }
         .composer-head-sub {
             margin-top: .12rem;
-            color: rgba(255,255,255,.7);
+            color: var(--feed-muted);
             font-size: .88rem;
         }
         .composer-head-tags { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: flex-end; }
@@ -306,9 +306,9 @@
             min-height: 30px;
             padding: .35rem .65rem;
             border-radius: 999px;
-            border: 1px solid rgba(255,255,255,.16);
-            background: rgba(255,255,255,.08);
-            color: rgba(255,255,255,.84);
+            border: 1px solid var(--ic-border);
+            background: rgba(45,106,79,.06);
+            color: var(--feed-ink);
             font-family: 'DM Mono', monospace;
             font-size: .66rem;
             font-weight: 700;
@@ -367,11 +367,12 @@
             margin-top: 1rem !important;
             padding: .8rem .9rem;
             border-radius: 16px;
-            background: #0d1f18;
+            border: 1px solid var(--ic-border);
+            background: linear-gradient(135deg, #f3f6f4, #e7f0ea);
         }
         .composer-submit-row::before {
             content: "Post will appear in the community feed after publishing.";
-            color: rgba(255,255,255,.68);
+            color: var(--feed-muted);
             font-size: .85rem;
             font-weight: 700;
         }
@@ -418,41 +419,41 @@
             .composer-submit-row::before { font-size: .78rem; }
         }
         .avatar { background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.3); color: #74c69d; }
-        .feed-title { color: #fff !important; }
-        .feed-body-text { color: rgba(255,255,255,.85) !important; }
-        .feed-meta { color: rgba(255,255,255,.5); }
-        .feed-badge { background: rgba(82,183,136,.16); color: #74c69d; }
-        .feed-badge.archived { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border-color: rgba(255,255,255,.15); }
-        .manage-actions { border-top-color: rgba(255,255,255,.1); }
-        .manage-panel summary { border-color: #74c69d; background: rgba(82,183,136,.12); color: #74c69d; }
+        .feed-title { color: var(--feed-ink) !important; }
+        .feed-body-text { color: var(--feed-ink) !important; }
+        .feed-meta { color: var(--feed-muted); }
+        .feed-badge { background: rgba(82,183,136,.16); color: #2d6a4f; }
+        .feed-badge.archived { background: rgba(45,106,79,.06); color: var(--feed-muted); border-color: var(--feed-line); }
+        .manage-actions { border-top-color: var(--feed-line); }
+        .manage-panel summary { border-color: #74c69d; background: rgba(82,183,136,.12); color: #2d6a4f; }
         .manage-panel summary:hover, .manage-panel[open] summary { background: rgba(82,183,136,.2); }
-        .manage-panel-body { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); }
-        .file-tile { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: rgba(255,255,255,.85); }
+        .manage-panel-body { border-color: var(--feed-line); background: rgba(45,106,79,.03); }
+        .file-tile { border-color: var(--feed-line); background: rgba(45,106,79,.03); color: var(--feed-ink); }
         .reaction-row { border-color: #edf3ee; background: #fbfdfb; }
-        .reaction-trigger { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
-        .reaction-trigger.active { color: #74c69d; background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.4); }
-        .reaction-count-pill { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: rgba(255,255,255,.7); }
-        .comment-bubble { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.85); }
-        .side-panel { border-color: rgba(255,255,255,.1); background: var(--ic-green-950); position: sticky; }
+        .reaction-trigger { border-color: var(--feed-line); background: #fff; color: var(--feed-ink); }
+        .reaction-trigger.active { color: #2d6a4f; background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.4); }
+        .reaction-count-pill { border-color: var(--feed-line); background: #fff; color: var(--feed-muted); }
+        .comment-bubble { background: #f4faf6; border-color: var(--feed-line); color: var(--feed-ink); }
+        .side-panel { border-color: var(--ic-sand-dark); background: linear-gradient(145deg, var(--ic-paper), #f7fbf8); position: sticky; }
         .feed-empty-icon { background: rgba(82,183,136,.16); border-color: rgba(149,213,178,.3); color: #74c69d; }
-        .feed-empty strong { color: #fff; }
-        .feed-empty p { color: rgba(255,255,255,.55); }
-        .feed-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
-        .feed-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
+        .feed-empty strong { color: var(--feed-ink); }
+        .feed-empty p { color: var(--feed-muted); }
+        .feed-wrap .text-muted { color: var(--feed-muted) !important; }
+        .feed-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #1a3a2a; }
         .feed-wrap .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
         .feed-wrap .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
-        .feed-wrap .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
-        .feed-wrap .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
+        .feed-wrap .btn-outline-secondary { color: var(--feed-muted); border-color: var(--feed-line); }
+        .feed-wrap .btn-outline-secondary:hover { background: rgba(45,106,79,.08); border-color: #2d6a4f; color: var(--feed-ink); }
 
         .feed-post-card > .feed-card-body {
             color: #0d1f18 !important;
         }
         .feed-post-card .feed-post-head {
-            color: rgba(255,255,255,.85) !important;
-            background: #0d1f18;
+            color: var(--feed-ink) !important;
+            background: linear-gradient(135deg, #f3f6f4, #e7f0ea);
         }
         .feed-post-card .feed-title {
-            color: #fff !important;
+            color: var(--feed-ink) !important;
         }
         .feed-post-card .feed-post-heading {
             color: #0d1f18 !important;
@@ -461,16 +462,16 @@
             color: #243a30 !important;
         }
         .feed-post-card .feed-meta {
-            color: rgba(183,228,199,.72) !important;
+            color: var(--feed-muted) !important;
         }
         .feed-post-card .feed-badge {
             background: rgba(82,183,136,.16);
-            color: #74c69d;
+            color: #2d6a4f;
         }
         .feed-post-card .feed-badge.archived {
-            background: rgba(255,255,255,.06);
-            color: rgba(255,255,255,.65);
-            border-color: rgba(255,255,255,.15);
+            background: rgba(45,106,79,.06);
+            color: var(--feed-muted);
+            border-color: var(--feed-line);
         }
         .feed-post-card .reaction-row {
             border-color: #edf3ee !important;
@@ -508,7 +509,7 @@
             color: #6c757d;
         }
         .feed-post-card .feed-card-body .text-muted {
-            color: #6b8f71 !important;
+            color: #6b7c72 !important;
         }
 
         /* Community feed final layout pass */
@@ -546,8 +547,8 @@
             margin: -1rem -1rem 1rem;
             padding: 1rem;
             border-radius: 16px 16px 0 0;
-            background: linear-gradient(135deg, #0d1f18, #183c2b) !important;
-            color: #fff !important;
+            background: linear-gradient(135deg, #f3f6f4, #e7f0ea) !important;
+            color: var(--feed-ink) !important;
             align-items: flex-start;
         }
         .feed-post-card .feed-author {
@@ -555,12 +556,12 @@
             align-items: center;
         }
         .feed-post-card .avatar {
-            background: rgba(116,198,157,.18);
-            border-color: rgba(183,228,199,.42);
-            color: #b7e4c7;
+            background: rgba(82,183,136,.16);
+            border-color: rgba(149,213,178,.4);
+            color: #2d6a4f;
         }
         .feed-post-card .feed-title {
-            color: #fff !important;
+            color: var(--feed-ink) !important;
             font-family: 'Inter', sans-serif;
             font-size: 1rem;
             font-weight: 800;
@@ -568,7 +569,7 @@
             overflow-wrap: anywhere;
         }
         .feed-post-card .feed-meta {
-            color: rgba(216,243,220,.72) !important;
+            color: var(--feed-muted) !important;
             line-height: 1.35;
             margin-top: .18rem;
         }
@@ -577,9 +578,9 @@
             padding-top: .15rem;
         }
         .feed-post-card .feed-badge {
-            background: rgba(116,198,157,.17);
-            border: 1px solid rgba(183,228,199,.22);
-            color: #95d5b2;
+            background: rgba(82,183,136,.14);
+            border: 1px solid rgba(149,213,178,.35);
+            color: #2d6a4f;
         }
         .feed-post-card .feed-post-heading {
             margin: 0 0 .35rem;
@@ -822,9 +823,9 @@
             white-space: normal;
         }
         .feed-wrap .side-panel {
-            background: #0d1f18;
-            border-color: rgba(255,255,255,.1);
-            box-shadow: 0 .7rem 1.4rem rgba(13,31,24,.08);
+            background: linear-gradient(145deg, var(--ic-paper), #f7fbf8);
+            border-color: var(--ic-sand-dark);
+            box-shadow: 0 .7rem 1.4rem rgba(31,42,36,.06);
             position: sticky;
             top: 1rem;
             align-self: start;
@@ -842,29 +843,29 @@
             margin: .75rem 0 .75rem;
         }
         .toolkit-item {
-            border: 1px solid rgba(183,228,199,.14);
+            border: 1px solid var(--ic-border);
             border-radius: 8px;
-            background: rgba(255,255,255,.04);
+            background: rgba(45,106,79,.04);
             padding: .62rem .7rem;
         }
         .toolkit-item strong {
             display: block;
-            color: #fff;
+            color: var(--feed-ink);
             font-size: .84rem;
             line-height: 1.25;
             margin-bottom: .2rem;
         }
         .toolkit-item span {
             display: block;
-            color: rgba(255,255,255,.58);
+            color: var(--feed-muted);
             font-size: .76rem;
             line-height: 1.38;
         }
         .toolkit-note {
-            border-top: 1px solid rgba(183,228,199,.14);
+            border-top: 1px solid var(--ic-border);
             padding-top: .7rem;
             margin-top: auto;
-            color: rgba(255,255,255,.62);
+            color: var(--feed-muted);
             font-size: .76rem;
             line-height: 1.4;
         }
@@ -922,7 +923,7 @@
                 <div>
                     <div class="feed-eyebrow">Community Feed</div>
                     <h1 class="h3 mb-1">MAO updates, programs, activities, and farmer discussions</h1>
-                    <p class="mb-0 text-white-50">Farmers can react and comment on official MAO posts with photos, videos, and files.</p>
+                    <p class="mb-0 text-muted">Farmers can react and comment on official MAO posts with photos, videos, and files.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <span class="feed-chip"><span class="feed-pulse"></span> Live MAO Board</span>
@@ -955,7 +956,7 @@
                                     <span class="composer-head-tag">Calendar Ready</span>
                                 </div>
                             </div>
-                            <form method="POST" action="{{ route('community-feed.store') }}" enctype="multipart/form-data">
+                            <form method="POST" action="{{ route('community-feed.store') }}" enctype="multipart/form-data" data-loading="true">
                                 @csrf
                                 <div class="composer-layout">
                                     <div class="composer-surface">
@@ -1014,7 +1015,7 @@
                                                 <div id="composerFileList" class="composer-file-list"></div>
                                             </div>
                                         </div>
-                                        <div class="mt-3 composer-submit-row"><button class="btn btn-primary fw-bold" type="submit">Publish Post</button></div>
+                                        <div class="mt-3 composer-submit-row"><button class="btn btn-primary fw-bold" type="submit" data-loading-text="Posting...">Publish Post</button></div>
                                     </div>
                                     </div>
                             </form>
@@ -1040,7 +1041,7 @@
                                     <div class="avatar">{{ str($post->author?->name ?? 'M')->substr(0, 1)->upper() }}</div>
                                     <div>
                                         <h2 class="feed-title h5">{{ $post->author?->name ?? 'MAO' }}</h2>
-                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->format('M d, Y h:i A') }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
+                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->shortDateTime() }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
                                     </div>
                                 </div>
                                 <div class="post-actions">
@@ -1094,14 +1095,14 @@
                                     </button>
                                     <div class="reaction-menu" role="menu" aria-label="Choose a reaction">
                                         @foreach($reactionTypes as $reaction)
-                                            <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}">
+                                            <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}" data-loading="true">
                                                 @csrf
                                                 <input type="hidden" name="type" value="{{ $reaction }}">
                                                 @php
                                                     $reactionClass = strtolower($reaction);
                                                     $reactionIcon = $reactionIcons[$reaction] ?? '👍';
                                                 @endphp
-                                                <button type="submit" class="reaction-option {{ $reactionClass }} {{ $userReaction?->type === $reaction ? 'text-success' : '' }}" data-icon="{{ $reactionIcon }}" title="{{ $reaction }}" aria-label="{{ $reaction }}" role="menuitem">{{ $reaction }}</button>
+                                                <button type="submit" class="reaction-option {{ $reactionClass }} {{ $userReaction?->type === $reaction ? 'text-success' : '' }}" data-icon="{{ $reactionIcon }}" title="{{ $reaction }}" aria-label="{{ $reaction }}" role="menuitem" data-loading-text="{{ $reaction }}">{{ $reaction }}</button>
                                             </form>
                                         @endforeach
                                     </div>
@@ -1154,7 +1155,7 @@
                                 <details class="manage-panel">
                                     <summary>Edit</summary>
                                     <div class="manage-panel-body">
-                                        <form method="POST" action="{{ route('community-feed.update', $post) }}" enctype="multipart/form-data">
+                                        <form method="POST" action="{{ route('community-feed.update', $post) }}" enctype="multipart/form-data" data-loading="true">
                                             @csrf
                                             @method('PATCH')
                                             <div class="row g-3">
@@ -1200,22 +1201,22 @@
                                                 </div>
                                             </div>
                                             <div class="mt-3">
-                                                <button class="btn btn-primary fw-bold" type="submit">Save Changes</button>
+                                                <button class="btn btn-primary fw-bold" type="submit" data-loading-text="Saving...">Save Changes</button>
                                             </div>
                                         </form>
                                     </div>
                                 </details>
                                 @if(! $isArchived)
-                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" onsubmit="return confirm('Archive this post? Farmers will no longer see it.');">
+                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" onsubmit="return confirm('Archive this post? Farmers will no longer see it.');" data-loading="true">
                                         @csrf
                                         @method('PATCH')
-                                        <button class="btn btn-outline-secondary fw-bold" type="submit">Archive</button>
+                                        <button class="btn btn-outline-secondary fw-bold" type="submit" data-loading-text="Archiving...">Archive</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" onsubmit="return confirm('Delete this post permanently?');">
+                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" onsubmit="return confirm('Delete this post permanently?');" data-loading="true">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-outline-danger fw-bold" type="submit">Delete</button>
+                                    <button class="btn btn-outline-danger fw-bold" type="submit" data-loading-text="Deleting...">Delete</button>
                                 </form>
                             </div>
                         @endif
@@ -1231,10 +1232,10 @@
                                 </div>
                             @endforeach
                             @unless($isArchived)
-                                <form method="POST" action="{{ route('community-feed.comments.store', $post) }}" class="d-flex gap-2 mt-3">
+                                <form method="POST" action="{{ route('community-feed.comments.store', $post) }}" class="d-flex gap-2 mt-3" data-loading="true">
                                     @csrf
                                     <input name="body" class="form-control" placeholder="Write a comment..." required>
-                                    <button class="btn btn-outline-primary fw-bold" type="submit">Comment</button>
+                                    <button class="btn btn-outline-primary fw-bold" type="submit" data-loading-text="Posting...">Comment</button>
                                 </form>
                             @else
                                 <div class="text-muted small mt-3">This post is archived. Reactions and comments are closed.</div>

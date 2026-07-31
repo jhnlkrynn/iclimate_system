@@ -17,7 +17,7 @@
             ? 'Calculated from weather, yield, and local exposure inputs'
             : 'Baseline barangay location; refresh needed for live risk',
         'is_baseline' => ! str_contains(strtolower((string) $area->description), 'auto-updated from'),
-        'updated_at' => $area->updated_at?->format('M d, Y g:i A'),
+        'updated_at' => $area->updated_at?->shortDateTime(),
     ])->values();
     $riskSource = optional($mapAreas->first())->description;
     $priorityAreas = $mapAreas->sortByDesc('risk_score')->take(5)->values();
@@ -26,17 +26,17 @@
         'title' => $latestPagasaAdvisory->title,
         'severity' => $latestPagasaAdvisory->severityLabel(),
         'summary' => $latestPagasaAdvisory->summary ?: $latestPagasaAdvisory->message,
-        'source' => 'PAGASA',
+        'source' => $latestPagasaAdvisory->sourceLabel(),
         'source_url' => $latestPagasaAdvisory->source_url,
-        'updated_at' => $latestPagasaAdvisory->valid_from?->format('M d, Y g:i A') ?: $latestPagasaAdvisory->created_at?->format('M d, Y g:i A'),
-        'freshness' => 'Official PAGASA online advisory cached in iClimate',
+        'updated_at' => $latestPagasaAdvisory->valid_from?->shortDateTime() ?: $latestPagasaAdvisory->created_at?->shortDateTime(),
+        'freshness' => 'Official PAGASA online advisory page cached in iClimate',
     ] : [
-        'title' => 'No active PAGASA signal for Lian/Batangas',
+        'title' => 'No active PAGASA online signal for Lian/Batangas',
         'severity' => 'None',
-        'summary' => 'No active PAGASA advisory record is stored for Lian or Batangas right now. Use the official PAGASA map link for external verification.',
-        'source' => 'PAGASA External Reference',
+        'summary' => 'No active PAGASA online advisory record is stored for Lian or Batangas right now. Use the official PAGASA website map link for external verification.',
+        'source' => 'PAGASA Website External Reference',
         'source_url' => $pagasaMapUrl,
-        'updated_at' => 'No stored PAGASA match',
+        'updated_at' => 'No stored PAGASA online match',
         'freshness' => 'External reference only',
     ];
 @endphp
@@ -138,6 +138,10 @@
         .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
         .map-atmosphere { position: absolute; inset: 0; z-index: 320; pointer-events: none; background: radial-gradient(circle at 23% 24%, rgba(255,255,255,.11), transparent 18rem), radial-gradient(circle at 76% 68%, rgba(13,31,24,.12), transparent 22rem), linear-gradient(180deg, rgba(13,31,24,.04), rgba(13,31,24,.08)); mix-blend-mode: soft-light; }
+        .map-loading-overlay { position: absolute; inset: 0; z-index: 490; display: flex; align-items: center; justify-content: center; background: rgba(247, 251, 248, .72); backdrop-filter: blur(1px); pointer-events: none; }
+        .map-loading-overlay[hidden] { display: none; }
+        .map-loading-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(45,106,79,.2); border-top-color: var(--ic-green-500); animation: mapLoadingSpin .7s linear infinite; }
+        @keyframes mapLoadingSpin { to { transform: rotate(360deg); } }
         .map-control-panel {
             position: absolute;
             z-index: 510;
@@ -250,7 +254,7 @@
             font-size: 1.18rem;
             box-shadow: 0 .7rem 1.6rem rgba(13,31,24,.12);
         }
-        .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1px solid rgba(149,213,178,.18); border-radius: 12px; background: rgba(13,31,24,.96); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 12px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
@@ -268,6 +272,10 @@
         .risk-info-value { color: #0d1f18; font-size: 1.02rem; font-weight: 900; margin-top: .28rem; line-height: 1.25; }
         .risk-chip { display: inline-flex; border-radius: 999px; padding: .42rem .72rem; font-size: .86rem; font-weight: 900; background: var(--chip-bg, #d8f3dc); color: var(--chip-color, #2d6a4f); }
         .risk-help { color: #5a7a64; font-size: .9rem; line-height: 1.45; margin-top: .42rem; }
+        .risk-flow-list { display: grid; gap: .5rem; margin-top: .75rem; }
+        .risk-flow-step { border: 1px solid #d4edda; border-radius: 8px; background: #f7fbf8; padding: .65rem; }
+        .risk-flow-step strong { display: block; color: #0d1f18; font-size: .82rem; line-height: 1.25; }
+        .risk-flow-step span { display: block; color: #5a7a64; font-size: .76rem; line-height: 1.35; margin-top: .25rem; }
         .risk-advice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
         .risk-advice { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .95rem; }
         .risk-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
@@ -426,31 +434,31 @@
             .pagasa-official-badge { width: 100%; justify-content: center; }
         }
 
-        /* -- dark theme overrides (page chrome only; map/overlay controls kept self-contained) -- */
-        .heatmap-page { color: rgba(255,255,255,.85); }
-        .map-shell { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .map-insight { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .risk-label { color: rgba(255,255,255,.5); }
-        .risk-value { color: #fff; }
-        .risk-help { color: rgba(255,255,255,.6); }
-        .legend-row { color: rgba(255,255,255,.65); }
-        .priority-item { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .priority-item .fw-bold { color: #fff; }
-        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #74c69d; }
-        .risk-stat { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .barangay-card { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .barangay-card-head { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.1); }
-        .barangay-name { color: #fff; }
-        .risk-info-box { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .risk-info-box.primary { background: rgba(82,183,136,.08); }
-        .risk-info-label { color: rgba(255,255,255,.5); }
-        .risk-info-value { color: #fff; }
-        .risk-advice { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .heatmap-page .empty-state { background: var(--ic-green-950); border-color: rgba(255,255,255,.16); color: rgba(255,255,255,.7); }
-        .heatmap-page .text-muted { color: rgba(255,255,255,.5) !important; }
-        .heatmap-page .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
-        .heatmap-page .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
-        .heatmap-page .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
+        /* -- page chrome: light surfaces, dark ink text (map/overlay controls kept self-contained) -- */
+        .heatmap-page { color: #1f2a24; }
+        .map-shell { border-color: #e8e0d0; background: #fff; }
+        .map-insight { border-color: #e8e0d0; background: linear-gradient(145deg, #fff, #f7fbf8); }
+        .risk-label { color: #6b7c72; }
+        .risk-value { color: #1f2a24; }
+        .risk-help { color: #4a5c52; }
+        .legend-row { color: #4a5c52; }
+        .priority-item { border-color: #d4edda; background: #fff; }
+        .priority-item .fw-bold { color: #1f2a24; }
+        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #2d6a4f; }
+        .risk-stat { border-color: #e8e0d0; background: linear-gradient(145deg, #fff, #f7fbf8); }
+        .barangay-card { border-color: #e8e0d0; background: #fff; }
+        .barangay-card-head { background: linear-gradient(90deg, #fff, #f0f7f4); border-color: #d4edda; }
+        .barangay-name { color: #0d1f18; }
+        .risk-info-box { border-color: #d4edda; background: #f7fbf8; }
+        .risk-info-box.primary { background: #fff; }
+        .risk-info-label { color: #6b7c72; }
+        .risk-info-value { color: #1f2a24; }
+        .risk-advice { border-color: #d4edda; background: #fff; }
+        .heatmap-page .empty-state { background: linear-gradient(135deg, #ffffff, var(--ic-green-50)); border-color: var(--ic-sand-dark); color: #6b7c72; }
+        .heatmap-page .text-muted { color: #6b7c72 !important; }
+        .heatmap-page .btn-outline-secondary { color: #4a5c52; border-color: #d4edda; }
+        .heatmap-page .btn-outline-secondary:hover { background: rgba(45,106,79,.08); border-color: #2d6a4f; color: #1f2a24; }
+        .heatmap-page .btn-outline-primary { color: #2d6a4f; border-color: #2d6a4f; }
         .heatmap-page .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
     </style>
     @include('layouts.partials.dark-workspace')
@@ -461,7 +469,7 @@
             <div>
                 <div class="eyebrow mb-2">Barangay Agricultural Risk Map</div>
                 <h1 class="h2 fw-bold mb-2">Heat Map Areas</h1>
-                <p class="mb-0 text-white-50">API-rendered Lian barangay heatmap, with PAGASA used as the official weather reference source.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">API-rendered Lian barangay heatmap, with PAGASA online advisory pages used as the official weather reference source.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-end action-cluster">
                 <a class="btn btn-warning" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
@@ -527,7 +535,7 @@
 
             <div class="map-shell">
                 <div class="map-toolbar" aria-label="Heat map layer controls">
-                    <span class="pagasa-official-badge">PAGASA Official Source</span>
+                    <span class="pagasa-official-badge">PAGASA Online Source</span>
                     <button class="layer-btn active" type="button" data-layer="impact" aria-pressed="true">Climate Impact</button>
                     <button class="layer-btn" type="button" data-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
                     <button class="layer-btn" type="button" data-layer="farm_type" aria-pressed="false">Farm Type</button>
@@ -554,8 +562,11 @@
                     <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
                 </aside>
                 <div id="barangayRiskMap"></div>
+                <div id="mapLoadingOverlay" class="map-loading-overlay" aria-hidden="true">
+                    <div class="map-loading-spinner"></div>
+                </div>
                 <div class="pagasa-source-strip">
-                    <span class="pagasa-official-badge">PAGASA Reference</span>
+                    <span class="pagasa-official-badge">{{ $pagasaSignal['source'] }}</span>
                     <div class="pagasa-source-copy">
                         <strong>{{ $pagasaSignal['title'] }}</strong>
                         {{ $pagasaSignal['freshness'] }} | Last signal: {{ $pagasaSignal['updated_at'] }}
@@ -567,6 +578,27 @@
         </div>
 
         <aside class="risk-side">
+            <div class="risk-stat">
+                <div class="risk-label">Tools Used</div>
+                <div class="risk-flow-list" aria-label="Tools and sources used by the heatmap">
+                    <div class="risk-flow-step"><strong>Laravel Heatmap API</strong><span>Loads the Lian barangay boundary, risk score, weather, yield, and farm-type data for the map.</span></div>
+                    <div class="risk-flow-step"><strong>OpenStreetMap Online Tiles</strong><span>Shows the street and place map background used behind the colored barangay layer.</span></div>
+                    <div class="risk-flow-step"><strong>Open-Meteo Weather API</strong><span>Provides online rainfall and precipitation forecast values when live barangay weather is available.</span></div>
+                    <div class="risk-flow-step"><strong>PAGASA Online Advisory Page</strong><span>Provides the official external weather advisory reference shown on the heatmap.</span></div>
+                    <div class="risk-flow-step"><strong>Trained Rice Yield Model</strong><span>Estimates yield support values when local production records are not enough for a barangay.</span></div>
+                    <div class="risk-flow-step"><strong>iClimate Database Records</strong><span>Stores barangay coordinates, rice production, farm type, irrigation, and previous risk updates.</span></div>
+                </div>
+            </div>
+            <div class="risk-stat">
+                <div class="risk-label">How It Works</div>
+                <div class="risk-flow-list" aria-label="Simple heatmap output guide">
+                    <div class="risk-flow-step"><strong>1. Get the barangay map</strong><span>The system loads Lian barangay boundaries through the heatmap API, then uses the local fallback file if an online boundary source is unavailable.</span></div>
+                    <div class="risk-flow-step"><strong>2. Add weather and farm data</strong><span>Cached Open-Meteo API weather, stored rice records, farm-type data, and PAGASA online advisory references are matched to each barangay.</span></div>
+                    <div class="risk-flow-step"><strong>3. Compute the risk score</strong><span>The system checks rainfall, yield, farm exposure, and irrigation needs to produce a barangay risk score.</span></div>
+                    <div class="risk-flow-step"><strong>4. Show the color result</strong><span>Low risk is blue, moderate is yellow, high is orange, and severe or critical is red so users can quickly see priority areas.</span></div>
+                    <div class="risk-flow-step"><strong>5. Explain the outcome</strong><span>Clicking a barangay shows the source, score, weather values, main concern, and suggested action for review.</span></div>
+                </div>
+            </div>
             <div class="map-insight">
                 <div class="risk-label mb-3">Priority Queue</div>
                 @if($priorityAreas->count())
@@ -615,7 +647,7 @@
                 </div>
             </div>
             <div class="risk-stat risk-low">
-                <div class="risk-label">PAGASA Official Signal</div>
+                <div class="risk-label">PAGASA Online Signal</div>
                 <div class="risk-info-value mt-2">{{ $pagasaSignal['title'] }}</div>
                 <div class="text-muted small mt-2">{{ $pagasaSignal['summary'] }}</div>
                 <div class="d-flex flex-wrap gap-2 mt-3">
@@ -627,7 +659,13 @@
             <div class="risk-stat">
                 <div class="risk-label">Risk Source</div>
                 <div class="small text-muted mt-2">{{ $riskSource }}</div>
-                <div class="small text-muted mt-2">Accuracy note: barangay colors are advisory estimates from stored rice records, weather inputs, and local exposure rules. Validate high-risk areas with MAO field observation and official PAGASA warnings.</div>
+                <div class="small text-muted mt-2">Accuracy note: barangay colors are advisory estimates from stored rice records, weather inputs, and local exposure rules. Validate high-risk areas with MAO field observation and official PAGASA online advisories or LGU warnings.</div>
+                <div class="risk-flow-list" aria-label="How heatmap outcomes are made">
+                    <div class="risk-flow-step"><strong>1. Collect inputs</strong><span>Use stored barangay risk records, rice production, live weather when available, and PAGASA online advisory references.</span></div>
+                    <div class="risk-flow-step"><strong>2. Score each barangay</strong><span>iClimate compares rainfall, yield, farm exposure, and field risk factors.</span></div>
+                    <div class="risk-flow-step"><strong>3. Color the map</strong><span>The score becomes Low, Moderate, High, or Severe so users can scan priority areas.</span></div>
+                    <div class="risk-flow-step"><strong>4. Confirm action</strong><span>Use the map as decision support, then verify with MAO field checks and official warnings.</span></div>
+                </div>
             </div>
         @endif
         </aside>
@@ -766,7 +804,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const apiUrl = "{{ url('/api/heatmaps/lian-barangays') }}";
+            const apiUrl = "{{ url('/api/heatmaps/lian-barangays?cached_weather=1') }}";
             const mapEl = document.getElementById('barangayRiskMap');
             const detailPanel = document.getElementById('mapDetailPanel');
             const focusSelect = document.getElementById('mapBarangayFocus');
@@ -1041,7 +1079,7 @@
 
             const pagasaSignalText = () => pagasaSignal?.title
                 ? `${pagasaSignal.title} (${pagasaSignal.severity || 'No severity'})`
-                : 'No active PAGASA signal stored for Lian/Batangas.';
+                : 'No active PAGASA online signal stored for Lian/Batangas.';
 
             const popupMetricCards = (area, layer) => {
                 const weather = liveWeather(area);
@@ -1081,7 +1119,7 @@
 
                 return [
                     ...cards,
-                    ['Latest PAGASA signal', pagasaSignalText(), 'Official advisory reference.'],
+                    ['Latest PAGASA online signal', pagasaSignalText(), 'Official online advisory page/reference.'],
                 ].map(([label, value, note]) => `
                     <div class="map-popup-box">
                         <div class="map-popup-label">${escapeHtml(label)}</div>
@@ -1209,7 +1247,7 @@
                 if (!tileLayer) return;
 
                 const rect = mapEl.getBoundingClientRect();
-                const zoom = rect.width > 1100 ? 14 : 13;
+                const zoom = rect.width > 1100 ? 13 : 12;
                 const tilesAtZoom = 2 ** zoom;
                 const [minX, minY, maxX, maxY] = renderer.mercatorBounds;
                 const tileMinX = Math.floor(minX * tilesAtZoom);
@@ -1229,8 +1267,7 @@
                         const wrappedX = ((x % tilesAtZoom) + tilesAtZoom) % tilesAtZoom;
 
                         const style = `left:${left.toFixed(2)}px;top:${top.toFixed(2)}px;width:${sizeX.toFixed(2)}px;height:${sizeY.toFixed(2)}px;`;
-                        parts.push(`<img class="api-map-tile street" src="https://tile.openstreetmap.org/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style}">`);
-                        parts.push(`<img class="api-map-tile street" src="https://a.basemaps.cartocdn.com/light_only_labels/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style};z-index:1;opacity:.95;">`);
+                        parts.push(`<img class="api-map-tile street" src="https://tile.openstreetmap.org/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" decoding="async" style="${style}">`);
                     }
                 }
 
@@ -1354,6 +1391,8 @@
                 });
             };
 
+            const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
+
             fetch(apiUrl, { headers: { Accept: 'application/json' } })
                 .then((response) => response.ok ? response.json() : Promise.reject(response))
                 .then((data) => {
@@ -1363,6 +1402,9 @@
                 .catch(() => {
                     boundaryNotice?.classList.remove('d-none');
                     boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap API right now.';
+                })
+                .finally(() => {
+                    mapLoadingOverlay?.setAttribute('hidden', 'hidden');
                 });
 
             document.querySelectorAll('[data-layer]').forEach((button) => {

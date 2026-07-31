@@ -74,6 +74,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.regenerate');
 
+        Route::post('planting-advisories/refresh-pagasa', [PlantingAdvisoryController::class, 'refreshPagasa'])
+            ->middleware('throttle:6,1')
+            ->name('planting-advisories.refresh-pagasa');
+
         Route::post('management/advisories/{advisory}/approve', [PlantingAdvisoryController::class, 'approve'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.approve');
@@ -138,11 +142,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('messages', [MessagingController::class, 'index'])
             ->name('messages.index');
 
+        Route::get('messages/search', [MessagingController::class, 'searchRecipients'])
+            ->name('messages.search');
+
+        Route::post('messages/open', [MessagingController::class, 'openConversation'])
+            ->name('messages.open');
+
         Route::post('messages', [MessagingController::class, 'store'])
             ->name('messages.store');
 
         Route::get('messages/{conversation}', [MessagingController::class, 'show'])
             ->name('messages.show');
+
+        Route::get('messages/{conversation}/poll', [MessagingController::class, 'poll'])
+            ->name('messages.poll');
+
+        Route::post('messages/{conversation}/typing', [MessagingController::class, 'typing'])
+            ->middleware('throttle:30,1')
+            ->name('messages.typing');
 
         Route::post('messages/{conversation}', [MessagingController::class, 'reply'])
             ->name('messages.reply');
