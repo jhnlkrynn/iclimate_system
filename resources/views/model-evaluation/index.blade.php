@@ -10,10 +10,12 @@
             border-radius: 8px;
             padding: 1.35rem;
             margin-bottom: 1rem;
-            color: #fff;
-            background: linear-gradient(135deg, #0d1f18 0%, #173828 60%, #21523b 100%);
-            box-shadow: 0 1rem 2.2rem rgba(13,31,24,.16);
+            color: #1f2a24;
+            background: linear-gradient(135deg, #f6f9f7 0%, #eef4f0 60%, #e7f0ea 100%);
+            border: 1px solid #e3ece6;
+            box-shadow: 0 1rem 2.2rem rgba(31,42,36,.08);
         }
+        .me-hero .text-white-50 { color: #4a5c52 !important; }
         .me-panel {
             border: 1px solid #d4edda;
             border-radius: 8px;
@@ -204,7 +206,7 @@
             <div>
                 <div class="me-eyebrow mb-2">Model Evaluation Report</div>
                 <h1 class="h2 fw-bold mb-2">Rice Yield Algorithm Comparison</h1>
-        <p class="mb-0 text-white-50" style="max-width: 820px;">
+        <p class="mb-0" style="max-width: 820px; color: #4a5c52;">
                     This page supports the manuscript requirement using the trained model selection results from the iClimate ML notebook.
                 </p>
             </div>

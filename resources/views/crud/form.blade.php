@@ -4,7 +4,7 @@
             <div>
                 <div class="eyebrow mb-2">Record Editor</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }}</h1>
-                <p class="mb-0 text-white-50">Complete the form and save changes.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Complete the form and save changes.</p>
             </div>
             <a class="btn btn-light align-self-start align-self-lg-end" href="{{ route($routeName.'.index') }}">Back to List</a>
         </div>

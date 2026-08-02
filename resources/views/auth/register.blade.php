@@ -21,7 +21,7 @@
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     a { color: inherit; }
     button, input { font: inherit; }
-    .field-error { color: #ffb4a6; font-size: .78rem; font-weight: 600; margin-top: 6px; }
+    .field-error { color: #c0392b; font-size: .78rem; font-weight: 600; margin-top: 6px; }
     .form-input.is-invalid { border-color: #e57a68; box-shadow: 0 0 0 3px rgba(229,122,104,.14); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
 
@@ -92,51 +92,51 @@
 
     /* -- RIGHT: FORM CARD --------------------------------- */
     .form-card {
-      background: rgba(15,31,23,.68); border: 1.5px solid rgba(149,213,178,.22); border-radius: 20px;
-      box-shadow: 0 26px 60px rgba(0,0,0,.4); backdrop-filter: blur(18px); padding: 26px 30px;
+      background: rgba(255,255,255,.94); border: 1.5px solid rgba(149,213,178,.35); border-radius: 20px;
+      box-shadow: 0 26px 60px rgba(13,31,24,.2); backdrop-filter: blur(18px); padding: 26px 30px;
       transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
       transform: translateZ(0);
     }
-    .form-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(0,0,0,.45); border-color: rgba(149,213,178,.34); }
+    .form-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(13,31,24,.26); border-color: rgba(82,183,136,.45); }
     .form-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
     .form-card-icon {
       width: 40px; height: 40px; border-radius: 50%; background: rgba(82,183,136,.16); border: 1px solid rgba(82,183,136,.35);
-      color: #74C69D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: #2D6A4F; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .form-card-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.5rem; font-weight: 400; color: #fff; letter-spacing: -0.01em; }
-    .form-card-sub { font-size: .86rem; color: rgba(255,255,255,.5); margin: 0 0 14px; }
+    .form-card-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.5rem; font-weight: 400; color: #1f2a24; letter-spacing: -0.01em; }
+    .form-card-sub { font-size: .86rem; color: #4a5c52; margin: 0 0 14px; }
 
     .role-pill {
-      display: inline-flex; align-items: center; gap: 8px; background: rgba(82,183,136,.16);
-      border: 1px solid rgba(82,183,136,.35); border-radius: 100px; padding: 5px 14px 5px 8px; margin-bottom: 16px;
+      display: inline-flex; align-items: center; gap: 8px; background: rgba(82,183,136,.14);
+      border: 1px solid rgba(82,183,136,.3); border-radius: 100px; padding: 5px 14px 5px 8px; margin-bottom: 16px;
     }
     .role-pill-dot { width: 20px; height: 20px; background: #52B788; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: .6rem; font-weight: 700; }
-    .role-pill span { font-size: .8rem; font-weight: 600; color: #d8f3dc; }
+    .role-pill span { font-size: .8rem; font-weight: 600; color: #1a3a2a; }
 
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: .8rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 5px; }
+    .form-group label { display: block; font-size: .8rem; font-weight: 600; color: #1f2a24; margin-bottom: 5px; }
     .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 11px;
-      padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
+      width: 100%; background: #fff; border: 1.5px solid rgba(82,183,136,.28); border-radius: 11px;
+      padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #1f2a24; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
     }
     .form-input.has-icon { padding-left: 40px; }
-    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); transform: translateY(-1px); }
-    .form-input::placeholder { color: rgba(255,255,255,.35); }
-    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #74C69D; }
-    .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.55); background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
-    .pwd-toggle:hover { color: #74C69D; }
+    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: #fff; transform: translateY(-1px); }
+    .form-input::placeholder { color: #8a9a91; }
+    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #2D6A4F; }
+    .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #6b7c72; background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
+    .pwd-toggle:hover { color: #2D6A4F; }
     .captcha-card {
       display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
-      background: rgba(82,183,136,.1); border: 1.5px solid rgba(149,213,178,.24); border-radius: 12px;
+      background: rgba(82,183,136,.08); border: 1.5px solid rgba(82,183,136,.22); border-radius: 12px;
       padding: 10px 12px; margin-bottom: 12px;
     }
     .captcha-icon {
       width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
-      background: rgba(82,183,136,.18); color: #74C69D; border: 1px solid rgba(149,213,178,.3);
+      background: rgba(82,183,136,.18); color: #2D6A4F; border: 1px solid rgba(82,183,136,.3);
     }
-    .captcha-label { font-size: .76rem; font-weight: 800; color: rgba(255,255,255,.72); margin-bottom: 5px; }
+    .captcha-label { font-size: .76rem; font-weight: 800; color: #1f2a24; margin-bottom: 5px; }
     .captcha-image {
       display: block; width: 100%; height: 64px; border-radius: 13px;
       border: 1px solid rgba(149,213,178,.34); margin-bottom: 8px; background: #eef8f2;
@@ -150,20 +150,20 @@
 
     .terms-row {
       display: flex; align-items: flex-start; gap: 10px; margin: 14px 0; padding: 12px;
-      background: rgba(255,255,255,.05); border: 1.5px solid rgba(149,213,178,.22); border-radius: 12px;
+      background: rgba(82,183,136,.06); border: 1.5px solid rgba(82,183,136,.22); border-radius: 12px;
     }
     .custom-checkbox { display: none; }
     .checkbox-custom {
-      width: 17px; height: 17px; border: 2px solid rgba(149,213,178,.4); border-radius: 5px; background: rgba(255,255,255,.05);
+      width: 17px; height: 17px; border: 2px solid rgba(82,183,136,.45); border-radius: 5px; background: #fff;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all .18s; cursor: pointer;
     }
     .custom-checkbox:checked + .checkbox-custom { background: #52B788; border-color: #52B788; }
     .custom-checkbox:checked + .checkbox-custom::after { content: ''; width: 9px; height: 5px; border: 2px solid white; border-top: none; border-right: none; transform: rotate(-45deg) translateY(-1px); display: block; }
-    .terms-text { font-size: .82rem; color: rgba(255,255,255,.62); line-height: 1.5; }
-    .terms-text a { color: #74C69D; font-weight: 600; text-decoration: none; }
-    .terms-text a:hover { color: #95D5B2; }
+    .terms-text { font-size: .82rem; color: #4a5c52; line-height: 1.5; }
+    .terms-text a { color: #2D6A4F; font-weight: 600; text-decoration: none; }
+    .terms-text a:hover { color: #1a3a2a; }
 
-    #formMessage { font-size: .84rem; color: #ffb4a6; background: rgba(229,122,104,.1); border: 1px solid rgba(229,122,104,.28); border-radius: 8px; padding: 9px 14px; margin-bottom: 12px; }
+    #formMessage { font-size: .84rem; color: #c0392b; background: rgba(229,122,104,.1); border: 1px solid rgba(229,122,104,.28); border-radius: 8px; padding: 9px 14px; margin-bottom: 12px; }
 
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;
@@ -174,9 +174,9 @@
     .btn-login:hover { background: #f0b559; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
     .btn-login:active { transform: translateY(0) scale(.985); }
 
-    .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); }
-    .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
-    .login-register a:hover { color: #f0b559; }
+    .login-register { text-align: center; font-size: .86rem; color: #4a5c52; }
+    .login-register a { color: #C6872A; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a:hover { color: #a8701f; }
 
     @keyframes authSceneEnter { from { opacity: 0; transform: translateY(16px) scale(.992); filter: blur(2px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
@@ -220,6 +220,7 @@
   </style>
 </head>
 <body class="register-page">
+  <x-flash-toast />
   <div class="scene-glow scene-glow-1"></div>
   <div class="scene-glow scene-glow-2"></div>
 
@@ -282,7 +283,7 @@
           <span>Rice Farmer &middot; Public Registration</span>
         </div>
 
-        <form method="POST" action="{{ route('register') }}" class="register-form">
+        <form method="POST" action="{{ route('register') }}" class="register-form" data-loading="true">
           @csrf
           <input type="hidden" id="name" name="name" value="{{ old('name') }}">
 
@@ -363,7 +364,7 @@
 
           <div id="formMessage" style="display:none;"></div>
 
-          <button class="btn-login" id="createAccountBtn" type="submit">
+          <button class="btn-login" id="createAccountBtn" type="submit" data-loading-text="Creating account...">
             Create Account
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M1 15c.6-3.4 2.5-5.2 5-5.2s4.4 1.8 5 5.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 5v4M10 7h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </button>

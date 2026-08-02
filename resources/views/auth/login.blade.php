@@ -47,7 +47,7 @@
     body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     a { color: inherit; }
     button, input { font: inherit; }
-    .field-error { color: #ffb4a6; font-size: .78rem; font-weight: 600; margin-top: 6px; }
+    .field-error { color: #c0392b; font-size: .78rem; font-weight: 600; margin-top: 6px; }
     .form-input.is-invalid { border-color: #e57a68; box-shadow: 0 0 0 3px rgba(229,122,104,.14); }
     .btn-login:disabled { opacity: .75; cursor: wait; transform: none; }
 
@@ -89,83 +89,66 @@
     /* -- LOGIN CARD -------------------------------------- */
     .login-card {
       flex: 0 1 560px;
-      background: rgba(15,31,23,.68);
-      border: 1.5px solid rgba(149,213,178,.22);
+      background: rgba(255,255,255,.94);
+      border: 1.5px solid rgba(149,213,178,.35);
       border-radius: 22px;
-      box-shadow: 0 26px 60px rgba(0,0,0,.42);
+      box-shadow: 0 26px 60px rgba(13,31,24,.2);
       backdrop-filter: blur(18px);
       padding: 34px 40px 30px;
       transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
       transform: translateZ(0);
     }
-    .login-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(0,0,0,.46); border-color: rgba(149,213,178,.34); }
+    .login-card:hover { transform: translateY(-4px); box-shadow: 0 32px 72px rgba(13,31,24,.26); border-color: rgba(82,183,136,.45); }
     .card-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
     .card-logo img { width: 42px; height: auto; display: block; }
-    .card-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: #74C69D; letter-spacing: -0.01em; }
+    .card-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: #2D6A4F; letter-spacing: -0.01em; }
 
     .login-form-header { text-align: center; margin-bottom: 14px; }
     .login-form-header h1 {
-      font-family: 'DM Serif Display', Georgia, serif; font-size: 1.65rem; font-weight: 400; color: #fff; margin-bottom: 4px; letter-spacing: -0.02em;
+      font-family: 'DM Serif Display', Georgia, serif; font-size: 1.65rem; font-weight: 400; color: #1f2a24; margin-bottom: 4px; letter-spacing: -0.02em;
     }
-    .login-form-header p { font-size: .88rem; color: rgba(255,255,255,.55); }
-    .login-form-header p em { font-style: normal; color: #74C69D; font-weight: 600; }
+    .login-form-header p { font-size: .88rem; color: #4a5c52; }
+    .login-form-header p em { font-style: normal; color: #2D6A4F; font-weight: 600; }
 
-    .auth-status { background: rgba(82,183,136,.14); border: 1px solid rgba(82,183,136,.35); color: #d8f3dc; border-radius: 10px; padding: 9px 12px; font-size: .82rem; margin-bottom: 12px; }
-    .auth-popup { position: fixed; inset: 0; z-index: 20; display: none; align-items: flex-start; justify-content: center; padding: 18px; background: radial-gradient(circle at 50% 0, rgba(82,183,136,.22), transparent 22rem), rgba(8,18,13,.34); backdrop-filter: blur(5px); }
-    .auth-popup.show { display: flex; }
-    .auth-popup-card { width: min(430px, 100%); margin-top: 22px; border: 1.5px solid rgba(149,213,178,.34); border-radius: 20px; overflow: hidden; background: linear-gradient(145deg, rgba(255,255,255,.99), rgba(240,247,244,.99)); box-shadow: 0 24px 58px rgba(0,0,0,.42); animation: authPopupIn .24s ease-out; }
-    .auth-popup-card.success { --popup-accent: #52B788; }
-    .auth-popup-card.error { --popup-accent: #e57a68; }
-    .auth-popup-card.info { --popup-accent: #E8A73D; }
-    .auth-popup-card::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--popup-accent), #E8A73D, #74C69D); }
-    .auth-popup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; padding: 16px 16px 13px; }
-    .auth-popup-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--popup-accent); box-shadow: 0 12px 24px color-mix(in srgb, var(--popup-accent) 36%, transparent); font-weight: 900; }
-    .auth-popup-title { margin: 0 0 5px; color: #0d1f18; font-size: 1rem; font-weight: 900; }
-    .auth-popup-message { margin: 0; color: #3d5a48; line-height: 1.45; }
-    .auth-popup-close { width: 100%; border: 0; border-top: 1px solid #d4edda; padding: 11px 14px; background: #f0f7f4; color: #1a3a2a; font-weight: 900; cursor: pointer; }
-    .auth-popup-close:hover { background: #d8f3dc; }
-    .auth-popup-timer { height: 3px; background: color-mix(in srgb, var(--popup-accent) 24%, #fff); }
-    .auth-popup-timer span { display: block; height: 100%; background: var(--popup-accent); animation: authPopupTimer 5.2s linear forwards; }
-    @keyframes authPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    @keyframes authPopupTimer { from { width: 100%; } to { width: 0%; } }
+    .auth-status { background: rgba(82,183,136,.14); border: 1px solid rgba(82,183,136,.35); color: #1a3a2a; border-radius: 10px; padding: 9px 12px; font-size: .82rem; margin-bottom: 12px; }
     @keyframes authSceneEnter { from { opacity: 0; transform: translateY(16px) scale(.992); filter: blur(2px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
     .form-group { margin-bottom: 11px; }
-    .form-group label { display: block; font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.82); margin-bottom: 6px; }
+    .form-group label { display: block; font-size: .82rem; font-weight: 600; color: #1f2a24; margin-bottom: 6px; }
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; background: rgba(255,255,255,.06); border: 1.5px solid rgba(149,213,178,.28); border-radius: 10px;
-      padding: 9px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #fff; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
+      width: 100%; background: #fff; border: 1.5px solid rgba(82,183,136,.28); border-radius: 10px;
+      padding: 9px 14px; font-family: 'Inter', sans-serif; font-size: .92rem; color: #1f2a24; transition: border-color var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med), transform var(--auth-motion-med); outline: none;
     }
     .form-input.has-icon { padding-left: 40px; }
-    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: rgba(255,255,255,.09); transform: translateY(-1px); }
-    .form-input::placeholder { color: rgba(255,255,255,.35); }
-    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #74C69D; }
-    .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,.55); background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
-    .pwd-toggle:hover { color: #74C69D; }
+    .form-input:focus { border-color: #52B788; box-shadow: 0 0 0 3px rgba(82,183,136,.2); background: #fff; transform: translateY(-1px); }
+    .form-input::placeholder { color: #8a9a91; }
+    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #2D6A4F; }
+    .pwd-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #6b7c72; background: none; border: none; cursor: pointer; padding: 2px; display: flex; transition: color .2s; }
+    .pwd-toggle:hover { color: #2D6A4F; }
     .captcha-card {
       display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
-      background: rgba(82,183,136,.1); border: 1.5px solid rgba(149,213,178,.24); border-radius: 12px;
+      background: rgba(82,183,136,.08); border: 1.5px solid rgba(82,183,136,.22); border-radius: 12px;
       padding: 10px 12px; margin-bottom: 11px;
     }
     .captcha-icon {
       width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
-      background: rgba(82,183,136,.18); color: #74C69D; border: 1px solid rgba(149,213,178,.3);
+      background: rgba(82,183,136,.18); color: #2D6A4F; border: 1px solid rgba(82,183,136,.3);
     }
-    .captcha-label { font-size: .76rem; font-weight: 800; color: rgba(255,255,255,.72); margin-bottom: 5px; }
+    .captcha-label { font-size: .76rem; font-weight: 800; color: #1f2a24; margin-bottom: 5px; }
     .captcha-image {
       display: block; width: 100%; height: 64px; border-radius: 13px;
       border: 1px solid rgba(149,213,178,.34); margin-bottom: 8px; background: #eef8f2;
     }
 
     .form-row-split { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .checkbox-label { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: rgba(255,255,255,.8); cursor: pointer; user-select: none; }
+    .checkbox-label { display: flex; align-items: center; gap: 9px; font-size: .85rem; color: #1f2a24; cursor: pointer; user-select: none; }
     .custom-checkbox { display: none; }
-    .checkbox-custom { width: 17px; height: 17px; border: 2px solid rgba(149,213,178,.4); border-radius: 5px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
+    .checkbox-custom { width: 17px; height: 17px; border: 2px solid rgba(82,183,136,.45); border-radius: 5px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .18s; }
     .custom-checkbox:checked + .checkbox-custom { background: #52B788; border-color: #52B788; }
     .custom-checkbox:checked + .checkbox-custom::after { content: ''; width: 9px; height: 5px; border: 2px solid white; border-top: none; border-right: none; transform: rotate(-45deg) translateY(-1px); display: block; }
-    .forgot-link { font-size: .85rem; font-weight: 600; color: #74C69D; text-decoration: none; transition: color .2s; }
-    .forgot-link:hover { color: #95D5B2; }
+    .forgot-link { font-size: .85rem; font-weight: 600; color: #2D6A4F; text-decoration: none; transition: color .2s; }
+    .forgot-link:hover { color: #1a3a2a; }
 
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px;
@@ -176,8 +159,8 @@
     .btn-login:hover { background: #f0b559; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
     .btn-login:active { transform: translateY(0) scale(.985); }
 
-    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
-    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: #6b7c72; font-size: .8rem; }
+    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(82,183,136,.28); }
 
     .demo-accounts {
       display: grid;
@@ -189,14 +172,14 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      color: rgba(255,255,255,.7);
+      color: #4a5c52;
       font-size: .76rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .08em;
     }
     .demo-password {
-      color: #E8A73D;
+      color: #C6872A;
       font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: .72rem;
       font-weight: 700;
@@ -210,10 +193,10 @@
     }
     .demo-account {
       min-width: 0;
-      border: 1px solid rgba(149,213,178,.24);
+      border: 1px solid rgba(82,183,136,.24);
       border-radius: 10px;
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.82);
+      background: #fff;
+      color: #1f2a24;
       cursor: pointer;
       display: grid;
       gap: 3px;
@@ -222,18 +205,18 @@
       transition: background-color var(--auth-motion-med), border-color var(--auth-motion-med), transform var(--auth-motion-med);
     }
     .demo-account:hover {
-      background: rgba(82,183,136,.14);
-      border-color: rgba(149,213,178,.44);
+      background: rgba(82,183,136,.1);
+      border-color: rgba(82,183,136,.4);
       transform: translateY(-2px);
     }
     .demo-role {
-      color: #95D5B2;
+      color: #2D6A4F;
       font-size: .73rem;
       font-weight: 800;
       line-height: 1.15;
     }
     .demo-email {
-      color: rgba(255,255,255,.54);
+      color: #6b7c72;
       font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: .64rem;
       overflow: hidden;
@@ -241,9 +224,9 @@
       white-space: nowrap;
     }
 
-    .login-register { text-align: center; font-size: .86rem; color: rgba(255,255,255,.55); margin: 0; }
-    .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
-    .login-register a:hover { color: #f0b559; }
+    .login-register { text-align: center; font-size: .86rem; color: #4a5c52; margin: 0; }
+    .login-register a { color: #C6872A; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a:hover { color: #a8701f; }
 
     /* -- WEATHER WIDGET ---------------------------------- */
     .weather-card {
@@ -304,26 +287,7 @@
   </style>
 </head>
 <body class="login-page">
-  @php
-    $popupType = $errors->any() ? 'error' : (session('success') ? 'success' : (session('status') ? 'info' : null));
-    $popupTitle = $popupType === 'error' ? 'Login failed' : ($popupType === 'success' ? 'Action successful' : 'Notice');
-    $popupMessage = session('success') ?: session('status') ?: ($errors->any() ? $errors->first() : null);
-  @endphp
-  @if($popupType && $popupMessage)
-    <div id="authActionPopup" class="auth-popup show" role="alertdialog" aria-modal="true" aria-labelledby="authPopupTitle">
-      <div class="auth-popup-card {{ $popupType }}">
-        <div class="auth-popup-body">
-          <div class="auth-popup-icon" aria-hidden="true">{{ $popupType === 'success' ? '✓' : ($popupType === 'error' ? '!' : 'i') }}</div>
-          <div>
-            <h2 id="authPopupTitle" class="auth-popup-title">{{ $popupTitle }}</h2>
-            <p class="auth-popup-message">{{ $popupMessage }}</p>
-          </div>
-        </div>
-        <button type="button" class="auth-popup-close" data-auth-popup-close>OK</button>
-        <div class="auth-popup-timer" aria-hidden="true"><span></span></div>
-      </div>
-    </div>
-  @endif
+  <x-flash-toast />
   <div class="scene-glow scene-glow-1"></div>
   <div class="scene-glow scene-glow-2"></div>
 
@@ -348,7 +312,7 @@
         <div class="auth-status">{{ session('status') }}</div>
       @endif
 
-      <form method="POST" action="{{ route('login') }}" class="login-form">
+      <form method="POST" action="{{ route('login') }}" class="login-form" data-loading="true">
         @csrf
 
         <div class="form-group">
@@ -395,7 +359,7 @@
           @if (Route::has('password.request'))<a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>@endif
         </div>
 
-        <button class="btn-login" id="loginBtn" type="submit">
+        <button class="btn-login" id="loginBtn" type="submit" data-loading-text="Signing in...">
           Login
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3h6a1 1 0 011 1v8a1 1 0 01-1 1H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 8H2m0 0l2.5-2.5M2 8l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -456,7 +420,7 @@
 
       <div class="weather-updated">
         <span class="weather-updated-dot"></span>
-        Updated {{ $weatherUpdatedAt->format('g:i A') }}
+        Updated {{ $weatherUpdatedAt->shortTime() }}
       </div>
     </div>
   </div>
@@ -496,16 +460,6 @@
       loginBtn.disabled = true;
       loginBtn.innerHTML = 'Signing in...';
     });
-
-    const popup = document.getElementById('authActionPopup');
-    if (popup) {
-      const close = () => popup.classList.remove('show');
-      popup.querySelector('[data-auth-popup-close]')?.addEventListener('click', close);
-      popup.addEventListener('click', (event) => {
-        if (event.target === popup) close();
-      });
-      setTimeout(close, 5200);
-    }
   });
 </script>
 </body>

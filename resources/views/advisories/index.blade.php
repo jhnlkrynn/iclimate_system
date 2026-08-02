@@ -86,7 +86,7 @@
             <div>
                 <div class="eyebrow mb-2">Forecast-Based Guidance</div>
                 <h1 class="h2 fw-bold mb-2">Agricultural Advisories</h1>
-                <p class="mb-0 text-white-50">View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
             </div>
             @if($canManage)
                 <div class="d-flex flex-wrap gap-2 action-cluster">
@@ -111,7 +111,7 @@
             <div class="card no-lift h-100">
                 <div class="card-body">
                     <div class="stat-label">Latest PAGASA Online Source</div>
-                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->format('F d, Y, g:i A') ?? 'No PAGASA match yet' }}</div>
+                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->shortDateTime('F d, Y,') ?? 'No PAGASA match yet' }}</div>
                     <div class="text-muted small">Official source: {{ $latestPagasaAdvisory?->sourceLabel() ?: 'PAGASA online advisory pages' }}, filtered for Lian/Batangas</div>
                     @isset($pagasaSummary)
                         <div class="text-muted small mt-2">
@@ -121,7 +121,7 @@
                         </div>
                     @endisset
                     @if($lastWeather)
-                        <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->format('M d, g:i A') }}</div>
+                        <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</div>
                     @endif
                     @if($latestPagasaAdvisory)
                         <span class="badge text-bg-success mt-2">{{ $latestPagasaAdvisory->sourceLabel() }} Active</span>
@@ -249,7 +249,7 @@
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
                                 <td>{{ $advisory->sourceLabel() }}</td>
-                                <td>{{ $advisory->valid_until?->format('M d, Y g:i A') ?? 'Open' }}</td>
+                                <td>{{ $advisory->valid_until?->shortDateTime() ?? 'Open' }}</td>
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
                                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a></td>
                             </tr>

@@ -98,11 +98,36 @@
             padding: 1rem;
             background: linear-gradient(145deg, #fff, #f7fbf8);
         }
+        .lf-barangay-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-top: .85rem;
+        }
         .lf-barangay-list {
             display: flex;
             flex-wrap: wrap;
             gap: .45rem;
-            margin-top: .85rem;
+            flex: 1 1 60%;
+            align-content: flex-start;
+        }
+        .lf-barangay-detail {
+            flex: 1 1 40%;
+            min-width: 260px;
+            border: 1px solid rgba(212,237,218,.98);
+            border-radius: 8px;
+            background: linear-gradient(90deg, #0d1f18, #1a3a2a);
+            color: #fff;
+            padding: 1rem;
+        }
+        .lf-barangay-detail[hidden] { display: none; }
+        .lf-barangay-detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .85rem; }
+        .lf-barangay-detail-close { border: 0; background: rgba(255,255,255,.12); color: #fff; width: 30px; height: 30px; border-radius: 999px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+        .lf-barangay-detail-close:hover { background: rgba(255,255,255,.22); }
+        .lf-barangay-detail-footer { margin-top: .85rem; }
+        @media (max-width: 767.98px) {
+            .lf-barangay-row { flex-direction: column; }
+            .lf-barangay-detail { width: 100%; }
         }
         .lf-barangay-chip {
             border: 1px solid rgba(82,183,136,.34);
@@ -230,27 +255,27 @@
             .lf-guide-flow { grid-template-columns: 1fr; }
         }
 
-        /* -- dark theme overrides (matches farmer dashboard palette) -- */
-        .lf-page { color: rgba(255,255,255,.85); }
-        .lf-map-toolbar { background: linear-gradient(90deg, #0d1f18, #16281f); border-bottom-color: rgba(255,255,255,.1); }
-        .lf-label { color: rgba(255,255,255,.5); }
+        /* -- toolbar/panel surfaces: light, dark ink text -- */
+        .lf-page { color: #1f2a24; }
+        .lf-map-toolbar { background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom-color: rgba(212,237,218,.98); }
+        .lf-label { color: #6b7c72; }
         .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li, .lf-guide-step {
-            background: var(--ic-green-950, #0D1F18);
-            border-color: rgba(255,255,255,.12);
+            background: linear-gradient(145deg, #fff, #f7fbf8);
+            border-color: rgba(212,237,218,.98);
         }
-        .lf-guide-step strong { color: #fff; }
-        .lf-guide-step span { color: rgba(255,255,255,.58); }
-        .lf-value { color: #fff; }
-        .lf-model-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.1); }
-        .lf-model-number { color: #fff; }
-        .lf-model-unit { color: rgba(255,255,255,.55); }
-        .lf-insight-list li { color: rgba(255,255,255,.85); }
-        .lf-popup-note { background: rgba(82,183,136,.12); border-left-color: #52b788; color: rgba(255,255,255,.85); }
-        .lf-source-note { background: rgba(47,111,143,.22); color: #7ec8e3; }
-        .lf-barangay-panel { background: var(--ic-green-950, #0D1F18); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 1rem; }
-        .lf-barangay-chip { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.85); }
+        .lf-guide-step strong { color: #1f2a24; }
+        .lf-guide-step span { color: #6b7c72; }
+        .lf-value { color: #1f2a24; }
+        .lf-model-header { background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom-color: rgba(212,237,218,.98); }
+        .lf-model-number { color: #1f2a24; }
+        .lf-model-unit { color: #6b7c72; }
+        .lf-insight-list li { color: #1f2a24; }
+        .lf-popup-note { background: rgba(82,183,136,.12); border-left-color: #52b788; color: #1a3a2a; }
+        .lf-source-note { background: #eef7ff; color: #155a84; }
+        .lf-barangay-panel { background: linear-gradient(145deg, #fff, #f7fbf8); border: 1px solid rgba(212,237,218,.98); border-radius: 8px; padding: 1rem; }
+        .lf-barangay-chip { background: #fff; border-color: rgba(82,183,136,.34); color: #1b2b23; }
         .lf-barangay-chip:hover, .lf-barangay-chip:focus { background: rgba(82,183,136,.14); border-color: #52b788; }
-        .lf-page .text-muted { color: rgba(255,255,255,.5) !important; }
+        .lf-page .text-muted { color: #6b7c72 !important; }
     </style>
 
     <div class="lf-page">
@@ -407,67 +432,61 @@
             </div>
             <div class="small text-muted fw-semibold">{{ count($barangays) }} barangays are included in the Lian-only prediction context.</div>
         </div>
-        <div class="lf-barangay-list" aria-label="Lian barangays included in live forecasting">
-            @foreach ($barangays as $barangay)
-                <button class="lf-barangay-chip" type="button" data-barangay="{{ $barangay }}" data-bs-toggle="modal" data-bs-target="#barangayForecastModal">{{ $barangay }}</button>
-            @endforeach
-        </div>
-    </section>
-    </div>
-
-    <div class="modal fade" id="barangayForecastModal" tabindex="-1" aria-labelledby="barangayForecastModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0" style="border-radius: 8px;">
-                <div class="modal-header" style="background: linear-gradient(90deg, #0d1f18, #1a3a2a); color: #fff;">
+        <div class="lf-barangay-row">
+            <div class="lf-barangay-list" aria-label="Lian barangays included in live forecasting">
+                @foreach ($barangays as $barangay)
+                    <button class="lf-barangay-chip" type="button" data-barangay="{{ $barangay }}">{{ $barangay }}</button>
+                @endforeach
+            </div>
+            <aside id="barangayDetailPanel" class="lf-barangay-detail" hidden>
+                <div class="lf-barangay-detail-header">
                     <div>
                         <div class="lf-eyebrow">Selected Lian Area</div>
-                        <h2 class="modal-title h5 fw-bold" id="barangayForecastModalLabel">Barangay</h2>
+                        <h2 class="h5 fw-bold mb-0" id="barangayForecastLabel">Barangay</h2>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="lf-barangay-detail-close" data-detail-close aria-label="Close">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <div class="lf-popup-note mb-3">
-                        <strong>Friendly reminder:</strong> The live map is universal, but iClimate uses this selection only for Lian-focused forecast guidance.
+                <div class="lf-popup-note mb-3">
+                    <strong>Friendly reminder:</strong> The live map is universal, but iClimate uses this selection only for Lian-focused forecast guidance.
+                </div>
+                <div class="lf-popup-grid mb-3">
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Risk Level</div>
+                        <div class="lf-value" data-popup-field="risk_level">For monitoring</div>
                     </div>
-                    <div class="lf-popup-grid mb-3">
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Risk Level</div>
-                            <div class="lf-value" data-popup-field="risk_level">For monitoring</div>
-                        </div>
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Main Watch</div>
-                            <div class="lf-value" data-popup-field="risk_type">Live weather watch</div>
-                        </div>
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Coordinates</div>
-                            <div class="lf-value" data-popup-field="coordinates">Lian, Batangas</div>
-                        </div>
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Rainfall Status</div>
-                            <div class="lf-value" data-popup-field="rainfall_status">Check live rain layer.</div>
-                        </div>
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Main Watch</div>
+                        <div class="lf-value" data-popup-field="risk_type">Live weather watch</div>
                     </div>
-                    <div class="d-grid gap-2">
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Planting Guidance</div>
-                            <p class="mb-0 lf-value fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
-                        </div>
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Irrigation Guidance</div>
-                            <p class="mb-0 lf-value fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
-                        </div>
-                        <div class="lf-popup-item">
-                            <div class="lf-label">Local Note</div>
-                            <p class="mb-0 lf-value fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
-                        </div>
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Coordinates</div>
+                        <div class="lf-value" data-popup-field="coordinates">Lian, Batangas</div>
+                    </div>
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Rainfall Status</div>
+                        <div class="lf-value" data-popup-field="rainfall_status">Check live rain layer.</div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="d-grid gap-2">
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Planting Guidance</div>
+                        <p class="mb-0 lf-value fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
+                    </div>
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Irrigation Guidance</div>
+                        <p class="mb-0 lf-value fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
+                    </div>
+                    <div class="lf-popup-item">
+                        <div class="lf-label">Local Note</div>
+                        <p class="mb-0 lf-value fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
+                    </div>
+                </div>
+                <div class="lf-barangay-detail-footer">
                     <a class="btn btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Upcoming Prediction</a>
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
                 </div>
-            </div>
+            </aside>
         </div>
+    </section>
     </div>
 
     <script>
@@ -478,12 +497,15 @@
             const mapLocationSelect = document.getElementById('liveMapLocation');
             const mapFocusLabel = document.getElementById('liveMapFocusLabel');
             const mapCoordinateLabel = document.getElementById('liveMapCoordinateLabel');
-            const modal = document.getElementById('barangayForecastModal');
-            const title = document.getElementById('barangayForecastModalLabel');
+            const detailPanel = document.getElementById('barangayDetailPanel');
+            const title = document.getElementById('barangayForecastLabel');
             const setField = (field, value) => {
-                const node = modal?.querySelector(`[data-popup-field="${field}"]`);
+                const node = detailPanel?.querySelector(`[data-popup-field="${field}"]`);
                 if (node) node.textContent = value || 'For monitoring';
             };
+            detailPanel?.querySelector('[data-detail-close]')?.addEventListener('click', () => {
+                detailPanel.hidden = true;
+            });
             const liveMapUrl = (location) => {
                 const params = new URLSearchParams({
                     lat: location.latitude,
@@ -536,6 +558,7 @@
                     setField('planting_advisory', detail.planting_advisory);
                     setField('irrigation_recommendation', detail.irrigation_recommendation);
                     setField('description', detail.description);
+                    if (detailPanel) detailPanel.hidden = false;
                 });
             });
         });

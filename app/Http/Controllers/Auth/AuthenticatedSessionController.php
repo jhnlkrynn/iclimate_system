@@ -32,6 +32,7 @@ class AuthenticatedSessionController extends Controller
 
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
+            'requiresCaptcha' => $requiresCaptcha,
             'demoAccounts' => $this->demoAccounts(),
             'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
             'loginWeather' => [

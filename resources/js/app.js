@@ -222,7 +222,9 @@ function bindLoadingForms() {
         if (form.dataset.loadingBound === 'true') return;
         form.dataset.loadingBound = 'true';
 
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (event) => {
+            if (event.defaultPrevented) return;
+
             if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
                 return;
             }
@@ -352,7 +354,9 @@ function bindFastNavigation() {
         if (form.dataset.fastSubmitBound === 'true') return;
         form.dataset.fastSubmitBound = 'true';
 
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (event) => {
+            if (event.defaultPrevented) return;
+
             if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
                 return;
             }
@@ -374,15 +378,26 @@ function bindFastNavigation() {
     window.addEventListener('pageshow', () => {
         progress?.classList.remove('show');
         document.body.classList.remove('ic-page-leaving');
+        document.getElementById('loadingOverlay')?.classList.remove('show');
         document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
+        document.querySelectorAll('button[disabled]').forEach((button) => {
+            if (button.dataset.loadingOriginalText) {
+                button.textContent = button.dataset.loadingOriginalText;
+                delete button.dataset.loadingOriginalText;
+            }
+            button.disabled = false;
+        });
     });
 }
 
 function lockSubmitButtons(form) {
     form.querySelectorAll('button[type="submit"]').forEach((button) => {
         button.disabled = true;
-        if (button.dataset.loadingText) button.textContent = button.dataset.loadingText;
+        if (button.dataset.loadingText) {
+            if (!button.dataset.loadingOriginalText) button.dataset.loadingOriginalText = button.textContent;
+            button.textContent = button.dataset.loadingText;
+        }
     });
 }
 

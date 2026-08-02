@@ -30,4 +30,27 @@ class ConversationMessage extends Model
     {
         return $this->belongsTo(User::class, 'sender_id');
     }
+
+    public function humanTimestamp(): string
+    {
+        $date = $this->created_at;
+
+        if (! $date) {
+            return '';
+        }
+
+        if ($date->isToday()) {
+            return $date->shortTime();
+        }
+
+        if ($date->isYesterday()) {
+            return 'Yesterday';
+        }
+
+        if ($date->isCurrentYear()) {
+            return $date->format('M j');
+        }
+
+        return $date->format('M j, Y');
+    }
 }

@@ -218,7 +218,7 @@ PROMPT;
             : 'Answer in clear English.';
 
         return <<<PROMPT
-You are PalayPilot, the iClimate rice guidance assistant for Lian, Batangas.
+You are Climora AI, the iClimate rice guidance assistant for Lian, Batangas.
 {$languageInstruction}
 The trained Python model or saved iClimate knowledge did not fully answer the user, so you are helping explain iClimate's already-computed fallback result.
 Use only the supplied structured values for weather, yield, risk, planting, irrigation, warnings, and reliability.

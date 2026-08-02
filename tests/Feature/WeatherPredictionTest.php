@@ -4,17 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\ClimateRecord;
 use App\Models\User;
+use App\Services\Prediction\PredictionDateValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class WeatherPredictionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_authenticated_user_can_view_monthly_weather_prediction(): void
+    private function seedClimateRecords(): void
     {
-        $user = User::factory()->create(['role' => User::ROLE_MAO]);
-
         foreach (range(1, 6) as $month) {
             ClimateRecord::query()->create([
                 'record_date' => sprintf('2026-%02d-15', $month),
@@ -26,9 +26,17 @@ class WeatherPredictionTest extends TestCase
                 'source' => 'PAGASA',
             ]);
         }
+    }
+
+    public function test_authenticated_user_can_view_monthly_weather_prediction(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+        $this->seedClimateRecords();
+
+        $futureMonth = Carbon::now()->addMonthsNoOverflow(2)->format('Y-m');
 
         $this->actingAs($user)
-            ->get(route('weather-predictions.index', ['target_month' => '2026-07']))
+            ->get(route('weather-predictions.index', ['target_month' => $futureMonth]))
             ->assertOk()
             ->assertSee('Rice Yield Forecast')
             ->assertSee('Random Forest')
@@ -38,10 +46,13 @@ class WeatherPredictionTest extends TestCase
     public function test_authenticated_user_can_predict_rice_yield(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_MAO]);
+        $this->seedClimateRecords();
+
+        $futureDate = Carbon::now()->addMonthsNoOverflow(2)->format('Y-m-d');
 
         $this->actingAs($user)
             ->post(route('weather-predictions.predict'), [
-                'prediction_date' => '2026-07-15',
+                'prediction_date' => $futureDate,
                 'farm_type' => 'Rainfed',
             ])
             ->assertOk()
@@ -64,5 +75,35 @@ class WeatherPredictionTest extends TestCase
             ->assertSessionHasErrors([
                 'prediction_date',
             ]);
+    }
+
+    public function test_rice_yield_prediction_rejects_todays_date(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+        $this->seedClimateRecords();
+
+        $this->actingAs($user)
+            ->post(route('weather-predictions.predict'), [
+                'prediction_date' => Carbon::today()->format('Y-m-d'),
+                'farm_type' => 'Rainfed',
+            ])
+            ->assertOk()
+            ->assertSee(PredictionDateValidator::ERROR_MESSAGE)
+            ->assertDontSee('Prediction Result');
+    }
+
+    public function test_rice_yield_prediction_rejects_past_date(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+        $this->seedClimateRecords();
+
+        $this->actingAs($user)
+            ->post(route('weather-predictions.predict'), [
+                'prediction_date' => '2020-01-01',
+                'farm_type' => 'Rainfed',
+            ])
+            ->assertOk()
+            ->assertSee(PredictionDateValidator::ERROR_MESSAGE)
+            ->assertDontSee('Prediction Result');
     }
 }

@@ -12,16 +12,16 @@
             gap: .45rem;
             min-width: 112px;
             white-space: nowrap;
-            border-color: rgba(255,255,255,.58) !important;
-            background: rgba(255,255,255,.12) !important;
-            color: #fff !important;
-            box-shadow: 0 .75rem 1.6rem rgba(0,0,0,.16);
+            border-color: var(--ic-border) !important;
+            background: rgba(31,42,36,.04) !important;
+            color: var(--ic-ink) !important;
+            box-shadow: 0 .55rem 1.2rem rgba(13,31,24,.06);
         }
         .advisory-back-btn:hover,
         .advisory-back-btn:focus {
-            background: rgba(255,255,255,.2) !important;
-            border-color: rgba(255,255,255,.9) !important;
-            color: #fff !important;
+            background: rgba(31,42,36,.08) !important;
+            border-color: var(--ic-green-500) !important;
+            color: var(--ic-ink) !important;
         }
     </style>
     <section class="page-hero">
@@ -29,7 +29,7 @@
             <div>
                 <div class="eyebrow mb-2">Advisory Details</div>
                 <h1 class="h2 fw-bold mb-2">{{ $advisory->title }}</h1>
-                <p class="mb-0 text-white-50">{{ $advisory->summary }}</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">{{ $advisory->summary }}</p>
             </div>
             <div class="d-flex flex-wrap gap-2 advisory-hero-actions">
                 <a class="btn btn-outline-light advisory-back-btn" href="{{ url()->previous() }}">
@@ -83,8 +83,8 @@
                         <dt>Target location</dt><dd>{{ $advisory->targetLabel() }}</dd>
                         <dt>Source</dt><dd>{{ $advisory->sourceLabel() }}</dd>
                         <dt>Advisory window</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
-                        <dt>Generated date</dt><dd>{{ $advisory->created_at?->format('F d, Y g:i A') }}</dd>
-                        <dt>Validity period</dt><dd>{{ $advisory->valid_from?->format('M d, Y g:i A') }} to {{ $advisory->valid_until?->format('M d, Y g:i A') }}</dd>
+                        <dt>Generated date</dt><dd>{{ $advisory->created_at?->shortDateTime('F d, Y') }}</dd>
+                        <dt>Validity period</dt><dd>{{ $advisory->valid_from?->shortDateTime() }} to {{ $advisory->valid_until?->shortDateTime() }}</dd>
                         <dt>Review status</dt><dd>{{ $advisory->approved_at ? 'Approved by '.$advisory->approvedBy?->name : $advisory->statusLabel() }}</dd>
                     </div>
                 </div>

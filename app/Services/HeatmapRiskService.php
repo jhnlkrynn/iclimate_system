@@ -6,6 +6,7 @@ use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Process;
@@ -37,32 +38,11 @@ class HeatmapRiskService
         'San Diego' => [13.9793000, 120.6118000],
     ];
 
-    private const BARANGAY_EXPOSURE = [
-        'Bagong Pook' => 0.55,
-        'Balibago' => 0.70,
-        'Barangay 1 (Pob.)' => 0.50,
-        'Barangay 2 (Pob.)' => 0.50,
-        'Barangay 3 (Pob.)' => 0.55,
-        'Barangay 4 (Pob.)' => 0.55,
-        'Barangay 5 (Pob.)' => 0.50,
-        'Binubusan' => 0.45,
-        'Bungahan' => 0.65,
-        'Cumba' => 0.80,
-        'Humayingan' => 0.75,
-        'Kapito' => 0.70,
-        'Lumaniag' => 0.55,
-        'Luyahan' => 0.75,
-        'Malaruhatan' => 0.80,
-        'Matabungkay' => 0.90,
-        'Prenza' => 0.65,
-        'Puting-Kahoy' => 0.75,
-        'San Diego' => 0.85,
-    ];
-
     public function __construct(
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly WeatherApiService $weatherApi,
         private readonly DecisionSupportService $decisionSupport,
+        private readonly AgriculturalRiskScorer $riskScorer,
     ) {}
 
     public function refresh(): void
@@ -104,22 +84,22 @@ class HeatmapRiskService
                 'barangay' => $barangay,
                 'farm_type' => $farmType,
                 'rainfall' => $rainfall,
+                'temperature' => $temperature,
                 'wind_speed' => $weather['wind_speed'],
                 'humidity' => $weather['humidity'],
                 'season' => $season,
                 'predicted_yield' => $yield,
             ]);
-            $riskScore = $this->agriculturalRiskScore($barangay, $rainfall, $temperature, $yield, $farmType, $decision);
 
             $updates = [
-                'risk_level' => $this->riskLevelFromScore($riskScore),
+                'risk_level' => $decision['risk']['level'],
                 'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
-                'risk_score' => $riskScore,
+                'risk_score' => $decision['risk']['score'],
                 'predicted_yield' => $yield,
                 'rainfall_status' => $this->rainfallStatus($rainfall),
                 'planting_advisory' => $decision['planting']['recommendation'],
                 'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-                'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
+                'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
             ];
 
             if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
@@ -383,6 +363,10 @@ class HeatmapRiskService
         return round($weighted / max($totalWeight, 0.0001), 2);
     }
 
+    /**
+     * Cosmetic display chip only — intentionally separate from the shared
+     * risk formula in AgriculturalRiskScorer, not used in any risk scoring.
+     */
     private function rainfallStatus(float $rainfall): string
     {
         return $rainfall < 100 ? 'Low rainfall' : ($rainfall > 250 ? 'High rainfall' : 'Adequate rainfall');
@@ -412,75 +396,4 @@ class HeatmapRiskService
         return $temperature >= 32 ? 'Heat' : 'Drought';
     }
 
-    private function mapRiskScore(array $decision): float
-    {
-        $score = round(1 - ((float) $decision['score']['value'] / 100), 2);
-
-        return match ($decision['risk']['level']) {
-            'High', 'Severe' => max(0.75, $score),
-            'Moderate' => max(0.50, min(0.74, $score)),
-            default => min(0.49, $score),
-        };
-    }
-
-    private function agriculturalRiskScore(string $barangay, float $rainfall, float $temperature, ?float $yield, string $farmType, array $decision): float
-    {
-        $rainfallRisk = match (true) {
-            $rainfall <= 0 => 0.60,
-            $rainfall < 80 => 0.95,
-            $rainfall < 120 => 0.75,
-            $rainfall <= 280 => 0.22,
-            $rainfall <= 350 => 0.62,
-            default => 0.92,
-        };
-
-        $yieldRisk = match (true) {
-            $yield === null => 0.55,
-            $yield < 2 => 0.95,
-            $yield < 3 => 0.78,
-            $yield < 4 => 0.48,
-            default => 0.18,
-        };
-
-        $temperatureRisk = match (true) {
-            $temperature >= 35 => 0.86,
-            $temperature >= 32 => 0.64,
-            $temperature < 22 && $temperature > 0 => 0.52,
-            default => 0.24,
-        };
-
-        $exposure = self::BARANGAY_EXPOSURE[$barangay] ?? 0.55;
-        $farmExposure = strtolower($farmType) === 'rainfed' ? 0.10 : 0.03;
-        $stressPenalty = min(0.12, count($decision['stress_factors'] ?? []) * 0.025);
-
-        $score = ($rainfallRisk * 0.34)
-            + ($yieldRisk * 0.27)
-            + ($temperatureRisk * 0.14)
-            + ($exposure * 0.18)
-            + $farmExposure
-            + $stressPenalty;
-
-        return round(max(0.05, min(0.98, $score)), 2);
-    }
-
-    private function riskLevelFromScore(float $score): string
-    {
-        return match (true) {
-            $score >= 0.85 => 'Severe',
-            $score >= 0.68 => 'High',
-            $score >= 0.45 => 'Moderate',
-            default => 'Low',
-        };
-    }
-
-    private function exposureLabel(string $barangay): string
-    {
-        $exposure = self::BARANGAY_EXPOSURE[$barangay] ?? 0.55;
-
-        return match (true) {
-            $exposure >= 0.80 => 'high',
-            $exposure >= 0.60 => 'moderate',
-            default => 'low',
-        };
-    }
 }
