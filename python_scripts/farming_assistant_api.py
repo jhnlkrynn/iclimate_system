@@ -237,4 +237,7 @@ def predict():
 
 if __name__ == "__main__":
     load_models()
-    app.run(host="127.0.0.1", port=int(os.environ.get("FARMING_AI_PORT", "5001")))
+    app.run(
+        host=os.environ.get("FARMING_AI_HOST", "192.168.50.116"),
+        port=int(os.environ.get("FARMING_AI_PORT", "5001")),
+    )
