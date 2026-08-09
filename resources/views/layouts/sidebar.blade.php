@@ -152,12 +152,12 @@
     <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
 </aside>
 
-<div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header" style="background: var(--ic-green-950);">
-        <h5 class="offcanvas-title" id="mobileSidebarLabel">iClimate</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header" style="background: var(--ic-sidebar-bg); border-bottom: 1px solid var(--ic-border);">
+        <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: var(--ic-ink);">iClimate</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-green-950);">
+    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-sidebar-bg);">
         @include('layouts.partials.sidebar-brand')
         <div class="px-3 flex-grow-1 overflow-auto">
             {!! $renderSidebarNav() !!}

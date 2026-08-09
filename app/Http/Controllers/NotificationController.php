@@ -8,7 +8,6 @@ use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class NotificationController extends CrudController
@@ -50,7 +49,6 @@ class NotificationController extends CrudController
                 'type' => $data['type'],
                 'is_read' => false,
             ]);
-            Cache::forget('sidebar:unread-notifications:'.$user->id);
         }
         SystemAuditLogger::record('Sent Notification', $request, [
             'title' => $data['title'],
@@ -98,7 +96,6 @@ class NotificationController extends CrudController
         $record = $this->baseQuery($request)->findOrFail($notification);
 
         $record->update(['is_read' => true]);
-        Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
         SystemAuditLogger::forModel('marked read', $record, $request);
 
         return back()->with('success', 'Notification marked as read.');
@@ -109,7 +106,6 @@ class NotificationController extends CrudController
         $updated = $this->baseQuery($request)
             ->where('is_read', false)
             ->update(['is_read' => true]);
-        Cache::forget('sidebar:unread-notifications:'.$request->user()->id);
         SystemAuditLogger::record('Marked All Notifications Read', $request, [
             'updated_count' => $updated,
         ]);

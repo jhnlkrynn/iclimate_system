@@ -1,5 +1,5 @@
 @php
-    $assistantName = 'PalayPilot';
+    $assistantName = 'Climora AI';
     $assistantSubtitle = 'iClimate rice guidance powered by Groq llama-3.3 and Predict.py';
     $predictionCards = function ($chat): array {
         $intent = (string) ($chat->intent ?? '');
@@ -18,13 +18,16 @@
 <x-app-layout>
     <style>
         .ai-console { --ai-ink:#0d1f18; --ai-muted:#5f7569; --ai-green:#2d6a4f; --ai-mint:#52b788; --ai-blue:#1677b8; --ai-gold:#f4b63f; --ai-red:#d85b45; --ai-line:rgba(153,185,160,.72); width:100%; max-width:100%; overflow-x:hidden; }
-        .ai-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.35rem; margin-bottom:1.25rem; color:#fff; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.26), transparent 30%), linear-gradient(145deg,#0d1f18 0%,#1a3a2a 62%,#163324 100%); box-shadow:0 1rem 2.3rem rgba(13,31,24,.18); }
-        .ai-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.06) 1px,transparent 1px); background-size:38px 38px; mask-image:linear-gradient(90deg,rgba(0,0,0,.78),transparent 88%); }
+        .ai-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.35rem; margin-bottom:1.25rem; color:#1f2a24; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.16), transparent 30%), linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
+        .ai-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(31,42,36,.05) 1px,transparent 1px),linear-gradient(0deg,rgba(31,42,36,.04) 1px,transparent 1px); background-size:38px 38px; mask-image:linear-gradient(90deg,rgba(0,0,0,.78),transparent 88%); }
         .ai-hero > * { position:relative; z-index:1; }
-        .ai-eyebrow { font-size:.72rem; font-weight:900; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,.7); }
+        .ai-eyebrow { font-size:.72rem; font-weight:900; text-transform:uppercase; letter-spacing:.12em; color:#2d6a4f; }
         .ai-hero h1 { overflow-wrap:anywhere; }
         .ai-hero p { max-width:min(820px,100%); }
+        .ai-hero .text-white-50 { color:#4a5c52 !important; }
         .ai-hero-actions { display:flex; justify-content:flex-end; width:auto; }
+        .ai-hero-actions .btn-outline-light { color:#1f2a24; border-color:#c3d3ca; }
+        .ai-hero-actions .btn-outline-light:hover { background:rgba(45,106,79,.08); border-color:#2d6a4f; color:#1f2a24; }
         .ai-shell { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:1rem; align-items:start; min-width:0; }
         .ai-panel { border:1px solid var(--ai-line); border-radius:18px; background:linear-gradient(145deg,rgba(244,250,239,.98),rgba(232,244,230,.98)); box-shadow:0 .9rem 2rem rgba(20,32,51,.07); overflow:hidden; }
         .ai-panel-header { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1rem; border-bottom:1px solid rgba(153,185,160,.58); background:rgba(226,241,219,.58); }
@@ -120,7 +123,7 @@
                 <div id="chatWindow" class="ai-chat-window">
                     @forelse($chats as $chat)
                         <div class="ai-message user">
-                            <div class="ai-bubble">{{ $chat->question }}<div class="ai-meta">{{ $chat->created_at?->format('M d, Y h:i A') }}</div></div>
+                            <div class="ai-bubble">{{ $chat->question }}<div class="ai-meta">{{ $chat->created_at?->shortDateTime() }}</div></div>
                         </div>
                         <div class="ai-message assistant">
                             <div class="ai-bubble">
@@ -165,7 +168,7 @@
                 <div id="aiPrivacyNote" class="ai-privacy-note"></div>
                 <form id="chatForm" class="ai-form">
                     @csrf
-                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask PalayPilot: Should I plant rice next week?" required></textarea>
+                    <textarea id="questionInput" name="question" class="form-control" placeholder="Ask Climora AI: Should I plant rice next week?" required></textarea>
                     <button id="sendButton" class="btn btn-primary ai-send" type="submit">Send</button>
                 </form>
             </section>
@@ -252,9 +255,9 @@
                 if (mode === '0') {
                     privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
                 } else if (mode === '1') {
-                    privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                    privacyNote.textContent = 'Conversation saving is on. Climora AI can use recent saved chats as memory.';
                 } else {
-                    privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                    privacyNote.textContent = 'Choose whether Climora AI should save this conversation.';
                 }
             };
             document.querySelectorAll('[data-save-mode]').forEach((button) => {

@@ -7,23 +7,23 @@
         .report-stat-value { color: #0d1f18; font-size: 1.8rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .report-action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
         .report-live-strip { display: grid; grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr)); gap: .75rem; }
-        .report-live-item { border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.04); padding: .85rem; min-width: 0; }
-        .report-live-item strong { display: block; color: #fff; font-size: 1.25rem; line-height: 1.1; }
-        .report-live-item span { display: block; color: rgba(255,255,255,.55); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
-        .report-empty-state { border: 1px dashed rgba(116,198,157,.34); border-radius: 18px; background: rgba(255,255,255,.04); color: #fff; }
-        .report-empty-state .h5 { color: #fff; }
-        .report-empty-state .text-muted { color: rgba(255,255,255,.62) !important; }
+        .report-live-item { border: 1px solid var(--ic-border); border-radius: 14px; background: var(--ic-panel); padding: .85rem; min-width: 0; }
+        .report-live-item strong { display: block; color: var(--ic-ink); font-size: 1.25rem; line-height: 1.1; }
+        .report-live-item span { display: block; color: var(--ic-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+        .report-empty-state { border: 1px dashed rgba(116,198,157,.34); border-radius: 18px; background: var(--ic-panel); color: var(--ic-ink); }
+        .report-empty-state .h5 { color: var(--ic-ink); }
+        .report-empty-state .text-muted { color: var(--ic-muted) !important; }
         .report-page .report-white-action {
-            color: #fff !important;
-            border-color: rgba(255,255,255,.48) !important;
-            background: rgba(255,255,255,.06) !important;
+            color: var(--ic-ink) !important;
+            border-color: var(--ic-border) !important;
+            background: rgba(31,42,36,.04) !important;
         }
         .report-page .report-white-action:hover,
         .report-page .report-white-action:focus {
-            color: #0d1f18 !important;
-            border-color: #fff !important;
-            background: #fff !important;
-            box-shadow: 0 .65rem 1.2rem rgba(255,255,255,.12);
+            color: var(--ic-ink) !important;
+            border-color: var(--ic-green-500) !important;
+            background: var(--ic-green-50) !important;
+            box-shadow: 0 .65rem 1.2rem rgba(13,31,24,.08);
         }
         .report-table th { white-space: nowrap; }
         .report-mobile-list { display: none; gap: .75rem; }
@@ -45,30 +45,6 @@
             .report-mobile-row { grid-template-columns: 1fr; gap: .2rem; }
             .report-live-strip { grid-template-columns: 1fr; }
         }
-
-        /* -- dark theme overrides (matches farmer dashboard palette) -- */
-        .report-page { color: rgba(255,255,255,.85); }
-        .report-stat, .report-mobile-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
-        .report-stat-label, .report-mobile-label { color: rgba(255,255,255,.5); }
-        .report-stat-value, .report-mobile-value { color: #fff; }
-        .report-page .text-muted { color: rgba(255,255,255,.5) !important; }
-        .report-page .card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); color: rgba(255,255,255,.85); }
-        .report-page .card-header { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.08) !important; }
-        .report-page .table { color: rgba(255,255,255,.82); }
-        .report-page .table thead th { background: rgba(255,255,255,.04) !important; color: rgba(255,255,255,.5) !important; border-color: rgba(255,255,255,.08); }
-        .report-page .table td, .report-page .table th { color: rgba(255,255,255,.82) !important; border-color: rgba(255,255,255,.08); }
-        .report-page .table-hover tbody tr:hover { background: rgba(255,255,255,.05) !important; }
-        .report-page .form-control, .report-page .form-select {
-            background-color: rgba(255,255,255,.05);
-            border-color: rgba(255,255,255,.18);
-            color: #fff;
-        }
-        .report-page .form-control::placeholder { color: rgba(255,255,255,.35); }
-        .report-page .form-select option { color: var(--ic-ink, #0d1f18); }
-        .report-page .form-label { color: rgba(255,255,255,.55); }
-        .report-page .badge.text-bg-light { background: rgba(255,255,255,.08) !important; color: rgba(255,255,255,.75) !important; }
-        .report-page .btn-outline-secondary { color: #fff; border-color: rgba(255,255,255,.28); }
-        .report-page .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
     </style>
 
     <div class="report-page">
@@ -76,7 +52,7 @@
         <div>
             <div class="eyebrow mb-2">Analytics Workspace</div>
             <h1 class="h2 fw-bold mb-2">Reports</h1>
-            <p class="mb-0 text-white-50">Generate filtered reports from current iClimate records. Dummy report history is excluded.</p>
+            <p class="mb-0" style="color: var(--ic-ink-mid);">Generate filtered reports from current iClimate records. Dummy report history is excluded.</p>
         </div>
     </section>
 
@@ -86,7 +62,7 @@
             <div class="report-live-strip">
                 <div class="report-live-item">
                     <strong>Live app data</strong>
-                    <span>Refreshed {{ $sourceStats['last_refreshed']->format('M d, Y h:i A') }}</span>
+                    <span>Refreshed {{ $sourceStats['last_refreshed']->shortDateTime() }}</span>
                 </div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['climate_records']) }}</strong><span>Climate</span></div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['rice_production']) }}</strong><span>Rice rows</span></div>
@@ -135,7 +111,7 @@
         <div class="report-summary-grid">
             <div class="report-stat"><div class="report-stat-label">Report Type</div><div class="h5 fw-bold mb-0 mt-2">{{ $selected }}</div></div>
             <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->count()) }}</div></div>
-            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->format('M d, Y h:i A') }}</div></div>
+            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->shortDateTime() }}</div></div>
         </div>
 
         <div class="card no-lift">

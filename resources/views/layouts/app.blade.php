@@ -28,14 +28,18 @@
                 --ic-sand-dark: #e8e0d0;
                 --ic-blue: #2f6f8f;
                 --ic-coral: #d85b45;
-                --ic-ink: #0d1f18;
-                --ic-ink-mid: #3d5a48;
-                --ic-muted: #6b8f71;
-                --ic-border: #d4edda;
+                --ic-ink: #1f2a24;
+                --ic-ink-mid: #4a5c52;
+                --ic-muted: #6b7c72;
+                --ic-border: #e3ece6;
                 --ic-paper: rgba(255,255,255,.94);
                 --ic-panel: #f5f9f6;
                 --ic-panel-strong: #e8f5ed;
                 --ic-field: #ffffff;
+                --ic-sidebar-bg: #f3f6f4;
+                --ic-sidebar-active-bg: #e3efe7;
+                --ic-hero-from: #f6f9f7;
+                --ic-hero-to: #e7f0ea;
                 --ic-radius-sm: 4px;
                 --ic-radius-md: 10px;
                 --ic-radius-lg: 18px;
@@ -86,44 +90,45 @@
             .page-shell { padding: 1.25rem; min-width: 0; max-width: 100%; }
             .sidebar-fixed {
                 position: fixed !important; top: 0; left: 0; bottom: 0; width: var(--sidebar-width); height: 100vh; height: 100dvh; z-index: 1030; overflow: hidden;
-                background: var(--ic-green-950);
+                background: var(--ic-sidebar-bg);
+                border-right: 1px solid var(--ic-border);
             }
             .sidebar-nav-scroll { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; }
             .sidebar-nav-scroll::-webkit-scrollbar { display: none; }
             .sidebar-brand { position: relative; }
-            .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-400); }
-            .sidebar-location .pulse-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ic-green-400); box-shadow: 0 0 0 4px rgba(116,198,157,.2); flex-shrink: 0; }
-            .sidebar-tagline { font-family: 'Inter', sans-serif; font-size: .74rem; color: rgba(255,255,255,.45); line-height: 1.5; margin-top: .3rem; }
+            .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-700); }
+            .sidebar-location .pulse-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ic-green-500); box-shadow: 0 0 0 4px rgba(82,183,136,.2); flex-shrink: 0; }
+            .sidebar-tagline { font-family: 'Inter', sans-serif; font-size: .74rem; color: var(--ic-ink-mid); line-height: 1.5; margin-top: .3rem; }
             .sidebar-brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: .5rem; }
             .sidebar-logo-icon { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
-            .sidebar-wordmark { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--ic-green-400); letter-spacing: -0.01em; }
+            .sidebar-wordmark { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--ic-green-700); letter-spacing: -0.01em; }
             .sidebar-brand-underline { width: 66px; height: 2px; background: var(--ic-green-500); border-radius: 2px; position: relative; margin: 0 0 1rem; }
-            .sidebar-brand-underline::after { content: ''; position: absolute; right: -3px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--ic-green-400); }
+            .sidebar-brand-underline::after { content: ''; position: absolute; right: -3px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--ic-green-500); }
             .sidebar-brand--large { text-align: center; }
             .sidebar-brand--large .sidebar-logo-large { width: 128px; height: auto; margin: 0 auto .75rem; }
-            .sidebar-brand--large .sidebar-wordmark-lg { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.85rem; color: var(--ic-green-400); letter-spacing: -0.01em; }
+            .sidebar-brand--large .sidebar-wordmark-lg { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.85rem; color: var(--ic-green-700); letter-spacing: -0.01em; }
             .sidebar-brand--large .sidebar-brand-underline { margin: .5rem auto 0; }
-            .sidebar-foot { margin-top: auto; padding: 1rem 1.4rem 1.25rem; font-size: .72rem; color: rgba(255,255,255,.32); }
+            .sidebar-foot { margin-top: auto; padding: 1rem 1.4rem 1.25rem; font-size: .72rem; color: var(--ic-muted); }
             .sidebar-link {
                 position: relative;
-                color: rgba(255,255,255,.78); text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+                color: var(--ic-ink-mid); text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: .5rem;
                 border-radius: var(--ic-radius-pill); padding: .72rem 1rem; transition: background .15s ease, color .15s ease;
             }
-            .sidebar-link:hover { color: #fff; background: rgba(255,255,255,.09); }
-            .sidebar-link.active { color: #fff; background: rgba(255,255,255,.1); font-weight: 600; }
-            .sidebar-link.active::before { content: ''; position: absolute; left: -.7rem; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; border-radius: 3px; background: var(--ic-green-400); }
+            .sidebar-link:hover { color: var(--ic-ink); background: rgba(45,106,79,.08); }
+            .sidebar-link.active { color: var(--ic-ink); background: var(--ic-sidebar-active-bg); font-weight: 600; }
+            .sidebar-link.active::before { content: ''; position: absolute; left: -.7rem; top: 50%; transform: translateY(-50%); width: 3px; height: 60%; border-radius: 3px; background: var(--ic-green-500); }
             .sidebar-link.active .sidebar-icon { background: var(--ic-green-500); color: #fff; }
-            .sidebar-icon { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); flex-shrink: 0; }
+            .sidebar-icon { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; background: rgba(45,106,79,.08); color: var(--ic-ink-mid); flex-shrink: 0; }
             .sidebar-badge { background: var(--ic-gold); color: var(--ic-ink); font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; border-radius: 999px; min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 .4rem; flex-shrink: 0; }
             .sidebar-link-arrow { flex-shrink: 0; opacity: 0; transform: translateX(-3px); transition: opacity .15s ease, transform .15s ease; }
             .sidebar-link:hover .sidebar-link-arrow { opacity: .55; transform: translateX(0); }
-            .sidebar-link.active .sidebar-link-arrow { opacity: .9; transform: translateX(0); color: #fff; }
-            .sidebar-section { color: rgba(255,255,255,.42); font-family: 'DM Mono', monospace; font-size: .66rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; margin: 1.4rem 1rem .5rem; }
+            .sidebar-link.active .sidebar-link-arrow { opacity: .9; transform: translateX(0); color: var(--ic-ink); }
+            .sidebar-section { color: var(--ic-muted); font-family: 'DM Mono', monospace; font-size: .66rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; margin: 1.4rem 1rem .5rem; }
             .sidebar-ai-card { margin: .75rem 1rem 1rem; padding: .85rem 1rem; border-radius: var(--ic-radius-lg); background: linear-gradient(135deg, rgba(82,183,136,.16), rgba(82,183,136,.05)); border: 1px solid rgba(116,198,157,.35); display: flex; align-items: center; gap: .75rem; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
             .sidebar-ai-card:hover { background: linear-gradient(135deg, rgba(82,183,136,.24), rgba(82,183,136,.08)); border-color: rgba(116,198,157,.55); }
-            .sidebar-ai-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(82,183,136,.18); display: flex; align-items: center; justify-content: center; color: var(--ic-green-400); flex-shrink: 0; }
-            .sidebar-ai-title { color: #fff; font-weight: 700; font-size: .88rem; }
-            .sidebar-ai-sub { color: rgba(255,255,255,.5); font-size: .74rem; }
+            .sidebar-ai-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(82,183,136,.18); display: flex; align-items: center; justify-content: center; color: var(--ic-green-700); flex-shrink: 0; }
+            .sidebar-ai-title { color: var(--ic-ink); font-weight: 700; font-size: .88rem; }
+            .sidebar-ai-sub { color: var(--ic-ink-mid); font-size: .74rem; }
             .topbar { position: sticky; top: 0; z-index: 1020; background: rgba(245,249,246,.88); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(212,237,218,.95); box-shadow: 0 .55rem 1.4rem rgba(13,31,24,.05); }
             .topbar-inner { min-height: 74px; min-width: 0; }
             .weather-strip { display: flex; align-items: center; gap: .65rem; padding: .52rem .75rem; border: 1px solid rgba(183,228,199,.9); border-radius: 8px; background: linear-gradient(90deg, #ffffff, var(--ic-green-50)); }
@@ -145,16 +150,16 @@
             .form-control, .form-select { border-color: var(--ic-sand-dark); background-color: var(--ic-field); }
             .form-control:hover, .form-select:hover { border-color: rgba(82,183,136,.58); background-color: #fff; }
             .form-control:focus, .form-select:focus { border-color: var(--ic-green-500); box-shadow: 0 0 0 .22rem rgba(82,183,136,.14); }
-            .page-hero { position: relative; overflow: hidden; border-radius: var(--ic-radius-xl); padding: 1.75rem 1.85rem; margin-bottom: 1.25rem; color: #fff; background: linear-gradient(145deg, var(--ic-green-950) 0%, var(--ic-green-800) 62%, #163324 100%); box-shadow: var(--ic-shadow-lg); }
+            .page-hero { position: relative; overflow: hidden; border-radius: var(--ic-radius-xl); padding: 1.75rem 1.85rem; margin-bottom: 1.25rem; color: var(--ic-ink); background: linear-gradient(145deg, var(--ic-hero-from) 0%, var(--ic-hero-to) 100%); border: 1px solid var(--ic-border); box-shadow: var(--ic-shadow-lg); }
             .page-hero::before {
                 content: "";
                 position: absolute; inset: 0;
                 background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"),
-                    radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.16) 0%, transparent 60%);
+                    radial-gradient(ellipse at 88% -10%, rgba(82,183,136,.14) 0%, transparent 60%);
                 pointer-events: none;
             }
             .page-hero > * { position: relative; z-index: 1; }
-            .page-hero h1, .sidebar-brand .h4 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+            .page-hero h1, .sidebar-brand .h4 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; color: var(--ic-ink); }
             .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--ic-green-400); }
             .eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--ic-green-400); }
             .stat-card { overflow: hidden; position: relative; min-height: 136px; }
@@ -189,21 +194,6 @@
             .page-progress::before { content: ""; display: block; width: 42%; height: 100%; background: linear-gradient(90deg, var(--ic-green-500), var(--ic-gold)); transform: translateX(-100%); animation: pageProgress 1s ease-in-out infinite; }
             .page-progress.show { opacity: 1; }
             .is-loading-action { opacity: .72; pointer-events: none; }
-            .ic-action-popup { position: fixed; inset: 0; z-index: 2200; display: none; align-items: flex-start; justify-content: center; padding: 1.25rem; background: radial-gradient(circle at 50% 0, rgba(82,183,136,.2), transparent 22rem), rgba(13,31,24,.28); backdrop-filter: blur(4px); }
-            .ic-action-popup.show { display: flex; }
-            .ic-action-dialog { width: min(460px, 100%); margin-top: 1.25rem; border: 1px solid rgba(212,237,218,.98); border-radius: 20px; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1.4rem 3.2rem rgba(13,31,24,.28); overflow: hidden; animation: icPopupIn .24s ease-out; }
-            .ic-action-dialog.success { --popup-accent: var(--ic-green-500); }
-            .ic-action-dialog.error { --popup-accent: var(--ic-coral); }
-            .ic-action-dialog.info { --popup-accent: var(--ic-gold); }
-            .ic-action-dialog::before { content: ""; display: block; height: 7px; background: linear-gradient(90deg, var(--popup-accent), var(--ic-gold), var(--ic-green-400)); }
-            .ic-action-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .85rem; padding: 1rem 1rem .9rem; }
-            .ic-action-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--popup-accent); box-shadow: 0 .7rem 1.4rem color-mix(in srgb, var(--popup-accent) 34%, transparent); font-weight: 900; }
-            .ic-action-title { margin: 0 0 .3rem; color: var(--ic-ink); font-weight: 900; font-size: 1.04rem; }
-            .ic-action-message { margin: 0; color: var(--ic-ink-mid); line-height: 1.45; }
-            .ic-action-close { border: 0; border-top: 1px solid var(--ic-border); width: 100%; padding: .78rem 1rem; background: var(--ic-green-50); color: var(--ic-green-800); font-weight: 900; }
-            .ic-action-close:hover { background: var(--ic-green-100); }
-            .ic-action-timer { height: 3px; background: color-mix(in srgb, var(--popup-accent) 24%, #fff); }
-            .ic-action-timer span { display: block; height: 100%; background: var(--popup-accent); animation: icPopupTimer 4.8s linear forwards; }
             .ic-logout-confirm { position: fixed; inset: 0; z-index: 10000; display: none; place-items: center; padding: 1rem; overflow-y: auto; background: radial-gradient(circle at 50% 10%, rgba(232,167,61,.2), transparent 22rem), rgba(13,31,24,.42); backdrop-filter: blur(5px); }
             .ic-logout-confirm.show { display: grid !important; }
             body.ic-modal-open { overflow: hidden; }
@@ -218,7 +208,6 @@
             .ic-logout-cancel { background: var(--ic-green-50); color: var(--ic-green-800); }
             .ic-logout-confirm-btn { background: var(--ic-coral); color: #fff; box-shadow: 0 .75rem 1.45rem rgba(216,91,69,.22); }
             @keyframes icPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-            @keyframes icPopupTimer { from { width: 100%; } to { width: 0%; } }
             @keyframes pageProgress {
                 0% { transform: translateX(-110%); }
                 55% { transform: translateX(80vw); }
@@ -247,12 +236,12 @@
             }
             .form-control:focus, .form-select:focus { transform: translateY(-1px); }
             .loading-overlay.show .card { animation: icSoftRise var(--ic-motion-med) both; }
-            .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover, .ic-action-close:hover { transform: translateY(-1px); }
-            .ic-logout-cancel:active, .ic-logout-confirm-btn:active, .ic-action-close:active { transform: translateY(0) scale(.985); }
+            .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover { transform: translateY(-1px); }
+            .ic-logout-cancel:active, .ic-logout-confirm-btn:active { transform: translateY(0) scale(.985); }
             @keyframes icPageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes icSoftRise { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
             @media (prefers-reduced-motion: reduce) {
-                .page-shell, .loading-overlay.show .card, .ic-action-dialog, .ic-logout-card { animation: none !important; }
+                .page-shell, .loading-overlay.show .card, .ic-logout-card { animation: none !important; }
                 .sidebar-link, .sidebar-ai-card, .card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .filter-panel, .quick-action, .priority-card, .btn, .form-control, .form-select { transition-duration: .01ms !important; }
             }
             @media (min-width: 1400px) { .page-shell { padding: 1.75rem 2rem; } }
@@ -294,54 +283,10 @@
         <div class="app-main">
             @include('layouts.navigation')
             <main class="page-shell">
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                        <strong>Success.</strong> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                        <strong>Error.</strong> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-                @if ($errors->any())
-                    <div class="alert alert-danger shadow-sm">
-                        <strong>Please check the form.</strong>
-                        <ul class="mb-0 mt-2">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
                 {{ $slot }}
             </main>
         </div>
-        @php
-            $popupType = session('error') || $errors->any() ? 'error' : (session('success') ? 'success' : (session('status') ? 'info' : null));
-            $popupTitle = $popupType === 'error' ? 'Action failed' : ($popupType === 'success' ? 'Action successful' : 'Notice');
-            $popupMessage = session('error')
-                ?: session('success')
-                ?: session('status')
-                ?: ($errors->any() ? $errors->first() : null);
-        @endphp
-        @if($popupType && $popupMessage)
-            <div id="icActionPopup" class="ic-action-popup show" role="alertdialog" aria-modal="true" aria-labelledby="icActionTitle">
-                <div class="ic-action-dialog {{ $popupType }}">
-                    <div class="ic-action-body">
-                        <div class="ic-action-icon" aria-hidden="true">{{ $popupType === 'success' ? 'OK' : ($popupType === 'error' ? '!' : 'i') }}</div>
-                        <div>
-                            <h2 id="icActionTitle" class="ic-action-title">{{ $popupTitle }}</h2>
-                            <p class="ic-action-message">{{ $popupMessage }}</p>
-                        </div>
-                    </div>
-                    <button type="button" class="ic-action-close" data-popup-close>OK</button>
-                    <div class="ic-action-timer" aria-hidden="true"><span></span></div>
-                </div>
-            </div>
-        @endif
+        <x-flash-toast />
         <div id="icLogoutConfirm" class="ic-logout-confirm" role="dialog" aria-modal="true" aria-labelledby="icLogoutTitle">
             <div class="ic-logout-card">
                 <div class="ic-logout-body">
@@ -356,23 +301,11 @@
             </div>
         </div>
         <div id="loadingOverlay" class="loading-overlay">
-            <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3"><div class="spinner-border text-primary" role="status" aria-hidden="true"></div><div class="fw-semibold">Loading...</div></div></div>
+            <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3"><div class="spinner-border" style="color: var(--ic-green-500);" role="status" aria-hidden="true"></div><div class="fw-semibold">Loading...</div></div></div>
         </div>
         <div id="pageProgress" class="page-progress" aria-hidden="true"></div>
         @auth
             @include('components.ai-chat-widget')
         @endauth
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const popup = document.getElementById('icActionPopup');
-                if (!popup) return;
-                const close = () => popup.classList.remove('show');
-                popup.querySelector('[data-popup-close]')?.addEventListener('click', close);
-                popup.addEventListener('click', (event) => {
-                    if (event.target === popup) close();
-                });
-                setTimeout(close, 4800);
-            });
-        </script>
     </body>
 </html>

@@ -18,12 +18,18 @@
     $seasonalRainfall = (float) ($modelInput['seasonal_rainfall'] ?? $rainfall);
     $seasonalTemp = (float) ($modelInput['seasonal_temp'] ?? $tempAvg);
 
-    $rainfallStatus = $rainfall < 120 ? ['Dry', 'Rainfall may be limited for rainfed fields.', 'tone-amber'] : ($rainfall > 280 ? ['Very Wet', 'Watch for flooding and drainage issues.', 'tone-red'] : ['Favorable', 'Rainfall is within a workable planning range.', 'tone-green']);
+    $rainfallLabel = \App\Services\Prediction\WeatherLabeler::fromRainfall($rainfall);
+    $rainfallStatus = match ($rainfallLabel) {
+        'Heavy Rain' => ['Heavy Rain', 'Watch for flooding and drainage issues.', 'tone-red'],
+        'Rain' => ['Rain', 'Rainfall is within a workable planning range.', 'tone-green'],
+        'Dry' => ['Dry', 'Rainfall may be limited for rainfed fields.', 'tone-amber'],
+        default => ['Cloudy', 'Rainfall is moderate; monitor conditions.', 'tone-green'],
+    };
     $temperatureStatus = $tempAvg > 32 ? ['Hot', 'Heat stress may reduce crop performance.', 'tone-red'] : ($tempAvg < 24 ? ['Cool', 'Growth may be slower than expected.', 'tone-amber'] : ['Favorable', 'Temperature is suitable for rice growth.', 'tone-green']);
     $humidity = (float) ($modelInput['humidity'] ?? ($predictions['humidity'] ?? 75));
     $windSpeed = (float) ($modelInput['wind_speed'] ?? ($predictions['wind_speed'] ?? 8));
     $humidityStatus = $humidity > 88 ? ['Humid', 'Monitor for disease pressure.', 'tone-amber'] : ['Balanced', 'Humidity is manageable.', 'tone-green'];
-    $windStatus = $windSpeed > 18 ? ['Windy', 'Secure field materials and monitor lodging risk.', 'tone-amber'] : ['Calm', 'Wind speed is not a major concern.', 'tone-green'];
+    $windStatus = $windSpeed > 20 ? ['Windy', 'Secure field materials and monitor lodging risk.', 'tone-amber'] : ['Calm', 'Wind speed is not a major concern.', 'tone-green'];
     $weatherConfidence = $result['confidence'] ?? ['value' => 0, 'label' => 'Not ready', 'note' => 'Add more climate records.'];
     $weatherInsights = $result['insights'] ?? [];
     $weatherModelSource = $result['source_name'] ?? 'iClimate monthly Random Forest model';
@@ -35,13 +41,14 @@
 
 <x-app-layout>
     <style>
-        .wp-hero { position: relative; overflow: hidden; border-radius: 32px; padding: 1.35rem; margin-bottom: 1.25rem; color: #fff; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.24), transparent 30%), linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%); box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18); }
-        .wp-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(90deg, rgba(0,0,0,.8), transparent 86%); }
+        .wp-hero { position: relative; overflow: hidden; border-radius: 32px; padding: 1.35rem; margin-bottom: 1.25rem; color: #1f2a24; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.14), transparent 30%), linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 100%); border: 1px solid #e3ece6; box-shadow: 0 1rem 2.3rem rgba(31,42,36,.08); }
+        .wp-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(31,42,36,.07) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(90deg, rgba(0,0,0,.8), transparent 86%); }
+        .wp-hero .text-white-50 { color: #4a5c52 !important; }
         .wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
         .wp-hero > * { position: relative; z-index: 1; }
-        .wp-eyebrow { font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.7); }
-        .wp-tabs { display: inline-flex; gap: .35rem; padding: .35rem; margin-bottom: 1.25rem; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; background: var(--ic-green-950); }
-        .wp-tab-button { border: 0; border-radius: 999px; padding: .65rem 1rem; color: rgba(255,255,255,.62); background: transparent; font-weight: 900; }
+        .wp-eyebrow { font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: #2d6a4f; }
+        .wp-tabs { display: inline-flex; gap: .35rem; padding: .35rem; margin-bottom: 1.25rem; border: 1px solid #e3ece6; border-radius: 999px; background: #f3f6f4; }
+        .wp-tab-button { border: 0; border-radius: 999px; padding: .65rem 1rem; color: #4a5c52; background: transparent; font-weight: 900; }
         .wp-tab-button.active { color: #0d1f18; background: #52b788; }
         .wp-tab-panel[hidden] { display: none !important; }
         .wp-panel, .wp-metric, .wp-input-card, .wp-result-card { position: relative; overflow: hidden; border: 1px solid rgba(212,237,218,.98); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(247,251,248,.96)); box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
@@ -108,37 +115,17 @@
         @media (max-width: 991.98px) { .wp-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .ds-grid { grid-template-columns: 1fr; } .wp-guide-flow { grid-template-columns: 1fr; } .wp-input-row { display: grid; } .wp-input-card .form-control { max-width: none; text-align: left; } }
 
-        /* -- dark theme overrides -- */
-        .wp-page { color: rgba(255,255,255,.85); }
-        .wp-panel, .wp-metric, .wp-input-card, .wp-result-card {
-            border-color: rgba(255,255,255,.12);
-            background: var(--ic-green-950);
+        .wp-source-line { color: #6b7c72; }
+        .wp-guide-step { border-color: #e3ece6; background: #fff; }
+        .wp-guide-step strong { color: #1f2a24; }
+        .wp-guide-step span { color: #4a5c52; }
+        #advancedWeatherInputs .form-label { color: #4a5c52; }
+        #advancedWeatherInputs .form-control,
+        #advancedWeatherInputs .form-select {
+            background: #fff;
+            border-color: #d4edda;
+            color: #1f2a24;
         }
-        .wp-panel-header { border-color: rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
-        .wp-label { color: rgba(255,255,255,.5); }
-        .wp-value { color: #fff; }
-        .wp-unit, .wp-note, .wp-help { color: rgba(255,255,255,.55); }
-        .tone-green { --accent: #52b788; --status-color: #74c69d; --status-bg: rgba(82,183,136,.16); }
-        .tone-blue { --accent: #6fb8e0; --status-color: #6fb8e0; --status-bg: rgba(47,111,143,.22); }
-        .tone-amber { --accent: #ffd166; --status-color: #ffd166; --status-bg: rgba(255,209,102,.16); }
-        .tone-red { --accent: #f0917c; --status-color: #f0917c; --status-bg: rgba(216,91,69,.2); }
-        .wp-input-card .form-control { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.18); color: #fff; }
-        .wp-advisory { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .wp-feature-pill { background: rgba(82,183,136,.16); color: #74c69d; }
-        .wp-score-bar { background: rgba(255,255,255,.08); }
-        .ds-card { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .ds-card.primary { background: rgba(82,183,136,.08); }
-        .ds-title { color: rgba(255,255,255,.5); }
-        .ds-value { color: #fff; }
-        .ds-note { color: rgba(255,255,255,.55); }
-        .ds-notifications li { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
-        .smart-list li { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: rgba(255,255,255,.85); }
-        .stress-chip { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .wp-page .text-muted { color: rgba(255,255,255,.5) !important; }
-        .wp-page .text-dark { color: #fff !important; }
-        .wp-page .text-success { color: #74c69d !important; }
-        .wp-page .text-primary { color: #6fb8e0 !important; }
-        .wp-page code { color: rgba(255,255,255,.6); }
 
         /* -- plain, uniform page (matches farmer dashboard, no tone variation) -- */
         .wp-metric::before, .wp-panel::before { background: #52b788 !important; }
@@ -157,7 +144,7 @@
             </div>
             <form method="GET" action="{{ route('weather-predictions.index') }}" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-end">
                 <div>
-                    <label for="target_date" class="form-label text-white-50 small fw-bold mb-1">Prediction Date</label>
+                    <label for="target_date" class="form-label small fw-bold mb-1" style="color: #4a5c52;">Prediction Date</label>
                     <input id="target_date" name="target_date" type="date" class="form-control" value="{{ $targetDate->format('Y-m-d') }}">
                 </div>
                 <button class="btn btn-light fw-bold" type="submit">Update Forecast</button>
