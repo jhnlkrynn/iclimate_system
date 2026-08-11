@@ -378,14 +378,14 @@
                 <span class="dashboard-group-toggle"></span>
             </summary>
             <div class="dashboard-group-body">
-        <section class="mao-panel">
+        <section class="mao-panel" data-mao-weather-root data-mao-weather-url="{{ route('mao.dashboard.weather') }}">
             <div class="mao-panel-header">
                 <div>
                     <h2 class="mao-panel-title">Barangay Heat Map Dashboard</h2>
                     <p class="mao-panel-sub">Primary view for rainfall, yield, irrigation, and climate-impact risk by barangay.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="source-badge">{{ $weatherDataSource }}</span>
+                    <span class="source-badge" data-mao-weather-source>{{ $weatherDataSource }}</span>
                     <a class="btn btn-sm btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Prediction</a>
                 </div>
@@ -395,22 +395,22 @@
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
                             <div class="mao-label">Current Rain</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['current_rainfall_mm'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-rain>{{ number_format($liveWeather['current_rainfall_mm'], 1) }}</div>
                             <div class="mao-note">mm right now</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Temperature</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['current_temperature_c'], 1) }}</div>
-                            <div class="mao-note">C current reading</div>
+                            <div class="risk-level-value" data-mao-current-temperature>{{ number_format($liveWeather['current_temperature_c'], 1) }}</div>
+                            <div class="mao-note">°C current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Humidity</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['humidity_percent'], 1) }}</div>
-                            <div class="mao-note">percent current reading</div>
+                            <div class="risk-level-value" data-mao-current-humidity>{{ number_format($liveWeather['humidity_percent'], 1) }}</div>
+                            <div class="mao-note">% current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Wind Speed</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['wind_speed_kmh'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-wind>{{ number_format($liveWeather['wind_speed_kmh'], 1) }}</div>
                             <div class="mao-note">km/h current reading</div>
                         </div>
                     </div>
@@ -467,27 +467,27 @@
                     <div class="visual-grid mb-4">
                         <div class="chart-box">
                             <div class="chart-title">Rainfall Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Live forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
                             <canvas id="rainfallChart"></canvas>
                         </div>
                         <div class="chart-box">
                             <div class="chart-title">Temperature Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Live forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
                             <canvas id="temperatureChart"></canvas>
                         </div>
                         <div class="chart-box">
                             <div class="chart-title">Humidity Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Live forecast humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo current humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
                             <canvas id="humidityChart"></canvas>
                         </div>
                         <div class="chart-box">
                             <div class="chart-title">Wind Speed Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
                             <canvas id="windSpeedChart"></canvas>
                         </div>
                     </div>
                 @else
-                    <div class="empty-soft mb-4"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">The live weather API is unavailable and there are no saved climate records to show.</div></div>
+                    <div class="empty-soft mb-4"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Open-Meteo is unavailable and there are no saved climate records to show.</div></div>
                 @endif
 
             </div>
@@ -670,9 +670,12 @@
                 });
             });
 
+            const MAO_WEATHER_POLL_INTERVAL = 60000;
             const chartData = @json($weatherChartData);
             const mapAreas = @json($dashboardMapAreas);
             const labels = chartData.labels || [];
+            const weatherRoot = document.querySelector('[data-mao-weather-root]');
+            let maoWeatherPollTimer = null;
 
             const chartOptions = (unit) => ({
                 responsive: true,
@@ -694,9 +697,9 @@
 
             const makeChart = (id, label, values, color, unit) => {
                 const canvas = document.getElementById(id);
-                if (!canvas || !labels.length) return;
+                if (!canvas || !labels.length) return null;
 
-                new Chart(canvas, {
+                return new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels,
@@ -716,10 +719,65 @@
                 });
             };
 
-            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
-            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
-            makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%');
-            makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', '');
+            const weatherCharts = {
+                rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
+                temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),
+                humidity: makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%'),
+                windSpeed: makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', 'km/h'),
+            };
+            const setMaoText = (selector, value) => {
+                document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
+            };
+            const formatOne = (value) => Number.isFinite(Number(value)) ? Number(value).toFixed(1) : 'N/A';
+            const updateWeatherChart = (chart, labels, values) => {
+                if (!chart || !Array.isArray(labels) || !Array.isArray(values)) return;
+
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.update('none');
+            };
+            const renderMaoWeather = (payload) => {
+                const weather = payload?.weather;
+                if (!weather) return;
+
+                setMaoText('[data-mao-weather-source]', payload.source_label || `${weather.source || 'Open-Meteo'} live weather for ${weather.location || 'Lian, Batangas'}`);
+                setMaoText('[data-mao-current-rain]', formatOne(weather.current_rainfall_mm));
+                setMaoText('[data-mao-current-temperature]', formatOne(weather.current_temperature_c));
+                setMaoText('[data-mao-current-humidity]', formatOne(weather.humidity_percent));
+                setMaoText('[data-mao-current-wind]', formatOne(weather.wind_speed_kmh));
+
+                const series = weather.daily_series || {};
+                updateWeatherChart(weatherCharts.rainfall, series.labels, series.rainfall);
+                updateWeatherChart(weatherCharts.temperature, series.labels, series.temperature);
+                updateWeatherChart(weatherCharts.humidity, series.labels, series.humidity);
+                updateWeatherChart(weatherCharts.windSpeed, series.labels, series.windSpeed);
+            };
+            const refreshMaoWeather = async () => {
+                if (!weatherRoot?.dataset.maoWeatherUrl || document.visibilityState !== 'visible') return;
+
+                try {
+                    const response = await fetch(weatherRoot.dataset.maoWeatherUrl, { headers: { Accept: 'application/json' } });
+                    if (!response.ok) return;
+                    renderMaoWeather(await response.json());
+                } catch (error) {
+                    // Keep the last visible weather values when the live source is temporarily unavailable.
+                }
+            };
+            const startMaoWeatherPolling = () => {
+                if (maoWeatherPollTimer) clearInterval(maoWeatherPollTimer);
+                maoWeatherPollTimer = setInterval(refreshMaoWeather, MAO_WEATHER_POLL_INTERVAL);
+            };
+
+            startMaoWeatherPolling();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    refreshMaoWeather();
+                    startMaoWeatherPolling();
+                } else if (maoWeatherPollTimer) {
+                    clearInterval(maoWeatherPollTimer);
+                    maoWeatherPollTimer = null;
+                }
+            });
 
             const mapEl = document.getElementById('dashboardRiskMap');
             if (mapEl && mapAreas.length && window.L) {

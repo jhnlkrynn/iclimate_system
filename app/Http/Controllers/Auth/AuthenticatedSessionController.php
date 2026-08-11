@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
 use App\Services\Weather\OpenMeteoService;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,12 +34,27 @@ class AuthenticatedSessionController extends Controller
             'captcha' => $captcha->challenge($request, 'login'),
             'demoAccounts' => $this->demoAccounts(),
             'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
+            'requiresCaptcha' => $requiresCaptcha,
             'loginWeather' => [
                 'forecast' => $latestForecast,
                 'result' => $forecastResult,
                 'timezone' => $weatherTimezone,
             ],
         ]);
+    }
+
+    /**
+     * Demo credentials shown on the login page.
+     *
+     * @return array<int, array{role: string, email: string}>
+     */
+    private function demoAccounts(): array
+    {
+        return [
+            ['role' => User::ROLE_FARMER, 'email' => 'farmer@iclimate.com'],
+            ['role' => User::ROLE_MAO, 'email' => 'mao@iclimate.com'],
+            ['role' => User::ROLE_IT_EXPERT, 'email' => 'admin@iclimate.com'],
+        ];
     }
 
     /**
