@@ -99,10 +99,10 @@
                     <p class="mb-0 text-white-50" style="max-width:820px;">{{ $assistantSubtitle }}. Ask natural farming questions and get weather, yield, planting, irrigation, and warning guidance.</p>
                 </div>
                 <div class="ai-hero-actions">
-                    <form method="POST" action="{{ route('ai-chat.clear') }}">
+                    <form method="POST" action="{{ route('ai-chat.clear') }}" data-loading="true">
                         @csrf
                         @method('DELETE')
-                        <button class="btn btn-outline-light fw-bold" type="submit">Clear Conversation</button>
+                        <button class="btn btn-outline-light fw-bold" type="submit" data-loading-text="Clearing...">Clear Conversation</button>
                     </form>
                 </div>
             </div>
@@ -123,7 +123,7 @@
                 <div id="chatWindow" class="ai-chat-window">
                     @forelse($chats as $chat)
                         <div class="ai-message user">
-                            <div class="ai-bubble">{{ $chat->question }}<div class="ai-meta">{{ $chat->created_at?->shortDateTime() }}</div></div>
+                            <div class="ai-bubble">{{ $chat->question }}<div class="ai-meta">{{ $chat->created_at?->shortDateTime('M d, Y') }}</div></div>
                         </div>
                         <div class="ai-message assistant">
                             <div class="ai-bubble">

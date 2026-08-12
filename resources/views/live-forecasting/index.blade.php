@@ -1,8 +1,4 @@
 <x-app-layout>
-    @php
-        $modelSource = $modelForecast['source_name'] ?? 'iClimate monthly Random Forest model';
-        $modelSourceNote = $modelForecast['source_note'] ?? 'Model output trained from saved monthly climate records.';
-    @endphp
     <style>
         .lf-hero {
             position: relative;
@@ -98,36 +94,11 @@
             padding: 1rem;
             background: linear-gradient(145deg, #fff, #f7fbf8);
         }
-        .lf-barangay-row {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-start;
-            margin-top: .85rem;
-        }
         .lf-barangay-list {
             display: flex;
             flex-wrap: wrap;
             gap: .45rem;
-            flex: 1 1 60%;
-            align-content: flex-start;
-        }
-        .lf-barangay-detail {
-            flex: 1 1 40%;
-            min-width: 260px;
-            border: 1px solid rgba(212,237,218,.98);
-            border-radius: 8px;
-            background: linear-gradient(90deg, #0d1f18, #1a3a2a);
-            color: #fff;
-            padding: 1rem;
-        }
-        .lf-barangay-detail[hidden] { display: none; }
-        .lf-barangay-detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .85rem; }
-        .lf-barangay-detail-close { border: 0; background: rgba(255,255,255,.12); color: #fff; width: 30px; height: 30px; border-radius: 999px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
-        .lf-barangay-detail-close:hover { background: rgba(255,255,255,.22); }
-        .lf-barangay-detail-footer { margin-top: .85rem; }
-        @media (max-width: 767.98px) {
-            .lf-barangay-row { flex-direction: column; }
-            .lf-barangay-detail { width: 100%; }
+            margin-top: .85rem;
         }
         .lf-barangay-chip {
             border: 1px solid rgba(82,183,136,.34);
@@ -236,35 +207,27 @@
             padding: .85rem 1rem;
             font-weight: 800;
         }
-        .lf-guide-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-bottom: 1rem; }
-        .lf-guide-step { border: 1px solid rgba(212,237,218,.98); border-radius: 8px; background: #fff; padding: .72rem; }
-        .lf-guide-step strong { display: block; color: #0d1f18; font-size: .82rem; line-height: 1.25; }
-        .lf-guide-step span { display: block; color: #5a7a64; font-size: .76rem; line-height: 1.35; margin-top: .28rem; }
         @media (max-width: 991.98px) {
             .lf-map-frame { height: 68vh; min-height: 480px; }
             .lf-meta-grid { grid-template-columns: 1fr; }
             .lf-popup-grid { grid-template-columns: 1fr; }
             .lf-model-header { align-items: stretch; flex-direction: column; }
             .lf-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .lf-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 575.98px) {
             .lf-map-frame { height: 72vh; min-height: 420px; }
             .lf-map-toolbar .btn, .lf-map-search, .lf-map-search .form-select { width: 100%; }
             .lf-model-grid { grid-template-columns: 1fr; }
-            .lf-guide-flow { grid-template-columns: 1fr; }
         }
 
         /* -- toolbar/panel surfaces: light, dark ink text -- */
         .lf-page { color: #1f2a24; }
         .lf-map-toolbar { background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom-color: rgba(212,237,218,.98); }
         .lf-label { color: #6b7c72; }
-        .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li, .lf-guide-step {
+        .lf-meta, .lf-popup-item, .lf-model-panel, .lf-model-card, .lf-insight-list li {
             background: linear-gradient(145deg, #fff, #f7fbf8);
             border-color: rgba(212,237,218,.98);
         }
-        .lf-guide-step strong { color: #1f2a24; }
-        .lf-guide-step span { color: #6b7c72; }
         .lf-value { color: #1f2a24; }
         .lf-model-header { background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom-color: rgba(212,237,218,.98); }
         .lf-model-number { color: #1f2a24; }
@@ -327,13 +290,11 @@
         </div>
         <div class="lf-meta">
             <div class="lf-label">Live Map</div>
-            <div class="lf-value">Windy ECMWF View</div>
-            <div class="small text-muted fw-semibold mt-1">Source: Windy.com live weather embed</div>
+            <div class="lf-value">Universal Weather View</div>
         </div>
         <div class="lf-meta">
             <div class="lf-label">Model Source</div>
-            <div class="lf-value">{{ $modelSource }}</div>
-            <div class="small text-muted fw-semibold mt-1">{{ $modelSourceNote }}</div>
+            <div class="lf-value">Trained Random Forest</div>
         </div>
     </div>
 
@@ -343,22 +304,16 @@
                 <div class="lf-label">Upcoming Lian Prediction</div>
                 <div class="lf-value">{{ $targetMonth->format('F Y') }}</div>
             </div>
-            <form method="GET" action="{{ route('live-forecasting.index') }}" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-end">
+            <form method="GET" action="{{ route('live-forecasting.index') }}" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-end" data-loading="true">
                 <div>
                     <label class="form-label small fw-bold text-muted mb-1" for="target_month">Target Month</label>
                     <input id="target_month" name="target_month" type="month" class="form-control" value="{{ $targetMonth->format('Y-m') }}">
                 </div>
-                <button class="btn btn-primary" type="submit">Update Model</button>
+                <button class="btn btn-primary" type="submit" data-loading-text="Updating...">Update Model</button>
             </form>
         </div>
         <div class="lf-model-body">
-            <div class="lf-source-note mb-3">Sources: live map by Windy.com using the selected weather layer; model values by {{ $modelSource }}. They support each other, but they are different sources.</div>
-            <div class="lf-guide-flow" aria-label="How live forecasting output is made">
-                <div class="lf-guide-step"><strong>1. View live map</strong><span>Windy shows the current weather layer and movement around Lian.</span></div>
-                <div class="lf-guide-step"><strong>2. Pick month</strong><span>iClimate uses the selected month for the Lian-only forecast.</span></div>
-                <div class="lf-guide-step"><strong>3. Run model</strong><span>The trained Random Forest predicts rainfall, temperature, humidity, and wind.</span></div>
-                <div class="lf-guide-step"><strong>4. Decide carefully</strong><span>Use the model for planning and confirm with field conditions and official warnings.</span></div>
-            </div>
+            <div class="lf-source-note mb-3">Use the live map for current movement and use the trained model below for Lian-only upcoming planning. They support each other, but they are different sources.</div>
 
             @if($modelForecast['ready'] ?? false)
                 @php($predictions = $modelForecast['predictions'])
@@ -432,61 +387,67 @@
             </div>
             <div class="small text-muted fw-semibold">{{ count($barangays) }} barangays are included in the Lian-only prediction context.</div>
         </div>
-        <div class="lf-barangay-row">
-            <div class="lf-barangay-list" aria-label="Lian barangays included in live forecasting">
-                @foreach ($barangays as $barangay)
-                    <button class="lf-barangay-chip" type="button" data-barangay="{{ $barangay }}">{{ $barangay }}</button>
-                @endforeach
-            </div>
-            <aside id="barangayDetailPanel" class="lf-barangay-detail" hidden>
-                <div class="lf-barangay-detail-header">
-                    <div>
-                        <div class="lf-eyebrow">Selected Lian Area</div>
-                        <h2 class="h5 fw-bold mb-0" id="barangayForecastLabel">Barangay</h2>
-                    </div>
-                    <button type="button" class="lf-barangay-detail-close" data-detail-close aria-label="Close">&times;</button>
-                </div>
-                <div class="lf-popup-note mb-3">
-                    <strong>Friendly reminder:</strong> The live map is universal, but iClimate uses this selection only for Lian-focused forecast guidance.
-                </div>
-                <div class="lf-popup-grid mb-3">
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Risk Level</div>
-                        <div class="lf-value" data-popup-field="risk_level">For monitoring</div>
-                    </div>
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Main Watch</div>
-                        <div class="lf-value" data-popup-field="risk_type">Live weather watch</div>
-                    </div>
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Coordinates</div>
-                        <div class="lf-value" data-popup-field="coordinates">Lian, Batangas</div>
-                    </div>
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Rainfall Status</div>
-                        <div class="lf-value" data-popup-field="rainfall_status">Check live rain layer.</div>
-                    </div>
-                </div>
-                <div class="d-grid gap-2">
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Planting Guidance</div>
-                        <p class="mb-0 lf-value fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
-                    </div>
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Irrigation Guidance</div>
-                        <p class="mb-0 lf-value fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
-                    </div>
-                    <div class="lf-popup-item">
-                        <div class="lf-label">Local Note</div>
-                        <p class="mb-0 lf-value fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
-                    </div>
-                </div>
-                <div class="lf-barangay-detail-footer">
-                    <a class="btn btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Upcoming Prediction</a>
-                </div>
-            </aside>
+        <div class="lf-barangay-list" aria-label="Lian barangays included in live forecasting">
+            @foreach ($barangays as $barangay)
+                <button class="lf-barangay-chip" type="button" data-barangay="{{ $barangay }}" data-drawer-open="#barangayForecastModal">{{ $barangay }}</button>
+            @endforeach
         </div>
     </section>
+    </div>
+
+    <div class="ic-drawer" id="barangayForecastModal" aria-hidden="true">
+        <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="barangayForecastModalLabel">
+            <div class="modal-content border-0">
+                <div class="modal-header" style="background: linear-gradient(90deg, #0d1f18, #1a3a2a); color: #fff;">
+                    <div>
+                        <div class="lf-eyebrow">Selected Lian Area</div>
+                        <h2 class="modal-title h5 fw-bold" id="barangayForecastModalLabel">Barangay</h2>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="lf-popup-note mb-3">
+                        <strong>Friendly reminder:</strong> The live map is universal, but iClimate uses this selection only for Lian-focused forecast guidance.
+                    </div>
+                    <div class="lf-popup-grid mb-3">
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Risk Level</div>
+                            <div class="lf-value" data-popup-field="risk_level">For monitoring</div>
+                        </div>
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Main Watch</div>
+                            <div class="lf-value" data-popup-field="risk_type">Live weather watch</div>
+                        </div>
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Coordinates</div>
+                            <div class="lf-value" data-popup-field="coordinates">Lian, Batangas</div>
+                        </div>
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Rainfall Status</div>
+                            <div class="lf-value" data-popup-field="rainfall_status">Check live rain layer.</div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Planting Guidance</div>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="planting_advisory">Use the Lian-only upcoming prediction before making planting decisions.</p>
+                        </div>
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Irrigation Guidance</div>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="irrigation_recommendation">Confirm field moisture locally and monitor rainfall movement on the live map.</p>
+                        </div>
+                        <div class="lf-popup-item">
+                            <div class="lf-label">Local Note</div>
+                            <p class="mb-0 lf-value fw-semibold" data-popup-field="description">This barangay is included in the Lian forecast scope.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Upcoming Prediction</a>
+                    <button type="button" class="btn btn-primary" data-drawer-close>Got it</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -497,15 +458,12 @@
             const mapLocationSelect = document.getElementById('liveMapLocation');
             const mapFocusLabel = document.getElementById('liveMapFocusLabel');
             const mapCoordinateLabel = document.getElementById('liveMapCoordinateLabel');
-            const detailPanel = document.getElementById('barangayDetailPanel');
-            const title = document.getElementById('barangayForecastLabel');
+            const modal = document.getElementById('barangayForecastModal');
+            const title = document.getElementById('barangayForecastModalLabel');
             const setField = (field, value) => {
-                const node = detailPanel?.querySelector(`[data-popup-field="${field}"]`);
+                const node = modal?.querySelector(`[data-popup-field="${field}"]`);
                 if (node) node.textContent = value || 'For monitoring';
             };
-            detailPanel?.querySelector('[data-detail-close]')?.addEventListener('click', () => {
-                detailPanel.hidden = true;
-            });
             const liveMapUrl = (location) => {
                 const params = new URLSearchParams({
                     lat: location.latitude,
@@ -558,7 +516,6 @@
                     setField('planting_advisory', detail.planting_advisory);
                     setField('irrigation_recommendation', detail.irrigation_recommendation);
                     setField('description', detail.description);
-                    if (detailPanel) detailPanel.hidden = false;
                 });
             });
         });

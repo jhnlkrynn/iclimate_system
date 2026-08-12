@@ -1015,7 +1015,7 @@
                                                 <div id="composerFileList" class="composer-file-list"></div>
                                             </div>
                                         </div>
-                                        <div class="mt-3 composer-submit-row"><button class="btn btn-primary fw-bold" type="submit" data-loading-text="Posting...">Publish Post</button></div>
+                                        <div class="mt-3 composer-submit-row"><button class="btn btn-primary fw-bold" type="submit" data-loading-text="Publishing...">Publish Post</button></div>
                                     </div>
                                     </div>
                             </form>
@@ -1041,7 +1041,7 @@
                                     <div class="avatar">{{ str($post->author?->name ?? 'M')->substr(0, 1)->upper() }}</div>
                                     <div>
                                         <h2 class="feed-title h5">{{ $post->author?->name ?? 'MAO' }}</h2>
-                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->shortDateTime() }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
+                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->shortDateTime('M d, Y') }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
                                     </div>
                                 </div>
                                 <div class="post-actions">
@@ -1095,14 +1095,14 @@
                                     </button>
                                     <div class="reaction-menu" role="menu" aria-label="Choose a reaction">
                                         @foreach($reactionTypes as $reaction)
-                                            <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}" data-loading="true">
+                                            <form method="POST" action="{{ route('community-feed.reactions.store', $post) }}">
                                                 @csrf
                                                 <input type="hidden" name="type" value="{{ $reaction }}">
                                                 @php
                                                     $reactionClass = strtolower($reaction);
                                                     $reactionIcon = $reactionIcons[$reaction] ?? '👍';
                                                 @endphp
-                                                <button type="submit" class="reaction-option {{ $reactionClass }} {{ $userReaction?->type === $reaction ? 'text-success' : '' }}" data-icon="{{ $reactionIcon }}" title="{{ $reaction }}" aria-label="{{ $reaction }}" role="menuitem" data-loading-text="{{ $reaction }}">{{ $reaction }}</button>
+                                                <button type="submit" class="reaction-option {{ $reactionClass }} {{ $userReaction?->type === $reaction ? 'text-success' : '' }}" data-icon="{{ $reactionIcon }}" title="{{ $reaction }}" aria-label="{{ $reaction }}" role="menuitem">{{ $reaction }}</button>
                                             </form>
                                         @endforeach
                                     </div>
@@ -1207,13 +1207,13 @@
                                     </div>
                                 </details>
                                 @if(! $isArchived)
-                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" onsubmit="return confirm('Archive this post? Farmers will no longer see it.');" data-loading="true">
+                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" data-loading="true" onsubmit="return confirm('Archive this post? Farmers will no longer see it.');">
                                         @csrf
                                         @method('PATCH')
                                         <button class="btn btn-outline-secondary fw-bold" type="submit" data-loading-text="Archiving...">Archive</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" onsubmit="return confirm('Delete this post permanently?');" data-loading="true">
+                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" data-loading="true" onsubmit="return confirm('Delete this post permanently?');">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn btn-outline-danger fw-bold" type="submit" data-loading-text="Deleting...">Delete</button>
@@ -1232,7 +1232,7 @@
                                 </div>
                             @endforeach
                             @unless($isArchived)
-                                <form method="POST" action="{{ route('community-feed.comments.store', $post) }}" class="d-flex gap-2 mt-3" data-loading="true">
+                                <form method="POST" action="{{ route('community-feed.comments.store', $post) }}" class="d-flex gap-2 mt-3">
                                     @csrf
                                     <input name="body" class="form-control" placeholder="Write a comment..." required>
                                     <button class="btn btn-outline-primary fw-bold" type="submit" data-loading-text="Posting...">Comment</button>

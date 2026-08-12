@@ -126,6 +126,25 @@ class PredictionEngine
 
     private function requestYield(array $modelInput): array
     {
+        [$modelYield, $apiError] = $this->requestYieldFromModel($modelInput);
+
+        if ($modelYield !== null) {
+            return [$modelYield, $apiError];
+        }
+
+        return [$this->localYieldFallback($modelInput), $apiError];
+    }
+
+    /**
+     * The single "ask the trained model" path — tries the Farming AI API, then
+     * the local Python script, with identical parsing and rounding either way.
+     * Shared by every feature that needs a raw model yield (System Prediction,
+     * AI Assistant, and per-barangay heatmap risk) so results never diverge.
+     *
+     * @return array{0: array<string, mixed>|null, 1: string|null} [yield, apiError]
+     */
+    public function requestYieldFromModel(array $modelInput): array
+    {
         try {
             $apiResult = $this->python->farmingAssistant(['features' => $modelInput]);
             $yield = data_get($apiResult, 'rice_yield_prediction', $apiResult);
@@ -164,7 +183,7 @@ class PredictionEngine
             ], $apiError];
         }
 
-        return [$this->localYieldFallback($modelInput), $apiError];
+        return [null, $apiError];
     }
 
     private function requestYieldFromLocalScript(array $modelInput): ?array
