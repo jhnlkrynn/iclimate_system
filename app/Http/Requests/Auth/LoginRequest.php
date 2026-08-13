@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class LoginRequest extends FormRequest
 {
@@ -72,7 +73,13 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        try {
+            $authenticated = Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
+        } catch (RuntimeException) {
+            $authenticated = false;
+        }
+
+        if (! $authenticated) {
             RateLimiter::hit($this->throttleKey());
             $captcha->recordFailedAttempt($this, 'login');
 

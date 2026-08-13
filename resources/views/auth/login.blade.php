@@ -170,6 +170,74 @@
     .login-register { text-align: center; font-size: .86rem; color: #64748B; margin: 0; }
     .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #C6872A; }
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
+    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
+
+    .demo-accounts {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .demo-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: rgba(255,255,255,.7);
+      font-size: .76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .demo-password {
+      color: #E8A73D;
+      font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .demo-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .demo-account {
+      min-width: 0;
+      border: 1px solid rgba(149,213,178,.24);
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.82);
+      cursor: pointer;
+      display: grid;
+      gap: 3px;
+      padding: 8px 9px;
+      text-align: left;
+      transition: background-color var(--auth-motion-med), border-color var(--auth-motion-med), transform var(--auth-motion-med);
+    }
+    .demo-account:hover {
+      background: rgba(82,183,136,.14);
+      border-color: rgba(149,213,178,.44);
+      transform: translateY(-2px);
+    }
+    .demo-role {
+      color: #95D5B2;
+      font-size: .73rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .demo-email {
+      color: rgba(255,255,255,.54);
+      font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: .64rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .login-register { text-align: center; font-size: .86rem; color: #4a5c52; margin: 0; }
+    .login-register a { color: #C6872A; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a:hover { color: #a8701f; }
 
     /* -- WEATHER WIDGET ---------------------------------- */
     .weather-card {

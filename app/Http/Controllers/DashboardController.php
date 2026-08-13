@@ -14,8 +14,9 @@ use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\TyphoonSafetyService;
-use App\Services\Weather\OpenMeteoService;
+use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\WeatherApiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -23,41 +24,13 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request, OpenMeteoService $openMeteo, TyphoonSafetyService $typhoonSafety): View
+    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety): View
     {
-        $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
-        $today = now($weatherTimezone)->toDateString();
-        if (! $request->boolean('cached_weather')) {
-            $forecastResult = $openMeteo->fetchForecast(true);
-        } else {
-            $storedForecast = $openMeteo->latestStoredForecast();
-            $forecastResult = [
-                'ok' => true,
-                'source' => 'Open-Meteo',
-                'freshness' => $storedForecast->first()?->freshnessLabel() ?? 'unavailable',
-                'records' => $storedForecast,
-                'records_saved' => 0,
-                'fetched_at' => $storedForecast->first()?->fetched_at,
-                'message' => 'Using the latest stored Open-Meteo weather update for faster dashboard loading.',
-                'cached_dashboard_load' => true,
-            ];
-        }
-        $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
-        $latestForecast = $forecastRecords
-            ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
-            ?? $forecastRecords->first();
-
-        if (! $latestForecast || empty(data_get($latestForecast->raw_response, 'current'))) {
-            $forecastResult = $openMeteo->fetchForecast(true);
-            $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
-            $latestForecast = $forecastRecords
-                ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
-                ?? $forecastRecords->first();
-        }
-
+        $dashboardWeather = $weather->current($request->boolean('refresh_weather'));
         $dashboardData = $this->stats();
         $dashboardData['highRiskHeatMapAreas'] = HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count();
         $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
+        $weatherAlerts = $this->weatherAlertsFor($request);
 
         return view('dashboards.farmer', $dashboardData + [
             'feedPosts' => FeedPost::query()
@@ -70,10 +43,13 @@ class DashboardController extends Controller
             'advisories' => PlantingAdvisory::query()->where('status', 'Published')->latest()->take(5)->get(),
             'notifications' => UserNotification::query()->where('user_id', $request->user()->id)->latest()->take(5)->get(),
             'unreadNotificationCount' => UserNotification::query()->where('user_id', $request->user()->id)->where('is_read', false)->count(),
+            'activeWeatherAlerts' => $weatherAlerts['count'],
+            'weatherAlertNotifications' => $weatherAlerts['items'],
             'climateSummary' => ClimateRecord::query()->latest('record_date')->first(),
             'recentClimateRecords' => ClimateRecord::query()->latest('record_date')->take(5)->get(),
-            'latestForecast' => $latestForecast,
-            'forecastResult' => $forecastResult,
+            'dashboardWeather' => $dashboardWeather,
+            'dashboardWeatherResponse' => $weather->responsePayload($dashboardWeather),
+            'weatherGuidance' => $weather->guidance($dashboardWeather),
             'highRiskAreasList' => HeatmapArea::query()
                 ->whereIn('risk_level', ['High', 'Severe'])
                 ->orderByDesc('risk_score')
@@ -86,6 +62,25 @@ class DashboardController extends Controller
                     ->where('event_key', $activeTyphoonSafetyEvent['key'])
                     ->first()
                 : null,
+        ]);
+    }
+
+    public function farmerWeather(Request $request, FarmerDashboardWeatherService $weather): JsonResponse
+    {
+        return response()->json($weather->responsePayload($weather->current($request->boolean('refresh'))));
+    }
+
+    public function maoWeather(WeatherApiService $weatherApi): JsonResponse
+    {
+        $liveWeather = $weatherApi->forecast(refresh: true);
+
+        return response()->json([
+            'ok' => $liveWeather !== null,
+            'weather' => $liveWeather,
+            'source_label' => $liveWeather
+                ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
+                : 'Stored climate records',
+            'checked_at' => now((string) config('services.weather.timezone', 'Asia/Manila'))->toIso8601String(),
         ]);
     }
 
@@ -116,7 +111,7 @@ class DashboardController extends Controller
         ];
         $weatherChartData = data_get($liveWeather, 'daily_series') ?: $storedWeatherChartData;
         $weatherDataSource = $liveWeather
-            ? 'Live '.data_get($liveWeather, 'source', 'OpenWeather').' forecast for '.data_get($liveWeather, 'location', 'Lian, Batangas')
+            ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
             : 'Stored climate records';
         $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
         $typhoonSafetyResponses = $this->hasTyphoonSafetyTable() && $activeTyphoonSafetyEvent
@@ -246,5 +241,29 @@ class DashboardController extends Controller
     private function hasTyphoonSafetyTable(): bool
     {
         return Schema::hasTable('typhoon_safety_responses');
+    }
+
+    /**
+     * @return array{count: int, items: \Illuminate\Support\Collection<int, UserNotification>}
+     */
+    private function weatherAlertsFor(Request $request): array
+    {
+        $keywords = ['weather', 'rain', 'rainfall', 'storm', 'typhoon', 'flood', 'drought', 'heat', 'pagasa', 'climate'];
+
+        $query = UserNotification::query()
+            ->where('user_id', $request->user()->id)
+            ->where('is_read', false)
+            ->where('type', 'Warning')
+            ->where(function ($query) use ($keywords): void {
+                foreach ($keywords as $keyword) {
+                    $query->orWhere('title', 'like', '%'.$keyword.'%')
+                        ->orWhere('message', 'like', '%'.$keyword.'%');
+                }
+            });
+
+        return [
+            'count' => (clone $query)->count(),
+            'items' => $query->latest()->take(5)->get(),
+        ];
     }
 }

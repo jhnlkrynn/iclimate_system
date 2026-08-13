@@ -1960,6 +1960,7 @@
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#C6872A" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#C6872A"/></svg></div>
         <strong>Climate-Informed</strong>
         <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
+        <p>Combining stored climate records, Open-Meteo live forecasts, and official PAGASA advisory references for localized guidance.</p>
       </div>
       <div class="pillar-card">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#C6872A" stroke-width="1.5"/></svg></div>

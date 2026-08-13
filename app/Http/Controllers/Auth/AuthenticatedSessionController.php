@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\User;
 use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
 use App\Services\Weather\OpenMeteoService;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,15 +32,29 @@ class AuthenticatedSessionController extends Controller
 
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
-            'requiresCaptcha' => $requiresCaptcha,
             'demoAccounts' => $this->demoAccounts(),
             'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
+            'requiresCaptcha' => $requiresCaptcha,
             'loginWeather' => [
                 'forecast' => $latestForecast,
                 'result' => $forecastResult,
                 'timezone' => $weatherTimezone,
             ],
         ]);
+    }
+
+    /**
+     * Demo credentials shown on the login page.
+     *
+     * @return array<int, array{role: string, email: string}>
+     */
+    private function demoAccounts(): array
+    {
+        return [
+            ['role' => User::ROLE_FARMER, 'email' => 'farmer@iclimate.com'],
+            ['role' => User::ROLE_MAO, 'email' => 'mao@iclimate.com'],
+            ['role' => User::ROLE_IT_EXPERT, 'email' => 'admin@iclimate.com'],
+        ];
     }
 
     /**
@@ -75,16 +89,4 @@ class AuthenticatedSessionController extends Controller
         return redirect('/')->with('success', 'You have logged out successfully.');
     }
 
-    private function demoAccounts()
-    {
-        return User::query()
-            ->whereIn('email', ['farmer@iclimate.com', 'mao@iclimate.com', 'admin@iclimate.com'])
-            ->where('status', User::STATUS_ACTIVE)
-            ->orderByRaw('case role when ? then 1 when ? then 2 when ? then 3 else 4 end', [
-                User::ROLE_FARMER,
-                User::ROLE_MAO,
-                User::ROLE_IT_EXPERT,
-            ])
-            ->get(['name', 'email', 'role', 'status']);
-    }
 }

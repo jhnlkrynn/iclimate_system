@@ -37,7 +37,6 @@ return [
 
     'weather_api' => [
         'enabled' => env('WEATHER_API_ENABLED', false),
-        'key' => env('OPENWEATHER_API_KEY'),
         'timeout' => env('WEATHER_API_TIMEOUT', 8),
         'location_name' => env('WEATHER_API_LOCATION_NAME', 'Lian, Batangas'),
         'latitude' => env('WEATHER_API_LATITUDE', 14.04),
@@ -46,6 +45,16 @@ return [
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
         'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 10),
         'realtime' => env('WEATHER_API_REALTIME', true),
+    ],
+
+    'weather' => [
+        'provider' => env('WEATHER_PROVIDER', 'openmeteo'),
+        'latitude' => env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 14.033)),
+        'longitude' => env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.650)),
+        'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', 'Asia/Manila')),
+        'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
+        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 5),
+        'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
     ],
 
     'open_meteo' => [
@@ -58,6 +67,11 @@ return [
         'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
         'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
         'realtime' => env('OPEN_METEO_REALTIME', true),
+    ],
+
+    'accuweather' => [
+        'key' => env('ACCUWEATHER_API_KEY'),
+        'timeout' => env('ACCUWEATHER_TIMEOUT', 8),
     ],
 
     'pagasa' => [
