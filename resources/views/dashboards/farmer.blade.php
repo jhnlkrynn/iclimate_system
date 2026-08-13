@@ -107,17 +107,7 @@
             background: radial-gradient(ellipse at center, rgba(95,143,120,.14) 0%, transparent 65%);
             pointer-events: none;
         }
-        .farmer-hero-leaf {
-            position: absolute; right: 0; bottom: 0;
-            width: 150px; height: 130px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M65 2C30 20 12 55 18 92c4 14 12 23 22 28-6-28 0-58 16-84C68 20 68 10 65 2Z' fill='%235F8F78' fill-opacity='.16'/%3E%3Cpath d='M60 12C38 38 26 68 32 100' stroke='%237FD6B5' stroke-opacity='.4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-size: contain;
-            background-position: bottom right;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .farmer-hero > *:not(.farmer-hero-leaf) { position: relative; z-index: 1; }
+        .farmer-hero > * { position: relative; z-index: 1; }
         .farmer-hero h1 { color: #fff; font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
         .farmer-hero h1 em { font-style: italic; color: var(--fc-gold); }
         .farmer-hero p { color: rgba(255,255,255,.72); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
@@ -172,19 +162,41 @@
 
         /* -- STAT / FIELD CARDS ------------------------------ */
         .climate-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 1rem;
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            gap: .85rem;
             margin-bottom: .5rem;
+            padding-bottom: .35rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(95,143,120,.4) transparent;
+        }
+        .climate-grid::-webkit-scrollbar { height: 6px; }
+        .climate-grid::-webkit-scrollbar-track { background: transparent; }
+        .climate-grid::-webkit-scrollbar-thumb { background: rgba(95,143,120,.35); border-radius: 999px; }
+        .climate-grid .field-card {
+            flex: 1 1 0;
+            min-width: 190px;
+            scroll-snap-align: start;
+        }
+        @media (min-width: 1360px) {
+            .climate-grid {
+                overflow-x: visible;
+                flex-wrap: nowrap;
+            }
+            .climate-grid .field-card { min-width: 0; }
         }
         .field-card {
             position: relative;
             border: 1.5px solid var(--fc-sand-dark);
             border-radius: var(--radius-lg);
             background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            padding: 1.15rem 1.2rem;
+            padding: 1rem 1.1rem;
             text-decoration: none;
-            display: flex; flex-direction: column; gap: .6rem;
+            display: flex; flex-direction: column; gap: .5rem;
             transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s;
             width: 100%;
             text-align: left;
@@ -237,16 +249,32 @@
         .fc-modal-table td { color: var(--fc-ink) !important; border-color: var(--fc-border); }
         .fc-modal-table-highlight { color: var(--fc-green-700) !important; font-weight: 700; }
         .field-icon {
-            width: 40px; height: 40px;
+            width: 38px; height: 38px;
             border-radius: 50%;
             display: grid; place-items: center;
             background: rgba(95,143,120,.14);
             border: 1px solid rgba(127,214,181,.35);
             color: var(--fc-green-700);
-            font-family: 'DM Mono', monospace;
-            font-size: .65rem;
-            font-weight: 700;
+            flex-shrink: 0;
         }
+        .field-icon svg { width: 18px; height: 18px; }
+        .field-card-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .field-status {
+            display: inline-flex; align-items: center;
+            font-family: 'DM Mono', monospace;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: .22rem .55rem;
+            border-radius: var(--radius-pill);
+            background: rgba(95,143,120,.14);
+            color: var(--fc-green-700);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .field-status.is-live { background: rgba(232,167,61,.16); color: var(--fc-gold-dark); }
+        .field-status.is-warn { background: rgba(216,91,69,.14); color: var(--fc-coral); }
         .field-label {
             color: var(--fc-ink-light);
             font-family: 'DM Mono', monospace;
@@ -257,7 +285,7 @@
         }
         .field-value {
             font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+            font-size: clamp(1.7rem, 3vw, 2.15rem);
             line-height: 1;
             color: var(--fc-ink);
             letter-spacing: -.02em;
@@ -331,6 +359,9 @@
             color: var(--fc-green-700);
         }
         .status-pill.muted { background: var(--fc-green-50); color: var(--fc-ink-light); }
+        .status-pill.warn { background: rgba(216,91,69,.14); color: var(--fc-coral); }
+        .status-pill.info { background: rgba(47,111,143,.14); color: var(--fc-blue); }
+        .status-pill.gold { background: rgba(232,167,61,.16); color: var(--fc-gold-dark); }
         .advisory-card {
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
@@ -386,6 +417,16 @@
         .priority-card span.desc { display: block; color: var(--fc-ink-light); font-size: .82rem; line-height: 1.55; font-family: 'Inter', sans-serif; }
         .priority-card .status-pill { align-self: flex-start; }
         .priority-card.priority-highlight .status-pill { background: var(--fc-gold); color: var(--fc-ink); }
+        .priority-icon {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            display: grid; place-items: center;
+            background: rgba(95,143,120,.14);
+            border: 1px solid rgba(127,214,181,.35);
+            color: var(--fc-green-700);
+            flex-shrink: 0;
+        }
+        .priority-card.priority-highlight .priority-icon { background: rgba(232,167,61,.16); border-color: rgba(232,167,61,.4); color: var(--fc-gold-dark); }
 
         /* -- COLLAPSIBLE GROUPS --------------------------------- */
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -417,10 +458,9 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .farmer-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .farmer-list-item:nth-of-type(n+4), .list-compact .row > [class*="col-"]:nth-child(n+5) { display: none; }
 
-        @media (max-width: 1399.98px) { .climate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 1199.98px) { .climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .priority-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 767.98px) {
-            .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .quick-grid, .priority-grid { grid-template-columns: 1fr; }
             .farmer-hero { padding: 1.5rem; }
             .fc-modal-table.table { min-width: 560px; }
             .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
@@ -435,6 +475,7 @@
         $weatherNow = now($weatherTimezone);
         $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
         $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
+        $weatherStatusShort = ($forecastResult['ok'] ?? false) ? 'Live' : 'Stored';
         $weatherFreshness = $latestForecast
             ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
             : 'Stored Record';
@@ -476,7 +517,6 @@
 
     <div class="farmer-console">
         <section class="farmer-hero">
-            <div class="farmer-hero-leaf" aria-hidden="true"></div>
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
                 <div>
                     <div class="fc-eyebrow on-light">Farmer field view</div>
@@ -498,7 +538,10 @@
 
         <section class="climate-grid">
             <button type="button" class="field-card" data-drawer-open="#statModalTemperature">
-                <div class="field-icon">TMP</div>
+                <div class="field-card-top">
+                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M9 11.3V4.5a1.5 1.5 0 0 1 3 0v6.8a3 3 0 1 1-3 0Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                </div>
                 <div class="field-label">Temperature</div>
                 <div class="field-value">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' C' : 'N/A' }}</div>
                 <div class="field-note">{{ $weatherNoteLabel }}</div>
@@ -509,7 +552,10 @@
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-drawer-open="#statModalRainfall">
-                <div class="field-icon">RAIN</div>
+                <div class="field-card-top">
+                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.6 3.6 5 6.8 5 9.5A5 5 0 1 1 5 11.5C5 8.8 7.4 5.6 10 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                </div>
                 <div class="field-label">Rainfall</div>
                 <div class="field-value">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'N/A' }}</div>
                 <div class="field-note">Use advisories before fertilizer application</div>
@@ -520,7 +566,10 @@
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-drawer-open="#statModalHumidity">
-                <div class="field-icon">HUM</div>
+                <div class="field-card-top">
+                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 10.5a3.6 3.6 0 0 0 .7 7.1 4.8 4.8 0 0 0 9.2.8 3.2 3.2 0 0 0-.5-6.3H6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.2 12.6A3.6 3.6 0 0 1 12 7.1a4.7 4.7 0 0 1 1.6 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                </div>
                 <div class="field-label">Humidity</div>
                 <div class="field-value">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'N/A' }}</div>
                 <div class="field-note">Monitor crop disease risk after rain</div>
@@ -531,7 +580,10 @@
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-drawer-open="#statModalAlerts">
-                <div class="field-icon">ALT</div>
+                <div class="field-card-top">
+                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 15.5V9a4 4 0 1 1 8 0v6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 15.5h11M8.3 17.8a1.9 1.9 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+                    <span class="field-status {{ $unreadNotifications > 0 ? 'is-warn' : '' }}">{{ $unreadNotifications > 0 ? 'Unread' : 'Clear' }}</span>
+                </div>
                 <div class="field-label">Weather Alerts</div>
                 <div class="field-value">{{ number_format($unreadNotifications) }} unread</div>
                 <div class="field-note">Recent notifications sent to your account</div>
@@ -539,7 +591,10 @@
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-drawer-open="#statModalRisk">
-                <div class="field-icon">RSK</div>
+                <div class="field-card-top">
+                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
+                    <span class="field-status {{ $highRiskHeatMapAreas > 0 ? 'is-warn' : '' }}">{{ $highRiskHeatMapAreas > 0 ? 'Flagged' : 'Clear' }}</span>
+                </div>
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
                 <div class="field-note">High or severe barangay risk areas</div>
@@ -624,7 +679,13 @@
                         <p class="fc-modal-sub">Most recent notifications sent to your account.</p>
                         @forelse($notifications as $notification)
                             <div class="farmer-list-item">
-                                <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
+                                <div class="list-mark">
+                                    @if($notification->is_read)
+                                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 9.5l3.5 3.5 7-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    @else
+                                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 14V8a3.5 3.5 0 1 1 7 0v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4 14h10M7.2 15.9a1.7 1.7 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                                    @endif
+                                </div>
                                 <div>
                                     <div class="list-title">{{ $notification->title }}</div>
                                     <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
@@ -654,7 +715,7 @@
                         <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
                         @forelse($highRiskAreasList as $area)
                             <div class="farmer-list-item">
-                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="list-mark"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div>
                                     <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
                                     <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
@@ -678,18 +739,22 @@
 
         <section class="priority-grid">
             <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}">
+                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v6A2.5 2.5 0 0 1 14.5 14H9l-3.5 3v-3h-1A2.5 2.5 0 0 1 2 11.5v-6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7" cy="8.5" r=".9" fill="currentColor"/><circle cx="10.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="14" cy="8.5" r=".9" fill="currentColor"/></svg></div>
                 <div><strong>Climora AI</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
                 <span class="status-pill">Open Climora AI</span>
             </a>
             <a class="priority-card" href="{{ route('heatmap-areas.index') }}">
+                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5 7 4l6 2 4.5-1.5v10L13 16l-6-2-4.5 1.5v-10Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 4v10M13 6v10" stroke="currentColor" stroke-width="1.2"/></svg></div>
                 <div><strong>Barangay Heat Map</strong><span class="desc">Check risk areas before planning field work, irrigation, and harvest movement.</span></div>
                 <span class="status-pill">Open Heat Map</span>
             </a>
             <a class="priority-card" href="{{ route('community-feed.index') }}">
+                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M6 17l2.2-2.5h3.6L14 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 7.5h9M5.5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
                 <div><strong>Community Feed</strong><span class="desc">View MAO updates, programs, activities, photos, videos, comments, and reactions.</span></div>
                 <span class="status-pill">Open Feed</span>
             </a>
             <a class="priority-card" href="{{ route('messages.index') }}">
+                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 5.5l7 5.5 7-5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div><strong>Messages</strong><span class="desc">Start private conversations with MAO personnel for specific farm concerns.</span></div>
                 <span class="status-pill">Open Messages</span>
             </a>
@@ -723,7 +788,12 @@
                                 <div class="col-md-6">
                                     <div class="advisory-card">
                                         <div class="d-flex justify-content-between gap-2">
-                                            <span class="status-pill">{{ $advisory->type }}</span>
+                                            <span class="status-pill {{ match(strtolower((string) $advisory->type)) {
+                                                'warning' => 'warn',
+                                                'irrigation' => 'info',
+                                                'climate' => 'gold',
+                                                default => '',
+                                            } }}">{{ $advisory->type }}</span>
                                             <span class="small mono" style="color: var(--fc-ink-light); font-size: .74rem;">{{ $advisory->created_at?->format('M d') }}</span>
                                         </div>
                                         <strong>{{ $advisory->title }}</strong>
@@ -749,12 +819,12 @@
                     </div>
                     <div class="farmer-panel-body">
                         @if($latestAdvisory)
-                            <div class="list-mark mb-3">ADV</div>
+                            <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
                             <div class="list-title">{{ $latestAdvisory->title }}</div>
                             <div class="list-text">{{ str($latestAdvisory->content)->limit(180) }}</div>
                             <div class="list-meta">{{ $latestAdvisory->type }} advisory</div>
                         @elseif($climateSummary)
-                            <div class="list-mark mb-3">CLI</div>
+                            <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
                             <div class="list-title">Review latest climate conditions</div>
                             <div class="list-text">Season is {{ $climateSummary->season }} with {{ $climateSummary->rainfall }} mm rainfall recorded.</div>
                             <div class="list-meta">Source: {{ $climateSummary->source }}</div>
@@ -838,15 +908,15 @@
                     </div>
                     <div class="farmer-panel-body">
                         <div class="farmer-list-item pt-0">
-                            <div class="list-mark">BRG</div>
+                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/></svg></div>
                             <div><div class="list-title">{{ $profile?->barangay ?? auth()->user()->barangay ?? 'Barangay not set' }}</div><div class="list-text">Registered barangay</div></div>
                         </div>
                         <div class="farmer-list-item">
-                            <div class="list-mark">FAR</div>
+                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2.5 15.5V8l6.5-5.5L15.5 8v7.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 15.5v-5h6v5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
                             <div><div class="list-title">{{ $profile?->farm_area ? number_format($profile->farm_area, 2).' ha' : 'Farm area not set' }}</div><div class="list-text">Farm area</div></div>
                         </div>
                         <div class="farmer-list-item">
-                            <div class="list-mark">TYP</div>
+                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 10.5-4M3 5v4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9a6 6 0 0 1-10.5 4M15 13v-4h-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                             <div><div class="list-title">{{ $profile?->farm_type ?? 'Farm type not set' }}</div><div class="list-text">Farm irrigation type</div></div>
                         </div>
                     </div>

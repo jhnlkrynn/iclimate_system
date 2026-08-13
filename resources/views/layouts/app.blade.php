@@ -84,8 +84,9 @@
                 min-height: 100vh;
                 min-width: 0;
                 background:
-                    linear-gradient(180deg, rgba(31,77,58,.98), rgba(31,77,58,1)),
-                    radial-gradient(circle at 70% 10%, rgba(127,214,181,.08), transparent 28rem);
+                    radial-gradient(circle at 78% 0%, rgba(127,214,181,.16), transparent 32rem),
+                    radial-gradient(circle at 8% 55%, rgba(232,167,61,.07), transparent 30rem),
+                    linear-gradient(165deg, #1f4d3a 0%, #2a5c46 55%, #234f3c 100%);
             }
             .page-shell { padding: 1.25rem; min-width: 0; max-width: 100%; }
             .sidebar-fixed {
