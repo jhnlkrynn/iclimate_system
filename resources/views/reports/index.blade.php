@@ -62,7 +62,7 @@
             <div class="report-live-strip">
                 <div class="report-live-item">
                     <strong>Live app data</strong>
-                    <span>Refreshed {{ $sourceStats['last_refreshed']->shortDateTime() }}</span>
+                    <span>Refreshed {{ $sourceStats['last_refreshed']->shortDateTime('M d, Y') }}</span>
                 </div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['climate_records']) }}</strong><span>Climate</span></div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['rice_production']) }}</strong><span>Rice rows</span></div>
@@ -99,8 +99,8 @@
                 <div class="col-lg-8 report-action-bar align-self-end">
                     <button class="btn btn-primary" type="submit" data-loading-text="Generating...">Generate Report</button>
                     @if ($selected)
-                        <button class="btn report-white-action" formaction="{{ route('reports.print') }}" formmethod="GET" formtarget="_blank" type="submit">Print Report</button>
-                        <button class="btn report-white-action" formaction="{{ route('reports.export') }}" formmethod="GET" type="submit">Export CSV</button>
+                        <button class="btn report-white-action" formaction="{{ route('reports.print') }}" formmethod="GET" formtarget="_blank" type="submit" data-loading-text="Opening...">Print Report</button>
+                        <button class="btn report-white-action" formaction="{{ route('reports.export') }}" formmethod="GET" type="submit" data-loading-text="Exporting...">Export CSV</button>
                     @endif
                 </div>
             </form>
@@ -111,7 +111,7 @@
         <div class="report-summary-grid">
             <div class="report-stat"><div class="report-stat-label">Report Type</div><div class="h5 fw-bold mb-0 mt-2">{{ $selected }}</div></div>
             <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->count()) }}</div></div>
-            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->shortDateTime() }}</div></div>
+            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->shortDateTime('M d, Y') }}</div></div>
         </div>
 
         <div class="card no-lift">
@@ -126,7 +126,7 @@
                                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                                 @endif
                             @endforeach
-                            <button class="btn btn-sm fw-bold report-white-action" type="submit">Print Report</button>
+                            <button class="btn btn-sm fw-bold report-white-action" type="submit" data-loading-text="Opening...">Print Report</button>
                         </form>
                         <form method="GET" action="{{ route('reports.export') }}">
                             @foreach ($filters as $key => $value)
@@ -134,7 +134,7 @@
                                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                                 @endif
                             @endforeach
-                            <button class="btn btn-sm fw-bold report-white-action" type="submit">Download CSV</button>
+                            <button class="btn btn-sm fw-bold report-white-action" type="submit" data-loading-text="Exporting...">Download CSV</button>
                         </form>
                     </div>
                 </div>

@@ -5,26 +5,26 @@
 
     <style>
         .farmer-console {
-            --fc-green-950: #0D1F18;
-            --fc-green-900: #122B20;
-            --fc-green-800: #1A3A2A;
-            --fc-green-700: #2D6A4F;
-            --fc-green-500: #52B788;
-            --fc-green-400: #74C69D;
-            --fc-green-200: #B7E4C7;
-            --fc-green-100: #D8F3DC;
-            --fc-green-50:  #F0F7F4;
-            --fc-sand:      #F5F0E8;
-            --fc-sand-dark: #E8E0D0;
+            --fc-green-950: #163B2D;
+            --fc-green-900: #1F4D3A;
+            --fc-green-800: #1F4D3A;
+            --fc-green-700: #1F4D3A;
+            --fc-green-500: #5F8F78;
+            --fc-green-400: #7FD6B5;
+            --fc-green-200: #7FD6B5;
+            --fc-green-100: rgba(127,214,181,.22);
+            --fc-green-50:  rgba(95,143,120,.1);
+            --fc-sand:      #F7F6F2;
+            --fc-sand-dark: #5F8F78;
             --fc-gold:      #E8A73D;
             --fc-gold-dark: #C6872A;
-            --fc-gold-light:#FBEBCF;
+            --fc-gold-light:#F6D58A;
             --fc-blue:      #2F6F8F;
             --fc-coral:     #D85B45;
-            --fc-ink:       #1F2A24;
-            --fc-ink-mid:   #4A5C52;
-            --fc-ink-light: #6B7C72;
-            --fc-border:    #E3ECE6;
+            --fc-ink:       #1F2937;
+            --fc-ink-mid:   #64748B;
+            --fc-ink-light: rgba(31,41,55,.6);
+            --fc-border:    #5F8F78;
             --radius-sm: 4px;
             --radius-md: 10px;
             --radius-lg: 18px;
@@ -54,12 +54,12 @@
             font-weight: 500;
             letter-spacing: .12em;
             text-transform: uppercase;
-            color: var(--fc-green-400);
+            color: var(--fc-gold-light);
             margin-bottom: 14px;
         }
-        .fc-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--fc-green-400); }
-        .fc-eyebrow.on-light { color: var(--fc-green-700); }
-        .fc-eyebrow.on-light::before { background: var(--fc-green-700); }
+        .fc-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--fc-gold-light); }
+        .fc-eyebrow.on-light { color: var(--fc-gold-light); }
+        .fc-eyebrow.on-light::before { background: var(--fc-gold-light); }
 
         /* -- BUTTONS (pill, matches welcome.blade) -------- */
         .fc-btn {
@@ -76,10 +76,10 @@
         }
         .fc-btn-gold { background: var(--fc-gold); color: var(--fc-ink); box-shadow: var(--shadow-gold); }
         .fc-btn-gold:hover { background: var(--fc-gold-dark); color: var(--fc-ink); transform: translateY(-1px); }
-        .fc-btn-outline-light { border-color: var(--fc-sand-dark); color: var(--fc-ink); }
-        .fc-btn-outline-light:hover { background: var(--fc-green-50); border-color: var(--fc-green-700); color: var(--fc-ink); }
-        .fc-btn-outline { border-color: var(--fc-sand-dark); color: var(--fc-ink-mid); background: transparent; }
-        .fc-btn-outline:hover { background: var(--fc-green-50); border-color: var(--fc-green-700); color: var(--fc-ink); }
+        .fc-btn-outline-light { border-color: #fff; color: #fff; }
+        .fc-btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--fc-ink); }
+        .fc-btn-outline { border-color: var(--fc-green-700); color: var(--fc-green-700); background: transparent; }
+        .fc-btn-outline:hover { background: var(--fc-green-700); border-color: var(--fc-green-700); color: #fff; }
 
         /* -- HERO ------------------------------------------ */
         .farmer-hero {
@@ -88,9 +88,9 @@
             border-radius: var(--radius-xl);
             padding: 2rem 2.25rem;
             margin-bottom: 1.5rem;
-            color: var(--fc-ink);
-            background: linear-gradient(145deg, var(--fc-green-50) 0%, var(--fc-green-100) 100%);
-            border: 1px solid var(--fc-border);
+            color: #fff;
+            background: linear-gradient(145deg, var(--fc-green-950) 0%, var(--fc-green-900) 100%);
+            border: 1px solid rgba(255,255,255,.12);
             box-shadow: var(--shadow-lg);
         }
         .farmer-hero::before {
@@ -104,13 +104,13 @@
             position: absolute;
             top: -30%; right: -8%;
             width: 60%; height: 140%;
-            background: radial-gradient(ellipse at center, rgba(82,183,136,.14) 0%, transparent 65%);
+            background: radial-gradient(ellipse at center, rgba(95,143,120,.14) 0%, transparent 65%);
             pointer-events: none;
         }
         .farmer-hero-leaf {
             position: absolute; right: 0; bottom: 0;
             width: 150px; height: 130px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M65 2C30 20 12 55 18 92c4 14 12 23 22 28-6-28 0-58 16-84C68 20 68 10 65 2Z' fill='%2352B788' fill-opacity='.16'/%3E%3Cpath d='M60 12C38 38 26 68 32 100' stroke='%2374C69D' stroke-opacity='.4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M65 2C30 20 12 55 18 92c4 14 12 23 22 28-6-28 0-58 16-84C68 20 68 10 65 2Z' fill='%235F8F78' fill-opacity='.16'/%3E%3Cpath d='M60 12C38 38 26 68 32 100' stroke='%237FD6B5' stroke-opacity='.4' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-size: contain;
             background-position: bottom right;
@@ -118,18 +118,18 @@
             z-index: 0;
         }
         .farmer-hero > *:not(.farmer-hero-leaf) { position: relative; z-index: 1; }
-        .farmer-hero h1 { color: var(--fc-ink); font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
-        .farmer-hero h1 em { font-style: italic; color: var(--fc-green-700); }
-        .farmer-hero p { color: var(--fc-ink-mid); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
+        .farmer-hero h1 { color: #fff; font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
+        .farmer-hero h1 em { font-style: italic; color: var(--fc-gold); }
+        .farmer-hero p { color: rgba(255,255,255,.72); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
         .field-chip {
             display: inline-flex;
             align-items: center;
             gap: .5rem;
-            border: 1px solid var(--fc-border);
+            border: 1px solid rgba(255,255,255,.18);
             border-radius: var(--radius-pill);
             padding: .5rem .85rem;
-            background: rgba(255,255,255,.6);
-            color: var(--fc-ink-mid);
+            background: rgba(255,255,255,.1);
+            color: rgba(255,255,255,.85);
             font-family: 'DM Mono', monospace;
             font-size: .76rem;
             font-weight: 500;
@@ -138,8 +138,8 @@
         .field-pulse {
             width: 8px; height: 8px;
             border-radius: 999px;
-            background: var(--fc-green-400);
-            box-shadow: 0 0 0 5px rgba(116,198,157,.2);
+            background: var(--fc-gold);
+            box-shadow: 0 0 0 5px rgba(232,167,61,.25);
             flex-shrink: 0;
         }
 
@@ -153,11 +153,11 @@
         }
         .dashboard-section-label:first-of-type { margin-top: 0; }
         .section-title {
-            color: var(--fc-ink);
+            color: var(--fc-gold-light);
             font-size: clamp(1.2rem, 2vw, 1.5rem);
             margin: 0;
         }
-        .section-note { color: var(--fc-ink-light); font-size: .85rem; margin: .2rem 0 0; }
+        .section-note { color: rgba(255,255,255,.65); font-size: .85rem; margin: .2rem 0 0; }
         .fc-section-link {
             display: inline-flex; align-items: center; gap: 6px;
             font-family: 'DM Mono', monospace;
@@ -165,10 +165,10 @@
             font-weight: 600;
             letter-spacing: .05em;
             text-transform: uppercase;
-            color: var(--fc-green-700);
+            color: var(--fc-gold);
             white-space: nowrap;
         }
-        .fc-section-link:hover { color: var(--fc-green-500); }
+        .fc-section-link:hover { color: var(--fc-gold-light); }
 
         /* -- STAT / FIELD CARDS ------------------------------ */
         .climate-grid {
@@ -190,6 +190,7 @@
             text-align: left;
             font: inherit;
             cursor: pointer;
+            box-shadow: var(--shadow-sm);
         }
         .field-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-500); }
         .field-card:focus-visible { outline: 2px solid var(--fc-green-400); outline-offset: 2px; }
@@ -206,29 +207,26 @@
         }
         .field-card:hover .field-tap-hint, .field-card:focus-visible .field-tap-hint { opacity: 1; transform: translateY(0); }
 
-        /* -- STAT DETAIL PANELS ------------------------------- */
+        /* -- STAT DETAIL MODALS ------------------------------- */
         .fc-stat-modal {
-            --fc-green-950: #0D1F18;
-            --fc-green-900: #122B20;
-            --fc-green-800: #1A3A2A;
-            --fc-green-700: #2D6A4F;
-            --fc-green-400: #74C69D;
+            --fc-green-950: #163B2D;
+            --fc-green-900: #1F4D3A;
+            --fc-green-800: #1F4D3A;
+            --fc-green-700: #1F4D3A;
+            --fc-green-400: #7FD6B5;
             --fc-gold: #E8A73D;
             --fc-gold-dark: #C6872A;
-            --fc-ink: #1F2A24;
+            --fc-ink: #1F2937;
             --radius-lg: 18px;
             --radius-pill: 100px;
             --shadow-gold: 0 10px 28px rgba(232,167,61,.32);
             --ease: cubic-bezier(.4,0,.2,1);
         }
-        .fc-stat-panel { margin-top: 1rem; }
-        .fc-stat-panel[hidden] { display: none; }
+        .fc-stat-modal.ic-drawer .ic-drawer-panel { width: min(560px, 100vw); }
         .fc-modal-content { background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--fc-ink-mid); border: 1px solid var(--fc-sand-dark); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(13,31,24,.18); overflow: hidden; }
-        .fc-modal-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; background: linear-gradient(90deg, var(--fc-green-50), var(--fc-green-100)); border-bottom: 1px solid var(--fc-border); color: var(--fc-ink); padding: .85rem 1rem; }
-        .fc-modal-header .modal-title { color: var(--fc-ink); font-family: 'DM Serif Display', serif; margin: 0; }
-        .fc-panel-close { border: 0; background: rgba(13,31,24,.06); color: var(--fc-ink); width: 30px; height: 30px; border-radius: 999px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
-        .fc-panel-close:hover { background: rgba(13,31,24,.12); }
-        .fc-modal-body { max-height: 330px; overflow-y: auto; background: #ffffff; padding: 1rem; }
+        .fc-modal-header { background: linear-gradient(90deg, var(--fc-green-50), var(--fc-green-100)); border-bottom: 1px solid var(--fc-border); color: var(--fc-ink); }
+        .fc-modal-header .modal-title { color: var(--fc-ink); font-family: 'DM Serif Display', serif; }
+        .fc-modal-body { overflow-y: auto; background: #ffffff; padding: 1rem; }
         .fc-modal-footer { border-top: 1px solid var(--fc-border); background: var(--fc-green-50); padding: .8rem 1rem; }
         .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: var(--fc-ink); }
         .fc-modal-sub { color: var(--fc-ink-light); font-size: .8rem; margin: .25rem 0 .75rem; }
@@ -242,8 +240,8 @@
             width: 40px; height: 40px;
             border-radius: 50%;
             display: grid; place-items: center;
-            background: rgba(82,183,136,.14);
-            border: 1px solid rgba(116,198,157,.35);
+            background: rgba(95,143,120,.14);
+            border: 1px solid rgba(127,214,181,.35);
             color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-size: .65rem;
@@ -399,8 +397,8 @@
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: rgba(82,183,136,.14);
-            border: 1px solid rgba(149,213,178,.3);
+            background: rgba(95,143,120,.14);
+            border: 1px solid rgba(127,214,181,.3);
             color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-weight: 700;
@@ -420,7 +418,7 @@
             font-weight: 600;
             letter-spacing: .03em;
             text-transform: uppercase;
-            background: rgba(82,183,136,.14);
+            background: rgba(95,143,120,.14);
             color: var(--fc-green-700);
         }
         .status-pill.muted { background: var(--fc-green-50); color: var(--fc-ink-light); }
@@ -517,18 +515,56 @@
             .weather-mini-grid { grid-template-columns: 1fr; }
             .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero { padding: 1.5rem; }
-            .fc-modal-body { max-height: 300px; }
             .fc-modal-table.table { min-width: 560px; }
             .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
         }
     </style>
 
     @php
-        $unreadNotifications = $unreadNotificationCount ?? \App\Models\Notification::query()->where('user_id', auth()->id())->where('is_read', false)->count();
+        $unreadNotifications = $unreadNotificationCount ?? $notifications->where('is_read', false)->count();
         $latestAdvisory = $advisories->first();
         $profile = auth()->user()->farmerProfile;
         $weatherTimezone = config('services.weather.timezone', 'Asia/Manila');
         $weatherNow = now($weatherTimezone);
+        $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
+        $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
+        $weatherFreshness = $latestForecast
+            ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
+            : 'Stored Record';
+        $weatherFetchedAt = $latestForecast?->fetched_at?->timezone($weatherTimezone)->shortDateTime('M d, Y');
+        $weatherDate = $latestForecast?->forecast_date?->format('M d, Y') ?? $climateSummary?->record_date?->format('M d, Y');
+        $forecastHour = $weatherNow->hour;
+        $forecastHourLabel = $weatherNow->format('g A');
+        $currentWeather = $latestForecast?->raw_response['current'] ?? [];
+        $currentWeatherTime = data_get($currentWeather, 'time');
+        $currentWeatherTimeLabel = $currentWeatherTime
+            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->shortTime()
+            : $weatherNow->shortTime();
+        $currentWeatherDate = $currentWeatherTime
+            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('M d, Y')
+            : $weatherNow->format('M d, Y');
+        $hourlyWeather = $latestForecast?->raw_response['hourly'] ?? [];
+        $hourlyTemperature = $hourlyWeather['temperature_2m'][$forecastHour] ?? null;
+        $hourlyHumidity = $hourlyWeather['relative_humidity_2m'][$forecastHour] ?? null;
+        $hourlyRainfall = $hourlyWeather['rain'][$forecastHour] ?? $hourlyWeather['precipitation'][$forecastHour] ?? null;
+        $weatherSourceLine = $latestForecast
+            ? $weatherSource.' forecast'.($weatherFetchedAt ? ' - Updated '.$weatherFetchedAt : '')
+            : 'Recorded: '.$weatherSource;
+        $weatherTimingLabel = $currentWeather !== []
+            ? 'Current weather reading - '.$currentWeatherTimeLabel
+            : ($latestForecast ? 'Hourly forecast - '.$forecastHourLabel : 'Stored Record');
+        $weatherDisplayDate = $currentWeather !== []
+            ? $currentWeatherDate
+            : $weatherDate;
+        $weatherUpdateLine = $weatherFetchedAt
+            ? 'Updated '.$weatherFetchedAt
+            : $weatherDataMode;
+        $temperatureValue = data_get($currentWeather, 'temperature_2m') ?? $hourlyTemperature ?? $latestForecast?->temperature ?? $climateSummary?->temperature;
+        $rainfallValue = data_get($currentWeather, 'rain') ?? data_get($currentWeather, 'precipitation') ?? $hourlyRainfall ?? $latestForecast?->rainfall_mm ?? $climateSummary?->rainfall;
+        $humidityValue = data_get($currentWeather, 'relative_humidity_2m') ?? $hourlyHumidity ?? $latestForecast?->humidity ?? $climateSummary?->humidity;
+        $weatherNoteLabel = $currentWeather !== []
+            ? 'Current Open-Meteo weather for Lian'
+            : ($latestForecast ? 'Latest Open-Meteo forecast for Lian' : 'Latest recorded field climate data');
         $weatherPayload = $dashboardWeather ?? [];
         $currentWeather = $weatherPayload['current'] ?? [];
         $todayWeather = $weatherPayload['today'] ?? [];
@@ -604,7 +640,7 @@
         </div>
 
         <section class="climate-grid">
-            <button type="button" class="field-card" data-toggle-detail="statPanelTemperature" aria-expanded="false">
+            <button type="button" class="field-card" data-drawer-open="#statModalTemperature">
                 <div class="field-icon">TMP</div>
                 <div class="field-label">Temperature</div>
                 <div class="field-value" data-weather-temperature-card>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
@@ -615,7 +651,7 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-toggle-detail="statPanelRainfall" aria-expanded="false">
+            <button type="button" class="field-card" data-drawer-open="#statModalRainfall">
                 <div class="field-icon">RAIN</div>
                 <div class="field-label">Today&apos;s Rainfall</div>
                 <div class="field-value" data-weather-rain-card>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</div>
@@ -626,7 +662,7 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-toggle-detail="statPanelHumidity" aria-expanded="false">
+            <button type="button" class="field-card" data-drawer-open="#statModalHumidity">
                 <div class="field-icon">HUM</div>
                 <div class="field-label">Humidity</div>
                 <div class="field-value" data-weather-humidity-card>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</div>
@@ -637,7 +673,7 @@
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-toggle-detail="statPanelAlerts" aria-expanded="false">
+            <button type="button" class="field-card" data-drawer-open="#statModalAlerts">
                 <div class="field-icon">ALT</div>
                 <div class="field-label">Weather Alerts</div>
                 <div class="field-value">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
@@ -645,7 +681,7 @@
                 <div class="field-source">Source: ICLIMATE ALERTS</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-toggle-detail="statPanelRisk" aria-expanded="false">
+            <button type="button" class="field-card" data-drawer-open="#statModalRisk">
                 <div class="field-icon">RSK</div>
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
@@ -673,6 +709,22 @@
             $fcModalTrend = fn () => $recentClimateRecords->reverse()->values();
         @endphp
 
+        <div class="ic-drawer fc-stat-modal" id="statModalTemperature" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalTemperatureLabel">
+                <div class="modal-content fc-modal-content">
+                    <div class="modal-header fc-modal-header">
+                        <h2 class="modal-title h5" id="statModalTemperatureLabel">Temperature Detail</h2>
+                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fc-modal-body">
+                        <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
+                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
+                    </div>
+                    <div class="modal-footer fc-modal-footer">
+                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    </div>
         <div class="fc-stat-panel" id="statPanelTemperature" hidden>
             <div class="fc-modal-content">
                 <div class="fc-modal-header">
@@ -691,6 +743,22 @@
             </div>
         </div>
 
+        <div class="ic-drawer fc-stat-modal" id="statModalRainfall" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalRainfallLabel">
+                <div class="modal-content fc-modal-content">
+                    <div class="modal-header fc-modal-header">
+                        <h2 class="modal-title h5" id="statModalRainfallLabel">Rainfall Detail</h2>
+                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fc-modal-body">
+                        <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
+                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
+                    </div>
+                    <div class="modal-footer fc-modal-footer">
+                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    </div>
         <div class="fc-stat-panel" id="statPanelRainfall" hidden>
             <div class="fc-modal-content">
                 <div class="fc-modal-header">
@@ -709,6 +777,22 @@
             </div>
         </div>
 
+        <div class="ic-drawer fc-stat-modal" id="statModalHumidity" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalHumidityLabel">
+                <div class="modal-content fc-modal-content">
+                    <div class="modal-header fc-modal-header">
+                        <h2 class="modal-title h5" id="statModalHumidityLabel">Humidity Detail</h2>
+                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fc-modal-body">
+                        <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
+                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                        <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
+                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
+                    </div>
+                    <div class="modal-footer fc-modal-footer">
+                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    </div>
         <div class="fc-stat-panel" id="statPanelHumidity" hidden>
             <div class="fc-modal-content">
                 <div class="fc-modal-header">
@@ -727,6 +811,32 @@
             </div>
         </div>
 
+        <div class="ic-drawer fc-stat-modal" id="statModalAlerts" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalAlertsLabel">
+                <div class="modal-content fc-modal-content">
+                    <div class="modal-header fc-modal-header">
+                        <h2 class="modal-title h5" id="statModalAlertsLabel">Weather Alerts</h2>
+                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fc-modal-body">
+                        <div class="fc-modal-headline">{{ number_format($unreadNotifications) }} unread</div>
+                        <p class="fc-modal-sub">Most recent notifications sent to your account.</p>
+                        @forelse($notifications as $notification)
+                            <div class="farmer-list-item">
+                                <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
+                                <div>
+                                    <div class="list-title">{{ $notification->title }}</div>
+                                    <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
+                                    <div class="list-meta">{{ $notification->type }} &middot; {{ $notification->created_at?->shortDateTime('M d, Y') }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No alerts yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Notifications will appear here when sent.</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer fc-modal-footer">
+                        <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
+                    </div>
         <div class="fc-stat-panel" id="statPanelAlerts" hidden>
             <div class="fc-modal-content">
                 <div class="fc-modal-header">
@@ -755,30 +865,32 @@
             </div>
         </div>
 
-        <div class="fc-stat-panel" id="statPanelRisk" hidden>
-            <div class="fc-modal-content">
-                <div class="fc-modal-header">
-                    <h2 class="modal-title h5">High Risk Barangays</h2>
-                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="fc-modal-body">
-                    <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
-                    <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
-                    @forelse($highRiskAreasList as $area)
-                        <div class="farmer-list-item">
-                            <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
-                            <div>
-                                <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
-                                <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                <div class="list-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+        <div class="ic-drawer fc-stat-modal" id="statModalRisk" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalRiskLabel">
+                <div class="modal-content fc-modal-content">
+                    <div class="modal-header fc-modal-header">
+                        <h2 class="modal-title h5" id="statModalRiskLabel">High Risk Barangays</h2>
+                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body fc-modal-body">
+                        <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
+                        <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
+                        @forelse($highRiskAreasList as $area)
+                            <div class="farmer-list-item">
+                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div>
+                                    <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="list-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>No high risk barangays</strong><div class="small mt-1" style="color: var(--fc-ink-light);">All barangays are currently within normal risk levels.</div></div>
-                    @endforelse
-                </div>
-                <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                        @empty
+                            <div class="empty-soft"><strong>No high risk barangays</strong><div class="small mt-1" style="color: var(--fc-ink-light);">All barangays are currently within normal risk levels.</div></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer fc-modal-footer">
+                        <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1014,29 +1126,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const dateTarget = document.querySelector('[data-current-date]');
-            document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
-                card.addEventListener('click', () => {
-                    const panel = document.getElementById(card.dataset.toggleDetail);
-                    if (!panel) return;
-                    const isOpen = !panel.hidden;
-
-                    document.querySelectorAll('.fc-stat-panel').forEach((other) => { other.hidden = true; });
-                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
-
-                    if (!isOpen) {
-                        panel.hidden = false;
-                        card.setAttribute('aria-expanded', 'true');
-                        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                });
-            });
-            document.querySelectorAll('.fc-panel-close').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const panel = btn.closest('.fc-stat-panel');
-                    if (panel) panel.hidden = true;
-                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
-                });
-            });
 
             const MANILA_TIME_ZONE = @json($weatherTimezone);
             const WEATHER_POLL_INTERVAL = 60000;
@@ -1085,6 +1174,10 @@
                     dateTarget.textContent = `${dashboardDateFormatter.format(now)} ${dashboardTimeFormatter.format(now)}`;
                 }
 
+            const weatherRefreshMs = @json(max(1, (int) config('services.open_meteo.refresh_minutes', 10)) * 60 * 1000);
+            setInterval(() => {
+                if (document.visibilityState !== 'visible') return;
+                if (document.querySelector('.modal.show, .ic-drawer.show')) return;
                 const currentManilaDate = getManilaDateKey();
                 if (refreshOnDateChange && currentManilaDate !== previousManilaDate) {
                     previousManilaDate = currentManilaDate;

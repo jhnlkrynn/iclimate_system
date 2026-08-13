@@ -1,14 +1,19 @@
 <x-app-layout>
     <style>
         .mao-console {
-            --mao-ink: #0d1f18;
-            --mao-muted: #5f7569;
-            --mao-green: #2d6a4f;
-            --mao-green-bright: #52b788;
+            --mao-ink: #1F2937;
+            --mao-muted: #64748B;
+            --mao-green: #1F4D3A;
             --mao-blue: #1677b8;
-            --mao-gold: #f4b63f;
+            --mao-gold: #E8A73D;
+            --mao-gold-dark: #C6872A;
             --mao-red: #d85b45;
-            --mao-line: rgba(153, 185, 160, .72);
+            --mao-mint: #7FD6B5;
+            --mao-soft-gold: #F6D58A;
+            --mao-line: #5F8F78;
+            --mao-green-50: rgba(95,143,120,.1);
+            --mao-green-100: rgba(127,214,181,.22);
+            color: var(--mao-ink);
         }
         .mao-hero {
             position: relative;
@@ -16,20 +21,20 @@
             border-radius: 32px;
             padding: 1.35rem;
             margin-bottom: 1.25rem;
-            color: #1f2a24;
+            color: #fff;
             background:
-                radial-gradient(circle at 84% 12%, rgba(82,183,136,.14), transparent 30%),
-                linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 100%);
-            border: 1px solid #e3ece6;
-            box-shadow: 0 1rem 2.3rem rgba(31,42,36,.08);
+                radial-gradient(circle at 84% 12%, rgba(127,214,181,.14), transparent 30%),
+                linear-gradient(145deg, #163B2D 0%, #1F4D3A 100%);
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 1rem 2.3rem rgba(13,31,24,.28);
         }
         .mao-hero::before {
             content: "";
             position: absolute;
             inset: 0;
             background:
-                linear-gradient(90deg, rgba(31,42,36,.06) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(31,42,36,.045) 1px, transparent 1px);
+                linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px);
             background-size: 38px 38px;
             mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 88%);
         }
@@ -39,33 +44,33 @@
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: .12em;
-            color: #2d6a4f;
+            color: var(--mao-soft-gold);
         }
-        .mao-hero h1 { color: #1f2a24; }
-        .mao-hero em { color: #2d6a4f; font-style: italic; }
-        .mao-hero p { color: #4a5c52; max-width: 760px; }
+        .mao-hero h1 { color: #fff; }
+        .mao-hero em { color: var(--mao-gold); font-style: italic; }
+        .mao-hero p { color: rgba(255,255,255,.72); max-width: 760px; }
         .mao-chip {
             display: inline-flex;
             align-items: center;
             gap: .5rem;
-            border: 1px solid #e3ece6;
+            border: 1px solid rgba(255,255,255,.18);
             border-radius: 999px;
             padding: .45rem .75rem;
-            background: rgba(31,42,36,.04);
-            color: #1f2a24;
+            background: rgba(255,255,255,.1);
+            color: rgba(255,255,255,.85);
             font-size: .82rem;
             font-weight: 800;
         }
-        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-green-bright); box-shadow: 0 0 0 6px rgba(82,183,136,.16); }
-        .mao-hero .btn-outline-light { border-color: #e3ece6; color: #1f2a24; }
-        .mao-hero .btn-outline-light:hover { background: rgba(45,106,79,.08); border-color: #52b788; color: #1f2a24; }
+        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-gold); box-shadow: 0 0 0 6px rgba(232,167,61,.25); }
+        .mao-hero .btn-outline-light { border-color: #fff; color: #fff; }
+        .mao-hero .btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--mao-ink); }
         .mao-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
         .mao-card {
             position: relative;
             overflow: hidden;
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(229,242,226,.97));
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
             width: 100%;
@@ -73,18 +78,14 @@
             font: inherit;
             cursor: pointer;
         }
-        .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(31,143,85,.42); }
-        .mao-card:focus-visible { outline: 2px solid var(--mao-green-bright); outline-offset: 2px; }
-        .mao-tap-hint { color: var(--mao-green-bright); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
+        .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(95,143,120,.55); }
+        .mao-card:focus-visible { outline: 2px solid var(--mao-mint); outline-offset: 2px; }
+        .mao-tap-hint { color: var(--mao-green); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
         .mao-card:hover .mao-tap-hint, .mao-card:focus-visible .mao-tap-hint { opacity: 1; transform: translateY(0); }
-        .mao-stat-panel { margin-bottom: 1.25rem; }
-        .mao-stat-panel[hidden] { display: none; }
-        .mao-modal-content { border-radius: 18px; background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(229,242,226,.97)); color: var(--mao-muted); overflow: hidden; }
-        .mao-modal-content .modal-footer { border-top-color: rgba(153,185,160,.4); }
-        .mao-modal-header { background: linear-gradient(90deg, #e2f1df, #d8f3dc); color: var(--mao-ink); }
+        .mao-modal-content { border-radius: 18px; background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--mao-muted); overflow: hidden; }
+        .mao-modal-content .modal-footer { border-top-color: rgba(95,143,120,.4); }
+        .mao-modal-header { background: linear-gradient(90deg, var(--mao-green-50), var(--mao-green-100)); color: var(--mao-ink); }
         .mao-modal-header .modal-title { color: var(--mao-ink); }
-        .mao-panel-close { border: 0; background: rgba(13,31,24,.06); color: var(--mao-ink); width: 30px; height: 30px; border-radius: 999px; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
-        .mao-panel-close:hover { background: rgba(13,31,24,.12); }
         .mao-modal-headline { font-size: 1.6rem; font-weight: 900; color: var(--mao-ink); }
         .mao-modal-sub { color: var(--mao-muted); font-size: .85rem; margin: .3rem 0 .9rem; }
         .mao-card-body { padding: 1rem; position: relative; z-index: 1; }
@@ -94,43 +95,44 @@
         .mao-panel {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(232,244,230,.97));
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             overflow: hidden;
         }
-        .mao-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .75rem; border-bottom: 1px solid rgba(153,185,160,.58); background: rgba(226,241,219,.58); }
+        .mao-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .75rem; border-bottom: 1px solid rgba(95,143,120,.58); background: var(--mao-green-50); }
         .mao-panel-title { font-size: 1rem; font-weight: 900; margin: 0; color: var(--mao-ink); }
         .mao-panel-sub { margin: .15rem 0 0; color: var(--mao-muted); font-size: .82rem; }
         .mao-panel-body { padding: 1rem; }
         .mao-list-item { display: flex; gap: .85rem; align-items: flex-start; padding: .85rem 0; }
-        .mao-list-item + .mao-list-item { border-top: 1px solid rgba(153,185,160,.55); }
-        .list-mark { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: #e2f1df; color: var(--mao-green); font-weight: 900; font-size: .76rem; flex: 0 0 auto; }
+        .mao-list-item + .mao-list-item { border-top: 1px solid rgba(95,143,120,.55); }
+        .list-mark { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: rgba(95,143,120,.14); color: var(--mao-green); font-weight: 900; font-size: .76rem; flex: 0 0 auto; }
         .row-title { font-weight: 900; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
-        .row-meta { color: #7a8f82; font-size: .76rem; margin-top: .35rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .32rem .58rem; font-size: .72rem; font-weight: 900; background: #d8f3dc; color: #1f6f4a; }
-        .status-pill.muted { background: #e8eef6; color: #516579; }
+        .row-meta { color: var(--mao-muted); font-size: .76rem; margin-top: .35rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .32rem .58rem; font-size: .72rem; font-weight: 900; background: rgba(95,143,120,.14); color: var(--mao-green); }
+        .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
-        .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(153,185,160,.72); background: linear-gradient(135deg, #edf7e7, #dfeee8); color: inherit; text-decoration: none; }
-        .quick-action:hover { transform: translateY(-2px); border-color: rgba(31,143,85,.55); }
+        .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); color: inherit; text-decoration: none; }
+        .quick-action:hover { transform: translateY(-2px); border-color: rgba(95,143,120,.55); }
         .quick-action strong { display: block; color: var(--mao-ink); }
         .quick-action span { display: block; color: var(--mao-muted); font-size: .82rem; margin-top: .25rem; }
         .heat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(153,185,160,.72); background: linear-gradient(135deg, #edf7e7, #e3f1e7); }
+        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); }
+        .risk-card strong { color: var(--mao-ink); }
         .risk-card.severe, .risk-card.high { border-color: rgba(216,91,69,.45); background: linear-gradient(135deg, #fff3ee, #f5e7db); }
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
-        .live-weather-card { border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; padding: .9rem; }
+        .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
         .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 900; }
-        .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; }
+        .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; }
         .chart-box canvas { width: 100% !important; height: 220px !important; }
         .chart-title { color: var(--mao-ink); font-weight: 900; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
-        .layer-btn { min-height: 38px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .48rem .64rem; font-size: .78rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
-        .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
+        .layer-btn { min-height: 38px; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.94); color: var(--mao-ink); padding: .48rem .64rem; font-size: .78rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
+        .layer-btn.active { background: #1F4D3A; border-color: #1F4D3A; color: #fff; }
         .dashboard-map {
             height: 540px;
             min-height: 380px;
@@ -146,18 +148,18 @@
         .thermo-point { width: 12px; height: 12px; border-radius: 999px; border: 2px solid rgba(13,31,24,.78); background: rgba(255,255,255,.86); box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24); }
         .leaflet-popup-content { width: min(320px, calc(100vw - 4.5rem)) !important; min-width: 0; margin: .85rem; }
         .leaflet-popup-content-wrapper { border-radius: 8px; }
-        .map-popup { color: #1b2b23; font-size: .86rem; line-height: 1.35; }
-        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
-        .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
-        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .7rem; font-weight: 900; }
-        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #52b788); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
+        .map-popup { color: var(--mao-ink); font-size: .86rem; line-height: 1.35; }
+        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid rgba(95,143,120,.3); padding-bottom: .58rem; margin-bottom: .62rem; }
+        .map-popup-name { color: var(--mao-ink); font-size: 1rem; font-weight: 900; line-height: 1.18; }
+        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, rgba(95,143,120,.14)); color: var(--popup-color, #1F4D3A); font-size: .7rem; font-weight: 900; }
+        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #5F8F78); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
-        .map-popup-box { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .52rem .58rem; }
-        .map-popup-label { color: #5a7a64; font-size: .66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-        .map-popup-value { color: #0d1f18; font-weight: 900; margin-top: .16rem; }
-        .map-popup-note { color: #5a7a64; font-size: .78rem; margin-top: .18rem; }
-        .map-popup-advice { border: 1px solid #d4edda; border-radius: 8px; background: #f0f7f4; padding: .58rem .65rem; margin-top: .55rem; }
-        .map-popup-source { color: #5a7a64; font-size: .74rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; }
+        .map-popup-box { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; padding: .52rem .58rem; }
+        .map-popup-label { color: var(--mao-muted); font-size: .66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+        .map-popup-value { color: var(--mao-ink); font-weight: 900; margin-top: .16rem; }
+        .map-popup-note { color: var(--mao-muted); font-size: .78rem; margin-top: .18rem; }
+        .map-popup-advice { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: rgba(95,143,120,.1); padding: .58rem .65rem; margin-top: .55rem; }
+        .map-popup-source { color: var(--mao-muted); font-size: .74rem; margin-top: .55rem; border-top: 1px solid rgba(95,143,120,.3); padding-top: .5rem; }
         .map-detail-panel {
             position: absolute;
             top: 1rem;
@@ -166,7 +168,7 @@
             width: min(292px, calc(100% - 2rem));
             max-height: calc(100% - 2rem);
             overflow: auto;
-            border: 1px solid #d4edda;
+            border: 1px solid rgba(95,143,120,.3);
             border-radius: 8px;
             background: rgba(255,255,255,.96);
             box-shadow: 0 .9rem 2rem rgba(13,31,24,.18);
@@ -174,27 +176,28 @@
             display: none;
         }
         .map-detail-panel.show { display: block; }
-        .map-detail-empty { color: #5a7a64; font-size: .86rem; line-height: 1.45; }
-        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid #d4edda; border-radius: 8px; background: #fff; color: #0d1f18; font-weight: 900; line-height: 1; }
+        .map-detail-empty { color: var(--mao-muted); font-size: .86rem; line-height: 1.45; }
+        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; color: var(--mao-ink); font-weight: 900; line-height: 1; }
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
         .risk-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
-        .risk-level-card { border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; padding: .9rem; }
-        .risk-level-card.low { border-left: 5px solid #52b788; }
+        .risk-level-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
+        .risk-level-card.low { border-left: 5px solid #5F8F78; }
         .risk-level-card.moderate { border-left: 5px solid #ffd166; }
         .risk-level-card.high, .risk-level-card.severe { border-left: 5px solid #d85b45; }
         .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 900; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
-        .empty-soft { border: 1px dashed #aac7b0; background: linear-gradient(135deg, #edf7e7, #e2f1df); border-radius: 8px; padding: 1.5rem; text-align: center; }
+        .empty-soft { border: 1px dashed #5F8F78; background: var(--mao-green-50); border-radius: 8px; padding: 1.5rem; text-align: center; }
+        .empty-soft strong { color: var(--mao-ink); }
         .dashboard-section-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .75rem; }
         .dashboard-section-label:first-of-type { margin-top: 0; }
-        .section-title { color: var(--mao-ink); font-size: .92rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
-        .section-note { color: var(--mao-muted); font-size: .84rem; margin: 0; }
+        .section-title { color: var(--mao-soft-gold); font-size: .92rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+        .section-note { color: var(--mao-mint); font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: rgba(255,255,255,.58);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
             overflow: hidden;
         }
@@ -206,7 +209,7 @@
             padding: .95rem 1rem;
             cursor: pointer;
             list-style: none;
-            background: linear-gradient(135deg, rgba(244,250,239,.95), rgba(232,244,230,.82));
+            background: var(--mao-green-50);
         }
         .dashboard-group > summary::-webkit-details-marker { display: none; }
         .dashboard-group-title { color: var(--mao-ink); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
@@ -219,6 +222,7 @@
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+
     </style>
 
     @php
@@ -250,120 +254,128 @@
         </div>
 
         <section class="mao-stat-grid">
-            <button type="button" class="mao-card text-decoration-none" data-toggle-detail="maoPanelFarmers" aria-expanded="false"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-toggle-detail="maoPanelClimate" aria-expanded="false"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-toggle-detail="maoPanelRice" aria-expanded="false"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-toggle-detail="maoPanelRisk" aria-expanded="false"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
         </section>
 
-        <div class="mao-stat-panel" id="maoPanelFarmers" hidden>
-            <div class="mao-modal-content">
-                <div class="mao-modal-header d-flex align-items-center justify-content-between gap-2 p-3">
-                    <h2 class="h5 fw-bold mb-0">Farmer Profiles</h2>
-                    <button type="button" class="mao-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="p-3">
-                    <div class="mao-modal-headline">{{ number_format($profileCount) }} registered</div>
-                    <p class="mao-modal-sub">Most recently registered farmer profiles.</p>
-                    @forelse($recentFarmerProfiles as $profile)
-                        <div class="mao-list-item">
-                            <div class="list-mark">FAR</div>
-                            <div class="flex-grow-1">
-                                <div class="row-title">{{ $profile->full_name }}</div>
-                                <div class="row-text">{{ $profile->barangay }} &middot; {{ number_format($profile->farm_area, 2) }} ha &middot; {{ $profile->farm_type }}</div>
-                                <div class="row-meta">{{ $profile->contact_number }}</div>
+        <div class="ic-drawer" id="maoStatFarmers" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatFarmersLabel">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatFarmersLabel">Farmer Profiles</h2>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($profileCount) }} registered</div>
+                        <p class="mao-modal-sub">Most recently registered farmer profiles.</p>
+                        @forelse($recentFarmerProfiles as $profile)
+                            <div class="mao-list-item">
+                                <div class="list-mark">FAR</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $profile->full_name }}</div>
+                                    <div class="row-text">{{ $profile->barangay }} &middot; {{ number_format($profile->farm_area, 2) }} ha &middot; {{ $profile->farm_type }}</div>
+                                    <div class="row-meta">{{ $profile->contact_number }}</div>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>No farmer profiles yet</strong></div>
-                    @endforelse
-                </div>
-                <div class="p-3 border-top" style="border-color: rgba(153,185,160,.4) !important;">
-                    <a class="btn btn-primary fw-bold" href="{{ route('farmer-profiles.index') }}">Open Farmer Profiles</a>
+                        @empty
+                            <div class="empty-soft"><strong>No farmer profiles yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('farmer-profiles.index') }}">Open Farmer Profiles</a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mao-stat-panel" id="maoPanelClimate" hidden>
-            <div class="mao-modal-content">
-                <div class="mao-modal-header d-flex align-items-center justify-content-between gap-2 p-3">
-                    <h2 class="h5 fw-bold mb-0">Climate Records</h2>
-                    <button type="button" class="mao-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="p-3">
-                    <div class="mao-modal-headline">{{ number_format($totalClimateRecords) }} recorded</div>
-                    <p class="mao-modal-sub">Latest entry: {{ $latestClimate?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $latestClimate?->source ?? 'N/A' }}</p>
-                    @forelse($recentClimateRecords as $record)
-                        <div class="mao-list-item">
-                            <div class="list-mark">CLI</div>
-                            <div class="flex-grow-1">
-                                <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
-                                <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
-                                <div class="row-meta">Source: {{ $record->source }}</div>
+        <div class="ic-drawer" id="maoStatClimate" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatClimateLabel">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatClimateLabel">Climate Records</h2>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($totalClimateRecords) }} recorded</div>
+                        <p class="mao-modal-sub">Latest entry: {{ $latestClimate?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $latestClimate?->source ?? 'N/A' }}</p>
+                        @forelse($recentClimateRecords as $record)
+                            <div class="mao-list-item">
+                                <div class="list-mark">CLI</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
+                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
+                                    <div class="row-meta">Source: {{ $record->source }}</div>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>No climate records yet</strong></div>
-                    @endforelse
-                </div>
-                <div class="p-3 border-top" style="border-color: rgba(153,185,160,.4) !important;">
-                    <a class="btn btn-primary fw-bold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                        @empty
+                            <div class="empty-soft"><strong>No climate records yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mao-stat-panel" id="maoPanelRice" hidden>
-            <div class="mao-modal-content">
-                <div class="mao-modal-header d-flex align-items-center justify-content-between gap-2 p-3">
-                    <h2 class="h5 fw-bold mb-0">Rice Production</h2>
-                    <button type="button" class="mao-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="p-3">
-                    <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} total production</div>
-                    <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
-                    @forelse($recentRiceProductions as $production)
-                        <div class="mao-list-item">
-                            <div class="list-mark">RIC</div>
-                            <div class="flex-grow-1">
-                                <div class="row-title">{{ $production->barangay }} &middot; {{ $production->season }} {{ $production->year }}</div>
-                                <div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div>
-                                <div class="row-meta">{{ $production->irrigation_type }}</div>
+        <div class="ic-drawer" id="maoStatRice" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatRiceLabel">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatRiceLabel">Rice Production</h2>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} total production</div>
+                        <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
+                        @forelse($recentRiceProductions as $production)
+                            <div class="mao-list-item">
+                                <div class="list-mark">RIC</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $production->barangay }} &middot; {{ $production->season }} {{ $production->year }}</div>
+                                    <div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div>
+                                    <div class="row-meta">{{ $production->irrigation_type }}</div>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>No production records yet</strong></div>
-                    @endforelse
-                </div>
-                <div class="p-3 border-top" style="border-color: rgba(153,185,160,.4) !important;">
-                    <a class="btn btn-primary fw-bold" href="{{ route('rice-productions.index') }}">Open Rice Production</a>
+                        @empty
+                            <div class="empty-soft"><strong>No production records yet</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('rice-productions.index') }}">Open Rice Production</a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mao-stat-panel" id="maoPanelRisk" hidden>
-            <div class="mao-modal-content">
-                <div class="mao-modal-header d-flex align-items-center justify-content-between gap-2 p-3">
-                    <h2 class="h5 fw-bold mb-0">Heat Map Risks</h2>
-                    <button type="button" class="mao-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="p-3">
-                    <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
-                    <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
-                    @forelse($highRiskAreasList as $area)
-                        <div class="mao-list-item">
-                            <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
-                            <div class="flex-grow-1">
-                                <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
-                                <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                <div class="row-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+        <div class="ic-drawer" id="maoStatRisk" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatRiskLabel">
+                <div class="modal-content border-0 mao-modal-content">
+                    <div class="modal-header mao-modal-header">
+                        <h2 class="modal-title h5 fw-bold" id="maoStatRiskLabel">Heat Map Risks</h2>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
+                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
+                        @forelse($highRiskAreasList as $area)
+                            <div class="mao-list-item">
+                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="row-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>No high risk barangays</strong></div>
-                    @endforelse
-                </div>
-                <div class="p-3 border-top" style="border-color: rgba(153,185,160,.4) !important;">
-                    <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                        @empty
+                            <div class="empty-soft"><strong>No high risk barangays</strong></div>
+                        @endforelse
+                    </div>
+                    <div class="modal-footer">
+                        <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -420,19 +432,23 @@
                     <div class="col-xl-8">
                         <div class="chart-title">Municipal Heat Map</div>
                         <div class="chart-note">Barangay markers colored by climate and production risk. Start here before reviewing weather charts.</div>
-                        <div class="dashboard-map-shell">
-                            <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
-                                <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                        @if($dashboardMapAreas->count())
+                            <div class="dashboard-map-shell">
+                                <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
+                                    <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                                </div>
+                                <div id="dashboardRiskMap" class="dashboard-map"></div>
+                                <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
+                                    <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
+                                    <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
+                                </aside>
                             </div>
-                            <div id="dashboardRiskMap" class="dashboard-map"></div>
-                            <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
-                                <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                                <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
-                            </aside>
-                        </div>
+                        @else
+                            <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map layers and controls will appear here once barangay locations are recorded.</div></div>
+                        @endif
                     </div>
                     <div class="col-xl-4">
                         <div class="chart-title">Barangay Risk Levels</div>
@@ -719,6 +735,10 @@
                 });
             };
 
+            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
+            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
+            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
+            makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#E8A73D', '');
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
                 temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),
@@ -901,7 +921,7 @@
                     if (area.risk_level === 'Moderate') {
                         return '--popup-accent:#ffd166;--popup-bg:#fff4cf;--popup-color:#8a5a00;';
                     }
-                    return '--popup-accent:#52b788;--popup-bg:#d8f3dc;--popup-color:#2d6a4f;';
+                    return '--popup-accent:#5F8F78;--popup-bg:rgba(95,143,120,.14);--popup-color:#1F4D3A;';
                 };
                 const popup = (area, layer = activeDashboardLayer) => {
                     const mainDetail = layerMainDetail(area, layer);

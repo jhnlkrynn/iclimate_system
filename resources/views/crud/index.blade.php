@@ -1,6 +1,4 @@
 <x-app-layout>
-    @include('layouts.partials.dark-workspace')
-    <div class="dark-workspace">
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
@@ -112,6 +110,5 @@
                 </div>
             </div>
         @endif
-    </div>
     </div>
 </x-app-layout>

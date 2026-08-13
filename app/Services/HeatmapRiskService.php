@@ -6,10 +6,10 @@ use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Process;
 
 class HeatmapRiskService
 {
@@ -43,6 +43,7 @@ class HeatmapRiskService
         private readonly WeatherApiService $weatherApi,
         private readonly DecisionSupportService $decisionSupport,
         private readonly AgriculturalRiskScorer $riskScorer,
+        private readonly PredictionEngine $predictionEngine,
     ) {}
 
     public function refresh(): void
@@ -255,95 +256,51 @@ class HeatmapRiskService
         ];
     }
 
+    /**
+     * Delegates to PredictionEngine::requestYieldFromModel() — the same model
+     * call and rounding used by the AI Assistant and System Prediction page —
+     * so a barangay's heatmap yield never diverges from what those features
+     * would compute for the same inputs. Falls back to the barangay's stored
+     * production average (handled by the caller) if the model can't be reached.
+     */
     private function predictedYieldForBarangay(array $weather, ?RiceProduction $production, string $farmType, string $season): ?float
     {
-        $scriptPath = base_path('python_scripts/predict.py');
-        $modelPath = storage_path('models/rice_yield_model_final.pkl');
-
-        if (! file_exists($scriptPath) || ! file_exists($modelPath)) {
-            return null;
-        }
-
         $area = (float) ($production?->area_hectares ?? 1);
 
         if ($area <= 0) {
             $area = 1;
         }
 
-        $payload = [
+        $modelInput = [
             'rainfall' => (float) $weather['rainfall'],
             'temp_avg' => (float) $weather['temperature'],
             'temp_range' => max(1, abs((float) $weather['temperature'] - (float) $weather['previous_temp'])),
             'area' => $area,
             'previous_rainfall' => (float) $weather['previous_rainfall'],
             'previous_temp' => (float) $weather['previous_temp'],
+            'previous_humidity' => (float) ($weather['humidity'] ?? 0),
+            'previous_wind_speed' => (float) ($weather['wind_speed'] ?? 0),
             'rainfall_6m' => (float) $weather['rainfall_6m'],
             'temp_3m' => (float) $weather['temp_3m'],
             'temp_6m' => (float) $weather['temp_6m'],
             'seasonal_rainfall' => (float) $weather['seasonal_rainfall'],
             'seasonal_temp' => (float) $weather['seasonal_temp'],
+            'humidity' => (float) ($weather['humidity'] ?? 0),
+            'wind_speed' => (float) ($weather['wind_speed'] ?? 0),
             'season' => in_array($season, [ClimateRecord::SEASON_WET, ClimateRecord::SEASON_DRY], true) ? $season : ClimateRecord::SEASON_WET,
             'farm_type' => $farmType,
+            'month_num' => (int) CarbonImmutable::now()->addMonthNoOverflow()->format('n'),
         ];
 
-        $memoKey = md5(json_encode($payload));
+        $memoKey = md5(json_encode($modelInput));
 
         if (array_key_exists($memoKey, $this->yieldPredictionMemo)) {
             return $this->yieldPredictionMemo[$memoKey];
         }
 
-        $process = Process::timeout(20)
-            ->env($this->pythonEnvironment())
-            ->run([
-                $this->pythonBinary(),
-                $scriptPath,
-                json_encode($payload),
-            ]);
+        [$yield] = $this->predictionEngine->requestYieldFromModel($modelInput);
 
-        if (! $process->successful()) {
-            $this->yieldPredictionMemo[$memoKey] = null;
-
-            return null;
-        }
-
-        $result = json_decode($process->output(), true);
-
-        if (! is_array($result) || ! isset($result['predicted_yield']) || ! is_numeric($result['predicted_yield'])) {
-            $this->yieldPredictionMemo[$memoKey] = null;
-
-            return null;
-        }
-
-        return $this->yieldPredictionMemo[$memoKey] = round((float) $result['predicted_yield'], 2);
-    }
-
-    private function pythonBinary(): string
-    {
-        $configured = env('PYTHON_BINARY');
-
-        if (is_string($configured) && $configured !== '') {
-            return $configured;
-        }
-
-        $windowsPython = 'C:\\Users\\Luke\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe';
-
-        return file_exists($windowsPython) ? $windowsPython : 'python';
-    }
-
-    private function pythonEnvironment(): array
-    {
-        $systemRoot = getenv('SystemRoot') ?: getenv('SYSTEMROOT') ?: 'C:\\WINDOWS';
-        $path = getenv('PATH') ?: getenv('Path') ?: '';
-
-        return [
-            'SystemRoot' => $systemRoot,
-            'SYSTEMROOT' => $systemRoot,
-            'WINDIR' => getenv('WINDIR') ?: $systemRoot,
-            'Path' => $path,
-            'PATH' => $path,
-            'PYTHONIOENCODING' => 'utf-8',
-            'PYTHONUTF8' => '1',
-        ];
+        return $this->yieldPredictionMemo[$memoKey] = $yield['predicted_yield'] ?? null;
     }
 
     private function weightedAverage(array $values): float

@@ -142,12 +142,12 @@
                 <h1 class="h2 fw-bold mb-2">Rice Yield Forecast</h1>
                 <p class="mb-0 text-white-50" style="max-width: 720px;">Pick a date and iClimate will estimate the rice yield using the forecast for that month.</p>
             </div>
-            <form method="GET" action="{{ route('weather-predictions.index') }}" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-end">
+            <form method="GET" action="{{ route('weather-predictions.index') }}" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-end" data-loading="true">
                 <div>
                     <label for="target_date" class="form-label small fw-bold mb-1" style="color: #4a5c52;">Prediction Date</label>
                     <input id="target_date" name="target_date" type="date" class="form-control" value="{{ $targetDate->format('Y-m-d') }}">
                 </div>
-                <button class="btn btn-light fw-bold" type="submit">Update Forecast</button>
+                <button class="btn btn-light fw-bold" type="submit" data-loading-text="Updating...">Update Forecast</button>
             </form>
         </div>
     </section>
@@ -214,7 +214,7 @@
             <div class="wp-panel-body">
                 <form method="POST" action="{{ route('weather-predictions.predict') }}" data-loading="true" id="yieldPredictionForm">
                     @csrf
-                    <input type="hidden" name="farm_type" value="Rainfed">
+                    <input type="hidden" name="farm_type" value="{{ auth()->user()?->farmerProfile?->farm_type ?? \App\Models\FarmerProfile::FARM_TYPE_RAINFED }}">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-7 col-xl-4">
                             <div class="wp-input-card">

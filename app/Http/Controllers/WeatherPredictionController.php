@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FarmerProfile;
 use App\Services\Prediction\PredictionDateValidator;
 use App\Services\Prediction\PredictionEngine;
 use Carbon\CarbonImmutable;
@@ -38,7 +39,7 @@ class WeatherPredictionController extends Controller
             ]);
         }
 
-        $engineResult = $engine->predict($targetDate, 'Rainfed');
+        $engineResult = $engine->predict($targetDate, $this->defaultFarmType($request), null, $request->user());
 
         return view('weather-predictions.index', [
             'targetMonth' => $targetMonth,
@@ -71,7 +72,7 @@ class WeatherPredictionController extends Controller
             ]);
         }
 
-        $engineResult = $engine->predict($targetDate, $validated['farm_type'] ?? 'Rainfed');
+        $engineResult = $engine->predict($targetDate, $validated['farm_type'] ?? $this->defaultFarmType($request), null, $request->user());
 
         return view('weather-predictions.index', [
             'targetMonth' => $targetMonth,
@@ -81,6 +82,15 @@ class WeatherPredictionController extends Controller
             'mlResult' => $this->buildMlResult($engineResult),
             'error' => null,
         ]);
+    }
+
+    /**
+     * Same fallback chain as PredictionService uses for the AI Assistant, so a
+     * logged-in farmer's own profile decides the default farm type here too.
+     */
+    private function defaultFarmType(Request $request): string
+    {
+        return (string) ($request->user()?->farmerProfile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
     }
 
     private function buildMlResult(array $engineResult): array
