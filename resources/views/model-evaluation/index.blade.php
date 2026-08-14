@@ -483,11 +483,11 @@
                 return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
                     <rect x="11" y="11" width="42" height="42" rx="4" fill="#fffdf7" stroke="#e3c078" stroke-width="2"/>
                     <path d="M18 47h29M18 20v27" stroke="#b68a36" stroke-width="2" stroke-linecap="round"/>
-                    <rect x="22" y="39" width="6" height="8" rx="1.5" fill="#e8a73d"/>
-                    <rect x="31" y="32" width="6" height="15" rx="1.5" fill="#d7962f"/>
-                    <rect x="40" y="23" width="6" height="24" rx="1.5" fill="#c6872a"/>
-                    <path d="M21 36c7-1 13-5 21-14" stroke="#8a5a00" stroke-width="3" stroke-linecap="round"/>
-                    <path d="M39 21h7v7" stroke="#8a5a00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="22" y="39" width="6" height="8" rx="1.5" fill="#8FAF9A"/>
+                    <rect x="31" y="32" width="6" height="15" rx="1.5" fill="#4B7185"/>
+                    <rect x="40" y="23" width="6" height="24" rx="1.5" fill="#1F5A46"/>
+                    <path d="M21 36c7-1 13-5 21-14" stroke="#123F32" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M39 21h7v7" stroke="#123F32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>`;
             };
 

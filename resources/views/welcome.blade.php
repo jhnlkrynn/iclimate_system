@@ -1,9 +1,11 @@
 @php
     $heroClimate = \App\Support\ClimateSnapshot::latest();
     $rice = [
-        'hero'  => asset('images/rice-hero-aerial.jpg'),
-        'about' => asset('images/rice-about-farmer.jpg'),
-        'roles' => asset('images/rice-roles-terrace.png'),
+        'hero'     => asset('images/rice-hero-aerial.jpg'),
+        'about'    => asset('images/rice-about-farmer.jpg'),
+        'features' => asset('images/rice-features-paddy.jpg'),
+        'roles'    => asset('images/rice-roles-terrace.png'),
+        'contact'  => asset('images/rice-contact-golden.jpg'),
     ];
 @endphp
 <!DOCTYPE html>
@@ -18,22 +20,33 @@
   <style>
     /* -- TOKENS --------------------------------------- */
     :root {
-      --green-950: #163B2D;
-      --green-900: #1F4D3A;
-      --green-800: #1F4D3A;
-      --green-700: #1F4D3A;
+      --iclimate-primary: #123F32;
+      --iclimate-primary-medium: #1F5A46;
+      --iclimate-accent: #8FAF9A;
+      --iclimate-accent-light: #C9D8CE;
+      --iclimate-surface: #F4F6F2;
+      --iclimate-border: #D8E0DA;
+      --iclimate-text: #1E2B25;
+      --iclimate-text-muted: #68756D;
+      --iclimate-warning: #C58B2A;
+      --iclimate-danger: #B84A4A;
+      --iclimate-info: #4B7185;
+      --green-950: var(--iclimate-primary);
+      --green-900: var(--iclimate-primary-medium);
+      --green-800: var(--iclimate-primary-medium);
+      --green-700: var(--iclimate-primary-medium);
       --green-500: #5F8F78;
       --green-400: #7FD6B5;
       --green-200: #7FD6B5;
       --green-100: rgba(127,214,181,0.22);
       --green-50:  rgba(95,143,120,0.08);
-      --sand:      #F7F6F2;
-      --sand-dark: #E5E7EB;
-      --gold:      #E8A73D;
-      --gold-dark: #C6872A;
-      --gold-light:#F6D58A;
-      --ink:       #1F2937;
-      --ink-mid:   #64748B;
+      --sand:      var(--iclimate-surface);
+      --sand-dark: var(--iclimate-border);
+      --accent:      var(--iclimate-accent);
+      --accent-dark: #6F8978;
+      --accent-light:var(--iclimate-accent-light);
+      --ink:       var(--iclimate-text);
+      --ink-mid:   var(--iclimate-text-muted);
       --ink-light: rgba(100,116,139,0.72);
       --white:     #FFFFFF;
       --border:    #5F8F78;
@@ -51,7 +64,7 @@
       --shadow-sm: 0 1px 4px rgba(22,59,45,0.08);
       --shadow-md: 0 4px 20px rgba(22,59,45,0.12);
       --shadow-lg: 0 16px 56px rgba(22,59,45,0.18);
-      --shadow-gold: 0 10px 28px rgba(232,167,61,0.35);
+      --shadow-accent: 0 10px 28px rgba(143,175,154,0.35);
       --nav-h: 92px;
       --ease: cubic-bezier(0.4,0,0.2,1);
     }
@@ -61,7 +74,7 @@
     html { scroll-behavior: smooth; }
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      font-size: 16px;
+      font-size: 17px;
       line-height: 1.65;
       color: var(--ink);
       background: var(--green-800);
@@ -82,7 +95,11 @@
     }
     h1 { font-size: clamp(2.4rem, 5.5vw, 4rem); letter-spacing: -0.02em; }
     h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); letter-spacing: -0.02em; }
-    h3 { font-size: 1.2rem; }
+    h3 { font-size: 1.28rem; }
+    small, .small, .feature-card p, .role-card p, .pillar-card p, .contact-card p {
+      font-size: .96rem;
+      line-height: 1.58;
+    }
     .mono { font-family: 'DM Mono', monospace; }
 
     /* -- LAYOUT ---------------------------------------- */
@@ -101,14 +118,15 @@
       letter-spacing: 0.01em;
     }
     .btn-primary {
-      background: var(--gold);
-      color: var(--ink);
-      box-shadow: var(--shadow-gold);
+      background: var(--green-700);
+      color: var(--white);
+      box-shadow: none;
     }
     .btn-primary:hover {
-      background: var(--gold-dark);
+      background: var(--green-950);
+      color: var(--white);
       transform: translateY(-1px);
-      box-shadow: 0 10px 28px rgba(232,167,61,0.48);
+      box-shadow: none;
     }
     .btn-outline {
       border: 1.5px solid var(--white);
@@ -124,7 +142,7 @@
       background: transparent;
       padding-left: 0;
     }
-    .btn-ghost-light:hover { color: var(--gold); }
+    .btn-ghost-light:hover { color: var(--accent); }
     .btn-lg { padding: 14px 32px; font-size: 0.95rem; border-radius: var(--radius-pill); }
     .btn-full { width: 100%; justify-content: center; }
 
@@ -139,13 +157,7 @@
       color: var(--green-500);
       margin-bottom: 20px;
     }
-    .eyebrow::before {
-      content: '';
-      display: block;
-      width: 20px;
-      height: 1px;
-      background: var(--green-500);
-    }
+    .eyebrow::before { content: none; }
 
     /* ===============================================
        NAVBAR
@@ -182,7 +194,7 @@
       color: var(--white);
       letter-spacing: -0.01em;
     }
-    .logo-text em { font-style: italic; color: var(--gold); }
+    .logo-text em { font-style: italic; color: var(--accent); }
     .nav-links {
       display: flex; align-items: center; gap: 2px;
       margin-left: auto;
@@ -198,7 +210,7 @@
     }
     .nav-link:hover { color: var(--white); }
     .nav-link.active {
-      color: var(--gold);
+      color: var(--accent);
       font-weight: 600;
     }
     .nav-link.active::after {
@@ -208,7 +220,7 @@
       transform: translateX(-50%);
       width: 4px; height: 4px;
       border-radius: 50%;
-      background: var(--gold);
+      background: var(--accent);
     }
     .nav-actions { display: flex; align-items: center; gap: 10px; }
     .nav-login {
@@ -230,12 +242,12 @@
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--ink);
-      background: var(--gold);
+      background: var(--accent);
       transition: all 0.2s;
       white-space: nowrap;
     }
     .nav-cta:hover {
-      background: var(--gold-dark);
+      background: var(--accent-dark);
       transform: translateY(-1px);
     }
     @media (max-width: 640px) { .nav-cta { display: none; } }
@@ -309,7 +321,7 @@
     }
     .hero-title-italic {
       font-style: italic;
-      color: var(--gold);
+      color: var(--accent);
     }
     .hero-subtitle {
       font-family: 'DM Serif Display', serif;
@@ -437,8 +449,8 @@
       width: 40px; height: 40px;
       flex-shrink: 0;
       border-radius: 50%;
-      background: rgba(232,167,61,0.12);
-      border: 1px solid rgba(232,167,61,0.3);
+      background: rgba(143,175,154,0.12);
+      border: 1px solid rgba(143,175,154,0.3);
       display: flex; align-items: center; justify-content: center;
     }
     .trust-num {
@@ -465,22 +477,29 @@
     =============================================== */
     .about-section {
       position: relative;
-      background: var(--green-800);
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96) 0%, rgba(31,77,58,.90) 48%, rgba(22,59,45,.95) 100%),
+        url('{{ $rice['hero'] }}') center 44% / cover no-repeat;
       padding: 120px 0;
       overflow: hidden;
+      isolation: isolate;
     }
     .about-section::before {
       content: '';
       position: absolute; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none; opacity: 0.5;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(127,214,181,.16), transparent 28%),
+        radial-gradient(circle at 85% 72%, rgba(143,175,154,.10), transparent 30%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.75;
     }
     .about-section::after {
       content: '';
       position: absolute;
-      top: -15%; left: -10%;
-      width: 60%; height: 70%;
-      background: radial-gradient(ellipse at center, rgba(95,143,120,0.09) 0%, transparent 65%);
+      left: 0; right: 0; bottom: -1px;
+      height: 190px;
+      background: linear-gradient(180deg, transparent 0%, rgba(31,77,58,.72) 62%, rgba(31,77,58,1) 100%);
       pointer-events: none;
     }
     .about-section > .container { position: relative; z-index: 1; }
@@ -500,19 +519,19 @@
     .about-text { display: flex; flex-direction: column; gap: 20px; }
     .about-text .hero-location { margin-bottom: 0; }
     .about-text .section-title { margin-bottom: 4px; color: var(--white); }
-    .about-text .section-title em { font-style: italic; color: var(--gold); }
+    .about-text .section-title em { font-style: italic; color: var(--accent); }
     .about-text p { font-size: 0.975rem; line-height: 1.8; color: rgba(255,255,255,.72); }
     .about-tagline {
       display: flex; align-items: center; gap: 12px;
       font-family: 'DM Serif Display', serif;
       font-style: italic;
       font-size: 1.05rem;
-      color: var(--gold);
+      color: var(--accent);
     }
     .tagline-flourish {
       position: relative;
       width: 22px; height: 1px;
-      background: var(--gold);
+      background: var(--accent);
       flex-shrink: 0;
     }
     .tagline-flourish::after {
@@ -565,8 +584,8 @@
       flex-shrink: 0;
       width: 42px; height: 42px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
+      background: rgba(143,175,154,0.16);
+      border: 1px solid rgba(143,175,154,0.35);
       display: flex; align-items: center; justify-content: center;
     }
     .mission-card strong { display: block; font-size: 0.95rem; color: var(--white); margin-bottom: 4px; }
@@ -583,7 +602,7 @@
     }
     .pillar-card {
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       border-radius: var(--radius-lg);
       padding: 22px 18px;
       text-align: center;
@@ -593,15 +612,15 @@
     }
     .pillar-card:hover {
       background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
-      border-color: rgba(232,167,61,.45);
+      border-color: rgba(143,175,154,.45);
       transform: translateY(-4px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
     }
     .pillar-card .pillar-icon {
       width: 48px; height: 48px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 14px;
     }
@@ -622,7 +641,7 @@
       overflow: hidden;
       margin-top: 72px;
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       border-radius: var(--radius-xl);
       padding: 56px;
       backdrop-filter: blur(10px);
@@ -636,7 +655,7 @@
       content: "";
       position: absolute; left: -40px; bottom: -40px;
       width: 260px; height: 200px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%237FD6B5' stroke-opacity='0.3' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%23E8A73D' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%237FD6B5' stroke-opacity='0.3' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%238FAF9A' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       opacity: 0.9;
     }
@@ -654,8 +673,8 @@
     .wwa-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
       display: flex; align-items: center; justify-content: center;
     }
     .wwa-num {
@@ -687,9 +706,12 @@
     =============================================== */
     .features-section {
       position: relative;
-      background: var(--green-800);
+      background:
+        linear-gradient(180deg, rgba(31,77,58,.96) 0%, rgba(22,59,45,.89) 45%, rgba(31,77,58,.96) 100%),
+        url('{{ $rice['features'] }}') center center / cover no-repeat;
       padding: 120px 0;
       overflow: hidden;
+      isolation: isolate;
     }
     .features-section::before {
       content: '';
@@ -699,6 +721,16 @@
       background-size: 22px 22px;
       -webkit-mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
       mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .features-section::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(15,41,32,.30), transparent 36%, rgba(15,41,32,.26)),
+        radial-gradient(circle at 50% 18%, rgba(143,175,154,.08), transparent 34%);
       pointer-events: none;
       z-index: 0;
     }
@@ -721,7 +753,7 @@
       color: var(--mint);
     }
     .features-section > .container > .section-header h2 { color: var(--white); }
-    .features-section > .container > .section-header h2 em { font-style: italic; color: var(--gold); }
+    .features-section > .container > .section-header h2 em { font-style: italic; color: var(--accent); }
     .features-section > .container > .section-header p { color: var(--white); }
     .features-grid {
       display: grid;
@@ -733,7 +765,7 @@
       padding: 32px 26px;
       display: flex; flex-direction: column; gap: 12px;
       border-radius: var(--radius-lg);
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       backdrop-filter: blur(10px);
       transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s, background 0.25s;
       position: relative;
@@ -744,22 +776,22 @@
       content: '';
       position: absolute; top: -30%; left: -20%;
       width: 60%; height: 60%;
-      background: radial-gradient(circle, rgba(232,167,61,0.18) 0%, transparent 72%);
+      background: radial-gradient(circle, rgba(143,175,154,0.18) 0%, transparent 72%);
       pointer-events: none;
     }
     .feature-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.32);
-      border-color: rgba(232,167,61,.5);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.32);
+      border-color: rgba(143,175,154,.5);
       background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
     }
     .fc-icon-wrap {
       width: 52px; height: 52px;
-      background: rgba(232,167,61,0.1);
+      background: rgba(143,175,154,0.1);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 4px;
-      border: 1px solid rgba(232,167,61,0.38);
+      border: 1px solid rgba(143,175,154,0.38);
       flex-shrink: 0;
       position: relative; z-index: 1;
     }
@@ -779,9 +811,9 @@
       font-size: 0.65rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--gold);
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.35);
+      color: var(--accent);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.35);
       padding: 3px 10px;
       border-radius: var(--radius-pill);
       width: fit-content;
@@ -794,7 +826,7 @@
       overflow: hidden;
       margin-top: 96px;
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
-      border: 1px solid rgba(232,167,61,.2);
+      border: 1px solid rgba(143,175,154,.2);
       border-radius: var(--radius-xl);
       padding: 56px;
       backdrop-filter: blur(10px);
@@ -803,7 +835,7 @@
     .how-block .section-header { margin-bottom: 56px; }
     .how-block .eyebrow { color: var(--mint); }
     .how-block .section-header h2 { color: var(--white); }
-    .how-block .section-header h2 em { font-style: italic; color: var(--gold); }
+    .how-block .section-header h2 em { font-style: italic; color: var(--accent); }
     .how-block .section-header p { color: rgba(255,255,255,.7); }
     .how-steps {
       display: flex;
@@ -828,9 +860,9 @@
     .how-step-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -838,13 +870,13 @@
       font-family: 'DM Mono', monospace;
       font-weight: 700;
       font-size: 1.05rem;
-      color: var(--gold);
+      color: var(--accent);
     }
     .how-step:not(:last-child) .how-step-top::after {
       content: '';
       flex: 1;
       height: 0;
-      border-top: 2px dotted rgba(232,167,61,.4);
+      border-top: 2px dotted rgba(143,175,154,.4);
       margin-left: 6px;
     }
     .how-step h3 {
@@ -941,7 +973,7 @@
     .dm-chip {
       font-family: 'DM Mono', monospace;
       font-size: 0.65rem;
-      background: var(--gold-light);
+      background: var(--accent-light);
       color: var(--green-950);
       padding: 4px 10px;
       border-radius: var(--radius-pill);
@@ -998,18 +1030,20 @@
     =============================================== */
     .contact-section {
       position: relative;
-      background: var(--green-800);
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96) 0%, rgba(31,77,58,.86) 44%, rgba(15,41,32,.96) 100%),
+        url('{{ $rice['contact'] }}') center 55% / cover no-repeat;
       padding: 120px 0;
       overflow: hidden;
+      isolation: isolate;
     }
     .contact-section::before {
       content: '';
-      position: absolute; top: 6%; right: 4%;
-      width: 300px; height: 300px;
-      background-image: radial-gradient(rgba(127,214,181,0.2) 1.5px, transparent 1.5px);
-      background-size: 24px 24px;
-      -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-      mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(rgba(127,214,181,0.18) 1.5px, transparent 1.5px) right 6% top 8% / 24px 24px no-repeat,
+        radial-gradient(circle at 12% 22%, rgba(127,214,181,.14), transparent 28%),
+        radial-gradient(circle at 80% 72%, rgba(143,175,154,.12), transparent 30%);
       pointer-events: none;
       z-index: 0;
     }
@@ -1035,7 +1069,7 @@
     }
     .contact-method {
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       border-radius: var(--radius-lg);
       padding: 24px 24px 22px;
       display: flex; flex-direction: column; gap: 8px;
@@ -1046,9 +1080,9 @@
     }
     .contact-method:hover {
       transform: translateY(-5px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
       background: linear-gradient(180deg, rgba(31,77,58,.68), rgba(22,59,45,.74));
-      border-color: rgba(232,167,61,.45);
+      border-color: rgba(143,175,154,.45);
     }
     .contact-method-media {
       margin: -24px -24px 4px;
@@ -1065,9 +1099,9 @@
     .contact-method-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 6px;
       flex-shrink: 0;
@@ -1094,7 +1128,7 @@
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--gold);
+      color: var(--accent);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -1108,7 +1142,7 @@
     .contact-info { display: flex; flex-direction: column; gap: 0; }
     .contact-info .hero-location { margin-bottom: 18px; }
     .contact-info h2 { color: var(--white); margin-bottom: 10px; }
-    .contact-info h2 em { font-style: italic; color: var(--gold); }
+    .contact-info h2 em { font-style: italic; color: var(--accent); }
     .contact-info .about-tagline { margin-bottom: 18px; }
     .contact-info > p { font-size: 0.9rem; color: var(--white); margin-bottom: 28px; }
     .contact-details { display: flex; flex-direction: column; gap: 18px; }
@@ -1118,8 +1152,8 @@
     .cd-icon-wrap {
       width: 40px; height: 40px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
+      background: rgba(143,175,154,0.16);
+      border: 1px solid rgba(143,175,154,0.35);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       font-size: 1rem;
@@ -1136,7 +1170,7 @@
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
       border-radius: var(--radius-xl);
       padding: 40px 40px 38px;
-      border: 1px solid rgba(232,167,61,.24);
+      border: 1px solid rgba(143,175,154,.24);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow-lg);
       display: flex;
@@ -1150,9 +1184,9 @@
     .cfc-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1197,7 +1231,7 @@
     .form-input {
       width: 100%;
       background: rgba(15,41,32,.4);
-      border: 1.5px solid rgba(232,167,61,.28);
+      border: 1.5px solid rgba(143,175,154,.28);
       border-radius: var(--radius-md);
       padding: 10px 14px;
       font-family: 'Inter', sans-serif;
@@ -1210,11 +1244,11 @@
     select.form-input { cursor: pointer; }
     select.form-input option { color: var(--ink); }
     .form-input:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(232,167,61,0.16);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(143,175,154,0.16);
     }
     .form-input::placeholder { color: rgba(255,255,255,.45); }
-    .btn-dark { background: var(--green-800); color: var(--white); border: 1px solid rgba(232,167,61,.3); }
+    .btn-dark { background: var(--green-800); color: var(--white); border: 1px solid rgba(143,175,154,.3); }
     .btn-dark:hover {
       background: var(--green-950);
       transform: translateY(-1px);
@@ -1226,16 +1260,18 @@
     =============================================== */
     .footer {
       position: relative;
-      background: var(--green-950);
-      padding: 88px 0 40px;
-      border-top: 1px solid rgba(232,167,61,.18);
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96), rgba(15,41,32,.98)),
+        url('{{ $rice['roles'] }}') center 62% / cover no-repeat;
+      padding: 58px 0 30px;
+      border-top: 1px solid rgba(143,175,154,.18);
       overflow: hidden;
     }
     .footer::before {
       content: '';
       position: absolute; bottom: 0; right: 0;
-      width: 300px; height: 300px;
-      background-image: radial-gradient(rgba(232,167,61,0.16) 1.5px, transparent 1.5px);
+      width: 260px; height: 260px;
+      background-image: radial-gradient(rgba(143,175,154,0.10) 1.5px, transparent 1.5px);
       background-size: 24px 24px;
       -webkit-mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
       mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
@@ -1245,96 +1281,99 @@
     .footer > .container { position: relative; z-index: 1; }
     .footer-grid {
       display: grid;
-      grid-template-columns: 2.3fr 1fr 2.1fr 1fr;
-      gap: 40px;
-      margin-bottom: 56px;
-      padding-bottom: 56px;
-      border-bottom: 1px solid rgba(232,167,61,.14);
+      grid-template-columns: minmax(260px, 1.45fr) minmax(150px, .72fr) minmax(260px, 1.24fr) minmax(150px, .7fr);
+      gap: 28px;
+      margin-bottom: 34px;
+      padding-bottom: 34px;
+      border-bottom: 1px solid rgba(143,175,154,.14);
+      align-items: start;
     }
     .footer-col-label {
       display: inline-flex; align-items: center; gap: 10px;
-      padding: 5px 16px 5px 5px;
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(232,167,61,.32);
-      background: rgba(232,167,61,0.08);
-      margin-bottom: 20px;
+      padding: 0;
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      margin-bottom: 14px;
     }
     .footer-col-icon {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      width: 18px; height: 18px;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
     .footer-social h4,
     .footer-links h4 {
       font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.64rem;
       font-weight: 500;
       color: var(--mint);
-      letter-spacing: 0.12em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       margin: 0;
     }
-    .footer-social-icons { display: flex; gap: 12px; }
+    .footer-social-icons { display: flex; gap: 10px; }
     .footer-social-icon {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.35);
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(143,175,154,0.28);
       display: flex; align-items: center; justify-content: center;
-      color: var(--gold);
+      color: var(--accent);
       transition: background 0.2s, border-color 0.2s, transform 0.2s;
     }
-    .footer-social-icon:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); transform: translateY(-2px); }
+    .footer-social-icon:hover { background: rgba(143,175,154,.18); border-color: var(--accent); color: var(--accent-light); transform: translateY(-1px); }
     .footer-message-card {
       position: relative;
       overflow: hidden;
-      margin-top: 22px;
-      padding: 20px 22px;
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(232,167,61,.34);
-      background: linear-gradient(180deg, rgba(31,77,58,.5), rgba(22,59,45,.6));
-      box-shadow: var(--shadow-gold);
+      margin-top: 18px;
+      padding: 0 0 0 14px;
+      border-radius: 0;
+      border: 0;
+      border-left: 2px solid rgba(143,175,154,.48);
+      background: transparent;
+      box-shadow: none;
     }
     .footer-message-card p {
       position: relative; z-index: 1;
       font-size: 0.875rem;
       line-height: 1.6;
       color: var(--white);
-      max-width: 85%;
+      max-width: 100%;
     }
-    .footer-message-card p em { font-style: normal; color: var(--gold); font-weight: 600; }
+    .footer-message-card p em { font-style: normal; color: var(--accent); font-weight: 600; }
     .footer-col-pair {
       display: grid;
-      grid-template-columns: 1fr 1.5fr;
-      column-gap: 32px;
+      grid-template-columns: minmax(110px, .8fr) minmax(150px, 1.2fr);
+      column-gap: 24px;
       align-items: start;
     }
-    .footer-logo { margin-bottom: 14px; }
+    .footer-logo { margin-bottom: 14px; display: inline-flex; }
+    .footer-logo .brand-logo-img { height: 68px; width: auto; object-fit: contain; }
     .footer-tagline {
       font-size: 0.875rem;
       color: var(--white);
-      line-height: 1.65;
+      line-height: 1.6;
       max-width: 100%;
     }
     .footer-tagline-chip {
       display: inline-flex; align-items: flex-start; gap: 10px;
-      margin-top: 20px;
+      margin-top: 16px;
       max-width: 100%;
-      padding: 8px 18px 8px 8px;
-      border-radius: 20px;
-      border: 1px solid rgba(232,167,61,.32);
-      background: rgba(232,167,61,0.08);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(143,175,154,.32);
+      background: rgba(143,175,154,0.08);
     }
     .footer-tagline-chip-icon {
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      width: 22px; height: 22px;
+      border-radius: var(--radius-sm);
+      background: rgba(143,175,154,0.12);
+      border: 1px solid rgba(143,175,154,0.28);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       margin-top: 2px;
@@ -1347,16 +1386,17 @@
       display: flex; align-items: center; gap: 9px;
       font-size: 0.875rem;
       color: var(--white);
-      padding: 10px 0;
+      padding: 8px 0;
       transition: color 0.2s;
+      line-height: 1.35;
     }
-    .footer-links a:hover { color: var(--gold); }
+    .footer-links a:hover { color: var(--accent); }
     .footer-links a::before {
       content: '';
       width: 5px; height: 5px;
       flex-shrink: 0;
       border-radius: 50%;
-      background: var(--gold);
+      background: var(--accent);
       opacity: 0.75;
     }
     .footer-bottom {
@@ -1368,9 +1408,9 @@
     .footer-bottom-icon {
       width: 30px; height: 30px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.35);
-      color: var(--gold);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.35);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1400,10 +1440,11 @@
       .contact-grid { grid-template-columns: 1fr; gap: 48px; }
       .contact-methods { flex-direction: row; flex-wrap: wrap; }
       .contact-methods .contact-method { flex: 1 1 240px; }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-      .footer-brand { grid-column: span 2; }
-      .footer-social { grid-column: span 2; }
-      .footer-col-pair { grid-template-columns: 1fr 1.5fr; column-gap: 24px; }
+      .footer { padding-top: 48px; }
+      .footer-grid { grid-template-columns: 1.25fr 1fr; gap: 28px; }
+      .footer-brand { grid-column: span 1; }
+      .footer-social { grid-column: span 1; }
+      .footer-col-pair { grid-template-columns: 1fr 1fr; column-gap: 24px; }
       .dm-widgets { grid-template-columns: repeat(2,1fr); }
       .dmw-wide { grid-column: span 2; }
       .dashboard-mockup { height: auto; flex-direction: column; }
@@ -1433,13 +1474,17 @@
       .form-row { grid-template-columns: 1fr; gap: 0; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-brand { grid-column: span 1; }
-      .footer-col-pair { grid-template-columns: 1fr 1.5fr; column-gap: 20px; }
+      .footer-col-pair { grid-template-columns: 1fr 1fr; column-gap: 20px; }
       .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
     }
     @media (max-width: 480px) {
       .hero-actions { flex-direction: column; align-items: flex-start; }
       .hero-actions .btn-lg { width: 100%; justify-content: center; }
       .contact-form-card { padding: 28px 20px; }
+      .footer { padding: 38px 0 26px; }
+      .footer-grid { gap: 24px; margin-bottom: 24px; padding-bottom: 24px; }
+      .footer-col-pair { grid-template-columns: 1fr; row-gap: 24px; }
+      .footer-logo .brand-logo-img { height: 60px; }
     }
 
     /* -- SCROLL ANIMATIONS ------------------------- */
@@ -1489,7 +1534,7 @@
     }
     .roles-section .section-header .eyebrow { justify-content: center; color: var(--mint); }
     .roles-section .section-header h2 { color: var(--white); }
-    .roles-section .section-header h2 em { font-style: italic; color: var(--gold); }
+    .roles-section .section-header h2 em { font-style: italic; color: var(--accent); }
     .roles-section .section-header p { color: var(--white); }
     .roles-grid {
       display: grid;
@@ -1499,7 +1544,7 @@
     }
     .role-card {
       background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       border-radius: var(--radius-xl);
       padding: 40px 32px 32px;
       display: flex;
@@ -1511,9 +1556,9 @@
       transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s, background 0.25s;
     }
     .role-card:hover {
-      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
       transform: translateY(-4px);
-      border-color: rgba(232,167,61,.45);
+      border-color: rgba(143,175,154,.45);
     }
     .role-workspace-label {
       font-family: 'DM Mono', monospace;
@@ -1526,21 +1571,21 @@
     }
     .role-card.role-card--highlight {
       background: linear-gradient(180deg, rgba(31,77,58,.74), rgba(22,59,45,.84));
-      border-color: rgba(232,167,61,.5);
+      border-color: rgba(143,175,154,.5);
       margin-top: -16px;
       padding-bottom: 48px;
-      box-shadow: 0 24px 56px rgba(0,0,0,.36), 0 0 0 1px rgba(232,167,61,.28), var(--shadow-gold);
+      box-shadow: 0 24px 56px rgba(0,0,0,.36), 0 0 0 1px rgba(143,175,154,.28), var(--shadow-accent);
     }
-    .role-card.role-card--highlight:hover { border-color: rgba(232,167,61,.7); }
-    .role-card.role-card--highlight .role-workspace-label { color: var(--gold); }
+    .role-card.role-card--highlight:hover { border-color: rgba(143,175,154,.7); }
+    .role-card.role-card--highlight .role-workspace-label { color: var(--accent); }
     .role-card.role-card--highlight .role-cta {
-      background: var(--gold);
-      border-color: var(--gold);
+      background: var(--accent);
+      border-color: var(--accent);
       color: var(--ink);
     }
     .role-card.role-card--highlight .role-cta:hover {
-      background: var(--gold-dark);
-      border-color: var(--gold-dark);
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
     }
     @media (max-width: 1024px) {
       .role-card.role-card--highlight { margin-top: 0; padding-bottom: 32px; }
@@ -1549,7 +1594,7 @@
     /* How the roles connect */
     .roles-connect {
       background: linear-gradient(180deg, rgba(31,77,58,.5), rgba(22,59,45,.58));
-      border: 1px solid rgba(232,167,61,.22);
+      border: 1px solid rgba(143,175,154,.22);
       border-radius: var(--radius-xl);
       padding: 32px 40px;
       margin-top: 64px;
@@ -1588,9 +1633,9 @@
     .connect-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.14);
-      border: 1px solid rgba(232,167,61,0.4);
-      color: var(--gold);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1615,20 +1660,20 @@
       .connect-divider { width: 100%; height: 1px; }
       .connect-item { padding: 0; }
     }
-    /* Role icon wrap - simple line icon in a gold-ring badge */
+    /* Role icon wrap - simple line icon in a sage-accent badge */
     .role-icon-wrap--img {
       width: 84px; height: 84px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.12);
-      color: var(--gold);
+      background: rgba(143,175,154,0.12);
+      color: var(--accent);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 20px;
       flex-shrink: 0;
-      border: 1px solid rgba(232,167,61,0.4);
-      box-shadow: 0 0 0 4px rgba(232,167,61,0.14), 0 10px 24px rgba(0,0,0,.22);
+      border: 1px solid rgba(143,175,154,0.4);
+      box-shadow: 0 0 0 4px rgba(143,175,154,0.14), 0 10px 24px rgba(0,0,0,.22);
     }
     .role-card--highlight .role-icon-wrap--img {
-      box-shadow: 0 0 0 4px rgba(232,167,61,0.26), 0 12px 28px rgba(0,0,0,0.3);
+      box-shadow: 0 0 0 4px rgba(143,175,154,0.26), 0 12px 28px rgba(0,0,0,0.3);
     }
     .role-card h3 {
       font-family: 'Inter', sans-serif;
@@ -1670,7 +1715,7 @@
       font-size: 0.875rem;
       color: rgba(255,255,255,.82);
     }
-    .role-feature-item svg { flex-shrink: 0; color: var(--gold); }
+    .role-feature-item svg { flex-shrink: 0; color: var(--accent); }
     .role-cta {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       padding: 11px 24px;
@@ -1746,7 +1791,7 @@
       box-shadow: 0 18px 40px rgba(22,59,45,0.14);
     }
     .role-farmer { background: linear-gradient(135deg, #5F8F78, #1F4D3A); }
-    .role-mao { background: linear-gradient(135deg, var(--gold), #1F4D3A); }
+    .role-mao { background: linear-gradient(135deg, var(--accent), #1F4D3A); }
     .role-it { background: linear-gradient(135deg, #1F4D3A, #163B2D); }
     .contact-form-card button[type="button"] { cursor: default; }
     .brand-logo-img {
@@ -1924,6 +1969,49 @@
         max-width: 52vw;
       }
     }
+    /* Final readability pass: preserve landing layout while avoiding tiny content text. */
+    .eyebrow,
+    .nav-link,
+    .hws-label,
+    .stat-label,
+    .feature-tag,
+    .module-tag,
+    .footer-kicker,
+    .contact-label,
+    .mini-label,
+    .dm-label {
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+    .hero-copy p,
+    .section-lead,
+    .feature-card p,
+    .role-card p,
+    .pillar-card p,
+    .contact-card p,
+    .footer-copy,
+    .dm-body,
+    .dm-note,
+    .form-helper {
+      font-size: 1rem;
+      line-height: 1.58;
+    }
+    .badge,
+    .mini-badge,
+    .status-badge,
+    .footer-pill,
+    .hws-badge {
+      font-size: 0.75rem;
+      line-height: 1.25;
+    }
+    .form-control,
+    .form-select,
+    input,
+    textarea,
+    select {
+      font-size: 1rem;
+      line-height: 1.45;
+    }
   </style>
 </head>
 <body>
@@ -1981,7 +2069,7 @@
       <div class="trust-grid fade-up fade-up-4">
         <div class="trust-item">
           <div class="trust-icon">
-            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div>
             <div class="trust-num">3</div>
@@ -1990,7 +2078,7 @@
         </div>
         <div class="trust-item">
           <div class="trust-icon">
-            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div>
             <div class="trust-num">24/7</div>
@@ -1999,7 +2087,7 @@
         </div>
         <div class="trust-item">
           <div class="trust-icon">
-            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#E8A73D" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div>
             <div class="trust-num">PAGASA</div>
@@ -2019,7 +2107,7 @@
         <div class="hero-weather-strip">
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature) : 26 }}&deg;C</div><div class="hws-label">Temperature</div></div>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature) : 26 }}°C</div><div class="hws-label">Temperature</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c1.6 2.2 3 4.3 3 6.1A3 3 0 1 1 7 8.1C7 6.3 8.4 4.2 10 2Z" stroke="currentColor" stroke-width="1.4"/></svg>
@@ -2061,7 +2149,7 @@
         <div class="about-photo">
           <div class="mission-card">
             <div class="mission-icon">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#C6872A" stroke-width="1.6"/></svg>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#6F8978" stroke-width="1.6"/></svg>
             </div>
             <div>
               <strong>Our Mission</strong>
@@ -2074,28 +2162,28 @@
 
     <div class="pillars-row">
       <div class="pillar-card">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#C6872A" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#C6872A"/></svg></div>
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#6F8978"/></svg></div>
         <strong>Climate-Informed</strong>
         <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
         <p>Combining stored climate records, Open-Meteo live forecasts, and official PAGASA advisory references for localized guidance.</p>
       </div>
       <div class="pillar-card">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#C6872A" stroke-width="1.5"/></svg></div>
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#6F8978" stroke-width="1.5"/></svg></div>
         <strong>Rice-Focused</strong>
         <p>Specialized in rice production analysis, yield prediction, and planting recommendations.</p>
       </div>
       <div class="pillar-card">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#C6872A"/><rect x="8.5" y="6" width="3" height="11" fill="#C6872A" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#C6872A" opacity="0.6"/></svg></div>
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#6F8978"/><rect x="8.5" y="6" width="3" height="11" fill="#6F8978" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#6F8978" opacity="0.6"/></svg></div>
         <strong>Data-Driven</strong>
         <p>Using historical records and analytics to generate accurate insights and reports.</p>
       </div>
       <div class="pillar-card">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#C6872A" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#C6872A" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#6F8978" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/></svg></div>
         <strong>Community-Centered</strong>
         <p>Built for farmers, supported by MAO staff and technicians, and optimized by IT personnel.</p>
       </div>
       <div class="pillar-card">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#C6872A" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#6F8978" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
         <strong>Secure &amp; Reliable</strong>
         <p>Ensuring data security, system reliability, and continuous improvement.</p>
       </div>
@@ -2109,25 +2197,25 @@
       </div>
       <div class="wwa-grid">
         <div class="wwa-stat">
-          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.2" stroke="#E8A73D" stroke-width="1.3"/><circle cx="12" cy="7" r="1.8" stroke="#E8A73D" stroke-width="1.3"/><path d="M2 15c.4-2.7 1.8-4 4.5-4s4 1.3 4.5 4" stroke="#E8A73D" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 15c.3-2 1.5-3.2 3-3.2s2.7.9 3 2.9" stroke="#E8A73D" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.2" stroke="#8FAF9A" stroke-width="1.3"/><circle cx="12" cy="7" r="1.8" stroke="#8FAF9A" stroke-width="1.3"/><path d="M2 15c.4-2.7 1.8-4 4.5-4s4 1.3 4.5 4" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 15c.3-2 1.5-3.2 3-3.2s2.7.9 3 2.9" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/></svg></div>
           <div class="wwa-num">3</div>
           <div class="wwa-label">User Roles</div>
           <p class="wwa-desc">Rice Farmers, MAO Staff with Technician, and IT Personnel</p>
         </div>
         <div class="wwa-stat">
-          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="10" width="2.6" height="5" fill="#E8A73D"/><rect x="7.7" y="6" width="2.6" height="9" fill="#E8A73D" opacity="0.85"/><rect x="12.4" y="3" width="2.6" height="12" fill="#E8A73D" opacity="0.6"/></svg></div>
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="10" width="2.6" height="5" fill="#8FAF9A"/><rect x="7.7" y="6" width="2.6" height="9" fill="#8FAF9A" opacity="0.85"/><rect x="12.4" y="3" width="2.6" height="12" fill="#8FAF9A" opacity="0.6"/></svg></div>
           <div class="wwa-num">24/7</div>
           <div class="wwa-label">Real-Time Monitoring</div>
           <p class="wwa-desc">Continuous weather and climate updates</p>
         </div>
         <div class="wwa-stat">
-          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#E8A73D" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#8FAF9A" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
           <div class="wwa-num">PAGASA</div>
           <div class="wwa-label">Verified Data Source</div>
           <p class="wwa-desc">Trusted climate data from PAGASA</p>
         </div>
         <div class="wwa-stat">
-          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#E8A73D" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#E8A73D" stroke-width="1.2"/></svg></div>
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#8FAF9A" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#8FAF9A" stroke-width="1.2"/></svg></div>
           <div class="wwa-num">1 Goal</div>
           <div class="wwa-label">Stronger Farming Community</div>
           <p class="wwa-desc">Better decisions for better harvests</p>
@@ -2150,8 +2238,8 @@
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#E8A73D" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M5 17c1-2.5 3-4 6-4s5 1.5 6 4" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#8FAF9A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M5 17c1-2.5 3-4 6-4s5 1.5 6 4" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
             <circle cx="11" cy="4.5" r="2" fill="#5F8F78"/>
           </svg>
         </div>
@@ -2165,7 +2253,7 @@
             <rect x="2" y="14" width="4" height="6" rx="1" fill="#5F8F78"/>
             <rect x="9" y="9" width="4" height="11" rx="1" fill="#5F8F78" opacity="0.7"/>
             <rect x="16" y="5" width="4" height="15" rx="1" fill="#5F8F78" opacity="0.45"/>
-            <path d="M4 10l7-5 7-3" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M4 10l7-5 7-3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
           </svg>
         </div>
         <h3>Rice Production</h3>
@@ -2175,8 +2263,8 @@
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="#E8A73D" stroke-width="1.8"/>
-            <path d="M11 6v5l3.5 2" stroke="#C6872A" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="11" cy="11" r="8" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M11 6v5l3.5 2" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/>
           </svg>
         </div>
         <h3>Planting Advisory</h3>
@@ -2186,7 +2274,7 @@
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M2 11C5 5,8 3,11 3C14 3,17 5,20 11C17 17,14 19,11 19C8 19,5 17,2 11Z" stroke="#E8A73D" stroke-width="1.8"/>
+            <path d="M2 11C5 5,8 3,11 3C14 3,17 5,20 11C17 17,14 19,11 19C8 19,5 17,2 11Z" stroke="#8FAF9A" stroke-width="1.8"/>
             <circle cx="11" cy="11" r="3" fill="#5F8F78"/>
           </svg>
         </div>
@@ -2197,7 +2285,7 @@
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#E8A73D" stroke-width="1.8"/>
+            <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#8FAF9A" stroke-width="1.8"/>
           </svg>
         </div>
         <h3>Heat Map</h3>
@@ -2207,9 +2295,9 @@
       <div class="feature-card">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M4 3h10l4 4v12H4V3z" stroke="#E8A73D" stroke-width="1.8"/>
-            <path d="M14 3v4h4" stroke="#E8A73D" stroke-width="1.8"/>
-            <path d="M7 10h8M7 13h6M7 16h7" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M4 3h10l4 4v12H4V3z" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M14 3v4h4" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M7 10h8M7 13h6M7 16h7" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
           </svg>
         </div>
         <h3>Reports &amp; Analytics</h3>
@@ -2460,7 +2548,7 @@
         <div class="contact-details">
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#C6872A" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#C6872A" stroke-width="1.4"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
             </div>
             <div class="cd-text">
               <strong>Address</strong>
@@ -2469,7 +2557,7 @@
           </div>
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#C6872A" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="cd-text">
               <strong>Email</strong>
@@ -2478,7 +2566,7 @@
           </div>
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="cd-text">
               <strong>Phone</strong>
@@ -2487,7 +2575,7 @@
           </div>
           <div class="cd-item">
             <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#C6872A" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#6F8978" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="cd-text">
               <strong>Office Hours</strong>
@@ -2504,7 +2592,7 @@
       <div class="contact-form-card">
         <div class="cfc-header">
           <div class="cfc-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#C6872A" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div>
             <h3>Send us a message</h3>
@@ -2544,7 +2632,7 @@
       <div class="contact-methods">
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Call Us</h3>
           <p>Speak with the MAO front desk about records, advisories, or general inquiries.</p>
@@ -2555,7 +2643,7 @@
         </div>
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#C6872A" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#C6872A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h3>Email Us</h3>
           <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
@@ -2566,7 +2654,7 @@
         </div>
         <div class="contact-method">
           <div class="contact-method-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#C6872A" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#C6872A" stroke-width="1.4"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
           </div>
           <h3>Visit Us</h3>
           <p>Visit the Municipal Agricultural Office to consult on-site during standard business hours.</p>

@@ -81,6 +81,7 @@ class IntentDetectionService
                 'chart', 'graph', 'map legend', 'heat map', 'heatmap', 'how to read', 'explain the dashboard',
                 'random forest', 'linear regression', 'gradient boosting', 'rmse', 'mae', 'r2', 'r-squared', 'confidence score',
                 'how accurate', 'accuracy', 'algorithm', 'machine learning model', 'change password', 'update profile', 'forgot password',
+                'who are you', 'who r u', 'what are you', 'sino ka', 'ano ka', 'tagalog', 'filipino',
             ]) + (str_contains($text, 'heat map') || str_contains($text, 'heatmap') ? 2 : 0),
             self::GENERAL_AGRICULTURE => $this->score($text, [
                 'rice', 'palay', 'farm', 'farmer', 'crop', 'agriculture', 'bukid', 'sakahan',
@@ -89,7 +90,7 @@ class IntentDetectionService
                 'typhoon', 'bagyo preparation', 'disaster preparedness', 'paghahanda sa bagyo', 'flood preparation',
                 'rcef', 'philrice', 'palaycheck', 'da program', 'government program', 'gobyerno program', 'subsidy', 'binhi program',
             ]),
-            self::GENERAL_CONVERSATION => $this->score($text, ['hello', 'hi', 'kumusta', 'salamat', 'thanks', 'good morning']),
+            self::GENERAL_CONVERSATION => $this->score($text, ['hello', 'hi', 'kumusta', 'salamat', 'thanks', 'good morning', 'sino ka']),
             self::BARANGAY_INFO => $this->score($text, [
                 'barangay', 'brgy', 'which barangay', 'anong barangay',
                 ...array_map(static fn (string $barangay): string => strtolower($barangay), LianBarangays::all()),
@@ -146,10 +147,28 @@ class IntentDetectionService
         return str($text)->contains(['predict', 'will it rain', 'should i irrigate', 'should i plant', 'when should i plant', 'risk assessment', 'yield explanation', 'climate recommendation']);
     }
 
-    public function detectLanguage(string $question): string
+    public function detectLanguage(string $question, array $memory = []): string
     {
         $text = str($question)->lower()->toString();
-        $tagalog = $this->score($text, ['ang', 'ako', 'ba', 'kaba', 'bakit', 'dapat', 'gamit', 'kailan', 'kaya', 'kung', 'mag', 'magiging', 'mga', 'ng', 'paano', 'para', 'po', 'sa', 'tag-ulan', 'tag-init', 'tanim', 'tubig', 'ulan', 'uulan', 'ani', 'palay', 'bukas', 'ngayon']);
+
+        if ($explicitLanguage = $this->explicitLanguageRequest($text)) {
+            return $explicitLanguage;
+        }
+
+        $recentQuestions = implode(' ', array_slice((array) ($memory['recent_questions'] ?? []), 0, 3));
+        $recentText = str($recentQuestions)->lower()->toString();
+        $preferredLanguage = $this->explicitLanguageRequest($recentText);
+
+        if ($preferredLanguage && ! $this->explicitLanguageRequest($text)) {
+            return $preferredLanguage;
+        }
+
+        $tagalog = $this->score($text, [
+            'ang ', ' ako', 'akin', 'kaba', 'natin', 'niyo', 'sila', 'siya',
+            'bakit', 'dapat', 'gamit', 'ikaw', 'ilang', 'kailan', 'kaya', 'kung', 'mag', 'magiging',
+            'mga', 'paano', 'para', ' po', 'sino', 'ano', 'tag-ulan', 'tag-init',
+            'tanim', 'tubig', 'ulan', 'uulan', 'ani', 'palay', 'bukas', 'ngayon',
+        ]);
         $english = $this->score($text, ['the', 'is', 'are', 'should', 'when', 'how', 'what', 'why', 'farm', 'rice', 'rain', 'yield']);
 
         if ($tagalog > 0 && $tagalog >= $english) {
@@ -161,6 +180,45 @@ class IntentDetectionService
         }
 
         return $tagalog > $english ? 'Tagalog' : 'English';
+    }
+
+    private function explicitLanguageRequest(string $text): ?string
+    {
+        $languageMap = [
+            'Tagalog' => ['tagalog', 'filipino', 'pilipino', 'magtagalog', 'mag tagalog', 'wikang tagalog', 'salitang tagalog'],
+            'English' => ['english', 'ingles', 'in english'],
+            'Cebuano/Bisaya' => ['cebuano', 'bisaya', 'binisaya'],
+            'Ilocano' => ['ilocano', 'ilokano'],
+            'Kapampangan' => ['kapampangan', 'pampango'],
+            'Hiligaynon/Ilonggo' => ['hiligaynon', 'ilonggo'],
+            'Bicolano' => ['bicolano', 'bikol'],
+            'Waray' => ['waray'],
+            'Spanish' => ['spanish', 'espanol', 'español'],
+        ];
+
+        foreach ($languageMap as $language => $keywords) {
+            if (str($text)->contains($keywords)) {
+                return $language;
+            }
+        }
+
+        if (preg_match('/[\x{3040}-\x{30ff}]/u', $text)) {
+            return 'Japanese';
+        }
+
+        if (preg_match('/[\x{ac00}-\x{d7af}]/u', $text)) {
+            return 'Korean';
+        }
+
+        if (preg_match('/[\x{4e00}-\x{9fff}]/u', $text)) {
+            return 'Chinese';
+        }
+
+        if (preg_match('/[\x{0600}-\x{06ff}]/u', $text)) {
+            return 'Arabic';
+        }
+
+        return null;
     }
 
     private function score(string $text, array $keywords): int

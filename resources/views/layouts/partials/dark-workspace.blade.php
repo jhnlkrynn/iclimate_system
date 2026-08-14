@@ -9,6 +9,12 @@
     .dark-workspace .card-header { border-color: var(--ic-border) !important; background: rgba(13,31,24,.02); }
     .dark-workspace h1, .dark-workspace h2, .dark-workspace h3, .dark-workspace h4, .dark-workspace h5,
     .dark-workspace .fw-bold, .dark-workspace .fw-semibold { color: var(--ic-ink); }
+    .dark-workspace .page-hero h1,
+    .dark-workspace .page-hero h2,
+    .dark-workspace .page-hero h3,
+    .dark-workspace .page-hero .fw-bold,
+    .dark-workspace .page-hero .fw-semibold { color: #fff; }
+    .dark-workspace .page-hero .eyebrow { color: var(--iclimate-accent-light); }
     .dark-workspace .text-muted { color: var(--ic-muted) !important; }
     .dark-workspace small, .dark-workspace .small { color: var(--ic-muted); }
     .dark-workspace .stat-label { color: var(--ic-muted); }

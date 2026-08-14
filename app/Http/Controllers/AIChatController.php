@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AIChat;
-use App\Services\PredictionService;
+use App\Services\AI\AIOrchestratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,14 +15,14 @@ class AIChatController extends Controller
         return redirect()->route($request->user()->dashboardRoute());
     }
 
-    public function message(Request $request, PredictionService $predictionService): JsonResponse
+    public function message(Request $request, AIOrchestratorService $orchestrator): JsonResponse
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:1000'],
             'save_conversation' => ['sometimes', 'boolean'],
         ]);
 
-        $result = $predictionService->answer($request->user(), $validated['question']);
+        $result = $orchestrator->answer($request->user(), $validated['question']);
 
         $shouldSave = (bool) ($validated['save_conversation'] ?? true);
 

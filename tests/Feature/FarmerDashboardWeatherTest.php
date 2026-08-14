@@ -26,6 +26,8 @@ class FarmerDashboardWeatherTest extends TestCase
             'services.weather.timezone' => 'Asia/Manila',
             'services.weather.cache_minutes' => 5,
             'services.weather.forecast_days' => 7,
+            'services.weather.provider' => 'openmeteo',
+            'services.weatherapi.key' => null,
         ]);
     }
 
@@ -106,8 +108,12 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertSee('getManilaDateKey', false);
         $response->assertSee('Live as of', false);
         $response->assertSee('data-weather-live-line', false);
-        $response->assertSee('Data updated', false);
-        $response->assertSee('data-weather-data-updated-line', false);
+        $response->assertSee('Near-real-time weather data', false);
+        $response->assertSee('data-weather-provider', false);
+        $response->assertDontSee('Data updated', false);
+        $response->assertDontSee('Observation updated', false);
+        $response->assertDontSee('Dashboard checked', false);
+        $response->assertDontSee('data-weather-data-updated-line', false);
         $response->assertSee('updateLiveWeatherTimestamp', false);
         $response->assertSee('startMinuteClock', false);
         $response->assertSee('visibilitychange', false);
@@ -137,6 +143,127 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertJsonStructure(['fetched_at', 'checked_at', 'guidance']);
     }
 
+    public function test_weatherapi_is_primary_provider_and_uses_configured_lian_coordinates(): void
+    {
+        config([
+            'services.weather.provider' => 'weatherapi',
+            'services.weatherapi.key' => 'test-weatherapi-key',
+            'services.weatherapi.base_url' => 'https://api.weatherapi.com/v1',
+        ]);
+
+        Http::fake([
+            'api.weatherapi.com/*' => Http::response($this->weatherApiPayload(), 200),
+        ]);
+
+        $weather = app(FarmerDashboardWeatherService::class)->current(force: true);
+
+        $this->assertSame('WeatherAPI', $weather['provider']);
+        $this->assertSame(27.9, $weather['current']['temperature']);
+        $this->assertSame(33.7, $weather['today']['rainfall']);
+        $this->assertSame(0.4, $weather['current']['precipitation']);
+        $this->assertSame('Overcast', $weather['current']['condition']);
+        $this->assertSame('2026-08-14T11:34:00+08:00', $weather['timestamps']['provider_updated_at']);
+
+        Http::assertSent(function ($request) {
+            $url = urldecode((string) $request->url());
+
+            return str_contains($url, 'forecast.json')
+                && str_contains($url, 'q=14.033,120.65')
+                && str_contains($url, 'days=7');
+        });
+    }
+
+    public function test_weatherapi_failure_falls_back_to_open_meteo(): void
+    {
+        config([
+            'services.weather.provider' => 'weatherapi',
+            'services.weatherapi.key' => 'test-weatherapi-key',
+            'services.weatherapi.base_url' => 'https://api.weatherapi.com/v1',
+        ]);
+
+        Http::fake([
+            'api.weatherapi.com/*' => Http::response(['error' => ['message' => 'maintenance']], 503),
+            'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
+        ]);
+
+        $weather = app(FarmerDashboardWeatherService::class)->current(force: true);
+
+        $this->assertSame('Open-Meteo', $weather['provider']);
+        $this->assertTrue($weather['provider_details']['fallback']);
+        $this->assertSame(25.5, $weather['current']['temperature']);
+    }
+
+    public function test_failed_refresh_returns_last_successful_weather_without_zero_placeholders(): void
+    {
+        config([
+            'services.weather.provider' => 'weatherapi',
+            'services.weatherapi.key' => 'test-weatherapi-key',
+            'services.weatherapi.base_url' => 'https://api.weatherapi.com/v1',
+        ]);
+
+        Http::fake([
+            'api.weatherapi.com/*' => Http::sequence()
+                ->push($this->weatherApiPayload(), 200)
+                ->push(['error' => ['message' => 'down']], 503)
+                ->push(['error' => ['message' => 'down']], 503)
+                ->push(['error' => ['message' => 'down']], 503),
+            'api.open-meteo.com/*' => Http::response(['reason' => 'down'], 503),
+        ]);
+
+        $service = app(FarmerDashboardWeatherService::class);
+        $service->current(force: true);
+        $fallback = $service->current(force: true);
+
+        $this->assertTrue($fallback['cached']);
+        $this->assertTrue($fallback['stale']);
+        $this->assertSame(27.9, $fallback['current']['temperature']);
+        $this->assertNotSame(0.0, $fallback['today']['rainfall']);
+    }
+
+    public function test_weatherapi_dashboard_cache_prevents_external_calls_on_each_poll(): void
+    {
+        config([
+            'services.weather.provider' => 'weatherapi',
+            'services.weatherapi.key' => 'test-weatherapi-key',
+            'services.weatherapi.base_url' => 'https://api.weatherapi.com/v1',
+        ]);
+
+        Http::fake([
+            'api.weatherapi.com/*' => Http::response($this->weatherApiPayload(), 200),
+        ]);
+
+        $service = app(FarmerDashboardWeatherService::class);
+        $first = $service->current();
+        $second = $service->current();
+
+        $this->assertFalse($first['cached']);
+        $this->assertTrue($second['cached']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_live_weather_endpoint_wraps_payload_for_frontend_clients(): void
+    {
+        config([
+            'services.weather.provider' => 'weatherapi',
+            'services.weatherapi.key' => 'test-weatherapi-key',
+            'services.weatherapi.base_url' => 'https://api.weatherapi.com/v1',
+        ]);
+
+        Http::fake([
+            'api.weatherapi.com/*' => Http::response($this->weatherApiPayload(), 200),
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson(route('api.weather.live'))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.provider', 'WeatherAPI')
+            ->assertJsonPath('data.current.temperature', 27.9)
+            ->assertJsonStructure(['data' => ['fetched_at', 'checked_at', 'timestamps', 'guidance']]);
+    }
+
     public function test_mao_dashboard_has_realtime_open_meteo_weather_endpoint_and_polling(): void
     {
         Http::fake([
@@ -160,6 +287,65 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertJsonPath('weather.source', 'Open-Meteo')
             ->assertJsonPath('weather.current_temperature_c', 25.5)
             ->assertJsonPath('source_label', 'Open-Meteo live weather for Lian, Batangas');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function weatherApiPayload(): array
+    {
+        return [
+            'location' => [
+                'name' => 'Lian',
+                'region' => 'Batangas',
+                'country' => 'Philippines',
+                'lat' => 14.033,
+                'lon' => 120.65,
+                'tz_id' => 'Asia/Manila',
+            ],
+            'current' => [
+                'last_updated_epoch' => 1786678440,
+                'last_updated' => '2026-08-14 11:34',
+                'temp_c' => 27.9,
+                'feelslike_c' => 33.0,
+                'humidity' => 85,
+                'precip_mm' => 0.4,
+                'condition' => ['text' => 'Overcast', 'code' => 1009],
+                'wind_kph' => 11.3,
+                'wind_degree' => 210,
+                'wind_dir' => 'SSW',
+                'gust_kph' => 18.5,
+                'pressure_mb' => 1008,
+                'cloud' => 100,
+                'vis_km' => 10,
+                'uv' => 4,
+                'is_day' => 1,
+            ],
+            'forecast' => [
+                'forecastday' => [
+                    [
+                        'date' => '2026-08-14',
+                        'day' => [
+                            'maxtemp_c' => 30.2,
+                            'mintemp_c' => 24.9,
+                            'totalprecip_mm' => 33.7,
+                            'daily_chance_of_rain' => 96,
+                            'condition' => ['text' => 'Overcast', 'code' => 1009],
+                        ],
+                    ],
+                    [
+                        'date' => '2026-08-15',
+                        'day' => [
+                            'maxtemp_c' => 29.0,
+                            'mintemp_c' => 25.0,
+                            'totalprecip_mm' => 8.0,
+                            'daily_chance_of_rain' => 84,
+                            'condition' => ['text' => 'Patchy rain nearby', 'code' => 1063],
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**

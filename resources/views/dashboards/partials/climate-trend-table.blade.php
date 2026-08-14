@@ -6,7 +6,7 @@
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th class="{{ $highlight === 'temperature' ? 'fc-modal-table-highlight' : '' }}">Temp (&deg;C)</th>
+                    <th class="{{ $highlight === 'temperature' ? 'fc-modal-table-highlight' : '' }}">Temp (°C)</th>
                     <th class="{{ $highlight === 'rainfall' ? 'fc-modal-table-highlight' : '' }}">Rainfall (mm)</th>
                     <th class="{{ $highlight === 'humidity' ? 'fc-modal-table-highlight' : '' }}">Humidity (%)</th>
                 </tr>

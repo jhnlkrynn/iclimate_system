@@ -43,7 +43,7 @@
     }
     .scene-glow { position: fixed; z-index: 0; pointer-events: none; border-radius: 50%; filter: blur(90px); }
     .scene-glow-1 { width: 420px; height: 420px; background: rgba(95,143,120,.16); top: -110px; right: -70px; }
-    .scene-glow-2 { width: 320px; height: 320px; background: rgba(232,167,61,.1); bottom: -50px; left: -50px; }
+    .scene-glow-2 { width: 320px; height: 320px; background: rgba(143,175,154,.1); bottom: -50px; left: -50px; }
 
     .register-main { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; justify-content: center; padding: 28px 20px; }
     .register-grid {
@@ -57,16 +57,16 @@
       display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600;
       color: #7FD6B5; text-decoration: none; margin-bottom: 18px; transition: color .2s;
     }
-    .back-link-top:hover { color: #F6D58A; }
+    .back-link-top:hover { color: #C9D8CE; }
 
     .reg-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
     .reg-logo img { width: 44px; height: auto; display: block; }
     .reg-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.3rem; color: #fff; letter-spacing: -0.01em; }
 
     .reg-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.7rem, 2.8vw, 2.2rem); font-weight: 400; color: #fff; line-height: 1.18; margin-bottom: 12px; }
-    .reg-headline em { font-style: normal; color: #E8A73D; }
+    .reg-headline em { font-style: normal; color: #1F5A46; }
     .reg-sub { font-size: .92rem; color: rgba(255,255,255,.78); line-height: 1.6; margin-bottom: 18px; max-width: 420px; }
-    .reg-sub a { color: #E8A73D; font-weight: 600; text-decoration: none; }
+    .reg-sub a { color: #1F5A46; font-weight: 600; text-decoration: none; }
 
     .perk-card {
       background: rgba(31,77,58,.4); border: 1px solid rgba(95,143,120,.5); border-radius: 14px;
@@ -91,9 +91,9 @@
       transition: transform var(--auth-motion-med), border-color var(--auth-motion-med), background-color var(--auth-motion-med);
     }
     .notice-card:hover { transform: translateY(-3px); border-color: rgba(95,143,120,.6); background: rgba(22,59,45,.75); }
-    .notice-icon { flex-shrink: 0; margin-top: 1px; color: #E8A73D; }
+    .notice-icon { flex-shrink: 0; margin-top: 1px; color: #1F5A46; }
     .notice-card p { font-size: .82rem; color: rgba(255,255,255,.75); line-height: 1.5; margin: 0; }
-    .notice-card strong { color: #F6D58A; font-weight: 700; }
+    .notice-card strong { color: #C9D8CE; font-weight: 700; }
 
     /* -- RIGHT: FORM CARD --------------------------------- */
     .form-card {
@@ -150,7 +150,7 @@
     .pwd-strength { margin-top: 7px; display: flex; gap: 4px; }
     .pwd-strength-bar { height: 3px; flex: 1; border-radius: 2px; background: rgba(95,143,120,.25); transition: background .3s; }
     .pwd-strength-bar.filled-weak { background: #e57a68; }
-    .pwd-strength-bar.filled-ok { background: #F6D58A; }
+    .pwd-strength-bar.filled-ok { background: #C9D8CE; }
     .pwd-strength-bar.filled-strong { background: #1F4D3A; }
 
     .terms-row {
@@ -172,16 +172,16 @@
 
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;
-      background: #E8A73D; color: #1F2937; border: none; border-radius: 11px; font-family: 'Inter', sans-serif;
+      background: #1F5A46; color: #fff; border: none; border-radius: 11px; font-family: 'Inter', sans-serif;
       font-size: .96rem; font-weight: 800; cursor: pointer; transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med); margin-bottom: 14px;
-      box-shadow: 0 10px 24px rgba(232,167,61,.28);
+      box-shadow: 0 10px 24px rgba(143,175,154,.28);
     }
-    .btn-login:hover { background: #F6D58A; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
+    .btn-login:hover { background: #123F32; color: #fff; transform: translateY(-1px); box-shadow: none; }
     .btn-login:active { transform: translateY(0) scale(.985); }
 
     .login-register { text-align: center; font-size: .86rem; color: #64748B; }
-    .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
-    .login-register a:hover { color: #C6872A; }
+    .login-register a { color: #1F5A46; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a:hover { color: #123F32; }
 
     @keyframes authSceneEnter { from { opacity: 0; transform: translateY(16px) scale(.992); filter: blur(2px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 
@@ -194,7 +194,7 @@
     .rf-brand { display: flex; align-items: center; gap: 10px; }
     .rf-brand img { width: 26px; height: 26px; object-fit: contain; }
     .rf-brand-text { display: flex; flex-direction: column; line-height: 1.3; }
-    .rf-brand-text strong { font-family: 'Inter', sans-serif; font-weight: 800; font-size: .9rem; color: #E8A73D; }
+    .rf-brand-text strong { font-family: 'Inter', sans-serif; font-weight: 800; font-size: .9rem; color: #1F5A46; }
     .rf-brand-text span { font-size: .68rem; color: rgba(127,214,181,.75); }
     .rf-badges { display: flex; gap: 22px; flex-wrap: wrap; }
     .rf-badge { display: flex; align-items: center; gap: 8px; }
@@ -202,6 +202,38 @@
     .rf-badge-text { display: flex; flex-direction: column; line-height: 1.25; }
     .rf-badge-text strong { font-size: .78rem; color: #fff; font-weight: 700; }
     .rf-badge-text span { font-size: .68rem; color: rgba(127,214,181,.75); }
+
+    .register-page .reg-sub,
+    .register-page .field-error,
+    .register-page .notice-card p,
+    .register-page .form-card-sub,
+    .register-page .terms-text,
+    .register-page #formMessage,
+    .register-page .login-register,
+    .register-page .perk-item {
+      font-size: .96rem;
+      line-height: 1.55;
+    }
+    .register-page .form-group label,
+    .register-page .captcha-label,
+    .register-page .role-pill span {
+      font-size: .94rem;
+    }
+    .register-page .form-group input,
+    .register-page .form-group select,
+    .register-page .btn-submit {
+      font-size: 1rem;
+    }
+    .register-page .perk-title,
+    .register-page .rf-brand-text strong,
+    .register-page .rf-badge-text strong {
+      font-size: 1rem;
+    }
+    .register-page .perk-sub,
+    .register-page .rf-brand-text span,
+    .register-page .rf-badge-text span {
+      font-size: .82rem;
+    }
 
     /* -- RESPONSIVE ---------------------------------------- */
     @media (max-width: 980px) {

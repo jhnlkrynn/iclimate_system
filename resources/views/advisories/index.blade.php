@@ -7,7 +7,7 @@
             border: 1px solid rgba(255,209,102,.48);
             border-radius: 14px;
             background:
-                linear-gradient(135deg, rgba(232,167,61,.24) 0%, rgba(18,43,32,.98) 42%, rgba(7,25,18,.99) 100%),
+                linear-gradient(135deg, rgba(197,139,42,.22) 0%, rgba(18,43,32,.98) 42%, rgba(7,25,18,.99) 100%),
                 #0d1f18;
             color: #fff;
             padding: 1rem;
@@ -29,16 +29,13 @@
             gap: 8px;
             color: #74c69d;
             font-family: 'DM Mono', monospace;
-            font-size: .68rem;
+            font-size: .875rem;
             font-weight: 800;
             letter-spacing: .12em;
             text-transform: uppercase;
         }
         .advisory-safety-eyebrow::before {
-            content: "";
-            width: 20px;
-            height: 1px;
-            background: #74c69d;
+            content: none;
         }
         .advisory-safety-card h2 {
             color: #fff;
@@ -58,7 +55,7 @@
             padding: .42rem .7rem;
             background: rgba(82,183,136,.18);
             color: #74c69d;
-            font-size: .78rem;
+            font-size: .875rem;
             font-weight: 900;
         }
         .advisory-safety-status.needs-help {
@@ -154,8 +151,8 @@
                         <input type="hidden" name="event_key" value="{{ $activeTyphoonSafetyEvent['key'] }}">
                         <textarea class="advisory-safety-note" name="note" rows="2" placeholder="Optional note for MAO.">{{ old('note', $typhoonSafetyResponse?->note) }}</textarea>
                         <div class="advisory-safety-actions">
-                            <button class="btn btn-warning fw-bold rounded-pill px-4" type="submit" name="status" value="safe">I am safe</button>
-                            <button class="btn btn-outline-light fw-bold rounded-pill px-4" type="submit" name="status" value="needs_help">I need help</button>
+                            <button class="btn btn-primary fw-bold rounded-pill px-4" type="submit" name="status" value="safe">I am safe</button>
+                            <button class="btn btn-danger fw-bold rounded-pill px-4" type="submit" name="status" value="needs_help">I need help</button>
                         </div>
                     </form>
                 </div>

@@ -5,37 +5,48 @@
 
     <style>
         .farmer-console {
-            --fc-green-950: #163B2D;
-            --fc-green-900: #1F4D3A;
-            --fc-green-800: #1F4D3A;
-            --fc-green-700: #1F4D3A;
+            --fc-green-950: #123F32;
+            --fc-green-900: #1F5A46;
+            --fc-green-800: #1F5A46;
+            --fc-green-700: #1F5A46;
             --fc-green-500: #5F8F78;
-            --fc-green-400: #7FD6B5;
-            --fc-green-200: #7FD6B5;
-            --fc-green-100: rgba(127,214,181,.22);
-            --fc-green-50:  rgba(95,143,120,.1);
-            --fc-sand:      #F7F6F2;
-            --fc-sand-dark: #5F8F78;
-            --fc-gold:      #E8A73D;
-            --fc-gold-dark: #C6872A;
-            --fc-gold-light:#F6D58A;
-            --fc-blue:      #2F6F8F;
-            --fc-coral:     #D85B45;
-            --fc-ink:       #1F2937;
-            --fc-ink-mid:   #64748B;
-            --fc-ink-light: rgba(31,41,55,.6);
-            --fc-border:    #5F8F78;
+            --fc-green-400: #8FAF9A;
+            --fc-green-200: #C9D8CE;
+            --fc-green-100: rgba(143,175,154,.18);
+            --fc-green-50:  #EEF3EF;
+            --fc-sand:      #F4F6F2;
+            --fc-sand-dark: #D8E0DA;
+            --fc-accent:      #8FAF9A;
+            --fc-accent-dark: #6F8978;
+            --fc-accent-light:#C9D8CE;
+            --fc-blue:      #4B7185;
+            --fc-coral:     #B84A4A;
+            --fc-warning:   #C58B2A;
+            --fc-ink:       #1E2B25;
+            --fc-ink-mid:   #68756D;
+            --fc-ink-light: rgba(30,43,37,.64);
+            --fc-border:    #D8E0DA;
             --radius-sm: 4px;
             --radius-md: 10px;
-            --radius-lg: 18px;
-            --radius-xl: 32px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
             --radius-pill: 100px;
             --shadow-sm: 0 1px 4px rgba(13,31,24,.08);
-            --shadow-md: 0 4px 20px rgba(13,31,24,.12);
-            --shadow-lg: 0 16px 56px rgba(13,31,24,.18);
-            --shadow-gold: 0 10px 28px rgba(232,167,61,.32);
+            --shadow-md: 0 6px 16px rgba(13,31,24,.10);
+            --shadow-lg: 0 10px 26px rgba(13,31,24,.12);
+            --shadow-accent: none;
             --ease: cubic-bezier(.4,0,.2,1);
+            --text-xs: .75rem;
+            --text-sm: .875rem;
+            --text-base: 1rem;
+            --text-md: 1.04rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
             font-family: 'Inter', system-ui, sans-serif;
+            font-size: var(--text-base);
+            line-height: 1.58;
             color: var(--fc-ink);
         }
         .farmer-console h1, .farmer-console h2, .farmer-console h3 {
@@ -50,32 +61,32 @@
         .fc-eyebrow {
             display: inline-flex; align-items: center; gap: 8px;
             font-family: 'DM Mono', monospace;
-            font-size: .72rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             letter-spacing: .12em;
             text-transform: uppercase;
-            color: var(--fc-gold-light);
+            color: var(--fc-accent-light);
             margin-bottom: 14px;
         }
-        .fc-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--fc-gold-light); }
-        .fc-eyebrow.on-light { color: var(--fc-gold-light); }
-        .fc-eyebrow.on-light::before { background: var(--fc-gold-light); }
+        .fc-eyebrow::before { content: none; }
+        .fc-eyebrow.on-light { color: var(--fc-accent-light); }
+        .fc-eyebrow.on-light::before { content: none; }
 
-        /* -- BUTTONS (pill, matches welcome.blade) -------- */
+        /* -- BUTTONS -------------------------------------- */
         .fc-btn {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 10px 22px;
-            border-radius: var(--radius-pill);
+            border-radius: var(--radius-md);
             font-family: 'Inter', sans-serif;
-            font-size: .85rem;
+            font-size: var(--text-sm);
             font-weight: 600;
             letter-spacing: .01em;
             transition: all .2s var(--ease);
             white-space: nowrap;
             border: 1.5px solid transparent;
         }
-        .fc-btn-gold { background: var(--fc-gold); color: var(--fc-ink); box-shadow: var(--shadow-gold); }
-        .fc-btn-gold:hover { background: var(--fc-gold-dark); color: var(--fc-ink); transform: translateY(-1px); }
+        .fc-btn-primary { background: var(--fc-green-700); color: #fff; box-shadow: none; }
+        .fc-btn-primary:hover { background: var(--fc-green-950); color: #fff; transform: translateY(-1px); }
         .fc-btn-outline-light { border-color: #fff; color: #fff; }
         .fc-btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--fc-ink); }
         .fc-btn-outline { border-color: var(--fc-green-700); color: var(--fc-green-700); background: transparent; }
@@ -86,12 +97,12 @@
             position: relative;
             overflow: hidden;
             border-radius: var(--radius-xl);
-            padding: 2rem 2.25rem;
+            padding: 1.5rem 1.65rem;
             margin-bottom: 1.5rem;
             color: #fff;
             background: linear-gradient(145deg, var(--fc-green-950) 0%, var(--fc-green-900) 100%);
             border: 1px solid rgba(255,255,255,.12);
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
         }
         .farmer-hero::before {
             content: "";
@@ -99,37 +110,114 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
             pointer-events: none; opacity: .6;
         }
-        .farmer-hero::after {
-            content: "";
-            position: absolute;
-            top: -30%; right: -8%;
-            width: 60%; height: 140%;
-            background: radial-gradient(ellipse at center, rgba(95,143,120,.14) 0%, transparent 65%);
-            pointer-events: none;
-        }
+        .farmer-hero::after { content: none; }
         .farmer-hero > * { position: relative; z-index: 1; }
+        .farmer-hero-grid {
+            display: grid;
+            grid-template-columns: minmax(420px, 1fr) minmax(360px, 448px);
+            grid-template-areas:
+                "copy actions"
+                "copy weather";
+            align-items: stretch;
+            gap: 1rem 1.5rem;
+        }
+        .farmer-hero-copy {
+            grid-area: copy;
+            max-width: 760px;
+            align-self: center;
+            padding-bottom: 0;
+        }
+        .farmer-hero-copy .fc-eyebrow {
+            font-size: var(--text-sm);
+            letter-spacing: .08em;
+            margin-bottom: .8rem;
+        }
+        .farmer-hero-copy .fc-eyebrow::before { content: none; }
+        .farmer-hero-copy h1 {
+            font-size: clamp(1.85rem, 3vw, 2.55rem);
+            line-height: 1.08;
+            max-width: 820px;
+            margin-bottom: .9rem;
+        }
+        .farmer-hero-copy p {
+            max-width: 760px;
+            font-size: var(--text-base);
+            line-height: 1.55;
+        }
+        .farmer-hero-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+            max-width: 780px;
+            margin-top: 1.35rem;
+        }
+        .farmer-hero-summary-item {
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,.06);
+            padding: .75rem .85rem;
+        }
+        .farmer-hero-summary-item span {
+            display: block;
+            color: var(--fc-accent-light);
+            font-family: 'DM Mono', monospace;
+            font-size: var(--text-sm);
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: .32rem;
+        }
+        .farmer-hero-summary-item strong {
+            display: block;
+            color: #fff;
+            font-size: 1.08rem;
+            line-height: 1.35;
+        }
+        .farmer-hero-summary-item small {
+            display: block;
+            color: rgba(255,255,255,.64);
+            font-size: var(--text-sm);
+            line-height: 1.5;
+            margin-top: .18rem;
+        }
+        .farmer-hero-side {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        .farmer-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .55rem;
+            justify-content: flex-start;
+            align-self: start;
+        }
+        .farmer-hero .weather-live-card { grid-area: weather; }
+        .farmer-hero-actions { grid-area: actions; }
+        .farmer-hero-actions .field-chip { flex: 1 1 100%; width: 100%; justify-content: center; }
         .farmer-hero h1 { color: #fff; font-size: clamp(1.7rem, 3.4vw, 2.5rem); margin-bottom: .35rem; }
-        .farmer-hero h1 em { font-style: italic; color: var(--fc-gold); }
-        .farmer-hero p { color: rgba(255,255,255,.72); max-width: 640px; margin: 0; font-size: .95rem; line-height: 1.7; }
+        .farmer-hero h1 em { font-style: normal; color: #fff; }
+        .farmer-hero p { color: rgba(255,255,255,.78); max-width: 640px; margin: 0; font-size: var(--text-base); line-height: 1.7; }
         .field-chip {
             display: inline-flex;
             align-items: center;
             gap: .5rem;
             border: 1px solid rgba(255,255,255,.18);
-            border-radius: var(--radius-pill);
+            border-radius: var(--radius-md);
             padding: .5rem .85rem;
             background: rgba(255,255,255,.1);
             color: rgba(255,255,255,.85);
             font-family: 'DM Mono', monospace;
-            font-size: .76rem;
+            font-size: var(--text-sm);
             font-weight: 500;
             letter-spacing: .02em;
         }
         .field-pulse {
             width: 8px; height: 8px;
             border-radius: 999px;
-            background: var(--fc-gold);
-            box-shadow: 0 0 0 5px rgba(232,167,61,.25);
+            background: var(--fc-green-400);
             flex-shrink: 0;
         }
 
@@ -143,73 +231,53 @@
         }
         .dashboard-section-label:first-of-type { margin-top: 0; }
         .section-title {
-            color: var(--fc-gold-light);
+            color: var(--fc-accent-light);
             font-size: clamp(1.2rem, 2vw, 1.5rem);
             margin: 0;
         }
-        .section-note { color: rgba(255,255,255,.65); font-size: .85rem; margin: .2rem 0 0; }
+        .section-note { color: rgba(255,255,255,.74); font-size: var(--text-sm); margin: .2rem 0 0; line-height: 1.5; }
         .fc-section-link {
             display: inline-flex; align-items: center; gap: 6px;
             font-family: 'DM Mono', monospace;
-            font-size: .72rem;
+            font-size: var(--text-sm);
             font-weight: 600;
             letter-spacing: .05em;
             text-transform: uppercase;
-            color: var(--fc-gold);
+            color: var(--fc-accent);
             white-space: nowrap;
         }
-        .fc-section-link:hover { color: var(--fc-gold-light); }
+        .fc-section-link:hover { color: var(--fc-accent-light); }
 
         /* -- STAT / FIELD CARDS ------------------------------ */
         .climate-grid {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            overscroll-behavior-x: contain;
-            scroll-snap-type: x proximity;
-            -webkit-overflow-scrolling: touch;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            align-items: stretch;
             gap: .85rem;
             margin-bottom: .5rem;
-            padding-bottom: .35rem;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(95,143,120,.4) transparent;
-        }
-        .climate-grid::-webkit-scrollbar { height: 6px; }
-        .climate-grid::-webkit-scrollbar-track { background: transparent; }
-        .climate-grid::-webkit-scrollbar-thumb { background: rgba(95,143,120,.35); border-radius: 999px; }
-        .climate-grid .field-card {
-            flex: 1 1 0;
-            min-width: 190px;
-            scroll-snap-align: start;
-        }
-        @media (min-width: 1360px) {
-            .climate-grid {
-                overflow-x: visible;
-                flex-wrap: nowrap;
-            }
-            .climate-grid .field-card { min-width: 0; }
         }
         .field-card {
             position: relative;
-            border: 1.5px solid var(--fc-sand-dark);
+            border: 1px solid rgba(201,215,206,.95);
             border-radius: var(--radius-lg);
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
+            background: #ffffff;
             padding: 1rem 1.1rem;
             text-decoration: none;
             display: flex; flex-direction: column; gap: .5rem;
-            transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s;
+            transition: transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s;
             width: 100%;
             text-align: left;
             font: inherit;
             cursor: pointer;
             box-shadow: var(--shadow-sm);
+            min-height: 174px;
         }
-        .field-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-500); }
+        .field-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: var(--fc-green-500); }
         .field-card:focus-visible { outline: 2px solid var(--fc-green-400); outline-offset: 2px; }
         .field-tap-hint {
             color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
-            font-size: .64rem;
+            font-size: var(--text-xs);
             font-weight: 600;
             letter-spacing: .04em;
             text-transform: uppercase;
@@ -226,13 +294,21 @@
             --fc-green-800: #1F4D3A;
             --fc-green-700: #1F4D3A;
             --fc-green-400: #7FD6B5;
-            --fc-gold: #E8A73D;
-            --fc-gold-dark: #C6872A;
+            --fc-accent: #8FAF9A;
+            --fc-accent-dark: #6F8978;
             --fc-ink: #1F2937;
             --radius-lg: 18px;
             --radius-pill: 100px;
-            --shadow-gold: 0 10px 28px rgba(232,167,61,.32);
+            --shadow-accent: none;
             --ease: cubic-bezier(.4,0,.2,1);
+            --text-xs: .75rem;
+            --text-sm: .875rem;
+            --text-base: 1rem;
+            --text-md: 1.04rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
         }
         .fc-stat-modal.ic-drawer .ic-drawer-panel { width: min(560px, 100vw); }
         .fc-modal-content { background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--fc-ink-mid); border: 1px solid var(--fc-sand-dark); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(13,31,24,.18); overflow: hidden; }
@@ -240,17 +316,17 @@
         .fc-modal-header .modal-title { color: var(--fc-ink); font-family: 'DM Serif Display', serif; }
         .fc-modal-body { overflow-y: auto; background: #ffffff; padding: 1rem; }
         .fc-modal-footer { border-top: 1px solid var(--fc-border); background: var(--fc-green-50); padding: .8rem 1rem; }
-        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: var(--fc-ink); }
-        .fc-modal-sub { color: var(--fc-ink-light); font-size: .8rem; margin: .25rem 0 .75rem; }
-        .fc-modal-note { color: var(--fc-ink-mid); font-size: .82rem; line-height: 1.55; margin-bottom: .85rem; }
+        .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: var(--text-2xl); color: var(--fc-ink); line-height: 1.18; }
+        .fc-modal-sub { color: var(--fc-ink-mid); font-size: var(--text-sm); margin: .25rem 0 .75rem; }
+        .fc-modal-note { color: var(--fc-ink-mid); font-size: var(--text-base); line-height: 1.58; margin-bottom: .85rem; }
         .fc-modal-table { color: var(--fc-ink); }
         .fc-modal-table.table { min-width: 620px; }
-        .fc-modal-table thead th { background: var(--fc-green-50) !important; color: var(--fc-ink-light) !important; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-color: var(--fc-border); font-weight: 600; }
-        .fc-modal-table td { color: var(--fc-ink) !important; border-color: var(--fc-border); }
+        .fc-modal-table thead th { background: var(--fc-green-50) !important; color: var(--fc-ink-mid) !important; font-size: var(--text-sm); text-transform: uppercase; letter-spacing: .04em; border-color: var(--fc-border); font-weight: 600; }
+        .fc-modal-table td { color: var(--fc-ink) !important; border-color: var(--fc-border); font-size: var(--text-sm); line-height: 1.45; }
         .fc-modal-table-highlight { color: var(--fc-green-700) !important; font-weight: 700; }
         .field-icon {
-            width: 38px; height: 38px;
-            border-radius: 50%;
+            width: 32px; height: 32px;
+            border-radius: 8px;
             display: grid; place-items: center;
             background: rgba(95,143,120,.14);
             border: 1px solid rgba(127,214,181,.35);
@@ -261,11 +337,11 @@
         .field-card-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
         .field-status {
             display: inline-flex; align-items: center;
-            font-family: 'DM Mono', monospace;
-            font-size: .6rem;
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-xs);
             font-weight: 700;
             letter-spacing: .04em;
-            text-transform: uppercase;
+            text-transform: none;
             padding: .22rem .55rem;
             border-radius: var(--radius-pill);
             background: rgba(95,143,120,.14);
@@ -273,39 +349,41 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .field-status.is-live { background: rgba(232,167,61,.16); color: var(--fc-gold-dark); }
+        .field-status.is-live { background: rgba(143,175,154,.18); color: var(--fc-green-700); }
         .field-status.is-warn { background: rgba(216,91,69,.14); color: var(--fc-coral); }
         .field-label {
             color: var(--fc-ink-light);
-            font-family: 'DM Mono', monospace;
-            font-size: .64rem;
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-sm);
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: .08em;
+            text-transform: none;
+            letter-spacing: 0;
         }
         .field-value {
             font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.7rem, 3vw, 2.15rem);
+            font-size: clamp(1.7rem, 2.4vw, 2rem);
             line-height: 1;
             color: var(--fc-ink);
             letter-spacing: -.02em;
         }
-        .field-note { color: var(--fc-ink-light); font-size: .78rem; line-height: 1.5; }
+        .field-note { color: var(--fc-ink-mid); font-size: var(--text-sm); line-height: 1.5; }
         .field-source {
             color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
-            font-size: .62rem;
+            font-size: var(--text-xs);
             font-weight: 600;
             letter-spacing: .04em;
             text-transform: uppercase;
             line-height: 1.35;
+            margin-top: auto;
         }
         .field-source span { display: block; color: var(--fc-ink-light); margin-top: .1rem; }
         .weather-live-card {
-            min-width: min(100%, 360px);
-            border: 1px solid rgba(82,183,136,.28);
+            width: 100%;
+            min-width: 0;
+            border: 1px solid rgba(201,215,206,.95);
             border-radius: var(--radius-lg);
-            background: rgba(255,255,255,.72);
+            background: #ffffff;
             padding: 1rem;
             box-shadow: var(--shadow-sm);
         }
@@ -321,26 +399,25 @@
             align-items: center;
             gap: .45rem;
             color: var(--fc-green-700);
-            font-family: 'DM Mono', monospace;
-            font-size: .66rem;
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-sm);
             font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
+            letter-spacing: 0;
+            text-transform: none;
         }
         .weather-live-dot {
             width: 8px;
             height: 8px;
             border-radius: 999px;
             background: var(--fc-green-500);
-            box-shadow: 0 0 0 5px rgba(82,183,136,.16);
         }
         .weather-refresh-btn {
             border: 1px solid var(--fc-border);
             background: #fff;
             color: var(--fc-green-700);
-            border-radius: var(--radius-pill);
+            border-radius: var(--radius-md);
             padding: .35rem .65rem;
-            font-size: .72rem;
+            font-size: var(--text-sm);
             font-weight: 700;
         }
         .weather-refresh-btn:disabled { opacity: .65; cursor: wait; }
@@ -358,11 +435,11 @@
         .weather-live-temp {
             color: var(--fc-ink);
             font-family: 'DM Serif Display', serif;
-            font-size: 2rem;
+            font-size: 2.35rem;
             line-height: 1;
         }
-        .weather-live-condition { color: var(--fc-green-700); font-weight: 800; font-size: .94rem; }
-        .weather-live-meta { color: var(--fc-ink-light); font-size: .78rem; margin-top: .25rem; line-height: 1.45; }
+        .weather-live-condition { color: var(--fc-green-700); font-weight: 800; font-size: 1.08rem; }
+        .weather-live-meta { color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .3rem; line-height: 1.5; }
         .weather-mini-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -374,8 +451,8 @@
             background: var(--fc-green-50);
             padding: .6rem;
         }
-        .weather-mini span { display: block; color: var(--fc-ink-light); font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; }
-        .weather-mini strong { display: block; color: var(--fc-ink); font-size: .86rem; margin-top: .1rem; }
+        .weather-mini span { display: block; color: var(--fc-ink-mid); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
+        .weather-mini strong { display: block; color: var(--fc-ink); font-size: var(--text-base); margin-top: .1rem; line-height: 1.25; }
         .forecast-strip {
             display: grid;
             grid-template-columns: repeat(7, minmax(96px, 1fr));
@@ -385,19 +462,19 @@
         .forecast-day {
             border: 1px solid var(--fc-border);
             border-radius: var(--radius-md);
-            background: rgba(255,255,255,.72);
+            background: #ffffff;
             padding: .7rem;
             text-align: center;
         }
         .forecast-day img { width: 34px; height: 34px; display: block; margin: .25rem auto; }
-        .forecast-day strong { display: block; color: var(--fc-ink); font-size: .82rem; }
-        .forecast-day span { display: block; color: var(--fc-ink-light); font-size: .72rem; line-height: 1.35; }
+        .forecast-day strong { display: block; color: var(--fc-ink); font-size: var(--text-sm); font-weight: 700; line-height: 1.3; }
+        .forecast-day span { display: block; color: var(--fc-ink-mid); font-size: var(--text-sm); line-height: 1.42; }
 
         /* -- PANELS ------------------------------------------ */
         .farmer-panel {
-            border: 1.5px solid var(--fc-sand-dark);
+            border: 1px solid rgba(201,215,206,.95);
             border-radius: var(--radius-lg);
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
+            background: #ffffff;
             box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
@@ -409,8 +486,8 @@
             padding: 1.15rem 1.25rem 1rem;
             border-bottom: 1px solid var(--fc-border);
         }
-        h2.farmer-panel-title { font-size: 1.05rem; margin: 0; color: var(--fc-ink); }
-        .farmer-panel-sub { margin: .25rem 0 0; color: var(--fc-ink-light); font-size: .82rem; font-family: 'Inter', sans-serif; }
+        h2.farmer-panel-title { font-size: var(--text-lg); margin: 0; color: var(--fc-ink); }
+        .farmer-panel-sub { margin: .25rem 0 0; color: var(--fc-ink-mid); font-size: var(--text-sm); line-height: 1.5; font-family: 'Inter', sans-serif; }
         .farmer-panel-body { padding: 1.25rem; }
         .farmer-list-item {
             display: flex;
@@ -430,19 +507,19 @@
             color: var(--fc-green-700);
             font-family: 'DM Mono', monospace;
             font-weight: 700;
-            font-size: .66rem;
+            font-size: var(--text-xs);
             flex: 0 0 auto;
         }
-        .list-title { font-weight: 700; color: var(--fc-ink); line-height: 1.3; font-size: .92rem; }
-        .list-text { color: var(--fc-ink-light); font-size: .84rem; margin-top: .2rem; line-height: 1.55; }
-        .list-meta { color: var(--fc-ink-light); font-family: 'DM Mono', monospace; font-size: .66rem; margin-top: .4rem; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+        .list-title { font-weight: 700; color: var(--fc-ink); line-height: 1.3; font-size: var(--text-base); }
+        .list-text { color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .2rem; line-height: 1.55; }
+        .list-meta { color: var(--fc-ink-mid); font-family: 'DM Mono', monospace; font-size: var(--text-xs); margin-top: .4rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; line-height: 1.4; }
         .status-pill {
             display: inline-flex;
             align-items: center;
             border-radius: var(--radius-pill);
             padding: .32rem .62rem;
             font-family: 'DM Mono', monospace;
-            font-size: .64rem;
+            font-size: var(--text-xs);
             font-weight: 600;
             letter-spacing: .03em;
             text-transform: uppercase;
@@ -452,7 +529,7 @@
         .status-pill.muted { background: var(--fc-green-50); color: var(--fc-ink-light); }
         .status-pill.warn { background: rgba(216,91,69,.14); color: var(--fc-coral); }
         .status-pill.info { background: rgba(47,111,143,.14); color: var(--fc-blue); }
-        .status-pill.gold { background: rgba(232,167,61,.16); color: var(--fc-gold-dark); }
+        .status-pill.neutral { background: rgba(143,175,154,.18); color: var(--fc-green-700); }
         .advisory-card {
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
@@ -460,7 +537,7 @@
             background: var(--fc-green-50);
             min-height: 100%;
         }
-        .advisory-card strong { color: var(--fc-ink); display: block; margin: .5rem 0 .35rem; font-size: .95rem; }
+        .advisory-card strong { color: var(--fc-ink); display: block; margin: .5rem 0 .35rem; font-size: var(--text-base); line-height: 1.35; }
 
         /* -- QUICK ACTIONS ------------------------------------ */
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -476,8 +553,8 @@
             transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s, background .2s;
         }
         .quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--fc-green-500); background: var(--fc-green-100); }
-        .quick-action strong { display: block; color: var(--fc-ink); font-size: .92rem; font-weight: 700; }
-        .quick-action span { display: block; color: var(--fc-ink-light); font-size: .8rem; margin-top: .3rem; line-height: 1.5; }
+        .quick-action strong { display: block; color: var(--fc-ink); font-size: var(--text-base); font-weight: 700; }
+        .quick-action span { display: block; color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .3rem; line-height: 1.5; }
         .empty-soft {
             border: 1.5px dashed var(--fc-sand-dark);
             background: var(--fc-green-50);
@@ -485,7 +562,7 @@
             padding: 1.75rem;
             text-align: center;
         }
-        .empty-soft strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.05rem; color: var(--fc-ink); }
+        .empty-soft strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: var(--text-lg); color: var(--fc-ink); }
 
         /* -- PRIORITY TOOLS (role-card style) ------------------ */
         .priority-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: .5rem; }
@@ -505,9 +582,9 @@
         }
         .priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-700); }
         .priority-card strong { display: block; color: var(--fc-ink); font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.1rem; margin-bottom: .4rem; }
-        .priority-card span.desc { display: block; color: var(--fc-ink-light); font-size: .82rem; line-height: 1.55; font-family: 'Inter', sans-serif; }
+        .priority-card span.desc { display: block; color: var(--fc-ink-mid); font-size: var(--text-sm); line-height: 1.55; font-family: 'Inter', sans-serif; }
         .priority-card .status-pill { align-self: flex-start; }
-        .priority-card.priority-highlight .status-pill { background: var(--fc-gold); color: var(--fc-ink); }
+        .priority-card.priority-highlight .status-pill { background: var(--fc-green-100); color: var(--fc-green-700); }
         .priority-icon {
             width: 44px; height: 44px;
             border-radius: 50%;
@@ -517,7 +594,7 @@
             color: var(--fc-green-700);
             flex-shrink: 0;
         }
-        .priority-card.priority-highlight .priority-icon { background: rgba(232,167,61,.16); border-color: rgba(232,167,61,.4); color: var(--fc-gold-dark); }
+        .priority-card.priority-highlight .priority-icon { background: rgba(143,175,154,.16); border-color: rgba(143,175,154,.4); color: var(--fc-green-700); }
 
         /* -- COLLAPSIBLE GROUPS --------------------------------- */
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -540,18 +617,30 @@
         }
         .dashboard-group > summary::-webkit-details-marker { display: none; }
         .dashboard-group-summary-main { display: flex; align-items: center; gap: .9rem; }
-        h2.dashboard-group-title { color: var(--fc-ink); font-size: 1rem; margin: 0; }
-        .dashboard-group-note { color: var(--fc-ink-light); font-size: .82rem; margin: .15rem 0 0; font-family: 'Inter', sans-serif; }
-        .dashboard-group-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; color: var(--fc-green-700); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+        h2.dashboard-group-title { color: var(--fc-ink); font-size: var(--text-lg); margin: 0; }
+        .dashboard-group-note { color: var(--fc-ink-mid); font-size: var(--text-sm); margin: .15rem 0 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
+        .dashboard-group-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; color: var(--fc-green-700); font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
         .dashboard-group-toggle::before { content: "Collapse"; }
         .dashboard-group:not([open]) .dashboard-group-toggle::before { content: "Expand"; }
         .dashboard-group-body { padding: 1.25rem; }
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .farmer-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .farmer-list-item:nth-of-type(n+4), .list-compact .row > [class*="col-"]:nth-child(n+5) { display: none; }
 
+        @media (max-width: 1399.98px) {
+            .farmer-hero-grid { grid-template-columns: minmax(0, 1fr) minmax(340px, 420px); }
+            .climate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
         @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 767.98px) {
-            .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .farmer-hero-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .farmer-hero-grid {
+                grid-template-areas:
+                    "copy"
+                    "actions"
+                    "weather";
+            }
+            .farmer-hero-summary { grid-template-columns: 1fr; }
+            .farmer-hero-actions .field-chip { flex: 1 1 100%; width: 100%; justify-content: flex-start; }
             .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
             .weather-mini-grid { grid-template-columns: 1fr; }
             .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -567,60 +656,28 @@
         $profile = auth()->user()->farmerProfile;
         $weatherTimezone = config('services.weather.timezone', 'Asia/Manila');
         $weatherNow = now($weatherTimezone);
-        $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
-        $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
-        $weatherStatusShort = ($forecastResult['ok'] ?? false) ? 'Live' : 'Stored';
-        $weatherFreshness = $latestForecast
-            ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
-            : 'Stored Record';
-        $weatherFetchedAt = $latestForecast?->fetched_at?->timezone($weatherTimezone)->shortDateTime('M d, Y');
-        $weatherDate = $latestForecast?->forecast_date?->format('M d, Y') ?? $climateSummary?->record_date?->format('M d, Y');
-        $forecastHour = $weatherNow->hour;
-        $forecastHourLabel = $weatherNow->format('g A');
-        $currentWeather = $latestForecast?->raw_response['current'] ?? [];
-        $currentWeatherTime = data_get($currentWeather, 'time');
-        $currentWeatherTimeLabel = $currentWeatherTime
-            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->shortTime()
-            : $weatherNow->shortTime();
-        $currentWeatherDate = $currentWeatherTime
-            ? \Illuminate\Support\Carbon::parse($currentWeatherTime, $weatherTimezone)->format('M d, Y')
-            : $weatherNow->format('M d, Y');
-        $hourlyWeather = $latestForecast?->raw_response['hourly'] ?? [];
-        $hourlyTemperature = $hourlyWeather['temperature_2m'][$forecastHour] ?? null;
-        $hourlyHumidity = $hourlyWeather['relative_humidity_2m'][$forecastHour] ?? null;
-        $hourlyRainfall = $hourlyWeather['rain'][$forecastHour] ?? $hourlyWeather['precipitation'][$forecastHour] ?? null;
-        $weatherSourceLine = $latestForecast
-            ? $weatherSource.' forecast'.($weatherFetchedAt ? ' - Updated '.$weatherFetchedAt : '')
-            : 'Recorded: '.$weatherSource;
-        $weatherTimingLabel = $currentWeather !== []
-            ? 'Current weather reading - '.$currentWeatherTimeLabel
-            : ($latestForecast ? 'Hourly forecast - '.$forecastHourLabel : 'Stored Record');
-        $weatherDisplayDate = $currentWeather !== []
-            ? $currentWeatherDate
-            : $weatherDate;
-        $weatherUpdateLine = $weatherFetchedAt
-            ? 'Updated '.$weatherFetchedAt
-            : $weatherDataMode;
-        $temperatureValue = data_get($currentWeather, 'temperature_2m') ?? $hourlyTemperature ?? $latestForecast?->temperature ?? $climateSummary?->temperature;
-        $rainfallValue = data_get($currentWeather, 'rain') ?? data_get($currentWeather, 'precipitation') ?? $hourlyRainfall ?? $latestForecast?->rainfall_mm ?? $climateSummary?->rainfall;
-        $humidityValue = data_get($currentWeather, 'relative_humidity_2m') ?? $hourlyHumidity ?? $latestForecast?->humidity ?? $climateSummary?->humidity;
-        $weatherNoteLabel = $currentWeather !== []
-            ? 'Current Open-Meteo weather for Lian'
-            : ($latestForecast ? 'Latest Open-Meteo forecast for Lian' : 'Latest recorded field climate data');
         $weatherPayload = $dashboardWeather ?? [];
         $currentWeather = $weatherPayload['current'] ?? [];
         $todayWeather = $weatherPayload['today'] ?? [];
         $weatherSource = $weatherPayload['provider'] ?? 'Open-Meteo';
+        $weatherSourceDisplay = $weatherSource;
+        if (($weatherPayload['stale'] ?? false) && $weatherSource !== 'Unavailable') {
+            $weatherSourceDisplay .= ' stored data';
+        }
         $weatherFetchedAt = $weatherPayload['fetched_at'] ?? null;
         $weatherFetchedLabel = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
             ? $weatherFetchedAt->timezone($weatherTimezone)->format('M j, Y').' • '.$weatherFetchedAt->timezone($weatherTimezone)->format('g:i A')
             : ($weatherPayload['fetched_at_label'] ?? 'Weather temporarily unavailable');
-        $weatherStatusLabel = ($weatherPayload['stale'] ?? false) ? 'Latest Available Data' : 'Live Weather';
+        $weatherCheckedAt = $dashboardWeatherResponse['checked_at'] ?? null;
+        $weatherCheckedLabel = $dashboardWeatherResponse['checked_at_label'] ?? $weatherNow->format('M j, Y').' - '.$weatherNow->format('g:i A');
+        $weatherStatusLabel = ($weatherPayload['stale'] ?? false) ? 'Latest available' : 'Near-real-time';
+        $weatherStatusShort = ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'Live' : 'Stored';
         $temperatureValue = $currentWeather['temperature'] ?? null;
         $feelsLikeValue = $currentWeather['feels_like'] ?? null;
         $humidityValue = $currentWeather['humidity'] ?? null;
         $todayRainfallValue = $todayWeather['rainfall'] ?? null;
         $currentPrecipitationValue = $currentWeather['precipitation'] ?? $currentWeather['rain'] ?? null;
+        $rainfallValue = $todayRainfallValue ?? $currentPrecipitationValue ?? $climateSummary?->rainfall;
         $windSpeedValue = $currentWeather['wind_speed'] ?? null;
         $weatherCondition = $currentWeather['condition'] ?? 'Weather temporarily unavailable';
         $weatherIcon = $currentWeather['icon'] ?? $weatherPayload['icon'] ?? '/images/weather/unavailable.svg';
@@ -628,26 +685,46 @@
         $weatherNoteLabel = ($weatherPayload['success'] ?? false)
             ? 'Current weather for Lian, Batangas'
             : 'Weather data temporarily unavailable';
-        $weatherSourceLine = $weatherSource.' current weather - Data updated '.$weatherFetchedLabel;
-        $weatherUpdateLine = 'Data updated '.$weatherFetchedLabel;
+        $weatherSourceLine = 'Source: '.$weatherSourceDisplay;
+        $weatherUpdateLine = $weatherFetchedLabel;
+        $weatherTimingLabel = ($weatherPayload['success'] ?? false) ? 'Current weather reading' : 'Latest available weather reading';
+        $weatherDisplayDate = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
+            ? $weatherFetchedAt->timezone($weatherTimezone)->format('M d, Y')
+            : $climateSummary?->record_date?->format('M d, Y');
         $weatherForecastDays = $weatherPayload['forecast'] ?? [];
         $weatherFetchedIso = $dashboardWeatherResponse['fetched_at'] ?? ($weatherFetchedAt instanceof \Illuminate\Support\Carbon ? $weatherFetchedAt->toIso8601String() : null);
     @endphp
 
     <div class="farmer-console">
-        <section class="farmer-hero">
-            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
-            <div class="farmer-hero-leaf" aria-hidden="true"></div>
-            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-start">
-                <div>
-                    <div class="fc-eyebrow on-light">Farmer field view</div>
-                    <h1>Climate-smart <em>farmer dashboard.</em></h1>
-                    <p>Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, community updates, and messages for Lian, Batangas.</p>
+        <section class="farmer-hero" data-reveal="blur" data-reveal-duration="720" data-parallax data-parallax-speed="0.035" data-parallax-limit="16">
+            <div class="farmer-hero-leaf" aria-hidden="true" data-parallax data-parallax-speed="0.08" data-parallax-limit="28"></div>
+            <div class="farmer-hero-grid">
+                <div class="farmer-hero-copy">
+                    <div class="fc-eyebrow on-light" data-reveal="fade-up" data-reveal-delay="60" data-reveal-duration="560">Farmer Dashboard</div>
+                    <h1 data-reveal="blur" data-reveal-delay="150" data-reveal-duration="680">Lian field conditions</h1>
+                    <p data-reveal="fade-up" data-reveal-delay="240" data-reveal-duration="620">Weather, rainfall, advisories, community updates, and messages for {{ auth()->user()->name }} in Lian, Batangas.</p>
+                    <div class="farmer-hero-summary" aria-label="Farmer dashboard summary" data-reveal-stagger>
+                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="320">
+                            <span>Current Weather</span>
+                            <strong>{{ $weatherCondition }}</strong>
+                            <small>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'No temperature data' }} in Lian, Batangas</small>
+                        </div>
+                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="390">
+                            <span>Today&apos;s Rain</span>
+                            <strong>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'No rainfall data' }}</strong>
+                            <small>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</small>
+                        </div>
+                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="460">
+                            <span>Advisories</span>
+                            <strong>{{ number_format($activeWeatherAlerts ?? 0) }} active</strong>
+                            <small>{{ number_format($highRiskHeatMapAreas) }} high-risk barangay areas tracked</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="weather-live-card" data-weather-root data-weather-url="{{ route('farmer.dashboard.weather') }}">
+                <div class="weather-live-card" data-weather-root data-weather-url="{{ route('farmer.dashboard.weather') }}" data-reveal="fade-right" data-reveal-delay="360" data-reveal-duration="740">
                     <div class="weather-live-head">
-                        <span class="weather-live-status"><span class="weather-live-dot"></span><span data-weather-status>{{ $weatherStatusLabel }}</span></span>
-                        <button type="button" class="weather-refresh-btn" data-weather-refresh>Refresh Weather</button>
+                        <span class="weather-live-status"><span class="weather-live-dot"></span>Current Weather</span>
+                        <button type="button" class="weather-refresh-btn" data-weather-refresh>Refresh</button>
                     </div>
                     <div class="weather-live-main">
                         <img class="weather-live-icon" src="{{ $weatherIcon }}" alt="{{ $weatherCondition }}" data-weather-icon>
@@ -657,9 +734,8 @@
                             <div class="weather-live-meta">
                                 <strong>Lian, Batangas</strong><br>
                                 Feels like <span data-weather-feels-like>{{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</span><br>
-                                <span data-weather-live-line>Live as of {{ $weatherNow->format('M j, Y') }} &bull; {{ $weatherNow->format('g:i A') }} &middot; {{ $weatherSource }}</span><br>
-                                <span data-weather-data-updated-line>Data updated <span data-weather-updated>{{ $weatherFetchedLabel }}</span></span><br>
-                                <span data-weather-freshness>{{ $weatherFetchedIso ? 'just now' : 'Weather timestamp unavailable' }}</span>
+                                Source: <span data-weather-provider>{{ $weatherSourceDisplay }}</span><br>
+                                <span data-weather-freshness>{{ $weatherFetchedIso ? 'Near-real-time weather data' : 'Weather timestamp unavailable' }}</span>
                             </div>
                         </div>
                     </div>
@@ -669,67 +745,51 @@
                         <div class="weather-mini"><span>Wind</span><strong data-weather-wind-mini>{{ $windSpeedValue !== null ? number_format((float) $windSpeedValue, 1).' km/h' : 'N/A' }}</strong></div>
                     </div>
                 </div>
-            </div>
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F j, Y') }} {{ $weatherNow->format('g:i:s A') }}</span></span>
-                <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
-                <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
-                <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
+                <div class="farmer-hero-actions" data-reveal="fade-left" data-reveal-delay="260">
+                    <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F j, Y') }} {{ $weatherNow->format('g:i:s A') }}</span></span>
+                    <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
+                    <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
+                    <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
+                </div>
             </div>
         </section>
 
-        <div class="dashboard-section-label">
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
             <div class="fc-eyebrow on-light">At a glance</div>
         </div>
 
-        <section class="climate-grid">
-            <button type="button" class="field-card" data-drawer-open="#statModalTemperature">
+        <section class="climate-grid" data-reveal-stagger>
+            <button type="button" class="field-card" data-drawer-open="#statModalTemperature" data-reveal="fade-up" data-reveal-delay="0">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M9 11.3V4.5a1.5 1.5 0 0 1 3 0v6.8a3 3 0 1 1-3 0Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
                 </div>
                 <div class="field-label">Temperature</div>
                 <div class="field-value" data-weather-temperature-card>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
                 <div class="field-note" data-weather-temperature-note>Feels like {{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</div>
-                <div class="field-source">
-                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
-                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
-                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalRainfall">
+            <button type="button" class="field-card" data-drawer-open="#statModalRainfall" data-reveal="fade-up" data-reveal-delay="70">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.6 3.6 5 6.8 5 9.5A5 5 0 1 1 5 11.5C5 8.8 7.4 5.6 10 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
                 </div>
-                <div class="field-label">Rainfall</div>
-                <div class="field-value">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'N/A' }}</div>
-                <div class="field-note">Use advisories before fertilizer application</div>
-                <div class="field-icon">RAIN</div>
                 <div class="field-label">Today&apos;s Rainfall</div>
                 <div class="field-value" data-weather-rain-card>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</div>
                 <div class="field-note" data-weather-precip-note>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</div>
-                <div class="field-source">
-                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
-                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
-                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalHumidity">
+            <button type="button" class="field-card" data-drawer-open="#statModalHumidity" data-reveal="fade-up" data-reveal-delay="140">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 10.5a3.6 3.6 0 0 0 .7 7.1 4.8 4.8 0 0 0 9.2.8 3.2 3.2 0 0 0-.5-6.3H6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.2 12.6A3.6 3.6 0 0 1 12 7.1a4.7 4.7 0 0 1 1.6 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                    <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
                 </div>
                 <div class="field-label">Humidity</div>
                 <div class="field-value" data-weather-humidity-card>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</div>
                 <div class="field-note">Current relative humidity</div>
-                <div class="field-source">
-                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
-                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
-                </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalAlerts">
+            <button type="button" class="field-card" data-drawer-open="#statModalAlerts" data-reveal="fade-up" data-reveal-delay="210">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 15.5V9a4 4 0 1 1 8 0v6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 15.5h11M8.3 17.8a1.9 1.9 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
                     <span class="field-status {{ $unreadNotifications > 0 ? 'is-warn' : '' }}">{{ $unreadNotifications > 0 ? 'Unread' : 'Clear' }}</span>
@@ -737,10 +797,9 @@
                 <div class="field-label">Weather Alerts</div>
                 <div class="field-value">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
                 <div class="field-note">Unread weather warnings only</div>
-                <div class="field-source">Source: ICLIMATE ALERTS</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalRisk">
+            <button type="button" class="field-card" data-drawer-open="#statModalRisk" data-reveal="fade-up" data-reveal-delay="280">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                     <span class="field-status {{ $highRiskHeatMapAreas > 0 ? 'is-warn' : '' }}">{{ $highRiskHeatMapAreas > 0 ? 'Flagged' : 'Clear' }}</span>
@@ -748,15 +807,14 @@
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
                 <div class="field-note">High or severe barangay risk areas</div>
-                <div class="field-source">Source: ICLIMATE HEAT MAP</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
         </section>
 
         @if($weatherForecastDays !== [])
-            <section class="forecast-strip" data-weather-forecast>
+            <section class="forecast-strip" data-weather-forecast data-reveal-stagger>
                 @foreach($weatherForecastDays as $forecastDay)
-                    <div class="forecast-day">
+                    <div class="forecast-day" data-reveal="fade-up" data-reveal-delay="{{ $loop->index * 60 }}">
                         <strong>{{ $forecastDay['day'] ?? '' }}</strong>
                         <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
                         <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
@@ -785,7 +843,7 @@
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
         <div class="fc-stat-panel" id="statPanelTemperature" hidden>
             <div class="fc-modal-content">
@@ -795,12 +853,12 @@
                 </div>
                 <div class="fc-modal-body">
                     <div class="fc-modal-headline" data-weather-temperature-modal>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-modal-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSource) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-sub" data-weather-modal-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSourceDisplay) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
                     <p class="fc-modal-note">Current temperature and apparent temperature come from the normalized weather provider payload for Lian, Batangas. Compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
                     @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
                 </div>
                 <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -819,7 +877,7 @@
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
         <div class="fc-stat-panel" id="statPanelRainfall" hidden>
             <div class="fc-modal-content">
@@ -829,12 +887,12 @@
                 </div>
                 <div class="fc-modal-body">
                     <div class="fc-modal-headline" data-weather-rain-modal>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-rain-sub>Today&apos;s rainfall uses daily precipitation_sum from {{ strtoupper($weatherSource) }}. Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}. {{ $weatherUpdateLine }}</p>
+                    <p class="fc-modal-sub" data-weather-rain-sub>Today&apos;s rainfall uses daily total precipitation from {{ strtoupper($weatherSourceDisplay) }}. Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}. {{ $weatherUpdateLine }}</p>
                     <p class="fc-modal-note">The headline is today&apos;s accumulated rainfall, not the current interval. Current precipitation is shown separately to avoid mixing rainfall definitions.</p>
                     @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
                 </div>
                 <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -853,7 +911,7 @@
                         @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
                     </div>
                     <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
         <div class="fc-stat-panel" id="statPanelHumidity" hidden>
             <div class="fc-modal-content">
@@ -863,12 +921,12 @@
                 </div>
                 <div class="fc-modal-body">
                     <div class="fc-modal-headline" data-weather-humidity-modal>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-humidity-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSource) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-sub" data-weather-humidity-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSourceDisplay) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
                     <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. Monitor fields closely when humidity stays elevated.</p>
                     @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
                 </div>
                 <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -903,7 +961,7 @@
                         @endforelse
                     </div>
                     <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
+                        <a class="fc-btn fc-btn-primary" href="{{ route('notifications.index') }}">Open Notifications</a>
                     </div>
         <div class="fc-stat-panel" id="statPanelAlerts" hidden>
             <div class="fc-modal-content">
@@ -928,7 +986,7 @@
                     @endforelse
                 </div>
                 <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
+                    <a class="fc-btn fc-btn-primary" href="{{ route('notifications.index') }}">Open Notifications</a>
                 </div>
             </div>
         </div>
@@ -957,40 +1015,40 @@
                         @endforelse
                     </div>
                     <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-gold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                        <a class="fc-btn fc-btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="dashboard-section-label">
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
             <div class="fc-eyebrow on-light">Daily tools</div>
         </div>
 
-        <section class="priority-grid">
-            <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}">
+        <section class="priority-grid" data-reveal-stagger>
+            <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}" data-reveal="fade-up" data-reveal-delay="0">
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v6A2.5 2.5 0 0 1 14.5 14H9l-3.5 3v-3h-1A2.5 2.5 0 0 1 2 11.5v-6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7" cy="8.5" r=".9" fill="currentColor"/><circle cx="10.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="14" cy="8.5" r=".9" fill="currentColor"/></svg></div>
                 <div><strong>Climora AI</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
                 <span class="status-pill">Open Climora AI</span>
             </a>
-            <a class="priority-card" href="{{ route('heatmap-areas.index') }}">
+            <a class="priority-card" href="{{ route('heatmap-areas.index') }}" data-reveal="fade-up" data-reveal-delay="70">
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5 7 4l6 2 4.5-1.5v10L13 16l-6-2-4.5 1.5v-10Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 4v10M13 6v10" stroke="currentColor" stroke-width="1.2"/></svg></div>
                 <div><strong>Barangay Heat Map</strong><span class="desc">Check risk areas before planning field work, irrigation, and harvest movement.</span></div>
                 <span class="status-pill">Open Heat Map</span>
             </a>
-            <a class="priority-card" href="{{ route('community-feed.index') }}">
+            <a class="priority-card" href="{{ route('community-feed.index') }}" data-reveal="fade-up" data-reveal-delay="140">
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M6 17l2.2-2.5h3.6L14 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 7.5h9M5.5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
                 <div><strong>Community Feed</strong><span class="desc">View MAO updates, programs, activities, photos, videos, comments, and reactions.</span></div>
                 <span class="status-pill">Open Feed</span>
             </a>
-            <a class="priority-card" href="{{ route('messages.index') }}">
+            <a class="priority-card" href="{{ route('messages.index') }}" data-reveal="fade-up" data-reveal-delay="210">
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 5.5l7 5.5 7-5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div><strong>Messages</strong><span class="desc">Start private conversations with MAO personnel for specific farm concerns.</span></div>
                 <span class="status-pill">Open Messages</span>
             </a>
         </section>
 
-        <div class="dashboard-section-label">
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
             <div>
                 <div class="fc-eyebrow on-light">Guidance</div>
                 <p class="section-note">Published advisories and the most relevant field note.</p>
@@ -1004,7 +1062,7 @@
         <div class="dashboard-focus-grid">
         <div class="row g-4 mb-0">
             <div class="col-xl-8">
-                <div class="farmer-panel h-100">
+                <div class="farmer-panel h-100" data-reveal="fade-right">
                     <div class="farmer-panel-header">
                         <div>
                             <h2 class="farmer-panel-title">Latest Planting Advisories</h2>
@@ -1021,10 +1079,10 @@
                                             <span class="status-pill {{ match(strtolower((string) $advisory->type)) {
                                                 'warning' => 'warn',
                                                 'irrigation' => 'info',
-                                                'climate' => 'gold',
+                                                'climate' => 'neutral',
                                                 default => '',
                                             } }}">{{ $advisory->type }}</span>
-                                            <span class="small mono" style="color: var(--fc-ink-light); font-size: .74rem;">{{ $advisory->created_at?->format('M d') }}</span>
+                                            <span class="small mono" style="color: var(--fc-ink-mid);">{{ $advisory->created_at?->format('M d') }}</span>
                                         </div>
                                         <strong>{{ $advisory->title }}</strong>
                                         <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
@@ -1040,7 +1098,7 @@
             </div>
 
             <div class="col-xl-4">
-                <div class="farmer-panel h-100">
+                <div class="farmer-panel h-100" data-reveal="fade-left" data-reveal-delay="120">
                     <div class="farmer-panel-header">
                         <div>
                             <h2 class="farmer-panel-title">Today&apos;s Field Guide</h2>
@@ -1048,8 +1106,6 @@
                         </div>
                     </div>
                     <div class="farmer-panel-body">
-                        @if($latestAdvisory)
-                            <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
                         @if($weatherGuidance)
                             <div class="list-mark mb-3">WX</div>
                             <div class="list-title" data-weather-guidance-title>{{ $weatherGuidance['title'] }}</div>
@@ -1073,7 +1129,7 @@
             </div>
         </div>
 
-        <details class="dashboard-group">
+        <details class="dashboard-group" data-reveal="scale">
             <summary>
                 <div class="dashboard-group-summary-main">
                     <span class="list-mark">
@@ -1091,7 +1147,7 @@
             <div class="dashboard-group-body">
         <div class="row g-4 mb-0">
             <div class="col-xl-4">
-                <div class="farmer-panel h-100">
+                <div class="farmer-panel h-100" data-reveal="fade-up">
                     <div class="farmer-panel-header">
                         <div>
                             <h2 class="farmer-panel-title">Community Posts</h2>
@@ -1117,7 +1173,7 @@
             </div>
 
             <div class="col-xl-4">
-                <div class="farmer-panel h-100">
+                <div class="farmer-panel h-100" data-reveal="fade-up" data-reveal-delay="80">
                     <div class="farmer-panel-header">
                         <div>
                             <h2 class="farmer-panel-title">Community and Messages</h2>
@@ -1127,15 +1183,15 @@
                     </div>
                     <div class="farmer-panel-body">
                         <div class="quick-grid" style="grid-template-columns:1fr;">
-                            <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>View MAO updates, activities, programs, photos, videos, comments, and reactions.</span></a>
-                            <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Start a private conversation with MAO personnel.</span></a>
+                            <a class="quick-action" href="{{ route('community-feed.index') }}" data-reveal="fade-up"><strong>Community Feed</strong><span>View MAO updates, activities, programs, photos, videos, comments, and reactions.</span></a>
+                            <a class="quick-action" href="{{ route('messages.index') }}" data-reveal="fade-up" data-reveal-delay="70"><strong>Messages</strong><span>Start a private conversation with MAO personnel.</span></a>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-xl-4">
-                <div class="farmer-panel h-100">
+                <div class="farmer-panel h-100" data-reveal="fade-up" data-reveal-delay="160">
                     <div class="farmer-panel-header">
                         <div>
                             <h2 class="farmer-panel-title">Farm Profile Snapshot</h2>
@@ -1163,7 +1219,7 @@
             </div>
         </details>
 
-        <details class="dashboard-group">
+        <details class="dashboard-group" data-reveal="scale" data-reveal-delay="100">
             <summary>
                 <div class="dashboard-group-summary-main">
                     <span class="list-mark">
@@ -1179,7 +1235,7 @@
                 </span>
             </summary>
             <div class="dashboard-group-body">
-        <div class="farmer-panel">
+        <div class="farmer-panel" data-reveal="fade-up">
             <div class="farmer-panel-header">
                 <div>
                     <h2 class="farmer-panel-title">Farmer Quick Access</h2>
@@ -1187,13 +1243,13 @@
                 </div>
             </div>
             <div class="farmer-panel-body">
-                <div class="quick-grid">
-                    <a class="quick-action" href="{{ route('climate-records.index') }}"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
-                    <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
-                    <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>Climora AI</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
-                    <a class="quick-action" href="{{ route('planting-advisories.index') }}"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
-                    <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
-                    <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>
+                <div class="quick-grid" data-reveal-stagger>
+                    <a class="quick-action" href="{{ route('climate-records.index') }}" data-reveal="fade-up"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
+                    <a class="quick-action" href="{{ route('heatmap-areas.index') }}" data-reveal="fade-up"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
+                    <a class="quick-action" href="{{ route('ai-chat.index') }}" data-reveal="fade-up"><strong>Climora AI</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
+                    <a class="quick-action" href="{{ route('planting-advisories.index') }}" data-reveal="fade-up"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
+                    <a class="quick-action" href="{{ route('community-feed.index') }}" data-reveal="fade-up"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
+                    <a class="quick-action" href="{{ route('messages.index') }}" data-reveal="fade-up"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>
                 </div>
             </div>
         </div>
@@ -1207,7 +1263,7 @@
             const dateTarget = document.querySelector('[data-current-date]');
 
             const MANILA_TIME_ZONE = @json($weatherTimezone);
-            const WEATHER_POLL_INTERVAL = 60000;
+            const WEATHER_POLL_INTERVAL = @json(max(10, (int) config('services.weather.poll_seconds', 60)) * 1000);
             const dashboardDateFormatter = new Intl.DateTimeFormat('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -1253,10 +1309,6 @@
                     dateTarget.textContent = `${dashboardDateFormatter.format(now)} ${dashboardTimeFormatter.format(now)}`;
                 }
 
-            const weatherRefreshMs = @json(max(1, (int) config('services.open_meteo.refresh_minutes', 10)) * 60 * 1000);
-            setInterval(() => {
-                if (document.visibilityState !== 'visible') return;
-                if (document.querySelector('.modal.show, .ic-drawer.show')) return;
                 const currentManilaDate = getManilaDateKey();
                 if (refreshOnDateChange && currentManilaDate !== previousManilaDate) {
                     previousManilaDate = currentManilaDate;
@@ -1271,17 +1323,57 @@
             let weatherMinuteTimeout = null;
             let weatherMinuteTimer = null;
             let weatherFetchedAt = @json($weatherFetchedIso);
-            let weatherProvider = @json($weatherSource);
+            let weatherCheckedAt = @json($weatherCheckedAt);
+            let weatherProvider = @json($weatherSourceDisplay);
 
             const fmt = (value, decimals = 1, suffix = '') => {
                 if (value === null || value === undefined || Number.isNaN(Number(value))) return 'N/A';
                 return `${Number(value).toFixed(decimals)}${suffix}`;
             };
             const text = (selector, value) => {
-                document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
+                const animatedSelectors = [
+                    '[data-weather-status]',
+                    '[data-weather-condition]',
+                    '[data-weather-temperature]',
+                    '[data-weather-feels-like]',
+                    '[data-weather-provider]',
+                    '[data-weather-freshness]',
+                    '[data-weather-humidity-mini]',
+                    '[data-weather-rain-mini]',
+                    '[data-weather-wind-mini]',
+                    '[data-weather-temperature-card]',
+                    '[data-weather-temperature-note]',
+                    '[data-weather-rain-card]',
+                    '[data-weather-precip-note]',
+                    '[data-weather-humidity-card]',
+                    '[data-weather-temperature-modal]',
+                    '[data-weather-rain-modal]',
+                    '[data-weather-humidity-modal]',
+                ];
+                const shouldAnimate = animatedSelectors.includes(selector);
+
+                document.querySelectorAll(selector).forEach((target) => {
+                    if (shouldAnimate && window.iClimateMotion?.animateValueChange) {
+                        window.iClimateMotion.animateValueChange(target, value);
+                    } else {
+                        target.textContent = value;
+                    }
+                });
+            };
+            const weatherSourceLabel = (payload = {}) => {
+                const provider = payload.provider || payload.source || weatherProvider || 'Weather provider unavailable';
+                if (provider === 'Unavailable') return 'Weather unavailable';
+
+                const parts = [provider];
+                if (payload.stale) parts.push('stored data');
+
+                return parts.join(' ');
             };
             const setWeatherStatus = (label) => text('[data-weather-status]', label);
             const updateLiveWeatherTimestamp = () => {
+                const providerLabel = weatherProvider || 'Weather provider unavailable';
+                text('[data-weather-provider]', providerLabel);
+                return;
                 const now = new Date();
                 const provider = weatherProvider || 'Open-Meteo';
 
@@ -1317,6 +1409,7 @@
 
                 return Math.max(0, Math.floor((Date.now() - fetched.getTime()) / 1000));
             };
+            const weatherCheckedLabel = () => weatherCheckedAt ? weatherExactLabel(weatherCheckedAt) : 'Dashboard check pending';
             const weatherFreshnessLabel = (seconds) => {
                 if (seconds === null) return 'Weather timestamp unavailable';
                 if (seconds < 60) return 'just now';
@@ -1327,13 +1420,13 @@
                 return `${Math.floor(seconds / 3600)} hours ago`;
             };
             const weatherStatusLabel = (seconds) => {
-                if (!navigator.onLine) return 'Connection Lost';
-                if (seconds === null) return 'Latest Available Data';
-                if (seconds < 300) return 'Live Weather';
+                if (!navigator.onLine) return 'Offline';
+                if (seconds === null) return 'Latest available';
+                if (seconds < 300) return 'Near-real-time';
                 if (seconds < 900) return `Weather Data · ${Math.floor(seconds / 60)} min ago`;
-                if (seconds < 1800) return 'Weather Data Getting Old';
+                if (seconds < 1800) return 'Getting old';
 
-                return 'Weather Data May Be Stale';
+                return 'May be stale';
             };
             const updateWeatherFreshness = () => {
                 const seconds = weatherAgeSeconds();
@@ -1343,8 +1436,6 @@
                 text('[data-weather-updated]', exact);
                 text('[data-weather-provider]', weatherProvider || 'Weather provider unavailable');
                 text('[data-weather-freshness]', freshness);
-                text('[data-weather-data-updated-line]', `Data updated ${exact}`);
-                text('[data-weather-updated-card]', `Data updated ${exact} · ${weatherProvider || 'Weather provider unavailable'} · ${freshness}`);
                 setWeatherStatus(weatherStatusLabel(seconds));
             };
 
@@ -1353,7 +1444,7 @@
                 if (!target || !Array.isArray(days)) return;
 
                 target.innerHTML = days.map((day) => `
-                    <div class="forecast-day">
+                    <div class="forecast-day" data-reveal="fade-up">
                         <strong>${day.day ?? ''}</strong>
                         <img src="${day.icon ?? '/images/weather/unavailable.svg'}" alt="${day.condition ?? 'Forecast'}">
                         <span>${day.condition ?? 'N/A'}</span>
@@ -1361,14 +1452,17 @@
                         <span>${day.precipitation_probability !== null && day.precipitation_probability !== undefined ? Number(day.precipitation_probability).toFixed(0) : 'N/A'}% rain chance</span>
                     </div>
                 `).join('');
+                window.iClimateMotion?.initScrollAnimations?.(target);
             };
 
             const renderWeather = (payload) => {
                 const current = payload.current ?? {};
                 const today = payload.today ?? {};
                 const provider = payload.provider ?? 'Open-Meteo';
+                const sourceLabel = weatherSourceLabel(payload);
                 weatherFetchedAt = payload.fetched_at ?? weatherFetchedAt;
-                weatherProvider = provider;
+                weatherCheckedAt = payload.checked_at ?? weatherCheckedAt;
+                weatherProvider = sourceLabel;
                 const updated = weatherExactLabel(weatherFetchedAt);
                 const freshness = weatherFreshnessLabel(weatherAgeSeconds());
 
@@ -1376,9 +1470,8 @@
                 text('[data-weather-temperature]', fmt(current.temperature, 1, '°C'));
                 text('[data-weather-feels-like]', fmt(current.feels_like, 1, '°C'));
                 text('[data-weather-updated]', updated);
-                text('[data-weather-provider]', provider);
+                text('[data-weather-provider]', sourceLabel);
                 text('[data-weather-freshness]', freshness);
-                text('[data-weather-data-updated-line]', `Data updated ${updated}`);
                 text('[data-weather-humidity-mini]', fmt(current.humidity, 0, '%'));
                 text('[data-weather-rain-mini]', fmt(today.rainfall, 1, ' mm'));
                 text('[data-weather-wind-mini]', fmt(current.wind_speed, 1, ' km/h'));
@@ -1387,12 +1480,13 @@
                 text('[data-weather-rain-card]', fmt(today.rainfall, 1, ' mm'));
                 text('[data-weather-precip-note]', `Current precipitation: ${fmt(current.precipitation ?? current.rain, 1, ' mm')}`);
                 text('[data-weather-humidity-card]', fmt(current.humidity, 0, '%'));
-                text('[data-weather-updated-card]', `Data updated ${updated} · ${provider} · ${freshness}`);
-                text('[data-weather-source-inline]', provider.toUpperCase());
                 text('[data-weather-temperature-modal]', fmt(current.temperature, 1, '°C'));
                 text('[data-weather-rain-modal]', fmt(today.rainfall, 1, ' mm'));
                 text('[data-weather-humidity-modal]', fmt(current.humidity, 0, '%'));
-                text('[data-weather-rain-sub]', `Today's rainfall uses daily precipitation_sum from ${provider.toUpperCase()}. Current precipitation: ${fmt(current.precipitation ?? current.rain, 1, ' mm')}. Data updated ${updated} · ${freshness}`);
+
+                text('[data-weather-rain-sub]', `Today's rainfall uses daily total precipitation from ${sourceLabel}. Current precipitation: ${fmt(current.precipitation ?? current.rain, 1, ' mm')}.`);
+                text('[data-weather-modal-sub]', `Source: ${sourceLabel}`);
+                text('[data-weather-humidity-sub]', `Source: ${sourceLabel}`);
 
                 const icon = document.querySelector('[data-weather-icon]');
                 if (icon && current.icon) {
@@ -1426,7 +1520,7 @@
                     if (!response.ok) throw new Error(`Weather endpoint returned ${response.status}`);
                     renderWeather(await response.json());
                 } catch (error) {
-                    setWeatherStatus(navigator.onLine ? 'Latest Available Data' : 'Connection Lost');
+                    setWeatherStatus(navigator.onLine ? 'Latest available' : 'Offline');
                 } finally {
                     weatherRequestInProgress = false;
                     if (refreshButton) {
@@ -1436,7 +1530,7 @@
                 }
             };
 
-            refreshButton?.addEventListener('click', () => refreshWeather(false));
+            refreshButton?.addEventListener('click', () => refreshWeather(true));
 
             const startWeatherPolling = () => {
                 if (weatherPollTimer) clearInterval(weatherPollTimer);
@@ -1462,7 +1556,7 @@
                 refreshWeather(false);
             });
             window.addEventListener('offline', () => {
-                setWeatherStatus('Connection Lost');
+                setWeatherStatus('Offline');
             });
 
             updateDashboardClock(false);
@@ -1476,3 +1570,4 @@
         });
     </script>
 </x-app-layout>
+

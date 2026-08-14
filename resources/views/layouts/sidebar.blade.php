@@ -146,10 +146,10 @@
     };
 
     $renderAiCard = function () use ($sidebarIcon): string {
-        return '<div class="sidebar-ai-card" onclick="document.getElementById(\'icAiWidget\')?.classList.add(\'open\'); document.getElementById(\'icAiInput\')?.focus();">'
+        return '<button type="button" class="sidebar-ai-card" data-ai-open>'
             .'<span class="sidebar-ai-icon">'.$sidebarIcon('ai').'</span>'
             .'<span><span class="sidebar-ai-title d-block">AI Assistant</span><span class="sidebar-ai-sub">Ask me anything!</span></span>'
-            .'</div>';
+            .'</button>';
     };
 @endphp
 

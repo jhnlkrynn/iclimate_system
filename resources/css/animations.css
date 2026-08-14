@@ -1,0 +1,121 @@
+html {
+    scroll-behavior: smooth;
+}
+
+body.js-enabled [data-reveal] {
+    --ic-reveal-distance: 30px;
+    --ic-reveal-duration: 650ms;
+    --ic-reveal-delay: 0ms;
+    opacity: 0;
+    transition:
+        opacity var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1),
+        transform var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1),
+        filter var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1);
+    transition-delay: var(--ic-reveal-delay);
+    will-change: opacity, transform;
+}
+
+body.js-enabled [data-reveal="fade-up"] {
+    transform: translateY(var(--ic-reveal-distance));
+}
+
+body.js-enabled [data-reveal="fade-left"] {
+    transform: translateX(calc(var(--ic-reveal-distance) * -1));
+}
+
+body.js-enabled [data-reveal="fade-right"] {
+    transform: translateX(var(--ic-reveal-distance));
+}
+
+body.js-enabled [data-reveal="scale"] {
+    transform: scale(.96);
+}
+
+body.js-enabled [data-reveal="blur"] {
+    --ic-reveal-distance: 15px;
+    transform: translateY(var(--ic-reveal-distance));
+    filter: blur(6px);
+}
+
+body.js-enabled [data-reveal].is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+}
+
+[data-reveal-line]::before,
+.fc-eyebrow[data-reveal]::before,
+.eyebrow[data-reveal]::before {
+    content: none !important;
+    transform: none !important;
+    transition: none;
+}
+
+body.js-enabled [data-reveal-line]::before,
+body.js-enabled .fc-eyebrow[data-reveal]::before,
+body.js-enabled .eyebrow[data-reveal]::before {
+    transform: none !important;
+}
+
+body.js-enabled [data-reveal-line].is-visible::before,
+body.js-enabled .fc-eyebrow[data-reveal].is-visible::before,
+body.js-enabled .eyebrow[data-reveal].is-visible::before {
+    transform: none !important;
+}
+
+[data-parallax] {
+    --ic-parallax-y: 0px;
+    transform: translate3d(0, var(--ic-parallax-y), 0);
+    will-change: transform;
+}
+
+.ic-value-changing {
+    animation: icValueChange 240ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.weather-live-icon {
+    animation: icWeatherFloat 4.8s ease-in-out infinite;
+}
+
+@keyframes icValueChange {
+    0% { opacity: 1; transform: translateY(0); }
+    45% { opacity: .58; transform: translateY(3px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes icWeatherFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+@media (max-width: 767.98px) {
+    body.js-enabled [data-reveal] {
+        --ic-reveal-distance: 15px;
+        --ic-reveal-duration: 520ms;
+    }
+
+    [data-parallax] {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body.js-enabled [data-reveal],
+    body.js-enabled [data-reveal].is-visible,
+    [data-parallax],
+    .weather-live-icon {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .ic-value-changing {
+        animation: none !important;
+    }
+}

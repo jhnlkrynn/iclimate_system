@@ -1,6 +1,6 @@
 <x-app-layout>
     <style>
-        .feed-wrap { --feed-ink:#1f2a24; --feed-muted:#6b7c72; --feed-line:#e8e0d0; --feed-green:#2d6a4f; --feed-mint:#52b788; --feed-blue:#2f6f8f; --feed-gold:#e8a73d; }
+        .feed-wrap { --feed-ink:#1E2B25; --feed-muted:#68756D; --feed-line:#D8E0DA; --feed-green:#1F5A46; --feed-mint:#8FAF9A; --feed-blue:#4B7185; --feed-accent:#8FAF9A; }
         .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:var(--feed-ink); background:linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .feed-hero::before {
             content:"";
@@ -12,7 +12,7 @@
         .feed-hero > * { position:relative; z-index:1; }
         .feed-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:var(--feed-ink); }
         .feed-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.12em; color:#74c69d; margin-bottom:.4rem; }
-        .feed-eyebrow::before { content:''; display:block; width:18px; height:1px; background:#74c69d; }
+        .feed-eyebrow::before { content:none; }
         .feed-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--feed-line); border-radius:999px; padding:.5rem .85rem; background:rgba(45,106,79,.06); color:var(--feed-ink); font-family:'DM Mono', monospace; font-size:.76rem; font-weight:500; letter-spacing:.02em; }
         .feed-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .feed-grid { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:1rem; align-items:start; margin-top:1rem; }
@@ -31,7 +31,7 @@
         .composer-option:has(input:checked) { border-color:#52b788 !important; background:#edf8f1 !important; box-shadow:inset 0 0 0 1px rgba(82,183,136,.16); }
         .composer-option .form-check-input { width:1rem; height:1rem; flex:0 0 auto; }
         .composer-layout .row { position:relative; }
-        .composer-layout .row::before { content:""; position:absolute; inset:-.45rem; z-index:0; border-radius:18px; background:linear-gradient(135deg, rgba(82,183,136,.08), rgba(232,167,61,.08)); pointer-events:none; }
+        .composer-layout .row::before { content:""; position:absolute; inset:-.45rem; z-index:0; border-radius:18px; background:linear-gradient(135deg, rgba(82,183,136,.08), rgba(143,175,154,.08)); pointer-events:none; }
         .composer-layout .row > * { position:relative; z-index:1; }
         .composer-file-list { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
         .composer-file-chip { border:1px solid #d4edda; border-radius:999px; background:#f7fbf8; color:#274438; padding:.22rem .55rem; font-size:.74rem; font-weight:800; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -242,7 +242,7 @@
             inset: 0;
             background:
                 linear-gradient(120deg, rgba(82,183,136,.11), transparent 36%),
-                radial-gradient(circle at 94% 12%, rgba(232,167,61,.16), transparent 28%);
+                radial-gradient(circle at 94% 12%, rgba(143,175,154,.16), transparent 28%);
             pointer-events: none;
         }
         .feed-wrap .feed-composer .feed-card-body {
@@ -914,6 +914,52 @@
             .feed-post-card form.d-flex .btn {
                 width: 100%;
             }
+        }
+        .feed-wrap {
+            --text-xs: .75rem;
+            --text-sm: .875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            font-size: var(--text-base);
+            line-height: 1.58;
+        }
+        .feed-eyebrow,
+        .feed-chip,
+        .field-box-label,
+        .composer-head-tag,
+        .feed-meta,
+        .manage-panel summary {
+            font-size: var(--text-sm);
+            line-height: 1.35;
+        }
+        .feed-body-text,
+        .comment-bubble,
+        .composer-head-sub,
+        .composer-submit-row::before,
+        .feed-empty p,
+        .feed-wrap .form-control,
+        .feed-wrap .form-select {
+            font-size: var(--text-base);
+            line-height: 1.55;
+        }
+        .feed-badge,
+        .composer-file-chip,
+        .reaction-counts,
+        .reaction-count-pill {
+            font-size: var(--text-xs);
+            line-height: 1.3;
+        }
+        .reaction-trigger,
+        .feed-post-card .reaction-trigger {
+            font-size: var(--text-sm);
+            line-height: 1.35;
+        }
+        .feed-post-heading,
+        .composer-head-title,
+        .reaction-viewer-title,
+        .comment-bubble .fw-bold {
+            font-size: var(--text-lg);
+            line-height: 1.35;
         }
     </style>
 

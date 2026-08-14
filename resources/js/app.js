@@ -1,5 +1,6 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { initScrollAnimations } from './scroll-animations';
 import {
     Chart,
     ArcElement,
@@ -72,42 +73,28 @@ function bindNavbarState() {
 }
 
 function bindRevealMotion() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
     const selectors = [
         '.page-hero',
         '.alert',
-        '.card',
-        '.glass-card',
-        '.module-tile',
-        '.climate-chip',
-        '.risk-card',
-        '.stat-card',
-        '.soft-section',
-        '.filter-panel',
-        '.table-responsive',
+        '.card:not(.no-reveal)',
+        '.glass-card:not(.no-reveal)',
+        '.module-tile:not(.no-reveal)',
+        '.climate-chip:not(.no-reveal)',
+        '.risk-card:not(.no-reveal)',
+        '.stat-card:not(.no-reveal)',
+        '.soft-section:not(.no-reveal)',
+        '.filter-panel:not(.no-reveal)',
+        '.table-responsive:not(.no-reveal)',
     ].join(',');
 
-    const elements = [...document.querySelectorAll(selectors)]
-        .filter((element) => !element.closest('.modal, .offcanvas, .ic-ai-panel'));
-
-    elements.slice(0, 36).forEach((element, index) => {
-        if (element.dataset.revealBound === 'true') return;
-        element.dataset.revealBound = 'true';
-        element.classList.add('ic-reveal');
-        element.style.setProperty('--ic-reveal-delay', `${Math.min(index * 38, 260)}ms`);
-    });
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
+    [...document.querySelectorAll(selectors)]
+        .filter((element) => !element.closest('.modal, .offcanvas, .ic-ai-panel, .farmer-console'))
+        .forEach((element, index) => {
+            if (!element.dataset.reveal) element.dataset.reveal = 'fade-up';
+            if (!element.dataset.revealDelay) element.dataset.revealDelay = String(Math.min(index * 45, 260));
         });
-    }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
 
-    elements.forEach((element) => observer.observe(element));
+    initScrollAnimations(document);
 }
 
 function bindGestureFeedback() {

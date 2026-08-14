@@ -70,6 +70,16 @@ class DashboardController extends Controller
         return response()->json($weather->responsePayload($weather->current($request->boolean('refresh'))));
     }
 
+    public function liveWeather(Request $request, FarmerDashboardWeatherService $weather): JsonResponse
+    {
+        $payload = $weather->responsePayload($weather->current($request->boolean('refresh')));
+
+        return response()->json([
+            'success' => (bool) ($payload['success'] ?? false),
+            'data' => $payload,
+        ]);
+    }
+
     public function maoWeather(WeatherApiService $weatherApi): JsonResponse
     {
         $liveWeather = $weatherApi->forecast(refresh: true);

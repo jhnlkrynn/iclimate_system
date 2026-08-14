@@ -48,13 +48,20 @@ return [
     ],
 
     'weather' => [
-        'provider' => env('WEATHER_PROVIDER', 'openmeteo'),
-        'latitude' => env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 14.033)),
-        'longitude' => env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.650)),
+        'provider' => env('WEATHER_PROVIDER', 'weatherapi'),
+        'latitude' => env('ICLIMATE_WEATHER_LAT', env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 14.033))),
+        'longitude' => env('ICLIMATE_WEATHER_LON', env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.650))),
         'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', 'Asia/Manila')),
         'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
-        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 5),
+        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 1),
         'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
+        'poll_seconds' => env('WEATHER_POLL_SECONDS', 60),
+    ],
+
+    'weatherapi' => [
+        'key' => env('WEATHERAPI_KEY'),
+        'base_url' => env('WEATHERAPI_BASE_URL', 'https://api.weatherapi.com/v1'),
+        'timeout' => env('WEATHERAPI_TIMEOUT', 8),
     ],
 
     'open_meteo' => [

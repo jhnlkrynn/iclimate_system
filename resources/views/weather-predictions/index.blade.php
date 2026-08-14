@@ -46,7 +46,7 @@
         .wp-hero .text-white-50 { color: #4a5c52 !important; }
         .wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
         .wp-hero > * { position: relative; z-index: 1; }
-        .wp-eyebrow { font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: #2d6a4f; }
+        .wp-eyebrow { font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; color: #2d6a4f; line-height: 1.35; }
         .wp-tabs { display: inline-flex; gap: .35rem; padding: .35rem; margin-bottom: 1.25rem; border: 1px solid #e3ece6; border-radius: 999px; background: #f3f6f4; }
         .wp-tab-button { border: 0; border-radius: 999px; padding: .65rem 1rem; color: #4a5c52; background: transparent; font-weight: 900; }
         .wp-tab-button.active { color: #0d1f18; background: #52b788; }
@@ -55,16 +55,16 @@
         .wp-panel-header { padding: 1rem; border-bottom: 1px solid rgba(212,237,218,.9); background: linear-gradient(90deg, #fff, #f0f7f4); }
         .wp-panel-body, .wp-metric-body { padding: 1rem; }
         .wp-metric { min-height: 168px; }
-        .wp-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+        .wp-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .wp-value { margin-top: .35rem; color: #0d1f18; font-size: clamp(1.8rem, 3vw, 2.45rem); font-weight: 900; line-height: 1; }
         .wp-unit { color: #5a7a64; font-size: .86rem; font-weight: 700; }
         .wp-note { color: #5a7a64; font-size: .86rem; margin-top: .7rem; }
-        .wp-source-line { color: rgba(255,255,255,.56); font-size: .78rem; font-weight: 800; margin-top: .65rem; }
+        .wp-source-line { color: rgba(255,255,255,.72); font-size: .875rem; font-weight: 800; margin-top: .65rem; line-height: 1.4; }
         .wp-guide-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-top: 1rem; }
         .wp-guide-step { border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: rgba(255,255,255,.04); padding: .72rem; }
-        .wp-guide-step strong { display: block; color: #fff; font-size: .82rem; line-height: 1.25; }
-        .wp-guide-step span { display: block; color: rgba(255,255,255,.58); font-size: .76rem; line-height: 1.35; margin-top: .28rem; }
-        .wp-status { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .35rem .65rem; margin-top: .85rem; font-size: .76rem; font-weight: 900; color: var(--status-color, #2d6a4f); background: var(--status-bg, #d8f3dc); }
+        .wp-guide-step strong { display: block; color: #fff; font-size: .875rem; line-height: 1.3; }
+        .wp-guide-step span { display: block; color: rgba(255,255,255,.72); font-size: .875rem; line-height: 1.45; margin-top: .28rem; }
+        .wp-status { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .38rem .7rem; margin-top: .85rem; font-size: .8125rem; font-weight: 900; color: var(--status-color, #2d6a4f); background: var(--status-bg, #d8f3dc); line-height: 1.25; }
         .wp-status::before { content: ""; width: .45rem; height: .45rem; border-radius: 999px; background: currentColor; }
         .tone-green { --accent: #52b788; --status-color: #2d6a4f; --status-bg: #d8f3dc; }
         .tone-blue { --accent: #2d6a4f; --status-color: #2d6a4f; --status-bg: #d8f3dc; }
@@ -73,7 +73,7 @@
         .wp-input-card { padding: 1rem; height: 100%; }
         .wp-input-row { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; margin-bottom: .7rem; }
         .wp-input-card .form-control { max-width: 132px; font-weight: 800; text-align: right; }
-        .wp-help { color: #5a7a64; font-size: .78rem; margin-top: .45rem; }
+        .wp-help { color: #4f665b; font-size: .875rem; margin-top: .45rem; line-height: 1.45; }
         .wp-advanced-panel { overflow: visible; }
         .wp-advanced-panel .wp-panel-body { overflow: visible; }
         #advancedWeatherInputs.collapse:not(.show) { display: none; }
@@ -94,13 +94,13 @@
         #advancedWeatherInputs .form-select option { color: #0d1f18; background: #fff; }
         .wp-result-card { padding: 1rem; }
         .wp-advisory { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: 1rem; }
-        .wp-feature-pill { display: inline-flex; border-radius: 999px; padding: .35rem .65rem; background: #d8f3dc; color: #1f6f4a; font-size: .76rem; font-weight: 800; margin: .18rem; }
+        .wp-feature-pill { display: inline-flex; border-radius: 999px; padding: .38rem .7rem; background: #d8f3dc; color: #1f6f4a; font-size: .8125rem; font-weight: 800; margin: .18rem; line-height: 1.25; }
         .wp-score-bar { height: 10px; border-radius: 999px; overflow: hidden; background: #dbe8dd; }
         .wp-score-bar > span { display: block; height: 100%; width: min(var(--score, 50%), 100%); background: linear-gradient(90deg, #ffd166, #52b788); }
         .ds-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
         .ds-card { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: 1rem; min-height: 138px; }
         .ds-card.primary { background: linear-gradient(145deg, #fff, #f0f7f4); border-left: 5px solid var(--accent, #52b788); }
-        .ds-title { color: #5a7a64; font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .055em; }
+        .ds-title { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .ds-value { color: #0d1f18; font-size: 1.05rem; font-weight: 900; line-height: 1.28; margin-top: .45rem; }
         .ds-note { color: #5a7a64; font-size: .86rem; line-height: 1.4; margin-top: .45rem; }
         .ds-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .42rem .72rem; font-size: .84rem; font-weight: 900; background: var(--status-bg, #d8f3dc); color: var(--status-color, #2d6a4f); }
@@ -132,6 +132,45 @@
         .wp-metric .wp-status { color: #74c69d !important; background: rgba(82,183,136,.16) !important; }
         .ds-card.primary { border-left-color: #52b788 !important; }
         .stress-chip { border-left-color: #52b788 !important; }
+
+        /* Product UI restraint pass */
+        .wp-hero {
+            border-radius: 16px;
+            background: #f5f7f4;
+            box-shadow: 0 1px 2px rgba(13,31,24,.08);
+        }
+        .wp-hero::before { opacity: .24; }
+        .wp-eyebrow,
+        .wp-label,
+        .ds-title {
+            font-family: 'Inter', sans-serif;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .wp-tabs {
+            border-radius: 10px;
+            padding: .25rem;
+        }
+        .wp-tab-button {
+            border-radius: 8px;
+            font-weight: 750;
+        }
+        .wp-panel,
+        .wp-metric,
+        .wp-input-card,
+        .wp-result-card {
+            border: 1px solid #c9d7ce;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(13,31,24,.08);
+        }
+        .wp-panel-header { background: #f5f7f4; }
+        .wp-status,
+        .wp-feature-pill,
+        .ds-pill {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+        }
     </style>
 
     <div class="wp-page">
@@ -174,7 +213,7 @@
         @elseif ($weatherReady)
             <div class="row g-4 mb-4">
                 <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $rainfallStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Rainfall</div><div class="wp-value">{{ number_format($predictions['rainfall'], 2) }} <span class="wp-unit">mm</span></div><div class="wp-status">{{ $rainfallStatus[0] }}</div><div class="wp-note">{{ $rainfallStatus[1] }}</div></div></div></div>
-                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $temperatureStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Temperature</div><div class="wp-value">{{ number_format($predictions['temperature'], 2) }} <span class="wp-unit">&deg;C</span></div><div class="wp-status">{{ $temperatureStatus[0] }}</div><div class="wp-note">{{ $temperatureStatus[1] }}</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $temperatureStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Temperature</div><div class="wp-value">{{ number_format($predictions['temperature'], 2) }} <span class="wp-unit">°C</span></div><div class="wp-status">{{ $temperatureStatus[0] }}</div><div class="wp-note">{{ $temperatureStatus[1] }}</div></div></div></div>
                 <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $humidityStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Humidity</div><div class="wp-value">{{ number_format($humidity, 2) }}<span class="wp-unit">%</span></div><div class="wp-status">{{ $humidityStatus[0] }}</div><div class="wp-note">{{ $humidityStatus[1] }}</div></div></div></div>
                 <div class="col-md-6 col-xl-3"><div class="wp-metric {{ $windStatus[2] }} h-100"><div class="wp-metric-body"><div class="wp-label">Wind Speed</div><div class="wp-value">{{ number_format($windSpeed, 2) }}</div><div class="wp-status">{{ $windStatus[0] }}</div><div class="wp-note">{{ $windStatus[1] }}</div></div></div></div>
             </div>
@@ -227,7 +266,7 @@
                             <button class="btn btn-primary fw-bold px-4 w-100" type="submit" data-loading-text="Predicting...">Predict</button>
                         </div>
                         <div class="col-xl-5">
-                            <div class="small text-muted">Using {{ number_format($rainfall, 2) }} mm rainfall, {{ number_format($tempAvg, 2) }} &deg;C, {{ number_format($humidity, 2) }}% humidity, {{ number_format($windSpeed, 2) }} wind speed, and {{ $seasonValue }} season. Source: {{ $weatherModelSource }}.</div>
+                            <div class="small text-muted">Using {{ number_format($rainfall, 2) }} mm rainfall, {{ number_format($tempAvg, 2) }} °C, {{ number_format($humidity, 2) }}% humidity, {{ number_format($windSpeed, 2) }} wind speed, and {{ $seasonValue }} season. Source: {{ $weatherModelSource }}.</div>
                         </div>
                     </div>
                 </form>
@@ -257,6 +296,8 @@
                     <div class="col-lg-4"><div class="wp-result-card h-100"><div class="wp-label">Estimated Rice Yield</div><div class="wp-value">{{ number_format($yield, 2) }}</div><div class="wp-unit">tons/hectare</div><div class="wp-score-bar mt-3" style="--score: {{ $yieldScore }}%;"><span></span></div></div></div>
                     <div class="col-lg-8">
                         <div class="row g-3">
+                            <div class="col-md-6"><div class="wp-advisory h-100"><div class="wp-label mb-2">Farm Area Used</div><div class="fw-bold">{{ number_format((float) ($mlResult['farm_area_hectares'] ?? $area), 2) }} hectares</div></div></div>
+                            <div class="col-md-6"><div class="wp-advisory h-100"><div class="wp-label mb-2">Estimated Total Production</div><div class="fw-bold">{{ number_format((float) ($mlResult['estimated_total_production_tons'] ?? 0), 2) }} tons</div></div></div>
                             <div class="col-md-6"><div class="wp-advisory h-100"><div class="wp-label mb-2">Planting Advisory</div><div class="fw-bold text-success">{{ $mlResult['planting_advisory'] }}</div></div></div>
                             <div class="col-md-6"><div class="wp-advisory h-100"><div class="wp-label mb-2">Irrigation Recommendation</div><div class="fw-bold text-primary">{{ $mlResult['irrigation_recommendation'] }}</div></div></div>
                             <div class="col-md-6"><div class="wp-advisory h-100"><div class="wp-label mb-2">Risk Level</div><div class="fw-bold">{{ $decision['risk']['label'] ?? 'Not available' }}</div></div></div>

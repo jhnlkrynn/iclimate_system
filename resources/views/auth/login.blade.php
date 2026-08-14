@@ -74,7 +74,7 @@
       position: fixed; z-index: 0; pointer-events: none; border-radius: 50%; filter: blur(90px);
     }
     .scene-glow-1 { width: 420px; height: 420px; background: rgba(95,143,120,.16); top: -110px; left: -90px; }
-    .scene-glow-2 { width: 320px; height: 320px; background: rgba(232,167,61,.1); bottom: -70px; right: -50px; }
+    .scene-glow-2 { width: 320px; height: 320px; background: rgba(143,175,154,.1); bottom: -70px; right: -50px; }
 
     .scene-content {
       position: relative; z-index: 1;
@@ -89,7 +89,7 @@
       display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600;
       color: #FFFFFF; text-decoration: none; transition: color .2s;
     }
-    .back-link-top:hover { color: #F6D58A; }
+    .back-link-top:hover { color: #C9D8CE; }
 
     /* -- LOGIN CARD -------------------------------------- */
     .login-card {
@@ -157,19 +157,19 @@
 
     .btn-login {
       width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px;
-      background: #E8A73D; color: #1F2937; border: none; border-radius: 10px; font-family: 'Inter', sans-serif;
+      background: #1F5A46; color: #fff; border: none; border-radius: 10px; font-family: 'Inter', sans-serif;
       font-size: .95rem; font-weight: 800; cursor: pointer; transition: transform var(--auth-motion-med), box-shadow var(--auth-motion-med), background-color var(--auth-motion-med); margin-bottom: 12px;
-      box-shadow: 0 10px 24px rgba(232,167,61,.28);
+      box-shadow: 0 10px 24px rgba(143,175,154,.28);
     }
-    .btn-login:hover { background: #F6D58A; transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,167,61,.42); }
+    .btn-login:hover { background: #123F32; color: #fff; transform: translateY(-1px); box-shadow: none; }
     .btn-login:active { transform: translateY(0) scale(.985); }
 
     .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: #64748B; font-size: .8rem; }
     .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
 
     .login-register { text-align: center; font-size: .86rem; color: #64748B; margin: 0; }
-    .login-register a { color: #E8A73D; font-weight: 700; text-decoration: none; transition: color .2s; }
-    .login-register a:hover { color: #C6872A; }
+    .login-register a { color: #1F5A46; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a:hover { color: #123F32; }
     .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
     .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
 
@@ -190,7 +190,7 @@
       letter-spacing: .08em;
     }
     .demo-password {
-      color: #E8A73D;
+      color: #1F5A46;
       font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: .72rem;
       font-weight: 700;
@@ -236,7 +236,7 @@
     }
 
     .login-register { text-align: center; font-size: .86rem; color: #4a5c52; margin: 0; }
-    .login-register a { color: #C6872A; font-weight: 700; text-decoration: none; transition: color .2s; }
+    .login-register a { color: #123F32; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #a8701f; }
 
     /* -- WEATHER WIDGET ---------------------------------- */
@@ -263,7 +263,7 @@
     .weather-divider { height: 1px; background: rgba(95,143,120,.3); margin: 2px 0 10px; }
     .weather-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
     .weather-row { display: flex; align-items: center; gap: 12px; }
-    .weather-row-icon { color: #E8A73D; flex-shrink: 0; width: 20px; }
+    .weather-row-icon { color: #1F5A46; flex-shrink: 0; width: 20px; }
     .weather-row-val { font-weight: 700; font-size: .93rem; color: #fff; }
     .weather-row-label { font-size: .72rem; color: rgba(127,214,181,.85); }
     .weather-updated { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: rgba(127,214,181,.7); }
@@ -273,6 +273,39 @@
     .scene-tagline { position: relative; z-index: 1; text-align: center; margin-top: 12px; width: 100%; }
     .scene-tagline-row { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.92); font-size: .88rem; font-weight: 600; }
     .scene-copyright { margin-top: 5px; font-size: .76rem; color: rgba(127,214,181,.65); }
+
+    .login-page .login-form-header p,
+    .login-page .auth-status,
+    .login-page .field-error,
+    .login-page .checkbox-label,
+    .login-page .forgot-link,
+    .login-page .form-divider,
+    .login-page .login-register {
+      font-size: .96rem;
+      line-height: 1.55;
+    }
+    .login-page .form-group label,
+    .login-page .captcha-label {
+      font-size: .94rem;
+    }
+    .login-page .form-group input,
+    .login-page .form-group select,
+    .login-page .btn-login {
+      font-size: 1rem;
+    }
+    .login-page .weather-loc,
+    .login-page .weather-cond,
+    .login-page .weather-updated,
+    .login-page .scene-tagline-row {
+      font-size: .96rem;
+    }
+    .login-page .weather-row-label,
+    .login-page .scene-copyright {
+      font-size: .86rem;
+    }
+    .login-page .weather-row-val {
+      font-size: 1.02rem;
+    }
 
     @media (max-width: 820px) {
       .scene-content { flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
@@ -390,7 +423,7 @@
 
       <div class="weather-main">
         <div class="weather-emoji">{!! $condition[1] !!}</div>
-        <div class="weather-temp">{{ round((float) $temperature) }}&deg;C</div>
+        <div class="weather-temp">{{ round((float) $temperature) }}°C</div>
         <div class="weather-cond">{{ $condition[0] }}</div>
       </div>
 

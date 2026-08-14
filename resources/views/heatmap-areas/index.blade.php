@@ -86,7 +86,7 @@
             background: rgba(255,255,255,.82);
             color: #315044;
             padding: .16rem .35rem;
-            font-size: .68rem;
+            font-size: .75rem;
             font-weight: 800;
             text-decoration: none;
         }
@@ -102,11 +102,54 @@
         }
         .map-loading-overlay.d-none { display: none; }
         .map-loading-spinner {
-            width: 34px; height: 34px; border-radius: 999px;
-            border: 3px solid rgba(255,255,255,.22); border-top-color: #74c69d;
-            animation: mapLoadingSpin .7s linear infinite;
+            position: relative;
+            width: 58px;
+            height: 58px;
+            border-radius: 999px;
+            background:
+                conic-gradient(from 0deg, transparent 0 12%, rgba(183,228,199,.35) 16%, #74c69d 34%, #ffd166 47%, transparent 60% 100%);
+            animation: mapLoadingSpin 1s linear infinite;
+            filter: drop-shadow(0 0 14px rgba(116,198,157,.34));
         }
-        @keyframes mapLoadingSpin { to { transform: rotate(360deg); } }
+        .map-loading-spinner::before,
+        .map-loading-spinner::after {
+            content: "";
+            position: absolute;
+            inset: 7px;
+            border-radius: inherit;
+            background: rgba(7,22,15,.9);
+        }
+        .map-loading-spinner::after {
+            inset: 0;
+            background:
+                radial-gradient(circle at 50% 3px, #ffd166 0 4px, transparent 4.5px),
+                radial-gradient(circle at 50% 3px, rgba(255,209,102,.28) 0 9px, transparent 9.5px);
+            animation: mapLoadingOrbit .72s linear infinite;
+        }
+        .map-loading-overlay span {
+            position: relative;
+            padding-top: .15rem;
+        }
+        .map-loading-overlay span::after {
+            content: "";
+            display: inline-block;
+            width: 1.4em;
+            text-align: left;
+            animation: mapLoadingDots 1.2s steps(4, end) infinite;
+        }
+        @keyframes mapLoadingSpin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes mapLoadingOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+        @keyframes mapLoadingDots {
+            0% { content: ""; }
+            25% { content: "."; }
+            50% { content: ".."; }
+            75%, 100% { content: "..."; }
+        }
         .api-heatmap-region {
             cursor: pointer;
             stroke: rgba(20,20,20,.28);
@@ -150,8 +193,9 @@
         .accuracy-badge.baseline { border-color: rgba(255,209,102,.45); background: rgba(255,209,102,.13); color: #ffe8a3; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
-        .layer-btn { min-height: 42px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
-        .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
+        .layer-btn { min-height: 42px; border: 1.5px solid #ffffff; border-radius: 8px; background: rgba(255,255,255,.98); color: #10251b; padding: .55rem .72rem; font-size: .82rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.18); white-space: nowrap; }
+        .layer-btn:hover { background: #f5fff9; border-color: #74c69d; color: #10251b; transform: translateY(-1px); }
+        .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; box-shadow: 0 .65rem 1.4rem rgba(13,31,24,.28); }
         .map-atmosphere { position: absolute; inset: 0; z-index: 320; pointer-events: none; background: radial-gradient(circle at 23% 24%, rgba(255,255,255,.11), transparent 18rem), radial-gradient(circle at 76% 68%, rgba(13,31,24,.12), transparent 22rem), linear-gradient(180deg, rgba(13,31,24,.04), rgba(13,31,24,.08)); mix-blend-mode: soft-light; }
         .map-control-panel {
             position: absolute;
@@ -189,7 +233,7 @@
             gap: .65rem;
             margin-top: .58rem;
             color: rgba(255,255,255,.64);
-            font-size: .78rem;
+            font-size: .875rem;
             font-weight: 800;
         }
         .map-live-status strong { color: rgba(255,255,255,.82); }
@@ -233,20 +277,20 @@
             background: rgba(82,183,136,.16);
             color: #b7e4c7;
             padding: .38rem .62rem;
-            font-size: .76rem;
+            font-size: .82rem;
             font-weight: 900;
             white-space: nowrap;
         }
-        .pagasa-source-copy { min-width: 0; font-size: .78rem; font-weight: 800; line-height: 1.25; }
+        .pagasa-source-copy { min-width: 0; font-size: .875rem; font-weight: 800; line-height: 1.35; }
         .pagasa-source-copy strong { display: block; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pagasa-map-link {
             flex: 0 0 auto;
             border-radius: 8px;
             border: 1px solid #f0c36a;
-            background: #e8a73d;
-            color: #0d1f18;
+            background: #1F5A46;
+            color: #fff;
             padding: .52rem .7rem;
-            font-size: .78rem;
+            font-size: .875rem;
             font-weight: 900;
             text-decoration: none;
             white-space: nowrap;
@@ -267,7 +311,7 @@
         }
         .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 12px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
-        .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+        .risk-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
         .legend-row { display: flex; align-items: center; gap: .55rem; color: #5a7a64; font-size: .86rem; }
         .legend-swatch { width: 1rem; height: 1rem; border-radius: 4px; flex: 0 0 auto; }
@@ -279,7 +323,7 @@
         .risk-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
         .risk-info-box { border: 1px solid #d4edda; border-radius: 8px; background: #f7fbf8; padding: .9rem; min-height: 112px; }
         .risk-info-box.primary { background: #fff; border-left: 5px solid var(--accent, #52b788); }
-        .risk-info-label { color: #5a7a64; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+        .risk-info-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .risk-info-value { color: #0d1f18; font-size: 1.02rem; font-weight: 900; margin-top: .28rem; line-height: 1.25; }
         .risk-chip { display: inline-flex; border-radius: 999px; padding: .42rem .72rem; font-size: .86rem; font-weight: 900; background: var(--chip-bg, #d8f3dc); color: var(--chip-color, #2d6a4f); }
         .risk-help { color: #5a7a64; font-size: .9rem; line-height: 1.45; margin-top: .42rem; }
@@ -289,18 +333,18 @@
         .risk-low { --accent: #52b788; --chip-bg: #d8f3dc; --chip-color: #2d6a4f; }
         .risk-moderate { --accent: #ffd166; --chip-bg: #fff4cf; --chip-color: #8a5a00; }
         .risk-high, .risk-severe { --accent: #d85b45; --chip-bg: #fde8e2; --chip-color: #9f3728; }
-        .map-popup { color: #1b2b23; font-size: .86rem; line-height: 1.35; }
+        .map-popup { color: #1b2b23; font-size: .875rem; line-height: 1.45; }
         .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
         .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
-        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .7rem; font-weight: 900; }
+        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .32rem .58rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .75rem; font-weight: 900; line-height: 1.2; }
         .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #52b788); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
         .map-popup-box { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .52rem .58rem; }
-        .map-popup-label { color: #5a7a64; font-size: .66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+        .map-popup-label { color: #4f665b; font-size: .8rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .map-popup-value { color: #0d1f18; font-weight: 900; margin-top: .16rem; }
-        .map-popup-note { color: #5a7a64; font-size: .78rem; margin-top: .18rem; }
+        .map-popup-note { color: #4f665b; font-size: .875rem; margin-top: .18rem; line-height: 1.42; }
         .map-popup-advice { border: 1px solid #d4edda; border-radius: 8px; background: #f0f7f4; padding: .58rem .65rem; margin-top: .55rem; }
-        .map-popup-source { color: #5a7a64; font-size: .74rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; }
+        .map-popup-source { color: #4f665b; font-size: .82rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; line-height: 1.42; }
         .map-detail-panel {
             position: absolute;
             top: 4.85rem;
@@ -345,7 +389,7 @@
             border-radius: 999px;
             background: rgba(13, 31, 24, .88);
             color: #fff;
-            font-size: .72rem;
+            font-size: .875rem;
             font-weight: 900;
             letter-spacing: 0;
             padding: .24rem .5rem;
@@ -373,7 +417,7 @@
         .easy-read-marker small {
             display: block;
             margin-top: .12rem;
-            font-size: .62rem;
+            font-size: .75rem;
             font-weight: 800;
             opacity: .92;
         }
@@ -419,7 +463,7 @@
                 margin: .75rem;
             }
             .pagasa-map-link { width: 100%; text-align: center; }
-            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; }
+            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .875rem; }
             .risk-side { grid-template-columns: 1fr; }
             .priority-list { grid-template-columns: 1fr; }
             .priority-item { grid-template-columns: 1fr; }
@@ -431,7 +475,7 @@
             .risk-actions .btn, .risk-actions form, .risk-actions button { width: 100%; }
             .map-popup-title { display: grid; gap: .5rem; }
             .map-popup-badge { justify-self: start; }
-            .barangay-tooltip { font-size: .68rem; max-width: 120px; white-space: normal; text-align: center; }
+            .barangay-tooltip { font-size: .78rem; max-width: 140px; white-space: normal; text-align: center; }
         }
         @media (max-width: 420px) {
             .map-popup { font-size: .86rem; }
@@ -467,6 +511,34 @@
         .heatmap-page .btn-outline-secondary:hover { background: rgba(45,106,79,.08); border-color: #2d6a4f; color: #1f2a24; }
         .heatmap-page .btn-outline-primary { color: #2d6a4f; border-color: #2d6a4f; }
         .heatmap-page .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
+        .filter-actions { align-items: stretch; }
+        .filter-actions .btn {
+            min-width: 96px;
+            border-width: 1.5px;
+            border-radius: 8px;
+            font-weight: 900;
+            opacity: 1;
+            box-shadow: none;
+        }
+        .filter-actions .btn-apply {
+            background: #1f6b4a;
+            border-color: #1f6b4a;
+            color: #fff;
+        }
+        .filter-actions .btn-reset {
+            background: #fff;
+            border-color: #8bb7a4;
+            color: #1f4d3a;
+        }
+        .filter-actions .btn-refresh {
+            background: #1F5A46;
+            border-color: #1F5A46;
+            color: #fff;
+        }
+        .filter-actions .btn:hover {
+            filter: brightness(1.04);
+            transform: translateY(-1px);
+        }
     </style>
 
     <div class="heatmap-page">
@@ -478,7 +550,7 @@
                 <p class="mb-0" style="color: var(--ic-ink-mid);">API-rendered Lian barangay heatmap, with PAGASA used as the official weather reference source.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-end action-cluster">
-                <a class="btn btn-warning" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
+                <a class="btn btn-primary" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
                 @if ($canManage)
                     <a class="btn btn-light" href="{{ route('heatmap-areas.create') }}">Create Risk Area</a>
                 @endif
@@ -511,11 +583,11 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-lg-auto d-flex gap-2">
-                    <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
-                    <a class="btn btn-outline-secondary btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
+                <div class="col-lg-auto d-flex gap-2 filter-actions">
+                    <button class="btn btn-apply btn-lg" type="submit">Apply</button>
+                    <a class="btn btn-reset btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
                     @if($canManage)
-                        <a class="btn btn-outline-success btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
+                        <a class="btn btn-refresh btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
                     @endif
                 </div>
             </form>
@@ -561,7 +633,7 @@
                     </div>
                 </div>
                 <div id="boundaryNotice" class="alert alert-warning position-absolute m-3 bottom-0 start-0 end-0 d-none" style="z-index: 500;">
-                    Loading the Lian barangay heatmap API. If the official boundary API is unavailable, iClimate will use its local fallback boundary file.
+                    Loading the Lian barangay heatmap using the configured boundary source.
                 </div>
                 <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite">
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
@@ -570,7 +642,7 @@
                 <div id="barangayRiskMap"></div>
                 <div id="mapLoadingOverlay" class="map-loading-overlay" role="status" aria-live="polite">
                     <div class="map-loading-spinner"></div>
-                    <span>Loading barangay heat map...</span>
+                    <span>Loading barangay heat map</span>
                 </div>
                 <div class="pagasa-source-strip">
                     <span class="pagasa-official-badge">PAGASA Reference</span>
