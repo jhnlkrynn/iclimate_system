@@ -569,7 +569,6 @@
         $weatherNow = now($weatherTimezone);
         $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
         $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
-        $weatherStatusShort = ($forecastResult['ok'] ?? false) ? 'Live' : 'Stored';
         $weatherFreshness = $latestForecast
             ? str($forecastResult['freshness'] ?? $latestForecast->freshnessLabel())->headline()
             : 'Stored Record';
@@ -621,6 +620,7 @@
         $humidityValue = $currentWeather['humidity'] ?? null;
         $todayRainfallValue = $todayWeather['rainfall'] ?? null;
         $currentPrecipitationValue = $currentWeather['precipitation'] ?? $currentWeather['rain'] ?? null;
+        $rainfallValue = $todayRainfallValue ?? $currentPrecipitationValue ?? $climateSummary?->rainfall;
         $windSpeedValue = $currentWeather['wind_speed'] ?? null;
         $weatherCondition = $currentWeather['condition'] ?? 'Weather temporarily unavailable';
         $weatherIcon = $currentWeather['icon'] ?? $weatherPayload['icon'] ?? '/images/weather/unavailable.svg';
@@ -630,6 +630,10 @@
             : 'Weather data temporarily unavailable';
         $weatherSourceLine = $weatherSource.' current weather - Data updated '.$weatherFetchedLabel;
         $weatherUpdateLine = 'Data updated '.$weatherFetchedLabel;
+        $weatherTimingLabel = ($weatherPayload['success'] ?? false) ? 'Current weather reading' : 'Latest available weather reading';
+        $weatherDisplayDate = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
+            ? $weatherFetchedAt->timezone($weatherTimezone)->format('M d, Y')
+            : $climateSummary?->record_date?->format('M d, Y');
         $weatherForecastDays = $weatherPayload['forecast'] ?? [];
         $weatherFetchedIso = $dashboardWeatherResponse['fetched_at'] ?? ($weatherFetchedAt instanceof \Illuminate\Support\Carbon ? $weatherFetchedAt->toIso8601String() : null);
     @endphp
