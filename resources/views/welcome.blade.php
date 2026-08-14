@@ -1,5 +1,10 @@
 @php
     $heroClimate = \App\Support\ClimateSnapshot::latest();
+    $rice = [
+        'hero'  => asset('images/rice-hero-aerial.jpg'),
+        'about' => asset('images/rice-about-farmer.jpg'),
+        'roles' => asset('images/rice-roles-terrace.png'),
+    ];
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
@@ -249,7 +254,9 @@
     =============================================== */
     .hero {
       position: relative;
-      background: linear-gradient(180deg, var(--hero-from), var(--hero-to));
+      background:
+        linear-gradient(180deg, rgba(15,41,32,0.94) 0%, rgba(22,59,45,0.90) 55%, rgba(31,77,58,0.94) 100%),
+        url('{{ $rice['hero'] }}') center 30% / cover no-repeat;
       min-height: calc(100vh - var(--nav-h));
       display: flex; flex-direction: column;
       overflow: hidden;
@@ -494,7 +501,7 @@
     .about-text .hero-location { margin-bottom: 0; }
     .about-text .section-title { margin-bottom: 4px; color: var(--white); }
     .about-text .section-title em { font-style: italic; color: var(--gold); }
-    .about-text p { font-size: 0.975rem; line-height: 1.8; color: var(--ink-mid); }
+    .about-text p { font-size: 0.975rem; line-height: 1.8; color: rgba(255,255,255,.72); }
     .about-tagline {
       display: flex; align-items: center; gap: 12px;
       font-family: 'DM Serif Display', serif;
@@ -526,10 +533,11 @@
       box-shadow: var(--shadow-lg);
       background-color: var(--green-950);
       background-image:
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
-        radial-gradient(ellipse at 30% 20%, rgba(95,143,120,0.28) 0%, transparent 60%);
-      background-size: 28px 28px, 28px 28px, 100% 100%;
+        linear-gradient(180deg, rgba(22,59,45,0.12) 0%, rgba(22,59,45,0.28) 55%, rgba(15,41,32,0.82) 100%),
+        url('{{ $rice['about'] }}');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       border: 1px solid rgba(255,255,255,0.08);
     }
     .about-photo-leaf {
@@ -574,25 +582,31 @@
       margin-top: 64px;
     }
     .pillar-card {
-      background: var(--white);
-      border: 1.5px solid var(--border);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(232,167,61,.22);
       border-radius: var(--radius-lg);
       padding: 22px 18px;
       text-align: center;
       backdrop-filter: blur(10px);
-      transition: background 0.2s ease, border-color 0.2s ease;
+      box-shadow: var(--shadow-lg);
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s var(--ease), box-shadow 0.25s ease;
     }
-    .pillar-card:hover { background: var(--white); border-color: rgba(95,143,120,.32); box-shadow: var(--shadow-sm); }
+    .pillar-card:hover {
+      background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
+      border-color: rgba(232,167,61,.45);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
+    }
     .pillar-card .pillar-icon {
       width: 48px; height: 48px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 14px;
     }
-    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--ink); margin-bottom: 6px; }
-    .pillar-card p { font-size: 0.78rem; line-height: 1.5; color: var(--ink-mid); }
+    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--white); margin-bottom: 6px; }
+    .pillar-card p { font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,.66); }
     @media (max-width: 900px) {
       .pillars-row { grid-template-columns: repeat(2, 1fr); }
     }
@@ -607,10 +621,12 @@
       position: relative;
       overflow: hidden;
       margin-top: 72px;
-      background: var(--white);
-      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
+      border: 1px solid rgba(232,167,61,.22);
       border-radius: var(--radius-xl);
       padding: 56px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-lg);
       display: grid;
       grid-template-columns: minmax(0,1fr) minmax(0,1.4fr);
       gap: 48px;
@@ -620,14 +636,14 @@
       content: "";
       position: absolute; left: -40px; bottom: -40px;
       width: 260px; height: 200px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%235F8F78' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%237FD6B5' stroke-opacity='0.4' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%237FD6B5' stroke-opacity='0.3' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%23E8A73D' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      opacity: 0.8;
+      opacity: 0.9;
     }
     .who-we-are-text { position: relative; z-index: 1; }
-    .who-we-are-text .eyebrow { color: var(--green-700); }
-    .who-we-are-text h2 { color: var(--ink); margin: 10px 0 14px; }
-    .who-we-are-text p { color: var(--ink-mid); font-size: 0.92rem; line-height: 1.7; }
+    .who-we-are-text .eyebrow { color: var(--mint); }
+    .who-we-are-text h2 { color: var(--white); margin: 10px 0 14px; }
+    .who-we-are-text p { color: rgba(255,255,255,.7); font-size: 0.92rem; line-height: 1.7; }
     .wwa-grid {
       position: relative; z-index: 1;
       display: grid;
@@ -638,27 +654,27 @@
     .wwa-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.12);
-      border: 1px solid rgba(232,167,61,0.3);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
       display: flex; align-items: center; justify-content: center;
     }
     .wwa-num {
       font-family: 'DM Serif Display', serif;
       font-size: 1.5rem;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.02em;
     }
     .wwa-label {
       font-family: 'DM Mono', monospace;
       font-size: 0.64rem;
-      color: var(--ink-light);
+      color: var(--mint);
       text-transform: uppercase;
       letter-spacing: 0.06em;
       margin-top: 2px;
     }
     .wwa-desc {
       font-size: 0.76rem;
-      color: var(--ink-mid);
+      color: rgba(255,255,255,.62);
       line-height: 1.5;
     }
     @media (max-width: 900px) {
@@ -713,49 +729,63 @@
       gap: 20px;
     }
     .feature-card {
-      background: linear-gradient(180deg, rgba(247,246,242,.98), rgba(247,246,242,.94));
-      padding: 32px 28px;
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      padding: 32px 26px;
       display: flex; flex-direction: column; gap: 12px;
       border-radius: var(--radius-lg);
-      border: 1px solid rgba(127,214,181,.72);
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
+      border: 1px solid rgba(232,167,61,.22);
+      backdrop-filter: blur(10px);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s, background 0.25s;
       position: relative;
       min-width: 0;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; top: -30%; left: -20%;
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, rgba(232,167,61,0.18) 0%, transparent 72%);
+      pointer-events: none;
     }
     .feature-card:hover {
       transform: translateY(-5px);
-      box-shadow: var(--shadow-md);
-      border-color: rgba(127,214,181,.88);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.32);
+      border-color: rgba(232,167,61,.5);
+      background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
     }
     .fc-icon-wrap {
       width: 52px; height: 52px;
-      background: rgba(255,255,255,.42);
+      background: rgba(232,167,61,0.1);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 4px;
-      border: 1px solid rgba(232,167,61,0.3);
+      border: 1px solid rgba(232,167,61,0.38);
       flex-shrink: 0;
+      position: relative; z-index: 1;
     }
     .feature-card h3 {
       font-family: 'Inter', sans-serif;
       font-size: 0.975rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       line-height: 1.3;
       letter-spacing: -0.01em;
+      position: relative; z-index: 1;
     }
-    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: var(--green-700); }
+    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: rgba(255,255,255,.68); position: relative; z-index: 1; }
     .fc-badge {
       display: inline-block; margin-top: auto;
       font-family: 'DM Mono', monospace;
       font-size: 0.65rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--green-950);
-      background: var(--gold-light);
+      color: var(--gold);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.35);
       padding: 3px 10px;
       border-radius: var(--radius-pill);
       width: fit-content;
+      position: relative; z-index: 1;
     }
 
     /* How it works */
@@ -763,28 +793,18 @@
       position: relative;
       overflow: hidden;
       margin-top: 96px;
-      background: var(--white);
-      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
+      border: 1px solid rgba(232,167,61,.2);
       border-radius: var(--radius-xl);
       padding: 56px;
-    }
-    .how-block::after {
-      content: '';
-      position: absolute; right: 20px; bottom: -16px;
-      width: 200px; height: 400px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 400'%3E%3Cpath d='M104 400 C98 300 94 210 108 100' stroke='%231F4D3A' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M104 260 C70 250 50 220 40 180 C74 186 100 206 108 240Z' fill='%235F8F78' fill-opacity='0.35'/%3E%3Cpath d='M110 320 C146 312 168 284 178 246 C142 250 116 272 108 306Z' fill='%235F8F78' fill-opacity='0.3'/%3E%3Cg fill='%237FD6B5' fill-opacity='0.55'%3E%3Cellipse cx='108' cy='95' rx='7' ry='14' transform='rotate(-10 108 95)'/%3E%3Cellipse cx='120' cy='78' rx='7' ry='14' transform='rotate(-4 120 78)'/%3E%3Cellipse cx='128' cy='58' rx='7' ry='14' transform='rotate(4 128 58)'/%3E%3Cellipse cx='130' cy='36' rx='7' ry='14' transform='rotate(10 130 36)'/%3E%3Cellipse cx='94' cy='82' rx='7' ry='14' transform='rotate(-22 94 82)'/%3E%3Cellipse cx='88' cy='60' rx='7' ry='14' transform='rotate(-28 88 60)'/%3E%3Cellipse cx='86' cy='38' rx='7' ry='14' transform='rotate(-32 86 38)'/%3E%3C/g%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-size: contain;
-      background-position: bottom right;
-      opacity: 0.9;
-      pointer-events: none;
+      backdrop-filter: blur(10px);
     }
     .how-block > * { position: relative; z-index: 1; }
     .how-block .section-header { margin-bottom: 56px; }
-    .how-block .eyebrow { color: var(--green-700); }
-    .how-block .section-header h2 { color: var(--ink); }
-    .how-block .section-header h2 em { font-style: italic; color: var(--green-700); }
-    .how-block .section-header p { color: var(--ink-mid); }
+    .how-block .eyebrow { color: var(--mint); }
+    .how-block .section-header h2 { color: var(--white); }
+    .how-block .section-header h2 em { font-style: italic; color: var(--gold); }
+    .how-block .section-header p { color: rgba(255,255,255,.7); }
     .how-steps {
       display: flex;
       justify-content: space-between;
@@ -808,9 +828,9 @@
     .how-step-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
-      color: var(--gold-dark);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -818,26 +838,26 @@
       font-family: 'DM Mono', monospace;
       font-weight: 700;
       font-size: 1.05rem;
-      color: var(--green-700);
+      color: var(--gold);
     }
     .how-step:not(:last-child) .how-step-top::after {
       content: '';
       flex: 1;
       height: 0;
-      border-top: 2px dotted rgba(127,214,181,.35);
+      border-top: 2px dotted rgba(232,167,61,.4);
       margin-left: 6px;
     }
     .how-step h3 {
       font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .how-step p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: var(--ink-mid);
+      color: rgba(255,255,255,.68);
     }
     @media (max-width: 1024px) {
       .how-block { padding: 36px 28px; }
@@ -982,69 +1002,99 @@
       padding: 120px 0;
       overflow: hidden;
     }
-    .contact-hero-media {
-      position: absolute; left: 0; bottom: 0;
-      width: 46%; height: 360px;
-      max-width: 560px;
-      overflow: hidden;
-      -webkit-mask-image: linear-gradient(to top, black 45%, transparent 100%);
-      mask-image: linear-gradient(to top, black 45%, transparent 100%);
+    .contact-section::before {
+      content: '';
+      position: absolute; top: 6%; right: 4%;
+      width: 300px; height: 300px;
+      background-image: radial-gradient(rgba(127,214,181,0.2) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
     }
-    .contact-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .contact-section > .container { position: relative; z-index: 1; }
+    .contact-leaf-float {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cpath d='M110 10C60 40 30 90 40 150c6 24 22 40 40 48-12-48 0-100 30-148 10-16 10-30 0-40Z' fill='%235F8F78' fill-opacity='.3'/%3E%3Cpath d='M100 20C68 62 52 112 62 168' stroke='%237FD6B5' stroke-opacity='.5' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    }
+    .contact-leaf-1 { top: 8%; left: -2%; width: 90px; height: 90px; opacity: 0.5; transform: rotate(-16deg); }
+    .contact-leaf-2 { top: 30%; left: 5%; width: 56px; height: 56px; opacity: 0.4; transform: rotate(20deg) scaleX(-1); }
+    .contact-leaf-3 { top: 62%; left: -1%; width: 70px; height: 70px; opacity: 0.42; transform: rotate(-30deg); }
+    .contact-leaf-4 { top: 12%; right: -2%; width: 80px; height: 80px; opacity: 0.45; transform: rotate(150deg); }
+    .contact-leaf-5 { top: 55%; right: 3%; width: 60px; height: 60px; opacity: 0.4; transform: rotate(200deg) scaleX(-1); }
+    @media (max-width: 1200px) { .contact-leaf-float { display: none; } }
     .contact-methods {
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
     .contact-method {
-      background: var(--white);
-      border: 1.5px solid var(--border);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(232,167,61,.22);
       border-radius: var(--radius-lg);
-      padding: 28px 26px;
+      padding: 24px 24px 22px;
       display: flex; flex-direction: column; gap: 8px;
       backdrop-filter: blur(10px);
+      overflow: hidden;
+      position: relative;
       transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
     }
     .contact-method:hover {
       transform: translateY(-5px);
-      box-shadow: var(--shadow-md);
-      background: var(--white);
-      border-color: rgba(95,143,120,.32);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
+      background: linear-gradient(180deg, rgba(31,77,58,.68), rgba(22,59,45,.74));
+      border-color: rgba(232,167,61,.45);
+    }
+    .contact-method-media {
+      margin: -24px -24px 4px;
+      height: 108px;
+      overflow: hidden;
+      position: relative;
+    }
+    .contact-method-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .contact-method-media::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(15,41,32,0) 40%, rgba(15,41,32,.85) 100%);
     }
     .contact-method-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 6px;
       flex-shrink: 0;
+      position: relative; z-index: 1;
     }
     .contact-method h3 {
       font-family: 'Inter', sans-serif;
       font-size: 1rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .contact-method p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: var(--ink-mid);
+      color: rgba(255,255,255,.66);
     }
     .contact-method-link {
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255,255,255,.12);
       font-family: 'DM Mono', monospace;
       font-size: 0.66rem;
       font-weight: 600;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--green-700);
+      color: var(--gold);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -1080,15 +1130,15 @@
     .cd-hours { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
     .cd-hours-row { display: grid; grid-template-columns: minmax(110px, 1fr) max-content; gap: 18px; align-items: baseline; font-size: 0.8rem; }
     .cd-hours-row span:first-child { color: var(--mint); }
-    .cd-hours-row span:last-child { color: var(--ink); font-weight: 600; white-space: nowrap; text-align: right; }
+    .cd-hours-row span:last-child { color: var(--white); font-weight: 600; white-space: nowrap; text-align: right; }
 
     .contact-form-card {
-      background: var(--white);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
       border-radius: var(--radius-xl);
       padding: 40px 40px 38px;
-      border: 1.5px solid var(--border);
+      border: 1px solid rgba(232,167,61,.24);
       backdrop-filter: blur(10px);
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-lg);
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -1100,8 +1150,9 @@
     .cfc-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1110,17 +1161,20 @@
       font-size: 1.4rem;
       font-weight: 400;
       margin-bottom: 2px;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
     }
     .contact-form-sub {
       font-size: 0.85rem;
-      color: var(--ink-mid);
+      color: rgba(255,255,255,.62);
     }
     .form-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(150px, .72fr);
+      grid-template-columns: minmax(0, 1fr) minmax(190px, 1fr);
       gap: 16px;
+    }
+    .form-row .form-input {
+      min-width: 0;
     }
     .form-group { margin-bottom: 18px; }
     .contact-form-card .form-group:has(textarea) {
@@ -1136,19 +1190,19 @@
       display: block;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--ink);
+      color: var(--white);
       margin-bottom: 7px;
       letter-spacing: 0.01em;
     }
     .form-input {
       width: 100%;
-      background: var(--white);
-      border: 1.5px solid var(--border);
+      background: rgba(15,41,32,.4);
+      border: 1.5px solid rgba(232,167,61,.28);
       border-radius: var(--radius-md);
       padding: 10px 14px;
       font-family: 'Inter', sans-serif;
       font-size: 0.9rem;
-      color: var(--ink);
+      color: var(--white);
       transition: all 0.2s;
       outline: none;
       resize: vertical;
@@ -1156,53 +1210,103 @@
     select.form-input { cursor: pointer; }
     select.form-input option { color: var(--ink); }
     .form-input:focus {
-      border-color: var(--green-500);
-      box-shadow: 0 0 0 3px rgba(95,143,120,0.12);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(232,167,61,0.16);
     }
-    .form-input::placeholder { color: var(--ink-light); }
-    .btn-dark { background: var(--green-800); color: var(--white); }
+    .form-input::placeholder { color: rgba(255,255,255,.45); }
+    .btn-dark { background: var(--green-800); color: var(--white); border: 1px solid rgba(232,167,61,.3); }
     .btn-dark:hover {
       background: var(--green-950);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(22,59,45,0.3);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
 
     /* ===============================================
        FOOTER
     =============================================== */
     .footer {
+      position: relative;
       background: var(--green-950);
-      padding: 72px 0 36px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 88px 0 40px;
+      border-top: 1px solid rgba(232,167,61,.18);
+      overflow: hidden;
     }
+    .footer::before {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 300px; height: 300px;
+      background-image: radial-gradient(rgba(232,167,61,0.16) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .footer > .container { position: relative; z-index: 1; }
     .footer-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 2fr 1fr;
-      gap: 48px;
+      grid-template-columns: 2.3fr 1fr 2.1fr 1fr;
+      gap: 40px;
       margin-bottom: 56px;
       padding-bottom: 56px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(232,167,61,.14);
     }
-    .footer-social h4 {
+    .footer-col-label {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 5px 16px 5px 5px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(232,167,61,.32);
+      background: rgba(232,167,61,0.08);
+      margin-bottom: 20px;
+    }
+    .footer-col-icon {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: rgba(232,167,61,0.16);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .footer-social h4,
+    .footer-links h4 {
       font-family: 'DM Mono', monospace;
       font-size: 0.65rem;
       font-weight: 500;
       color: var(--mint);
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      margin-bottom: 18px;
+      margin: 0;
     }
     .footer-social-icons { display: flex; gap: 12px; }
     .footer-social-icon {
-      width: 40px; height: 40px;
+      width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.3);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.35);
       display: flex; align-items: center; justify-content: center;
       color: var(--gold);
-      transition: background 0.2s, border-color 0.2s;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
     }
-    .footer-social-icon:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+    .footer-social-icon:hover { background: var(--gold); border-color: var(--gold); color: var(--ink); transform: translateY(-2px); }
+    .footer-message-card {
+      position: relative;
+      overflow: hidden;
+      margin-top: 22px;
+      padding: 20px 22px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(232,167,61,.34);
+      background: linear-gradient(180deg, rgba(31,77,58,.5), rgba(22,59,45,.6));
+      box-shadow: var(--shadow-gold);
+    }
+    .footer-message-card p {
+      position: relative; z-index: 1;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--white);
+      max-width: 85%;
+    }
+    .footer-message-card p em { font-style: normal; color: var(--gold); font-weight: 600; }
     .footer-col-pair {
       display: grid;
       grid-template-columns: 1fr 1.5fr;
@@ -1213,30 +1317,66 @@
     .footer-tagline {
       font-size: 0.875rem;
       color: var(--white);
-      line-height: 1.6;
-      max-width: 260px;
+      line-height: 1.65;
+      max-width: 100%;
     }
-    .footer-links h4 {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      font-weight: 500;
-      color: var(--mint);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
+    .footer-tagline-chip {
+      display: inline-flex; align-items: flex-start; gap: 10px;
+      margin-top: 20px;
+      max-width: 100%;
+      padding: 8px 18px 8px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(232,167,61,.32);
+      background: rgba(232,167,61,0.08);
     }
-    .footer-links ul { display: flex; flex-direction: column; gap: 12px; }
+    .footer-tagline-chip-icon {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(232,167,61,0.16);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .footer-tagline-chip span { font-size: 0.8rem; color: var(--white); font-weight: 500; line-height: 1.4; }
+    .footer-links ul { display: flex; flex-direction: column; }
+    .footer-links li { border-bottom: 1px solid rgba(255,255,255,.08); }
+    .footer-links li:last-child { border-bottom: none; }
     .footer-links a {
+      display: flex; align-items: center; gap: 9px;
       font-size: 0.875rem;
       color: var(--white);
+      padding: 10px 0;
       transition: color 0.2s;
     }
     .footer-links a:hover { color: var(--gold); }
+    .footer-links a::before {
+      content: '';
+      width: 5px; height: 5px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: 0.75;
+    }
     .footer-bottom {
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
     }
-    .footer-bottom p { font-size: 0.8rem; color: var(--mint); }
+    .footer-bottom-brand { display: flex; align-items: center; gap: 12px; }
+    .footer-bottom-icon {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.35);
+      color: var(--gold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .footer-bottom p { font-size: 0.8rem; color: var(--mint); margin: 0; }
     .footer-badge {
+      display: inline-flex; align-items: center; gap: 6px;
       font-family: 'DM Mono', monospace;
       font-size: 0.65rem;
       letter-spacing: 0.08em;
@@ -1253,12 +1393,10 @@
       .about-grid { grid-template-columns: 1fr; gap: 40px; }
       .about-visual { order: 2; }
       .about-text { order: 1; }
-      .features-hero-media { display: none; }
       .features-grid { grid-template-columns: repeat(3, 1fr); }
       .how-steps { flex-wrap: wrap; }
       .how-step-top::after { display: none; }
       .how-step { flex: 1 1 45%; }
-      .contact-hero-media { display: none; }
       .contact-grid { grid-template-columns: 1fr; gap: 48px; }
       .contact-methods { flex-direction: row; flex-wrap: wrap; }
       .contact-methods .contact-method { flex: 1 1 240px; }
@@ -1324,17 +1462,11 @@
     =============================================== */
     .roles-section {
       position: relative;
-      background: var(--green-800);
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.93) 0%, rgba(22,59,45,.88) 50%, rgba(15,41,32,.95) 100%),
+        url('{{ $rice['roles'] }}') center 35% / cover no-repeat;
       padding: 120px 0;
       overflow: hidden;
-    }
-    .roles-leaf-deco {
-      position: absolute; left: -30px; bottom: -20px;
-      width: 300px; height: 480px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 480'%3E%3Cpath d='M40 480 C36 340 42 220 70 90' stroke='%235F8F78' stroke-width='2.5' fill='none' stroke-opacity='0.35'/%3E%3Cpath d='M62 380 C110 368 142 336 156 292 C104 296 68 328 56 372Z' fill='none' stroke='%235F8F78' stroke-width='2' stroke-opacity='0.3'/%3E%3Cpath d='M56 300 C104 292 138 262 154 220 C102 222 66 252 52 292Z' fill='none' stroke='%235F8F78' stroke-width='2' stroke-opacity='0.3'/%3E%3Cpath d='M52 220 C98 210 130 182 146 142 C96 144 62 172 48 212Z' fill='none' stroke='%235F8F78' stroke-width='2' stroke-opacity='0.25'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      pointer-events: none;
-      z-index: 0;
     }
     .roles-section::before {
       content: '';
@@ -1366,8 +1498,8 @@
       align-items: stretch;
     }
     .role-card {
-      background: linear-gradient(180deg, rgba(247,246,242,.98), rgba(247,246,242,.94));
-      border: 1.5px solid rgba(127,214,181,.72);
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(232,167,61,.22);
       border-radius: var(--radius-xl);
       padding: 40px 32px 32px;
       display: flex;
@@ -1375,12 +1507,13 @@
       align-items: center;
       text-align: center;
       box-shadow: var(--shadow-lg);
-      transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s;
+      backdrop-filter: blur(10px);
+      transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s, background 0.25s;
     }
     .role-card:hover {
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(232,167,61,.3);
       transform: translateY(-4px);
-      border-color: rgba(127,214,181,.88);
+      border-color: rgba(232,167,61,.45);
     }
     .role-workspace-label {
       font-family: 'DM Mono', monospace;
@@ -1388,24 +1521,18 @@
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--green-500);
+      color: var(--mint);
       margin-bottom: 8px;
     }
     .role-card.role-card--highlight {
-      background: var(--green-950);
-      border-color: var(--green-900);
+      background: linear-gradient(180deg, rgba(31,77,58,.74), rgba(22,59,45,.84));
+      border-color: rgba(232,167,61,.5);
       margin-top: -16px;
       padding-bottom: 48px;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 24px 56px rgba(0,0,0,.36), 0 0 0 1px rgba(232,167,61,.28), var(--shadow-gold);
     }
-    .role-card.role-card--highlight:hover { border-color: var(--green-800); }
+    .role-card.role-card--highlight:hover { border-color: rgba(232,167,61,.7); }
     .role-card.role-card--highlight .role-workspace-label { color: var(--gold); }
-    .role-card.role-card--highlight h3 { color: var(--white); }
-    .role-card.role-card--highlight > p { color: rgba(255,255,255,0.55); }
-    .role-card.role-card--highlight .role-divider { background: rgba(255,255,255,0.1); }
-    .role-card.role-card--highlight .role-features-label { color: rgba(255,255,255,0.4); }
-    .role-card.role-card--highlight .role-feature-item { color: rgba(255,255,255,0.78); }
-    .role-card.role-card--highlight .role-feature-item svg { color: var(--gold); }
     .role-card.role-card--highlight .role-cta {
       background: var(--gold);
       border-color: var(--gold);
@@ -1421,11 +1548,12 @@
 
     /* How the roles connect */
     .roles-connect {
-      background: var(--white);
-      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(31,77,58,.5), rgba(22,59,45,.58));
+      border: 1px solid rgba(232,167,61,.22);
       border-radius: var(--radius-xl);
       padding: 32px 40px;
       margin-top: 64px;
+      backdrop-filter: blur(10px);
     }
     .connect-bar {
       display: flex;
@@ -1441,14 +1569,14 @@
       font-family: 'Inter', sans-serif;
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       line-height: 1.3;
       letter-spacing: -0.01em;
     }
     .connect-divider {
       width: 1px;
       align-self: stretch;
-      background: var(--border);
+      background: rgba(255,255,255,.14);
       flex-shrink: 0;
     }
     .connect-item {
@@ -1460,9 +1588,9 @@
     .connect-icon {
       width: 44px; height: 44px;
       border-radius: 50%;
-      background: rgba(232,167,61,0.16);
-      border: 1px solid rgba(232,167,61,0.35);
-      color: var(--gold-dark);
+      background: rgba(232,167,61,0.14);
+      border: 1px solid rgba(232,167,61,0.4);
+      color: var(--gold);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -1471,14 +1599,14 @@
       font-family: 'Inter', sans-serif;
       font-size: 0.9rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       letter-spacing: -0.01em;
       margin-bottom: 4px;
     }
     .connect-item p {
       font-size: 0.78rem;
       line-height: 1.5;
-      color: var(--ink-mid);
+      color: rgba(255,255,255,.62);
     }
     @media (max-width: 900px) {
       .roles-connect { padding: 28px 24px; }
@@ -1487,46 +1615,39 @@
       .connect-divider { width: 100%; height: 1px; }
       .connect-item { padding: 0; }
     }
-    /* Image logo wrap - real role images, contained in a white circle */
+    /* Role icon wrap - simple line icon in a gold-ring badge */
     .role-icon-wrap--img {
-      width: 96px; height: 96px;
+      width: 84px; height: 84px;
       border-radius: 50%;
-      overflow: hidden;
-      background: var(--white);
+      background: rgba(232,167,61,0.12);
+      color: var(--gold);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 20px;
       flex-shrink: 0;
-      border: 3px solid var(--white);
-      box-shadow: 0 0 0 4px rgba(232,167,61,0.2), var(--shadow-sm);
+      border: 1px solid rgba(232,167,61,0.4);
+      box-shadow: 0 0 0 4px rgba(232,167,61,0.14), 0 10px 24px rgba(0,0,0,.22);
     }
     .role-card--highlight .role-icon-wrap--img {
-      border-color: rgba(255,255,255,0.14);
-      box-shadow: 0 0 0 4px rgba(232,167,61,0.24), 0 10px 24px rgba(0,0,0,0.3);
-    }
-    .role-icon-wrap--img img {
-      width: 100%; height: 100%;
-      object-fit: contain;
-      padding: 6px;
-      display: block;
+      box-shadow: 0 0 0 4px rgba(232,167,61,0.26), 0 12px 28px rgba(0,0,0,0.3);
     }
     .role-card h3 {
       font-family: 'Inter', sans-serif;
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--ink);
+      color: var(--white);
       margin-bottom: 12px;
       letter-spacing: -0.01em;
     }
     .role-card > p {
       font-size: 0.875rem;
       line-height: 1.75;
-      color: var(--green-700);
+      color: rgba(255,255,255,.66);
       margin-bottom: 24px;
     }
     .role-divider {
       width: 100%;
       height: 1px;
-      background: rgba(95,143,120,.24);
+      background: rgba(255,255,255,.12);
       margin-bottom: 20px;
     }
     .role-features-label {
@@ -1534,7 +1655,7 @@
       font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(31,77,58,.72);
+      color: rgba(255,255,255,.42);
       margin-bottom: 14px;
     }
     .role-features {
@@ -1547,25 +1668,25 @@
     .role-feature-item {
       display: flex; align-items: center; gap: 10px;
       font-size: 0.875rem;
-      color: var(--green-800);
+      color: rgba(255,255,255,.82);
     }
-    .role-feature-item svg { flex-shrink: 0; color: var(--gold-dark); }
+    .role-feature-item svg { flex-shrink: 0; color: var(--gold); }
     .role-cta {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       padding: 11px 24px;
       border-radius: var(--radius-pill);
-      border: 1.5px solid var(--green-800);
+      border: 1.5px solid rgba(255,255,255,.35);
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--green-800);
+      color: var(--white);
       transition: all 0.2s var(--ease);
       margin-top: auto;
       width: 100%;
     }
     .role-cta:hover {
-      background: var(--green-800);
-      border-color: var(--green-800);
-      color: var(--white);
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--ink);
     }
     @media (max-width: 1024px) {
       .roles-grid { grid-template-columns: 1fr 1fr; }
@@ -1724,9 +1845,6 @@
       .hero-desc {
         max-width: none;
       }
-      .contact-hero-media {
-        display: none;
-      }
       .about-section,
       .roles-section {
         padding: 72px 0;
@@ -1820,8 +1938,8 @@
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" class="nav-link active">Home</a></li>
       <li><a href="#about" class="nav-link">About</a></li>
-      <li><a href="#features" class="nav-link">Features</a></li>
       <li><a href="#roles" class="nav-link">User Roles</a></li>
+      <li><a href="#features" class="nav-link">Features</a></li>
       <li><a href="#contact" class="nav-link">Contact</a></li>
     </ul>
     <div class="nav-actions">
@@ -1941,7 +2059,6 @@
 
       <div class="about-visual">
         <div class="about-photo">
-          <div class="about-photo-leaf" aria-hidden="true"></div>
           <div class="mission-card">
             <div class="mission-icon">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#C6872A" stroke-width="1.6"/></svg>
@@ -2154,7 +2271,6 @@
 
 <!-- USER ROLES -->
 <section class="roles-section" id="roles">
-  <div class="roles-leaf-deco" aria-hidden="true"></div>
   <div class="container">
     <div class="section-header">
       <span class="eyebrow">User Roles</span>
@@ -2165,8 +2281,8 @@
 
       <!-- Rice Farmer -->
       <div class="role-card">
-        <div class="role-icon-wrap--img">
-          <img src="{{ asset('images/rice-farmer-avatar.png') }}" alt="Rice Farmer">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 01</div>
         <h3>Rice Farmer</h3>
@@ -2203,8 +2319,8 @@
 
       <!-- MAO Personnel -->
       <div class="role-card role-card--highlight">
-        <div class="role-icon-wrap--img">
-          <img src="{{ asset('images/da.png') }}" alt="MAO Personnel">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 02</div>
         <h3>MAO Personnel</h3>
@@ -2241,8 +2357,8 @@
 
       <!-- IT Expert -->
       <div class="role-card">
-        <div class="role-icon-wrap--img">
-          <img src="{{ asset('images/it-personnel.png') }}" alt="IT Expert">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 03</div>
         <h3>IT Expert</h3>
@@ -2324,6 +2440,11 @@
 
 <!-- CONTACT -->
 <section class="contact-section" id="contact">
+  <div class="contact-leaf-float contact-leaf-1" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-2" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-3" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-4" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-5" aria-hidden="true"></div>
   <div class="container">
     <div class="contact-grid">
       <div class="contact-info">
@@ -2469,11 +2590,22 @@
           <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
         <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
+        <div class="footer-tagline-chip">
+          <span class="footer-tagline-chip-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span>Empowering agriculture through data and technology.</span>
+        </div>
       </div>
 
       <!-- Column 2: Platform -->
       <div class="footer-links">
-        <h4>Platform</h4>
+        <div class="footer-col-label">
+          <span class="footer-col-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="2" y="14" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="9" width="4" height="11" rx="1" fill="currentColor" opacity="0.7"/><rect x="14" y="5" width="4" height="15" rx="1" fill="currentColor" opacity="0.45"/></svg>
+          </span>
+          <h4>Platform</h4>
+        </div>
         <ul>
           <li><a href="{{ route('login') }}">Dashboard</a></li>
           <li><a href="#features">Climate Records</a></li>
@@ -2485,7 +2617,12 @@
       <!-- Columns 3 & 4: Company + Access side-by-side -->
       <div class="footer-col-pair">
         <div class="footer-links">
-          <h4>Company</h4>
+          <div class="footer-col-label">
+            <span class="footer-col-icon">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </span>
+            <h4>Company</h4>
+          </div>
           <ul>
             <li><a href="#about">About iClimate</a></li>
             <li><a href="#features">Features</a></li>
@@ -2494,7 +2631,12 @@
         </div>
 
         <div class="footer-links">
-          <h4>Access</h4>
+          <div class="footer-col-label">
+            <span class="footer-col-icon">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
+            </span>
+            <h4>Access</h4>
+          </div>
           <ul>
             <li><a href="{{ route('login') }}">Login</a></li>
             <li><a href="{{ route('register') }}">Create Account</a></li>
@@ -2507,7 +2649,12 @@
 
       <!-- Column 5: Follow Us -->
       <div class="footer-social">
-        <h4>Follow Us</h4>
+        <div class="footer-col-label">
+          <span class="footer-col-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <h4>Follow Us</h4>
+        </div>
         <div class="footer-social-icons">
           <a href="#" class="footer-social-icon" aria-label="Facebook">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg>
@@ -2519,12 +2666,23 @@
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
+        <div class="footer-message-card">
+          <p>Together, we build a climate-resilient future for <em>agriculture</em>.</p>
+        </div>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University ARASOF-Nasugbu</p>
-      <span class="footer-badge">Lian &middot; Batangas &middot; PH</span>
+      <div class="footer-bottom-brand">
+        <span class="footer-bottom-icon">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" fill="currentColor"/></svg>
+        </span>
+        <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University ARASOF-Nasugbu</p>
+      </div>
+      <span class="footer-badge">
+        <svg width="12" height="12" viewBox="0 0 10 12" fill="none"><path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg>
+        Lian &middot; Batangas &middot; PH
+      </span>
     </div>
   </div>
 </footer>

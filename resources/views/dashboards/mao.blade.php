@@ -14,7 +14,22 @@
             --mao-green-50: rgba(95,143,120,.1);
             --mao-green-100: rgba(127,214,181,.22);
             color: var(--mao-ink);
+            font-family: 'Inter', system-ui, sans-serif;
         }
+        .mao-console h1, .mao-console h2, .mao-console h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400 !important; letter-spacing: -.01em; }
+        .mao-console .mono { font-family: 'DM Mono', monospace; }
+        /* -- Buttons unified with landing/farmer pill style -- */
+        .mao-console .btn { border-radius: 999px !important; font-weight: 600 !important; letter-spacing: .01em; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
+        .mao-console .btn-primary, .mao-console .btn-light {
+            background: var(--mao-gold) !important; border-color: var(--mao-gold) !important; color: #1F2937 !important;
+            box-shadow: 0 10px 24px rgba(232,167,61,.28);
+        }
+        .mao-console .btn-primary:hover, .mao-console .btn-light:hover { background: var(--mao-gold-dark) !important; border-color: var(--mao-gold-dark) !important; transform: translateY(-1px); }
+        .mao-console .btn-outline-light { border-color: rgba(255,255,255,.55) !important; color: #fff !important; background: transparent !important; }
+        .mao-console .btn-outline-light:hover { background: #fff !important; border-color: #fff !important; color: var(--mao-ink) !important; }
+        .mao-console .btn-outline-primary { border-color: var(--mao-green) !important; color: var(--mao-green) !important; background: transparent !important; }
+        .mao-console .btn-outline-primary:hover { background: var(--mao-green) !important; border-color: var(--mao-green) !important; color: #fff !important; transform: translateY(-1px); }
+        .mao-console .btn-sm { padding: .4rem .9rem; font-size: .78rem; }
         .mao-hero {
             position: relative;
             overflow: hidden;
@@ -40,8 +55,9 @@
         }
         .mao-hero > * { position: relative; z-index: 1; }
         .mao-eyebrow {
+            font-family: 'DM Mono', monospace;
             font-size: .72rem;
-            font-weight: 900;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: .12em;
             color: var(--mao-soft-gold);
@@ -58,8 +74,9 @@
             padding: .45rem .75rem;
             background: rgba(255,255,255,.1);
             color: rgba(255,255,255,.85);
-            font-size: .82rem;
-            font-weight: 800;
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+            font-weight: 500;
         }
         .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-gold); box-shadow: 0 0 0 6px rgba(232,167,61,.25); }
         .mao-hero .btn-outline-light { border-color: #fff; color: #fff; }
@@ -80,17 +97,17 @@
         }
         .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(95,143,120,.55); }
         .mao-card:focus-visible { outline: 2px solid var(--mao-mint); outline-offset: 2px; }
-        .mao-tap-hint { color: var(--mao-green); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
+        .mao-tap-hint { color: var(--mao-green); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
         .mao-card:hover .mao-tap-hint, .mao-card:focus-visible .mao-tap-hint { opacity: 1; transform: translateY(0); }
         .mao-modal-content { border-radius: 18px; background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--mao-muted); overflow: hidden; }
         .mao-modal-content .modal-footer { border-top-color: rgba(95,143,120,.4); }
         .mao-modal-header { background: linear-gradient(90deg, var(--mao-green-50), var(--mao-green-100)); color: var(--mao-ink); }
         .mao-modal-header .modal-title { color: var(--mao-ink); }
-        .mao-modal-headline { font-size: 1.6rem; font-weight: 900; color: var(--mao-ink); }
+        .mao-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: var(--mao-ink); }
         .mao-modal-sub { color: var(--mao-muted); font-size: .85rem; margin: .3rem 0 .9rem; }
         .mao-card-body { padding: 1rem; position: relative; z-index: 1; }
-        .mao-label { color: var(--mao-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
-        .mao-value { margin-top: .35rem; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 900; color: var(--mao-ink); }
+        .mao-label { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; }
+        .mao-value { margin-top: .35rem; font-family: 'DM Serif Display', serif; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 400; color: var(--mao-ink); letter-spacing: -.02em; }
         .mao-note { color: var(--mao-muted); font-size: .84rem; margin-top: .65rem; }
         .mao-panel {
             border: 1px solid var(--mao-line);
@@ -100,16 +117,17 @@
             overflow: hidden;
         }
         .mao-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .75rem; border-bottom: 1px solid rgba(95,143,120,.58); background: var(--mao-green-50); }
-        .mao-panel-title { font-size: 1rem; font-weight: 900; margin: 0; color: var(--mao-ink); }
+        .mao-panel-title { font-size: 1.05rem; margin: 0; color: var(--mao-ink); }
         .mao-panel-sub { margin: .15rem 0 0; color: var(--mao-muted); font-size: .82rem; }
         .mao-panel-body { padding: 1rem; }
         .mao-list-item { display: flex; gap: .85rem; align-items: flex-start; padding: .85rem 0; }
         .mao-list-item + .mao-list-item { border-top: 1px solid rgba(95,143,120,.55); }
-        .list-mark { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: rgba(95,143,120,.14); color: var(--mao-green); font-weight: 900; font-size: .76rem; flex: 0 0 auto; }
-        .row-title { font-weight: 900; color: var(--mao-ink); line-height: 1.25; }
+        .list-mark { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(95,143,120,.14); border: 1px solid rgba(127,214,181,.35); color: var(--mao-green); flex: 0 0 auto; }
+        .list-mark svg { width: 17px; height: 17px; }
+        .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
-        .row-meta { color: var(--mao-muted); font-size: .76rem; margin-top: .35rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .32rem .58rem; font-size: .72rem; font-weight: 900; background: rgba(95,143,120,.14); color: var(--mao-green); }
+        .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
         .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
         .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); color: inherit; text-decoration: none; }
@@ -123,15 +141,15 @@
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
-        .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 900; }
+        .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 700; }
         .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; }
         .chart-box canvas { width: 100% !important; height: 220px !important; }
-        .chart-title { color: var(--mao-ink); font-weight: 900; margin-bottom: .25rem; }
+        .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
-        .layer-btn { min-height: 38px; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.94); color: var(--mao-ink); padding: .48rem .64rem; font-size: .78rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
+        .layer-btn { min-height: 38px; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.94); color: var(--mao-ink); padding: .48rem .64rem; font-size: .78rem; font-weight: 700; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1F4D3A; border-color: #1F4D3A; color: #fff; }
         .dashboard-map {
             height: 540px;
@@ -150,13 +168,13 @@
         .leaflet-popup-content-wrapper { border-radius: 8px; }
         .map-popup { color: var(--mao-ink); font-size: .86rem; line-height: 1.35; }
         .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid rgba(95,143,120,.3); padding-bottom: .58rem; margin-bottom: .62rem; }
-        .map-popup-name { color: var(--mao-ink); font-size: 1rem; font-weight: 900; line-height: 1.18; }
-        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, rgba(95,143,120,.14)); color: var(--popup-color, #1F4D3A); font-size: .7rem; font-weight: 900; }
+        .map-popup-name { color: var(--mao-ink); font-size: 1rem; font-weight: 700; line-height: 1.18; }
+        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, rgba(95,143,120,.14)); color: var(--popup-color, #1F4D3A); font-size: .7rem; font-weight: 700; }
         .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #5F8F78); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
         .map-popup-box { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; padding: .52rem .58rem; }
-        .map-popup-label { color: var(--mao-muted); font-size: .66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-        .map-popup-value { color: var(--mao-ink); font-weight: 900; margin-top: .16rem; }
+        .map-popup-label { color: var(--mao-muted); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .map-popup-value { color: var(--mao-ink); font-weight: 700; margin-top: .16rem; }
         .map-popup-note { color: var(--mao-muted); font-size: .78rem; margin-top: .18rem; }
         .map-popup-advice { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: rgba(95,143,120,.1); padding: .58rem .65rem; margin-top: .55rem; }
         .map-popup-source { color: var(--mao-muted); font-size: .74rem; margin-top: .55rem; border-top: 1px solid rgba(95,143,120,.3); padding-top: .5rem; }
@@ -177,21 +195,21 @@
         }
         .map-detail-panel.show { display: block; }
         .map-detail-empty { color: var(--mao-muted); font-size: .86rem; line-height: 1.45; }
-        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; color: var(--mao-ink); font-weight: 900; line-height: 1; }
+        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; color: var(--mao-ink); font-weight: 700; line-height: 1; }
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
         .risk-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
         .risk-level-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
         .risk-level-card.low { border-left: 5px solid #5F8F78; }
         .risk-level-card.moderate { border-left: 5px solid #ffd166; }
         .risk-level-card.high, .risk-level-card.severe { border-left: 5px solid #d85b45; }
-        .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
-        .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 900; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
+        .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 700; line-height: 1; margin-top: .35rem; }
+        .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 700; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
         .empty-soft { border: 1px dashed #5F8F78; background: var(--mao-green-50); border-radius: 8px; padding: 1.5rem; text-align: center; }
         .empty-soft strong { color: var(--mao-ink); }
         .dashboard-section-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .75rem; }
         .dashboard-section-label:first-of-type { margin-top: 0; }
-        .section-title { color: var(--mao-soft-gold); font-size: .92rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+        .section-title { color: var(--mao-soft-gold); font-family: 'DM Mono', monospace !important; font-size: .74rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
         .section-note { color: var(--mao-mint); font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
@@ -212,9 +230,9 @@
             background: var(--mao-green-50);
         }
         .dashboard-group > summary::-webkit-details-marker { display: none; }
-        .dashboard-group-title { color: var(--mao-ink); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+        .dashboard-group-title { color: var(--mao-ink); font-family: 'Inter', sans-serif !important; font-size: .92rem; font-weight: 700 !important; text-transform: none; letter-spacing: -.005em; margin: 0; }
         .dashboard-group-note { color: var(--mao-muted); font-size: .82rem; margin: .1rem 0 0; }
-        .dashboard-group-toggle { color: var(--mao-green); font-size: .78rem; font-weight: 900; white-space: nowrap; }
+        .dashboard-group-toggle { color: var(--mao-green); font-size: .78rem; font-weight: 700; white-space: nowrap; }
         .dashboard-group-toggle::after { content: "Collapse"; }
         .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
         .dashboard-group-body { padding: 1rem; }
@@ -272,7 +290,7 @@
                         <p class="mao-modal-sub">Most recently registered farmer profiles.</p>
                         @forelse($recentFarmerProfiles as $profile)
                             <div class="mao-list-item">
-                                <div class="list-mark">FAR</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $profile->full_name }}</div>
                                     <div class="row-text">{{ $profile->barangay }} &middot; {{ number_format($profile->farm_area, 2) }} ha &middot; {{ $profile->farm_type }}</div>
@@ -302,7 +320,7 @@
                         <p class="mao-modal-sub">Latest entry: {{ $latestClimate?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $latestClimate?->source ?? 'N/A' }}</p>
                         @forelse($recentClimateRecords as $record)
                             <div class="mao-list-item">
-                                <div class="list-mark">CLI</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
                                     <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
@@ -332,7 +350,7 @@
                         <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
-                                <div class="list-mark">RIC</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $production->barangay }} &middot; {{ $production->season }} {{ $production->year }}</div>
                                     <div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div>
@@ -362,7 +380,7 @@
                         <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
                         @forelse($highRiskAreasList as $area)
                             <div class="mao-list-item">
-                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
                                     <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
@@ -527,7 +545,7 @@
                     <div class="mao-panel-body list-compact">
                         @forelse($recentClimateRecords as $record)
                             <div class="mao-list-item">
-                                <div class="list-mark">CLI</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1"><div class="row-title">{{ $record->record_date?->format('M d, Y') }} | {{ $record->season }} Season</div><div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }} C, humidity {{ number_format($record->humidity, 1) }}%, wind {{ number_format($record->wind_speed, 1) }} km/h.</div><div class="row-meta">Source: {{ $record->source }}</div></div>
                             </div>
                         @empty
@@ -569,7 +587,7 @@
                     <div class="mao-panel-body list-compact">
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
-                                <div class="list-mark">RIC</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
                                 <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
                             </div>
                         @empty
@@ -609,7 +627,7 @@
                     <div class="mao-panel-header"><div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a></div>
                     <div class="mao-panel-body list-compact">
                         @forelse($latestAdvisories as $advisory)
-                            <div class="mao-list-item"><div class="list-mark">ADV</div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
+                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
                         @empty
                             <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
                         @endforelse
@@ -650,7 +668,7 @@
                     <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Farmer Registration Report']) }}"><strong>Farmer Report</strong><span>Summarize farmer account and profile records.</span></a>
                 </div>
                 @forelse($latestReports as $report)
-                    <div class="mao-list-item"><div class="list-mark">RPT</div><div class="flex-grow-1"><div class="row-title">{{ $report->title }}</div><div class="row-text">{{ $report->report_type }} generated by {{ $report->generatedBy?->name ?? 'System' }}.</div><div class="row-meta">{{ $report->created_at?->format('M d, Y') }}</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a></div>
+                    <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M4 3h10l4 4v12H4V3z" stroke="currentColor" stroke-width="1.4"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h8M7 13h6M7 16h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div><div class="flex-grow-1"><div class="row-title">{{ $report->title }}</div><div class="row-text">{{ $report->report_type }} generated by {{ $report->generatedBy?->name ?? 'System' }}.</div><div class="row-meta">{{ $report->created_at?->format('M d, Y') }}</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a></div>
                 @empty
                     <div class="empty-soft"><strong>No report history yet</strong><div class="small text-muted mt-1">Generated reports will appear here.</div></div>
                 @endforelse
