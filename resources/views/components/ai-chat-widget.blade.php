@@ -422,7 +422,7 @@
             <div class="ic-ai-head-main">
                 <img src="{{ asset('images/iclimate-icon.png') }}" alt="iClimate" class="ic-ai-logo">
                 <div>
-                    <h2 id="icAiTitle" class="ic-ai-title">iClimate Assistant</h2>
+                    <h2 id="icAiTitle" class="ic-ai-title">Climora AI</h2>
                     <p class="ic-ai-subtitle">Weather, rice yield, planting, and system guidance</p>
                 </div>
             </div>
@@ -467,7 +467,7 @@
         </div>
 
         <div id="icAiTyping" class="ic-ai-typing">
-            <span>Assistant is checking iClimate</span>
+            <span>Climora AI is checking iClimate</span>
             <span class="ic-ai-dot"></span>
             <span class="ic-ai-dot"></span>
             <span class="ic-ai-dot"></span>
@@ -490,8 +490,8 @@
         </form>
     </section>
 
-    <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open iClimate assistant">
-        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
+    <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open Climora AI">
+        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="Climora AI">
     </button>
 </div>
 

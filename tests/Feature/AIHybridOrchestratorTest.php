@@ -99,6 +99,51 @@ class AIHybridOrchestratorTest extends TestCase
         $this->assertFalse((bool) $second->json('chat.rice_yield_prediction.fallback'));
     }
 
+    public function test_ambiguous_prediction_request_asks_for_clarification_without_model_call(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'Can you make a prediction for me?',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.intent', 'unknown_prediction')
+            ->assertJsonPath('chat.prediction_result.requires_clarification', true)
+            ->assertJsonPath('chat.prediction_result.missing.0', 'prediction_type');
+
+        $this->assertStringContainsString('weather/rainfall prediction or a rice-yield prediction', $response->json('chat.answer'));
+        Http::assertNothingSent();
+    }
+
+    public function test_bare_number_follow_up_is_used_as_hectares_for_pending_yield_prediction(): void
+    {
+        $this->seedClimateRecords();
+        Http::fake([
+            '127.0.0.1:5001/predict' => Http::response([
+                'rice_yield_prediction' => ['predicted_yield' => 3.87, 'unit' => 'tons/hectare'],
+                'confidence_score' => 88,
+            ]),
+        ]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'Predict my rice yield.',
+        ])->assertOk()
+            ->assertJsonPath('chat.prediction_result.requires_clarification', true);
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => '2.5',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.prediction_result.input_features.area', 2.5)
+            ->assertJsonPath('chat.rice_yield_prediction.farm_area_hectares', 2.5);
+    }
+
     public function test_advisory_question_uses_active_advisory_records(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);

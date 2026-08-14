@@ -144,7 +144,7 @@ class IntentDetectionService
             return true;
         }
 
-        return str($text)->contains(['predict', 'will it rain', 'should i irrigate', 'should i plant', 'when should i plant', 'risk assessment', 'yield explanation', 'climate recommendation']);
+        return str($text)->contains(['will it rain', 'should i irrigate', 'should i plant', 'when should i plant', 'risk assessment', 'yield explanation', 'climate recommendation']);
     }
 
     public function detectLanguage(string $question, array $memory = []): string

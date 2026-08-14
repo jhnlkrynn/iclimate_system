@@ -104,9 +104,11 @@ class PredictionParityTest extends TestCase
             $user,
         );
 
-        $pageResponse = $this->actingAs($user)->post(route('weather-predictions.predict'), [
+        $pageResponse = $this->actingAs($user)->post(route('rice-yield-predictions.predict'), [
+            'prediction_type' => 'rice_yield',
             'prediction_date' => $targetDate->toDateString(),
             'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
+            'area' => 2.5,
         ]);
 
         $pageResponse->assertOk()->assertSee('Prediction Result');

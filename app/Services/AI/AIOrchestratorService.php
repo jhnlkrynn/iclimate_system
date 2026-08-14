@@ -41,6 +41,16 @@ class AIOrchestratorService
             $intent = $pending;
         }
 
+        if (($classification['requires_clarification'] ?? false) && $intent === IntentClassifierService::UNKNOWN) {
+            return $this->clarification(
+                $language,
+                $memory,
+                'unknown_prediction',
+                'Do you want a weather/rainfall prediction or a rice-yield prediction?',
+                'Weather/rainfall prediction ba o rice-yield prediction ang gusto mo?'
+            );
+        }
+
         Log::info('AI orchestrator selected intent.', [
             'user_id' => $user->id,
             'intent' => $intent,
@@ -220,7 +230,7 @@ class AIOrchestratorService
     private function modelBackedPrediction(User $user, string $question, string $language, array $memory, string $intent, array $entities): array
     {
         if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && ! $this->hasArea($entities) && ! $user->farmerProfile?->farm_area) {
-            return $this->clarification($language, $memory, 'rice_yield_prediction', 'I can predict your rice yield. What farm area in hectares should I use?', 'Kaya kong i-predict ang rice yield mo. Ilang ektarya ang gagamitin ko?');
+            return $this->clarification($language, $memory, 'rice_yield_prediction', 'I can predict your rice yield. What farm area in hectares should I use? For example: 2.5 hectares.', 'Kaya kong i-predict ang rice yield mo. Ilang ektarya ang gagamitin ko? Halimbawa: 2.5 hectares.');
         }
 
         $modelQuestion = $question;
@@ -336,14 +346,14 @@ class AIOrchestratorService
      */
     private function clarification(string $language, array $memory, string $pendingIntent, string $english, string $tagalog): array
     {
-        return $this->textResult($this->translate($language, $english, $tagalog), $pendingIntent, 'Clarification', 'iClimate Assistant', $language, [
+        return $this->textResult($this->translate($language, $english, $tagalog), $pendingIntent, 'Clarification', 'Climora AI', $language, [
             ...$memory,
             'pending_intent' => $pendingIntent,
         ], [
             'confidence_score' => 80,
             'prediction_result' => [
                 'requires_clarification' => true,
-                'missing' => ['area'],
+                'missing' => [$pendingIntent === 'unknown_prediction' ? 'prediction_type' : 'area'],
                 'pending_intent' => $pendingIntent,
             ],
         ]);
@@ -358,7 +368,7 @@ class AIOrchestratorService
             $this->translate($language, 'I could not complete that trusted iClimate lookup right now. Please try again in a moment.', 'Hindi ko matapos ang trusted iClimate lookup ngayon. Subukan ulit mamaya.'),
             $intent,
             'Tool Failure',
-            'iClimate Assistant',
+            'Climora AI',
             $language,
             [],
             [

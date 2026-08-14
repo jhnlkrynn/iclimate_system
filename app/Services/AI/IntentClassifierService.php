@@ -113,7 +113,11 @@ class IntentClassifierService
         $detected = $this->fallbackDetector->detect($question, $memory);
         $intent = $this->mapLegacyIntent((string) $detected['intent'], $text);
 
-        if ($this->looksLikeRisk($text)) {
+        if ($this->looksLikeAmbiguousPrediction($text)) {
+            $intent = self::UNKNOWN;
+        } elseif ($this->looksLikeYieldPrediction($text)) {
+            $intent = self::RICE_YIELD_PREDICTION;
+        } elseif ($this->looksLikeRisk($text)) {
             $intent = self::CLIMATE_RISK;
         } elseif ($this->looksLikeCurrentWeather($text)) {
             $intent = self::CURRENT_WEATHER;
@@ -126,17 +130,17 @@ class IntentClassifierService
         }
 
         $pendingIntent = (string) data_get($memory, 'pending_intent', '');
-        if ($pendingIntent !== '' && $this->extractArea($question) !== null) {
+        if ($pendingIntent !== '' && $this->extractArea($question, allowBareNumber: true) !== null) {
             $intent = $pendingIntent;
         }
 
         return [
             'intent' => $intent,
             'confidence' => ((float) ($detected['confidence'] ?? 65)) / 100,
-            'entities' => $this->normalizeEntities([], $question),
+            'entities' => $this->normalizeEntities([], $question, $pendingIntent !== ''),
             'source' => 'local_semantic_fallback',
             'missing' => [],
-            'requires_clarification' => false,
+            'requires_clarification' => $intent === self::UNKNOWN && $this->containsPredictionWord($text),
         ];
     }
 
@@ -199,6 +203,14 @@ class IntentClassifierService
     private function looksLikeMonthlyModelPrediction(string $text): bool
     {
         return str($text)->contains([
+            'predict rainfall',
+            'rainfall prediction',
+            'predict weather',
+            'weather prediction',
+            'predict next month',
+            'what rainfall does the model predict',
+            'use the weather prediction model',
+            'what does iclimate predict for rainfall',
             'next month',
             'monthly',
             'trained model',
@@ -220,6 +232,40 @@ class IntentClassifierService
         ]);
     }
 
+    private function looksLikeYieldPrediction(string $text): bool
+    {
+        return str($text)->contains([
+            'predict my rice yield',
+            'predict rice yield',
+            'rice yield',
+            'yield for',
+            'tons per hectare',
+            'tons/ha',
+            'estimate my harvest',
+            'estimate my yield',
+            'estimate my production',
+            'harvest',
+            'production',
+            'ani',
+            'aanihin',
+        ]);
+    }
+
+    private function looksLikeAmbiguousPrediction(string $text): bool
+    {
+        return $this->containsPredictionWord($text)
+            && ! $this->looksLikeYieldPrediction($text)
+            && ! $this->looksLikeMonthlyModelPrediction($text)
+            && ! $this->looksLikeApiForecast($text)
+            && ! $this->looksLikeCurrentWeather($text)
+            && ! $this->looksLikeRisk($text);
+    }
+
+    private function containsPredictionWord(string $text): bool
+    {
+        return str($text)->contains(['predict', 'prediction', 'estimate', 'model']);
+    }
+
     private function looksLikeAdvisory(string $text): bool
     {
         return str($text)->contains(['advisory', 'advisories', 'warning', 'alert', 'babala', 'pagasa']);
@@ -234,9 +280,9 @@ class IntentClassifierService
      * @param  array<string, mixed>  $entities
      * @return array<string, mixed>
      */
-    private function normalizeEntities(array $entities, string $question): array
+    private function normalizeEntities(array $entities, string $question, bool $allowBareArea = false): array
     {
-        if (($area = $this->extractArea($question)) !== null) {
+        if (($area = $this->extractArea($question, $allowBareArea)) !== null) {
             $entities['area'] = $area;
         }
 
@@ -264,9 +310,13 @@ class IntentClassifierService
         return Arr::where($entities, fn ($value) => $value !== null && $value !== '');
     }
 
-    private function extractArea(string $question): ?float
+    private function extractArea(string $question, bool $allowBareNumber = false): ?float
     {
         if (preg_match('/\b(\d+(?:\.\d+)?)\s*(?:ha|hectare|hectares|ektarya|hektarya)\b/i', $question, $match)) {
+            return round((float) $match[1], 2);
+        }
+
+        if ($allowBareNumber && preg_match('/^\s*(\d+(?:\.\d+)?)\s*$/', $question, $match)) {
             return round((float) $match[1], 2);
         }
 

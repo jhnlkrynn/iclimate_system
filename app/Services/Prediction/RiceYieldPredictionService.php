@@ -2,10 +2,13 @@
 
 namespace App\Services\Prediction;
 
+use App\Enums\PredictionType;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
+use RuntimeException;
 
 class RiceYieldPredictionService
 {
@@ -38,7 +41,12 @@ class RiceYieldPredictionService
         ?float $areaOverride = null,
         ?User $user = null,
         array $manualOverrides = [],
+        ?string $predictionType = null,
     ): array {
+        if ($predictionType !== null && $predictionType !== PredictionType::RICE_YIELD->value) {
+            throw new InvalidArgumentException('RiceYieldPredictionService only accepts rice-yield predictions.');
+        }
+
         $farmType = $this->normalizeFarmType($farmType);
         $manualOverrides = $this->normalizeManualOverrides($manualOverrides);
 
@@ -62,19 +70,28 @@ class RiceYieldPredictionService
             ? round((float) $yield['predicted_yield'], $decimals)
             : null;
         $area = array_key_exists('area', $modelInput) ? round((float) $modelInput['area'], 2) : null;
+        $totalProduction = $predictedYield !== null && $area !== null
+            ? round($predictedYield * $area, $decimals)
+            : null;
+        $riskLevel = data_get($decision, 'risk.level');
+        $riskLabel = data_get($decision, 'risk.label');
+        $riskScore = data_get($decision, 'risk.score');
+        $conditionScore = data_get($decision, 'score.value');
+        $conditionInterpretation = data_get($decision, 'score.interpretation');
+        $weatherAssessment = data_get($decision, 'overall_recommendation.weather')
+            ?? data_get($decision, 'weather.summary');
 
-        return [
+        $result = [
             ...$yield,
             'success' => $predictedYield !== null,
             'prediction_type' => 'rice_yield',
+            'yield_tons_per_hectare' => $predictedYield,
             'predicted_yield_raw' => $predictedYield,
             'predicted_yield' => $predictedYield,
             'predicted_yield_tons_per_hectare' => $predictedYield,
             'unit' => $yield['unit'] ?? 'tons/hectare',
             'farm_area_hectares' => $area,
-            'estimated_total_production_tons' => $predictedYield !== null && $area !== null
-                ? round($predictedYield * $area, $decimals)
-                : null,
+            'estimated_total_production_tons' => $totalProduction,
             'season' => $modelInput['season'] ?? null,
             'farm_type' => $modelInput['farm_type'] ?? null,
             'target_date' => data_get($engineResult, 'target_date')?->toDateString(),
@@ -90,11 +107,21 @@ class RiceYieldPredictionService
             'source' => $yield['source_name'] ?? 'iClimate Rice Yield Prediction Model',
             'planting_advisory' => data_get($decision, 'planting.recommendation'),
             'irrigation_recommendation' => data_get($decision, 'irrigation.recommendation'),
+            'weather_assessment' => $weatherAssessment,
+            'risk_level' => $riskLevel,
+            'risk_label' => $riskLabel,
+            'risk_score' => $riskScore,
+            'condition_score' => $conditionScore,
+            'condition_score_label' => $conditionInterpretation,
             'notifications' => $decision['notifications'] ?? [],
             'decision_support' => $decision,
             'api_error' => $engineResult['api_error'] ?? null,
             'engine_result' => $engineResult,
         ];
+
+        $this->assertCompleteResult($result);
+
+        return $result;
     }
 
     public function normalizeFarmType(?string $farmType): string
@@ -188,5 +215,28 @@ class RiceYieldPredictionService
         }
 
         return $sources;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    private function assertCompleteResult(array $result): void
+    {
+        $required = [
+            'yield_tons_per_hectare',
+            'farm_area_hectares',
+            'estimated_total_production_tons',
+            'weather_assessment',
+            'planting_advisory',
+            'irrigation_recommendation',
+            'risk_level',
+            'condition_score',
+        ];
+
+        foreach ($required as $field) {
+            if (! array_key_exists($field, $result) || $result[$field] === null || $result[$field] === '') {
+                throw new RuntimeException("Missing rice-yield prediction result field: {$field}");
+            }
+        }
     }
 }

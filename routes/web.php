@@ -15,6 +15,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
@@ -216,6 +217,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/predict',
             [WeatherPredictionController::class, 'predict']
         )->middleware('throttle:20,1')->name('weather-predictions.predict');
+
+        Route::post(
+            'rice-yield-predictions/predict',
+            [RiceYieldPredictionController::class, 'predict']
+        )->middleware('throttle:20,1')->name('rice-yield-predictions.predict');
 
         Route::get(
             'live-forecasting',

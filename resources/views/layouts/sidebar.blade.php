@@ -148,7 +148,7 @@
     $renderAiCard = function () use ($sidebarIcon): string {
         return '<button type="button" class="sidebar-ai-card" data-ai-open>'
             .'<span class="sidebar-ai-icon">'.$sidebarIcon('ai').'</span>'
-            .'<span><span class="sidebar-ai-title d-block">AI Assistant</span><span class="sidebar-ai-sub">Ask me anything!</span></span>'
+            .'<span><span class="sidebar-ai-title d-block">Climora AI</span><span class="sidebar-ai-sub">Ask me anything!</span></span>'
             .'</button>';
     };
 @endphp
