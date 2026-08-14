@@ -41,9 +41,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:'.User::ROLE_FARMER)
         ->name('farmer.dashboard');
 
+    Route::get('/farmer/dashboard/weather', [DashboardController::class, 'farmerWeather'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
+        ->name('farmer.dashboard.weather');
+
     Route::get('/mao/dashboard', [DashboardController::class, 'mao'])
         ->middleware('role:'.User::ROLE_MAO)
         ->name('mao.dashboard');
+
+    Route::get('/mao/dashboard/weather', [DashboardController::class, 'maoWeather'])
+        ->middleware(['role:'.User::ROLE_MAO, 'throttle:30,1'])
+        ->name('mao.dashboard.weather');
 
     Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
         ->middleware('role:'.User::ROLE_IT_EXPERT)

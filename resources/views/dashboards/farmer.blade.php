@@ -301,6 +301,97 @@
             line-height: 1.35;
         }
         .field-source span { display: block; color: var(--fc-ink-light); margin-top: .1rem; }
+        .weather-live-card {
+            min-width: min(100%, 360px);
+            border: 1px solid rgba(82,183,136,.28);
+            border-radius: var(--radius-lg);
+            background: rgba(255,255,255,.72);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .weather-live-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .75rem;
+        }
+        .weather-live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            color: var(--fc-green-700);
+            font-family: 'DM Mono', monospace;
+            font-size: .66rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .weather-live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--fc-green-500);
+            box-shadow: 0 0 0 5px rgba(82,183,136,.16);
+        }
+        .weather-refresh-btn {
+            border: 1px solid var(--fc-border);
+            background: #fff;
+            color: var(--fc-green-700);
+            border-radius: var(--radius-pill);
+            padding: .35rem .65rem;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+        .weather-refresh-btn:disabled { opacity: .65; cursor: wait; }
+        .weather-live-main {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: .9rem;
+        }
+        .weather-live-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+        }
+        .weather-live-temp {
+            color: var(--fc-ink);
+            font-family: 'DM Serif Display', serif;
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .weather-live-condition { color: var(--fc-green-700); font-weight: 800; font-size: .94rem; }
+        .weather-live-meta { color: var(--fc-ink-light); font-size: .78rem; margin-top: .25rem; line-height: 1.45; }
+        .weather-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .55rem;
+            margin-top: .85rem;
+        }
+        .weather-mini {
+            border-radius: var(--radius-md);
+            background: var(--fc-green-50);
+            padding: .6rem;
+        }
+        .weather-mini span { display: block; color: var(--fc-ink-light); font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; }
+        .weather-mini strong { display: block; color: var(--fc-ink); font-size: .86rem; margin-top: .1rem; }
+        .forecast-strip {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(96px, 1fr));
+            gap: .7rem;
+            margin-top: 1rem;
+        }
+        .forecast-day {
+            border: 1px solid var(--fc-border);
+            border-radius: var(--radius-md);
+            background: rgba(255,255,255,.72);
+            padding: .7rem;
+            text-align: center;
+        }
+        .forecast-day img { width: 34px; height: 34px; display: block; margin: .25rem auto; }
+        .forecast-day strong { display: block; color: var(--fc-ink); font-size: .82rem; }
+        .forecast-day span { display: block; color: var(--fc-ink-light); font-size: .72rem; line-height: 1.35; }
 
         /* -- PANELS ------------------------------------------ */
         .farmer-panel {
@@ -461,6 +552,9 @@
         @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 767.98px) {
             .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .weather-mini-grid { grid-template-columns: 1fr; }
+            .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero { padding: 1.5rem; }
             .fc-modal-table.table { min-width: 560px; }
             .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
@@ -471,7 +565,7 @@
         $unreadNotifications = $unreadNotificationCount ?? $notifications->where('is_read', false)->count();
         $latestAdvisory = $advisories->first();
         $profile = auth()->user()->farmerProfile;
-        $weatherTimezone = config('services.open_meteo.timezone', 'Asia/Manila');
+        $weatherTimezone = config('services.weather.timezone', 'Asia/Manila');
         $weatherNow = now($weatherTimezone);
         $weatherSource = $latestForecast?->source ?? $climateSummary?->source ?? 'No weather source yet';
         $weatherDataMode = ($forecastResult['ok'] ?? false) ? 'Live online fetch' : 'Stored fallback';
@@ -513,22 +607,74 @@
         $weatherNoteLabel = $currentWeather !== []
             ? 'Current Open-Meteo weather for Lian'
             : ($latestForecast ? 'Latest Open-Meteo forecast for Lian' : 'Latest recorded field climate data');
+        $weatherPayload = $dashboardWeather ?? [];
+        $currentWeather = $weatherPayload['current'] ?? [];
+        $todayWeather = $weatherPayload['today'] ?? [];
+        $weatherSource = $weatherPayload['provider'] ?? 'Open-Meteo';
+        $weatherFetchedAt = $weatherPayload['fetched_at'] ?? null;
+        $weatherFetchedLabel = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
+            ? $weatherFetchedAt->timezone($weatherTimezone)->format('M j, Y').' • '.$weatherFetchedAt->timezone($weatherTimezone)->format('g:i A')
+            : ($weatherPayload['fetched_at_label'] ?? 'Weather temporarily unavailable');
+        $weatherStatusLabel = ($weatherPayload['stale'] ?? false) ? 'Latest Available Data' : 'Live Weather';
+        $temperatureValue = $currentWeather['temperature'] ?? null;
+        $feelsLikeValue = $currentWeather['feels_like'] ?? null;
+        $humidityValue = $currentWeather['humidity'] ?? null;
+        $todayRainfallValue = $todayWeather['rainfall'] ?? null;
+        $currentPrecipitationValue = $currentWeather['precipitation'] ?? $currentWeather['rain'] ?? null;
+        $windSpeedValue = $currentWeather['wind_speed'] ?? null;
+        $weatherCondition = $currentWeather['condition'] ?? 'Weather temporarily unavailable';
+        $weatherIcon = $currentWeather['icon'] ?? $weatherPayload['icon'] ?? '/images/weather/unavailable.svg';
+        $weatherGuidance = $weatherGuidance ?? ['title' => 'iClimate Weather Guidance', 'message' => 'Weather guidance is temporarily unavailable.'];
+        $weatherNoteLabel = ($weatherPayload['success'] ?? false)
+            ? 'Current weather for Lian, Batangas'
+            : 'Weather data temporarily unavailable';
+        $weatherSourceLine = $weatherSource.' current weather - Data updated '.$weatherFetchedLabel;
+        $weatherUpdateLine = 'Data updated '.$weatherFetchedLabel;
+        $weatherForecastDays = $weatherPayload['forecast'] ?? [];
+        $weatherFetchedIso = $dashboardWeatherResponse['fetched_at'] ?? ($weatherFetchedAt instanceof \Illuminate\Support\Carbon ? $weatherFetchedAt->toIso8601String() : null);
     @endphp
 
     <div class="farmer-console">
         <section class="farmer-hero">
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
+            <div class="farmer-hero-leaf" aria-hidden="true"></div>
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-start">
                 <div>
                     <div class="fc-eyebrow on-light">Farmer field view</div>
                     <h1>Climate-smart <em>farmer dashboard.</em></h1>
                     <p>Welcome back, {{ auth()->user()->name }}. Here is your latest climate summary, advisories, community updates, and messages for Lian, Batangas.</p>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F d, Y') }}</span></span>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
+                <div class="weather-live-card" data-weather-root data-weather-url="{{ route('farmer.dashboard.weather') }}">
+                    <div class="weather-live-head">
+                        <span class="weather-live-status"><span class="weather-live-dot"></span><span data-weather-status>{{ $weatherStatusLabel }}</span></span>
+                        <button type="button" class="weather-refresh-btn" data-weather-refresh>Refresh Weather</button>
+                    </div>
+                    <div class="weather-live-main">
+                        <img class="weather-live-icon" src="{{ $weatherIcon }}" alt="{{ $weatherCondition }}" data-weather-icon>
+                        <div>
+                            <div class="weather-live-condition" data-weather-condition>{{ $weatherCondition }}</div>
+                            <div class="weather-live-temp" data-weather-temperature>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
+                            <div class="weather-live-meta">
+                                <strong>Lian, Batangas</strong><br>
+                                Feels like <span data-weather-feels-like>{{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</span><br>
+                                <span data-weather-live-line>Live as of {{ $weatherNow->format('M j, Y') }} &bull; {{ $weatherNow->format('g:i A') }} &middot; {{ $weatherSource }}</span><br>
+                                <span data-weather-data-updated-line>Data updated <span data-weather-updated>{{ $weatherFetchedLabel }}</span></span><br>
+                                <span data-weather-freshness>{{ $weatherFetchedIso ? 'just now' : 'Weather timestamp unavailable' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="weather-mini-grid">
+                        <div class="weather-mini"><span>Humidity</span><strong data-weather-humidity-mini>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</strong></div>
+                        <div class="weather-mini"><span>Today&apos;s Rain</span><strong data-weather-rain-mini>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</strong></div>
+                        <div class="weather-mini"><span>Wind</span><strong data-weather-wind-mini>{{ $windSpeedValue !== null ? number_format((float) $windSpeedValue, 1).' km/h' : 'N/A' }}</strong></div>
+                    </div>
                 </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F j, Y') }} {{ $weatherNow->format('g:i:s A') }}</span></span>
+                <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
+                <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
+                <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
             </div>
         </section>
 
@@ -543,11 +689,11 @@
                     <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
                 </div>
                 <div class="field-label">Temperature</div>
-                <div class="field-value">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' C' : 'N/A' }}</div>
-                <div class="field-note">{{ $weatherNoteLabel }}</div>
+                <div class="field-value" data-weather-temperature-card>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
+                <div class="field-note" data-weather-temperature-note>Feels like {{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</div>
                 <div class="field-source">
-                    Source: {{ $weatherSource }}
-                    <span>{{ $weatherUpdateLine }}</span>
+                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
+                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
@@ -559,9 +705,13 @@
                 <div class="field-label">Rainfall</div>
                 <div class="field-value">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'N/A' }}</div>
                 <div class="field-note">Use advisories before fertilizer application</div>
+                <div class="field-icon">RAIN</div>
+                <div class="field-label">Today&apos;s Rainfall</div>
+                <div class="field-value" data-weather-rain-card>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</div>
+                <div class="field-note" data-weather-precip-note>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</div>
                 <div class="field-source">
-                    Source: {{ $weatherSource }}
-                    <span>{{ $weatherUpdateLine }}</span>
+                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
+                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
@@ -571,11 +721,11 @@
                     <span class="field-status {{ ($forecastResult['ok'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
                 </div>
                 <div class="field-label">Humidity</div>
-                <div class="field-value">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'N/A' }}</div>
-                <div class="field-note">Monitor crop disease risk after rain</div>
+                <div class="field-value" data-weather-humidity-card>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</div>
+                <div class="field-note">Current relative humidity</div>
                 <div class="field-source">
-                    Source: {{ $weatherSource }}
-                    <span>{{ $weatherUpdateLine }}</span>
+                    Source: <span data-weather-source-inline style="display:inline;color:inherit;margin:0;">{{ strtoupper($weatherSource) }}</span>
+                    <span data-weather-updated-card>{{ $weatherUpdateLine }}</span>
                 </div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
@@ -585,9 +735,9 @@
                     <span class="field-status {{ $unreadNotifications > 0 ? 'is-warn' : '' }}">{{ $unreadNotifications > 0 ? 'Unread' : 'Clear' }}</span>
                 </div>
                 <div class="field-label">Weather Alerts</div>
-                <div class="field-value">{{ number_format($unreadNotifications) }} unread</div>
-                <div class="field-note">Recent notifications sent to your account</div>
-                <div class="field-source">Source: Notifications</div>
+                <div class="field-value">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
+                <div class="field-note">Unread weather warnings only</div>
+                <div class="field-source">Source: ICLIMATE ALERTS</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
             <button type="button" class="field-card" data-drawer-open="#statModalRisk">
@@ -598,10 +748,24 @@
                 <div class="field-label">High Risk Areas</div>
                 <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
                 <div class="field-note">High or severe barangay risk areas</div>
-                <div class="field-source">Source: Heat Map Records</div>
+                <div class="field-source">Source: ICLIMATE HEAT MAP</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
         </section>
+
+        @if($weatherForecastDays !== [])
+            <section class="forecast-strip" data-weather-forecast>
+                @foreach($weatherForecastDays as $forecastDay)
+                    <div class="forecast-day">
+                        <strong>{{ $forecastDay['day'] ?? '' }}</strong>
+                        <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
+                        <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
+                        <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
+                        <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
+                    </div>
+                @endforeach
+            </section>
+        @endif
 
         @php
             $fcModalTrend = fn () => $recentClimateRecords->reverse()->values();
@@ -623,6 +787,20 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
+        <div class="fc-stat-panel" id="statPanelTemperature" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Temperature Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline" data-weather-temperature-modal>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub" data-weather-modal-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSource) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-note">Current temperature and apparent temperature come from the normalized weather provider payload for Lian, Batangas. Compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -643,6 +821,20 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
+        <div class="fc-stat-panel" id="statPanelRainfall" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Rainfall Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline" data-weather-rain-modal>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub" data-weather-rain-sub>Today&apos;s rainfall uses daily precipitation_sum from {{ strtoupper($weatherSource) }}. Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}. {{ $weatherUpdateLine }}</p>
+                    <p class="fc-modal-note">The headline is today&apos;s accumulated rainfall, not the current interval. Current precipitation is shown separately to avoid mixing rainfall definitions.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -663,6 +855,20 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
+        <div class="fc-stat-panel" id="statPanelHumidity" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Humidity Detail</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline" data-weather-humidity-modal>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'No weather data yet' }}</div>
+                    <p class="fc-modal-sub" data-weather-humidity-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSource) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
+                    <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. Monitor fields closely when humidity stays elevated.</p>
+                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -699,6 +905,30 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
                     </div>
+        <div class="fc-stat-panel" id="statPanelAlerts" hidden>
+            <div class="fc-modal-content">
+                <div class="fc-modal-header">
+                    <h2 class="modal-title h5">Weather Alerts</h2>
+                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
+                </div>
+                <div class="fc-modal-body">
+                    <div class="fc-modal-headline">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
+                    <p class="fc-modal-sub">Unread warning notifications that mention weather, rainfall, storms, floods, drought, heat, typhoon, PAGASA, or climate.</p>
+                    @forelse($weatherAlertNotifications ?? collect() as $notification)
+                        <div class="farmer-list-item">
+                            <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
+                            <div>
+                                <div class="list-title">{{ $notification->title }}</div>
+                                <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
+                                <div class="list-meta">{{ $notification->type }} &middot; {{ $notification->created_at?->shortDateTime() }}</div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="empty-soft"><strong>0 active weather alerts</strong><div class="small mt-1" style="color: var(--fc-ink-light);">No unread iClimate weather warnings are active for your account.</div></div>
+                    @endforelse
+                </div>
+                <div class="fc-modal-footer">
+                    <a class="fc-btn fc-btn-gold" href="{{ route('notifications.index') }}">Open Notifications</a>
                 </div>
             </div>
         </div>
@@ -820,6 +1050,13 @@
                     <div class="farmer-panel-body">
                         @if($latestAdvisory)
                             <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+                        @if($weatherGuidance)
+                            <div class="list-mark mb-3">WX</div>
+                            <div class="list-title" data-weather-guidance-title>{{ $weatherGuidance['title'] }}</div>
+                            <div class="list-text" data-weather-guidance-message>{{ $weatherGuidance['message'] }}</div>
+                            <div class="list-meta">Deterministic guidance from current weather values</div>
+                        @elseif($latestAdvisory)
+                            <div class="list-mark mb-3">ADV</div>
                             <div class="list-title">{{ $latestAdvisory->title }}</div>
                             <div class="list-text">{{ str($latestAdvisory->content)->limit(180) }}</div>
                             <div class="list-meta">{{ $latestAdvisory->type }} advisory</div>
@@ -969,30 +1206,273 @@
         document.addEventListener('DOMContentLoaded', () => {
             const dateTarget = document.querySelector('[data-current-date]');
 
-            if (!dateTarget) return;
-
-            const formatter = new Intl.DateTimeFormat('en-US', {
+            const MANILA_TIME_ZONE = @json($weatherTimezone);
+            const WEATHER_POLL_INTERVAL = 60000;
+            const dashboardDateFormatter = new Intl.DateTimeFormat('en-US', {
                 weekday: 'long',
                 month: 'long',
-                day: '2-digit',
+                day: 'numeric',
                 year: 'numeric',
-                timeZone: @json($weatherTimezone),
+                timeZone: MANILA_TIME_ZONE,
             });
+            const dashboardTimeFormatter = new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+                timeZone: MANILA_TIME_ZONE,
+            });
+            const weatherDateFormatter = new Intl.DateTimeFormat('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: MANILA_TIME_ZONE,
+            });
+            const weatherTimeFormatter = new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+                timeZone: MANILA_TIME_ZONE,
+            });
+            const manilaDatePartsFormatter = new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                timeZone: MANILA_TIME_ZONE,
+            });
+            const getManilaDateKey = () => {
+                const parts = Object.fromEntries(manilaDatePartsFormatter.formatToParts(new Date()).map((part) => [part.type, part.value]));
 
-            const refreshDate = () => {
-                dateTarget.textContent = formatter.format(new Date());
+                return `${parts.year}-${parts.month}-${parts.day}`;
             };
+            let previousManilaDate = getManilaDateKey();
 
-            refreshDate();
-            setInterval(refreshDate, 60000);
+            const updateDashboardClock = (refreshOnDateChange = false) => {
+                const now = new Date();
+                if (dateTarget) {
+                    dateTarget.textContent = `${dashboardDateFormatter.format(now)} ${dashboardTimeFormatter.format(now)}`;
+                }
 
             const weatherRefreshMs = @json(max(1, (int) config('services.open_meteo.refresh_minutes', 10)) * 60 * 1000);
             setInterval(() => {
                 if (document.visibilityState !== 'visible') return;
                 if (document.querySelector('.modal.show, .ic-drawer.show')) return;
+                const currentManilaDate = getManilaDateKey();
+                if (refreshOnDateChange && currentManilaDate !== previousManilaDate) {
+                    previousManilaDate = currentManilaDate;
+                    refreshWeather(true);
+                }
+            };
 
-                window.location.reload();
-            }, weatherRefreshMs);
+            const weatherRoot = document.querySelector('[data-weather-root]');
+            const refreshButton = document.querySelector('[data-weather-refresh]');
+            let weatherRequestInProgress = false;
+            let weatherPollTimer = null;
+            let weatherMinuteTimeout = null;
+            let weatherMinuteTimer = null;
+            let weatherFetchedAt = @json($weatherFetchedIso);
+            let weatherProvider = @json($weatherSource);
+
+            const fmt = (value, decimals = 1, suffix = '') => {
+                if (value === null || value === undefined || Number.isNaN(Number(value))) return 'N/A';
+                return `${Number(value).toFixed(decimals)}${suffix}`;
+            };
+            const text = (selector, value) => {
+                document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
+            };
+            const setWeatherStatus = (label) => text('[data-weather-status]', label);
+            const updateLiveWeatherTimestamp = () => {
+                const now = new Date();
+                const provider = weatherProvider || 'Open-Meteo';
+
+                text('[data-weather-live-line]', `Live as of ${weatherDateFormatter.format(now)} • ${weatherTimeFormatter.format(now)} · ${provider}`);
+            };
+            const startMinuteClock = () => {
+                if (weatherMinuteTimeout) clearTimeout(weatherMinuteTimeout);
+                if (weatherMinuteTimer) clearInterval(weatherMinuteTimer);
+
+                updateLiveWeatherTimestamp();
+
+                const now = new Date();
+                const delay = Math.max(0, (60 - now.getSeconds()) * 1000 - now.getMilliseconds());
+
+                weatherMinuteTimeout = setTimeout(() => {
+                    updateLiveWeatherTimestamp();
+                    weatherMinuteTimer = setInterval(updateLiveWeatherTimestamp, WEATHER_POLL_INTERVAL);
+                }, delay);
+            };
+            const weatherExactLabel = (isoValue) => {
+                if (!isoValue) return 'Weather temporarily unavailable';
+
+                const fetched = new Date(isoValue);
+                if (Number.isNaN(fetched.getTime())) return 'Weather temporarily unavailable';
+
+                return `${weatherDateFormatter.format(fetched)} • ${weatherTimeFormatter.format(fetched)}`;
+            };
+            const weatherAgeSeconds = () => {
+                if (!weatherFetchedAt) return null;
+
+                const fetched = new Date(weatherFetchedAt);
+                if (Number.isNaN(fetched.getTime())) return null;
+
+                return Math.max(0, Math.floor((Date.now() - fetched.getTime()) / 1000));
+            };
+            const weatherFreshnessLabel = (seconds) => {
+                if (seconds === null) return 'Weather timestamp unavailable';
+                if (seconds < 60) return 'just now';
+                if (seconds < 120) return '1 minute ago';
+                if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+                if (seconds < 7200) return '1 hour ago';
+
+                return `${Math.floor(seconds / 3600)} hours ago`;
+            };
+            const weatherStatusLabel = (seconds) => {
+                if (!navigator.onLine) return 'Connection Lost';
+                if (seconds === null) return 'Latest Available Data';
+                if (seconds < 300) return 'Live Weather';
+                if (seconds < 900) return `Weather Data · ${Math.floor(seconds / 60)} min ago`;
+                if (seconds < 1800) return 'Weather Data Getting Old';
+
+                return 'Weather Data May Be Stale';
+            };
+            const updateWeatherFreshness = () => {
+                const seconds = weatherAgeSeconds();
+                const exact = weatherExactLabel(weatherFetchedAt);
+                const freshness = weatherFreshnessLabel(seconds);
+
+                text('[data-weather-updated]', exact);
+                text('[data-weather-provider]', weatherProvider || 'Weather provider unavailable');
+                text('[data-weather-freshness]', freshness);
+                text('[data-weather-data-updated-line]', `Data updated ${exact}`);
+                text('[data-weather-updated-card]', `Data updated ${exact} · ${weatherProvider || 'Weather provider unavailable'} · ${freshness}`);
+                setWeatherStatus(weatherStatusLabel(seconds));
+            };
+
+            const renderForecast = (days) => {
+                const target = document.querySelector('[data-weather-forecast]');
+                if (!target || !Array.isArray(days)) return;
+
+                target.innerHTML = days.map((day) => `
+                    <div class="forecast-day">
+                        <strong>${day.day ?? ''}</strong>
+                        <img src="${day.icon ?? '/images/weather/unavailable.svg'}" alt="${day.condition ?? 'Forecast'}">
+                        <span>${day.condition ?? 'N/A'}</span>
+                        <span>${day.temperature_max !== null && day.temperature_min !== null ? `${Number(day.temperature_max).toFixed(0)} / ${Number(day.temperature_min).toFixed(0)}°C` : 'N/A'}</span>
+                        <span>${day.precipitation_probability !== null && day.precipitation_probability !== undefined ? Number(day.precipitation_probability).toFixed(0) : 'N/A'}% rain chance</span>
+                    </div>
+                `).join('');
+            };
+
+            const renderWeather = (payload) => {
+                const current = payload.current ?? {};
+                const today = payload.today ?? {};
+                const provider = payload.provider ?? 'Open-Meteo';
+                weatherFetchedAt = payload.fetched_at ?? weatherFetchedAt;
+                weatherProvider = provider;
+                const updated = weatherExactLabel(weatherFetchedAt);
+                const freshness = weatherFreshnessLabel(weatherAgeSeconds());
+
+                text('[data-weather-condition]', current.condition ?? 'Weather temporarily unavailable');
+                text('[data-weather-temperature]', fmt(current.temperature, 1, '°C'));
+                text('[data-weather-feels-like]', fmt(current.feels_like, 1, '°C'));
+                text('[data-weather-updated]', updated);
+                text('[data-weather-provider]', provider);
+                text('[data-weather-freshness]', freshness);
+                text('[data-weather-data-updated-line]', `Data updated ${updated}`);
+                text('[data-weather-humidity-mini]', fmt(current.humidity, 0, '%'));
+                text('[data-weather-rain-mini]', fmt(today.rainfall, 1, ' mm'));
+                text('[data-weather-wind-mini]', fmt(current.wind_speed, 1, ' km/h'));
+                text('[data-weather-temperature-card]', fmt(current.temperature, 1, '°C'));
+                text('[data-weather-temperature-note]', `Feels like ${fmt(current.feels_like, 1, '°C')}`);
+                text('[data-weather-rain-card]', fmt(today.rainfall, 1, ' mm'));
+                text('[data-weather-precip-note]', `Current precipitation: ${fmt(current.precipitation ?? current.rain, 1, ' mm')}`);
+                text('[data-weather-humidity-card]', fmt(current.humidity, 0, '%'));
+                text('[data-weather-updated-card]', `Data updated ${updated} · ${provider} · ${freshness}`);
+                text('[data-weather-source-inline]', provider.toUpperCase());
+                text('[data-weather-temperature-modal]', fmt(current.temperature, 1, '°C'));
+                text('[data-weather-rain-modal]', fmt(today.rainfall, 1, ' mm'));
+                text('[data-weather-humidity-modal]', fmt(current.humidity, 0, '%'));
+                text('[data-weather-rain-sub]', `Today's rainfall uses daily precipitation_sum from ${provider.toUpperCase()}. Current precipitation: ${fmt(current.precipitation ?? current.rain, 1, ' mm')}. Data updated ${updated} · ${freshness}`);
+
+                const icon = document.querySelector('[data-weather-icon]');
+                if (icon && current.icon) {
+                    icon.src = current.icon;
+                    icon.alt = current.condition ?? 'Weather condition';
+                }
+
+                if (payload.guidance) {
+                    text('[data-weather-guidance-title]', payload.guidance.title ?? 'iClimate Weather Guidance');
+                    text('[data-weather-guidance-message]', payload.guidance.message ?? 'Weather guidance is temporarily unavailable.');
+                }
+
+                renderForecast(payload.forecast ?? []);
+                updateLiveWeatherTimestamp();
+                updateWeatherFreshness();
+            };
+
+            const refreshWeather = async (force = false) => {
+                if (!weatherRoot || weatherRequestInProgress) return;
+                weatherRequestInProgress = true;
+                setWeatherStatus('Updating Weather');
+                if (refreshButton) {
+                    refreshButton.disabled = true;
+                    refreshButton.textContent = 'Refreshing...';
+                }
+
+                try {
+                    const url = new URL(weatherRoot.dataset.weatherUrl, window.location.origin);
+                    if (force) url.searchParams.set('refresh', '1');
+                    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (!response.ok) throw new Error(`Weather endpoint returned ${response.status}`);
+                    renderWeather(await response.json());
+                } catch (error) {
+                    setWeatherStatus(navigator.onLine ? 'Latest Available Data' : 'Connection Lost');
+                } finally {
+                    weatherRequestInProgress = false;
+                    if (refreshButton) {
+                        refreshButton.disabled = false;
+                        refreshButton.textContent = 'Refresh Weather';
+                    }
+                }
+            };
+
+            refreshButton?.addEventListener('click', () => refreshWeather(false));
+
+            const startWeatherPolling = () => {
+                if (weatherPollTimer) clearInterval(weatherPollTimer);
+                weatherPollTimer = setInterval(() => {
+                    if (document.visibilityState === 'visible') refreshWeather(false);
+                }, WEATHER_POLL_INTERVAL);
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    updateDashboardClock(false);
+                    updateLiveWeatherTimestamp();
+                    refreshWeather(false);
+                    startWeatherPolling();
+                } else if (weatherPollTimer) {
+                    clearInterval(weatherPollTimer);
+                    weatherPollTimer = null;
+                }
+            });
+
+            window.addEventListener('online', () => {
+                setWeatherStatus('Updating Weather');
+                refreshWeather(false);
+            });
+            window.addEventListener('offline', () => {
+                setWeatherStatus('Connection Lost');
+            });
+
+            updateDashboardClock(false);
+            startMinuteClock();
+            updateWeatherFreshness();
+            setInterval(() => {
+                updateDashboardClock(true);
+                updateWeatherFreshness();
+            }, 1000);
+            startWeatherPolling();
         });
     </script>
 </x-app-layout>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Heavy rain">
+  <rect width="96" height="96" rx="24" fill="#F0F7F4"/>
+  <path d="M24 47h49c8 0 14-6 14-14s-6-14-14-14c-3 0-5 1-8 2-5-8-14-13-25-13-15 0-26 10-29 24-7 2-12 8-12 15 0 9 8 15 25 15Z" fill="#D8F3DC" stroke="#2F6F8F" stroke-width="4"/>
+  <g stroke="#2F6F8F" stroke-width="6" stroke-linecap="round">
+    <path d="M25 65l-8 16M41 65l-8 16M57 65l-8 16M73 65l-8 16"/>
+  </g>
+</svg>
