@@ -1197,7 +1197,10 @@
                             <h2 class="farmer-panel-title">Farm Profile Snapshot</h2>
                             <p class="farmer-panel-sub">Your registered farmer details.</p>
                         </div>
-                        <a class="fc-btn fc-btn-outline" href="{{ route('profile.edit') }}">Edit</a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="fc-btn fc-btn-outline" href="{{ route('profile.edit') }}">Edit Profile</a>
+                            <a class="fc-btn fc-btn-outline" href="{{ route('farmer.boundary.edit') }}">Set Location &amp; Size</a>
+                        </div>
                     </div>
                     <div class="farmer-panel-body">
                         <div class="farmer-list-item pt-0">
@@ -1245,6 +1248,7 @@
             <div class="farmer-panel-body">
                 <div class="quick-grid" data-reveal-stagger>
                     <a class="quick-action" href="{{ route('climate-records.index') }}" data-reveal="fade-up"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
+                    <a class="quick-action" href="{{ route('farmer.boundary.edit') }}" data-reveal="fade-up"><strong>My Farm Boundary</strong><span>Draw and save the complete perimeter of your planting area.</span></a>
                     <a class="quick-action" href="{{ route('heatmap-areas.index') }}" data-reveal="fade-up"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
                     <a class="quick-action" href="{{ route('ai-chat.index') }}" data-reveal="fade-up"><strong>Climora AI</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
                     <a class="quick-action" href="{{ route('planting-advisories.index') }}" data-reveal="fade-up"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
@@ -1568,6 +1572,5 @@
             }, 1000);
             startWeatherPolling();
         });
-    </script>
+</script>
 </x-app-layout>
-

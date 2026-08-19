@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
+use App\Models\User;
 use App\Services\HeatmapRiskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -89,6 +90,18 @@ class HeatmapAreaController extends CrudController
             ->latest('valid_from')
             ->first();
 
+        $myFarmBoundary = null;
+        if ($request->user()->role === User::ROLE_FARMER) {
+            $boundary = $request->user()->farmerProfile?->farmBoundary;
+            if ($boundary) {
+                $myFarmBoundary = [
+                    'coordinates' => $boundary->boundary_coordinates,
+                    'area_hectares' => (float) $boundary->calculated_area_hectares,
+                    'perimeter_meters' => (float) $boundary->calculated_perimeter_meters,
+                ];
+            }
+        }
+
         return view('heatmap-areas.index', [
             'records' => $recordsQuery->latest()->paginate(12)->withQueryString(),
             'mapAreas' => $mapAreasQuery
@@ -119,6 +132,7 @@ class HeatmapAreaController extends CrudController
             'latestPagasaAdvisory' => $latestPagasaAdvisory,
             'pagasaMapUrl' => 'https://www.pagasa.dost.gov.ph/?vm=r',
             'pagasaRadarUrl' => 'https://www.pagasa.dost.gov.ph/radar',
+            'myFarmBoundary' => $myFarmBoundary,
         ]);
     }
 
