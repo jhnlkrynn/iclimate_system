@@ -24,6 +24,20 @@
             </div>
         </div>
 
+        @if (auth()->user()->role === \App\Models\User::ROLE_FARMER)
+            <div class="col-12">
+                <div class="card no-lift">
+                    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <div>
+                            <h2 class="h4 fw-bold mb-2">Farm Location and Land Size</h2>
+                            <p class="mb-0 text-muted">Set your land size and draw the exact perimeter of your farm on the map.</p>
+                        </div>
+                        <a class="btn btn-primary" href="{{ route('farmer.boundary.edit') }}">Set Farm Location &amp; Size</a>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="col-12">
             <div class="card no-lift border-danger-subtle">
                 <div class="card-body p-4">

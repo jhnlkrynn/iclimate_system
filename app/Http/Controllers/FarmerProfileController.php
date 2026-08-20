@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FarmerProfile;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -47,5 +48,15 @@ class FarmerProfileController extends CrudController
             'farm_area' => ['nullable', 'numeric', 'min:0'],
             'farm_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
         ];
+    }
+
+    protected function baseQuery(Request $request): Builder
+    {
+        return FarmerProfile::query()
+            ->with(['user', 'farmBoundary'])
+            ->when(
+                $request->user()->role === User::ROLE_FARMER,
+                fn (Builder $query) => $query->where('user_id', $request->user()->id),
+            );
     }
 }
