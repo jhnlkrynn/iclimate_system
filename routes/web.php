@@ -7,6 +7,7 @@ use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmerProfileController;
+use App\Http\Controllers\FarmBoundaryController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
@@ -45,6 +46,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/farmer/dashboard/weather', [DashboardController::class, 'farmerWeather'])
         ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
         ->name('farmer.dashboard.weather');
+
+    Route::middleware('role:'.User::ROLE_FARMER)->group(function () {
+        Route::get('/farmer/boundary', [FarmBoundaryController::class, 'edit'])
+            ->name('farmer.boundary.edit');
+        Route::put('/farmer/boundary', [FarmBoundaryController::class, 'update'])
+            ->middleware('throttle:10,1')
+            ->name('farmer.boundary.update');
+        Route::delete('/farmer/boundary', [FarmBoundaryController::class, 'destroy'])
+            ->name('farmer.boundary.destroy');
+    });
 
     Route::get('/api/weather/live', [DashboardController::class, 'liveWeather'])
         ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])

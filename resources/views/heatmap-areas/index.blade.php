@@ -176,6 +176,25 @@
             dominant-baseline: central;
         }
         .api-heatmap-label.is-selected { font-size: .014px; stroke-width: .006; }
+        .api-farm-boundary {
+            fill: rgba(255, 255, 255, .08);
+            stroke: #ffffff;
+            stroke-width: .005;
+            stroke-dasharray: .012 .006;
+            vector-effect: non-scaling-stroke;
+            pointer-events: none;
+        }
+        .api-farm-boundary-label {
+            fill: #ffffff;
+            font-size: .013px;
+            font-weight: 900;
+            paint-order: stroke;
+            stroke: #123f32;
+            stroke-width: .006;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
         .easy-read-map .api-heatmap-label { font-size: .012px; stroke-width: .0055; }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
         .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
@@ -631,6 +650,13 @@
                         <span>Layer: <strong id="activeLayerLabel">Climate Impact</strong></span>
                         <span class="map-selected-pill" id="selectedBarangayLabel">No barangay selected</span>
                     </div>
+                    @if (auth()->user()->role === \App\Models\User::ROLE_FARMER)
+                        @if ($myFarmBoundary)
+                            <div class="small mt-2" style="color: var(--ic-ink-mid);">White outline: <strong>My Farm Boundary</strong> · {{ number_format($myFarmBoundary['area_hectares'], 4) }} ha</div>
+                        @else
+                            <a class="small mt-2 d-inline-block" href="{{ route('farmer.boundary.edit') }}">Add your farm boundary to this map</a>
+                        @endif
+                    @endif
                 </div>
                 <div id="boundaryNotice" class="alert alert-warning position-absolute m-3 bottom-0 start-0 end-0 d-none" style="z-index: 500;">
                     Loading the Lian barangay heatmap using the configured boundary source.
@@ -864,6 +890,7 @@
             const activeLayerLabel = document.getElementById('activeLayerLabel');
             const boundaryNotice = document.getElementById('boundaryNotice');
             const pagasaSignal = @json($pagasaSignal);
+            const myFarmBoundary = @json($myFarmBoundary);
             let activeLayer = 'impact';
             const easyReadMode = false;
             let heatmapData = null;
@@ -1257,6 +1284,19 @@
                 return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
             }).join(' ') + ' Z').join(' ');
 
+            const farmBoundaryPathFor = (project) => {
+                const points = myFarmBoundary?.coordinates || [];
+                if (points.length < 3) return '';
+                const path = points.map((point, index) => {
+                    const [x, y] = project([Number(point.lng), Number(point.lat)]);
+                    return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
+                }).join(' ') + ' Z';
+                const center = points.reduce((total, point) => [total[0] + Number(point.lng), total[1] + Number(point.lat)], [0, 0]);
+                const [labelX, labelY] = project([center[0] / points.length, center[1] / points.length]);
+
+                return `<path class="api-farm-boundary" d="${path}"></path><text class="api-farm-boundary-label" x="${labelX.toFixed(6)}" y="${labelY.toFixed(6)}">My farm</text>`;
+            };
+
             const drawHeat = (features, project) => {
                 const rect = mapEl.getBoundingClientRect();
                 const scale = window.devicePixelRatio || 1;
@@ -1425,7 +1465,7 @@
                 });
                 const labels = labelLayoutFor(items, rect);
 
-                svg.innerHTML = labels.map((item) => {
+                svg.innerHTML = farmBoundaryPathFor(renderer.project) + labels.map((item) => {
                     const selected = item.selected;
                     const fill = activeLayer === 'farm_type'
                         ? farmTypeColorFor(item.area, easyReadMode ? .28 : .08)
