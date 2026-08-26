@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">Figure 4. System Architecture</title>
+  <desc id="desc">Diagram for the iClimate web-based decision-support platform.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 14 5 L 0 10 z" fill="#37474f"/>
+    </marker>
+    <style>
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 34px; font-weight: 700; fill: #1b1b1b; }
+      .subtitle { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #455a64; }
+      .box-title { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #1b1b1b; }
+      .box-line { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #263238; }
+      .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #263238; }
+      .note { font-family: Arial, Helvetica, sans-serif; font-size: 17px; fill: #455a64; }
+      .phase { font-family: Arial, Helvetica, sans-serif; font-size: 19px; font-weight: 700; fill: #1b1b1b; }
+    </style>
+  </defs>
+  <rect width="1600" height="820" fill="#ffffff"/>
+  <text x="800.0" y="54" text-anchor="middle" class="title">Figure 4. System Architecture</text>
+  <line x1="370" y1="245" x2="470" y2="245" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="770" y1="245" x2="870" y2="245" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1190" y1="245" x2="1230" y2="245" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="870" y1="355" x2="631" y2="520" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1230" y1="368" x2="1047" y2="520" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1366" y1="370" x2="1351" y2="520" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1230" y1="308" x2="660" y2="549" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="830" y="404" width="230" height="30" rx="8" fill="#ffffff" stroke="#cfd8dc"/>
+<text x="945" y="424" text-anchor="middle" class="edge-label">read/write</text>
+  <rect x="70" y="160" width="300" height="170" rx="12" fill="#fce4ec" stroke="#ad1457" stroke-width="3"/>
+<text x="220.0" y="194" text-anchor="middle" class="box-title">User Layer</text>
+<text x="220.0" y="228" text-anchor="middle" class="box-line">Farmer</text>
+<text x="220.0" y="257" text-anchor="middle" class="box-line">MAO Personnel</text>
+<text x="220.0" y="286" text-anchor="middle" class="box-line">IT Expert/Admin</text>
+<rect x="470" y="130" width="300" height="230" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="620.0" y="164" text-anchor="middle" class="box-title">Presentation Layer</text>
+<text x="620.0" y="198" text-anchor="middle" class="box-line">Blade views</text>
+<text x="620.0" y="227" text-anchor="middle" class="box-line">Dashboards</text>
+<text x="620.0" y="256" text-anchor="middle" class="box-line">Forms</text>
+<text x="620.0" y="285" text-anchor="middle" class="box-line">Heat map</text>
+<text x="620.0" y="314" text-anchor="middle" class="box-line">AI chat</text>
+<rect x="870" y="120" width="320" height="250" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="1030.0" y="154" text-anchor="middle" class="box-title">Application Layer</text>
+<text x="1030.0" y="188" text-anchor="middle" class="box-line">Routes and</text>
+<text x="1030.0" y="212" text-anchor="middle" class="box-line">controllers</text>
+<text x="1030.0" y="241" text-anchor="middle" class="box-line">Middleware</text>
+<text x="1030.0" y="270" text-anchor="middle" class="box-line">Validation</text>
+<text x="1030.0" y="299" text-anchor="middle" class="box-line">Role access</text>
+<rect x="1230" y="120" width="300" height="250" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="1380.0" y="154" text-anchor="middle" class="box-title">Service Layer</text>
+<text x="1380.0" y="188" text-anchor="middle" class="box-line">Prediction</text>
+<text x="1380.0" y="212" text-anchor="middle" class="box-line">services</text>
+<text x="1380.0" y="241" text-anchor="middle" class="box-line">Advisory engine</text>
+<text x="1380.0" y="270" text-anchor="middle" class="box-line">Risk scorer</text>
+<text x="1380.0" y="299" text-anchor="middle" class="box-line">AI orchestrator</text>
+<rect x="300" y="520" width="360" height="210" rx="12" fill="#f3e5f5" stroke="#6a1b9a" stroke-width="3"/>
+<text x="480.0" y="554" text-anchor="middle" class="box-title">Data Layer</text>
+<text x="480.0" y="588" text-anchor="middle" class="box-line">MySQL database</text>
+<text x="480.0" y="617" text-anchor="middle" class="box-line">Laravel models</text>
+<text x="480.0" y="646" text-anchor="middle" class="box-line">Model files in storage</text>
+<rect x="760" y="520" width="320" height="210" rx="12" fill="#eceff1" stroke="#455a64" stroke-width="3"/>
+<text x="920.0" y="554" text-anchor="middle" class="box-title">ML/Python Layer</text>
+<text x="920.0" y="588" text-anchor="middle" class="box-line">predict.py</text>
+<text x="920.0" y="617" text-anchor="middle" class="box-line">Farming AI API</text>
+<text x="920.0" y="646" text-anchor="middle" class="box-line">Random Forest model</text>
+<text x="920.0" y="675" text-anchor="middle" class="box-line">Fallback estimate</text>
+<rect x="1180" y="520" width="320" height="210" rx="12" fill="#eceff1" stroke="#455a64" stroke-width="3"/>
+<text x="1340.0" y="554" text-anchor="middle" class="box-title">External Services</text>
+<text x="1340.0" y="588" text-anchor="middle" class="box-line">PAGASA pages</text>
+<text x="1340.0" y="617" text-anchor="middle" class="box-line">Open-Meteo API</text>
+<text x="1340.0" y="646" text-anchor="middle" class="box-line">Groq API</text>
+  
+</svg>

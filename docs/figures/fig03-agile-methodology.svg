@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="930" viewBox="0 0 1600 930" role="img" aria-labelledby="title desc">
+  <title id="title">Figure 3. Agile Methodology</title>
+  <desc id="desc">Diagram for the iClimate web-based decision-support platform.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 14 5 L 0 10 z" fill="#37474f"/>
+    </marker>
+    <style>
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 34px; font-weight: 700; fill: #1b1b1b; }
+      .subtitle { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #455a64; }
+      .box-title { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #1b1b1b; }
+      .box-line { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #263238; }
+      .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #263238; }
+      .note { font-family: Arial, Helvetica, sans-serif; font-size: 17px; fill: #455a64; }
+      .phase { font-family: Arial, Helvetica, sans-serif; font-size: 19px; font-weight: 700; fill: #1b1b1b; }
+    </style>
+  </defs>
+  <rect width="1600" height="930" fill="#ffffff"/>
+  <text x="800.0" y="54" text-anchor="middle" class="title">Figure 3. Agile Methodology</text>
+  <line x1="880" y1="239" x2="970" y2="275" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1120" y1="389" x2="1169" y2="544" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1101" y1="669" x2="1008" y2="734" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="790" y1="797" x2="690" y2="797" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="471" y1="734" x2="378" y2="669" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="310" y1="544" x2="359" y2="389" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="510" y1="277" x2="620" y2="236" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="766" y1="454" x2="753" y2="249" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="644" y="327" width="230" height="30" rx="8" fill="#ffffff" stroke="#cfd8dc"/>
+<text x="759" y="347" text-anchor="middle" class="edge-label">feedback</text>
+  <rect x="620" y="125" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="750.0" y="159" text-anchor="middle" class="box-title">Requirements</text>
+<text x="750.0" y="193" text-anchor="middle" class="box-line">Users, data needs,</text>
+<text x="750.0" y="217" text-anchor="middle" class="box-line">advisories</text>
+<rect x="970" y="265" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="1100.0" y="299" text-anchor="middle" class="box-title">Planning</text>
+<text x="1100.0" y="333" text-anchor="middle" class="box-line">Modules, roles,</text>
+<text x="1100.0" y="357" text-anchor="middle" class="box-line">stack</text>
+<rect x="1060" y="545" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="1190.0" y="579" text-anchor="middle" class="box-title">Design</text>
+<text x="1190.0" y="613" text-anchor="middle" class="box-line">Schema, UI,</text>
+<text x="1190.0" y="637" text-anchor="middle" class="box-line">diagrams</text>
+<rect x="790" y="735" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="920.0" y="769" text-anchor="middle" class="box-title">Development</text>
+<text x="920.0" y="803" text-anchor="middle" class="box-line">Laravel, Python,</text>
+<text x="920.0" y="827" text-anchor="middle" class="box-line">APIs</text>
+<rect x="430" y="735" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="560.0" y="769" text-anchor="middle" class="box-title">Testing</text>
+<text x="560.0" y="803" text-anchor="middle" class="box-line">Feature and unit</text>
+<text x="560.0" y="827" text-anchor="middle" class="box-line">tests</text>
+<rect x="160" y="545" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="290.0" y="579" text-anchor="middle" class="box-title">Review</text>
+<text x="290.0" y="613" text-anchor="middle" class="box-line">Gap fixes and</text>
+<text x="290.0" y="637" text-anchor="middle" class="box-line">revisions</text>
+<rect x="250" y="265" width="260" height="125" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="380.0" y="299" text-anchor="middle" class="box-title">Deployment</text>
+<text x="380.0" y="333" text-anchor="middle" class="box-line">XAMPP/Laravel/MySQL</text>
+<rect x="590" y="455" width="360" height="125" rx="12" fill="#fff8e1" stroke="#ef6c00" stroke-width="3"/>
+<text x="770.0" y="489" text-anchor="middle" class="box-title">Iteration and Maintenance</text>
+<text x="770.0" y="523" text-anchor="middle" class="box-line">Refresh forecasts,</text>
+<text x="770.0" y="547" text-anchor="middle" class="box-line">advisories, logs,</text>
+<text x="770.0" y="571" text-anchor="middle" class="box-line">models</text>
+  <text x="800.0" y="896" text-anchor="middle" class="note">Agile cycle applied to iClimate system development.</text>
+</svg>
