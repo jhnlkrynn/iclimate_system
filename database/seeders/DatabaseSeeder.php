@@ -105,6 +105,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
+            FarmerOrganizationSeeder::class,
             KnowledgeBaseSeeder::class,
             AdvisoryRuleSeeder::class,
         ]);

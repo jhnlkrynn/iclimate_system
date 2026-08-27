@@ -158,6 +158,52 @@
         .it-panel-title { font-size: 1.05rem; margin: 0; color: var(--it-ink); }
         .it-panel-sub { margin: .15rem 0 0; color: var(--it-muted); font-size: .82rem; }
         .it-panel-body { padding: 1rem; }
+        .farmer-org-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .85rem;
+            margin-bottom: 1rem;
+        }
+        .farmer-org-card {
+            border: 1px solid rgba(95,143,120,.5);
+            border-radius: 10px;
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
+            padding: .9rem;
+        }
+        .farmer-org-card-label {
+            color: var(--it-muted);
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .farmer-org-card-value {
+            margin-top: .35rem;
+            color: var(--it-ink);
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: clamp(1.45rem, 2.6vw, 2rem);
+            line-height: 1;
+        }
+        .farmer-org-card-note {
+            color: var(--it-muted);
+            font-size: .78rem;
+            margin-top: .45rem;
+        }
+        .farmer-org-chart-shell {
+            position: relative;
+            min-height: 720px;
+            overflow-x: auto;
+            padding: .5rem .25rem 0;
+        }
+        .farmer-org-chart-inner {
+            min-width: min(100%, 860px);
+            height: 720px;
+        }
+        .farmer-org-chart-inner canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
         .module-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .module-link {
             display: block;
@@ -282,8 +328,8 @@
         .dashboard-group-body > .row:last-child { margin-bottom: 0 !important; }
         .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } }
+        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 767.98px) { .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .farmer-org-chart-shell { min-height: 780px; } .farmer-org-chart-inner { min-width: 720px; height: 780px; } }
 
         .it-console .empty-state { background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08)); border: 1px dashed rgba(95,143,120,.55); color: var(--it-muted); border-radius: 8px; }
         .it-console .empty-state .fw-bold { color: var(--it-ink); }
@@ -362,6 +408,7 @@
         .it-modal-headline { font-size: var(--text-2xl); line-height: 1.18; }
         .it-console .table th,
         .it-console .table td { font-size: var(--text-sm); line-height: 1.45; }
+        .farmer-org-card-label { letter-spacing: 0; text-transform: none; font-family: 'Inter', sans-serif; }
     </style>
 
     @php
@@ -801,4 +848,9 @@
         </details>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+        });
+    </script>
 </x-app-layout>
