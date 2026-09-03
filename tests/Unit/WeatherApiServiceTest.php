@@ -8,50 +8,42 @@ use Tests\TestCase;
 
 class WeatherApiServiceTest extends TestCase
 {
-    public function test_it_maps_openweather_forecast_to_planning_inputs(): void
+    public function test_it_maps_open_meteo_forecast_to_planning_inputs(): void
     {
         config([
             'services.weather_api.enabled' => true,
-            'services.weather_api.key' => 'test-key',
             'services.weather_api.forecast_days' => 2,
+            'services.weather.timezone' => 'Asia/Manila',
         ]);
 
         Http::fake([
-            'api.openweathermap.org/data/2.5/forecast*' => Http::response([
-                'list' => [
-                    [
-                        'dt_txt' => '2026-07-04 00:00:00',
-                        'main' => ['temp' => 28, 'humidity' => 80],
-                        'wind' => ['speed' => 2],
-                        'rain' => ['3h' => 1.5],
-                        'pop' => 0.4,
-                    ],
-                    [
-                        'dt_txt' => '2026-07-04 03:00:00',
-                        'main' => ['temp' => 30, 'humidity' => 82],
-                        'wind' => ['speed' => 3],
-                        'rain' => ['3h' => 2.5],
-                        'pop' => 0.6,
-                    ],
-                    [
-                        'dt_txt' => '2026-07-05 00:00:00',
-                        'main' => ['temp' => 29, 'humidity' => 84],
-                        'wind' => ['speed' => 4],
-                        'pop' => 0.2,
-                    ],
+            'api.open-meteo.com/v1/forecast*' => Http::response([
+                'current' => [
+                    'time' => '2026-07-04T16:00',
+                    'temperature_2m' => 29.4,
+                    'relative_humidity_2m' => 83,
+                    'precipitation' => 0.8,
+                    'rain' => 0.8,
+                    'weather_code' => 61,
+                    'wind_speed_10m' => 9,
                 ],
-            ]),
-            'api.openweathermap.org/data/2.5/weather*' => Http::response([
-                'dt' => 1783123200,
-                'main' => ['temp' => 29.4, 'humidity' => 83],
-                'wind' => ['speed' => 2.5],
-                'rain' => ['1h' => 0.8],
+                'daily' => [
+                    'time' => ['2026-07-04', '2026-07-05'],
+                    'weather_code' => [61, 2],
+                    'temperature_2m_max' => [30, 31],
+                    'temperature_2m_min' => [28, 27],
+                    'precipitation_sum' => [4, 0],
+                    'rain_sum' => [4, 0],
+                    'precipitation_probability_max' => [60, 20],
+                    'wind_speed_10m_max' => [10, 8],
+                ],
             ]),
         ]);
 
         $forecast = app(WeatherApiService::class)->forecast();
 
-        $this->assertSame('OpenWeather', $forecast['source']);
+        $this->assertSame('Open-Meteo', $forecast['source']);
+        $this->assertSame('Live/current weather and frequent dashboard updates', $forecast['source_role']);
         $this->assertSame(2, $forecast['forecast_days']);
         $this->assertSame(60.0, $forecast['monthly_rainfall_estimate_mm']);
         $this->assertSame(29.0, $forecast['temperature_c']);
@@ -61,17 +53,36 @@ class WeatherApiServiceTest extends TestCase
         $this->assertSame([4.0, 0.0], $forecast['daily_series']['rainfall']);
     }
 
-    public function test_it_returns_null_when_openweather_key_is_missing(): void
+    public function test_it_does_not_require_an_openweather_key(): void
     {
         config([
             'services.weather_api.enabled' => true,
             'services.weather_api.key' => '',
+            'services.weather_api.forecast_days' => 1,
         ]);
 
-        Http::fake();
+        Http::fake([
+            'api.open-meteo.com/v1/forecast*' => Http::response([
+                'current' => [
+                    'time' => '2026-07-04T16:00',
+                    'temperature_2m' => 29.4,
+                    'relative_humidity_2m' => 83,
+                    'precipitation' => 0,
+                    'wind_speed_10m' => 9,
+                ],
+                'daily' => [
+                    'time' => ['2026-07-04'],
+                    'temperature_2m_max' => [30],
+                    'temperature_2m_min' => [28],
+                    'precipitation_sum' => [0],
+                    'precipitation_probability_max' => [20],
+                    'wind_speed_10m_max' => [9],
+                ],
+            ]),
+        ]);
 
-        $this->assertNull(app(WeatherApiService::class)->forecast());
+        $this->assertSame('Open-Meteo', app(WeatherApiService::class)->forecast()['source']);
 
-        Http::assertNothingSent();
+        Http::assertSentCount(1);
     }
 }

@@ -9,7 +9,6 @@ use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
-use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -81,15 +80,29 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        ClimateRecord::factory()->count(5)->create();
-        RiceProduction::factory()->count(5)->create();
-        HeatmapArea::factory()->count(5)->create();
+        if (ClimateRecord::query()->doesntExist()) {
+            ClimateRecord::factory()->count(5)->create();
+        }
 
-        Announcement::factory()->count(3)->create(['posted_by' => $mao->id, 'status' => 'Published']);
-        PlantingAdvisory::factory()->count(3)->create(['posted_by' => $mao->id, 'status' => 'Published']);
+        if (RiceProduction::query()->doesntExist()) {
+            RiceProduction::factory()->count(5)->create();
+        }
 
-        Notification::factory()->count(3)->create(['user_id' => $farmer->id]);
-        SystemLog::factory()->count(3)->create(['user_id' => $itExpert->id]);
+        if (HeatmapArea::query()->count() < 22) {
+            HeatmapArea::factory()->count(5)->create();
+        }
+
+        if (Announcement::query()->doesntExist()) {
+            Announcement::factory()->count(3)->create(['posted_by' => $mao->id, 'status' => 'Published']);
+        }
+
+        if (PlantingAdvisory::query()->doesntExist()) {
+            PlantingAdvisory::factory()->count(3)->create(['posted_by' => $mao->id, 'status' => 'Published']);
+        }
+
+        if (Notification::query()->where('user_id', $farmer->id)->doesntExist()) {
+            Notification::factory()->count(3)->create(['user_id' => $farmer->id]);
+        }
 
         $this->call([
             KnowledgeBaseSeeder::class,

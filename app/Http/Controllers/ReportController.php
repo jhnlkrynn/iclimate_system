@@ -8,6 +8,7 @@ use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
+use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -70,7 +71,7 @@ class ReportController extends CrudController
         [$rows, $columns] = $this->reportData($data);
         $label = self::REPORT_TYPES[$data['report_type']];
 
-        Report::query()->create([
+        $report = Report::query()->create([
             'report_type' => $label,
             'title' => $label.' - '.now()->format('Y-m-d H:i'),
             'generated_by' => $request->user()->id,
@@ -79,6 +80,11 @@ class ReportController extends CrudController
                 'row_count' => $rows->count(),
                 'generated_at' => now()->toDateTimeString(),
             ],
+        ]);
+        SystemAuditLogger::forModel('generated', $report, $request, [
+            'report_type' => $label,
+            'row_count' => $rows->count(),
+            'filters' => $data,
         ]);
 
         return view('reports.index', [
@@ -115,11 +121,16 @@ class ReportController extends CrudController
         [$rows, $columns] = $this->reportData($data);
         $title = self::REPORT_TYPES[$data['report_type']];
 
-        Report::query()->create([
+        $report = Report::query()->create([
             'report_type' => $title,
             'title' => $title.' CSV Export - '.now()->format('Y-m-d H:i'),
             'generated_by' => $request->user()->id,
             'payload' => ['filters' => $data, 'row_count' => $rows->count(), 'export' => 'csv'],
+        ]);
+        SystemAuditLogger::forModel('exported CSV for', $report, $request, [
+            'report_type' => $title,
+            'row_count' => $rows->count(),
+            'filters' => $data,
         ]);
 
         $handle = fopen('php://temp', 'r+');

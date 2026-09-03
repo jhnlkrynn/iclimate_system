@@ -1,12 +1,10 @@
 <x-app-layout>
-    @include('layouts.partials.dark-workspace')
-    <div class="dark-workspace">
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
                 <div class="eyebrow mb-2">Record Studio</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }}s</h1>
-                <p class="mb-0 text-white-50">Search, filter, and manage records from one responsive workspace.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Search, filter, and manage records from one responsive workspace.</p>
             </div>
             <div class="d-flex flex-column flex-sm-row gap-2 align-self-start align-self-xl-end action-cluster">
                 @if ($routeName === 'notifications')
@@ -162,6 +160,5 @@
                 </div>
             </div>
         @endif
-    </div>
     </div>
 </x-app-layout>

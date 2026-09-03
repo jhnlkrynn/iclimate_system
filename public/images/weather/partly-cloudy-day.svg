@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Partly cloudy day">
+  <rect width="96" height="96" rx="24" fill="#F0F7F4"/>
+  <circle cx="35" cy="34" r="15" fill="#E8A73D"/>
+  <path d="M28 63h42c8 0 14-6 14-13s-6-13-14-13c-2 0-4 0-6 1-4-8-12-13-22-13-12 0-22 8-24 20-7 1-12 7-12 14 0 8 7 14 22 14Z" fill="#D8F3DC" stroke="#74C69D" stroke-width="4"/>
+</svg>

@@ -17,7 +17,7 @@
             ? 'Calculated from weather, yield, and local exposure inputs'
             : 'Baseline barangay location; refresh needed for live risk',
         'is_baseline' => ! str_contains(strtolower((string) $area->description), 'auto-updated from'),
-        'updated_at' => $area->updated_at?->format('M d, Y g:i A'),
+        'updated_at' => $area->updated_at?->shortDateTime('M d, Y'),
     ])->values();
     $riskSource = optional($mapAreas->first())->description;
     $priorityAreas = $mapAreas->sortByDesc('risk_score')->take(5)->values();
@@ -28,7 +28,7 @@
         'summary' => $latestPagasaAdvisory->summary ?: $latestPagasaAdvisory->message,
         'source' => 'PAGASA',
         'source_url' => $latestPagasaAdvisory->source_url,
-        'updated_at' => $latestPagasaAdvisory->valid_from?->format('M d, Y g:i A') ?: $latestPagasaAdvisory->created_at?->format('M d, Y g:i A'),
+        'updated_at' => $latestPagasaAdvisory->valid_from?->shortDateTime('M d, Y') ?: $latestPagasaAdvisory->created_at?->shortDateTime('M d, Y'),
         'freshness' => 'Official PAGASA online advisory cached in iClimate',
     ] : [
         'title' => 'No active PAGASA signal for Lian/Batangas',
@@ -92,6 +92,21 @@
         }
         .api-heatmap-canvas { z-index: 1; filter: blur(10px) saturate(1.45) contrast(1.08); opacity: .72; mix-blend-mode: multiply; transform: scale(1.035); }
         .api-heatmap-svg { z-index: 2; }
+        .map-loading-overlay {
+            position: absolute; inset: 0; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+            background: rgba(7,22,15,.72);
+            color: rgba(255,255,255,.85);
+            font-size: .82rem; font-weight: 700;
+            transition: opacity .18s ease;
+        }
+        .map-loading-overlay.d-none { display: none; }
+        .map-loading-spinner {
+            width: 34px; height: 34px; border-radius: 999px;
+            border: 3px solid rgba(255,255,255,.22); border-top-color: #74c69d;
+            animation: mapLoadingSpin .7s linear infinite;
+        }
+        @keyframes mapLoadingSpin { to { transform: rotate(360deg); } }
         .api-heatmap-region {
             cursor: pointer;
             stroke: rgba(20,20,20,.28);
@@ -250,7 +265,7 @@
             font-size: 1.18rem;
             box-shadow: 0 .7rem 1.6rem rgba(13,31,24,.12);
         }
-        .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1px solid rgba(149,213,178,.18); border-radius: 12px; background: rgba(13,31,24,.96); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 12px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
@@ -426,42 +441,41 @@
             .pagasa-official-badge { width: 100%; justify-content: center; }
         }
 
-        /* -- dark theme overrides (page chrome only; map/overlay controls kept self-contained) -- */
-        .heatmap-page { color: rgba(255,255,255,.85); }
-        .map-shell { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .map-insight { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .risk-label { color: rgba(255,255,255,.5); }
-        .risk-value { color: #fff; }
-        .risk-help { color: rgba(255,255,255,.6); }
-        .legend-row { color: rgba(255,255,255,.65); }
-        .priority-item { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .priority-item .fw-bold { color: #fff; }
-        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #74c69d; }
-        .risk-stat { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .barangay-card { border-color: rgba(255,255,255,.12); background: var(--ic-green-950); }
-        .barangay-card-head { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.1); }
-        .barangay-name { color: #fff; }
-        .risk-info-box { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .risk-info-box.primary { background: rgba(82,183,136,.08); }
-        .risk-info-label { color: rgba(255,255,255,.5); }
-        .risk-info-value { color: #fff; }
-        .risk-advice { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-        .heatmap-page .empty-state { background: var(--ic-green-950); border-color: rgba(255,255,255,.16); color: rgba(255,255,255,.7); }
-        .heatmap-page .text-muted { color: rgba(255,255,255,.5) !important; }
-        .heatmap-page .btn-outline-secondary { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.28); }
-        .heatmap-page .btn-outline-secondary:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.6); color: #fff; }
-        .heatmap-page .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
+        /* -- page chrome: light surfaces, dark ink text (map/overlay controls kept self-contained) -- */
+        .heatmap-page { color: #1f2a24; }
+        .map-shell { border-color: #e8e0d0; background: #fff; }
+        .map-insight { border-color: #e8e0d0; background: linear-gradient(145deg, #fff, #f7fbf8); }
+        .risk-label { color: #6b7c72; }
+        .risk-value { color: #1f2a24; }
+        .risk-help { color: #4a5c52; }
+        .legend-row { color: #4a5c52; }
+        .priority-item { border-color: #d4edda; background: #fff; }
+        .priority-item .fw-bold { color: #1f2a24; }
+        .priority-jump:hover .fw-bold, .priority-jump:focus .fw-bold { color: #2d6a4f; }
+        .risk-stat { border-color: #e8e0d0; background: linear-gradient(145deg, #fff, #f7fbf8); }
+        .barangay-card { border-color: #e8e0d0; background: #fff; }
+        .barangay-card-head { background: linear-gradient(90deg, #fff, #f0f7f4); border-color: #d4edda; }
+        .barangay-name { color: #0d1f18; }
+        .risk-info-box { border-color: #d4edda; background: #f7fbf8; }
+        .risk-info-box.primary { background: #fff; }
+        .risk-info-label { color: #6b7c72; }
+        .risk-info-value { color: #1f2a24; }
+        .risk-advice { border-color: #d4edda; background: #fff; }
+        .heatmap-page .empty-state { background: linear-gradient(135deg, #ffffff, var(--ic-green-50)); border-color: var(--ic-sand-dark); color: #6b7c72; }
+        .heatmap-page .text-muted { color: #6b7c72 !important; }
+        .heatmap-page .btn-outline-secondary { color: #4a5c52; border-color: #d4edda; }
+        .heatmap-page .btn-outline-secondary:hover { background: rgba(45,106,79,.08); border-color: #2d6a4f; color: #1f2a24; }
+        .heatmap-page .btn-outline-primary { color: #2d6a4f; border-color: #2d6a4f; }
         .heatmap-page .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
     </style>
-    @include('layouts.partials.dark-workspace')
 
-    <div class="dark-workspace heatmap-page">
+    <div class="heatmap-page">
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
                 <div class="eyebrow mb-2">Barangay Agricultural Risk Map</div>
                 <h1 class="h2 fw-bold mb-2">Heat Map Areas</h1>
-                <p class="mb-0 text-white-50">API-rendered Lian barangay heatmap, with PAGASA used as the official weather reference source.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">API-rendered Lian barangay heatmap, with PAGASA used as the official weather reference source.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 align-self-start align-self-lg-end action-cluster">
                 <a class="btn btn-warning" href="{{ $pagasaMapUrl }}" target="_blank" rel="noopener">View PAGASA Map</a>
@@ -569,6 +583,10 @@
                     <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
                 </aside>
                 <div id="barangayRiskMap"></div>
+                <div id="mapLoadingOverlay" class="map-loading-overlay" role="status" aria-live="polite">
+                    <div class="map-loading-spinner"></div>
+                    <span>Loading barangay heat map...</span>
+                </div>
                 <div class="pagasa-source-strip">
                     <span class="pagasa-official-badge">PAGASA Reference</span>
                     <div class="pagasa-source-copy">
@@ -1369,6 +1387,8 @@
                 });
             };
 
+            const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
+
             fetch(apiUrl, { headers: { Accept: 'application/json' } })
                 .then((response) => response.ok ? response.json() : Promise.reject(response))
                 .then((data) => {
@@ -1378,6 +1398,9 @@
                 .catch(() => {
                     boundaryNotice?.classList.remove('d-none');
                     boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap API right now.';
+                })
+                .finally(() => {
+                    mapLoadingOverlay?.classList.add('d-none');
                 });
 
             document.querySelectorAll('[data-layer]').forEach((button) => {

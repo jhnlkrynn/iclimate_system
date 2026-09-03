@@ -41,9 +41,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:'.User::ROLE_FARMER)
         ->name('farmer.dashboard');
 
+    Route::get('/farmer/dashboard/weather', [DashboardController::class, 'farmerWeather'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
+        ->name('farmer.dashboard.weather');
+
     Route::get('/mao/dashboard', [DashboardController::class, 'mao'])
         ->middleware('role:'.User::ROLE_MAO)
         ->name('mao.dashboard');
+
+    Route::get('/mao/dashboard/weather', [DashboardController::class, 'maoWeather'])
+        ->middleware(['role:'.User::ROLE_MAO, 'throttle:30,1'])
+        ->name('mao.dashboard.weather');
 
     Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
         ->middleware('role:'.User::ROLE_IT_EXPERT)
@@ -73,6 +81,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('management/advisories/regenerate', [PlantingAdvisoryController::class, 'regenerate'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.regenerate');
+
+        Route::post('planting-advisories/refresh-pagasa', [PlantingAdvisoryController::class, 'refreshPagasa'])
+            ->middleware('throttle:6,1')
+            ->name('planting-advisories.refresh-pagasa');
 
         Route::post('management/advisories/{advisory}/approve', [PlantingAdvisoryController::class, 'approve'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
@@ -138,11 +150,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('messages', [MessagingController::class, 'index'])
             ->name('messages.index');
 
+        Route::get('messages/search', [MessagingController::class, 'searchRecipients'])
+            ->name('messages.search');
+
+        Route::post('messages/open', [MessagingController::class, 'openConversation'])
+            ->name('messages.open');
+
         Route::post('messages', [MessagingController::class, 'store'])
             ->name('messages.store');
 
         Route::get('messages/{conversation}', [MessagingController::class, 'show'])
             ->name('messages.show');
+
+        Route::get('messages/{conversation}/poll', [MessagingController::class, 'poll'])
+            ->name('messages.poll');
+
+        Route::post('messages/{conversation}/typing', [MessagingController::class, 'typing'])
+            ->middleware('throttle:30,1')
+            ->name('messages.typing');
 
         Route::post('messages/{conversation}', [MessagingController::class, 'reply'])
             ->name('messages.reply');

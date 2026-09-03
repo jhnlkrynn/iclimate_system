@@ -3,7 +3,7 @@
         <div>
             <div class="eyebrow mb-2">Account Center</div>
             <h1 class="h2 fw-bold mb-2">Profile</h1>
-            <p class="mb-0 text-white-50">Manage your account information, password, and account access.</p>
+            <p class="mb-0" style="color: var(--ic-ink-mid);">Manage your account information, password, and account access.</p>
         </div>
     </section>
 

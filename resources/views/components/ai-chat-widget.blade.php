@@ -31,7 +31,8 @@
 
 <style>
     .ic-ai-widget { position: fixed; right: 1rem; bottom: 1rem; z-index: 2050; font-family: 'Inter', system-ui, sans-serif; }
-    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; }
+    .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; padding: 0; overflow: hidden; }
+    .ic-ai-toggle img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
     .ic-ai-panel {
         position: absolute; right: 0; bottom: 4.5rem;
         width: min(920px, calc(100vw - 2rem)); height: min(660px, calc(100vh - 7rem));
@@ -42,24 +43,24 @@
     .ic-ai-widget.open .ic-ai-panel { display: grid; }
 
     /* ---- Left info panel ---- */
-    .ic-ai-left { background: linear-gradient(160deg, #0d1f18, #1a3a2a 60%, #204631); color: #fff; padding: 1.1rem 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: .9rem; }
+    .ic-ai-left { background: linear-gradient(160deg, var(--ic-hero-from), var(--ic-hero-to) 60%, var(--ic-panel-strong)); color: var(--ic-ink); padding: 1.1rem 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: .9rem; }
     .ic-ai-left-head { display: flex; align-items: flex-start; gap: .6rem; }
     .ic-ai-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: contain; flex-shrink: 0; }
     .ic-ai-brand { font-family: 'DM Serif Display', serif; font-size: 1.15rem; line-height: 1.2; }
-    .ic-ai-brand-accent { color: #74c69d; }
-    .ic-ai-brand-sub { font-family: 'DM Mono', monospace; font-size: .66rem; color: rgba(255,255,255,.68); margin-top: .25rem; line-height: 1.35; }
-    .ic-ai-left-divider { border: none; border-top: 1px solid rgba(255,255,255,.14); margin: 0; }
-    .ic-ai-welcome-card { background: rgba(82,183,136,.16); border: 1px solid rgba(116,198,157,.35); border-radius: 12px; padding: .75rem .8rem; display: flex; gap: .55rem; align-items: flex-start; }
-    .ic-ai-welcome-icon { width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.12); display: grid; place-items: center; flex-shrink: 0; font-size: .95rem; }
-    .ic-ai-welcome-card strong { display: block; font-size: .85rem; margin-bottom: .3rem; }
-    .ic-ai-welcome-card p { margin: 0; font-size: .76rem; line-height: 1.45; color: rgba(255,255,255,.82); }
-    .ic-ai-help-title { font-size: .78rem; font-weight: 700; color: #95d5b2; display: flex; align-items: center; gap: .4rem; }
+    .ic-ai-brand-accent { color: var(--ic-green-700); }
+    .ic-ai-brand-sub { font-family: 'DM Mono', monospace; font-size: .66rem; color: var(--ic-ink-mid); margin-top: .25rem; line-height: 1.35; }
+    .ic-ai-left-divider { border: none; border-top: 1px solid var(--ic-border); margin: 0; }
+    .ic-ai-welcome-card { background: rgba(82,183,136,.12); border: 1px solid rgba(116,198,157,.4); border-radius: 12px; padding: .75rem .8rem; display: flex; gap: .55rem; align-items: flex-start; }
+    .ic-ai-welcome-icon { width: 30px; height: 30px; border-radius: 999px; background: rgba(82,183,136,.16); display: grid; place-items: center; flex-shrink: 0; font-size: .95rem; }
+    .ic-ai-welcome-card strong { display: block; font-size: .85rem; margin-bottom: .3rem; color: var(--ic-ink); }
+    .ic-ai-welcome-card p { margin: 0; font-size: .76rem; line-height: 1.45; color: var(--ic-ink-mid); }
+    .ic-ai-help-title { font-size: .78rem; font-weight: 700; color: var(--ic-green-700); display: flex; align-items: center; gap: .4rem; }
     .ic-ai-help-list { display: flex; flex-direction: column; }
-    .ic-ai-help-item { display: flex; gap: .6rem; align-items: flex-start; padding: .65rem 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .ic-ai-help-item { display: flex; gap: .6rem; align-items: flex-start; padding: .65rem 0; border-bottom: 1px solid var(--ic-border); }
     .ic-ai-help-item:last-child { border-bottom: none; }
-    .ic-ai-help-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.08); display: grid; place-items: center; flex-shrink: 0; font-size: 1rem; }
-    .ic-ai-help-name { font-size: .82rem; font-weight: 700; }
-    .ic-ai-help-desc { font-size: .72rem; color: rgba(255,255,255,.62); margin-top: .1rem; line-height: 1.35; }
+    .ic-ai-help-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--ic-panel-strong); display: grid; place-items: center; flex-shrink: 0; font-size: 1rem; }
+    .ic-ai-help-name { font-size: .82rem; font-weight: 700; color: var(--ic-ink); }
+    .ic-ai-help-desc { font-size: .72rem; color: var(--ic-ink-mid); margin-top: .1rem; line-height: 1.35; }
 
     /* ---- Right chat panel ---- */
     .ic-ai-right { display: grid; grid-template-rows: minmax(0,1fr) auto auto; position: relative; background: linear-gradient(180deg, #f7fbf8, #e9f5e1); min-width: 0; }
@@ -145,7 +146,7 @@
                     <div class="ic-ai-msg user">
                         <div class="ic-ai-msg-col">
                             <div class="ic-ai-bubble">{{ $chat->question }}</div>
-                            <div class="ic-ai-msg-time">{{ $chat->created_at?->format('g:i A') }}</div>
+                            <div class="ic-ai-msg-time">{{ $chat->created_at?->shortTime() }}</div>
                         </div>
                     </div>
                     <div class="ic-ai-msg assistant">
@@ -161,14 +162,14 @@
                                     </div>
                                 @endif
                             </div>
-                            <div class="ic-ai-msg-time">{{ $chat->created_at?->format('g:i A') }}</div>
+                            <div class="ic-ai-msg-time">{{ $chat->created_at?->shortTime() }}</div>
                         </div>
                     </div>
                 @empty
                     <div class="ic-ai-msg assistant">
                         <div class="ic-ai-msg-col">
                             <div class="ic-ai-bubble">Hello! Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.</div>
-                            <div class="ic-ai-msg-time" data-now-time>{{ now()->format('g:i A') }}</div>
+                            <div class="ic-ai-msg-time" data-now-time>{{ now()->shortTime() }}</div>
                         </div>
                     </div>
                 @endforelse
@@ -193,7 +194,13 @@
             </form>
         </div>
     </div>
+<<<<<<< HEAD
     <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName ?? 'PalayPilot' }} assistant">PP</button>
+=======
+    <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
+        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
+    </button>
+>>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 </div>
 
 <script>
@@ -215,7 +222,12 @@
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scroll = () => { body.scrollTop = body.scrollHeight; };
-        const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const timeNow = () => {
+            const now = new Date();
+            return now.getMinutes() === 0
+                ? now.toLocaleTimeString([], { hour: 'numeric' })
+                : now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        };
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
         const relevantPredictionCards = (chat) => {
             switch (chat.intent) {
@@ -253,10 +265,10 @@
                 privacyNote.textContent = 'Conversation saving is off. New AI replies will not be saved to your history.';
                 privacyNote.classList.add('show');
             } else if (mode === '1') {
-                privacyNote.textContent = 'Conversation saving is on. PalayPilot can use recent saved chats as memory.';
+                privacyNote.textContent = 'Conversation saving is on. Climora AI can use recent saved chats as memory.';
                 privacyNote.classList.add('show');
             } else {
-                privacyNote.textContent = 'Choose whether PalayPilot should save this conversation.';
+                privacyNote.textContent = 'Choose whether Climora AI should save this conversation.';
                 privacyNote.classList.add('show');
             }
         };

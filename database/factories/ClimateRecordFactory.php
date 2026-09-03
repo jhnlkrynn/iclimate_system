@@ -17,7 +17,7 @@ class ClimateRecordFactory extends Factory
             'humidity' => fake()->randomFloat(2, 55, 98),
             'wind_speed' => fake()->randomFloat(2, 0, 80),
             'season' => fake()->randomElement([ClimateRecord::SEASON_WET, ClimateRecord::SEASON_DRY]),
-            'source' => 'PAGASA',
+            'source' => 'PAGASA Historical Climate Record',
         ];
     }
 }

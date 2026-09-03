@@ -142,7 +142,7 @@ class RoleAssistantService
                 'answer' => $tagalog
                     ? 'Sabihin kung aling barangay sa Lian, Batangas ang gusto mong malaman (hal. Matabungkay, Lumaniag, Bagong Pook).'
                     : 'Let me know which barangay in Lian, Batangas you would like information about (e.g. Matabungkay, Lumaniag, Bagong Pook).',
-                'source_name' => 'PalayPilot',
+                'source_name' => 'Climora AI',
                 'confidence' => 70,
             ];
         }

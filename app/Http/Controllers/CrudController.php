@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,9 @@ abstract class CrudController extends Controller
 
         $data = $this->prepareData($request, $this->validated($request));
         $record = $this->model::query()->create($data);
+        SystemAuditLogger::forModel('created', $record, $request, [
+            'module' => $this->title,
+        ]);
 
         return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' created successfully.');
     }
@@ -125,6 +129,9 @@ abstract class CrudController extends Controller
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
         $record->update($this->prepareData($request, $this->validated($request, $record->id)));
+        SystemAuditLogger::forModel('updated', $record, $request, [
+            'module' => $this->title,
+        ]);
 
         return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' updated successfully.');
     }
@@ -133,7 +140,13 @@ abstract class CrudController extends Controller
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
+        $recordId = $record->getKey();
         $record->delete();
+        SystemAuditLogger::record('Deleted '.$this->title, $request, [
+            'record_type' => class_basename($this->model),
+            'record_id' => $recordId,
+            'module' => $this->title,
+        ]);
 
         return redirect()->route($this->routeName.'.index')->with('success', $this->title.' deleted successfully.');
     }

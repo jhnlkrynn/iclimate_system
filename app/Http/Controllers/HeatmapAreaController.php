@@ -85,7 +85,7 @@ class HeatmapAreaController extends CrudController
 
         $latestPagasaAdvisory = PlantingAdvisory::query()
             ->active()
-            ->where('source', 'PAGASA')
+            ->fromPagasaOnline()
             ->latest('valid_from')
             ->first();
 

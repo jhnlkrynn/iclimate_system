@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class MobileAuthController extends Controller
 {
@@ -26,7 +27,13 @@ class MobileAuthController extends Controller
             ->where('email', $credentials['email'])
             ->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        try {
+            $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
+        } catch (RuntimeException) {
+            $passwordMatches = false;
+        }
+
+        if (! $passwordMatches) {
             throw ValidationException::withMessages([
                 'email' => ['These credentials do not match our records.'],
             ]);

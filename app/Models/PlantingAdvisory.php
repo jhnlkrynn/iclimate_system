@@ -39,6 +39,12 @@ class PlantingAdvisory extends Model
 
     public const SEVERITY_CRITICAL = 'critical';
 
+    public const SOURCE_PAGASA_LEGACY = 'PAGASA';
+
+    public const SOURCE_PAGASA_ONLINE_ADVISORY = 'PAGASA Online Advisory Page';
+
+    public const SOURCE_PAGASA_WEEKLY_OUTLOOK = 'PAGASA Online Weekly Weather Outlook';
+
     protected $fillable = [
         'title',
         'content',
@@ -140,6 +146,20 @@ class PlantingAdvisory extends Model
         });
     }
 
+    public function scopeFromPagasaOnline(Builder $query): Builder
+    {
+        return $query->whereIn('source', self::pagasaOnlineSources());
+    }
+
+    public static function pagasaOnlineSources(): array
+    {
+        return [
+            self::SOURCE_PAGASA_LEGACY,
+            self::SOURCE_PAGASA_ONLINE_ADVISORY,
+            self::SOURCE_PAGASA_WEEKLY_OUTLOOK,
+        ];
+    }
+
     public function isActive(): bool
     {
         $now = now();
@@ -162,6 +182,15 @@ class PlantingAdvisory extends Model
     public function statusLabel(): string
     {
         return str((string) $this->status)->replace('_', ' ')->headline()->toString();
+    }
+
+    public function sourceLabel(): string
+    {
+        if ($this->source === self::SOURCE_PAGASA_LEGACY) {
+            return 'PAGASA Online Advisory Page';
+        }
+
+        return $this->source ?: 'Open-Meteo Forecast API + iClimate Decision Rules';
     }
 
     public function horizonLabel(): string

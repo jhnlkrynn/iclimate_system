@@ -1,15 +1,35 @@
 <x-app-layout>
     <style>
         .mao-console {
-            --mao-ink: #0d1f18;
-            --mao-muted: #5f7569;
-            --mao-green: #2d6a4f;
-            --mao-green-bright: #52b788;
+            --mao-ink: #1F2937;
+            --mao-muted: #64748B;
+            --mao-green: #1F4D3A;
             --mao-blue: #1677b8;
-            --mao-gold: #f4b63f;
+            --mao-gold: #E8A73D;
+            --mao-gold-dark: #C6872A;
             --mao-red: #d85b45;
-            --mao-line: rgba(153, 185, 160, .72);
+            --mao-mint: #7FD6B5;
+            --mao-soft-gold: #F6D58A;
+            --mao-line: #5F8F78;
+            --mao-green-50: rgba(95,143,120,.1);
+            --mao-green-100: rgba(127,214,181,.22);
+            color: var(--mao-ink);
+            font-family: 'Inter', system-ui, sans-serif;
         }
+        .mao-console h1, .mao-console h2, .mao-console h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400 !important; letter-spacing: -.01em; }
+        .mao-console .mono { font-family: 'DM Mono', monospace; }
+        /* -- Buttons unified with landing/farmer pill style -- */
+        .mao-console .btn { border-radius: 999px !important; font-weight: 600 !important; letter-spacing: .01em; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
+        .mao-console .btn-primary, .mao-console .btn-light {
+            background: var(--mao-gold) !important; border-color: var(--mao-gold) !important; color: #1F2937 !important;
+            box-shadow: 0 10px 24px rgba(232,167,61,.28);
+        }
+        .mao-console .btn-primary:hover, .mao-console .btn-light:hover { background: var(--mao-gold-dark) !important; border-color: var(--mao-gold-dark) !important; transform: translateY(-1px); }
+        .mao-console .btn-outline-light { border-color: rgba(255,255,255,.55) !important; color: #fff !important; background: transparent !important; }
+        .mao-console .btn-outline-light:hover { background: #fff !important; border-color: #fff !important; color: var(--mao-ink) !important; }
+        .mao-console .btn-outline-primary { border-color: var(--mao-green) !important; color: var(--mao-green) !important; background: transparent !important; }
+        .mao-console .btn-outline-primary:hover { background: var(--mao-green) !important; border-color: var(--mao-green) !important; color: #fff !important; transform: translateY(-1px); }
+        .mao-console .btn-sm { padding: .4rem .9rem; font-size: .78rem; }
         .mao-hero {
             position: relative;
             overflow: hidden;
@@ -18,51 +38,56 @@
             margin-bottom: 1.25rem;
             color: #fff;
             background:
-                radial-gradient(circle at 84% 12%, rgba(82,183,136,.26), transparent 30%),
-                linear-gradient(145deg, #0d1f18 0%, #1a3a2a 62%, #163324 100%);
-            box-shadow: 0 1rem 2.3rem rgba(13,31,24,.18);
+                radial-gradient(circle at 84% 12%, rgba(127,214,181,.14), transparent 30%),
+                linear-gradient(145deg, #163B2D 0%, #1F4D3A 100%);
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 1rem 2.3rem rgba(13,31,24,.28);
         }
         .mao-hero::before {
             content: "";
             position: absolute;
             inset: 0;
             background:
-                linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(255,255,255,.06) 1px, transparent 1px);
+                linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px);
             background-size: 38px 38px;
             mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 88%);
         }
         .mao-hero > * { position: relative; z-index: 1; }
         .mao-eyebrow {
+            font-family: 'DM Mono', monospace;
             font-size: .72rem;
-            font-weight: 900;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: .12em;
-            color: rgba(255,255,255,.68);
+            color: var(--mao-soft-gold);
         }
         .mao-hero h1 { color: #fff; }
-        .mao-hero em { color: #9be5ba; font-style: italic; }
-        .mao-hero p { color: rgba(255,255,255,.66); max-width: 760px; }
+        .mao-hero em { color: var(--mao-gold); font-style: italic; }
+        .mao-hero p { color: rgba(255,255,255,.72); max-width: 760px; }
         .mao-chip {
             display: inline-flex;
             align-items: center;
             gap: .5rem;
-            border: 1px solid rgba(255,255,255,.2);
+            border: 1px solid rgba(255,255,255,.18);
             border-radius: 999px;
             padding: .45rem .75rem;
-            background: rgba(255,255,255,.08);
-            color: rgba(255,255,255,.88);
-            font-size: .82rem;
-            font-weight: 800;
+            background: rgba(255,255,255,.1);
+            color: rgba(255,255,255,.85);
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+            font-weight: 500;
         }
-        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-green-bright); box-shadow: 0 0 0 6px rgba(82,183,136,.16); }
+        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-gold); box-shadow: 0 0 0 6px rgba(232,167,61,.25); }
+        .mao-hero .btn-outline-light { border-color: #fff; color: #fff; }
+        .mao-hero .btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--mao-ink); }
         .mao-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
         .mao-card {
             position: relative;
             overflow: hidden;
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(229,242,226,.97));
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
             width: 100%;
@@ -70,60 +95,62 @@
             font: inherit;
             cursor: pointer;
         }
-        .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(31,143,85,.42); }
-        .mao-card:focus-visible { outline: 2px solid var(--mao-green-bright); outline-offset: 2px; }
-        .mao-tap-hint { color: var(--mao-green-bright); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
+        .mao-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); border-color: rgba(95,143,120,.55); }
+        .mao-card:focus-visible { outline: 2px solid var(--mao-mint); outline-offset: 2px; }
+        .mao-tap-hint { color: var(--mao-green); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
         .mao-card:hover .mao-tap-hint, .mao-card:focus-visible .mao-tap-hint { opacity: 1; transform: translateY(0); }
-        .mao-modal-content { border-radius: 18px; background: var(--ic-green-950, #0D1F18); color: rgba(255,255,255,.85); }
-        .mao-modal-content .modal-footer { border-top-color: rgba(255,255,255,.1); }
-        .mao-modal-header { background: linear-gradient(90deg, #0d1f18, #1a3a2a); color: #fff; }
-        .mao-modal-header .modal-title { color: #fff; }
-        .mao-modal-headline { font-size: 1.6rem; font-weight: 900; color: #fff; }
-        .mao-modal-sub { color: rgba(255,255,255,.55); font-size: .85rem; margin: .3rem 0 .9rem; }
+        .mao-modal-content { border-radius: 18px; background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--mao-muted); overflow: hidden; }
+        .mao-modal-content .modal-footer { border-top-color: rgba(95,143,120,.4); }
+        .mao-modal-header { background: linear-gradient(90deg, var(--mao-green-50), var(--mao-green-100)); color: var(--mao-ink); }
+        .mao-modal-header .modal-title { color: var(--mao-ink); }
+        .mao-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: var(--mao-ink); }
+        .mao-modal-sub { color: var(--mao-muted); font-size: .85rem; margin: .3rem 0 .9rem; }
         .mao-card-body { padding: 1rem; position: relative; z-index: 1; }
-        .mao-label { color: var(--mao-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
-        .mao-value { margin-top: .35rem; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 900; color: var(--mao-ink); }
+        .mao-label { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; }
+        .mao-value { margin-top: .35rem; font-family: 'DM Serif Display', serif; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 400; color: var(--mao-ink); letter-spacing: -.02em; }
         .mao-note { color: var(--mao-muted); font-size: .84rem; margin-top: .65rem; }
         .mao-panel {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: linear-gradient(145deg, rgba(244,250,239,.97), rgba(232,244,230,.97));
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
             overflow: hidden;
         }
-        .mao-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .75rem; border-bottom: 1px solid rgba(153,185,160,.58); background: rgba(226,241,219,.58); }
-        .mao-panel-title { font-size: 1rem; font-weight: 900; margin: 0; color: var(--mao-ink); }
+        .mao-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1rem .75rem; border-bottom: 1px solid rgba(95,143,120,.58); background: var(--mao-green-50); }
+        .mao-panel-title { font-size: 1.05rem; margin: 0; color: var(--mao-ink); }
         .mao-panel-sub { margin: .15rem 0 0; color: var(--mao-muted); font-size: .82rem; }
         .mao-panel-body { padding: 1rem; }
         .mao-list-item { display: flex; gap: .85rem; align-items: flex-start; padding: .85rem 0; }
-        .mao-list-item + .mao-list-item { border-top: 1px solid rgba(153,185,160,.55); }
-        .list-mark { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: #e2f1df; color: var(--mao-green); font-weight: 900; font-size: .76rem; flex: 0 0 auto; }
-        .row-title { font-weight: 900; color: var(--mao-ink); line-height: 1.25; }
+        .mao-list-item + .mao-list-item { border-top: 1px solid rgba(95,143,120,.55); }
+        .list-mark { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(95,143,120,.14); border: 1px solid rgba(127,214,181,.35); color: var(--mao-green); flex: 0 0 auto; }
+        .list-mark svg { width: 17px; height: 17px; }
+        .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
-        .row-meta { color: #7a8f82; font-size: .76rem; margin-top: .35rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .32rem .58rem; font-size: .72rem; font-weight: 900; background: #d8f3dc; color: #1f6f4a; }
-        .status-pill.muted { background: #e8eef6; color: #516579; }
+        .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+        .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
+        .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
-        .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(153,185,160,.72); background: linear-gradient(135deg, #edf7e7, #dfeee8); color: inherit; text-decoration: none; }
-        .quick-action:hover { transform: translateY(-2px); border-color: rgba(31,143,85,.55); }
+        .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); color: inherit; text-decoration: none; }
+        .quick-action:hover { transform: translateY(-2px); border-color: rgba(95,143,120,.55); }
         .quick-action strong { display: block; color: var(--mao-ink); }
         .quick-action span { display: block; color: var(--mao-muted); font-size: .82rem; margin-top: .25rem; }
         .heat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(153,185,160,.72); background: linear-gradient(135deg, #edf7e7, #e3f1e7); }
+        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); }
+        .risk-card strong { color: var(--mao-ink); }
         .risk-card.severe, .risk-card.high { border-color: rgba(216,91,69,.45); background: linear-gradient(135deg, #fff3ee, #f5e7db); }
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
-        .live-weather-card { border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; padding: .9rem; }
-        .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 900; }
-        .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; }
+        .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
+        .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 700; }
+        .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; }
         .chart-box canvas { width: 100% !important; height: 220px !important; }
-        .chart-title { color: var(--mao-ink); font-weight: 900; margin-bottom: .25rem; }
+        .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
-        .layer-btn { min-height: 38px; border: 1px solid #d4edda; border-radius: 8px; background: rgba(255,255,255,.94); color: #1b2b23; padding: .48rem .64rem; font-size: .78rem; font-weight: 900; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
-        .layer-btn.active { background: #1a3a2a; border-color: #1a3a2a; color: #fff; }
+        .layer-btn { min-height: 38px; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.94); color: var(--mao-ink); padding: .48rem .64rem; font-size: .78rem; font-weight: 700; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
+        .layer-btn.active { background: #1F4D3A; border-color: #1F4D3A; color: #fff; }
         .dashboard-map {
             height: 540px;
             min-height: 380px;
@@ -139,18 +166,18 @@
         .thermo-point { width: 12px; height: 12px; border-radius: 999px; border: 2px solid rgba(13,31,24,.78); background: rgba(255,255,255,.86); box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24); }
         .leaflet-popup-content { width: min(320px, calc(100vw - 4.5rem)) !important; min-width: 0; margin: .85rem; }
         .leaflet-popup-content-wrapper { border-radius: 8px; }
-        .map-popup { color: #1b2b23; font-size: .86rem; line-height: 1.35; }
-        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
-        .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
-        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .7rem; font-weight: 900; }
-        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #52b788); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
+        .map-popup { color: var(--mao-ink); font-size: .86rem; line-height: 1.35; }
+        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid rgba(95,143,120,.3); padding-bottom: .58rem; margin-bottom: .62rem; }
+        .map-popup-name { color: var(--mao-ink); font-size: 1rem; font-weight: 700; line-height: 1.18; }
+        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, rgba(95,143,120,.14)); color: var(--popup-color, #1F4D3A); font-size: .7rem; font-weight: 700; }
+        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #5F8F78); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
-        .map-popup-box { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .52rem .58rem; }
-        .map-popup-label { color: #5a7a64; font-size: .66rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-        .map-popup-value { color: #0d1f18; font-weight: 900; margin-top: .16rem; }
-        .map-popup-note { color: #5a7a64; font-size: .78rem; margin-top: .18rem; }
-        .map-popup-advice { border: 1px solid #d4edda; border-radius: 8px; background: #f0f7f4; padding: .58rem .65rem; margin-top: .55rem; }
-        .map-popup-source { color: #5a7a64; font-size: .74rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; }
+        .map-popup-box { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; padding: .52rem .58rem; }
+        .map-popup-label { color: var(--mao-muted); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .map-popup-value { color: var(--mao-ink); font-weight: 700; margin-top: .16rem; }
+        .map-popup-note { color: var(--mao-muted); font-size: .78rem; margin-top: .18rem; }
+        .map-popup-advice { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: rgba(95,143,120,.1); padding: .58rem .65rem; margin-top: .55rem; }
+        .map-popup-source { color: var(--mao-muted); font-size: .74rem; margin-top: .55rem; border-top: 1px solid rgba(95,143,120,.3); padding-top: .5rem; }
         .map-detail-panel {
             position: absolute;
             top: 1rem;
@@ -159,7 +186,7 @@
             width: min(292px, calc(100% - 2rem));
             max-height: calc(100% - 2rem);
             overflow: auto;
-            border: 1px solid #d4edda;
+            border: 1px solid rgba(95,143,120,.3);
             border-radius: 8px;
             background: rgba(255,255,255,.96);
             box-shadow: 0 .9rem 2rem rgba(13,31,24,.18);
@@ -167,27 +194,28 @@
             display: none;
         }
         .map-detail-panel.show { display: block; }
-        .map-detail-empty { color: #5a7a64; font-size: .86rem; line-height: 1.45; }
-        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid #d4edda; border-radius: 8px; background: #fff; color: #0d1f18; font-weight: 900; line-height: 1; }
+        .map-detail-empty { color: var(--mao-muted); font-size: .86rem; line-height: 1.45; }
+        .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; color: var(--mao-ink); font-weight: 700; line-height: 1; }
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
         .risk-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
-        .risk-level-card { border: 1px solid rgba(153,185,160,.72); border-radius: 8px; background: #fff; padding: .9rem; }
-        .risk-level-card.low { border-left: 5px solid #52b788; }
+        .risk-level-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
+        .risk-level-card.low { border-left: 5px solid #5F8F78; }
         .risk-level-card.moderate { border-left: 5px solid #ffd166; }
         .risk-level-card.high, .risk-level-card.severe { border-left: 5px solid #d85b45; }
-        .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
-        .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 900; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
+        .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 700; line-height: 1; margin-top: .35rem; }
+        .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 700; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
-        .empty-soft { border: 1px dashed #aac7b0; background: linear-gradient(135deg, #edf7e7, #e2f1df); border-radius: 8px; padding: 1.5rem; text-align: center; }
+        .empty-soft { border: 1px dashed #5F8F78; background: var(--mao-green-50); border-radius: 8px; padding: 1.5rem; text-align: center; }
+        .empty-soft strong { color: var(--mao-ink); }
         .dashboard-section-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .75rem; }
         .dashboard-section-label:first-of-type { margin-top: 0; }
-        .section-title { color: var(--mao-ink); font-size: .92rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0; }
-        .section-note { color: var(--mao-muted); font-size: .84rem; margin: 0; }
+        .section-title { color: var(--mao-soft-gold); font-family: 'DM Mono', monospace !important; font-size: .74rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
+        .section-note { color: var(--mao-mint); font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
-            background: rgba(255,255,255,.58);
+            background: linear-gradient(145deg, #ffffff, #f7fbf8);
             box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
             overflow: hidden;
         }
@@ -199,12 +227,12 @@
             padding: .95rem 1rem;
             cursor: pointer;
             list-style: none;
-            background: linear-gradient(135deg, rgba(244,250,239,.95), rgba(232,244,230,.82));
+            background: var(--mao-green-50);
         }
         .dashboard-group > summary::-webkit-details-marker { display: none; }
-        .dashboard-group-title { color: var(--mao-ink); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+        .dashboard-group-title { color: var(--mao-ink); font-family: 'Inter', sans-serif !important; font-size: .92rem; font-weight: 700 !important; text-transform: none; letter-spacing: -.005em; margin: 0; }
         .dashboard-group-note { color: var(--mao-muted); font-size: .82rem; margin: .1rem 0 0; }
-        .dashboard-group-toggle { color: var(--mao-green); font-size: .78rem; font-weight: 900; white-space: nowrap; }
+        .dashboard-group-toggle { color: var(--mao-green); font-size: .78rem; font-weight: 700; white-space: nowrap; }
         .dashboard-group-toggle::after { content: "Collapse"; }
         .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
         .dashboard-group-body { padding: 1rem; }
@@ -213,46 +241,6 @@
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
 
-        /* -- dark theme overrides (matches farmer dashboard palette) -- */
-        .mao-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.14); }
-        .mao-card:hover { border-color: rgba(149,213,178,.4); }
-        .mao-label { color: rgba(255,255,255,.5); }
-        .mao-value { color: #fff; }
-        .mao-note { color: rgba(255,255,255,.55); }
-        .mao-panel { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
-        .mao-panel-header { background: rgba(255,255,255,.03); border-bottom-color: rgba(255,255,255,.08); }
-        .mao-panel-title { color: #fff; }
-        .mao-panel-sub { color: rgba(255,255,255,.55); }
-        .mao-list-item + .mao-list-item { border-top-color: rgba(255,255,255,.08); }
-        .list-mark { background: rgba(82,183,136,.16); color: var(--mao-green-bright); }
-        .row-title { color: #fff; }
-        .row-text { color: rgba(255,255,255,.55); }
-        .row-meta { color: rgba(255,255,255,.4); }
-        .status-pill { background: rgba(82,183,136,.16); color: var(--mao-green-bright); }
-        .status-pill.muted { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); }
-        .quick-action { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
-        .quick-action:hover { border-color: rgba(116,198,157,.4); background: rgba(255,255,255,.07); }
-        .quick-action strong { color: #fff; }
-        .quick-action span { color: rgba(255,255,255,.55); }
-        .risk-card { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
-        .risk-card.severe, .risk-card.high { background: rgba(216,91,69,.14); border-color: rgba(216,91,69,.45); }
-        .live-weather-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
-        .source-badge { background: rgba(47,111,143,.22); border-color: rgba(126,200,227,.35); color: #7ec8e3; }
-        .chart-box { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
-        .chart-title { color: #fff; }
-        .chart-note { color: rgba(255,255,255,.55); }
-        .risk-level-card { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.12); }
-        .risk-level-value { color: #fff; }
-        .empty-soft { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.7); }
-        .empty-soft strong { color: #fff; }
-        .section-title { color: #fff; }
-        .section-note { color: rgba(255,255,255,.55); }
-        .dashboard-group { background: var(--ic-green-950, #0D1F18); border-color: rgba(255,255,255,.1); }
-        .dashboard-group > summary { background: rgba(255,255,255,.03); }
-        .dashboard-group-title { color: #fff; }
-        .dashboard-group-note { color: rgba(255,255,255,.55); }
-        .dashboard-group-toggle { color: var(--mao-green-bright); }
-        .mao-console .text-muted { color: rgba(255,255,255,.5) !important; }
     </style>
 
     @php
@@ -284,25 +272,25 @@
         </div>
 
         <section class="mao-stat-grid">
-            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-bs-toggle="modal" data-bs-target="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
         </section>
 
-        <div class="modal fade" id="maoStatFarmers" tabindex="-1" aria-labelledby="maoStatFarmersLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="ic-drawer" id="maoStatFarmers" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatFarmersLabel">
                 <div class="modal-content border-0 mao-modal-content">
                     <div class="modal-header mao-modal-header">
                         <h2 class="modal-title h5 fw-bold" id="maoStatFarmersLabel">Farmer Profiles</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mao-modal-headline">{{ number_format($profileCount) }} registered</div>
                         <p class="mao-modal-sub">Most recently registered farmer profiles.</p>
                         @forelse($recentFarmerProfiles as $profile)
                             <div class="mao-list-item">
-                                <div class="list-mark">FAR</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $profile->full_name }}</div>
                                     <div class="row-text">{{ $profile->barangay }} &middot; {{ number_format($profile->farm_area, 2) }} ha &middot; {{ $profile->farm_type }}</div>
@@ -320,19 +308,19 @@
             </div>
         </div>
 
-        <div class="modal fade" id="maoStatClimate" tabindex="-1" aria-labelledby="maoStatClimateLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="ic-drawer" id="maoStatClimate" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatClimateLabel">
                 <div class="modal-content border-0 mao-modal-content">
                     <div class="modal-header mao-modal-header">
                         <h2 class="modal-title h5 fw-bold" id="maoStatClimateLabel">Climate Records</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mao-modal-headline">{{ number_format($totalClimateRecords) }} recorded</div>
                         <p class="mao-modal-sub">Latest entry: {{ $latestClimate?->record_date?->format('F d, Y') ?? 'N/A' }} &middot; Source: {{ $latestClimate?->source ?? 'N/A' }}</p>
                         @forelse($recentClimateRecords as $record)
                             <div class="mao-list-item">
-                                <div class="list-mark">CLI</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
                                     <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
@@ -350,19 +338,19 @@
             </div>
         </div>
 
-        <div class="modal fade" id="maoStatRice" tabindex="-1" aria-labelledby="maoStatRiceLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="ic-drawer" id="maoStatRice" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatRiceLabel">
                 <div class="modal-content border-0 mao-modal-content">
                     <div class="modal-header mao-modal-header">
                         <h2 class="modal-title h5 fw-bold" id="maoStatRiceLabel">Rice Production</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} total production</div>
                         <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
-                                <div class="list-mark">RIC</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $production->barangay }} &middot; {{ $production->season }} {{ $production->year }}</div>
                                     <div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div>
@@ -380,19 +368,19 @@
             </div>
         </div>
 
-        <div class="modal fade" id="maoStatRisk" tabindex="-1" aria-labelledby="maoStatRiskLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="ic-drawer" id="maoStatRisk" aria-hidden="true">
+            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatRiskLabel">
                 <div class="modal-content border-0 mao-modal-content">
                     <div class="modal-header mao-modal-header">
                         <h2 class="modal-title h5 fw-bold" id="maoStatRiskLabel">Heat Map Risks</h2>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
                         <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
                         @forelse($highRiskAreasList as $area)
                             <div class="mao-list-item">
-                                <div class="list-mark">{{ $area->risk_level === 'Severe' ? 'SEV' : 'HI' }}</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
                                     <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
@@ -420,14 +408,14 @@
                 <span class="dashboard-group-toggle"></span>
             </summary>
             <div class="dashboard-group-body">
-        <section class="mao-panel">
+        <section class="mao-panel" data-mao-weather-root data-mao-weather-url="{{ route('mao.dashboard.weather') }}">
             <div class="mao-panel-header">
                 <div>
                     <h2 class="mao-panel-title">Barangay Heat Map Dashboard</h2>
                     <p class="mao-panel-sub">Primary view for rainfall, yield, irrigation, and climate-impact risk by barangay.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="source-badge">{{ $weatherDataSource }}</span>
+                    <span class="source-badge" data-mao-weather-source>{{ $weatherDataSource }}</span>
                     <a class="btn btn-sm btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Prediction</a>
                 </div>
@@ -437,22 +425,22 @@
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
                             <div class="mao-label">Current Rain</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['current_rainfall_mm'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-rain>{{ number_format($liveWeather['current_rainfall_mm'], 1) }}</div>
                             <div class="mao-note">mm right now</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Temperature</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['current_temperature_c'], 1) }}</div>
-                            <div class="mao-note">C current reading</div>
+                            <div class="risk-level-value" data-mao-current-temperature>{{ number_format($liveWeather['current_temperature_c'], 1) }}</div>
+                            <div class="mao-note">°C current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Humidity</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['humidity_percent'], 1) }}</div>
-                            <div class="mao-note">percent current reading</div>
+                            <div class="risk-level-value" data-mao-current-humidity>{{ number_format($liveWeather['humidity_percent'], 1) }}</div>
+                            <div class="mao-note">% current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Wind Speed</div>
-                            <div class="risk-level-value">{{ number_format($liveWeather['wind_speed_kmh'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-wind>{{ number_format($liveWeather['wind_speed_kmh'], 1) }}</div>
                             <div class="mao-note">km/h current reading</div>
                         </div>
                     </div>
@@ -462,19 +450,23 @@
                     <div class="col-xl-8">
                         <div class="chart-title">Municipal Heat Map</div>
                         <div class="chart-note">Barangay markers colored by climate and production risk. Start here before reviewing weather charts.</div>
-                        <div class="dashboard-map-shell">
-                            <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
-                                <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
-                                <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                        @if($dashboardMapAreas->count())
+                            <div class="dashboard-map-shell">
+                                <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
+                                    <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
+                                    <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                                </div>
+                                <div id="dashboardRiskMap" class="dashboard-map"></div>
+                                <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
+                                    <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
+                                    <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
+                                </aside>
                             </div>
-                            <div id="dashboardRiskMap" class="dashboard-map"></div>
-                            <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
-                                <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                                <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
-                            </aside>
-                        </div>
+                        @else
+                            <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map layers and controls will appear here once barangay locations are recorded.</div></div>
+                        @endif
                     </div>
                     <div class="col-xl-4">
                         <div class="chart-title">Barangay Risk Levels</div>
@@ -506,6 +498,7 @@
                 </div>
 
                 @if(! empty($weatherChartData['labels']))
+<<<<<<< HEAD
                     <div class="mb-4" data-chart-tabs>
                         <div class="ic-chart-tabs">
                             <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
@@ -534,10 +527,32 @@
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
                                 <canvas id="windSpeedChart"></canvas>
                             </div>
+=======
+                    <div class="visual-grid mb-4">
+                        <div class="chart-box">
+                            <div class="chart-title">Rainfall Chart</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
+                            <canvas id="rainfallChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">Temperature Chart</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
+                            <canvas id="temperatureChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">Humidity Chart</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo current humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
+                            <canvas id="humidityChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-title">Wind Speed Chart</div>
+                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
+                            <canvas id="windSpeedChart"></canvas>
+>>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
                         </div>
                     </div>
                 @else
-                    <div class="empty-soft mb-4"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">The live weather API is unavailable and there are no saved climate records to show.</div></div>
+                    <div class="empty-soft mb-4"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Open-Meteo is unavailable and there are no saved climate records to show.</div></div>
                 @endif
 
             </div>
@@ -561,7 +576,7 @@
                     <div class="mao-panel-body list-compact">
                         @forelse($recentClimateRecords as $record)
                             <div class="mao-list-item">
-                                <div class="list-mark">CLI</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1"><div class="row-title">{{ $record->record_date?->format('M d, Y') }} | {{ $record->season }} Season</div><div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }} C, humidity {{ number_format($record->humidity, 1) }}%, wind {{ number_format($record->wind_speed, 1) }} km/h.</div><div class="row-meta">Source: {{ $record->source }}</div></div>
                             </div>
                         @empty
@@ -603,7 +618,7 @@
                     <div class="mao-panel-body list-compact">
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
-                                <div class="list-mark">RIC</div>
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
                                 <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
                             </div>
                         @empty
@@ -643,7 +658,7 @@
                     <div class="mao-panel-header"><div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a></div>
                     <div class="mao-panel-body list-compact">
                         @forelse($latestAdvisories as $advisory)
-                            <div class="mao-list-item"><div class="list-mark">ADV</div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
+                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
                         @empty
                             <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
                         @endforelse
@@ -684,7 +699,7 @@
                     <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Farmer Registration Report']) }}"><strong>Farmer Report</strong><span>Summarize farmer account and profile records.</span></a>
                 </div>
                 @forelse($latestReports as $report)
-                    <div class="mao-list-item"><div class="list-mark">RPT</div><div class="flex-grow-1"><div class="row-title">{{ $report->title }}</div><div class="row-text">{{ $report->report_type }} generated by {{ $report->generatedBy?->name ?? 'System' }}.</div><div class="row-meta">{{ $report->created_at?->format('M d, Y') }}</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a></div>
+                    <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M4 3h10l4 4v12H4V3z" stroke="currentColor" stroke-width="1.4"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h8M7 13h6M7 16h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div><div class="flex-grow-1"><div class="row-title">{{ $report->title }}</div><div class="row-text">{{ $report->report_type }} generated by {{ $report->generatedBy?->name ?? 'System' }}.</div><div class="row-meta">{{ $report->created_at?->format('M d, Y') }}</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a></div>
                 @empty
                     <div class="empty-soft"><strong>No report history yet</strong><div class="small text-muted mt-1">Generated reports will appear here.</div></div>
                 @endforelse
@@ -696,9 +711,36 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const panel = document.getElementById(card.dataset.toggleDetail);
+                    if (!panel) return;
+                    const isOpen = !panel.hidden;
+
+                    document.querySelectorAll('.mao-stat-panel').forEach((other) => { other.hidden = true; });
+                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
+
+                    if (!isOpen) {
+                        panel.hidden = false;
+                        card.setAttribute('aria-expanded', 'true');
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            });
+            document.querySelectorAll('.mao-panel-close').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const panel = btn.closest('.mao-stat-panel');
+                    if (panel) panel.hidden = true;
+                    document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
+                });
+            });
+
+            const MAO_WEATHER_POLL_INTERVAL = 60000;
             const chartData = @json($weatherChartData);
             const mapAreas = @json($dashboardMapAreas);
             const labels = chartData.labels || [];
+            const weatherRoot = document.querySelector('[data-mao-weather-root]');
+            let maoWeatherPollTimer = null;
 
             const chartOptions = (unit) => ({
                 responsive: true,
@@ -713,16 +755,16 @@
                     },
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, color: 'rgba(255,255,255,.55)' } },
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,.1)' }, ticks: { color: 'rgba(255,255,255,.55)' } },
+                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, color: 'rgba(13,31,24,.55)' } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(13,31,24,.08)' }, ticks: { color: 'rgba(13,31,24,.55)' } },
                 },
             });
 
             const makeChart = (id, label, values, color, unit) => {
                 const canvas = document.getElementById(id);
-                if (!canvas || !labels.length) return;
+                if (!canvas || !labels.length) return null;
 
-                new Chart(canvas, {
+                return new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels,
@@ -744,8 +786,67 @@
 
             makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
             makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
-            makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%');
-            makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', '');
+            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
+            makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#E8A73D', '');
+            const weatherCharts = {
+                rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
+                temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),
+                humidity: makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%'),
+                windSpeed: makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', 'km/h'),
+            };
+            const setMaoText = (selector, value) => {
+                document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
+            };
+            const formatOne = (value) => Number.isFinite(Number(value)) ? Number(value).toFixed(1) : 'N/A';
+            const updateWeatherChart = (chart, labels, values) => {
+                if (!chart || !Array.isArray(labels) || !Array.isArray(values)) return;
+
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.update('none');
+            };
+            const renderMaoWeather = (payload) => {
+                const weather = payload?.weather;
+                if (!weather) return;
+
+                setMaoText('[data-mao-weather-source]', payload.source_label || `${weather.source || 'Open-Meteo'} live weather for ${weather.location || 'Lian, Batangas'}`);
+                setMaoText('[data-mao-current-rain]', formatOne(weather.current_rainfall_mm));
+                setMaoText('[data-mao-current-temperature]', formatOne(weather.current_temperature_c));
+                setMaoText('[data-mao-current-humidity]', formatOne(weather.humidity_percent));
+                setMaoText('[data-mao-current-wind]', formatOne(weather.wind_speed_kmh));
+
+                const series = weather.daily_series || {};
+                updateWeatherChart(weatherCharts.rainfall, series.labels, series.rainfall);
+                updateWeatherChart(weatherCharts.temperature, series.labels, series.temperature);
+                updateWeatherChart(weatherCharts.humidity, series.labels, series.humidity);
+                updateWeatherChart(weatherCharts.windSpeed, series.labels, series.windSpeed);
+            };
+            const refreshMaoWeather = async () => {
+                if (!weatherRoot?.dataset.maoWeatherUrl || document.visibilityState !== 'visible') return;
+
+                try {
+                    const response = await fetch(weatherRoot.dataset.maoWeatherUrl, { headers: { Accept: 'application/json' } });
+                    if (!response.ok) return;
+                    renderMaoWeather(await response.json());
+                } catch (error) {
+                    // Keep the last visible weather values when the live source is temporarily unavailable.
+                }
+            };
+            const startMaoWeatherPolling = () => {
+                if (maoWeatherPollTimer) clearInterval(maoWeatherPollTimer);
+                maoWeatherPollTimer = setInterval(refreshMaoWeather, MAO_WEATHER_POLL_INTERVAL);
+            };
+
+            startMaoWeatherPolling();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    refreshMaoWeather();
+                    startMaoWeatherPolling();
+                } else if (maoWeatherPollTimer) {
+                    clearInterval(maoWeatherPollTimer);
+                    maoWeatherPollTimer = null;
+                }
+            });
 
             const mapEl = document.getElementById('dashboardRiskMap');
             if (mapEl && mapAreas.length && window.L) {
@@ -869,7 +970,7 @@
                     if (area.risk_level === 'Moderate') {
                         return '--popup-accent:#ffd166;--popup-bg:#fff4cf;--popup-color:#8a5a00;';
                     }
-                    return '--popup-accent:#52b788;--popup-bg:#d8f3dc;--popup-color:#2d6a4f;';
+                    return '--popup-accent:#5F8F78;--popup-bg:rgba(95,143,120,.14);--popup-color:#1F4D3A;';
                 };
                 const popup = (area, layer = activeDashboardLayer) => {
                     const mainDetail = layerMainDetail(area, layer);

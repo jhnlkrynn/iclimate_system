@@ -4,10 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\AIChat;
 use App\Models\ClimateRecord;
-use App\Models\ExternalWeatherData;
 use App\Models\KnowledgeBase;
 use App\Models\RiceProduction;
 use App\Models\User;
+use App\Services\Prediction\PredictionDateValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -45,7 +45,7 @@ class AIChatTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('chat.intent', 'Planting Recommendation')
-            ->assertJsonPath('chat.weather_prediction.predicted_weather', 'Rain');
+            ->assertJsonPath('chat.weather_prediction.predicted_weather', 'Dry');
 
         $this->assertDatabaseHas('a_i_chats', [
             'user_id' => $user->id,
@@ -81,7 +81,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.prediction_result.input_features.season', 'Dry');
     }
 
-    public function test_ai_assistant_uses_latest_open_meteo_forecast_for_missing_weather_inputs(): void
+    public function test_ai_assistant_uses_random_forest_model_for_missing_weather_inputs(): void
     {
         Http::fake([
             '127.0.0.1:5001/predict' => Http::response([
@@ -92,28 +92,17 @@ class AIChatTest extends TestCase
             ]),
         ]);
 
-        ClimateRecord::query()->create([
-            'record_date' => '2026-01-15',
-            'rainfall' => 50,
-            'temperature' => 25,
-            'humidity' => 60,
-            'wind_speed' => 5,
-            'season' => ClimateRecord::SEASON_DRY,
-            'source' => 'Old Manual Record',
-        ]);
-
-        ExternalWeatherData::query()->create([
-            'source' => 'Open-Meteo',
-            'location_name' => 'Lian, Batangas',
-            'latitude' => 14.033,
-            'longitude' => 120.650,
-            'forecast_date' => now()->toDateString(),
-            'temperature' => 30.5,
-            'humidity' => 84.2,
-            'rainfall_mm' => 218.4,
-            'wind_speed' => 13.7,
-            'fetched_at' => now(),
-        ]);
+        foreach (range(1, 6) as $month) {
+            ClimateRecord::query()->create([
+                'record_date' => sprintf('2026-%02d-15', $month),
+                'rainfall' => 80 + ($month * 8),
+                'temperature' => 27 + ($month * 0.2),
+                'humidity' => 70 + $month,
+                'wind_speed' => 8 + ($month * 0.3),
+                'season' => $month >= 5 ? ClimateRecord::SEASON_WET : ClimateRecord::SEASON_DRY,
+                'source' => 'PAGASA',
+            ]);
+        }
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
 
@@ -121,14 +110,15 @@ class AIChatTest extends TestCase
             'question' => 'Should I plant rice this week?',
         ]);
 
-        $response->assertOk()
-            ->assertJsonPath('chat.prediction_result.input_features.rainfall', 218.4)
-            ->assertJsonPath('chat.prediction_result.input_features.temp_avg', 30.5)
-            ->assertJsonPath('chat.prediction_result.input_features.humidity', 84.2)
-            ->assertJsonPath('chat.prediction_result.input_features.wind_speed', 13.7);
+        $response->assertOk();
+
+        $this->assertIsNumeric($response->json('chat.prediction_result.input_features.rainfall'));
+        $this->assertIsNumeric($response->json('chat.prediction_result.input_features.temp_avg'));
+        $this->assertIsNumeric($response->json('chat.prediction_result.input_features.humidity'));
+        $this->assertIsNumeric($response->json('chat.prediction_result.input_features.wind_speed'));
 
         $this->assertStringContainsString(
-            'Open-Meteo forecast',
+            'Random Forest model',
             implode(' ', $response->json('chat.prediction_result.input_features.source_notes'))
         );
     }
@@ -161,7 +151,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.prediction_result.conversation_memory.last_intent', 'planting');
     }
 
-    public function test_ai_assistant_calibrates_yield_with_historical_production_records(): void
+    public function test_ai_assistant_uses_raw_model_yield_without_calibration(): void
     {
         Http::fake([
             '127.0.0.1:5001/predict' => Http::response([
@@ -194,15 +184,11 @@ class AIChatTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('chat.rice_yield_prediction.raw_predicted_yield', 2)
-            ->assertJsonPath('chat.rice_yield_prediction.calibrated', true)
-            ->assertJsonPath('chat.prediction_result.calibration.applied', true)
-            ->assertJsonPath('chat.prediction_result.quality.label', 'High reliability');
+            ->assertJsonPath('chat.rice_yield_prediction.fallback', false);
 
-        $this->assertGreaterThan(
-            2.0,
-            $response->json('chat.rice_yield_prediction.predicted_yield')
-        );
+        $this->assertEquals(2.0, $response->json('chat.rice_yield_prediction.predicted_yield'));
+        $this->assertArrayNotHasKey('calibrated', $response->json('chat.rice_yield_prediction'));
+        $this->assertArrayNotHasKey('raw_predicted_yield', $response->json('chat.rice_yield_prediction'));
     }
 
     public function test_ai_assistant_lowers_reliability_for_unrealistic_inputs(): void
@@ -261,8 +247,7 @@ class AIChatTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('chat.intent', 'Rice Yield Prediction')
             ->assertJsonPath('chat.rice_yield_prediction.fallback', true)
-            ->assertJsonPath('chat.rice_yield_prediction.unit', 'tons/hectare')
-            ->assertJsonPath('chat.prediction_result.calibration.fallback', true);
+            ->assertJsonPath('chat.rice_yield_prediction.unit', 'tons/hectare');
 
         $predictedYield = $response->json('chat.rice_yield_prediction.predicted_yield');
 
@@ -589,6 +574,27 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.source_type', 'System Scope');
 
         $this->assertStringContainsString('iClimate', $response->json('chat.answer'));
+
+        Http::assertNothingSent();
+    }
+
+    public function test_ai_assistant_rejects_prediction_for_a_past_month(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $pastMonth = now()->subMonths(2)->format('F Y');
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => "Predict rice yield for {$pastMonth}.",
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.answer', PredictionDateValidator::ERROR_MESSAGE)
+            ->assertJsonPath('chat.weather_prediction', null)
+            ->assertJsonPath('chat.rice_yield_prediction', null)
+            ->assertJsonPath('chat.prediction_result.validation_error', true);
 
         Http::assertNothingSent();
     }

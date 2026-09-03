@@ -25,7 +25,7 @@ class CalendarController extends Controller
         $advisories = PlantingAdvisory::query()
             ->when(
                 $user->role === User::ROLE_FARMER,
-                fn ($query) => $query->active()->forBarangay($user->barangay),
+                fn ($query) => $query->published()->forBarangay($user->barangay),
                 fn ($query) => $query->whereIn('status', [PlantingAdvisory::STATUS_PUBLISHED, PlantingAdvisory::STATUS_PENDING_REVIEW])
             )
             ->whereDate('valid_from', '<=', $gridEnd)
@@ -34,7 +34,6 @@ class CalendarController extends Controller
             ->get();
 
         $feedEvents = FeedPost::query()
-            ->where('show_on_calendar', true)
             ->whereNull('archived_at')
             ->whereNotNull('event_date')
             ->whereBetween('event_date', [$gridStart, $gridEnd])

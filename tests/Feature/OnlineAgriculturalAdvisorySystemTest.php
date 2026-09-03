@@ -18,6 +18,16 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'services.pagasa.regional_forecast_urls' => ['https://bagong.pagasa.dost.gov.ph/regional-forecast/slprsd'],
+            'services.pagasa.weekly_outlook_url' => 'https://pagasa.dost.gov.ph/weather/weather-outlook-weekly',
+        ]);
+    }
+
     public function test_open_meteo_service_normalizes_a_valid_response(): void
     {
         Http::fake(['api.open-meteo.com/*' => Http::response($this->openMeteoPayload(rainfall: 38, probability: 86), 200)]);
@@ -179,7 +189,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
 
         $this->assertSame(2, $result['advisories_created']);
         $this->assertDatabaseHas('planting_advisories', [
-            'source' => 'PAGASA',
+            'source' => PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY,
             'advisory_type' => 'climate',
             'status' => 'published',
         ]);
@@ -201,7 +211,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->assertSame(0, $result['advisories_created']);
         $this->assertSame(2, $result['sources_without_lian_batangas_match']);
         $this->assertDatabaseMissing('planting_advisories', [
-            'source' => 'PAGASA',
+            'source' => PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY,
         ]);
     }
 
@@ -217,7 +227,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         app(PagasaAdvisoryService::class)->fetchAndStore(true);
 
         $this->assertDatabaseHas('planting_advisories', [
-            'source' => 'PAGASA',
+            'source' => PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY,
             'target_barangay' => 'Matabungkay',
             'target_scope' => 'barangay',
         ]);
@@ -239,7 +249,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         app(PagasaAdvisoryService::class)->fetchAndStore(true);
 
         $this->assertDatabaseHas('planting_advisories', [
-            'source' => 'PAGASA',
+            'source' => PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY,
             'target_barangay' => null,
             'target_scope' => 'municipality',
         ]);

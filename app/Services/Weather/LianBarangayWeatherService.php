@@ -56,38 +56,11 @@ class LianBarangayWeatherService
             Cache::forget($cacheKey);
         }
 
-        return Cache::remember($cacheKey, now()->addMinutes($this->refreshMinutes()), function () use ($barangay, $latitude, $longitude): array {
-            try {
-                $payload = $this->requestForecast($latitude, $longitude);
+        if ($refresh) {
+            return $this->fetchBarangayWeather($barangay, $latitude, $longitude);
+        }
 
-                return $this->summarize($barangay, $latitude, $longitude, $payload);
-            } catch (Throwable $exception) {
-                Log::warning('Lian barangay weather fetch failed.', [
-                    'barangay' => $barangay,
-                    'message' => $exception->getMessage(),
-                ]);
-
-                return [
-                    'barangay' => $barangay,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'source' => 'Open-Meteo Forecast API',
-                    'status' => 'unavailable',
-                    'stale' => true,
-                    'message' => 'Live barangay weather could not be refreshed. Use stored iClimate risk data until the next scheduled update.',
-                    'observed_at' => null,
-                    'rainfall_status' => null,
-                    'rainfall_now_mm' => null,
-                    'rainfall_24h_mm' => null,
-                    'rainfall_7d_mm' => null,
-                    'precip_probability_percent' => null,
-                    'temperature_c' => null,
-                    'humidity_percent' => null,
-                    'wind_speed_kmh' => null,
-                    'fetched_at' => now()->toDateTimeString(),
-                ];
-            }
-        });
+        return Cache::remember($cacheKey, now()->addMinutes($this->refreshMinutes()), fn (): array => $this->fetchBarangayWeather($barangay, $latitude, $longitude));
     }
 
     public function refresh(): array
@@ -121,6 +94,42 @@ class LianBarangayWeatherService
         return $json;
     }
 
+    private function fetchBarangayWeather(string $barangay, float $latitude, float $longitude): array
+    {
+        try {
+            $payload = $this->requestForecast($latitude, $longitude);
+
+            return $this->summarize($barangay, $latitude, $longitude, $payload);
+        } catch (Throwable $exception) {
+            Log::warning('Lian barangay weather fetch failed.', [
+                'barangay' => $barangay,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [
+                'barangay' => $barangay,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'source' => 'Open-Meteo Forecast API',
+                'source_url' => 'https://open-meteo.com/',
+                'source_credit' => 'Weather forecast by Open-Meteo; interpreted by iClimate.',
+                'status' => 'unavailable',
+                'stale' => true,
+                'message' => 'Live barangay weather could not be refreshed. Use stored iClimate risk data until the next scheduled update.',
+                'observed_at' => null,
+                'rainfall_status' => null,
+                'rainfall_now_mm' => null,
+                'rainfall_24h_mm' => null,
+                'rainfall_7d_mm' => null,
+                'precip_probability_percent' => null,
+                'temperature_c' => null,
+                'humidity_percent' => null,
+                'wind_speed_kmh' => null,
+                'fetched_at' => now()->toDateTimeString(),
+            ];
+        }
+    }
+
     private function summarize(string $barangay, float $latitude, float $longitude, array $payload): array
     {
         $current = $payload['current'] ?? [];
@@ -136,6 +145,8 @@ class LianBarangayWeatherService
             'latitude' => $latitude,
             'longitude' => $longitude,
             'source' => 'Open-Meteo Forecast API',
+            'source_url' => 'https://open-meteo.com/',
+            'source_credit' => 'Weather forecast by Open-Meteo; interpreted by iClimate.',
             'status' => 'fresh',
             'stale' => false,
             'message' => 'Forecast is refreshed routinely from barangay coordinates. Treat it as decision support, not a rain-gauge reading.',

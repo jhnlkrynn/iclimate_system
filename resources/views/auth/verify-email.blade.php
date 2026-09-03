@@ -10,11 +10,11 @@
     @endif
 
     <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
+        <form method="POST" action="{{ route('verification.send') }}" data-loading="true">
             @csrf
 
             <div>
-                <x-primary-button>
+                <x-primary-button data-loading-text="Sending...">
                     {{ __('Resend Verification Email') }}
                 </x-primary-button>
             </div>

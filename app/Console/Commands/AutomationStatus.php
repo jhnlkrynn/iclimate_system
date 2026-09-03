@@ -44,7 +44,7 @@ class AutomationStatus extends Command
             ['Active published advisories', (string) PlantingAdvisory::query()->active()->count()],
             ['Pending review advisories', (string) PlantingAdvisory::query()->pendingReview()->count()],
             ['Expired advisories', (string) PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_EXPIRED)->count()],
-            ['PAGASA advisories stored', (string) PlantingAdvisory::query()->where('source', 'PAGASA')->count()],
+            ['PAGASA online advisories stored', (string) PlantingAdvisory::query()->fromPagasaOnline()->count()],
             ['Typhoon safety response', $activeTyphoonEvent
                 ? 'Open: '.$activeTyphoonEvent['title']
                 : 'Closed: no active typhoon advisory'],

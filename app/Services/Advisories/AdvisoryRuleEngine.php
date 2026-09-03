@@ -180,7 +180,7 @@ class AdvisoryRuleEngine
             'advisory_type' => PlantingAdvisory::TYPE_CLIMATE,
             'summary' => "{$label} outlook: No severe iClimate rule was triggered, but farmers should keep monitoring current Lian, Batangas weather.",
             'message' => $this->baselineMessage($metrics, $context),
-            'recommended_action' => 'Continue normal farm planning, check actual field conditions, monitor updated advisories, and follow MAO, LGU, or PAGASA guidance if conditions change.',
+            'recommended_action' => 'Continue normal farm planning, check actual field conditions, monitor updated advisories, and follow MAO, LGU, or PAGASA online guidance if conditions change.',
             'severity' => PlantingAdvisory::SEVERITY_INFORMATION,
             'priority' => 20,
             'target_barangay' => null,
@@ -381,7 +381,7 @@ class AdvisoryRuleEngine
 
     private function disclaimer(): string
     {
-        return 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA or local government warnings during severe weather.';
+        return 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA online advisories or local government warnings during severe weather.';
     }
 
     private function generationPeriodStamp($date, string $horizon): string

@@ -19,7 +19,7 @@ class RunIClimateAutomation extends Command
     protected $signature = 'iclimate:automation-run
         {--force-weather : Force a fresh Open-Meteo request}
         {--force-pagasa : Force fresh PAGASA requests}
-        {--skip-pagasa : Skip PAGASA advisory fetching for this run}';
+        {--skip-pagasa : Skip PAGASA online advisory page fetching for this run}';
 
     protected $description = 'Run the full iClimate automation pipeline for weather, advisories, cleanup, and safety state.';
 
@@ -51,7 +51,7 @@ class RunIClimateAutomation extends Command
         }, $summary);
 
         if (! $this->option('skip-pagasa')) {
-            $summary['steps']['pagasa'] = $this->runStep('PAGASA advisory fetch', function () use ($pagasa) {
+            $summary['steps']['pagasa'] = $this->runStep('PAGASA online advisory fetch', function () use ($pagasa) {
                 return $pagasa->fetchAndStore((bool) $this->option('force-pagasa'));
             }, $summary);
         }
@@ -75,7 +75,7 @@ class RunIClimateAutomation extends Command
             'active_advisories' => PlantingAdvisory::query()->active()->count(),
             'pending_review_advisories' => PlantingAdvisory::query()->pendingReview()->count(),
             'expired_advisories' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_EXPIRED)->count(),
-            'pagasa_advisories' => PlantingAdvisory::query()->where('source', 'PAGASA')->count(),
+            'pagasa_advisories' => PlantingAdvisory::query()->fromPagasaOnline()->count(),
             'typhoon_safety_open' => $activeTyphoonEvent !== null,
         ];
         $summary['finished_at'] = now()->toDateTimeString();
@@ -88,7 +88,7 @@ class RunIClimateAutomation extends Command
 
         $this->table(['Metric', 'Value'], [
             ['Weather records saved', (string) data_get($summary, 'steps.weather.records_saved', 0)],
-            ['PAGASA advisories created', (string) data_get($summary, 'steps.pagasa.advisories_created', 0)],
+            ['PAGASA online advisories created', (string) data_get($summary, 'steps.pagasa.advisories_created', 0)],
             ['Generated advisories created', (string) data_get($summary, 'steps.advisory_generation.advisories_created', 0)],
             ['Expired advisories updated', (string) data_get($summary, 'steps.expiry_cleanup.expired', 0)],
             ['Typhoon safety gate', $activeTyphoonEvent ? 'Open' : 'Closed'],

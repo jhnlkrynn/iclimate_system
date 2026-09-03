@@ -59,8 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFastNavigation();
     bindLoadingForms();
     bindDeleteConfirmations();
+<<<<<<< HEAD
     bindResponsiveCollapse();
     bindChartTabs();
+=======
+    bindStatDrawers();
+>>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 });
 
 function bindNavbarState() {
@@ -224,7 +228,9 @@ function bindLoadingForms() {
         if (form.dataset.loadingBound === 'true') return;
         form.dataset.loadingBound = 'true';
 
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (event) => {
+            if (event.defaultPrevented) return;
+
             if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
                 return;
             }
@@ -302,6 +308,49 @@ function bindLogoutConfirmations() {
     });
 }
 
+function openDrawer(drawer) {
+    if (!drawer) return;
+    drawer.classList.add('show');
+    drawer.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('ic-modal-open');
+}
+
+function closeDrawer(drawer) {
+    if (!drawer) return;
+    drawer.classList.remove('show');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('ic-modal-open');
+}
+
+function bindStatDrawers() {
+    document.querySelectorAll('[data-drawer-open]').forEach((trigger) => {
+        if (trigger.dataset.drawerTriggerBound === 'true') return;
+        trigger.dataset.drawerTriggerBound = 'true';
+
+        trigger.addEventListener('click', () => {
+            openDrawer(document.querySelector(trigger.dataset.drawerOpen));
+        });
+    });
+
+    document.querySelectorAll('.ic-drawer').forEach((drawer) => {
+        if (drawer.dataset.drawerBound === 'true') return;
+        drawer.dataset.drawerBound = 'true';
+
+        drawer.querySelectorAll('[data-drawer-close]').forEach((button) => {
+            button.addEventListener('click', () => closeDrawer(drawer));
+        });
+
+        drawer.addEventListener('click', (event) => {
+            if (event.target === drawer) closeDrawer(drawer);
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        document.querySelectorAll('.ic-drawer.show').forEach((drawer) => closeDrawer(drawer));
+    });
+}
+
 function bindFastNavigation() {
     const progress = document.getElementById('pageProgress');
     const prefetched = new Set();
@@ -354,7 +403,9 @@ function bindFastNavigation() {
         if (form.dataset.fastSubmitBound === 'true') return;
         form.dataset.fastSubmitBound = 'true';
 
-        form.addEventListener('submit', () => {
+        form.addEventListener('submit', (event) => {
+            if (event.defaultPrevented) return;
+
             if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
                 return;
             }
@@ -376,15 +427,26 @@ function bindFastNavigation() {
     window.addEventListener('pageshow', () => {
         progress?.classList.remove('show');
         document.body.classList.remove('ic-page-leaving');
+        document.getElementById('loadingOverlay')?.classList.remove('show');
         document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
+        document.querySelectorAll('button[disabled]').forEach((button) => {
+            if (button.dataset.loadingOriginalText) {
+                button.textContent = button.dataset.loadingOriginalText;
+                delete button.dataset.loadingOriginalText;
+            }
+            button.disabled = false;
+        });
     });
 }
 
 function lockSubmitButtons(form) {
     form.querySelectorAll('button[type="submit"]').forEach((button) => {
         button.disabled = true;
-        if (button.dataset.loadingText) button.textContent = button.dataset.loadingText;
+        if (button.dataset.loadingText) {
+            if (!button.dataset.loadingOriginalText) button.dataset.loadingOriginalText = button.textContent;
+            button.textContent = button.dataset.loadingText;
+        }
     });
 }
 

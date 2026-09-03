@@ -6,9 +6,10 @@ use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Prediction\PredictionEngine;
+use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Process;
 
 class HeatmapRiskService
 {
@@ -37,32 +38,12 @@ class HeatmapRiskService
         'San Diego' => [13.9793000, 120.6118000],
     ];
 
-    private const BARANGAY_EXPOSURE = [
-        'Bagong Pook' => 0.55,
-        'Balibago' => 0.70,
-        'Barangay 1 (Pob.)' => 0.50,
-        'Barangay 2 (Pob.)' => 0.50,
-        'Barangay 3 (Pob.)' => 0.55,
-        'Barangay 4 (Pob.)' => 0.55,
-        'Barangay 5 (Pob.)' => 0.50,
-        'Binubusan' => 0.45,
-        'Bungahan' => 0.65,
-        'Cumba' => 0.80,
-        'Humayingan' => 0.75,
-        'Kapito' => 0.70,
-        'Lumaniag' => 0.55,
-        'Luyahan' => 0.75,
-        'Malaruhatan' => 0.80,
-        'Matabungkay' => 0.90,
-        'Prenza' => 0.65,
-        'Puting-Kahoy' => 0.75,
-        'San Diego' => 0.85,
-    ];
-
     public function __construct(
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly WeatherApiService $weatherApi,
         private readonly DecisionSupportService $decisionSupport,
+        private readonly AgriculturalRiskScorer $riskScorer,
+        private readonly PredictionEngine $predictionEngine,
     ) {}
 
     public function refresh(): void
@@ -104,22 +85,22 @@ class HeatmapRiskService
                 'barangay' => $barangay,
                 'farm_type' => $farmType,
                 'rainfall' => $rainfall,
+                'temperature' => $temperature,
                 'wind_speed' => $weather['wind_speed'],
                 'humidity' => $weather['humidity'],
                 'season' => $season,
                 'predicted_yield' => $yield,
             ]);
-            $riskScore = $this->agriculturalRiskScore($barangay, $rainfall, $temperature, $yield, $farmType, $decision);
 
             $updates = [
-                'risk_level' => $this->riskLevelFromScore($riskScore),
+                'risk_level' => $decision['risk']['level'],
                 'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
-                'risk_score' => $riskScore,
+                'risk_score' => $decision['risk']['score'],
                 'predicted_yield' => $yield,
                 'rainfall_status' => $this->rainfallStatus($rainfall),
                 'planting_advisory' => $decision['planting']['recommendation'],
                 'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-                'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
+                'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
             ];
 
             if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
@@ -275,95 +256,51 @@ class HeatmapRiskService
         ];
     }
 
+    /**
+     * Delegates to PredictionEngine::requestYieldFromModel() — the same model
+     * call and rounding used by the AI Assistant and System Prediction page —
+     * so a barangay's heatmap yield never diverges from what those features
+     * would compute for the same inputs. Falls back to the barangay's stored
+     * production average (handled by the caller) if the model can't be reached.
+     */
     private function predictedYieldForBarangay(array $weather, ?RiceProduction $production, string $farmType, string $season): ?float
     {
-        $scriptPath = base_path('python_scripts/predict.py');
-        $modelPath = storage_path('models/rice_yield_model_final.pkl');
-
-        if (! file_exists($scriptPath) || ! file_exists($modelPath)) {
-            return null;
-        }
-
         $area = (float) ($production?->area_hectares ?? 1);
 
         if ($area <= 0) {
             $area = 1;
         }
 
-        $payload = [
+        $modelInput = [
             'rainfall' => (float) $weather['rainfall'],
             'temp_avg' => (float) $weather['temperature'],
             'temp_range' => max(1, abs((float) $weather['temperature'] - (float) $weather['previous_temp'])),
             'area' => $area,
             'previous_rainfall' => (float) $weather['previous_rainfall'],
             'previous_temp' => (float) $weather['previous_temp'],
+            'previous_humidity' => (float) ($weather['humidity'] ?? 0),
+            'previous_wind_speed' => (float) ($weather['wind_speed'] ?? 0),
             'rainfall_6m' => (float) $weather['rainfall_6m'],
             'temp_3m' => (float) $weather['temp_3m'],
             'temp_6m' => (float) $weather['temp_6m'],
             'seasonal_rainfall' => (float) $weather['seasonal_rainfall'],
             'seasonal_temp' => (float) $weather['seasonal_temp'],
+            'humidity' => (float) ($weather['humidity'] ?? 0),
+            'wind_speed' => (float) ($weather['wind_speed'] ?? 0),
             'season' => in_array($season, [ClimateRecord::SEASON_WET, ClimateRecord::SEASON_DRY], true) ? $season : ClimateRecord::SEASON_WET,
             'farm_type' => $farmType,
+            'month_num' => (int) CarbonImmutable::now()->addMonthNoOverflow()->format('n'),
         ];
 
-        $memoKey = md5(json_encode($payload));
+        $memoKey = md5(json_encode($modelInput));
 
         if (array_key_exists($memoKey, $this->yieldPredictionMemo)) {
             return $this->yieldPredictionMemo[$memoKey];
         }
 
-        $process = Process::timeout(20)
-            ->env($this->pythonEnvironment())
-            ->run([
-                $this->pythonBinary(),
-                $scriptPath,
-                json_encode($payload),
-            ]);
+        [$yield] = $this->predictionEngine->requestYieldFromModel($modelInput);
 
-        if (! $process->successful()) {
-            $this->yieldPredictionMemo[$memoKey] = null;
-
-            return null;
-        }
-
-        $result = json_decode($process->output(), true);
-
-        if (! is_array($result) || ! isset($result['predicted_yield']) || ! is_numeric($result['predicted_yield'])) {
-            $this->yieldPredictionMemo[$memoKey] = null;
-
-            return null;
-        }
-
-        return $this->yieldPredictionMemo[$memoKey] = round((float) $result['predicted_yield'], 2);
-    }
-
-    private function pythonBinary(): string
-    {
-        $configured = env('PYTHON_BINARY');
-
-        if (is_string($configured) && $configured !== '') {
-            return $configured;
-        }
-
-        $windowsPython = 'C:\\Users\\Luke\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe';
-
-        return file_exists($windowsPython) ? $windowsPython : 'python';
-    }
-
-    private function pythonEnvironment(): array
-    {
-        $systemRoot = getenv('SystemRoot') ?: getenv('SYSTEMROOT') ?: 'C:\\WINDOWS';
-        $path = getenv('PATH') ?: getenv('Path') ?: '';
-
-        return [
-            'SystemRoot' => $systemRoot,
-            'SYSTEMROOT' => $systemRoot,
-            'WINDIR' => getenv('WINDIR') ?: $systemRoot,
-            'Path' => $path,
-            'PATH' => $path,
-            'PYTHONIOENCODING' => 'utf-8',
-            'PYTHONUTF8' => '1',
-        ];
+        return $this->yieldPredictionMemo[$memoKey] = $yield['predicted_yield'] ?? null;
     }
 
     private function weightedAverage(array $values): float
@@ -383,6 +320,10 @@ class HeatmapRiskService
         return round($weighted / max($totalWeight, 0.0001), 2);
     }
 
+    /**
+     * Cosmetic display chip only — intentionally separate from the shared
+     * risk formula in AgriculturalRiskScorer, not used in any risk scoring.
+     */
     private function rainfallStatus(float $rainfall): string
     {
         return $rainfall < 100 ? 'Low rainfall' : ($rainfall > 250 ? 'High rainfall' : 'Adequate rainfall');
@@ -412,75 +353,4 @@ class HeatmapRiskService
         return $temperature >= 32 ? 'Heat' : 'Drought';
     }
 
-    private function mapRiskScore(array $decision): float
-    {
-        $score = round(1 - ((float) $decision['score']['value'] / 100), 2);
-
-        return match ($decision['risk']['level']) {
-            'High', 'Severe' => max(0.75, $score),
-            'Moderate' => max(0.50, min(0.74, $score)),
-            default => min(0.49, $score),
-        };
-    }
-
-    private function agriculturalRiskScore(string $barangay, float $rainfall, float $temperature, ?float $yield, string $farmType, array $decision): float
-    {
-        $rainfallRisk = match (true) {
-            $rainfall <= 0 => 0.60,
-            $rainfall < 80 => 0.95,
-            $rainfall < 120 => 0.75,
-            $rainfall <= 280 => 0.22,
-            $rainfall <= 350 => 0.62,
-            default => 0.92,
-        };
-
-        $yieldRisk = match (true) {
-            $yield === null => 0.55,
-            $yield < 2 => 0.95,
-            $yield < 3 => 0.78,
-            $yield < 4 => 0.48,
-            default => 0.18,
-        };
-
-        $temperatureRisk = match (true) {
-            $temperature >= 35 => 0.86,
-            $temperature >= 32 => 0.64,
-            $temperature < 22 && $temperature > 0 => 0.52,
-            default => 0.24,
-        };
-
-        $exposure = self::BARANGAY_EXPOSURE[$barangay] ?? 0.55;
-        $farmExposure = strtolower($farmType) === 'rainfed' ? 0.10 : 0.03;
-        $stressPenalty = min(0.12, count($decision['stress_factors'] ?? []) * 0.025);
-
-        $score = ($rainfallRisk * 0.34)
-            + ($yieldRisk * 0.27)
-            + ($temperatureRisk * 0.14)
-            + ($exposure * 0.18)
-            + $farmExposure
-            + $stressPenalty;
-
-        return round(max(0.05, min(0.98, $score)), 2);
-    }
-
-    private function riskLevelFromScore(float $score): string
-    {
-        return match (true) {
-            $score >= 0.85 => 'Severe',
-            $score >= 0.68 => 'High',
-            $score >= 0.45 => 'Moderate',
-            default => 'Low',
-        };
-    }
-
-    private function exposureLabel(string $barangay): string
-    {
-        $exposure = self::BARANGAY_EXPOSURE[$barangay] ?? 0.55;
-
-        return match (true) {
-            $exposure >= 0.80 => 'high',
-            $exposure >= 0.60 => 'moderate',
-            default => 'low',
-        };
-    }
 }

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->decimal('humidity', 5, 2)->nullable();
             $table->decimal('wind_speed', 6, 2)->nullable();
             $table->enum('season', ['Wet', 'Dry'])->index();
-            $table->string('source')->default('PAGASA');
+            $table->string('source')->default('PAGASA Historical Climate Record');
             $table->timestamps();
         });
     }

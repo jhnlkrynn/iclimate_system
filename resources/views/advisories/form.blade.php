@@ -4,7 +4,7 @@
             <div>
                 <div class="eyebrow mb-2">Advisory Editor</div>
                 <h1 class="h2 fw-bold mb-2">{{ $advisory->exists ? 'Edit Advisory' : 'Create Advisory' }}</h1>
-                <p class="mb-0 text-white-50">Manual MAO-reviewed advisories can be used alongside generated guidance.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Manual MAO-reviewed advisories can be used alongside generated guidance.</p>
             </div>
             <a class="btn btn-outline-light" href="{{ route('planting-advisories.index') }}">Back</a>
         </div>
