@@ -54,6 +54,8 @@
         .unsend-submit { background:#d85b45; color:#fff; box-shadow:0 .75rem 1.45rem rgba(216,91,69,.22); }
         .msg-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
         .msg-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
+        .msg-back-link { display:none; align-items:center; gap:.4rem; color:#74c69d; font-weight:700; text-decoration:none; font-size:.85rem; margin-bottom:.5rem; }
+        .msg-back-link:hover { color:#9be5ba; }
         @media (max-width:1199.98px) {
             .msg-shell { grid-template-columns:1fr; min-height:auto; }
             .msg-panel { min-height:auto; }
@@ -69,6 +71,9 @@
             .msg-compose { padding:.75rem; }
             .msg-compose .row > * { width:100%; }
             .msg-empty { min-height:300px; padding:1.25rem; }
+            /* On phones, an open conversation replaces the thread list instead of stacking below it. */
+            .msg-shell.has-active aside.msg-panel { display:none; }
+            .msg-back-link { display:inline-flex; }
         }
         @media (max-width:420px) {
             .msg-hero { border-radius:18px; }
@@ -97,7 +102,7 @@
             <div class="alert alert-success mt-3">{{ session('success') }}</div>
         @endif
 
-        <div class="msg-shell">
+        <div class="msg-shell {{ $activeConversation ? 'has-active' : '' }}">
             <aside class="msg-panel">
                 <div class="msg-head">
                     <div class="msg-eyebrow" style="color:#74c69d;">Start a thread</div>
@@ -150,6 +155,7 @@
                 @if($activeConversation)
                     @php($other = $activeConversation->otherParticipant(auth()->user()))
                     <div class="msg-head">
+                        <a class="msg-back-link" href="{{ route('messages.index') }}">&larr; Back to Messages</a>
                         <div class="d-flex gap-2 align-items-center">
                             <div class="avatar">{{ str($other?->name ?? 'U')->substr(0, 1)->upper() }}</div>
                             <div>

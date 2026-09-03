@@ -193,7 +193,7 @@
             </form>
         </div>
     </div>
-    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName }} assistant">PP</button>
+    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName ?? 'PalayPilot' }} assistant">PP</button>
 </div>
 
 <script>

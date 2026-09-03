@@ -256,6 +256,11 @@
                 </div>
             </div>
         @endif
+        @else
+        <div class="alert alert-warning shadow-sm mb-0">
+            <strong>Prediction Unavailable.</strong>
+            A validated prediction cannot be generated until the required historical climate and rice-production dataset is available.
+        </div>
         @endif
     </div>
     </div>

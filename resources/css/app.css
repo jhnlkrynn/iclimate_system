@@ -717,3 +717,201 @@ textarea {
         width: 100%;
     }
 }
+
+/* -- iClimate mobile compaction: collapsible secondary content -------- */
+.ic-collapse {
+    margin-bottom: 1rem;
+}
+
+.ic-collapse > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    list-style: none;
+    cursor: pointer;
+    padding: .75rem 1rem;
+    border: 1px solid var(--iclimate-border);
+    border-radius: var(--iclimate-radius-md);
+    background: var(--iclimate-green-50);
+    color: var(--iclimate-text);
+    font-weight: 700;
+    font-size: .92rem;
+    margin-bottom: .75rem;
+}
+
+.ic-collapse > summary::-webkit-details-marker {
+    display: none;
+}
+
+.ic-collapse > summary::after {
+    content: "Show";
+    flex: 0 0 auto;
+    font-size: .7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--iclimate-green-700);
+    white-space: nowrap;
+}
+
+.ic-collapse[open] > summary::after {
+    content: "Hide";
+}
+
+.ic-collapse-title {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.ic-collapse-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 .4rem;
+    border-radius: 999px;
+    background: var(--iclimate-green-500);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 800;
+    flex: 0 0 auto;
+}
+
+.dark-workspace .ic-collapse > summary,
+.farmer-console .ic-collapse > summary,
+.mao-console .ic-collapse > summary,
+.it-console .ic-collapse > summary,
+.report-page .ic-collapse > summary,
+.feed-wrap .ic-collapse > summary,
+.ai-shell-page .ic-collapse > summary {
+    background: rgba(255, 255, 255, .04);
+    border-color: rgba(255, 255, 255, .14);
+    color: #fff;
+}
+
+/* -- iClimate mobile compaction: table -> card list on small screens -- */
+.ic-table-cards {
+    display: none;
+    gap: .75rem;
+}
+
+.ic-table-card {
+    border: 1px solid var(--iclimate-border);
+    border-radius: var(--iclimate-radius-sm);
+    background: var(--iclimate-surface);
+    padding: .9rem;
+}
+
+.ic-table-card-row {
+    display: grid;
+    grid-template-columns: minmax(110px, .42fr) minmax(0, 1fr);
+    gap: .75rem;
+    padding: .4rem 0;
+}
+
+.ic-table-card-row + .ic-table-card-row {
+    border-top: 1px solid var(--iclimate-border);
+}
+
+.ic-table-card-label {
+    color: var(--iclimate-muted);
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ic-table-card-value {
+    color: var(--iclimate-text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.ic-table-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .6rem;
+}
+
+.ic-table-card-actions form {
+    flex: 1 1 auto;
+}
+
+.ic-table-card-actions .btn {
+    width: 100%;
+}
+
+.dark-workspace .ic-table-card,
+.report-page .ic-table-card {
+    background: var(--ic-green-950, #0D1F18);
+    border-color: rgba(255, 255, 255, .12);
+}
+
+.dark-workspace .ic-table-card-label,
+.report-page .ic-table-card-label {
+    color: rgba(255, 255, 255, .5);
+}
+
+.dark-workspace .ic-table-card-value,
+.report-page .ic-table-card-value {
+    color: #fff;
+}
+
+.dark-workspace .ic-table-card-row + .ic-table-card-row,
+.report-page .ic-table-card-row + .ic-table-card-row {
+    border-top-color: rgba(255, 255, 255, .1);
+}
+
+@media (max-width: 767.98px) {
+    .ic-table-hide-mobile {
+        display: none !important;
+    }
+
+    .ic-table-cards {
+        display: grid;
+    }
+}
+
+/* -- iClimate mobile compaction: one chart at a time on small screens - */
+.ic-chart-tabs {
+    display: none;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: .75rem;
+}
+
+.ic-chart-tab {
+    border: 1px solid var(--iclimate-border);
+    background: var(--iclimate-surface);
+    color: var(--iclimate-muted);
+    border-radius: 999px;
+    padding: .4rem .85rem;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ic-chart-tab.active {
+    background: var(--iclimate-green-500);
+    border-color: var(--iclimate-green-500);
+    color: #fff;
+}
+
+.dark-workspace .ic-chart-tab,
+.mao-console .ic-chart-tab {
+    background: rgba(255, 255, 255, .04);
+    border-color: rgba(255, 255, 255, .14);
+    color: rgba(255, 255, 255, .7);
+}
+
+@media (max-width: 767.98px) {
+    .ic-chart-tabs {
+        display: flex;
+    }
+}

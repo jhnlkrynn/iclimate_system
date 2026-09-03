@@ -103,6 +103,15 @@
             </div>
 
             <div class="col-xl-4">
+                <details class="ic-collapse">
+                    <summary>
+                        <span class="ic-collapse-title">
+                            Upcoming
+                            @if($upcoming->count())
+                                <span class="ic-collapse-count">{{ $upcoming->count() }}</span>
+                            @endif
+                        </span>
+                    </summary>
                 <div class="card no-lift h-100 upcoming-card">
                     <div class="card-header border-0 py-3">
                         <div class="fw-semibold">Upcoming</div>
@@ -131,6 +140,7 @@
                         @endif
                     </div>
                 </div>
+                </details>
             </div>
         </div>
     </div>

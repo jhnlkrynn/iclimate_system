@@ -22,32 +22,46 @@
         </div>
     </section>
 
-    <div class="card filter-panel no-lift mb-4">
-        <div class="card-body">
-            <form class="row g-3 align-items-end" method="GET" data-loading="true">
-                <div class="col-lg-{{ $filterable ? '4' : '8' }}">
-                    <label class="form-label fw-semibold">Search</label>
-                    <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search {{ strtolower($title) }} records">
-                </div>
-                @foreach ($filterable as $field => $options)
-                    <div class="col-sm-6 col-lg-3">
-                        <label class="form-label fw-semibold">{{ \Illuminate\Support\Str::headline($field) }}</label>
-                        <select class="form-select form-select-lg" name="{{ $field }}">
-                            <option value="">All</option>
-                            @foreach ($options as $value => $label)
-                                @php $actual = is_int($value) ? $value : $value; @endphp
-                                <option value="{{ $actual }}" @selected((string) request($field) === (string) $actual)>{{ $label }}</option>
-                            @endforeach
-                        </select>
+    @php
+        $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
+            + collect(array_keys($filterable))->filter(fn ($field) => request()->filled($field))->count();
+    @endphp
+    <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
+        <summary>
+            <span class="ic-collapse-title">
+                Filters
+                @if($activeFilterCount)
+                    <span class="ic-collapse-count">{{ $activeFilterCount }}</span>
+                @endif
+            </span>
+        </summary>
+        <div class="card filter-panel no-lift mb-4">
+            <div class="card-body">
+                <form class="row g-3 align-items-end" method="GET" data-loading="true">
+                    <div class="col-lg-{{ $filterable ? '4' : '8' }}">
+                        <label class="form-label fw-semibold">Search</label>
+                        <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search {{ strtolower($title) }} records">
                     </div>
-                @endforeach
-                <div class="col-lg-auto d-flex gap-2">
-                    <button class="btn btn-outline-primary btn-lg" type="submit" data-loading-text="Filtering...">Apply</button>
-                    <a class="btn btn-outline-secondary btn-lg" href="{{ route($routeName.'.index') }}">Reset</a>
-                </div>
-            </form>
+                    @foreach ($filterable as $field => $options)
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label fw-semibold">{{ \Illuminate\Support\Str::headline($field) }}</label>
+                            <select class="form-select form-select-lg" name="{{ $field }}">
+                                <option value="">All</option>
+                                @foreach ($options as $value => $label)
+                                    @php $actual = is_int($value) ? $value : $value; @endphp
+                                    <option value="{{ $actual }}" @selected((string) request($field) === (string) $actual)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endforeach
+                    <div class="col-lg-auto d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-lg" type="submit" data-loading-text="Filtering...">Apply</button>
+                        <a class="btn btn-outline-secondary btn-lg" href="{{ route($routeName.'.index') }}">Reset</a>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    </details>
 
     <div class="card no-lift">
         <div class="card-header border-0 d-flex flex-column flex-md-row justify-content-between gap-2 py-3">
@@ -55,7 +69,7 @@
             <div class="small text-muted">Showing {{ $records->firstItem() ?? 0 }}-{{ $records->lastItem() ?? 0 }} of {{ $records->total() }}</div>
         </div>
         @if ($records->count())
-            <div class="table-responsive">
+            <div class="table-responsive ic-table-hide-mobile">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
@@ -99,6 +113,42 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <div class="card-body ic-table-cards">
+                @foreach ($records as $record)
+                    <div class="ic-table-card">
+                        @foreach ($columns as $field => $label)
+                            <div class="ic-table-card-row">
+                                <div class="ic-table-card-label">{{ $label }}</div>
+                                <div class="ic-table-card-value">
+                                    @if ($field === 'is_read')
+                                        <span class="badge text-bg-{{ $record->is_read ? 'success' : 'warning' }}">{{ $record->is_read ? 'Read' : 'Unread' }}</span>
+                                    @else
+                                        {{ data_get($record, $field) }}
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                        <div class="ic-table-card-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}">View</a>
+                            @if ($routeName === 'notifications' && ! $record->is_read)
+                                <form method="POST" action="{{ route('notifications.mark-read', $record) }}" data-loading="true">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button class="btn btn-sm btn-outline-success" type="submit" data-loading-text="Updating...">Mark Read</button>
+                                </form>
+                            @endif
+                            @if ($canManage)
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
+                                <form method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" onsubmit="return confirm('Delete this record? This action cannot be undone.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Deleting...">Delete</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
             <div class="card-body border-top d-flex justify-content-center justify-content-md-end">
                 {{ $records->links() }}

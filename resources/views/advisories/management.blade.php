@@ -26,21 +26,36 @@
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Last API Update</div><div class="h6 fw-bold mt-2">{{ $lastWeather?->fetched_at?->format('M d, Y g:i A') ?? 'None' }}</div>@if($lastWeather)<span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }}">{{ str($lastWeather->freshnessLabel())->headline() }}</span>@endif</div></div></div>
     </div>
 
-    <div class="card filter-panel no-lift mb-4">
-        <div class="card-body">
-            <form class="row g-3 align-items-end" method="GET">
-                <div class="col-lg-3"><label class="form-label">Search</label><input class="form-control form-control-lg" name="search" value="{{ request('search') }}"></div>
-                <div class="col-sm-6 col-lg-2"><label class="form-label">Type</label><select class="form-select form-select-lg" name="advisory_type"><option value="">All</option>@foreach($types as $type)<option value="{{ $type }}" @selected(request('advisory_type') === $type)>{{ str($type)->headline() }}</option>@endforeach</select></div>
-                <div class="col-sm-6 col-lg-2"><label class="form-label">Status</label><select class="form-select form-select-lg" name="status"><option value="">All</option>@foreach($statuses as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>@endforeach</select></div>
-                <div class="col-sm-6 col-lg-2"><label class="form-label">Severity</label><select class="form-select form-select-lg" name="severity"><option value="">All</option>@foreach($severities as $severity)<option value="{{ $severity }}" @selected(request('severity') === $severity)>{{ str($severity)->headline() }}</option>@endforeach</select></div>
-                <div class="col-lg-auto d-flex gap-2"><button class="btn btn-outline-primary btn-lg">Apply</button><a class="btn btn-outline-secondary btn-lg" href="{{ route('management.advisories.index') }}">Reset</a></div>
-            </form>
+    @php
+        $activeFilterCount = collect(['search', 'advisory_type', 'status', 'severity'])
+            ->filter(fn ($field) => request()->filled($field))
+            ->count();
+    @endphp
+    <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
+        <summary>
+            <span class="ic-collapse-title">
+                Filters
+                @if($activeFilterCount)
+                    <span class="ic-collapse-count">{{ $activeFilterCount }}</span>
+                @endif
+            </span>
+        </summary>
+        <div class="card filter-panel no-lift mb-4">
+            <div class="card-body">
+                <form class="row g-3 align-items-end" method="GET">
+                    <div class="col-lg-3"><label class="form-label">Search</label><input class="form-control form-control-lg" name="search" value="{{ request('search') }}"></div>
+                    <div class="col-sm-6 col-lg-2"><label class="form-label">Type</label><select class="form-select form-select-lg" name="advisory_type"><option value="">All</option>@foreach($types as $type)<option value="{{ $type }}" @selected(request('advisory_type') === $type)>{{ str($type)->headline() }}</option>@endforeach</select></div>
+                    <div class="col-sm-6 col-lg-2"><label class="form-label">Status</label><select class="form-select form-select-lg" name="status"><option value="">All</option>@foreach($statuses as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>@endforeach</select></div>
+                    <div class="col-sm-6 col-lg-2"><label class="form-label">Severity</label><select class="form-select form-select-lg" name="severity"><option value="">All</option>@foreach($severities as $severity)<option value="{{ $severity }}" @selected(request('severity') === $severity)>{{ str($severity)->headline() }}</option>@endforeach</select></div>
+                    <div class="col-lg-auto d-flex gap-2"><button class="btn btn-outline-primary btn-lg">Apply</button><a class="btn btn-outline-secondary btn-lg" href="{{ route('management.advisories.index') }}">Reset</a></div>
+                </form>
+            </div>
         </div>
-    </div>
+    </details>
 
     <div class="card no-lift">
         @if($advisories->count())
-            <div class="table-responsive">
+            <div class="table-responsive ic-table-hide-mobile">
                 <table class="table table-hover align-middle mb-0">
                     <thead><tr><th>Title</th><th>Type</th><th>Window</th><th>Severity</th><th>Target</th><th>Status</th><th>Valid Until</th><th class="text-end">Actions</th></tr></thead>
                     <tbody>
@@ -68,6 +83,30 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <div class="card-body ic-table-cards">
+                @foreach($advisories as $advisory)
+                    <div class="ic-table-card">
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->summary }}</div></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Type</div><div class="ic-table-card-value"><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Window</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Severity</div><div class="ic-table-card-value"><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Target</div><div class="ic-table-card-value">{{ $advisory->targetLabel() }}</div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Status</div><div class="ic-table-card-value"><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Valid Until</div><div class="ic-table-card-value">{{ $advisory->valid_until?->format('M d, Y g:i A') }}</div></div>
+                        <div class="ic-table-card-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('planting-advisories.edit', $advisory) }}">Edit</a>
+                            @if($advisory->status === 'pending_review')
+                                <form method="POST" action="{{ route('management.advisories.approve', $advisory) }}" data-loading="true" onsubmit="return confirm('Publish this advisory?');">@csrf<button class="btn btn-sm btn-outline-success" data-loading-text="Publishing...">Approve</button></form>
+                                <form method="POST" action="{{ route('management.advisories.reject', $advisory) }}" data-loading="true" onsubmit="const reason = prompt('Reason for rejection?'); if (!reason) return false; this.querySelector('[name=rejection_reason]').value = reason; return true;">@csrf<input type="hidden" name="rejection_reason"><button class="btn btn-sm btn-outline-danger" data-loading-text="Rejecting...">Reject</button></form>
+                            @endif
+                            @if(! in_array($advisory->status, ['archived', 'expired'], true))
+                                <form method="POST" action="{{ route('management.advisories.archive', $advisory) }}" data-loading="true" onsubmit="return confirm('Archive this advisory?');">@csrf<button class="btn btn-sm btn-outline-dark" data-loading-text="Archiving...">Archive</button></form>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
             <div class="card-body border-top d-flex justify-content-end">{{ $advisories->links() }}</div>
         @else

@@ -60,9 +60,10 @@
                 </div>
             </div>
 
+            <details class="ic-collapse">
+                <summary><span class="ic-collapse-title">Weather Basis</span></summary>
             <div class="card no-lift">
                 <div class="card-body">
-                    <h2 class="h5">Weather Basis</h2>
                     @php($basis = $advisory->metadata['weather_basis'] ?? [])
                     <dl class="row mb-0 details-list g-3">
                         <dt class="col-sm-4">Expected rainfall</dt><dd class="col-sm-8">{{ data_get($basis, 'expected_rainfall_mm', 'N/A') }} mm</dd>
@@ -73,12 +74,14 @@
                     </dl>
                 </div>
             </div>
+            </details>
         </div>
 
         <div class="col-lg-4">
+            <details class="ic-collapse">
+                <summary><span class="ic-collapse-title">Location and Source</span></summary>
             <div class="card no-lift mb-4">
                 <div class="card-body">
-                    <h2 class="h5">Location and Source</h2>
                     <div class="details-list">
                         <dt>Target location</dt><dd>{{ $advisory->targetLabel() }}</dd>
                         <dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>
@@ -89,6 +92,7 @@
                     </div>
                 </div>
             </div>
+            </details>
             <div class="alert alert-warning shadow-sm">
                 <strong>Disclaimer.</strong>
                 {{ $advisory->metadata['disclaimer'] ?? 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA or local government warnings during severe weather.' }}
