@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class FarmerProfile extends Model
 {
@@ -16,6 +17,7 @@ class FarmerProfile extends Model
 
     protected $fillable = [
         'user_id',
+        'farmer_organization_id',
         'full_name',
         'contact_number',
         'address',
@@ -31,5 +33,15 @@ class FarmerProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function farmerOrganization(): BelongsTo
+    {
+        return $this->belongsTo(FarmerOrganization::class);
+    }
+
+    public function farmBoundary(): HasOne
+    {
+        return $this->hasOne(FarmBoundary::class);
     }
 }

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Figure 6. Use Case Diagram</title>
+  <desc id="desc">Diagram for the iClimate web-based decision-support platform.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 14 5 L 0 10 z" fill="#37474f"/>
+    </marker>
+    <style>
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 34px; font-weight: 700; fill: #1b1b1b; }
+      .subtitle { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #455a64; }
+      .box-title { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 700; fill: #1b1b1b; }
+      .box-line { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #263238; }
+      .edge-label { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #263238; }
+      .note { font-family: Arial, Helvetica, sans-serif; font-size: 17px; fill: #455a64; }
+      .phase { font-family: Arial, Helvetica, sans-serif; font-size: 19px; font-weight: 700; fill: #1b1b1b; }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <text x="800.0" y="54" text-anchor="middle" class="title">Figure 6. Use Case Diagram</text>
+  <line x1="320" y1="330" x2="520" y2="386" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="320" y1="599" x2="520" y2="543" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1280" y1="330" x2="1080" y2="386" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<line x1="1280" y1="599" x2="1080" y2="543" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="1065" y="547" width="230" height="30" rx="8" fill="#ffffff" stroke="#cfd8dc"/>
+<text x="1180" y="567" text-anchor="middle" class="edge-label">supplies data</text>
+  <rect x="70" y="170" width="250" height="250" rx="12" fill="#fce4ec" stroke="#ad1457" stroke-width="3"/>
+<text x="195.0" y="204" text-anchor="middle" class="box-title">Farmer</text>
+<text x="195.0" y="238" text-anchor="middle" class="box-line">View dashboard</text>
+<text x="195.0" y="267" text-anchor="middle" class="box-line">View forecasts</text>
+<text x="195.0" y="296" text-anchor="middle" class="box-line">Request prediction</text>
+<text x="195.0" y="325" text-anchor="middle" class="box-line">Read advisories</text>
+<text x="195.0" y="354" text-anchor="middle" class="box-line">Use AI assistant</text>
+<rect x="70" y="510" width="250" height="250" rx="12" fill="#fce4ec" stroke="#ad1457" stroke-width="3"/>
+<text x="195.0" y="544" text-anchor="middle" class="box-title">MAO Personnel</text>
+<text x="195.0" y="578" text-anchor="middle" class="box-line">Manage records</text>
+<text x="195.0" y="607" text-anchor="middle" class="box-line">Approve advisories</text>
+<text x="195.0" y="636" text-anchor="middle" class="box-line">Generate reports</text>
+<text x="195.0" y="665" text-anchor="middle" class="box-line">Post updates</text>
+<rect x="1280" y="170" width="250" height="250" rx="12" fill="#fce4ec" stroke="#ad1457" stroke-width="3"/>
+<text x="1405.0" y="204" text-anchor="middle" class="box-title">IT Expert/Admin</text>
+<text x="1405.0" y="238" text-anchor="middle" class="box-line">Manage users</text>
+<text x="1405.0" y="267" text-anchor="middle" class="box-line">View logs</text>
+<text x="1405.0" y="296" text-anchor="middle" class="box-line">Evaluate model</text>
+<text x="1405.0" y="325" text-anchor="middle" class="box-line">Monitor system</text>
+<rect x="1280" y="510" width="250" height="250" rx="12" fill="#eceff1" stroke="#455a64" stroke-width="3"/>
+<text x="1405.0" y="544" text-anchor="middle" class="box-title">External Services</text>
+<text x="1405.0" y="578" text-anchor="middle" class="box-line">Weather data</text>
+<text x="1405.0" y="607" text-anchor="middle" class="box-line">Advisory data</text>
+<text x="1405.0" y="636" text-anchor="middle" class="box-line">AI response</text>
+<rect x="520" y="120" width="560" height="690" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="3"/>
+<text x="800.0" y="154" text-anchor="middle" class="box-title">iClimate Use Cases</text>
+<text x="800.0" y="188" text-anchor="middle" class="box-line">Authenticate user</text>
+<text x="800.0" y="217" text-anchor="middle" class="box-line">Manage farmer profiles</text>
+<text x="800.0" y="246" text-anchor="middle" class="box-line">Manage climate/rice records</text>
+<text x="800.0" y="275" text-anchor="middle" class="box-line">Forecast weather</text>
+<text x="800.0" y="304" text-anchor="middle" class="box-line">Predict rice yield</text>
+<text x="800.0" y="333" text-anchor="middle" class="box-line">Generate planting advisories</text>
+<text x="800.0" y="362" text-anchor="middle" class="box-line">Display risk heat map</text>
+<text x="800.0" y="391" text-anchor="middle" class="box-line">Generate reports</text>
+<text x="800.0" y="420" text-anchor="middle" class="box-line">Send notifications</text>
+<text x="800.0" y="449" text-anchor="middle" class="box-line">Support messages/feed</text>
+  
+</svg>

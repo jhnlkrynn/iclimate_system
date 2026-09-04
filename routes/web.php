@@ -7,14 +7,15 @@ use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmerProfileController;
+use App\Http\Controllers\FarmBoundaryController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
-use App\Http\Controllers\ModelEvaluationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
@@ -44,6 +45,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/farmer/dashboard/weather', [DashboardController::class, 'farmerWeather'])
         ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
         ->name('farmer.dashboard.weather');
+
+    Route::middleware('role:'.User::ROLE_FARMER)->group(function () {
+        Route::get('/farmer/boundary', [FarmBoundaryController::class, 'edit'])
+            ->name('farmer.boundary.edit');
+        Route::put('/farmer/boundary', [FarmBoundaryController::class, 'update'])
+            ->middleware('throttle:10,1')
+            ->name('farmer.boundary.update');
+        Route::delete('/farmer/boundary', [FarmBoundaryController::class, 'destroy'])
+            ->name('farmer.boundary.destroy');
+    });
+
+    Route::get('/api/weather/live', [DashboardController::class, 'liveWeather'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
+        ->name('api.weather.live');
 
     Route::get('/mao/dashboard', [DashboardController::class, 'mao'])
         ->middleware('role:'.User::ROLE_MAO)
@@ -202,16 +217,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             [WeatherPredictionController::class, 'index']
         )->name('weather-predictions.index');
 
-        Route::get(
-            'model-evaluation',
-            [ModelEvaluationController::class, 'index']
-        )->middleware('role:'.User::ROLE_IT_EXPERT)
-            ->name('model-evaluation.index');
-
         Route::post(
             'weather-predictions/predict',
             [WeatherPredictionController::class, 'predict']
         )->middleware('throttle:20,1')->name('weather-predictions.predict');
+
+        Route::post(
+            'rice-yield-predictions/predict',
+            [RiceYieldPredictionController::class, 'predict']
+        )->middleware('throttle:20,1')->name('rice-yield-predictions.predict');
 
         Route::get(
             'live-forecasting',

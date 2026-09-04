@@ -3,14 +3,14 @@
         .mao-console {
             --mao-ink: #1F2937;
             --mao-muted: #64748B;
-            --mao-green: #1F4D3A;
-            --mao-blue: #1677b8;
-            --mao-gold: #E8A73D;
-            --mao-gold-dark: #C6872A;
-            --mao-red: #d85b45;
-            --mao-mint: #7FD6B5;
-            --mao-soft-gold: #F6D58A;
-            --mao-line: #5F8F78;
+            --mao-green: #1F5A46;
+            --mao-blue: #4B7185;
+            --mao-accent: #8FAF9A;
+            --mao-accent-dark: #6F8978;
+            --mao-red: #B84A4A;
+            --mao-mint: #C9D8CE;
+            --mao-accent-light: #C9D8CE;
+            --mao-line: #D8E0DA;
             --mao-green-50: rgba(95,143,120,.1);
             --mao-green-100: rgba(127,214,181,.22);
             color: var(--mao-ink);
@@ -21,10 +21,10 @@
         /* -- Buttons unified with landing/farmer pill style -- */
         .mao-console .btn { border-radius: 999px !important; font-weight: 600 !important; letter-spacing: .01em; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
         .mao-console .btn-primary, .mao-console .btn-light {
-            background: var(--mao-gold) !important; border-color: var(--mao-gold) !important; color: #1F2937 !important;
-            box-shadow: 0 10px 24px rgba(232,167,61,.28);
+            background: var(--mao-green) !important; border-color: var(--mao-green) !important; color: #fff !important;
+            box-shadow: none;
         }
-        .mao-console .btn-primary:hover, .mao-console .btn-light:hover { background: var(--mao-gold-dark) !important; border-color: var(--mao-gold-dark) !important; transform: translateY(-1px); }
+        .mao-console .btn-primary:hover, .mao-console .btn-light:hover { background: #123F32 !important; border-color: #123F32 !important; color: #fff !important; transform: translateY(-1px); }
         .mao-console .btn-outline-light { border-color: rgba(255,255,255,.55) !important; color: #fff !important; background: transparent !important; }
         .mao-console .btn-outline-light:hover { background: #fff !important; border-color: #fff !important; color: var(--mao-ink) !important; }
         .mao-console .btn-outline-primary { border-color: var(--mao-green) !important; color: var(--mao-green) !important; background: transparent !important; }
@@ -60,10 +60,10 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: .12em;
-            color: var(--mao-soft-gold);
+            color: var(--mao-accent-light);
         }
         .mao-hero h1 { color: #fff; }
-        .mao-hero em { color: var(--mao-gold); font-style: italic; }
+        .mao-hero em { color: #fff; font-style: normal; }
         .mao-hero p { color: rgba(255,255,255,.72); max-width: 760px; }
         .mao-chip {
             display: inline-flex;
@@ -78,7 +78,7 @@
             font-size: .78rem;
             font-weight: 500;
         }
-        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-gold); box-shadow: 0 0 0 6px rgba(232,167,61,.25); }
+        .mao-pulse { width: 10px; height: 10px; border-radius: 999px; background: var(--mao-mint); box-shadow: none; }
         .mao-hero .btn-outline-light { border-color: #fff; color: #fff; }
         .mao-hero .btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--mao-ink); }
         .mao-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
@@ -146,6 +146,9 @@
         .chart-box canvas { width: 100% !important; height: 220px !important; }
         .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
+        .farmer-org-chart-shell { position: relative; min-height: 500px; overflow-x: auto; padding: .5rem .25rem 0; }
+        .farmer-org-chart-inner { min-width: 1180px; height: 480px; }
+        .farmer-org-chart-inner canvas { width: 100% !important; height: 100% !important; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
@@ -209,7 +212,7 @@
         .empty-soft strong { color: var(--mao-ink); }
         .dashboard-section-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .75rem; }
         .dashboard-section-label:first-of-type { margin-top: 0; }
-        .section-title { color: var(--mao-soft-gold); font-family: 'DM Mono', monospace !important; font-size: .74rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
+        .section-title { color: var(--mao-accent-light); font-family: 'DM Mono', monospace !important; font-size: .74rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
         .section-note { color: var(--mao-mint); font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
@@ -239,6 +242,7 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+<<<<<<< HEAD
         @media (max-width: 767.98px) {
             .mao-stat-grid, .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; }
             .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { gap: .6rem; }
@@ -267,7 +271,83 @@
             .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; min-height: 40px; }
             .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; }
         }
+=======
+        @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .farmer-org-chart-shell { min-height: 500px; } .farmer-org-chart-inner { min-width: 1180px; height: 480px; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+>>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
 
+        /* Product UI restraint pass */
+        .mao-console .btn { border-radius: 8px !important; box-shadow: none !important; }
+        .mao-console .btn:hover { transform: translateY(-1px) !important; }
+        .mao-hero {
+            border-radius: 16px;
+            padding: 1.25rem 1.4rem;
+            background: #174230;
+            box-shadow: 0 6px 16px rgba(13,31,24,.12);
+        }
+        .mao-hero::before { opacity: .28; }
+        .mao-eyebrow { text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif; font-size: .82rem; }
+        .mao-hero em { font-style: normal; color: #fff; }
+        .mao-chip { border-radius: 8px; background: rgba(255,255,255,.08); font-family: 'Inter', sans-serif; letter-spacing: 0; }
+        .mao-pulse { width: 8px; height: 8px; box-shadow: none; }
+        .mao-card,
+        .mao-panel,
+        .dashboard-group {
+            border: 1px solid #c9d7ce;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(13,31,24,.08);
+        }
+        .mao-card:hover,
+        .quick-action:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(13,31,24,.10); }
+        .mao-panel-header,
+        .mao-modal-header { background: #f5f7f4; }
+        .list-mark { width: 32px; height: 32px; border-radius: 8px; background: transparent; }
+        .status-pill { border-radius: 999px; font-family: 'Inter', sans-serif; text-transform: none; letter-spacing: 0; }
+        .section-title,
+        .mao-label,
+        .row-meta { letter-spacing: 0; text-transform: none; font-family: 'Inter', sans-serif !important; }
+        .mao-console {
+            --text-xs: .75rem;
+            --text-sm: .875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-2xl: 1.5rem;
+            font-size: var(--text-base);
+            line-height: 1.58;
+        }
+        .mao-console .btn { font-size: var(--text-sm); line-height: 1.35; }
+        .mao-console .btn-sm { font-size: var(--text-sm); padding: .46rem .95rem; }
+        .mao-eyebrow,
+        .section-title,
+        .mao-label,
+        .row-meta,
+        .dashboard-group-toggle,
+        .map-popup-label { font-size: var(--text-sm); line-height: 1.35; }
+        .mao-hero p,
+        .section-note,
+        .mao-note,
+        .mao-panel-sub,
+        .row-text,
+        .dashboard-group-note,
+        .quick-action span,
+        .chart-note,
+        .map-popup-note,
+        .map-popup-source,
+        .map-detail-empty { font-size: var(--text-sm); line-height: 1.5; color: var(--mao-muted); }
+        .mao-panel-title,
+        .chart-title,
+        .dashboard-group-title,
+        .row-title,
+        .quick-action strong,
+        .map-popup-name { font-size: var(--text-base); line-height: 1.35; }
+        .mao-value,
+        .risk-level-value { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.08; }
+        .status-pill,
+        .map-popup-badge { font-size: var(--text-xs); line-height: 1.25; padding: .34rem .62rem; }
+        .mao-modal-headline { font-size: var(--text-2xl); line-height: 1.18; }
+        .mao-modal-sub { font-size: var(--text-sm); line-height: 1.48; color: var(--mao-muted); }
+        .mao-console .table th,
+        .mao-console .table td { font-size: var(--text-sm); line-height: 1.45; }
     </style>
 
     @php
@@ -303,6 +383,23 @@
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+        </section>
+
+        <section class="mao-panel mb-4">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title">FARMERS BY ORGANIZATION</h2>
+                    <p class="mao-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+                </div>
+                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
+            </div>
+            <div class="mao-panel-body">
+                <div class="farmer-org-chart-shell">
+                    <div class="farmer-org-chart-inner">
+                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization bar chart" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <div class="ic-drawer" id="maoStatFarmers" aria-hidden="true">
@@ -350,7 +447,7 @@
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
-                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
+                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}°C, humidity {{ number_format($record->humidity, 1) }}%.</div>
                                     <div class="row-meta">Source: {{ $record->source }}</div>
                                 </div>
                             </div>
@@ -715,6 +812,99 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const organizationCanvas = document.getElementById('farmersByOrganizationChart');
+            const organizationChartData = @json($farmerOrganizationChart);
+
+            if (organizationCanvas && window.Chart && organizationChartData?.labels?.length) {
+                const wrapOrganizationLabel = (label, max = 18) => {
+                    const words = String(label).split(' ');
+                    const lines = [];
+                    let current = '';
+
+                    words.forEach((word) => {
+                        const next = current ? `${current} ${word}` : word;
+                        if (next.length > max && current) {
+                            lines.push(current);
+                            current = word;
+                        } else {
+                            current = next;
+                        }
+                    });
+
+                    if (current) lines.push(current);
+                    return lines.length ? lines : [String(label)];
+                };
+
+                const maxOrganizationCount = Math.max(...organizationChartData.counts, 0);
+                const organizationValueLabels = {
+                    id: 'farmersByOrganizationValueLabels',
+                    afterDatasetsDraw(chart) {
+                        const { ctx } = chart;
+                        const meta = chart.getDatasetMeta(0);
+
+                        ctx.save();
+                        ctx.font = '700 12px Inter, system-ui, sans-serif';
+                        ctx.fillStyle = '#1F4D3A';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        meta.data.forEach((bar, index) => {
+                            ctx.fillText(String(chart.data.datasets[0].data[index] ?? 0), bar.x, bar.y - 8);
+                        });
+                        ctx.restore();
+                    },
+                };
+
+                new Chart(organizationCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: organizationChartData.labels.map((label) => wrapOrganizationLabel(label)),
+                        datasets: [{
+                            label: 'Registered farmers',
+                            data: organizationChartData.counts,
+                            borderWidth: 1,
+                            borderColor: '#1F5A46',
+                            backgroundColor: organizationChartData.counts.map((count, index) => organizationChartData.labels[index] === 'None'
+                                ? 'rgba(100, 116, 139, .72)'
+                                : count > 0 ? 'rgba(31, 90, 70, .86)' : 'rgba(143, 175, 154, .32)'),
+                            borderRadius: 7,
+                            barPercentage: .72,
+                            categoryPercentage: .82,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 420 },
+                        layout: { padding: { top: 24, right: 12 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => organizationChartData.labels[items[0].dataIndex] || '',
+                                    label: (context) => {
+                                        const value = context.parsed.y || 0;
+                                        return `${value} registered farmer${value === 1 ? '' : 's'}`;
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#1F2937', maxRotation: 45, minRotation: 45, autoSkip: false, font: { size: 11, weight: 600 } },
+                                grid: { display: false, drawBorder: false },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: maxOrganizationCount + 1,
+                                ticks: { precision: 0, color: '#64748B' },
+                                grid: { color: 'rgba(95,143,120,.18)', drawBorder: false },
+                            },
+                        },
+                    },
+                    plugins: [organizationValueLabels],
+                });
+            }
+
             document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
                 card.addEventListener('click', () => {
                     const panel = document.getElementById(card.dataset.toggleDetail);
@@ -788,6 +978,13 @@
                 });
             };
 
+<<<<<<< HEAD
+=======
+            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
+            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
+            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
+                    makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#4B7185', '');
+>>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
                 temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),

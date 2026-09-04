@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FarmerProfile;
+use App\Enums\PredictionType;
+use App\Http\Requests\WeatherPredictionRequest;
 use App\Services\Prediction\PredictionDateValidator;
-use App\Services\Prediction\PredictionEngine;
+use App\Services\Prediction\WeatherPredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class WeatherPredictionController extends Controller
 {
-    public function index(Request $request, PredictionDateValidator $dateValidator, PredictionEngine $engine): View
+    public function index(Request $request, PredictionDateValidator $dateValidator, WeatherPredictionService $weatherPrediction): View
     {
         $validated = $request->validate([
             'target_month' => ['nullable', 'date_format:Y-m'],
@@ -39,25 +40,21 @@ class WeatherPredictionController extends Controller
             ]);
         }
 
-        $engineResult = $engine->predict($targetDate, $this->defaultFarmType($request), null, $request->user());
+        $weatherResult = $weatherPrediction->predict($targetDate, PredictionType::WEATHER->value);
 
         return view('weather-predictions.index', [
             'targetMonth' => $targetMonth,
             'targetDate' => $targetDate,
-            'result' => $engineResult['weather'],
-            'defaultModelInput' => $engineResult['model_input'],
-            'mlResult' => $this->buildMlResult($engineResult),
+            'result' => $weatherResult,
+            'defaultModelInput' => $weatherResult['model_input'],
+            'mlResult' => null,
             'error' => null,
         ]);
     }
 
-    public function predict(Request $request, PredictionDateValidator $dateValidator, PredictionEngine $engine): View
+    public function predict(WeatherPredictionRequest $request, PredictionDateValidator $dateValidator, WeatherPredictionService $weatherPrediction): View
     {
-        $validated = $request->validate([
-            'prediction_date' => ['required', 'date'],
-            'farm_type' => ['nullable', 'in:Rainfed,Irrigated'],
-        ]);
-
+        $validated = $request->validated();
         $targetDate = CarbonImmutable::parse($validated['prediction_date']);
         $targetMonth = $targetDate->startOfMonth();
 
@@ -72,41 +69,15 @@ class WeatherPredictionController extends Controller
             ]);
         }
 
-        $engineResult = $engine->predict($targetDate, $validated['farm_type'] ?? $this->defaultFarmType($request), null, $request->user());
+        $weatherResult = $weatherPrediction->predict($targetDate, PredictionType::WEATHER->value);
 
         return view('weather-predictions.index', [
             'targetMonth' => $targetMonth,
             'targetDate' => $targetDate,
-            'result' => $engineResult['weather'],
-            'defaultModelInput' => $engineResult['model_input'],
-            'mlResult' => $this->buildMlResult($engineResult),
+            'result' => $weatherResult,
+            'defaultModelInput' => $weatherResult['model_input'],
+            'mlResult' => null,
             'error' => null,
         ]);
-    }
-
-    /**
-     * Same fallback chain as PredictionService uses for the AI Assistant, so a
-     * logged-in farmer's own profile decides the default farm type here too.
-     */
-    private function defaultFarmType(Request $request): string
-    {
-        return (string) ($request->user()?->farmerProfile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
-    }
-
-    private function buildMlResult(array $engineResult): array
-    {
-        $yield = $engineResult['yield'];
-        $decision = $engineResult['decision_support'];
-
-        return [
-            ...$yield,
-            'model_input' => $engineResult['model_input'],
-            'source' => $yield['source_name'],
-            'planting_advisory' => $decision['planting']['recommendation'],
-            'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-            'notifications' => $decision['notifications'],
-            'decision_support' => $decision,
-            'api_error' => $engineResult['api_error'],
-        ];
     }
 }

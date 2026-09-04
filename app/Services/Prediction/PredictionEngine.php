@@ -2,6 +2,7 @@
 
 namespace App\Services\Prediction;
 
+use App\Enums\PredictionType;
 use App\Models\ClimateRecord;
 use App\Models\RiceProduction;
 use App\Models\User;
@@ -146,7 +147,10 @@ class PredictionEngine
     public function requestYieldFromModel(array $modelInput): array
     {
         try {
-            $apiResult = $this->python->farmingAssistant(['features' => $modelInput]);
+            $apiResult = $this->python->farmingAssistant([
+                'prediction_type' => PredictionType::RICE_YIELD->value,
+                'features' => $modelInput,
+            ]);
             $yield = data_get($apiResult, 'rice_yield_prediction', $apiResult);
             $predicted = data_get($yield, 'predicted_yield');
 

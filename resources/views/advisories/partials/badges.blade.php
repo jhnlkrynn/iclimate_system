@@ -2,7 +2,7 @@
     $typeClass = [
         'climate' => 'text-bg-primary',
         'planting' => 'text-bg-success',
-        'harvesting' => 'text-bg-warning',
+        'harvesting' => 'text-bg-success',
         'irrigation' => 'text-bg-info',
     ][$advisory->advisory_type] ?? 'text-bg-light';
     $severityClass = [
