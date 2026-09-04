@@ -17,7 +17,7 @@
 
 <x-app-layout>
     <style>
-        .ai-console { --ai-ink:#0d1f18; --ai-muted:#5f7569; --ai-green:#2d6a4f; --ai-mint:#52b788; --ai-blue:#1677b8; --ai-gold:#f4b63f; --ai-red:#d85b45; --ai-line:rgba(153,185,160,.72); width:100%; max-width:100%; overflow-x:hidden; }
+        .ai-console { --ai-ink:#1E2B25; --ai-muted:#68756D; --ai-green:#1F5A46; --ai-mint:#8FAF9A; --ai-blue:#4B7185; --ai-accent:#8FAF9A; --ai-red:#B84A4A; --ai-line:#D8E0DA; width:100%; max-width:100%; overflow-x:hidden; }
         .ai-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.35rem; margin-bottom:1.25rem; color:#1f2a24; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.16), transparent 30%), linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .ai-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(31,42,36,.05) 1px,transparent 1px),linear-gradient(0deg,rgba(31,42,36,.04) 1px,transparent 1px); background-size:38px 38px; mask-image:linear-gradient(90deg,rgba(0,0,0,.78),transparent 88%); }
         .ai-hero > * { position:relative; z-index:1; }

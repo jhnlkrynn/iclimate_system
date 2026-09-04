@@ -16,7 +16,7 @@ use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
 use App\Services\AI\RoleAssistantService;
 use App\Services\Prediction\PredictionDateValidator;
-use App\Services\Prediction\PredictionEngine;
+use App\Services\Prediction\RiceYieldPredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 
@@ -29,14 +29,14 @@ class PredictionService
         private readonly GroqChatService $groqChat,
         private readonly RoleAssistantService $roleAssistant,
         private readonly PredictionDateValidator $dateValidator,
-        private readonly PredictionEngine $engine,
+        private readonly RiceYieldPredictionService $riceYield,
     ) {}
 
     public function answer(User $user, string $question): array
     {
         $startedAt = microtime(true);
         $memory = $this->conversationMemory($user);
-        $language = $this->intentDetector->detectLanguage($question);
+        $language = $this->intentDetector->detectLanguage($question, $memory);
         $intentResult = $this->intentDetector->detect($question, $memory);
         $intent = $intentResult['intent'];
 
@@ -66,7 +66,8 @@ class PredictionService
             'season' => $conditions['season'] ?? null,
         ], fn ($value) => $value !== null);
 
-        $engineResult = $this->engine->predict($targetDate, $farmType, $areaOverride, $user, $manualOverrides);
+        $sharedYieldResult = $this->riceYield->predictForUser($targetDate, $farmType, $areaOverride, $user, $manualOverrides);
+        $engineResult = $sharedYieldResult['engine_result'];
 
         $context = [
             ...$engineResult['model_input'],
@@ -74,7 +75,8 @@ class PredictionService
             'source_notes' => $this->sourceNotes($numbers, $conditions, $targetDate->startOfMonth()),
         ];
 
-        $yield = $engineResult['yield'];
+        $yield = $sharedYieldResult;
+        unset($yield['engine_result']);
         $apiError = $engineResult['api_error'];
 
         $weather = [
@@ -128,6 +130,10 @@ class PredictionService
                 'insights' => $insights,
                 'conversation_memory' => $memory,
                 'api_error' => $apiError,
+                'rice_yield_prediction' => $yield,
+                'authoritative_yield_service' => 'RiceYieldPredictionService',
+                'model_version' => $yield['model_version'] ?? null,
+                'feature_order' => $yield['feature_order'] ?? [],
                 'intent_detection' => $intentResult,
                 'target_date' => $targetDate->toDateString(),
                 'generative_ai' => $groqFallback ? [
@@ -266,6 +272,16 @@ class PredictionService
 
     private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt): array
     {
+        if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
+            return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Knowledge Base',
+                'source_name' => 'Climora AI',
+                'source_url' => null,
+                'confidence_score' => 82,
+                'intent_detection' => $intentResult,
+            ]);
+        }
+
         if ($domainAnswer = $this->domainRecordAnswer($user, $question, $intent, $language)) {
             return $this->textResponse($domainAnswer['answer'], $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
@@ -283,16 +299,6 @@ class PredictionService
                 'source_url' => $record->source_url,
                 'confidence_score' => (float) ($record->confidence ?? 82),
                 'knowledge_base_id' => $record->id,
-                'intent_detection' => $intentResult,
-            ]);
-        }
-
-        if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
-            return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
-                'source_type' => 'Knowledge Base',
-                'source_name' => 'Climora AI',
-                'source_url' => null,
-                'confidence_score' => 82,
                 'intent_detection' => $intentResult,
             ]);
         }
@@ -346,6 +352,18 @@ class PredictionService
     private function shouldUseLocalSystemAnswer(string $intent, string $question): bool
     {
         $text = str($question)->lower()->toString();
+
+        if (str($text)->contains([
+            'who are you',
+            'what are you',
+            'sino ka',
+            'ano ka',
+            'tagalog',
+            'filipino',
+            'pilipino',
+        ])) {
+            return true;
+        }
 
         return $intent === IntentDetectionService::SYSTEM_HELP
             && str($text)->contains([
@@ -615,6 +633,16 @@ class PredictionService
     private function localSystemAnswer(string $intent, string $question, string $language): string
     {
         $text = str($question)->lower()->toString();
+
+        if (str($text)->contains(['tagalog', 'filipino', 'pilipino'])) {
+            return 'Oo, puwede akong sumagot sa Tagalog o mixed Tagalog-English. Itanong mo lang ang kailangan mo tungkol sa iClimate, panahon, ani, pagtatanim, patubig, advisory, o problema sa palay.';
+        }
+
+        if (str($text)->contains(['who are you', 'what are you', 'sino ka', 'ano ka'])) {
+            return str_contains($language, 'Tagalog')
+                ? 'Ako si Climora AI, ang iClimate rice guidance assistant para sa Lian, Batangas. Tumutulong ako sa tanong tungkol sa panahon, ani ng palay, pagtatanim, patubig, advisories, climate risk, at paggamit ng iClimate system.'
+                : 'I am Climora AI, the iClimate rice guidance assistant for Lian, Batangas. I help with weather, rice yield, planting, irrigation, advisories, climate risk, and using the iClimate system.';
+        }
 
         if ($intent === IntentDetectionService::GENERAL_CONVERSATION) {
             if (str_contains($text, 'thank') || str_contains($text, 'salamat')) {
@@ -962,6 +990,9 @@ class PredictionService
         $yieldText = isset($yield['predicted_yield']) && $yield['predicted_yield'] !== null
             ? number_format((float) $yield['predicted_yield'], 2).' tons/hectare'
             : ($tagalog ? 'hindi available' : 'not available');
+        $totalText = isset($yield['estimated_total_production_tons']) && $yield['estimated_total_production_tons'] !== null
+            ? number_format((float) $yield['estimated_total_production_tons'], 2).' tons'
+            : null;
         $warningText = $warnings === []
             ? ($tagalog ? 'Walang urgent climate warning na nabuo.' : 'No urgent climate warning was generated.')
             : collect($warnings)->pluck('title')->implode('; ');
@@ -973,7 +1004,7 @@ class PredictionService
             $opening = match ($intent) {
                 IntentDetectionService::PLANTING_RECOMMENDATION => 'Para sa pagtatanim, ito ang rekomendasyon ko: '.$this->tagalogPhrase((string) $decision['planting']['recommendation']),
                 IntentDetectionService::IRRIGATION_RECOMMENDATION => 'Para sa patubig, ito ang rekomendasyon ko: '.$this->tagalogPhrase((string) $decision['irrigation']['recommendation']),
-                IntentDetectionService::RICE_YIELD_PREDICTION => 'Ang predicted rice yield mo ay '.$yieldText.'. '.$this->tagalogPhrase((string) $decision['yield']['advisory']),
+                IntentDetectionService::RICE_YIELD_PREDICTION => 'Ang predicted rice yield mo ay '.$yieldText.($totalText ? ', at ang estimated total production ay '.$totalText : '').'. '.$this->tagalogPhrase((string) $decision['yield']['advisory']),
                 IntentDetectionService::WEATHER_PREDICTION => 'Ang predicted weather ay '.$weatherText.'.',
                 IntentDetectionService::CLIMATE_RISK => 'Climate warning check: '.$warningText,
                 IntentDetectionService::FARMING_ADVISORY => 'Para sa payong pangsakahan, magsimula sa pagmamasid sa bukid at itugma ang fertilizer, peste, o soil decisions sa predicted climate conditions. '.$this->tagalogPhrase((string) $decision['yield']['advisory']),
@@ -983,7 +1014,7 @@ class PredictionService
             $opening = match ($intent) {
                 IntentDetectionService::PLANTING_RECOMMENDATION => 'For planting, I recommend: '.$decision['planting']['recommendation'],
                 IntentDetectionService::IRRIGATION_RECOMMENDATION => 'For irrigation, I recommend: '.$decision['irrigation']['recommendation'],
-                IntentDetectionService::RICE_YIELD_PREDICTION => 'Your predicted rice yield is '.$yieldText.'. '.$decision['yield']['advisory'],
+                IntentDetectionService::RICE_YIELD_PREDICTION => 'Your predicted rice yield is '.$yieldText.($totalText ? ', with estimated total production of '.$totalText : '').'. '.$decision['yield']['advisory'],
                 IntentDetectionService::WEATHER_PREDICTION => 'The predicted weather is '.$weather['predicted_weather'].'.',
                 IntentDetectionService::CLIMATE_RISK => 'Climate warning check: '.$warningText,
                 IntentDetectionService::FARMING_ADVISORY => 'For farming advice, start with field monitoring and match fertilizer, pest, or soil decisions with the predicted climate conditions. '.$decision['yield']['advisory'],
@@ -1001,6 +1032,7 @@ class PredictionService
                 'Mga input na ginamit: '.$insights['input_summary']."\n".
                 'Predicted Weather: '.$weatherText."\n".
                 'Predicted Yield: '.$yieldText."\n".
+                ($totalText ? 'Estimated Total Production: '.$totalText."\n" : '').
                 'Risk Level: '.$riskText.' (score '.$decision['score']['value'].")\n".
                 'Prediction Reliability: '.$qualityText.' ('.$insights['quality']['score'].")\n".
                 $explanation."\n\n".
@@ -1015,6 +1047,7 @@ class PredictionService
             'Inputs used: '.$insights['input_summary']."\n".
             'Predicted Weather: '.$weather['predicted_weather']."\n".
             'Predicted Yield: '.$yieldText."\n".
+            ($totalText ? 'Estimated Total Production: '.$totalText."\n" : '').
             'Risk Level: '.$decision['risk']['label'].' (score '.$decision['score']['value'].")\n".
             'Prediction Reliability: '.$insights['quality']['label'].' ('.$insights['quality']['score'].")\n".
             $explanation."\n\n".

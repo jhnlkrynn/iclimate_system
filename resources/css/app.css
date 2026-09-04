@@ -1,33 +1,54 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'leaflet/dist/leaflet.css';
+@import './animations.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 /* iClimate shared theme additions */
 :root {
-    --iclimate-green-950: #0d1f18;
-    --iclimate-green-900: #122b20;
-    --iclimate-green-700: #2d6a4f;
-    --iclimate-green-500: #52b788;
-    --iclimate-green-300: #95d5b2;
-    --iclimate-green-100: #d8f3dc;
-    --iclimate-green-50: #f0f7f4;
-    --iclimate-surface: #ffffff;
-    --iclimate-text: #1f2a24;
-    --iclimate-muted: #6b7c72;
-    --iclimate-border: #e3ece6;
+    --iclimate-primary: #123F32;
+    --iclimate-primary-medium: #1F5A46;
+    --iclimate-accent: #8FAF9A;
+    --iclimate-accent-light: #C9D8CE;
+    --iclimate-surface: #F4F6F2;
+    --iclimate-border: #D8E0DA;
+    --iclimate-text: #1E2B25;
+    --iclimate-text-muted: #68756D;
+    --iclimate-warning: #C58B2A;
+    --iclimate-danger: #B84A4A;
+    --iclimate-info: #4B7185;
+    --iclimate-green-950: var(--iclimate-primary);
+    --iclimate-green-900: var(--iclimate-primary);
+    --iclimate-green-700: var(--iclimate-primary-medium);
+    --iclimate-green-500: #5f8f78;
+    --iclimate-green-300: var(--iclimate-accent-light);
+    --iclimate-green-100: #e6eee8;
+    --iclimate-green-50: #eef3ef;
+    --iclimate-muted: var(--iclimate-text-muted);
     --iclimate-radius-sm: 6px;
-    --iclimate-radius-md: 10px;
-    --iclimate-radius-lg: 18px;
+    --iclimate-radius-md: 8px;
+    --iclimate-radius-lg: 12px;
     --iclimate-shadow-sm: 0 1px 3px rgba(26, 58, 42, .08);
-    --iclimate-shadow-md: 0 4px 16px rgba(26, 58, 42, .12);
-    --iclimate-shadow-lg: 0 16px 48px rgba(26, 58, 42, .18);
+    --iclimate-shadow-md: 0 6px 16px rgba(26, 58, 42, .10);
+    --iclimate-shadow-lg: 0 10px 26px rgba(26, 58, 42, .12);
     --iclimate-ease-out: cubic-bezier(.16, 1, .3, 1);
     --iclimate-ease-smooth: cubic-bezier(.22, .61, .36, 1);
     --iclimate-motion-fast: 160ms var(--iclimate-ease-smooth);
     --iclimate-motion-med: 260ms var(--iclimate-ease-smooth);
     --iclimate-motion-slow: 520ms var(--iclimate-ease-out);
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-md: 1.04rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --iclimate-readable-body: 1.04rem;
+    --iclimate-readable-small: .96rem;
+    --iclimate-readable-label: .84rem;
 }
 
 ::selection {
@@ -44,9 +65,49 @@ html {
 body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    font-size: var(--iclimate-readable-body);
+    line-height: 1.58;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+}
+
+p,
+li,
+.card-body,
+.modal-body,
+.offcanvas-body,
+.alert,
+.form-control,
+.form-select,
+.table,
+.module-tile,
+.climate-chip,
+.risk-card,
+.soft-section,
+.filter-panel,
+.details-list dd,
+.empty-state {
+    font-size: var(--iclimate-readable-body);
+    line-height: 1.58;
+}
+
+small,
+.small,
+.text-muted,
+.card-text,
+.help-text,
+.form-text {
+    font-size: var(--iclimate-readable-small);
+    line-height: 1.52;
+}
+
+.form-label,
+.stat-label,
+.table thead th,
+.iclimate-section-eyebrow,
+.badge {
+    font-size: var(--iclimate-readable-label);
 }
 
 body.ic-page-leaving {
@@ -123,7 +184,7 @@ button,
 .ic-ai-chip:hover,
 .quick-action:hover,
 .priority-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-1px);
 }
 
 .btn:active,
@@ -184,7 +245,7 @@ button:active,
 .risk-card:hover,
 .stat-card:hover,
 .soft-section:hover {
-    transform: translateY(-5px);
+    transform: translateY(-1px);
 }
 
 .form-control,
@@ -194,11 +255,11 @@ button:active,
 
 .form-control:focus,
 .form-select:focus {
-    transform: translateY(-1px);
+    transform: none;
 }
 
 .table tbody tr {
-    transition: background-color var(--iclimate-motion-fast), transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast), opacity var(--iclimate-motion-fast);
+    transition: background-color var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast), opacity var(--iclimate-motion-fast);
 }
 
 .table-hover tbody tr:hover {
@@ -379,6 +440,18 @@ textarea {
     margin-bottom: 0;
 }
 
+.table th,
+.table td {
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    padding-block: .82rem;
+}
+
+.table thead th {
+    font-size: var(--text-sm);
+    line-height: 1.35;
+}
+
 .table .badge,
 .table .btn {
     width: auto;
@@ -392,7 +465,9 @@ textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    line-height: 1.1;
+    font-size: var(--text-xs);
+    line-height: 1.2;
+    padding: .34rem .58rem;
 }
 
 .table td.text-end,
@@ -406,6 +481,18 @@ textarea {
 .form-control,
 .form-select {
     max-width: 100%;
+}
+
+.btn,
+.dropdown-item {
+    font-size: var(--text-sm);
+    line-height: 1.35;
+}
+
+.form-control,
+.form-select {
+    font-size: var(--text-base);
+    line-height: 1.45;
 }
 
 .btn,
@@ -462,21 +549,21 @@ textarea {
 .iclimate-brand-mark {
     width: 42px;
     height: 42px;
-    border-radius: var(--iclimate-radius-md);
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--iclimate-green-500), #168aad);
+    background: var(--iclimate-primary-medium);
     color: #fff;
     font-weight: 800;
     letter-spacing: .01em;
-    box-shadow: var(--iclimate-shadow-md);
+    box-shadow: none;
 }
 
 .iclimate-soft-panel {
     border: 1px solid var(--iclimate-border);
     border-radius: var(--iclimate-radius-md);
-    background: linear-gradient(145deg, rgba(244, 250, 239, .96), rgba(229, 242, 226, .96));
+    background: #ffffff;
     box-shadow: var(--iclimate-shadow-sm);
 }
 
@@ -484,19 +571,15 @@ textarea {
     display: inline-flex;
     align-items: center;
     gap: .45rem;
-    color: var(--iclimate-green-700);
-    font-size: .72rem;
+    color: var(--iclimate-primary-medium);
+    font-size: var(--text-sm);
     font-weight: 800;
     letter-spacing: .1em;
     text-transform: uppercase;
 }
 
 .iclimate-section-eyebrow::before {
-    content: "";
-    width: 20px;
-    height: 2px;
-    border-radius: 999px;
-    background: var(--iclimate-green-500);
+    content: none;
 }
 
 .iclimate-pill {
@@ -505,16 +588,16 @@ textarea {
     gap: .45rem;
     border-radius: 999px;
     padding: .4rem .7rem;
-    background: var(--iclimate-green-100);
-    color: var(--iclimate-green-700);
-    font-size: .78rem;
+    background: #e6eee8;
+    color: var(--iclimate-primary-medium);
+    font-size: var(--text-sm);
     font-weight: 800;
 }
 
 .iclimate-empty-state {
     border: 1px dashed #aac7b0;
     border-radius: var(--iclimate-radius-md);
-    background: linear-gradient(135deg, #edf7e7, #e2f1df);
+    background: #ffffff;
     padding: 1.5rem;
     text-align: center;
 }
@@ -530,7 +613,7 @@ textarea {
     display: block;
     height: 100%;
     width: var(--meter, 50%);
-    background: linear-gradient(90deg, var(--iclimate-green-500), #1677b8);
+    background: var(--iclimate-primary-medium);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -635,7 +718,7 @@ textarea {
 
 @media (max-width: 575.98px) {
     body {
-        font-size: .95rem;
+        font-size: 1.02rem;
     }
 
     .page-shell {

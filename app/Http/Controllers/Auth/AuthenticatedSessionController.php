@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Throwable;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -20,10 +21,34 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request, CaptchaService $captcha, OpenMeteoService $weather): View
     {
-        $forecastResult = $weather->fetchForecast(! $request->boolean('cached_weather'));
         $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
+        $forecastRecords = collect();
+
+        try {
+            $forecastRecords = $weather->latestStoredForecast();
+        } catch (Throwable) {
+            $forecastRecords = collect();
+        }
+
+        $forecastResult = [
+            'ok' => $forecastRecords->isNotEmpty(),
+            'source' => 'Open-Meteo',
+            'source_name' => 'Open-Meteo Forecast API',
+            'source_url' => 'https://open-meteo.com/',
+            'source_note' => $forecastRecords->isNotEmpty()
+                ? 'Stored forecast from the latest successful Open-Meteo update.'
+                : 'Weather preview is temporarily unavailable.',
+            'freshness' => $forecastRecords->first()?->freshnessLabel() ?? 'unavailable',
+            'records' => $forecastRecords,
+            'records_saved' => 0,
+            'fetched_at' => $forecastRecords->first()?->fetched_at,
+            'message' => $forecastRecords->isNotEmpty()
+                ? 'Showing the latest stored Lian, Batangas weather update.'
+                : 'Weather preview is temporarily unavailable. You can still sign in.',
+        ];
+
         $today = now($weatherTimezone)->toDateString();
-        $forecastRecords = collect($forecastResult['records'] ?? [])->sortBy('forecast_date')->values();
+        $forecastRecords = $forecastRecords->sortBy('forecast_date')->values();
         $latestForecast = $forecastRecords
             ->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
             ?? $forecastRecords->first();

@@ -7,6 +7,7 @@ use App\Models\ClimateRecord;
 use App\Models\KnowledgeBase;
 use App\Models\RiceProduction;
 use App\Models\User;
+use App\Services\AI\IntentDetectionService;
 use App\Services\Prediction\PredictionDateValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -425,6 +426,86 @@ class AIChatTest extends TestCase
         $this->assertStringContainsString('Hindi ako gumagawa ng sariling prediction values', $answer);
 
         Http::assertNothingSent();
+    }
+
+    public function test_ai_assistant_answers_sino_ka_in_tagalog(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'sino ka?',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.intent', 'System Help')
+            ->assertJsonPath('chat.language', 'Tagalog')
+            ->assertJsonPath('chat.source_type', 'Knowledge Base');
+
+        $answer = $response->json('chat.answer');
+        $this->assertStringContainsString('Ako si Climora AI', $answer);
+        $this->assertStringNotContainsString('English', $answer);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_ai_assistant_honors_explicit_tagalog_request(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'tagalog',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.language', 'Tagalog');
+
+        $answer = $response->json('chat.answer');
+        $this->assertStringNotContainsString('set to respond in English', $answer);
+        $this->assertStringNotContainsString('Unfortunately', $answer);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_ai_assistant_keeps_tagalog_preference_for_next_question(): void
+    {
+        Http::fake();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'tagalog',
+        ])->assertOk();
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'who are you?',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('chat.language', 'Tagalog');
+
+        $answer = $response->json('chat.answer');
+        $this->assertStringContainsString('Ako si Climora AI', $answer);
+        $this->assertStringNotContainsString('I am Climora AI', $answer);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_ai_language_detector_follows_user_language_and_preferences(): void
+    {
+        $detector = app(IntentDetectionService::class);
+
+        $this->assertSame('Tagalog', $detector->detectLanguage('sino ka?'));
+        $this->assertSame('Tagalog', $detector->detectLanguage('tagalog'));
+        $this->assertSame('English', $detector->detectLanguage('Who are you?'));
+        $this->assertSame('Cebuano/Bisaya', $detector->detectLanguage('bisaya'));
+        $this->assertSame('Cebuano/Bisaya', $detector->detectLanguage('Who are you?', [
+            'recent_questions' => ['bisaya'],
+        ]));
+        $this->assertSame('Japanese', $detector->detectLanguage('あなたは誰ですか'));
     }
 
     public function test_ai_assistant_answers_tagalog_prediction_questions_in_tagalog(): void

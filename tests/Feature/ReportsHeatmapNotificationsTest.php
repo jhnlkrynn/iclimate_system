@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\ClimateRecord;
 use App\Models\FeedPost;
+use App\Models\FarmBoundary;
+use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
@@ -81,6 +83,20 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('PAGASA Official Source')
             ->assertSee('View PAGASA Map')
             ->assertSee('PAGASA Lian Heavy Rainfall Advisory');
+    }
+
+    public function test_farmer_heatmap_displays_only_their_saved_farm_boundary(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        $profile = FarmerProfile::factory()->create(['user_id' => $farmer->id]);
+        FarmBoundary::factory()->create(['farmer_profile_id' => $profile->id]);
+        HeatmapArea::factory()->create(['barangay' => 'Matabungkay']);
+
+        $this->actingAs($farmer)
+            ->get(route('heatmap-areas.index'))
+            ->assertOk()
+            ->assertSee('My Farm Boundary')
+            ->assertSee('myFarmBoundary', false);
     }
 
     public function test_mao_can_send_notifications_to_farmers_and_farmer_can_mark_read(): void

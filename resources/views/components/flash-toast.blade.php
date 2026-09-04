@@ -33,8 +33,8 @@
         .flash-toast { border: 1px solid var(--ic-border, #d4edda); border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1rem 2.4rem rgba(13,31,24,.22); animation: flashToastIn .22s ease-out; }
         .flash-toast.success { --toast-accent: var(--ic-green-500, #52b788); }
         .flash-toast.error { --toast-accent: var(--ic-coral, #d85b45); }
-        .flash-toast.info { --toast-accent: var(--ic-gold, #e8a73d); }
-        .flash-toast-accent { height: 4px; background: linear-gradient(90deg, var(--toast-accent), var(--ic-gold, #e8a73d), var(--ic-green-400, #74c69d)); }
+        .flash-toast.info { --toast-accent: var(--iclimate-info, #4B7185); }
+        .flash-toast-accent { height: 4px; background: var(--toast-accent); }
         .flash-toast-body { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: .65rem; align-items: flex-start; padding: .8rem .85rem; }
         .flash-toast-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: var(--toast-accent); font-weight: 900; flex-shrink: 0; }
         .flash-toast-title { margin: 0 0 .2rem; color: var(--ic-ink, #0d1f18); font-weight: 900; font-size: .92rem; }

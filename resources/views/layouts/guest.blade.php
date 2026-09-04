@@ -35,7 +35,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
-    body.login-page { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f6f9f7; min-height: 100vh; display: flex; align-items: stretch; }
+    body.login-page { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 17px; line-height: 1.58; background: #f6f9f7; min-height: 100vh; display: flex; align-items: stretch; }
     .auth-logo-img { height: 48px; width: auto; max-width: 220px; object-fit: contain; display: block; }
 
     .login-layout { display: grid; grid-template-columns: 38% 62%; min-height: 100vh; width: 100%; }
@@ -53,17 +53,17 @@
     .lpl-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding: 44px 52px; }
     .lpl-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: auto; }
     .lpl-body { padding: 48px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .lpl-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
-    .lpl-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: #2D6A4F; }
+    .lpl-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.84rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+    .lpl-eyebrow::before { content: none; }
     .lpl-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
     .lpl-headline em { font-style: italic; color: #2D6A4F; }
-    .lpl-sub { font-size: 0.97rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
-    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.8rem; color: #6b7c72; }
+    .lpl-sub { font-size: 1.04rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
+    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.92rem; color: #6b7c72; }
 
     /* -- RIGHT PANEL ----------------------------------- */
     .login-panel-right { background: #f5f9f6; display: flex; align-items: center; justify-content: center; padding: 40px 48px; }
     .login-form-wrap { width: 100%; max-width: 460px; }
-    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.83rem; font-weight: 500; color: #5A7A64; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
+    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: #5A7A64; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
     .back-link-top:hover { color: #2D6A4F; }
     .login-form-header { margin-bottom: 28px; }
     .login-form-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.7rem; font-weight: 400; color: #1B2B23; margin-bottom: 6px; letter-spacing: -0.02em; }

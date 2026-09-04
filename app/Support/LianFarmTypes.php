@@ -58,6 +58,26 @@ class LianFarmTypes
         return collect(self::ASSOCIATIONS);
     }
 
+    public static function organizationOptions(): array
+    {
+        return self::records()
+            ->pluck('association')
+            ->values()
+            ->all();
+    }
+
+    public static function barangayForAssociation(string $association): ?string
+    {
+        return self::records()
+            ->first(fn (array $record): bool => $record['association'] === $association)['barangay'] ?? null;
+    }
+
+    public static function farmTypeForAssociation(string $association): ?string
+    {
+        return self::records()
+            ->first(fn (array $record): bool => $record['association'] === $association)['farm_type'] ?? null;
+    }
+
     private static function label(float $rainfedArea, float $irrigatedArea): string
     {
         if ($rainfedArea > 0 && $irrigatedArea > 0) {

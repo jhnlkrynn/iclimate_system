@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClimateRecord;
+use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
 use App\Models\HeatmapArea;
@@ -70,6 +71,16 @@ class DashboardController extends Controller
         return response()->json($weather->responsePayload($weather->current($request->boolean('refresh'))));
     }
 
+    public function liveWeather(Request $request, FarmerDashboardWeatherService $weather): JsonResponse
+    {
+        $payload = $weather->responsePayload($weather->current($request->boolean('refresh')));
+
+        return response()->json([
+            'success' => (bool) ($payload['success'] ?? false),
+            'data' => $payload,
+        ]);
+    }
+
     public function maoWeather(WeatherApiService $weatherApi): JsonResponse
     {
         $liveWeather = $weatherApi->forecast(refresh: true);
@@ -124,6 +135,7 @@ class DashboardController extends Controller
         $farmerCount = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count();
 
         return view('dashboards.mao', $this->stats() + [
+            ...$this->farmerOrganizationDashboardData(),
             'latestClimate' => ClimateRecord::query()->latest('record_date')->first(),
             'recentClimateRecords' => ClimateRecord::query()->latest('record_date')->take(5)->get(),
             'recentRiceProductions' => RiceProduction::query()->latest()->take(5)->get(),
@@ -222,6 +234,41 @@ class DashboardController extends Controller
                 'Reports' => Report::count(),
             ],
         ]);
+    }
+
+    private function farmerOrganizationDashboardData(): array
+    {
+        $organizations = FarmerOrganization::query()
+            ->withCount('farmerProfiles')
+            ->orderBy('id')
+            ->get();
+        $farmersWithoutOrganization = FarmerProfile::query()
+            ->whereNull('farmer_organization_id')
+            ->count();
+
+        $chartRows = $organizations
+            ->map(fn (FarmerOrganization $organization): array => [
+                'label' => $organization->name,
+                'count' => $organization->farmer_profiles_count,
+            ])
+            ->push([
+                'label' => 'None',
+                'count' => $farmersWithoutOrganization,
+            ])
+            ->values();
+
+        return [
+            'farmerOrganizationSummary' => [
+                'totalFarmers' => FarmerProfile::query()->count(),
+                'totalOrganizations' => $organizations->count(),
+                'farmersWithoutOrganization' => $farmersWithoutOrganization,
+                'totalFarmArea' => (float) FarmerProfile::query()->sum('farm_area'),
+            ],
+            'farmerOrganizationChart' => [
+                'labels' => $chartRows->pluck('label')->all(),
+                'counts' => $chartRows->pluck('count')->map(fn ($count): int => (int) $count)->all(),
+            ],
+        ];
     }
 
     private function stats(): array

@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\FarmerOrganization;
 use App\Services\Security\CaptchaService;
+use Database\Seeders\FarmerOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -13,10 +15,17 @@ class RegistrationTest extends TestCase
 
     public function test_registration_screen_can_be_rendered(): void
     {
+        $this->seed(FarmerOrganizationSeeder::class);
+
         $response = $this->get('/register');
 
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'register']), false);
+        $response->assertSee('Balibago Farmers Association');
+        $response->assertSee('Farm Location/Barangay');
+        $response->assertSee('At least 8 characters');
+        $response->assertSee('Uppercase letter');
+        $response->assertSee('Symbol');
     }
 
     public function test_registration_captcha_image_can_be_rendered(): void
@@ -33,13 +42,85 @@ class RegistrationTest extends TestCase
         $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Balibago',
             'captcha_answer' => '7',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('farmer.dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertRedirect('/');
+        $response->assertSessionHas('success', 'Account created successfully. Please log in using your email and password.');
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'barangay' => 'Balibago',
+        ]);
+        $this->assertDatabaseHas('farmer_profiles', [
+            'full_name' => 'Test User',
+            'barangay' => 'Balibago',
+            'farmer_organization_id' => null,
+        ]);
+    }
+
+    public function test_registration_assigns_barangay_from_selected_organization(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        $organization = FarmerOrganization::query()
+            ->where('name', 'Cuaco Irrigator\'s Association')
+            ->firstOrFail();
+
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Org User',
+            'email' => 'org-user@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'farmer_organization_id' => $organization->id,
+            'barangay' => 'Balibago',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+        $response->assertSessionHas('success', 'Account created successfully. Please log in using your email and password.');
+        $this->assertDatabaseHas('users', [
+            'email' => 'org-user@example.com',
+            'barangay' => 'Binubusan',
+        ]);
+        $this->assertDatabaseHas('farmer_profiles', [
+            'full_name' => 'Org User',
+            'farmer_organization_id' => $organization->id,
+            'barangay' => 'Binubusan',
+            'farm_type' => 'Irrigated',
+        ]);
+    }
+
+    public function test_registration_requires_manual_barangay_when_no_organization_is_selected(): void
+    {
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'No Barangay User',
+            'email' => 'no-barangay@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('barangay');
+    }
+
+    public function test_registration_rejects_weak_passwords(): void
+    {
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Weak Password User',
+            'email' => 'weak-password@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'barangay' => 'Balibago',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('password');
     }
 
     public function test_registration_fails_when_captcha_is_missing(): void
@@ -47,8 +128,8 @@ class RegistrationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ]);
 
         $this->assertGuest();
@@ -60,8 +141,9 @@ class RegistrationTest extends TestCase
         $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Balibago',
             'captcha_answer' => '8',
         ]);
 
