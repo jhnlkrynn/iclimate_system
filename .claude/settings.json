@@ -92,15 +92,13 @@
       "Bash(curl -s -b /tmp/mao_cookies.txt http://127.0.0.1:8000/community-feed -o /tmp/feed_page2.html)",
       "Bash(sed -n '/Test Post Title Visibility Check/,+3p' /tmp/feed_page2.html)",
       "Bash(grep -n \"^p \\\\|^p{\\\\|^p,\\\\| p {\" resources/css/app.css)",
-<<<<<<< HEAD
       "Bash(curl -s -o /dev/null -w \"HTTP_CODE:%{http_code}\\\\n\" http://127.0.0.1:8000/ --max-time 5)",
       "Bash(git stash *)",
       "Bash(npx --yes playwright install chromium --with-deps)",
       "Bash(node verify.js)",
       "Bash(node -e ' *)",
       "Bash(node capture-captcha.js)",
-      "Bash(powershell -Command \"Start-Process 'chrome.exe' 'http://127.0.0.1:8000'\")"
-=======
+      "Bash(powershell -Command \"Start-Process 'chrome.exe' 'http://127.0.0.1:8000'\")",
       "Bash(curl -s -b /tmp/toast_test2.txt http://127.0.0.1:8000/login -o /tmp/login_recheck.html -w \"HTTP:%{http_code}\\\\n\")",
       "Bash(curl -s -b /tmp/toast_test4.txt -c /tmp/toast_test4.txt http://127.0.0.1:8000/login -o /tmp/toast_final.html)",
       "Bash(node --check resources/js/app.js)",
@@ -182,7 +180,6 @@
       "Bash(curl -s -o /dev/null -w \"home:%{http_code}\\\\n\" http://127.0.0.1:8000/)",
       "Bash(git -C /c/xampp/htdocs/iclimate_system_new status --porcelain)",
       "Bash(git -C /c/xampp/htdocs/iclimate_system_new restore resources/views/advisories/index.blade.php resources/views/ai-chat/index.blade.php resources/views/auth/login.blade.php resources/views/auth/register.blade.php resources/views/auth/verify-email.blade.php resources/views/community-feed/index.blade.php resources/views/components/ai-chat-widget.blade.php resources/views/components/primary-button.blade.php resources/views/components/responsive-nav-link.blade.php resources/views/dashboards/farmer.blade.php resources/views/dashboards/it-expert.blade.php resources/views/dashboards/mao.blade.php resources/views/errors/minimal.blade.php resources/views/heatmap-areas/index.blade.php resources/views/layouts/app.blade.php resources/views/live-forecasting/index.blade.php resources/views/model-evaluation/index.blade.php resources/views/profile/partials/update-profile-information-form.blade.php resources/views/welcome.blade.php)"
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
     ],
     "additionalDirectories": [
       "C:\\xampp\\htdocs\\iclimate_system_new",

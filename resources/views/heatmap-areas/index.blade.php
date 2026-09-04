@@ -266,6 +266,7 @@
             box-shadow: 0 .7rem 1.6rem rgba(13,31,24,.12);
         }
         .risk-stat, .risk-side .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 12px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: 1rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
+        .risk-mini-stats { display: contents; }
         .risk-stat::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
         .risk-label { color: #5a7a64; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
@@ -386,12 +387,15 @@
         }
         @media (max-width: 767.98px) {
             .map-shell { overflow: visible; }
-            #barangayRiskMap { height: min(70vh, 430px); min-height: 340px; }
+            #barangayRiskMap { height: min(58vh, 360px); min-height: 280px; }
+            .map-insight-strip { margin-bottom: .65rem; }
+            .heatmap-grid { gap: .65rem; }
+            .heatmap-main { gap: .65rem; }
             .map-toolbar {
                 position: relative;
                 inset: auto;
                 z-index: 1;
-                padding: .75rem;
+                padding: .6rem;
                 overflow-x: auto;
                 flex-wrap: nowrap;
                 pointer-events: auto;
@@ -403,32 +407,45 @@
                 position: relative;
                 inset: auto;
                 width: auto;
-                margin: .75rem;
+                margin: .6rem;
+                padding: .6rem;
             }
             .map-detail-panel {
                 position: relative;
                 inset: auto;
                 width: auto;
-                max-height: 320px;
-                margin: .75rem;
+                max-height: 300px;
+                margin: .6rem;
+                padding: .65rem;
             }
             .pagasa-source-strip {
                 position: relative;
                 inset: auto;
                 display: grid;
-                margin: .75rem;
+                margin: .6rem;
+                padding: .55rem .6rem;
             }
             .pagasa-map-link { width: 100%; text-align: center; }
-            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; }
-            .risk-side { grid-template-columns: 1fr; }
+            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; min-height: 40px; padding: .5rem .65rem; }
+            .risk-side { grid-template-columns: 1fr; gap: .6rem; }
+            .risk-mini-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+            .risk-mini-stats .risk-stat { padding: .6rem .55rem; }
+            .risk-mini-stats .risk-label { font-size: .62rem; }
+            .risk-mini-stats .risk-value { font-size: 1.2rem; margin-top: .2rem; }
+            .risk-mini-stats .text-muted.small { font-size: .68rem; margin-top: .3rem !important; }
             .priority-list { grid-template-columns: 1fr; }
             .priority-item { grid-template-columns: 1fr; }
             .priority-score { justify-self: start; }
-            .risk-stat { padding: .9rem; }
-            .risk-value { font-size: 1.75rem; }
+            .risk-stat { padding: .8rem; }
+            .risk-value { font-size: 1.6rem; }
+            .barangay-risk-list { gap: .65rem; }
+            .barangay-card-head { padding: .75rem; }
+            .barangay-card-body { padding: .75rem; gap: .65rem; }
             .barangay-card-head, .risk-actions { display: grid; justify-content: stretch; }
-            .risk-summary-grid, .risk-advice-grid { grid-template-columns: 1fr; }
-            .risk-actions .btn, .risk-actions form, .risk-actions button { width: 100%; }
+            .risk-summary-grid, .risk-advice-grid { grid-template-columns: 1fr; gap: .5rem; }
+            .risk-info-box { min-height: 0; padding: .7rem; }
+            .risk-advice { padding: .75rem; }
+            .risk-actions .btn, .risk-actions form, .risk-actions button { width: 100%; min-height: 42px; }
             .map-popup-title { display: grid; gap: .5rem; }
             .map-popup-badge { justify-self: start; }
             .barangay-tooltip { font-size: .68rem; max-width: 120px; white-space: normal; text-align: center; }
@@ -618,35 +635,39 @@
                     <div class="text-muted">No priority areas yet.</div>
                 @endif
             </div>
-            <div class="risk-stat risk-high">
-                <div class="risk-label">Mapped Barangays</div>
-                <div class="risk-value">{{ number_format($mapAreas->count()) }}</div>
-                <div class="text-muted small mt-2">Records available for the Lian barangay heatmap API.</div>
-            </div>
-            <div class="risk-stat risk-moderate">
-                <div class="risk-label">High Priority Areas</div>
-                <div class="risk-value">{{ number_format($mapAreas->whereIn('risk_level', ['High', 'Severe'])->count()) }}</div>
-                <div class="text-muted small mt-2">Barangays needing close MAO monitoring.</div>
-            </div>
-            <div class="risk-stat risk-low">
-                <div class="risk-label">Average Predicted Yield</div>
-                <div class="risk-value">{{ number_format($mapAreas->whereNotNull('predicted_yield')->avg('predicted_yield') ?? 0, 2) }}</div>
-                <div class="text-muted small mt-2">Tons/hectare across mapped records.</div>
-            </div>
-            <div class="risk-stat">
-                <div class="risk-label mb-3">Legend</div>
-                <div class="d-grid gap-2">
-                    <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Low risk</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate risk</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High risk</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Critical / severe risk</div>
-                    <div class="risk-label mt-2">Farm Type Layer</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#2563eb"></span> Rainfed</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#16a34a"></span> Irrigated</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#a855f7"></span> Mixed</div>
-                    <div class="legend-row"><span class="legend-swatch" style="background:#6b7280"></span> Unknown</div>
+            <div class="risk-mini-stats">
+                <div class="risk-stat risk-high">
+                    <div class="risk-label">Mapped Barangays</div>
+                    <div class="risk-value">{{ number_format($mapAreas->count()) }}</div>
+                    <div class="text-muted small mt-2">Records available for the Lian barangay heatmap API.</div>
+                </div>
+                <div class="risk-stat risk-moderate">
+                    <div class="risk-label">High Priority Areas</div>
+                    <div class="risk-value">{{ number_format($mapAreas->whereIn('risk_level', ['High', 'Severe'])->count()) }}</div>
+                    <div class="text-muted small mt-2">Barangays needing close MAO monitoring.</div>
+                </div>
+                <div class="risk-stat risk-low">
+                    <div class="risk-label">Average Predicted Yield</div>
+                    <div class="risk-value">{{ number_format($mapAreas->whereNotNull('predicted_yield')->avg('predicted_yield') ?? 0, 2) }}</div>
+                    <div class="text-muted small mt-2">Tons/hectare across mapped records.</div>
                 </div>
             </div>
+            <details class="ic-collapse">
+                <summary><span class="ic-collapse-title">Legend</span></summary>
+                <div class="risk-stat">
+                    <div class="d-grid gap-2">
+                        <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Low risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Critical / severe risk</div>
+                        <div class="risk-label mt-2">Farm Type Layer</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#2563eb"></span> Rainfed</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#16a34a"></span> Irrigated</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#a855f7"></span> Mixed</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#6b7280"></span> Unknown</div>
+                    </div>
+                </div>
+            </details>
             <div class="risk-stat risk-low">
                 <div class="risk-label">PAGASA Official Signal</div>
                 <div class="risk-info-value mt-2">{{ $pagasaSignal['title'] }}</div>
@@ -657,11 +678,13 @@
                 </div>
             </div>
             @if ($riskSource)
-            <div class="risk-stat">
-                <div class="risk-label">Risk Source</div>
-                <div class="small text-muted mt-2">{{ $riskSource }}</div>
-                <div class="small text-muted mt-2">Accuracy note: barangay colors are advisory estimates from stored rice records, weather inputs, and local exposure rules. Validate high-risk areas with MAO field observation and official PAGASA warnings.</div>
-            </div>
+            <details class="ic-collapse">
+                <summary><span class="ic-collapse-title">Risk Source</span></summary>
+                <div class="risk-stat">
+                    <div class="small text-muted mt-2">{{ $riskSource }}</div>
+                    <div class="small text-muted mt-2">Accuracy note: barangay colors are advisory estimates from stored rice records, weather inputs, and local exposure rules. Validate high-risk areas with MAO field observation and official PAGASA warnings.</div>
+                </div>
+            </details>
         @endif
         </aside>
     </div>
@@ -739,36 +762,39 @@
                                 </div>
                             </div>
 
-                            <div class="risk-summary-grid">
-                                <div class="risk-info-box">
-                                    <div class="risk-info-label">Predicted Yield</div>
-                                    <div class="risk-info-value">{{ $record->predicted_yield !== null ? number_format($record->predicted_yield, 2).' t/ha' : 'No prediction' }}</div>
-                                    <div class="risk-help">{{ $yieldMeaning }}</div>
+                            <details class="ic-collapse">
+                                <summary><span class="ic-collapse-title">Yield, Source &amp; Advisories</span></summary>
+                                <div class="risk-summary-grid">
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Predicted Yield</div>
+                                        <div class="risk-info-value">{{ $record->predicted_yield !== null ? number_format($record->predicted_yield, 2).' t/ha' : 'No prediction' }}</div>
+                                        <div class="risk-help">{{ $yieldMeaning }}</div>
+                                    </div>
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Data Source</div>
+                                        <div class="risk-info-value">ML + Weather API</div>
+                                        <div class="risk-help">{{ $record->description ?: 'No source note available.' }}</div>
+                                    </div>
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Monitoring Level</div>
+                                        <div class="risk-info-value">{{ in_array($record->risk_level, ['High', 'Severe'], true) ? 'Close monitoring' : ($record->risk_level === 'Moderate' ? 'Regular monitoring' : 'Routine monitoring') }}</div>
+                                        <div class="risk-help">Use this as a quick guide for MAO follow-up priority.</div>
+                                    </div>
                                 </div>
-                                <div class="risk-info-box">
-                                    <div class="risk-info-label">Data Source</div>
-                                    <div class="risk-info-value">ML + Weather API</div>
-                                    <div class="risk-help">{{ $record->description ?: 'No source note available.' }}</div>
-                                </div>
-                                <div class="risk-info-box">
-                                    <div class="risk-info-label">Monitoring Level</div>
-                                    <div class="risk-info-value">{{ in_array($record->risk_level, ['High', 'Severe'], true) ? 'Close monitoring' : ($record->risk_level === 'Moderate' ? 'Regular monitoring' : 'Routine monitoring') }}</div>
-                                    <div class="risk-help">Use this as a quick guide for MAO follow-up priority.</div>
-                                </div>
-                            </div>
 
-                            <div class="risk-advice-grid">
-                                <div class="risk-advice">
-                                    <div class="risk-info-label">Planting Advisory</div>
-                                    <div class="risk-info-value">{{ $record->planting_advisory ?: 'No advisory yet.' }}</div>
-                                    <div class="risk-help">Suggested planting action based on the current risk level.</div>
+                                <div class="risk-advice-grid mt-3">
+                                    <div class="risk-advice">
+                                        <div class="risk-info-label">Planting Advisory</div>
+                                        <div class="risk-info-value">{{ $record->planting_advisory ?: 'No advisory yet.' }}</div>
+                                        <div class="risk-help">Suggested planting action based on the current risk level.</div>
+                                    </div>
+                                    <div class="risk-advice">
+                                        <div class="risk-info-label">Irrigation Recommendation</div>
+                                        <div class="risk-info-value">{{ $record->irrigation_recommendation ?: 'No recommendation yet.' }}</div>
+                                        <div class="risk-help">Suggested water-support action for MAO monitoring.</div>
+                                    </div>
                                 </div>
-                                <div class="risk-advice">
-                                    <div class="risk-info-label">Irrigation Recommendation</div>
-                                    <div class="risk-info-value">{{ $record->irrigation_recommendation ?: 'No recommendation yet.' }}</div>
-                                    <div class="risk-help">Suggested water-support action for MAO monitoring.</div>
-                                </div>
-                            </div>
+                            </details>
 
                             <div class="risk-actions">
                                 <a class="btn btn-outline-secondary" href="{{ route('heatmap-areas.show', $record) }}">View Full Record</a>

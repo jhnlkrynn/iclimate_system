@@ -239,7 +239,34 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+        @media (max-width: 767.98px) {
+            .mao-stat-grid, .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; }
+            .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { gap: .6rem; }
+            .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .mao-stat-grid { margin-bottom: .9rem; }
+            .mao-card-body { padding: .85rem; }
+            .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .mao-panel-header { padding: .85rem .85rem .6rem; }
+            .mao-panel-body { padding: .8rem; }
+            .mao-list-item { padding: .65rem 0; gap: .65rem; }
+            .dashboard-section-label { margin: 1rem 0 .6rem; }
+            .dashboard-group-body { padding: .75rem; }
+            .dashboard-group > summary { padding: .8rem .85rem; }
+            .mao-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .live-weather-card { padding: .7rem; }
+            .live-weather-grid { margin-bottom: .75rem; }
+            .risk-level-card { padding: .65rem; }
+            .risk-level-value { font-size: 1.5rem; }
+            .risk-card { padding: .75rem; }
+            .quick-action { min-height: 84px; padding: .8rem; }
+            .chart-box { padding: .75rem; min-height: 240px; }
+            .chart-box canvas { height: 200px !important; }
+            .dashboard-map { height: 300px; }
+            .dashboard-map-shell { overflow: visible; }
+            .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; }
+            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; min-height: 40px; }
+            .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; }
+        }
 
     </style>
 
@@ -498,7 +525,6 @@
                 </div>
 
                 @if(! empty($weatherChartData['labels']))
-<<<<<<< HEAD
                     <div class="mb-4" data-chart-tabs>
                         <div class="ic-chart-tabs">
                             <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
@@ -527,28 +553,6 @@
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
                                 <canvas id="windSpeedChart"></canvas>
                             </div>
-=======
-                    <div class="visual-grid mb-4">
-                        <div class="chart-box">
-                            <div class="chart-title">Rainfall Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
-                            <canvas id="rainfallChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Temperature Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
-                            <canvas id="temperatureChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Humidity Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo current humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
-                            <canvas id="humidityChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Wind Speed Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
-                            <canvas id="windSpeedChart"></canvas>
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
                         </div>
                     </div>
                 @else
@@ -784,10 +788,6 @@
                 });
             };
 
-            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
-            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
-            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
-            makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#E8A73D', '');
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
                 temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),

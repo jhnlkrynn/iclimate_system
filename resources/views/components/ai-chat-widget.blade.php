@@ -194,13 +194,9 @@
             </form>
         </div>
     </div>
-<<<<<<< HEAD
-    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName ?? 'PalayPilot' }} assistant">PP</button>
-=======
     <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
         <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
     </button>
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 </div>
 
 <script>

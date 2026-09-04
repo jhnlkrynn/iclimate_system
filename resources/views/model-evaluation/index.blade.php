@@ -199,6 +199,20 @@
         @media (max-width: 991.98px) {
             .me-detail-grid, .me-comparison-grid { grid-template-columns: 1fr; }
         }
+        @media (max-width: 767.98px) {
+            .me-hero { padding: 1rem; margin-bottom: .85rem; }
+            .me-panel-header, .me-panel-body { padding: .75rem; }
+            .me-stat { padding: .75rem; min-height: auto; }
+            .me-value { font-size: 1.4rem; }
+            .row.g-3.mb-4 { margin-bottom: 1rem !important; }
+            .me-panel.mb-4 { margin-bottom: 1rem !important; }
+            .me-compare-top { margin-bottom: .75rem; }
+            .me-compare-select { padding: .75rem; min-height: auto; }
+            .me-detail-card { padding: .75rem; }
+            .me-detail-block { padding: .65rem; }
+            .ic-table-card details.ic-collapse { margin-bottom: 0; }
+            .ic-table-card details.ic-collapse > summary { padding: .55rem .75rem; margin-bottom: .5rem; font-size: .82rem; }
+        }
     </style>
 
     <section class="me-hero">
@@ -250,7 +264,7 @@
             <h2 class="h5 fw-bold mb-1">Algorithm Metrics</h2>
             <div class="small text-muted">{{ $evaluation['message'] ?? 'Model evaluation summary.' }}</div>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive ic-table-hide-mobile">
             <table class="table table-hover align-middle mb-0 me-table">
                 <thead>
                     <tr>
@@ -306,8 +320,38 @@
                 </tbody>
             </table>
         </div>
+        <div class="me-panel-body ic-table-cards">
+            @foreach($rows as $index => $row)
+                <div class="ic-table-card">
+                    <div class="ic-table-card-row"><div class="ic-table-card-label">Algorithm</div><div class="ic-table-card-value fw-bold">{{ $row['algorithm'] }}</div></div>
+                    <div class="ic-table-card-row"><div class="ic-table-card-label">RMSE</div><div class="ic-table-card-value">{{ is_null($row['rmse']) ? 'N/A' : number_format((float) $row['rmse'], 6) }}</div></div>
+                    <div class="ic-table-card-row"><div class="ic-table-card-label">MAE</div><div class="ic-table-card-value">{{ is_null($row['mae']) ? 'N/A' : number_format((float) $row['mae'], 6) }}</div></div>
+                    <div class="ic-table-card-row"><div class="ic-table-card-label">R&sup2;</div><div class="ic-table-card-value">{{ is_null($row['r2']) ? 'N/A' : number_format((float) $row['r2'], 6) }}</div></div>
+                    <div class="ic-table-card-row"><div class="ic-table-card-label">Status</div><div class="ic-table-card-value"><span class="{{ $row['status'] === 'Selected Model' ? 'me-selected' : 'me-compared' }}">{{ $row['status'] }}</span></div></div>
+                    <details class="ic-collapse">
+                        <summary><span class="ic-collapse-title">Model Details</span></summary>
+                        <div class="me-detail-card">
+                            <div class="me-detail-block mb-2">
+                                <div class="me-label mb-2">What It Is</div>
+                                <div>{{ $row['details']['summary'] ?? 'No model details available.' }}</div>
+                            </div>
+                            <div class="me-detail-block mb-2">
+                                <div class="me-label mb-2">Metric Meaning</div>
+                                <div>{{ $row['details']['interpretation'] ?? 'No interpretation available.' }}</div>
+                            </div>
+                            <div class="me-detail-block">
+                                <div class="me-label mb-2">Defense Note</div>
+                                <div>{{ $row['details']['reason'] ?? 'No defense note available.' }}</div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            @endforeach
+        </div>
     </div>
 
+    <details class="ic-collapse">
+        <summary><span class="ic-collapse-title">Side-by-Side Model Comparison</span></summary>
     <div class="me-panel mb-4">
         <div class="me-panel-header">
             <h2 class="h5 fw-bold mb-1">Side-by-Side Model Comparison</h2>
@@ -341,6 +385,7 @@
             <div id="comparisonOutput" class="me-comparison-grid"></div>
         </div>
     </div>
+    </details>
 
     <details class="ic-collapse">
         <summary><span class="ic-collapse-title">Methodology &amp; Sources</span></summary>

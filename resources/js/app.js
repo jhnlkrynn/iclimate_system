@@ -59,12 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFastNavigation();
     bindLoadingForms();
     bindDeleteConfirmations();
-<<<<<<< HEAD
     bindResponsiveCollapse();
     bindChartTabs();
-=======
     bindStatDrawers();
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 });
 
 function bindNavbarState() {
