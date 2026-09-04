@@ -73,6 +73,8 @@
         </div>
     </div>
 
+    <details class="ic-collapse" data-force-open="true">
+        <summary><span class="ic-collapse-title">Generate Report</span></summary>
     <div class="card filter-panel no-lift">
         <div class="card-body p-4">
             <form method="POST" action="{{ route('reports.generate') }}" class="row g-3" data-loading="true">
@@ -106,6 +108,7 @@
             </form>
         </div>
     </div>
+    </details>
 
     @if ($selected)
         <div class="report-summary-grid">

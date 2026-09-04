@@ -60,7 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFastNavigation();
     bindLoadingForms();
     bindDeleteConfirmations();
+<<<<<<< HEAD
+    bindResponsiveCollapse();
+    bindChartTabs();
+=======
     bindStatDrawers();
+>>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 });
 
 function bindNavbarState() {
@@ -441,5 +446,91 @@ function bindDeleteConfirmations() {
             const message = element.dataset.confirm || 'Are you sure you want to continue?';
             if (!window.confirm(message)) event.preventDefault();
         });
+    });
+}
+
+/*
+ * Shared "expand for details" primitive: a native <details class="ic-collapse">
+ * opens by default on desktop widths (today's behavior for any content moved
+ * behind it) and starts collapsed on mobile so secondary content doesn't force
+ * long scrolling. `data-force-collapsed`/`data-force-open` override the default
+ * in both directions. Once a person manually toggles one, we stop overriding it.
+ */
+function bindResponsiveCollapse() {
+    const desktopQuery = window.matchMedia('(min-width: 768px)');
+
+    const defaultOpenState = (details) => {
+        if (details.dataset.forceOpen === 'true') return true;
+        if (details.dataset.forceCollapsed === 'true') return false;
+        return desktopQuery.matches;
+    };
+
+    const applyDefaults = () => {
+        document.querySelectorAll('.ic-collapse').forEach((details) => {
+            if (details.dataset.userToggled === 'true') return;
+            details.open = defaultOpenState(details);
+        });
+    };
+
+    applyDefaults();
+
+    if (bindResponsiveCollapse.bound) return;
+    bindResponsiveCollapse.bound = true;
+
+    desktopQuery.addEventListener('change', applyDefaults);
+
+    document.addEventListener('toggle', (event) => {
+        const target = event.target;
+        if (target instanceof HTMLDetailsElement && target.classList.contains('ic-collapse')) {
+            target.dataset.userToggled = 'true';
+        }
+    }, true);
+}
+
+/*
+ * Shows one chart at a time on narrow screens for any container marked
+ * [data-chart-tabs] with an `.ic-chart-tabs` button row and matching
+ * [data-chart-pane] elements. Desktop keeps every chart visible (today's grid).
+ */
+function bindChartTabs() {
+    const mobileQuery = window.matchMedia('(max-width: 767.98px)');
+
+    document.querySelectorAll('[data-chart-tabs]').forEach((container) => {
+        const tabsRow = container.querySelector('.ic-chart-tabs');
+        const panes = [...container.querySelectorAll('[data-chart-pane]')];
+        if (!tabsRow || !panes.length) return;
+
+        const activate = (key) => {
+            panes.forEach((pane) => {
+                pane.hidden = mobileQuery.matches && pane.dataset.chartPane !== key;
+            });
+            tabsRow.querySelectorAll('.ic-chart-tab').forEach((tab) => {
+                tab.classList.toggle('active', tab.dataset.chartTab === key);
+            });
+            // Chart.js canvases created while hidden (or made visible again after
+            // being hidden) need a nudge to pick up their real size.
+            window.dispatchEvent(new Event('resize'));
+        };
+
+        const applyMode = () => {
+            if (mobileQuery.matches) {
+                const activeTab = tabsRow.querySelector('.ic-chart-tab.active') || tabsRow.querySelector('.ic-chart-tab');
+                activate(activeTab?.dataset.chartTab);
+            } else {
+                panes.forEach((pane) => { pane.hidden = false; });
+            }
+        };
+
+        if (container.dataset.chartTabsBound !== 'true') {
+            container.dataset.chartTabsBound = 'true';
+
+            tabsRow.querySelectorAll('.ic-chart-tab').forEach((tab) => {
+                tab.addEventListener('click', () => activate(tab.dataset.chartTab));
+            });
+
+            mobileQuery.addEventListener('change', applyMode);
+        }
+
+        applyMode();
     });
 }

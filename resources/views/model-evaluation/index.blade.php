@@ -342,6 +342,8 @@
         </div>
     </div>
 
+    <details class="ic-collapse">
+        <summary><span class="ic-collapse-title">Methodology &amp; Sources</span></summary>
     <div class="row g-4">
         <div class="col-lg-7">
             <div class="me-panel h-100">
@@ -400,6 +402,7 @@
             </div>
         </div>
     </div>
+    </details>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

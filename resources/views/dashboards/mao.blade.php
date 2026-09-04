@@ -591,6 +591,36 @@
                 </div>
 
                 @if(! empty($weatherChartData['labels']))
+<<<<<<< HEAD
+                    <div class="mb-4" data-chart-tabs>
+                        <div class="ic-chart-tabs">
+                            <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="temperature">Temperature</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="humidity">Humidity</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="wind">Wind Speed</button>
+                        </div>
+                        <div class="visual-grid">
+                            <div class="chart-box" data-chart-pane="rainfall">
+                                <div class="chart-title">Rainfall Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
+                                <canvas id="rainfallChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="temperature">
+                                <div class="chart-title">Temperature Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
+                                <canvas id="temperatureChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="humidity">
+                                <div class="chart-title">Humidity Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
+                                <canvas id="humidityChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="wind">
+                                <div class="chart-title">Wind Speed Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
+                                <canvas id="windSpeedChart"></canvas>
+                            </div>
+=======
                     <div class="visual-grid mb-4">
                         <div class="chart-box">
                             <div class="chart-title">Rainfall Chart</div>
@@ -611,6 +641,7 @@
                             <div class="chart-title">Wind Speed Chart</div>
                             <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
                             <canvas id="windSpeedChart"></canvas>
+>>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
                         </div>
                     </div>
                 @else

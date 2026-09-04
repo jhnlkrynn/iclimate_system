@@ -577,6 +577,56 @@
         </div>
     </section>
 
+<<<<<<< HEAD
+    @php
+        $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
+            + (request()->filled('risk_level') ? 1 : 0)
+            + (request()->filled('risk_type') ? 1 : 0);
+    @endphp
+    <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
+        <summary>
+            <span class="ic-collapse-title">
+                Filters
+                @if($activeFilterCount)
+                    <span class="ic-collapse-count">{{ $activeFilterCount }}</span>
+                @endif
+            </span>
+        </summary>
+        <div class="card filter-panel no-lift mb-4">
+            <div class="card-body">
+                <form class="row g-3 align-items-end" method="GET">
+                    <div class="col-lg-4">
+                        <label class="form-label fw-semibold">Search</label>
+                        <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search barangay, rainfall, advisory">
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label fw-semibold">Risk Level</label>
+                        <select class="form-select form-select-lg" name="risk_level">
+                            <option value="">All</option>
+                            @foreach($riskLevels as $level)
+                                <option value="{{ $level }}" @selected(request('risk_level') === $level)>{{ $level }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label fw-semibold">Risk Type</label>
+                        <select class="form-select form-select-lg" name="risk_type">
+                            <option value="">All</option>
+                            @foreach($riskTypes as $type)
+                                <option value="{{ $type }}" @selected(request('risk_type') === $type)>{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-lg-auto d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
+                        <a class="btn btn-outline-secondary btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
+                        @if($canManage)
+                            <a class="btn btn-outline-success btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+=======
     <div class="card filter-panel no-lift mb-4">
         <div class="card-body">
             <form class="row g-3 align-items-end" method="GET">
@@ -610,8 +660,9 @@
                     @endif
                 </div>
             </form>
+>>>>>>> origin/main
         </div>
-    </div>
+    </details>
 
     <div class="heatmap-grid mb-4">
         <div class="heatmap-main">

@@ -985,6 +985,8 @@
         <div class="feed-grid">
             <main class="d-grid gap-3">
                 @if($canPost)
+                    <details class="ic-collapse">
+                        <summary><span class="ic-collapse-title">+ New Post</span></summary>
                     <section class="feed-card feed-composer">
                         <div class="feed-card-body">
                             <div class="feed-eyebrow" style="color:#0d1f18;">New Post</div>
@@ -1067,6 +1069,7 @@
                             </form>
                         </div>
                     </section>
+                    </details>
                 @endif
 
                 @forelse($posts as $post)
