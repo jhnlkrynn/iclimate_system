@@ -660,11 +660,42 @@ textarea {
 
 @media (max-width: 767.98px) {
     .row {
-        --bs-gutter-x: 1rem;
+        --bs-gutter-x: .85rem;
+        --bs-gutter-y: .85rem;
+    }
+
+    /* Condense Bootstrap's vertical rhythm utilities so stacked sections need
+       less scrolling on phones, without touching column/grid structure. */
+    .mb-5, .my-5 { margin-bottom: 1.75rem !important; }
+    .mt-5, .my-5 { margin-top: 1.75rem !important; }
+    .mb-4, .my-4 { margin-bottom: 1.05rem !important; }
+    .mt-4, .my-4 { margin-top: 1.05rem !important; }
+    .mb-3, .my-3 { margin-bottom: .85rem !important; }
+    .mt-3, .my-3 { margin-top: .85rem !important; }
+    .py-5 { padding-top: 1.75rem !important; padding-bottom: 1.75rem !important; }
+    .py-4 { padding-top: 1.05rem !important; padding-bottom: 1.05rem !important; }
+    .g-5 { --bs-gutter-x: 1.15rem; --bs-gutter-y: 1.15rem; }
+    .g-4 { --bs-gutter-x: .85rem; --bs-gutter-y: .85rem; }
+
+    .card-body,
+    .card-header {
+        padding: .95rem !important;
+    }
+
+    .stat-card {
+        min-height: 0 !important;
+        padding-top: .85rem !important;
+        padding-bottom: .85rem !important;
+    }
+
+    .module-tile {
+        min-height: 0 !important;
     }
 
     .page-hero {
         border-radius: 18px !important;
+        padding: 1.1rem 1.2rem !important;
+        margin-bottom: .85rem !important;
     }
 
     .page-hero h1,

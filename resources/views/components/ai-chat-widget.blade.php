@@ -474,9 +474,6 @@
         </div>
 <<<<<<< HEAD
     </div>
-<<<<<<< HEAD
-    <button type="button" class="ic-ai-toggle" aria-label="Open {{ $assistantName ?? 'PalayPilot' }} assistant">PP</button>
-=======
     <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
         <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
 =======
@@ -502,7 +499,6 @@
         <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="Climora AI">
 >>>>>>> origin/main
     </button>
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
 </div>
 
 <script>

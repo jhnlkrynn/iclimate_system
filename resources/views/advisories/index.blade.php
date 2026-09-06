@@ -75,6 +75,15 @@
             flex-wrap: wrap;
             gap: .6rem;
         }
+        @media (max-width: 767.98px) {
+            .row.g-3.mb-4 { margin-bottom: 1rem !important; }
+            .advisory-safety-card { padding: .85rem; }
+            .advisory-safety-card h2 { font-size: 1rem; margin: .6rem 0 .3rem; }
+            .advisory-safety-note { min-height: 60px; padding: .6rem .7rem; }
+            .advisory-safety-actions { gap: .45rem; }
+            .advisory-safety-actions .btn { flex: 1 1 auto; }
+            .empty-state.p-5 { padding: 2rem 1rem !important; }
+        }
     </style>
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">

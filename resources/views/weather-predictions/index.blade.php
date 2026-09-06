@@ -118,7 +118,24 @@
         .stress-chip.moderate { --accent: #ffd166; }
         @media (max-width: 1199.98px) { .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 991.98px) { .wp-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .ds-grid { grid-template-columns: 1fr; } .wp-guide-flow { grid-template-columns: 1fr; } .wp-input-row { display: grid; } .wp-input-card .form-control { max-width: none; text-align: left; } }
+        @media (max-width: 767.98px) {
+            .ds-grid { grid-template-columns: 1fr; }
+            .wp-guide-flow { grid-template-columns: 1fr; gap: .5rem; margin-top: .75rem; }
+            .wp-input-row { display: grid; }
+            .wp-input-card .form-control { max-width: none; text-align: left; }
+            .wp-hero { padding: 1rem; border-radius: 20px; margin-bottom: .85rem; }
+            .wp-tabs { margin-bottom: .85rem; padding: .28rem; }
+            .wp-tab-button { padding: .55rem .8rem; font-size: .86rem; }
+            .wp-panel-header, .wp-panel-body { padding: .75rem; }
+            .wp-metric-body { padding: .75rem; }
+            .wp-metric { min-height: auto; }
+            .wp-value { font-size: 1.7rem; margin-top: .25rem; }
+            .wp-guide-step { padding: .6rem; }
+            .ds-card { min-height: auto; padding: .75rem; }
+            .wp-page .row.g-4 { --bs-gutter-y: .75rem; }
+            .wp-page .mb-4 { margin-bottom: 1rem !important; }
+            .wp-result-card, .wp-input-card { padding: .85rem; }
+        }
 
         .wp-source-line { color: #6b7c72; }
         .wp-guide-step { border-color: #e3ece6; background: #fff; }
@@ -236,12 +253,15 @@
                 <div class="wp-panel-body">
                     <p class="mb-0 text-muted">{{ $result['message'] }}</p>
                     <div class="wp-source-line">Source credit: {{ $weatherModelSourceNote }}</div>
-                    <div class="wp-guide-flow" aria-label="How the weather forecast output is made">
-                        <div class="wp-guide-step"><strong>1. Read records</strong><span>iClimate checks saved monthly climate records.</span></div>
-                        <div class="wp-guide-step"><strong>2. Train model</strong><span>The Random Forest learns from past rainfall, temperature, humidity, and wind.</span></div>
-                        <div class="wp-guide-step"><strong>3. Predict month</strong><span>The selected date is converted to its target month and forecast values are produced.</span></div>
-                        <div class="wp-guide-step"><strong>4. Show status</strong><span>The system labels conditions as dry, favorable, hot, humid, or windy.</span></div>
-                    </div>
+                    <details class="ic-collapse">
+                        <summary><span class="ic-collapse-title">How this forecast is made</span></summary>
+                        <div class="wp-guide-flow" aria-label="How the weather forecast output is made">
+                            <div class="wp-guide-step"><strong>1. Read records</strong><span>iClimate checks saved monthly climate records.</span></div>
+                            <div class="wp-guide-step"><strong>2. Train model</strong><span>The Random Forest learns from past rainfall, temperature, humidity, and wind.</span></div>
+                            <div class="wp-guide-step"><strong>3. Predict month</strong><span>The selected date is converted to its target month and forecast values are produced.</span></div>
+                            <div class="wp-guide-step"><strong>4. Show status</strong><span>The system labels conditions as dry, favorable, hot, humid, or windy.</span></div>
+                        </div>
+                    </details>
                     @if(isset($mlResult) && $mlResult)
                         <div class="mt-3">
                             <span class="wp-feature-pill">Rice yield source: {{ $yieldSource }}</span>
@@ -313,12 +333,15 @@
             <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Rice Yield Prediction Result</h2><div class="small text-muted">Source: {{ $yieldSource }}{{ ! empty($mlResult['api_confidence']) ? ' | Confidence '.$mlResult['api_confidence'].'%' : '' }}</div></div>
             <div class="wp-panel-body">
                 <div class="wp-source-line mb-3">Source credit: {{ $yieldSourceCredit }}</div>
-                <div class="wp-guide-flow mb-3" aria-label="How the rice yield output is made">
-                    <div class="wp-guide-step"><strong>1. Gather inputs</strong><span>The system uses the date, forecast weather, season, farm type, and saved production data.</span></div>
-                    <div class="wp-guide-step"><strong>2. Run model</strong><span>The trained rice-yield model estimates tons per hectare.</span></div>
-                    <div class="wp-guide-step"><strong>3. Apply rules</strong><span>Decision rules check risk, planting timing, and irrigation need.</span></div>
-                    <div class="wp-guide-step"><strong>4. Verify locally</strong><span>Use MAO advice and field observation before final farm action.</span></div>
-                </div>
+                <details class="ic-collapse">
+                    <summary><span class="ic-collapse-title">How this yield estimate is made</span></summary>
+                    <div class="wp-guide-flow mb-3" aria-label="How the rice yield output is made">
+                        <div class="wp-guide-step"><strong>1. Gather inputs</strong><span>The system uses the date, forecast weather, season, farm type, and saved production data.</span></div>
+                        <div class="wp-guide-step"><strong>2. Run model</strong><span>The trained rice-yield model estimates tons per hectare.</span></div>
+                        <div class="wp-guide-step"><strong>3. Apply rules</strong><span>Decision rules check risk, planting timing, and irrigation need.</span></div>
+                        <div class="wp-guide-step"><strong>4. Verify locally</strong><span>Use MAO advice and field observation before final farm action.</span></div>
+                    </div>
+                </details>
                 <div class="row g-4">
                     <div class="col-lg-4"><div class="wp-result-card h-100"><div class="wp-label">Estimated Rice Yield</div><div class="wp-value">{{ number_format($yield, 2) }}</div><div class="wp-unit">tons/hectare</div><div class="wp-score-bar mt-3" style="--score: {{ $yieldScore }}%;"><span></span></div></div></div>
                     <div class="col-lg-8">

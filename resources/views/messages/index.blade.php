@@ -113,15 +113,10 @@
         .unsend-cancel, .unsend-submit { border:0; border-radius:999px; padding:.72rem 1rem; font-weight:900; }
         .unsend-cancel { background:#f0f7f4; color:#1a3a2a; }
         .unsend-submit { background:#d85b45; color:#fff; box-shadow:0 .75rem 1.45rem rgba(216,91,69,.22); }
-<<<<<<< HEAD
-        .msg-wrap .text-muted { color: rgba(255,255,255,.5) !important; }
-        .msg-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #d8f3dc; }
-        .msg-back-link { display:none; align-items:center; gap:.4rem; color:#74c69d; font-weight:700; text-decoration:none; font-size:.85rem; margin-bottom:.5rem; }
-        .msg-back-link:hover { color:#9be5ba; }
-=======
         .msg-wrap .text-muted { color: var(--msg-muted) !important; }
         .msg-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #1a3a2a; }
->>>>>>> f8d02c7b165c3ef9a8fb4fdc6cfe441c6961234a
+        .msg-back-link { display:none; align-items:center; gap:.4rem; color:#74c69d; font-weight:700; text-decoration:none; font-size:.85rem; margin-bottom:.5rem; }
+        .msg-back-link:hover { color:#9be5ba; }
         @media (max-width:1199.98px) {
             .msg-shell { grid-template-columns:1fr; min-height:auto; }
             .msg-panel { min-height:auto; }
@@ -130,19 +125,24 @@
         }
         @media (max-width:767.98px) {
             .msg-hero { padding:1rem; }
-            .msg-head { padding:.85rem; }
+            .msg-shell { gap:.75rem; }
+            .msg-head { padding:.7rem .85rem; }
+            .msg-tabs { margin-top:.55rem; }
+            .thread-link { padding:.65rem .85rem; }
             .chat-window { min-height:360px; max-height:58vh; padding:.75rem; }
-            .thread-list { max-height:300px; }
+            .thread-list { max-height:calc(100dvh - 230px); }
             .bubble { max-width:92%; overflow-wrap:anywhere; }
             .msg-compose-wrap { padding:.6rem .75rem; }
             .msg-empty { min-height:300px; padding:1.25rem; }
             /* On phones, an open conversation replaces the thread list instead of stacking below it. */
             .msg-shell.has-active aside.msg-panel { display:none; }
             .msg-back-link { display:inline-flex; }
+            /* On phones, hide the "select a conversation" placeholder while browsing the list -- it adds scroll depth without any data or functionality of its own. */
+            .msg-shell:not(.has-active) main.msg-panel { display:none; }
         }
         @media (max-width:420px) {
-            .msg-hero { border-radius:18px; }
-            .msg-shell { gap:.75rem; }
+            .msg-hero { padding:.85rem; border-radius:18px; }
+            .msg-shell { gap:.6rem; }
             .bubble { max-width:100%; }
             .unsend-actions { grid-template-columns:1fr; }
             .emoji-popover { grid-template-columns:repeat(5,1fr); }

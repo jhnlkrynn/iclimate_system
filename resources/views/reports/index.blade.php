@@ -44,6 +44,14 @@
             .report-mobile-list, .history-card-list { display: grid; }
             .report-mobile-row { grid-template-columns: 1fr; gap: .2rem; }
             .report-live-strip { grid-template-columns: 1fr; }
+            .report-shell { gap: .75rem; }
+            .report-stat { padding: .75rem; border-radius: 14px; }
+            .report-stat-value { font-size: 1.4rem; }
+            .report-live-item { padding: .65rem; }
+            .card-body.p-4 { padding: 1rem !important; }
+            .card-body.p-3 { padding: .75rem !important; }
+            .report-mobile-card { padding: .75rem; }
+            .card-header.py-3 { padding-top: .85rem !important; padding-bottom: .85rem !important; }
         }
     </style>
 
@@ -172,6 +180,15 @@
         </div>
     @endif
 
+    <details class="ic-collapse">
+        <summary>
+            <span class="ic-collapse-title">
+                Report History
+                @if($history->total())
+                    <span class="ic-collapse-count">{{ $history->total() }}</span>
+                @endif
+            </span>
+        </summary>
     <div class="card no-lift">
         <div class="card-header border-0 py-3"><h2 class="h5 mb-1">Report History</h2><div class="small text-muted">Only real reports generated from current iClimate records are shown.</div></div>
         <div class="table-responsive report-history-table">
@@ -201,6 +218,7 @@
         </div>
         <div class="card-body border-top d-flex justify-content-end">{{ $history->links() }}</div>
     </div>
+    </details>
     </div>
     </div>
 </x-app-layout>

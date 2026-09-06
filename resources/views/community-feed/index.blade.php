@@ -885,7 +885,18 @@
                 border-radius: 20px;
                 padding: 1.1rem;
             }
+            .feed-wrap .feed-grid {
+                gap: .75rem;
+            }
+            .feed-wrap main.d-grid {
+                gap: .75rem !important;
+            }
+            .feed-post-card > .feed-card-body {
+                padding: .85rem;
+            }
             .feed-post-card .feed-post-head {
+                margin: -.85rem -.85rem .75rem;
+                padding: .85rem;
                 flex-direction: column;
                 gap: .75rem;
             }
@@ -896,6 +907,7 @@
             .feed-post-card .reaction-row {
                 min-height: auto;
                 align-items: flex-start;
+                padding: .55rem .85rem;
             }
             .feed-post-card .reaction-row:has(.reaction-picker:hover),
             .feed-post-card .reaction-row:has(.reaction-picker:focus-within) {
@@ -907,12 +919,26 @@
             .feed-post-card .manage-actions {
                 grid-template-columns: 1fr;
                 padding-inline: .85rem;
+                padding-block: .4rem;
             }
             .feed-post-card form.d-flex {
                 flex-direction: column;
             }
             .feed-post-card form.d-flex .btn {
                 width: 100%;
+            }
+            .feed-post-card .comment {
+                margin-top: .55rem;
+            }
+            .feed-post-card .comment-bubble {
+                padding: .5rem .65rem;
+            }
+            .toolkit-list {
+                gap: .45rem;
+                margin: .6rem 0;
+            }
+            .toolkit-item {
+                padding: .5rem .6rem;
             }
         }
         .feed-wrap {
@@ -1312,28 +1338,31 @@
                 <div class="feed-eyebrow" style="color:#74c69d;">Farmer Toolkit</div>
                 <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
-                <div class="toolkit-list">
-                    <div class="toolkit-item">
-                        <strong>Check Official Updates</strong>
-                        <span>Review posts for schedules, program requirements, advisory changes, and activity reminders from MAO personnel.</span>
+                <details class="ic-collapse">
+                    <summary><span class="ic-collapse-title">Toolkit Guide <span class="ic-collapse-count">4</span></span></summary>
+                    <div class="toolkit-list">
+                        <div class="toolkit-item">
+                            <strong>Check Official Updates</strong>
+                            <span>Review posts for schedules, program requirements, advisory changes, and activity reminders from MAO personnel.</span>
+                        </div>
+                        <div class="toolkit-item">
+                            <strong>Use Reactions for Quick Feedback</strong>
+                            <span>Mark posts as helpful, liked, or important so the MAO can see which updates farmers are using most.</span>
+                        </div>
+                        <div class="toolkit-item">
+                            <strong>Ask Public Questions</strong>
+                            <span>Comment when your question can help other farmers, such as clarification about dates, locations, or instructions.</span>
+                        </div>
+                        <div class="toolkit-item">
+                            <strong>Message Private Concerns</strong>
+                            <span>Use messages for farm-specific issues, personal records, crop damage details, or concerns that need direct assistance.</span>
+                        </div>
                     </div>
-                    <div class="toolkit-item">
-                        <strong>Use Reactions for Quick Feedback</strong>
-                        <span>Mark posts as helpful, liked, or important so the MAO can see which updates farmers are using most.</span>
+                    <div class="toolkit-note mb-3">
+                        Before joining an activity, confirm the event date, prepare any listed documents, and follow the latest advisory if weather conditions change.
+                        For urgent crop or weather concerns, send a direct message with your barangay, crop stage, and photos when available.
                     </div>
-                    <div class="toolkit-item">
-                        <strong>Ask Public Questions</strong>
-                        <span>Comment when your question can help other farmers, such as clarification about dates, locations, or instructions.</span>
-                    </div>
-                    <div class="toolkit-item">
-                        <strong>Message Private Concerns</strong>
-                        <span>Use messages for farm-specific issues, personal records, crop damage details, or concerns that need direct assistance.</span>
-                    </div>
-                </div>
-                <div class="toolkit-note mb-3">
-                    Before joining an activity, confirm the event date, prepare any listed documents, and follow the latest advisory if weather conditions change.
-                    For urgent crop or weather concerns, send a direct message with your barangay, crop stage, and photos when available.
-                </div>
+                </details>
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary fw-bold" href="{{ route('messages.index') }}">Start Conversation</a>
                     <a class="btn btn-outline-primary fw-bold" href="{{ route('planting-advisories.index') }}">Planting Advisories</a>
