@@ -35,10 +35,16 @@
             .calendar-page .upcoming-title { color: var(--ic-ink); line-height: 1.25; }
             .calendar-page .upcoming-title:hover { color: var(--ic-green-700); }
             @media (max-width: 767.98px) {
-                .calendar-page .calendar-grid { grid-template-columns: 1fr; }
+                .calendar-page .calendar-grid { grid-template-columns: 1fr; padding: .5rem; gap: .4rem; }
                 .calendar-page .calendar-weekday { display: none; }
-                .calendar-page .calendar-day { min-height: auto; }
+                .calendar-page .calendar-day { min-height: auto; padding: .5rem .6rem; }
                 .calendar-page .calendar-day.is-outside { display: none; }
+                .calendar-page .calendar-toolbar { padding: .75rem 1rem; gap: .5rem; }
+                .calendar-page .calendar-toolbar-month { font-size: 1.15rem; min-width: 0; }
+                .calendar-page .calendar-legend { padding: .65rem 1rem 0; gap: .4rem; }
+                .calendar-page .upcoming-item { padding: .6rem 0; gap: .6rem; }
+                .calendar-page .upcoming-date { min-width: 44px; }
+                .row.g-3 { --bs-gutter-y: .75rem; }
             }
         </style>
 
@@ -103,6 +109,15 @@
             </div>
 
             <div class="col-xl-4">
+                <details class="ic-collapse">
+                    <summary>
+                        <span class="ic-collapse-title">
+                            Upcoming
+                            @if($upcoming->count())
+                                <span class="ic-collapse-count">{{ $upcoming->count() }}</span>
+                            @endif
+                        </span>
+                    </summary>
                 <div class="card no-lift h-100 upcoming-card">
                     <div class="card-header border-0 py-3">
                         <div class="fw-semibold">Upcoming</div>
@@ -131,6 +146,7 @@
                         @endif
                     </div>
                 </div>
+                </details>
             </div>
         </div>
     </div>

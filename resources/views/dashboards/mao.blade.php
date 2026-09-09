@@ -250,8 +250,8 @@
         .dashboard-group-body { padding: 1rem; }
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
-        @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .farmer-org-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box { min-height: 350px; } .chart-box canvas { min-width: 520px; height: 280px !important; } .farmer-org-chart-inner { min-width: 680px; height: 300px; } .farmer-org-legend { grid-template-columns: 1fr; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+        @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .farmer-org-chart-shell { min-height: 500px; } .farmer-org-chart-inner { min-width: 1180px; height: 480px; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
 
         /* Product UI restraint pass */
         .mao-console .btn { border-radius: 8px !important; box-shadow: none !important; }
@@ -602,26 +602,34 @@
                 </div>
 
                 @if(! empty($weatherChartData['labels']))
-                    <div class="visual-grid mb-4">
-                        <div class="chart-box">
-                            <div class="chart-title">Rainfall Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
-                            <canvas id="rainfallChart"></canvas>
+                    <div class="mb-4" data-chart-tabs>
+                        <div class="ic-chart-tabs">
+                            <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="temperature">Temperature</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="humidity">Humidity</button>
+                            <button type="button" class="ic-chart-tab" data-chart-tab="wind">Wind Speed</button>
                         </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Temperature Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
-                            <canvas id="temperatureChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Humidity Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo current humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
-                            <canvas id="humidityChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <div class="chart-title">Wind Speed Chart</div>
-                            <div class="chart-note">{{ $liveWeather ? 'Open-Meteo forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
-                            <canvas id="windSpeedChart"></canvas>
+                        <div class="visual-grid">
+                            <div class="chart-box" data-chart-pane="rainfall">
+                                <div class="chart-title">Rainfall Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
+                                <canvas id="rainfallChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="temperature">
+                                <div class="chart-title">Temperature Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
+                                <canvas id="temperatureChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="humidity">
+                                <div class="chart-title">Humidity Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
+                                <canvas id="humidityChart"></canvas>
+                            </div>
+                            <div class="chart-box" data-chart-pane="wind">
+                                <div class="chart-title">Wind Speed Chart</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
+                                <canvas id="windSpeedChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 @else
@@ -1000,6 +1008,10 @@
                 });
             };
 
+            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
+            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
+            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
+                    makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#4B7185', '');
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
                 temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C'),

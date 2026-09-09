@@ -174,6 +174,8 @@
             </section>
 
             <aside class="ai-panel ai-aside">
+                <details class="ic-collapse">
+                    <summary><span class="ic-collapse-title">Quick Actions &amp; Suggested Questions</span></summary>
                 <div class="ai-prompt-sections">
                     <div>
                         <div class="ai-panel-header">
@@ -217,6 +219,7 @@
                         </div>
                     </div>
                 </div>
+                </details>
             </aside>
         </div>
     </div>

@@ -215,9 +215,23 @@
             .lf-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 575.98px) {
-            .lf-map-frame { height: 72vh; min-height: 420px; }
+            .lf-hero { padding: 1rem; margin-bottom: .85rem; }
+            .lf-map-frame { height: min(48vh, 360px); min-height: 280px; }
+            .lf-map-toolbar { padding: .65rem .75rem; gap: .55rem; }
             .lf-map-toolbar .btn, .lf-map-search, .lf-map-search .form-select { width: 100%; }
-            .lf-model-grid { grid-template-columns: 1fr; }
+            .lf-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin-top: .75rem; }
+            .lf-meta { padding: .6rem .55rem; }
+            .lf-meta .lf-label { font-size: .62rem; }
+            .lf-meta .lf-value { font-size: .8rem; margin-top: .2rem; }
+            .lf-model-panel, .lf-barangay-panel { margin-top: .75rem; }
+            .lf-model-header { padding: .75rem; gap: .6rem; }
+            .lf-model-body { padding: .75rem; }
+            .lf-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+            .lf-model-card { padding: .7rem; min-height: 0; }
+            .lf-model-number { font-size: clamp(1.3rem, 6vw, 1.7rem); }
+            .lf-popup-item { padding: .65rem; }
+            .lf-barangay-panel { padding: .75rem; }
+            .lf-barangay-chip { min-height: 40px; padding: .5rem .75rem; }
         }
 
         /* -- toolbar/panel surfaces: light, dark ink text -- */
@@ -340,35 +354,38 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mt-1">
-                    <div class="col-md-4">
-                        <div class="lf-popup-item h-100">
-                            <div class="lf-label">Season</div>
-                            <div class="lf-value">{{ $predictions['season'] ?? 'N/A' }}</div>
+                <details class="ic-collapse mt-3">
+                    <summary><span class="ic-collapse-title">Model Details &amp; Insights</span></summary>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="lf-popup-item h-100">
+                                <div class="lf-label">Season</div>
+                                <div class="lf-value">{{ $predictions['season'] ?? 'N/A' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="lf-popup-item h-100">
+                                <div class="lf-label">Confidence</div>
+                                <div class="lf-value">{{ $modelForecast['confidence']['value'] ?? 0 }}%</div>
+                                <div class="small text-muted fw-semibold mt-1">{{ $modelForecast['confidence']['label'] ?? 'Not available' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="lf-popup-item h-100">
+                                <div class="lf-label">Training Months</div>
+                                <div class="lf-value">{{ $modelForecast['months_available'] ?? 0 }}</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="lf-popup-item h-100">
-                            <div class="lf-label">Confidence</div>
-                            <div class="lf-value">{{ $modelForecast['confidence']['value'] ?? 0 }}%</div>
-                            <div class="small text-muted fw-semibold mt-1">{{ $modelForecast['confidence']['label'] ?? 'Not available' }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="lf-popup-item h-100">
-                            <div class="lf-label">Training Months</div>
-                            <div class="lf-value">{{ $modelForecast['months_available'] ?? 0 }}</div>
-                        </div>
-                    </div>
-                </div>
 
-                @if(! empty($modelForecast['insights']))
-                    <ul class="lf-insight-list">
-                        @foreach($modelForecast['insights'] as $insight)
-                            <li>{{ $insight }}</li>
-                        @endforeach
-                    </ul>
-                @endif
+                    @if(! empty($modelForecast['insights']))
+                        <ul class="lf-insight-list">
+                            @foreach($modelForecast['insights'] as $insight)
+                                <li>{{ $insight }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </details>
             @else
                 <div class="alert alert-warning mb-0">
                     <strong>Model not ready.</strong>
