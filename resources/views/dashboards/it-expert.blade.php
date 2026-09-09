@@ -330,6 +330,8 @@
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
+            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
+            .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
             .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .module-list, .quick-grid { grid-template-columns: 1fr; }
             .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
@@ -349,6 +351,8 @@
             .dashboard-group-body { padding: .75rem; }
             .dashboard-group > summary { padding: .8rem .85rem; }
             .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .farmer-org-chart-shell { min-height: 780px; }
+            .farmer-org-chart-inner { min-width: 720px; height: 780px; }
             .farmer-org-chart-shell { min-height: 420px; max-height: 64vh; overflow: auto; }
             .farmer-org-chart-inner { min-width: 680px; height: 420px; }
         }

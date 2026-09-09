@@ -108,6 +108,7 @@
         .mao-card-body { padding: 1rem; position: relative; z-index: 1; }
         .mao-label { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; }
         .mao-value { margin-top: .35rem; font-family: 'DM Serif Display', serif; font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1; font-weight: 400; color: var(--mao-ink); letter-spacing: -.02em; }
+        .mao-value-unit { font-family: 'Inter', sans-serif; font-size: .95rem; font-weight: 600; color: var(--mao-muted); letter-spacing: 0; }
         .mao-note { color: var(--mao-muted); font-size: .84rem; margin-top: .65rem; }
         .mao-panel {
             border: 1px solid var(--mao-line);
@@ -138,6 +139,9 @@
         .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); }
         .risk-card strong { color: var(--mao-ink); }
         .risk-card.severe, .risk-card.high { border-color: rgba(216,91,69,.45); background: linear-gradient(135deg, #fff3ee, #f5e7db); }
+        .variable-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin-bottom: 1rem; }
+        .variable-info-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .85rem .9rem; }
+        .variable-info-card .row-text { margin-top: .3rem; }
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
@@ -251,6 +255,44 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 767.98px) {
+            .mao-stat-grid, .visual-grid, .quick-grid, .heat-grid, .variable-info-grid { grid-template-columns: 1fr; }
+            .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid, .variable-info-grid { gap: .6rem; }
+            .variable-info-card { padding: .75rem; }
+            .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .mao-stat-grid { margin-bottom: .9rem; }
+            .mao-card-body { padding: .85rem; }
+            .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .mao-panel-header { padding: .85rem .85rem .6rem; }
+            .mao-panel-body { padding: .8rem; }
+            .mao-list-item { padding: .65rem 0; gap: .65rem; }
+            .dashboard-section-label { margin: 1rem 0 .6rem; }
+            .dashboard-group-body { padding: .75rem; }
+            .dashboard-group > summary { padding: .8rem .85rem; }
+            .mao-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .live-weather-card { padding: .7rem; }
+            .live-weather-grid { margin-bottom: .75rem; }
+            .risk-level-card { padding: .65rem; }
+            .risk-level-value { font-size: 1.5rem; }
+            .risk-card { padding: .75rem; }
+            .quick-action { min-height: 84px; padding: .8rem; }
+            .chart-box { padding: .75rem; min-height: 240px; }
+            .chart-box canvas { height: 200px !important; }
+            .farmer-org-chart-shell { min-height: 500px; }
+            .farmer-org-chart-inner { min-width: 1180px; height: 480px; }
+            .dashboard-map { height: 300px; }
+            .dashboard-map-shell { overflow: visible; }
+            .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; }
+            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; min-height: 40px; }
+            .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; }
+        }
+        @media (max-width: 399.98px) {
+            .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; }
+            .mao-value { font-size: clamp(1.4rem, 7vw, 1.75rem); }
+            .risk-level-value { font-size: 1.35rem; }
+            .mao-hero { padding: .9rem; }
+            .mao-chip { font-size: .72rem; padding: .38rem .6rem; }
+        }
         @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .farmer-org-chart-shell { min-height: 0; overflow-x: auto; padding-bottom: .5rem; } .farmer-org-chart-inner { min-width: 520px; height: 300px; } .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
         @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } .farmer-org-chart-inner { min-width: 460px; } }
 
@@ -360,7 +402,7 @@
         <section class="mao-stat-grid">
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
         </section>
 
@@ -451,7 +493,7 @@
                         <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} total production</div>
+                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} tons total production</div>
                         <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
@@ -526,6 +568,22 @@
                 </div>
             </div>
             <div class="mao-panel-body">
+                <div class="variable-info-grid">
+                    <div class="variable-info-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="row-title mb-0">Rainfall &amp; Temperature</div>
+                            <span class="status-pill">Used in yield model</span>
+                        </div>
+                        <p class="row-text mb-0">Water and heat directly drive how rice grows. The trained yield model uses rainfall and temperature &mdash; including recent, 3-month, 6-month, and seasonal averages &mdash; together with farm area and season as its main predictors.</p>
+                    </div>
+                    <div class="variable-info-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="row-title mb-0">Humidity &amp; Wind Speed</div>
+                            <span class="status-pill muted">Shown live, not yet in yield model</span>
+                        </div>
+                        <p class="row-text mb-0">Tracked live below for weather forecasting and risk warnings (e.g. high wind before harvest, high humidity disease risk). Not yet part of the trained yield model &mdash; validating whether they should be added requires more historical climate and production records than are currently on file.</p>
+                    </div>
+                </div>
                 @if($liveWeather)
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
@@ -815,6 +873,25 @@
 
                     if (statusTarget) statusTarget.textContent = `${label}: ${countLabel(count)}`;
                 };
+
+                const maxOrganizationCount = Math.max(...organizationChartData.counts, 0);
+
+                // Many bars crowd vertical labels (rotated, overlapping). Switch to a
+                // horizontal layout past this threshold so labels stay flat and readable.
+                const HORIZONTAL_BAR_THRESHOLD = 6;
+                const isHorizontal = organizationChartData.labels.length > HORIZONTAL_BAR_THRESHOLD;
+
+                const organizationChartInner = organizationCanvas.closest('.farmer-org-chart-inner');
+                if (organizationChartInner) {
+                    if (isHorizontal) {
+                        organizationChartInner.style.minWidth = '0';
+                        organizationChartInner.style.height = `${Math.max(480, organizationChartData.labels.length * 46)}px`;
+                    } else {
+                        organizationChartInner.style.minWidth = '1180px';
+                        organizationChartInner.style.height = '480px';
+                    }
+                }
+
                 const organizationValueLabels = {
                     id: 'farmersByOrganizationValueLabels',
                     afterDatasetsDraw(chart) {
@@ -823,6 +900,19 @@
                         const zeroY = chart.scales.y?.getPixelForValue(0) ?? chart.chartArea.bottom;
 
                         ctx.save();
+                        ctx.font = '700 12px Inter, system-ui, sans-serif';
+                        ctx.fillStyle = '#1F4D3A';
+                        meta.data.forEach((bar, index) => {
+                            const value = String(chart.data.datasets[0].data[index] ?? 0);
+                            if (isHorizontal) {
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(value, bar.x + 8, bar.y);
+                            } else {
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'bottom';
+                                ctx.fillText(value, bar.x, bar.y - 8);
+                            }
                         ctx.font = '700 16px Inter, system-ui, sans-serif';
                         ctx.fillStyle = '#1F2937';
                         ctx.textAlign = 'center';
@@ -867,9 +957,11 @@
                         }],
                     },
                     options: {
+                        indexAxis: isHorizontal ? 'y' : 'x',
                         responsive: true,
                         maintainAspectRatio: false,
                         animation: { duration: 420 },
+                        layout: { padding: isHorizontal ? { right: 32 } : { top: 24, right: 12 } },
                         layout: { padding: { top: 24, right: 14, bottom: 4, left: 4 } },
                         plugins: {
                             legend: { display: false },
@@ -877,13 +969,24 @@
                                 callbacks: {
                                     title: (items) => organizationDisplayLabels[items[0].dataIndex] || '',
                                     label: (context) => {
-                                        const value = context.parsed.y || 0;
+                                        const value = (isHorizontal ? context.parsed.x : context.parsed.y) || 0;
                                         return `${value} registered farmer${value === 1 ? '' : 's'}`;
                                     },
                                 },
                             },
                         },
-                        scales: {
+                        scales: isHorizontal ? {
+                            x: {
+                                beginAtZero: true,
+                                suggestedMax: maxOrganizationCount + 1,
+                                ticks: { precision: 0, color: '#64748B' },
+                                grid: { color: 'rgba(95,143,120,.18)', drawBorder: false },
+                            },
+                            y: {
+                                ticks: { color: '#1F2937', autoSkip: false, font: { size: 11, weight: 600 } },
+                                grid: { display: false, drawBorder: false },
+                            },
+                        } : {
                             x: {
                                 ticks: chartLabels.horizontalCategoryTicks
                                     ? chartLabels.horizontalCategoryTicks({ display: false, color: '#1F2937', autoSkip: false, padding: 0, font: { size: 14, weight: 600 } })
