@@ -35,6 +35,69 @@ Chart.register(
     Tooltip,
 );
 
+const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
+    const normalized = String(label ?? '').trim();
+    if (!normalized) return [''];
+
+    const words = normalized.split(/\s+/);
+    const lines = [];
+    let current = '';
+
+    words.forEach((word) => {
+        const pieces = word.length > maxLineLength
+            ? word.match(new RegExp(`.{1,${maxLineLength}}`, 'g')) ?? [word]
+            : [word];
+
+        pieces.forEach((piece) => {
+            const next = current ? `${current} ${piece}` : piece;
+            if (next.length > maxLineLength && current) {
+                lines.push(current);
+                current = piece;
+            } else {
+                current = next;
+            }
+        });
+    });
+
+    if (current) lines.push(current);
+    if (lines.length <= maxLines) return lines;
+
+    const visible = lines.slice(0, maxLines);
+    visible[maxLines - 1] = `${visible[maxLines - 1].replace(/\.+$/, '')}...`;
+
+    return visible;
+};
+
+const horizontalCategoryTicks = (overrides = {}) => ({
+    color: '#1F2937',
+    maxRotation: 0,
+    minRotation: 0,
+    autoSkip: false,
+    padding: 10,
+    font: {
+        size: 12,
+        weight: 600,
+        lineHeight: 1.25,
+    },
+    ...overrides,
+    font: {
+        size: 12,
+        weight: 600,
+        lineHeight: 1.25,
+        ...(overrides.font ?? {}),
+    },
+});
+
+Chart.defaults.color = '#1F2937';
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.font.size = 12;
+Chart.defaults.plugins.tooltip.titleFont = { size: 13, weight: '700' };
+Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+
+window.iClimateChartLabels = {
+    wrap: wrapChartLabel,
+    horizontalCategoryTicks,
+};
 window.Chart = Chart;
 window.L = L;
 await import('leaflet.heat');

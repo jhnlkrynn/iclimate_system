@@ -289,6 +289,44 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertJsonPath('source_label', 'Open-Meteo live weather for Lian, Batangas');
     }
 
+    public function test_mao_dashboard_chart_labels_render_horizontally_and_wrap(): void
+    {
+        Http::fake([
+            'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
+        ]);
+
+        $user = User::factory()->maoPersonnel()->create();
+        $response = $this->actingAs($user)->get(route('mao.dashboard'));
+        $content = $response->getContent();
+
+        $response->assertOk()
+            ->assertSee('farmersByOrganizationLegend', false)
+            ->assertSee('horizontalCategoryTicks', false)
+            ->assertSee('organizationColors', false)
+            ->assertSee('farmer-org-legend-item', false)
+            ->assertSee('farmer-org-chart-title', false)
+            ->assertSee('font-size: 20px', false)
+            ->assertSee('font-size: 16px', false)
+            ->assertSee('grid-template-columns: repeat(3, minmax(0, 1fr))', false)
+            ->assertSee('grid-template-columns: repeat(2, minmax(0, 1fr))', false)
+            ->assertSee("label === 'None' ? 'No Organization'", false)
+            ->assertSee('data-organization-index', false)
+            ->assertSee('setActiveElements', false)
+            ->assertSee('setOrganizationStatus', false)
+            ->assertSee('context.parsed.y', false)
+            ->assertSee('display: false', false)
+            ->assertSee('maxRotation: 0', false)
+            ->assertSee('minRotation: 0', false)
+            ->assertDontSee("indexAxis: 'y'", false)
+            ->assertDontSee('maxRotation: 45', false)
+            ->assertDontSee('minRotation: 45', false);
+
+        $this->assertSame(1, substr_count($content, "makeChart('rainfallChart'"));
+        $this->assertSame(1, substr_count($content, "makeChart('temperatureChart'"));
+        $this->assertSame(1, substr_count($content, "makeChart('humidityChart'"));
+        $this->assertSame(1, substr_count($content, "makeChart('windSpeedChart'"));
+    }
+
     /**
      * @return array<string, mixed>
      */
