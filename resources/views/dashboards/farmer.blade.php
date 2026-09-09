@@ -632,17 +632,18 @@
         }
         @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 767.98px) {
-            .farmer-hero-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .farmer-hero-grid { grid-template-columns: 1fr; }
+            .quick-grid, .priority-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero-grid {
                 grid-template-areas:
                     "copy"
                     "actions"
                     "weather";
             }
-            .farmer-hero-summary { grid-template-columns: 1fr; }
+            .farmer-hero-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero-actions .field-chip { flex: 1 1 100%; width: 100%; justify-content: flex-start; }
-            .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
-            .weather-mini-grid { grid-template-columns: 1fr; }
+            .climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .weather-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-top: 0; }
             .farmer-hero { padding: 1.1rem 1rem; margin-bottom: 1rem; }
             .farmer-hero h1 { margin-bottom: .2rem; }
@@ -655,7 +656,9 @@
             .dashboard-section-label:first-of-type { margin-top: 0; }
             .section-note { margin-top: .1rem; }
             .climate-grid { gap: .6rem; margin-bottom: .35rem; padding-bottom: .25rem; }
-            .field-card { padding: .8rem .9rem; gap: .35rem; }
+            .field-card { min-height: 0; padding: .8rem .75rem; gap: .35rem; }
+            .field-icon { width: 28px; height: 28px; }
+            .field-status { white-space: normal; text-align: right; justify-content: flex-end; }
             .field-value { font-size: 1.55rem; }
             .weather-live-card { padding: .8rem; }
             .weather-live-head { margin-bottom: .55rem; }
@@ -678,6 +681,12 @@
             .advisory-card { padding: .85rem .95rem; }
             .farmer-list-item { padding: .65rem 0; gap: .7rem; }
             .empty-soft { padding: 1.25rem; }
+        }
+        @media (max-width: 380px) {
+            .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .field-card { padding: .75rem .68rem; }
+            .field-label, .field-note { font-size: .82rem; }
+            .field-value { font-size: 1.42rem; }
         }
     </style>
 
@@ -843,7 +852,6 @@
         </section>
 
         @if($weatherForecastDays !== [])
-<<<<<<< HEAD
             <details class="dashboard-group">
                 <summary>
                     <div class="dashboard-group-summary-main">
@@ -854,16 +862,6 @@
                             <h2 class="dashboard-group-title">7-Day Forecast</h2>
                             <p class="dashboard-group-note">Extended outlook for Lian, Batangas.</p>
                         </div>
-=======
-            <section class="forecast-strip" data-weather-forecast data-reveal-stagger>
-                @foreach($weatherForecastDays as $forecastDay)
-                    <div class="forecast-day" data-reveal="fade-up" data-reveal-delay="{{ $loop->index * 60 }}">
-                        <strong>{{ $forecastDay['day'] ?? '' }}</strong>
-                        <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
-                        <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
-                        <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
-                        <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
->>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
                     </div>
                     <span class="dashboard-group-toggle">
                         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

@@ -251,7 +251,8 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .farmer-org-chart-shell { min-height: 500px; } .farmer-org-chart-inner { min-width: 1180px; height: 480px; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+        @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .farmer-org-chart-shell { min-height: 0; overflow-x: auto; padding-bottom: .5rem; } .farmer-org-chart-inner { min-width: 520px; height: 300px; } .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
+        @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } .farmer-org-chart-inner { min-width: 460px; } }
 
         /* Product UI restraint pass */
         .mao-console .btn { border-radius: 8px !important; box-shadow: none !important; }
@@ -1008,10 +1009,6 @@
                 });
             };
 
-            makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm');
-            makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C');
-            makeChart('humidityChart', 'Humidity', chartData.humidity, '#5F8F78', '%');
-                    makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#4B7185', '');
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
                 temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C'),

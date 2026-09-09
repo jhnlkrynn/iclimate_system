@@ -328,15 +328,17 @@
         .dashboard-group-body > .row:last-child { margin-bottom: 0 !important; }
         .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-<<<<<<< HEAD
-        @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
-            .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
+            .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .module-list, .quick-grid { grid-template-columns: 1fr; }
+            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
             .it-stat-grid { margin-bottom: .9rem; }
             .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
             .it-panel-header { padding: .85rem .85rem .6rem; }
             .it-panel-body { padding: .8rem; }
             .it-card-body { padding: .85rem; }
+            .farmer-org-card { padding: .72rem; }
             .it-value { font-size: clamp(1.5rem, 6vw, 1.9rem); }
             .module-link { padding: .7rem; }
             .module-top { gap: .5rem; }
@@ -347,11 +349,13 @@
             .dashboard-group-body { padding: .75rem; }
             .dashboard-group > summary { padding: .8rem .85rem; }
             .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .farmer-org-chart-shell { min-height: 420px; max-height: 64vh; overflow: auto; }
+            .farmer-org-chart-inner { min-width: 680px; height: 420px; }
         }
-=======
-        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) { .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; } .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .farmer-org-chart-shell { min-height: 780px; } .farmer-org-chart-inner { min-width: 720px; height: 780px; } }
->>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
+        @media (max-width: 380px) {
+            .it-stat-grid, .farmer-org-grid { grid-template-columns: 1fr; }
+            .it-card-body, .farmer-org-card { padding: .72rem; }
+        }
 
         .it-console .empty-state { background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08)); border: 1px dashed rgba(95,143,120,.55); color: var(--it-muted); border-radius: 8px; }
         .it-console .empty-state .fw-bold { color: var(--it-ink); }

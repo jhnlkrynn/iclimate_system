@@ -119,7 +119,7 @@
         @media (max-width: 1199.98px) { .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 991.98px) { .wp-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
-            .ds-grid { grid-template-columns: 1fr; }
+            .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .wp-guide-flow { grid-template-columns: 1fr; gap: .5rem; margin-top: .75rem; }
             .wp-input-row { display: grid; }
             .wp-input-card .form-control { max-width: none; text-align: left; }
@@ -135,6 +135,9 @@
             .wp-page .row.g-4 { --bs-gutter-y: .75rem; }
             .wp-page .mb-4 { margin-bottom: 1rem !important; }
             .wp-result-card, .wp-input-card { padding: .85rem; }
+        }
+        @media (max-width: 380px) {
+            .ds-grid { grid-template-columns: 1fr; }
         }
 
         .wp-source-line { color: #6b7c72; }
