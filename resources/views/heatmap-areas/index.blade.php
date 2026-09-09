@@ -489,7 +489,6 @@
                 padding: .55rem .6rem;
             }
             .pagasa-map-link { width: 100%; text-align: center; }
-<<<<<<< HEAD
             .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; min-height: 40px; padding: .5rem .65rem; }
             .risk-side { grid-template-columns: 1fr; gap: .6rem; }
             .risk-mini-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
@@ -497,10 +496,6 @@
             .risk-mini-stats .risk-label { font-size: .62rem; }
             .risk-mini-stats .risk-value { font-size: 1.2rem; margin-top: .2rem; }
             .risk-mini-stats .text-muted.small { font-size: .68rem; margin-top: .3rem !important; }
-=======
-            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .875rem; }
-            .risk-side { grid-template-columns: 1fr; }
->>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
             .priority-list { grid-template-columns: 1fr; }
             .priority-item { grid-template-columns: 1fr; }
             .priority-score { justify-self: start; }
@@ -599,7 +594,6 @@
         </div>
     </section>
 
-<<<<<<< HEAD
     @php
         $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
             + (request()->filled('risk_level') ? 1 : 0)
@@ -639,50 +633,15 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-lg-auto d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
-                        <a class="btn btn-outline-secondary btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
+                    <div class="col-lg-auto d-flex gap-2 filter-actions">
+                        <button class="btn btn-apply btn-lg" type="submit">Apply</button>
+                        <a class="btn btn-reset btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
                         @if($canManage)
-                            <a class="btn btn-outline-success btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
+                            <a class="btn btn-refresh btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
                         @endif
                     </div>
                 </form>
             </div>
-=======
-    <div class="card filter-panel no-lift mb-4">
-        <div class="card-body">
-            <form class="row g-3 align-items-end" method="GET">
-                <div class="col-lg-4">
-                    <label class="form-label fw-semibold">Search</label>
-                    <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search barangay, rainfall, advisory">
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <label class="form-label fw-semibold">Risk Level</label>
-                    <select class="form-select form-select-lg" name="risk_level">
-                        <option value="">All</option>
-                        @foreach($riskLevels as $level)
-                            <option value="{{ $level }}" @selected(request('risk_level') === $level)>{{ $level }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <label class="form-label fw-semibold">Risk Type</label>
-                    <select class="form-select form-select-lg" name="risk_type">
-                        <option value="">All</option>
-                        @foreach($riskTypes as $type)
-                            <option value="{{ $type }}" @selected(request('risk_type') === $type)>{{ $type }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-lg-auto d-flex gap-2 filter-actions">
-                    <button class="btn btn-apply btn-lg" type="submit">Apply</button>
-                    <a class="btn btn-reset btn-lg" href="{{ route('heatmap-areas.index') }}">Reset</a>
-                    @if($canManage)
-                        <a class="btn btn-refresh btn-lg" href="{{ route('heatmap-areas.index', ['refresh' => 1]) }}">Refresh Map</a>
-                    @endif
-                </div>
-            </form>
->>>>>>> origin/main
         </div>
     </details>
 

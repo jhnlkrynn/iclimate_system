@@ -472,12 +472,6 @@
             <span class="ic-ai-dot"></span>
             <span class="ic-ai-dot"></span>
         </div>
-<<<<<<< HEAD
-    </div>
-    <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
-        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
-=======
-
         <div class="ic-ai-chips" aria-label="Suggested questions">
             @foreach($icAiChips as $chip)
                 <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
@@ -497,7 +491,6 @@
 
     <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open Climora AI">
         <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="Climora AI">
->>>>>>> origin/main
     </button>
 </div>
 

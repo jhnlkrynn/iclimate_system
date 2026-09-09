@@ -843,7 +843,6 @@
         </section>
 
         @if($weatherForecastDays !== [])
-<<<<<<< HEAD
             <details class="dashboard-group">
                 <summary>
                     <div class="dashboard-group-summary-main">
@@ -854,16 +853,6 @@
                             <h2 class="dashboard-group-title">7-Day Forecast</h2>
                             <p class="dashboard-group-note">Extended outlook for Lian, Batangas.</p>
                         </div>
-=======
-            <section class="forecast-strip" data-weather-forecast data-reveal-stagger>
-                @foreach($weatherForecastDays as $forecastDay)
-                    <div class="forecast-day" data-reveal="fade-up" data-reveal-delay="{{ $loop->index * 60 }}">
-                        <strong>{{ $forecastDay['day'] ?? '' }}</strong>
-                        <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
-                        <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
-                        <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
-                        <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
->>>>>>> 890a5e348eb92cd130cbf46c726ea361ceb14293
                     </div>
                     <span class="dashboard-group-toggle">
                         <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
