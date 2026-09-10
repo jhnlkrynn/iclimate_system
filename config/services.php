@@ -95,8 +95,11 @@ return [
         'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),
     ],
 
+    // iClimate ML service (python_scripts/main.py, FastAPI) — rice yield +
+    // weather predictions and live model-evaluation metrics. Config key kept
+    // as "farming_ai" for compatibility with existing callers/tests.
     'farming_ai' => [
-        'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:5001'),
+        'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:8010'),
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),
     ],
 

@@ -342,6 +342,38 @@
                         <div class="wp-guide-step"><strong>4. Verify locally</strong><span>Use MAO advice and field observation before final farm action.</span></div>
                     </div>
                 </details>
+                @php
+                    $modelFeatureRows = collect($mlResult['features'] ?? [])
+                        ->map(function ($value, $modelKey) {
+                            $entry = \App\Services\Prediction\FeatureCatalog::byModelKey((string) $modelKey, \App\Services\Prediction\FeatureCatalog::SCHEMA_DEPLOYED);
+
+                            return [
+                                'value' => $value,
+                                'label' => $entry['label'] ?? $modelKey,
+                                'unit' => $entry['unit'] ?? '',
+                                'description' => $entry['description'] ?? null,
+                            ];
+                        })
+                        ->values();
+                @endphp
+                @if($modelFeatureRows->isNotEmpty())
+                    <details class="ic-collapse mb-3">
+                        <summary><span class="ic-collapse-title">Exact model inputs used for this prediction</span></summary>
+                        <div class="row g-2 mt-2">
+                            @foreach($modelFeatureRows as $row)
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="wp-advisory h-100">
+                                        <div class="wp-label mb-1">{{ $row['label'] }}@if($row['unit'])<span class="text-muted fw-normal"> ({{ $row['unit'] }})</span>@endif</div>
+                                        <div class="wp-card-value">{{ is_numeric($row['value']) ? number_format((float) $row['value'], 2) : ($row['value'] ?? 'N/A') }}</div>
+                                        @if($row['description'])
+                                            <div class="ds-note mt-1">{{ $row['description'] }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
                 <div class="row g-4">
                     <div class="col-lg-4"><div class="wp-result-card h-100"><div class="wp-label">Estimated Rice Yield</div><div class="wp-value">{{ number_format($yield, 2) }}</div><div class="wp-unit">tons/hectare</div><div class="wp-score-bar mt-3" style="--score: {{ $yieldScore }}%;"><span></span></div></div></div>
                     <div class="col-lg-8">

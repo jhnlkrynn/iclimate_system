@@ -4,80 +4,147 @@ namespace App\Services\MachineLearning;
 
 use App\Models\ClimateRecord;
 use App\Models\RiceProduction;
+use App\Services\Prediction\FeatureCatalog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class ModelEvaluationService
 {
-    private const TRAINED_MODEL_RESULTS = [
-        [
-            'algorithm' => 'Multiple Linear Regression',
-            'rmse' => 0.863691,
-            'mae' => 0.651078,
-            'r2' => 0.120158,
-            'status' => 'Compared Model',
-            'details' => [
-                'summary' => 'Baseline statistical model used to compare how a simple linear relationship performs against ensemble models.',
-                'interpretation' => 'It assumes the relationship between weather inputs and rice yield is mostly straight-line. Rice yield is affected by mixed conditions, so this model had higher error than Random Forest.',
-                'reason' => 'Kept as a comparison model because the manuscript requires Multiple Linear Regression in the algorithm evaluation.',
-            ],
+    /**
+     * Static narrative text only — the numbers (rmse/mae/r2/status) come live
+     * from the iClimate ML service's /metrics route (python_scripts/main.py,
+     * evaluation_service.py), not from here.
+     */
+    private const ALGORITHM_DETAILS = [
+        'Multiple Linear Regression' => [
+            'summary' => 'Baseline statistical model used to compare how a simple linear relationship performs against ensemble models.',
+            'interpretation' => 'It assumes the relationship between weather inputs and rice yield is mostly straight-line. Rice yield is affected by mixed conditions, so this model typically has higher error than Random Forest.',
+            'reason' => 'Kept as a comparison model because the manuscript requires Multiple Linear Regression in the algorithm evaluation.',
         ],
-        [
-            'algorithm' => 'Random Forest',
-            'rmse' => 0.802549,
-            'mae' => 0.591967,
-            'r2' => 0.240319,
-            'status' => 'Selected Model',
-            'details' => [
-                'summary' => 'Ensemble regression model that combines multiple decision trees to produce a more stable rice yield prediction.',
-                'interpretation' => 'Random Forest is the best model here because it made the smallest average prediction errors. It has the lowest RMSE and MAE, meaning its yield predictions were closest to the actual values. It also has the highest R², meaning it explained more of the yield pattern than the other models.',
-                'reason' => 'Selected as the deployed rice yield model because it performed best overall in the trained model selection notebook and is saved as storage/models/rice_yield_model_final.pkl.',
-            ],
+        'Random Forest' => [
+            'summary' => 'Ensemble regression model that combines multiple decision trees to produce a more stable rice yield prediction.',
+            'interpretation' => 'Random Forest is deployed as the production model. Compare its RMSE, MAE, and R² against the other rows to see whether it is still the best-performing option on the current data.',
+            'reason' => 'Deployed as the rice yield model; saved as storage/models/rice_yield_model_final.pkl.',
         ],
-        [
-            'algorithm' => 'Gradient Boosting',
-            'rmse' => 0.897037,
-            'mae' => 0.653737,
-            'r2' => 0.050907,
-            'status' => 'Compared Model',
-            'details' => [
-                'summary' => 'Sequential ensemble model that builds trees one after another to correct previous prediction errors.',
-                'interpretation' => 'It can be powerful, but in this trained model evaluation it produced higher error than Random Forest and explained less of the rice yield pattern.',
-                'reason' => 'Kept as a comparison model because the manuscript requires Gradient Boosting in the model evaluation.',
-            ],
+        'Gradient Boosting' => [
+            'summary' => 'Sequential ensemble model that builds trees one after another to correct previous prediction errors.',
+            'interpretation' => 'Can be powerful, but is more prone to overfitting on small datasets than Random Forest.',
+            'reason' => 'Kept as a comparison model because the manuscript requires Gradient Boosting in the model evaluation.',
         ],
     ];
 
     public function evaluate(): array
     {
-        return Cache::remember('model-evaluation:rice-yield', now()->addMinutes(30), fn () => $this->buildEvaluation());
+        return Cache::remember('model-evaluation:rice-yield', now()->addMinutes(5), fn () => $this->buildEvaluation());
     }
 
     private function buildEvaluation(): array
     {
-        $samples = $this->samples();
+        $metrics = $this->fetchLiveMetrics();
+
+        if ($metrics !== null && ($metrics['ready'] ?? false)) {
+            return $this->buildReadyEvaluation($metrics);
+        }
+
+        return $this->buildNotReadyEvaluation($metrics);
+    }
+
+    private function buildReadyEvaluation(array $metrics): array
+    {
+        $best = $metrics['best_algorithm'] ?? null;
+
+        $rows = collect($metrics['rows'] ?? [])
+            ->map(function (array $row) use ($best): array {
+                $algorithm = $row['algorithm'] ?? 'Unknown';
+
+                return [
+                    'algorithm' => $algorithm,
+                    'rmse' => $row['rmse'] ?? null,
+                    'mae' => $row['mae'] ?? null,
+                    'r2' => $row['r2'] ?? null,
+                    'status' => $algorithm === $best ? 'Selected Model' : 'Compared Model',
+                    'details' => self::ALGORITHM_DETAILS[$algorithm] ?? [
+                        'summary' => 'No model details available.',
+                        'interpretation' => 'No interpretation available.',
+                        'reason' => 'No defense note available.',
+                    ],
+                ];
+            })
+            ->all();
+
+        $message = 'Evaluation metrics computed live from the current exported training data.';
+
+        if (! empty($metrics['warning'])) {
+            $message .= ' '.$metrics['warning'];
+        }
 
         return [
             'ready' => true,
-            'message' => 'Evaluation metrics come from the trained model selection notebook used to produce the deployed Random Forest rice yield model.',
-            'sample_count' => $samples->count(),
+            'message' => $message,
+            'sample_count' => $metrics['sample_count'] ?? $this->samples()->count(),
             'training_count' => null,
             'testing_count' => null,
             'features' => $this->featureLabels(),
-            'rows' => self::TRAINED_MODEL_RESULTS,
-            'best_algorithm' => 'Random Forest',
+            'rows' => $rows,
+            'best_algorithm' => $best,
             'source' => [
-                'name' => 'iClimate_ML_Model_Training.ipynb',
-                'type' => 'Trained model selection notebook',
-                'dataset_files' => [
-                    'Ambulong Monthly Data.csv',
-                    'planting summary 2020-2025',
-                    'irrigated and non irrigated farm types location',
-                ],
+                'name' => 'iClimate ML service (python_scripts/evaluation_service.py)',
+                'type' => 'Live cross-validated evaluation',
+                'dataset_path' => $metrics['source']['dataset_path'] ?? null,
+                'computed_live' => true,
                 'deployed_model' => storage_path('models/rice_yield_model_final.pkl'),
+            ],
+            'generated_at' => $metrics['generated_at'] ?? now(),
+        ];
+    }
+
+    private function buildNotReadyEvaluation(?array $metrics): array
+    {
+        $message = $metrics['message']
+            ?? 'Could not reach the iClimate ML service to compute model metrics. Confirm it is running '
+                .'(python_scripts/main.py via uvicorn) and that FARMING_AI_API_URL is set correctly.';
+
+        return [
+            'ready' => false,
+            'message' => $message,
+            'sample_count' => $metrics['sample_count'] ?? $this->samples()->count(),
+            'training_count' => null,
+            'testing_count' => null,
+            'features' => $this->featureLabels(),
+            'rows' => [],
+            'best_algorithm' => null,
+            'source' => [
+                'name' => 'iClimate ML service (python_scripts/evaluation_service.py)',
+                'type' => 'Live cross-validated evaluation',
+                'computed_live' => false,
             ],
             'generated_at' => now(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null null when the ML service could not be reached at all
+     */
+    private function fetchLiveMetrics(): ?array
+    {
+        $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
+        $timeout = (int) config('services.farming_ai.timeout', 5);
+
+        try {
+            $response = Http::timeout($timeout)->acceptJson()->get($baseUrl.'/metrics');
+        } catch (Throwable) {
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $data = $response->json();
+
+        return is_array($data) ? $data : null;
     }
 
     private function samples(): Collection
@@ -128,292 +195,19 @@ class ModelEvaluationService
             ->values();
     }
 
-    private function splitSamples(Collection $samples): array
-    {
-        $all = $samples->values()->all();
-        $testingCount = max(2, (int) ceil(count($all) * 0.3));
-
-        return [
-            array_slice($all, 0, count($all) - $testingCount),
-            array_slice($all, -$testingCount),
-        ];
-    }
-
-    private function metrics(array $actual, array $predicted): array
-    {
-        $count = max(count($actual), 1);
-        $errors = [];
-        $absolute = [];
-
-        foreach ($actual as $index => $value) {
-            $error = ((float) $predicted[$index]) - ((float) $value);
-            $errors[] = $error ** 2;
-            $absolute[] = abs($error);
-        }
-
-        $mean = array_sum($actual) / $count;
-        $total = array_sum(array_map(fn (float $value): float => ($value - $mean) ** 2, $actual));
-        $residual = array_sum($errors);
-
-        return [
-            'rmse' => round(sqrt(array_sum($errors) / $count), 3),
-            'mae' => round(array_sum($absolute) / $count, 3),
-            'r2' => round($total > 0 ? 1 - ($residual / $total) : 0, 3),
-        ];
-    }
-
+    /**
+     * @return array<int, array{label: string, unit: string, description: string, behavior: string}>
+     */
     private function featureLabels(): array
     {
-        return ['Rainfall', 'Temperature', 'Humidity', 'Wind Speed', 'Farm Area', 'Season', 'Irrigation Type'];
-    }
-}
-
-interface EvaluatesYieldModel
-{
-    public function train(array $samples): void;
-
-    public function predict(array $features): float;
-}
-
-class SimpleLinearRegressionModel implements EvaluatesYieldModel
-{
-    private array $weights = [];
-
-    private array $means = [];
-
-    private array $scales = [];
-
-    public function train(array $samples): void
-    {
-        $names = array_keys($samples[0]['features']);
-        $this->means = $this->means($samples, $names);
-        $this->scales = $this->scales($samples, $names, $this->means);
-        $this->weights = array_fill(0, count($names) + 1, 0.0);
-        $rate = 0.04;
-
-        for ($step = 0; $step < 1200; $step++) {
-            $gradient = array_fill(0, count($this->weights), 0.0);
-
-            foreach ($samples as $sample) {
-                $x = $this->vector($sample['features'], $names);
-                $error = $this->dot($this->weights, $x) - $sample['target'];
-
-                foreach ($x as $index => $value) {
-                    $gradient[$index] += $error * $value;
-                }
-            }
-
-            foreach ($this->weights as $index => $weight) {
-                $this->weights[$index] = $weight - ($rate * ($gradient[$index] / count($samples)));
-            }
-        }
-    }
-
-    public function predict(array $features): float
-    {
-        return $this->dot($this->weights, $this->vector($features, array_keys($features)));
-    }
-
-    private function vector(array $features, array $names): array
-    {
-        $vector = [1.0];
-
-        foreach ($names as $name) {
-            $vector[] = (((float) $features[$name]) - ($this->means[$name] ?? 0)) / max($this->scales[$name] ?? 1, 0.0001);
-        }
-
-        return $vector;
-    }
-
-    private function dot(array $a, array $b): float
-    {
-        return array_sum(array_map(fn ($x, $y): float => $x * $y, $a, $b));
-    }
-
-    private function means(array $samples, array $names): array
-    {
-        return array_combine($names, array_map(fn (string $name): float => array_sum(array_map(fn ($sample) => $sample['features'][$name], $samples)) / count($samples), $names));
-    }
-
-    private function scales(array $samples, array $names, array $means): array
-    {
-        return array_combine($names, array_map(function (string $name) use ($samples, $means): float {
-            $variance = array_sum(array_map(fn ($sample) => (((float) $sample['features'][$name]) - $means[$name]) ** 2, $samples)) / count($samples);
-
-            return sqrt($variance) ?: 1.0;
-        }, $names));
-    }
-}
-
-class SimpleRandomForestModel implements EvaluatesYieldModel
-{
-    private array $trees = [];
-
-    public function __construct(private readonly int $treeCount = 30) {}
-
-    public function train(array $samples): void
-    {
-        $this->trees = [];
-        $features = array_keys($samples[0]['features']);
-
-        for ($i = 0; $i < $this->treeCount; $i++) {
-            mt_srand(900 + $i);
-            $tree = new SimpleRegressionTree(maxDepth: 5, minSamples: 2, featureCount: max(2, (int) floor(sqrt(count($features)))));
-            $tree->train($this->bootstrap($samples), $features);
-            $this->trees[] = $tree;
-        }
-    }
-
-    public function predict(array $features): float
-    {
-        return array_sum(array_map(fn (SimpleRegressionTree $tree): float => $tree->predict($features), $this->trees)) / max(count($this->trees), 1);
-    }
-
-    private function bootstrap(array $samples): array
-    {
-        $boot = [];
-
-        for ($i = 0; $i < count($samples); $i++) {
-            $boot[] = $samples[mt_rand(0, count($samples) - 1)];
-        }
-
-        return $boot;
-    }
-}
-
-class SimpleGradientBoostingModel implements EvaluatesYieldModel
-{
-    private float $base = 0.0;
-
-    private array $trees = [];
-
-    private float $learningRate = 0.12;
-
-    public function __construct(private readonly int $rounds = 36) {}
-
-    public function train(array $samples): void
-    {
-        $this->trees = [];
-        $features = array_keys($samples[0]['features']);
-        $this->base = array_sum(array_map(fn ($sample) => $sample['target'], $samples)) / count($samples);
-        $working = $samples;
-
-        for ($i = 0; $i < $this->rounds; $i++) {
-            foreach ($working as $index => $sample) {
-                $working[$index]['target'] = $sample['target'] - $this->predict($sample['features']);
-            }
-
-            $tree = new SimpleRegressionTree(maxDepth: 2, minSamples: 2, featureCount: count($features));
-            $tree->train($working, $features);
-            $this->trees[] = $tree;
-        }
-    }
-
-    public function predict(array $features): float
-    {
-        $value = $this->base;
-
-        foreach ($this->trees as $tree) {
-            $value += $this->learningRate * $tree->predict($features);
-        }
-
-        return $value;
-    }
-}
-
-class SimpleRegressionTree
-{
-    private array $root = [];
-
-    public function __construct(
-        private readonly int $maxDepth,
-        private readonly int $minSamples,
-        private readonly int $featureCount,
-    ) {}
-
-    public function train(array $samples, array $features): void
-    {
-        $this->root = $this->build($samples, $features, 0);
-    }
-
-    public function predict(array $features): float
-    {
-        $node = $this->root;
-
-        while (($node['type'] ?? 'leaf') === 'split') {
-            $node = ($features[$node['feature']] <= $node['threshold']) ? $node['left'] : $node['right'];
-        }
-
-        return (float) ($node['value'] ?? 0);
-    }
-
-    private function build(array $samples, array $features, int $depth): array
-    {
-        if ($depth >= $this->maxDepth || count($samples) < $this->minSamples || $this->variance($samples) < 0.000001) {
-            return ['type' => 'leaf', 'value' => $this->mean($samples)];
-        }
-
-        $split = $this->bestSplit($samples, $this->featureSubset($features));
-
-        if (! $split) {
-            return ['type' => 'leaf', 'value' => $this->mean($samples)];
-        }
-
-        return [
-            'type' => 'split',
-            'feature' => $split['feature'],
-            'threshold' => $split['threshold'],
-            'left' => $this->build($split['left'], $features, $depth + 1),
-            'right' => $this->build($split['right'], $features, $depth + 1),
-        ];
-    }
-
-    private function bestSplit(array $samples, array $features): ?array
-    {
-        $best = null;
-        $bestScore = INF;
-
-        foreach ($features as $feature) {
-            $values = array_values(array_unique(array_map(fn ($sample): float => (float) $sample['features'][$feature], $samples)));
-            sort($values);
-
-            for ($i = 1; $i < count($values); $i++) {
-                $threshold = ($values[$i - 1] + $values[$i]) / 2;
-                $left = array_values(array_filter($samples, fn ($sample): bool => $sample['features'][$feature] <= $threshold));
-                $right = array_values(array_filter($samples, fn ($sample): bool => $sample['features'][$feature] > $threshold));
-
-                if ($left === [] || $right === []) {
-                    continue;
-                }
-
-                $score = (count($left) * $this->variance($left) + count($right) * $this->variance($right)) / count($samples);
-
-                if ($score < $bestScore) {
-                    $bestScore = $score;
-                    $best = compact('feature', 'threshold', 'left', 'right');
-                }
-            }
-        }
-
-        return $best;
-    }
-
-    private function featureSubset(array $features): array
-    {
-        shuffle($features);
-
-        return array_slice($features, 0, min($this->featureCount, count($features)));
-    }
-
-    private function mean(array $samples): float
-    {
-        return array_sum(array_map(fn ($sample): float => (float) $sample['target'], $samples)) / max(count($samples), 1);
-    }
-
-    private function variance(array $samples): float
-    {
-        $mean = $this->mean($samples);
-
-        return array_sum(array_map(fn ($sample): float => (((float) $sample['target']) - $mean) ** 2, $samples)) / max(count($samples), 1);
+        return collect(FeatureCatalog::forSchema(FeatureCatalog::SCHEMA_TARGET))
+            ->map(fn (array $feature): array => [
+                'label' => $feature['label'],
+                'unit' => $feature['unit'],
+                'description' => $feature['description'],
+                'behavior' => $feature['behavior'],
+            ])
+            ->values()
+            ->all();
     }
 }

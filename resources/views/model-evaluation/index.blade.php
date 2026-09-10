@@ -1,6 +1,6 @@
 @php
     $rows = collect($evaluation['rows'] ?? []);
-    $best = $evaluation['best_algorithm'] ?? 'Random Forest';
+    $best = $evaluation['best_algorithm'] ?? 'Not yet available';
     $source = $evaluation['source'] ?? [];
 @endphp
 
@@ -221,7 +221,7 @@
                 <div class="me-eyebrow mb-2">Model Evaluation Report</div>
                 <h1 class="h2 fw-bold mb-2">Rice Yield Algorithm Comparison</h1>
         <p class="mb-0" style="max-width: 820px; color: #4a5c52;">
-                    This page supports the manuscript requirement using the trained model selection results from the iClimate ML notebook.
+                    Metrics on this page are computed live by the iClimate ML service each time it runs a fresh cross-validation over the current exported training data — not a one-off notebook run.
                 </p>
             </div>
             <span class="badge text-bg-light border px-3 py-2">Selected: {{ $best }}</span>
@@ -246,15 +246,15 @@
         <div class="col-md-4">
             <div class="me-stat">
                 <div class="me-label">Metric Source</div>
-                <div class="me-value" style="font-size: 1.15rem;">Training Notebook</div>
-                <div class="small text-muted mt-2">{{ $source['name'] ?? 'iClimate_ML_Model_Training.ipynb' }}</div>
+                <div class="me-value" style="font-size: 1.15rem;">{{ ($source['computed_live'] ?? false) ? 'Live Evaluation' : 'Unavailable' }}</div>
+                <div class="small text-muted mt-2">{{ $source['name'] ?? 'iClimate ML service' }}</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="me-stat">
-                <div class="me-label">Deployed Model</div>
-                <div class="me-value" style="font-size: 1.15rem;">Random Forest</div>
-                <div class="small text-muted mt-2">Saved as <code>rice_yield_model_final.pkl</code>.</div>
+                <div class="me-label">Best Performing Algorithm</div>
+                <div class="me-value" style="font-size: 1.15rem;">{{ $best }}</div>
+                <div class="small text-muted mt-2">Deployed model is saved as <code>rice_yield_model_final.pkl</code>.</div>
             </div>
         </div>
     </div>
@@ -297,7 +297,7 @@
                                             <div class="me-label">Model Details</div>
                                             <div class="h5 fw-bold mb-0">{{ $row['algorithm'] }}</div>
                                         </div>
-                                        <div class="small text-muted">Metric source: trained model selection notebook</div>
+                                        <div class="small text-muted">Metric source: live cross-validated evaluation</div>
                                     </div>
                                     <div class="me-detail-grid">
                                         <div class="me-detail-block">
@@ -398,7 +398,7 @@
                 </div>
                 <div class="me-panel-body">
                     <p class="mb-2">
-                        The displayed metrics are from the trained model selection notebook, where Multiple Linear Regression, Random Forest, and Gradient Boosting were compared using MAE, RMSE, and R². Random Forest had the strongest result and is the selected deployed model.
+                        The displayed metrics come from a live cross-validated comparison of Multiple Linear Regression, Random Forest, and Gradient Boosting on the current exported training data, using MAE, RMSE, and R². The algorithm with the strongest live result is highlighted as the selected model above — it is only guaranteed to match the deployed <code>rice_yield_model_final.pkl</code> once that model has been retrained on the same data this evaluation used.
                     </p>
                     <p class="mb-0 text-muted">
                         Lower RMSE and MAE indicate smaller prediction error. Higher R² indicates better explanation of yield variation. The deployed system uses the saved trained model artifact for rice yield prediction.
@@ -410,12 +410,22 @@
             <div class="me-panel h-100">
                 <div class="me-panel-header">
                     <h2 class="h5 fw-bold mb-1">Input Features</h2>
-                    <div class="small text-muted">Variables used for the comparison.</div>
+                    <div class="small text-muted">Variables used for the comparison, and what each one means.</div>
                 </div>
-                <div class="me-panel-body">
-                    @foreach(($evaluation['features'] ?? []) as $feature)
-                        <span class="me-feature">{{ $feature }}</span>
-                    @endforeach
+                <div class="me-panel-body" style="display: flex; flex-direction: column; gap: .6rem;">
+                    @forelse(($evaluation['features'] ?? []) as $feature)
+                        <div class="me-detail-block">
+                            <span class="me-feature">{{ $feature['label'] ?? $feature }}@if(! empty($feature['unit'])) ({{ $feature['unit'] }})@endif</span>
+                            @if(! empty($feature['description']))
+                                <div class="small mt-2">{{ $feature['description'] }}</div>
+                            @endif
+                            @if(! empty($feature['behavior']))
+                                <div class="small text-muted mt-1">{{ $feature['behavior'] }}</div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="small text-muted">No feature list available.</div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -428,19 +438,19 @@
                 <div class="me-panel-body">
                     <div class="row g-3">
                         <div class="col-lg-4">
-                            <div class="me-label">Notebook</div>
-                            <div class="fw-bold">{{ $source['name'] ?? 'iClimate_ML_Model_Training.ipynb' }}</div>
-                            <div class="small text-muted">{{ $source['type'] ?? 'Trained model selection notebook' }}</div>
+                            <div class="me-label">Evaluation Service</div>
+                            <div class="fw-bold">{{ $source['name'] ?? 'iClimate ML service' }}</div>
+                            <div class="small text-muted">{{ $source['type'] ?? 'Live cross-validated evaluation' }}</div>
                         </div>
                         <div class="col-lg-4">
-                            <div class="me-label">Dataset Sources</div>
+                            <div class="me-label">Training Data Export</div>
                             <div class="small">
-                                {{ implode(', ', $source['dataset_files'] ?? []) }}
+                                <code>{{ $source['dataset_path'] ?? 'Not available — run php artisan iclimate:export-yield-data' }}</code>
                             </div>
                         </div>
                         <div class="col-lg-4">
-                            <div class="me-label">Saved Model Artifact</div>
-                            <div class="small"><code>{{ $source['deployed_model'] ?? '' }}</code></div>
+                            <div class="me-label">Deployed Model Artifact</div>
+                            <div class="small"><code>{{ $source['deployed_model'] ?? storage_path('models/rice_yield_model_final.pkl') }}</code></div>
                         </div>
                     </div>
                 </div>

@@ -45,7 +45,7 @@ class AIHybridOrchestratorTest extends TestCase
             ->assertJsonPath('chat.prediction_result.data.temperature_c', 29.4);
 
         Http::assertSent(fn ($request) => str_contains((string) $request->url(), 'forecast.json'));
-        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), '127.0.0.1:5001/predict'));
+        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), '127.0.0.1:19999/predict'));
     }
 
     public function test_next_month_rainfall_question_routes_to_trained_weather_model(): void
@@ -71,7 +71,7 @@ class AIHybridOrchestratorTest extends TestCase
     {
         $this->seedClimateRecords();
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'rice_yield_prediction' => ['predicted_yield' => 3.87, 'unit' => 'tons/hectare'],
                 'confidence_score' => 88,
             ]),
@@ -122,7 +122,7 @@ class AIHybridOrchestratorTest extends TestCase
     {
         $this->seedClimateRecords();
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'rice_yield_prediction' => ['predicted_yield' => 3.87, 'unit' => 'tons/hectare'],
                 'confidence_score' => 88,
             ]),

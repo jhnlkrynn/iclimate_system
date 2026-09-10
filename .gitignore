@@ -1,6 +1,9 @@
 *.log
 __pycache__/
 *.py[cod]
+.venv-ml/
+python_scripts/.venv/
+/storage/models/SMOKETEST_*
 .DS_Store
 .env
 .env.backup
