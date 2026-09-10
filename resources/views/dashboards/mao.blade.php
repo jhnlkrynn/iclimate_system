@@ -128,6 +128,11 @@
         .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
         .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+        .mao-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
+        .mao-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--mao-red); }
+        .mao-risk-badge-moderate { background: rgba(197,139,42,.14); color: #C58B2A; }
+        .mao-risk-badge-low { background: rgba(95,143,120,.14); color: var(--mao-green); }
+        .mao-risk-interpretation { font-weight: 500; color: var(--mao-ink); }
         .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
         .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
@@ -511,14 +516,33 @@
                     </div>
                     <div class="modal-body">
                         <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
-                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
+                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
                         @forelse($highRiskAreasList as $area)
+                            @php
+                                $riskScoreValue = (float) $area->risk_score;
+                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
+                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
+                                    'severe', 'high' => 'mao-risk-badge-severe',
+                                    'moderate' => 'mao-risk-badge-moderate',
+                                    default => 'mao-risk-badge-low',
+                                };
+                            @endphp
                             <div class="mao-list-item">
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div class="flex-grow-1">
-                                    <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="row-title">
+                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
+                                        <span class="mao-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
+                                    </div>
+                                    <div class="row-text mao-risk-interpretation">{{ $riskInterpretation }}</div>
                                     <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="row-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+                                    <div class="row-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
                                 </div>
                             </div>
                         @empty
