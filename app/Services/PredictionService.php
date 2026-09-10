@@ -268,6 +268,29 @@ class PredictionService
 
     private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt): array
     {
+<<<<<<< Updated upstream
+=======
+        if ($this->isUnsupportedConversationalQuestion($intent, $question)) {
+            return $this->textResponse($this->unsupportedAnswer($language), $intent, $language, $memory, $startedAt, [
+                'source_type' => 'System Scope',
+                'source_name' => 'Climora AI',
+                'source_url' => null,
+                'confidence_score' => 80,
+                'intent_detection' => $intentResult,
+            ]);
+        }
+
+        if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
+            return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Knowledge Base',
+                'source_name' => 'Climora AI',
+                'source_url' => null,
+                'confidence_score' => 82,
+                'intent_detection' => $intentResult,
+            ]);
+        }
+
+>>>>>>> Stashed changes
         if ($domainAnswer = $this->domainRecordAnswer($user, $question, $intent, $language)) {
             return $this->textResponse($domainAnswer['answer'], $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
@@ -369,7 +392,41 @@ class PredictionService
                 'where do you get',
                 'weather source',
                 'weather data source',
+                'how do you predict',
+                'how do you get weather',
+                'how do you collect weather',
+                'paano mo pinipredict',
+                'paano mo hinuhulaan',
             ]);
+    }
+
+    private function isUnsupportedConversationalQuestion(string $intent, string $question): bool
+    {
+        if ($intent !== IntentDetectionService::GENERAL_CONVERSATION) {
+            return false;
+        }
+
+        $text = str($question)->lower()->toString();
+
+        if (str($text)->contains([
+            'hello',
+            'hi',
+            'kumusta',
+            'salamat',
+            'thanks',
+            'thank',
+            'who are you',
+            'what are you',
+            'sino ka',
+            'ano ka',
+            'tagalog',
+            'filipino',
+            'pilipino',
+        ])) {
+            return false;
+        }
+
+        return true;
     }
 
     private function conversationMemory(User $user): array
@@ -644,7 +701,7 @@ class PredictionService
 
         if ($intent === IntentDetectionService::SYSTEM_HELP && str($text)->contains(['weather', 'forecast', 'prediction'])) {
             return str_contains($language, 'Tagalog')
-                ? 'Kinukuha ng iClimate ang weather inputs mula sa latest Open-Meteo forecast kapag available, at gumagamit din ng naka-save na climate records sa system bilang fallback o context. Pagkatapos, ipinapasa ang rainfall, temperature, humidity, wind speed, season, farm type, at farm area sa Predict.py/Python model at iClimate decision rules. Kung hindi maabot ang Python Farming AI API, gumagamit ang system ng local fallback rules para makapagbigay pa rin ng guidance. Hindi ako gumagawa ng sariling raw weather data; ipinapaliwanag at inaayos ko ang datos mula sa mga tool ng iClimate.'
+                ? 'Hinuhulaan ng iClimate ang panahon gamit ang latest Open-Meteo forecast kapag available, naka-save na climate records bilang fallback o context, at trained local weather model. Kasama sa input ang rainfall, temperature, humidity, wind speed, season, farm type, at farm area sa Predict.py/Python model at iClimate decision rules. Kung hindi maabot ang Python Farming AI API, gumagamit ang system ng local fallback rules para makapagbigay pa rin ng guidance. Hindi ako gumagawa ng sariling prediction values; ipinapaliwanag at inaayos ko lang ang datos mula sa mga tool ng iClimate.'
                 : 'iClimate gathers weather inputs from the latest Open-Meteo forecast when available, then uses saved climate records in the system as fallback or context. It passes rainfall, temperature, humidity, wind speed, season, farm type, and farm area into Predict.py/Python models and iClimate decision rules. If the Python Farming AI API cannot be reached, the system uses local fallback rules so guidance is still available. I do not create raw weather data myself; I explain and organize the data from iClimate tools.';
         }
 

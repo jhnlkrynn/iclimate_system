@@ -661,9 +661,17 @@
                             <div class="weather-live-meta">
                                 <strong>Lian, Batangas</strong><br>
                                 Feels like <span data-weather-feels-like>{{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</span><br>
+<<<<<<< Updated upstream
                                 <span data-weather-live-line>Live as of {{ $weatherNow->format('M j, Y') }} &bull; {{ $weatherNow->format('g:i A') }} &middot; {{ $weatherSource }}</span><br>
                                 <span data-weather-data-updated-line>Data updated <span data-weather-updated>{{ $weatherFetchedLabel }}</span></span><br>
                                 <span data-weather-freshness>{{ $weatherFetchedIso ? 'just now' : 'Weather timestamp unavailable' }}</span>
+=======
+                                Source: <span data-weather-provider>{{ strtoupper($weatherSourceDisplay) }}</span><br>
+                                @if(($activeWeatherAlerts ?? 0) === 0)
+                                    Data updated <span data-weather-updated>{{ $weatherUpdateLine }}</span><br>
+                                @endif
+                                <span data-weather-freshness>{{ $weatherFetchedIso ? 'Near-real-time weather data' : 'Weather timestamp unavailable' }}</span>
+>>>>>>> Stashed changes
                             </div>
                         </div>
                     </div>

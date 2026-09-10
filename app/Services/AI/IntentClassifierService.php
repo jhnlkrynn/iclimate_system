@@ -80,6 +80,28 @@ class IntentClassifierService
     {
         $text = str($question)->lower()->toString();
 
+        if ($this->fallbackDetector->requiresPrediction(
+            IntentDetectionService::SYSTEM_HELP,
+            $text
+        ) === false && str($text)->contains([
+            'how do you predict',
+            'how do you gather',
+            'how do you get weather',
+            'how do you collect weather',
+            'where do you get weather',
+            'paano mo pinipredict',
+            'paano mo hinuhulaan',
+        ])) {
+            return [
+                'intent' => self::SYSTEM_HELP,
+                'confidence' => 1.0,
+                'entities' => $this->normalizeEntities([], $question),
+                'source' => 'local_method_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
+
         if (str($text)->contains([
             'tagalog',
             'filipino',
@@ -111,6 +133,29 @@ class IntentClassifierService
             ];
         }
 
+        $localIntent = match (true) {
+            $this->looksLikePlantingRecommendation($text) => self::PLANTING_RECOMMENDATION,
+            $this->looksLikeIrrigationRecommendation($text) => self::IRRIGATION_RECOMMENDATION,
+            $this->looksLikeYieldPrediction($text) => self::RICE_YIELD_PREDICTION,
+            $this->looksLikeRisk($text) => self::CLIMATE_RISK,
+            $this->looksLikeCurrentWeather($text) => self::CURRENT_WEATHER,
+            $this->looksLikeApiForecast($text) => self::WEATHER_FORECAST,
+            $this->looksLikeMonthlyModelPrediction($text) => self::WEATHER_PREDICTION,
+            $this->looksLikeAdvisory($text) => self::WEATHER_ADVISORY,
+            default => null,
+        };
+
+        if ($localIntent !== null) {
+            return [
+                'intent' => $localIntent,
+                'confidence' => 0.92,
+                'entities' => $this->normalizeEntities([], $question),
+                'source' => 'local_semantic_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
+
         return null;
     }
 
@@ -125,9 +170,15 @@ class IntentClassifierService
 
         if ($this->looksLikeAmbiguousPrediction($text)) {
             $intent = self::UNKNOWN;
+<<<<<<< Updated upstream
         } elseif ($this->looksLikePlanting($text)) {
             $intent = self::PLANTING_RECOMMENDATION;
         } elseif ($this->looksLikeIrrigation($text)) {
+=======
+        } elseif ($this->looksLikePlantingRecommendation($text)) {
+            $intent = self::PLANTING_RECOMMENDATION;
+        } elseif ($this->looksLikeIrrigationRecommendation($text)) {
+>>>>>>> Stashed changes
             $intent = self::IRRIGATION_RECOMMENDATION;
         } elseif ($this->looksLikeYieldPrediction($text)) {
             $intent = self::RICE_YIELD_PREDICTION;
@@ -200,6 +251,31 @@ class IntentClassifierService
         return str($text)->contains(['risk', 'high risk', 'severe risk', 'heat map', 'heatmap', 'panganib']);
     }
 
+    private function looksLikePlantingRecommendation(string $text): bool
+    {
+        return str($text)->contains([
+            'should i plant',
+            'when should i plant',
+            'plant rice',
+            'planting',
+            'transplant',
+            'magtanim',
+            'pagtatanim',
+            'dapat ba akong magtanim',
+        ]);
+    }
+
+    private function looksLikeIrrigationRecommendation(string $text): bool
+    {
+        return str($text)->contains([
+            'should i irrigate',
+            'irrigat',
+            'water my field',
+            'patubig',
+            'diligan',
+        ]);
+    }
+
     private function looksLikeApiForecast(string $text): bool
     {
         return str($text)->contains([
@@ -253,8 +329,10 @@ class IntentClassifierService
         return str($text)->contains([
             'predict my rice yield',
             'predict rice yield',
+            'predict yield',
             'rice yield',
             'yield for',
+            'yield prediction',
             'tons per hectare',
             'tons/ha',
             'estimate my harvest',

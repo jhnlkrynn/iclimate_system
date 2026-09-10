@@ -37,6 +37,23 @@ class AIOrchestratorService
         $classification = $this->classifier->classify($user, $question, $language, $memory);
         $intent = $classification['intent'];
         $entities = $classification['entities'];
+        $questionText = str($question)->lower()->toString();
+
+        if (! $this->groq->available() && str($questionText)->contains(['paano kaba tatalino', 'paano ka ba tatalino'])) {
+            return $this->textResult(
+                $this->translate(
+                    $language,
+                    'I can help with iClimate only: weather prediction, rice yield prediction, planting and irrigation advice, climate risk, fertilizer, pest and disease guidance, soil information, barangay information, announcements, notifications, profile, calendar, reports, and how to use the system.',
+                    'Makakatulong ako tungkol sa iClimate lang: weather prediction, rice yield prediction, planting at irrigation advice, climate risk, fertilizer, pest at disease, soil, barangay information, announcements, notifications, profile, calendar, reports, at kung paano gamitin ang system.'
+                ),
+                $intent,
+                'System Scope',
+                'Climora AI',
+                $language,
+                $memory,
+                ['confidence_score' => 80]
+            );
+        }
 
         if (($pending = (string) data_get($memory, 'pending_intent')) !== '' && $this->hasArea($entities)) {
             $intent = $pending;
@@ -253,7 +270,12 @@ class AIOrchestratorService
      */
     private function modelBackedPrediction(User $user, string $question, string $language, array $memory, string $intent, array $entities): array
     {
-        if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && ! $this->hasArea($entities) && ! $user->farmerProfile?->farm_area) {
+        if (
+            $intent === IntentClassifierService::RICE_YIELD_PREDICTION
+            && ! $this->hasArea($entities)
+            && ! $user->farmerProfile?->farm_area
+            && ! $this->hasEnoughYieldContext($question, $entities)
+        ) {
             return $this->clarification($language, $memory, 'rice_yield_prediction', 'I can predict your rice yield. What farm area in hectares should I use? For example: 2.5 hectares.', 'Kaya kong i-predict ang rice yield mo. Ilang ektarya ang gagamitin ko? Halimbawa: 2.5 hectares.');
         }
 
@@ -587,6 +609,45 @@ class AIOrchestratorService
             'ano ang',
             'paano gumawa',
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $entities
+     */
+    private function hasEnoughYieldContext(string $question, array $entities): bool
+    {
+        if (isset($entities['season']) || isset($entities['target_period']) || isset($entities['target_date'])) {
+            return true;
+        }
+
+        $text = str($question)->lower()->toString();
+
+        if (str($text)->contains([
+            'wet season',
+            'dry season',
+            'tag-ulan',
+            'tag-init',
+            'rainfall',
+            'temperature',
+            'humidity',
+            'wind',
+            'january',
+            'february',
+            'march',
+            'april',
+            'may',
+            'june',
+            'july',
+            'august',
+            'september',
+            'october',
+            'november',
+            'december',
+        ])) {
+            return true;
+        }
+
+        return preg_match('/\b\d{4}-\d{1,2}(?:-\d{1,2})?\b/', $question) === 1;
     }
 
     /**

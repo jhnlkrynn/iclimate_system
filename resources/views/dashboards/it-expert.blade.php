@@ -381,6 +381,47 @@
             </button>
         </section>
 
+        <section class="it-panel mb-4">
+            <div class="it-panel-header">
+                <div>
+                    <div class="it-label">FARMERS BY ORGANIZATION</div>
+                    <h2 class="it-panel-title mt-1">Farmer Organization Coverage</h2>
+                    <p class="it-panel-sub">Distribution of farmer profiles across registered Lian organizations.</p>
+                </div>
+                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
+            </div>
+            <div class="it-panel-body">
+                <div class="farmer-org-grid">
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farmers</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</div>
+                        <div class="farmer-org-card-note">Profiles included in the organization chart.</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Organizations</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div>
+                        <div class="farmer-org-card-note">Registered farmer organizations.</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Farmers Without Organization</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['farmersWithoutOrganization']) }}</div>
+                        <div class="farmer-org-card-note">Profiles that still need organization assignment.</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farm Area</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmArea'], 2) }} ha</div>
+                        <div class="farmer-org-card-note">Combined area from farmer profiles.</div>
+                    </div>
+                </div>
+                <div class="farmer-org-chart-shell">
+                    <div class="farmer-org-chart-inner">
+                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization chart" role="img"></canvas>
+                    </div>
+                </div>
+                <script type="application/json" id="farmersByOrganizationData">@json($farmerOrganizationChart)</script>
+            </div>
+        </section>
+
         <div class="ic-drawer" id="itStatUsers" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatUsersLabel">
                 <div class="modal-content border-0 it-modal-content">
