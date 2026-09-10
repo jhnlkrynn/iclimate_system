@@ -1,0 +1,23 @@
+# Scoped for the ML service build (python_scripts/Dockerfile, context: repo
+# root). The Laravel app itself isn't containerized yet, so excluding its
+# heavy/irrelevant directories keeps `docker build` from uploading them.
+.git/
+vendor/
+node_modules/
+.venv-ml/
+python_scripts/__pycache__/
+python_scripts/.venv/
+storage/app/
+!storage/app/private/ml/.gitignore
+storage/framework/
+storage/logs/
+storage/debugbar/
+storage/pail/
+public/build/
+public/hot/
+bootstrap/cache/
+*.log
+.phpunit.cache/
+.phpunit.result.cache
+graphify-out/
+docs/

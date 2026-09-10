@@ -1,0 +1,42 @@
+# Runs the iClimate ML service (FastAPI, python_scripts/main.py) as its own
+# container, decoupled from the PHP web app per the migration plan — the
+# app talks to it over HTTP via FARMING_AI_API_URL, same as it currently
+# talks to the service running under uvicorn directly.
+#
+# Usage:
+#   docker compose up -d --build
+#   docker compose logs -f ml-service
+#   docker compose down
+#
+# One service for now (Phase 4 step 14 says split into more containers only
+# if training genuinely needs to be isolated from serving — it doesn't yet).
+
+services:
+  ml-service:
+    build:
+      context: .
+      dockerfile: python_scripts/Dockerfile
+    image: iclimate-ml-service:latest
+    container_name: iclimate-ml-service
+    restart: unless-stopped
+    ports:
+      - "${ML_SERVICE_PORT:-8010}:8010"
+    volumes:
+      # Retrained models can be dropped in here without rebuilding the
+      # image. First run seeds this volume from the models baked into the
+      # image (see python_scripts/Dockerfile), so it works immediately.
+      - ml-models:/app/storage/models
+      # Mount the real export produced by
+      # `php artisan iclimate:export-yield-data` on the app host so
+      # /metrics can compute real numbers once it exists. Empty by default
+      # — /metrics reports `ready: false` gracefully until this has data.
+      - ./storage/app/private/ml:/app/storage/app/private/ml
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  ml-models:
