@@ -69,7 +69,12 @@ class MonthlyWeatherRandomForest
         foreach (self::TARGETS as $target) {
             $forest = new RandomForestRegressor(treeCount: 45, maxDepth: 7, minSamplesSplit: 2, seed: crc32($target));
             $forest->train($samples, $target);
-            $predictions[$target] = round($forest->predict($features), 2);
+            $value = $forest->predict($features);
+            if ($target === 'temperature') {
+                $value = $this->safeTemperaturePrediction($value, $features, $samples);
+            }
+
+            $predictions[$target] = round($value, 2);
             $training[$target] = [
                 'trees' => $forest->treeCount(),
                 'samples' => count($samples),
@@ -244,6 +249,35 @@ class MonthlyWeatherRandomForest
         $insights[] = $confidence['note'];
 
         return array_values(array_unique($insights));
+    }
+
+    /**
+     * Keep temperature output in the same unit and range as saved climate records.
+     */
+    private function safeTemperaturePrediction(float $value, array $features, array $samples): float
+    {
+        if ($this->isReasonableTemperature($value)) {
+            return $value;
+        }
+
+        $fallbacks = [
+            $features['avg3_temperature'] ?? null,
+            $features['prev_temperature'] ?? null,
+            $this->targetStability($samples, 'temperature')['mean'] ?? null,
+        ];
+
+        foreach ($fallbacks as $fallback) {
+            if ($fallback !== null && $this->isReasonableTemperature((float) $fallback)) {
+                return (float) $fallback;
+            }
+        }
+
+        return max(18.0, min(40.0, $value));
+    }
+
+    private function isReasonableTemperature(float $value): bool
+    {
+        return $value >= 18.0 && $value <= 40.0;
     }
 }
 

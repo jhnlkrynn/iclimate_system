@@ -19,12 +19,19 @@
             ['icon' => '👤', 'name' => 'Account & Help', 'desc' => 'Manage your profile and get support'],
         ],
         default => [
+<<<<<<< Updated upstream
             ['icon' => '🌤️', 'name' => 'Weather & Climate', 'desc' => 'Get the latest weather updates and forecasts'],
             ['icon' => '🌾', 'name' => 'Rice Yield Prediction', 'desc' => 'AI-powered yield prediction and insights'],
             ['icon' => '📅', 'name' => 'Planting & Irrigation', 'desc' => 'Best planting time and irrigation advice'],
             ['icon' => '⚠️', 'name' => 'Climate Risk Alerts', 'desc' => 'Early warnings and risk notifications'],
             ['icon' => '📢', 'name' => 'Announcements', 'desc' => 'Latest updates and advisory announcements'],
             ['icon' => '👤', 'name' => 'Account & Help', 'desc' => 'Manage your profile and get support'],
+=======
+            'How do I use the dashboard?',
+            'Show my latest rice yield prediction',
+            'What does the heat map mean?',
+            'Where can I view advisories?',
+>>>>>>> Stashed changes
         ],
     };
 @endphp
@@ -34,11 +41,26 @@
     .ic-ai-toggle { width: 58px; height: 58px; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #1a3a2a, #2d6a4f); box-shadow: 0 .9rem 1.8rem rgba(13,31,24,.26); font-weight: 700; font-family: 'DM Mono', monospace; padding: 0; overflow: hidden; }
     .ic-ai-toggle img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
     .ic-ai-panel {
+<<<<<<< Updated upstream
         position: absolute; right: 0; bottom: 4.5rem;
         width: min(920px, calc(100vw - 2rem)); height: min(660px, calc(100vh - 7rem));
         border: 1.5px solid #e8e0d0; border-radius: 18px; overflow: hidden;
         background: #fff; box-shadow: 0 1.4rem 3rem rgba(13,31,24,.22);
         display: none; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+=======
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: min(460px, calc(100vw - 32px));
+        height: min(680px, calc(100vh - 88px));
+        border: 1px solid var(--ai-line);
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--ai-panel);
+        box-shadow: 0 24px 58px rgba(13, 31, 24, .26);
+        display: none;
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+>>>>>>> Stashed changes
     }
     .ic-ai-widget.open .ic-ai-panel { display: grid; }
 
@@ -91,6 +113,298 @@
         .ic-ai-panel { grid-template-columns: 1fr; }
         .ic-ai-left { display: none; }
     }
+<<<<<<< Updated upstream
+=======
+
+    .ic-ai-header {
+        min-height: 78px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .8rem;
+        padding: .85rem .95rem;
+        border-bottom: 1px solid var(--ai-line);
+        background: linear-gradient(180deg, #ffffff, #f1f8f2);
+    }
+
+    .ic-ai-head-main {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        min-width: 0;
+    }
+
+    .ic-ai-logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        object-fit: contain;
+        flex-shrink: 0;
+        background: #e8f5eb;
+        border: 1px solid #cfe8d6;
+    }
+
+    .ic-ai-title {
+        margin: 0;
+        color: var(--ai-ink);
+        font-size: 1.05rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .ic-ai-subtitle {
+        margin: .15rem 0 0;
+        color: var(--ai-muted);
+        font-size: .82rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    .ic-ai-actions {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        flex-shrink: 0;
+    }
+
+    .ic-ai-minimize,
+    .ic-ai-close {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #cfe8d6;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: #fff;
+        color: var(--ai-ink);
+        font-size: 1.1rem;
+        font-weight: 900;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .ic-ai-minimize:hover,
+    .ic-ai-close:hover {
+        border-color: var(--ai-green);
+        background: #edf7e7;
+    }
+
+    .ic-ai-body {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 1rem 1rem .8rem;
+        background:
+            radial-gradient(circle at 20% 0%, rgba(143, 175, 154, .16), transparent 32%),
+            linear-gradient(180deg, #f8fbf7, #edf7e7);
+    }
+
+    .ic-ai-msg {
+        display: flex;
+        margin-bottom: .9rem;
+    }
+
+    .ic-ai-msg.user {
+        justify-content: flex-end;
+    }
+
+    .ic-ai-msg-col {
+        max-width: 86%;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .ic-ai-msg.user .ic-ai-msg-col {
+        align-items: flex-end;
+        max-width: 82%;
+    }
+
+    .ic-ai-bubble {
+        border: 1px solid var(--ai-line);
+        border-radius: 14px;
+        padding: .75rem .85rem;
+        background: #fff;
+        color: var(--ai-ink);
+        line-height: 1.58;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        font-size: .96rem;
+        box-shadow: 0 8px 20px rgba(13, 31, 24, .06);
+    }
+
+    .ic-ai-msg.assistant .ic-ai-bubble {
+        background: #f6faf6;
+        color: var(--ai-ink);
+        border-color: #cfe8d6;
+    }
+
+    .ic-ai-msg.user .ic-ai-bubble {
+        background: var(--ai-ink);
+        color: #fff;
+        border-color: var(--ai-ink);
+    }
+
+    .ic-ai-msg-time {
+        font-size: .75rem;
+        color: #7d9584;
+        font-family: 'DM Mono', monospace;
+        margin-top: .3rem;
+        padding: 0 .1rem;
+    }
+
+    .ic-ai-msg.user .ic-ai-msg-time {
+        color: #6f8679;
+    }
+
+    .ic-ai-results {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+        margin-top: .65rem;
+    }
+
+    .ic-ai-card {
+        border: 1px solid #cfe8d6;
+        border-left: 4px solid #52b788;
+        border-radius: 10px;
+        background: #fff;
+        padding: .55rem;
+    }
+
+    .ic-ai-card-label {
+        color: var(--ai-muted);
+        font-family: 'DM Mono', monospace;
+        font-size: .68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .ic-ai-card-value {
+        color: var(--ai-ink);
+        font-size: .86rem;
+        font-weight: 900;
+        margin-top: .18rem;
+        line-height: 1.25;
+    }
+
+    .ic-ai-typing {
+        display: none;
+        align-items: center;
+        gap: .35rem;
+        color: var(--ai-muted);
+        font-family: 'DM Mono', monospace;
+        font-size: .78rem;
+        font-weight: 700;
+        padding: .45rem .95rem .7rem;
+        background: #edf7e7;
+        border-top: 1px solid rgba(212, 230, 218, .7);
+    }
+
+    .ic-ai-typing.show {
+        display: flex;
+    }
+
+    .ic-ai-dot {
+        width: .42rem;
+        height: .42rem;
+        border-radius: 999px;
+        background: #52b788;
+        animation: ic-ai-pulse 850ms ease-in-out infinite alternate;
+    }
+
+    .ic-ai-dot:nth-child(2) {
+        animation-delay: 120ms;
+    }
+
+    .ic-ai-dot:nth-child(3) {
+        animation-delay: 240ms;
+    }
+
+    @keyframes ic-ai-pulse {
+        from { opacity: .35; transform: translateY(0); }
+        to { opacity: 1; transform: translateY(-3px); }
+    }
+
+    .ic-ai-chips {
+        display: flex;
+        gap: .45rem;
+        overflow-x: auto;
+        padding: .75rem .95rem;
+        background: #fff;
+        border-top: 1px solid var(--ai-line);
+        scrollbar-width: thin;
+    }
+
+    .ic-ai-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cfe8d6;
+        background: #fff;
+        color: var(--ai-green);
+        border-radius: 999px;
+        padding: .42rem .72rem;
+        font-size: .82rem;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    .ic-ai-chip:hover {
+        background: var(--ai-sage);
+        border-color: #95d5b2;
+    }
+
+    .ic-ai-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: .6rem;
+        padding: .85rem .95rem;
+        border-top: 1px solid var(--ai-line);
+        background: #fff;
+        align-items: end;
+    }
+
+    .ic-ai-form textarea {
+        min-height: 46px;
+        max-height: 112px;
+        resize: none;
+        font-size: 1rem;
+        line-height: 1.38;
+        border-radius: 12px;
+        padding: .7rem .85rem;
+        border: 1px solid #cfe8d6;
+        background: #fff;
+        color: var(--ai-ink);
+    }
+
+    .ic-ai-send {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        padding: 0;
+        background: var(--ai-ink);
+        border-color: var(--ai-ink);
+        color: #fff;
+    }
+
+    .ic-ai-send svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .ic-ai-send:disabled {
+        opacity: .58;
+        cursor: wait;
+    }
+
+>>>>>>> Stashed changes
     @media (max-width: 575.98px) {
         .ic-ai-widget { right: .65rem; bottom: .65rem; }
         .ic-ai-panel { position: fixed; inset: auto .65rem 4.8rem .65rem; width: auto; height: min(590px, calc(100dvh - 6rem)); }
@@ -193,9 +507,39 @@
                 <button id="icAiSend" type="submit" class="btn btn-primary ic-ai-send" aria-label="Send">➤</button>
             </form>
         </div>
+<<<<<<< Updated upstream
     </div>
     <button type="button" class="ic-ai-toggle" aria-label="Open iClimate assistant">
         <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="iClimate AI Assistant">
+=======
+
+        <div id="icAiTyping" class="ic-ai-typing" aria-live="polite">
+            <span>Climora AI is checking iClimate records</span>
+            <span class="ic-ai-dot"></span>
+            <span class="ic-ai-dot"></span>
+            <span class="ic-ai-dot"></span>
+        </div>
+
+        <div class="ic-ai-chips" aria-label="Suggested questions">
+            @foreach($icAiChips as $chip)
+                <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
+            @endforeach
+        </div>
+
+        <form id="icAiForm" class="ic-ai-form">
+            @csrf
+            <textarea id="icAiInput" class="form-control" placeholder="Ask about iClimate..." rows="1" required></textarea>
+            <button id="icAiSend" type="submit" class="btn btn-primary ic-ai-send" aria-label="Send message">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M3 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </form>
+    </section>
+
+    <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open Climora AI">
+        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="Climora AI">
+>>>>>>> Stashed changes
     </button>
 </div>
 
@@ -217,21 +561,39 @@
         const saveStorageKey = 'iclimate_ai_save_conversation';
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
+<<<<<<< Updated upstream
         const scroll = () => { body.scrollTop = body.scrollHeight; };
         const timeNow = () => {
             const now = new Date();
             return now.getMinutes() === 0
                 ? now.toLocaleTimeString([], { hour: 'numeric' })
                 : now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+=======
+        const scrollMessages = () => { body.scrollTop = body.scrollHeight; };
+        const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const shouldSaveConversation = () => localStorage.getItem(saveStorageKey) !== '0';
+        const updateSuggestions = (questions = []) => {
+            const chips = widget.querySelector('.ic-ai-chips');
+            if (!chips || !Array.isArray(questions) || !questions.length) return;
+            chips.innerHTML = questions.slice(0, 4).map((question) => `<button type="button" class="ic-ai-chip" data-ai-chip>${escapeHtml(question)}</button>`).join('');
+>>>>>>> Stashed changes
         };
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
         const relevantPredictionCards = (chat) => {
             switch (chat.intent) {
-                case 'Weather Prediction': return ['weather'];
-                case 'Rice Yield Prediction': return ['yield'];
-                case 'Planting Recommendation': return ['planting'];
-                case 'Irrigation Recommendation': return ['irrigation'];
-                case 'Climate Risk': return ['weather'];
+                case 'Weather Prediction':
+                case 'weather_prediction':
+                case 'weather_forecast':
+                case 'current_weather': return ['weather'];
+                case 'Rice Yield Prediction':
+                case 'rice_yield_prediction': return ['yield'];
+                case 'Planting Recommendation':
+                case 'planting_recommendation': return ['planting'];
+                case 'Irrigation Recommendation':
+                case 'irrigation_recommendation': return ['irrigation'];
+                case 'Climate Risk':
+                case 'climate_risk':
+                case 'weather_advisory': return ['weather'];
                 default: return [];
             }
         };
@@ -303,7 +665,11 @@
             input.value = '';
             typing.classList.add('show');
             send.disabled = true;
+<<<<<<< Updated upstream
             scroll();
+=======
+            send.setAttribute('aria-busy', 'true');
+>>>>>>> Stashed changes
 
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 45000);
@@ -318,7 +684,12 @@
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message || 'The assistant could not answer right now.');
                 const chat = data.chat;
+<<<<<<< Updated upstream
                 body.insertAdjacentHTML('beforeend', `<div class="ic-ai-msg assistant"><div class="ic-ai-msg-col"><div class="ic-ai-bubble">${escapeHtml(chat.answer)}${predictionGrid(chat)}</div><div class="ic-ai-msg-time">${timeNow()}</div></div></div>`);
+=======
+                addMessage('assistant', chat.answer, predictionGrid(chat));
+                updateSuggestions(chat.prediction_result?.suggested_questions);
+>>>>>>> Stashed changes
             } catch (error) {
                 const message = error.name === 'AbortError'
                     ? 'The assistant took too long. Please ask a shorter iClimate question or try again.'
@@ -328,6 +699,7 @@
                 clearTimeout(timeout);
                 typing.classList.remove('show');
                 send.disabled = false;
+                send.removeAttribute('aria-busy');
                 input.focus();
                 scroll();
             }

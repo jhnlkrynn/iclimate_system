@@ -5,11 +5,11 @@
         $intent = (string) ($chat->intent ?? '');
 
         return match ($intent) {
-            'Weather Prediction' => ['weather'],
-            'Rice Yield Prediction' => ['yield'],
-            'Planting Recommendation' => ['planting'],
-            'Irrigation Recommendation' => ['irrigation'],
-            'Climate Risk' => ['weather'],
+            'Weather Prediction', 'weather_prediction', 'weather_forecast', 'current_weather' => ['weather'],
+            'Rice Yield Prediction', 'rice_yield_prediction' => ['yield'],
+            'Planting Recommendation', 'planting_recommendation' => ['planting'],
+            'Irrigation Recommendation', 'irrigation_recommendation' => ['irrigation'],
+            'Climate Risk', 'climate_risk', 'weather_advisory' => ['weather'],
             default => [],
         };
     };
@@ -96,7 +96,7 @@
                 <div>
                     <div class="ai-eyebrow mb-2">{{ $assistantName }}</div>
                     <h1 class="h2 fw-bold mb-2">Chat with climate-aware rice guidance</h1>
-                    <p class="mb-0 text-white-50" style="max-width:820px;">{{ $assistantSubtitle }}. Ask natural farming questions and get weather, yield, planting, irrigation, and warning guidance.</p>
+                    <p class="mb-0 text-white-50" style="max-width:820px;">Rule-based iClimate answers, managed keywords, and trusted prediction outputs. Ask about dashboards, navigation, weather, rice yield, heat maps, advisories, reports, or profiles.</p>
                 </div>
                 <div class="ai-hero-actions">
                     <form method="POST" action="{{ route('ai-chat.clear') }}" data-loading="true">
@@ -164,7 +164,7 @@
                         </div>
                     @endforelse
                 </div>
-                <div id="typingIndicator" class="ai-typing">{{ $assistantName }} is checking the models<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+                <div id="typingIndicator" class="ai-typing">{{ $assistantName }} is checking iClimate records<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
                 <div id="aiPrivacyNote" class="ai-privacy-note"></div>
                 <form id="chatForm" class="ai-form">
                     @csrf
@@ -236,16 +236,37 @@
             const resultCard = (label, value, extra = '') => `<div class="ai-result-card ${extra}"><div class="ai-result-label">${label}</div><div class="ai-result-value">${escapeHtml(String(value || 'N/A'))}</div></div>`;
             const relevantPredictionCards = (chat) => {
                 switch (chat.intent) {
-                    case 'Weather Prediction': return ['weather'];
-                    case 'Rice Yield Prediction': return ['yield'];
-                    case 'Planting Recommendation': return ['planting'];
-                    case 'Irrigation Recommendation': return ['irrigation'];
-                    case 'Climate Risk': return ['weather'];
+                    case 'Weather Prediction':
+                    case 'weather_prediction':
+                    case 'weather_forecast':
+                    case 'current_weather': return ['weather'];
+                    case 'Rice Yield Prediction':
+                    case 'rice_yield_prediction': return ['yield'];
+                    case 'Planting Recommendation':
+                    case 'planting_recommendation': return ['planting'];
+                    case 'Irrigation Recommendation':
+                    case 'irrigation_recommendation': return ['irrigation'];
+                    case 'Climate Risk':
+                    case 'climate_risk':
+                    case 'weather_advisory': return ['weather'];
                     default: return [];
                 }
             };
             const selectedSaveMode = () => localStorage.getItem(saveStorageKey);
             const shouldSaveConversation = () => selectedSaveMode() !== '0';
+            const updateSuggestions = (questions = []) => {
+                if (!Array.isArray(questions) || !questions.length) return;
+                const grids = document.querySelectorAll('.ai-chip-grid');
+                const target = grids[grids.length - 1];
+                if (!target) return;
+                target.innerHTML = questions.slice(0, 6).map((question) => `<button type="button" class="ai-chip" data-prompt="${escapeHtml(question)}">${escapeHtml(question)}</button>`).join('');
+                target.querySelectorAll('[data-prompt]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        input.value = button.dataset.prompt;
+                        input.focus();
+                    });
+                });
+            };
             const renderSaveChoice = () => {
                 const mode = selectedSaveMode();
                 document.querySelectorAll('[data-save-mode]').forEach((btn) => {
@@ -303,6 +324,7 @@
                 input.value = '';
                 typing.classList.add('show');
                 sendButton.disabled = true;
+                sendButton.setAttribute('aria-busy', 'true');
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 45000);
                 try {
@@ -315,6 +337,7 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.message || 'The assistant could not answer right now.');
                     addAssistant(data.chat);
+                    updateSuggestions(data.chat.prediction_result?.suggested_questions);
                 } catch (error) {
                     const message = error.name === 'AbortError'
                         ? 'The assistant took too long to answer. Please try a shorter question, or make sure the local farming model API is running.'
@@ -324,6 +347,7 @@
                     clearTimeout(timeout);
                     typing.classList.remove('show');
                     sendButton.disabled = false;
+                    sendButton.removeAttribute('aria-busy');
                     input.focus();
                 }
             });

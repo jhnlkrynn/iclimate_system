@@ -446,6 +446,10 @@
                     </div>
                 @endif
 
+                <div class="mb-4">
+                    @include('dashboards.partials.weekly-weather-forecast', ['forecast' => $weeklyWeatherForecast ?? [], 'variant' => 'mao'])
+                </div>
+
                 <div class="row g-4 mb-4">
                     <div class="col-xl-8">
                         <div class="chart-title">Municipal Heat Map</div>

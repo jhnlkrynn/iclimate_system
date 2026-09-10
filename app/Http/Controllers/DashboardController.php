@@ -15,6 +15,7 @@ use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
+use App\Services\Weather\WeatherForecastService;
 use App\Services\WeatherApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,9 +25,10 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety): View
+    public function farmer(Request $request, FarmerDashboardWeatherService $weather, WeatherForecastService $weeklyForecast, TyphoonSafetyService $typhoonSafety): View
     {
         $dashboardWeather = $weather->current($request->boolean('refresh_weather'));
+        $weeklyWeatherForecast = $weeklyForecast->forecast($request->boolean('refresh_weather'));
         $dashboardData = $this->stats();
         $dashboardData['highRiskHeatMapAreas'] = HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count();
         $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
@@ -50,6 +52,7 @@ class DashboardController extends Controller
             'dashboardWeather' => $dashboardWeather,
             'dashboardWeatherResponse' => $weather->responsePayload($dashboardWeather),
             'weatherGuidance' => $weather->guidance($dashboardWeather),
+            'weeklyWeatherForecast' => $weeklyWeatherForecast,
             'highRiskAreasList' => HeatmapArea::query()
                 ->whereIn('risk_level', ['High', 'Severe'])
                 ->orderByDesc('risk_score')
@@ -84,7 +87,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function mao(WeatherApiService $weatherApi, TyphoonSafetyService $typhoonSafety): View
+    public function mao(WeatherApiService $weatherApi, WeatherForecastService $weeklyForecast, TyphoonSafetyService $typhoonSafety): View
     {
         $climateChartRecords = ClimateRecord::query()
             ->orderByDesc('record_date')
@@ -102,6 +105,7 @@ class DashboardController extends Controller
             ->values();
 
         $liveWeather = $weatherApi->forecast(refresh: true);
+        $weeklyWeatherForecast = $weeklyForecast->forecast();
         $storedWeatherChartData = [
             'labels' => $climateChartRecords->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
             'rainfall' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->rainfall)->all(),
@@ -141,6 +145,7 @@ class DashboardController extends Controller
             'weatherChartData' => $weatherChartData,
             'weatherDataSource' => $weatherDataSource,
             'liveWeather' => $liveWeather,
+            'weeklyWeatherForecast' => $weeklyWeatherForecast,
             'riskLevelCounts' => [
                 'Low' => (clone $heatmapAreas)->where('risk_level', 'Low')->count(),
                 'Moderate' => (clone $heatmapAreas)->where('risk_level', 'Moderate')->count(),

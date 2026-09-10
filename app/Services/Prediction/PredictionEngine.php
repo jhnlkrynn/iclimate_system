@@ -82,7 +82,11 @@ class PredictionEngine
             : null;
 
         $rainfall = (float) ($predictions['rainfall'] ?? $averageRainfall ?? $latestClimate?->rainfall ?? 0);
-        $temperature = (float) ($predictions['temperature'] ?? $averageTemperature ?? $latestClimate?->temperature ?? 0);
+        $temperature = $this->safeAverageTemperature(
+            $predictions['temperature'] ?? null,
+            $averageTemperature !== null ? (float) $averageTemperature : null,
+            $latestClimate?->temperature !== null ? (float) $latestClimate->temperature : null,
+        );
         $humidity = (float) ($predictions['humidity'] ?? $latestClimate?->humidity ?? 0);
         $windSpeed = (float) ($predictions['wind_speed'] ?? $latestClimate?->wind_speed ?? 0);
         $forecastSeason = $predictions['season'] ?? 'Wet';
@@ -121,7 +125,53 @@ class PredictionEngine
             }
         }
 
+        $modelInput = $this->sanitizeTemperatureInputs(
+            $modelInput,
+            $averageTemperature !== null ? (float) $averageTemperature : null,
+            $latestClimate?->temperature !== null ? (float) $latestClimate->temperature : null,
+        );
+
         return $modelInput;
+    }
+
+    private function safeAverageTemperature(mixed $predicted, ?float $average, ?float $latest): float
+    {
+        foreach ([$predicted, $average, $latest] as $value) {
+            if ($value !== null && $this->isReasonableTemperature((float) $value)) {
+                return (float) $value;
+            }
+        }
+
+        return 28.0;
+    }
+
+    /**
+     * Temperature features must remain average temperatures, not combined or
+     * out-of-range values extracted from text or model output.
+     *
+     * @param  array<string, mixed>  $modelInput
+     * @return array<string, mixed>
+     */
+    private function sanitizeTemperatureInputs(array $modelInput, ?float $average, ?float $latest): array
+    {
+        $fallback = $this->safeAverageTemperature(null, $average, $latest);
+
+        foreach (['temp_avg', 'previous_temp', 'temp_3m', 'temp_6m', 'seasonal_temp'] as $key) {
+            if (! array_key_exists($key, $modelInput)) {
+                continue;
+            }
+
+            if (! $this->isReasonableTemperature((float) $modelInput[$key])) {
+                $modelInput[$key] = round($fallback, 2);
+            }
+        }
+
+        return $modelInput;
+    }
+
+    private function isReasonableTemperature(float $value): bool
+    {
+        return $value >= 18.0 && $value <= 40.0;
     }
 
     private function requestYield(array $modelInput): array

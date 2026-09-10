@@ -106,6 +106,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             KnowledgeBaseSeeder::class,
+            ChatbotResponseSeeder::class,
             AdvisoryRuleSeeder::class,
         ]);
     }

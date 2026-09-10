@@ -634,7 +634,7 @@
         $weatherDisplayDate = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
             ? $weatherFetchedAt->timezone($weatherTimezone)->format('M d, Y')
             : $climateSummary?->record_date?->format('M d, Y');
-        $weatherForecastDays = $weatherPayload['forecast'] ?? [];
+        $weatherForecastDays = [];
         $weatherFetchedIso = $dashboardWeatherResponse['fetched_at'] ?? ($weatherFetchedAt instanceof \Illuminate\Support\Carbon ? $weatherFetchedAt->toIso8601String() : null);
     @endphp
 
@@ -756,6 +756,26 @@
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
         </section>
+
+        <details class="dashboard-group" open>
+            <summary>
+                <div class="dashboard-group-summary-main">
+                    <span class="list-mark">
+                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 7h13M6 2v3M12 2v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </span>
+                    <div>
+                        <h2 class="dashboard-group-title">Weekly Forecast</h2>
+                        <p class="dashboard-group-note">7-day outlook and farming guidance for Lian, Batangas.</p>
+                    </div>
+                </div>
+                <span class="dashboard-group-toggle">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+            </summary>
+            <div class="dashboard-group-body">
+                @include('dashboards.partials.weekly-weather-forecast', ['forecast' => $weeklyWeatherForecast ?? [], 'variant' => 'farmer'])
+            </div>
+        </details>
 
         @if($weatherForecastDays !== [])
             <section class="forecast-strip" data-weather-forecast>

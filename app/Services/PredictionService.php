@@ -12,6 +12,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\AI\GroqChatService;
+use App\Services\AI\ChatbotResponseService;
 use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
 use App\Services\AI\RoleAssistantService;
@@ -26,6 +27,7 @@ class PredictionService
         private readonly DecisionSupportService $decisionSupport,
         private readonly IntentDetectionService $intentDetector,
         private readonly KnowledgeBaseService $knowledgeBase,
+        private readonly ChatbotResponseService $chatbotResponses,
         private readonly GroqChatService $groqChat,
         private readonly RoleAssistantService $roleAssistant,
         private readonly PredictionDateValidator $dateValidator,
@@ -276,6 +278,18 @@ class PredictionService
             ]);
         }
 
+        if ($ruleAnswer = $this->chatbotResponses->answer($user, $question, $language, $intent)) {
+            return $this->textResponse($ruleAnswer['answer'], $intent, $language, $memory, $startedAt, [
+                'source_type' => 'Chatbot Knowledge Base',
+                'source_name' => $ruleAnswer['source_name'],
+                'source_url' => null,
+                'confidence_score' => $ruleAnswer['confidence'],
+                'knowledge_base_id' => $ruleAnswer['chatbot_response_id'],
+                'intent_detection' => $intentResult,
+                'source_credit' => 'Source: Managed Climora AI chatbot responses',
+            ]);
+        }
+
         if ($record = $this->knowledgeBase->search($question, $intent)) {
             return $this->textResponse((string) $record->answer, $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Knowledge Base',
@@ -323,7 +337,7 @@ class PredictionService
         }
 
         if (! $this->isSupportedNonPredictionQuestion($intent, $question)) {
-            return $this->textResponse($this->unsupportedAnswer($language), $intent, $language, $memory, $startedAt, [
+            return $this->textResponse($this->unsupportedAnswer($language, $user), $intent, $language, $memory, $startedAt, [
                 'source_type' => 'System Scope',
                 'source_name' => 'Climora AI',
                 'source_url' => null,
@@ -603,13 +617,13 @@ class PredictionService
         ]);
     }
 
-    private function unsupportedAnswer(string $language): string
+    private function unsupportedAnswer(string $language, User $user): string
     {
         if (str_contains($language, 'Tagalog')) {
             return 'Makakatulong ako tungkol sa iClimate lang: weather prediction, rice yield prediction, planting at irrigation advice, climate risk, fertilizer, pest at disease, soil, barangay information, announcements, notifications, profile, calendar, reports, at kung paano gamitin ang system.';
         }
 
-        return 'I can help with iClimate only: weather prediction, rice yield prediction, planting and irrigation advice, climate risk, fertilizer, pest and disease guidance, soil information, barangay information, announcements, notifications, profile, calendar, reports, and how to use the system.';
+        return $this->chatbotResponses->fallbackMessage($user, $language);
     }
 
     private function localSystemAnswer(string $intent, string $question, string $language): string

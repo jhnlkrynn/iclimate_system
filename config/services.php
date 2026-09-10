@@ -37,10 +37,11 @@ return [
 
     'weather_api' => [
         'enabled' => env('WEATHER_API_ENABLED', false),
+        'provider' => env('WEATHER_API_PROVIDER', 'open_meteo'),
         'timeout' => env('WEATHER_API_TIMEOUT', 8),
         'location_name' => env('WEATHER_API_LOCATION_NAME', 'Lian, Batangas'),
-        'latitude' => env('WEATHER_API_LATITUDE', 14.04),
-        'longitude' => env('WEATHER_API_LONGITUDE', 120.65),
+        'latitude' => env('WEATHER_API_LATITUDE', env('WEATHER_LATITUDE', 13.98)),
+        'longitude' => env('WEATHER_API_LONGITUDE', env('WEATHER_LONGITUDE', 120.65)),
         'timezone' => env('WEATHER_API_TIMEZONE', env('APP_TIMEZONE', 'Asia/Manila')),
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
         'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 10),
@@ -48,19 +49,29 @@ return [
     ],
 
     'weather' => [
+<<<<<<< Updated upstream
         'provider' => env('WEATHER_PROVIDER', 'openmeteo'),
         'latitude' => env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 14.033)),
         'longitude' => env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.650)),
         'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', 'Asia/Manila')),
         'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
         'cache_minutes' => env('WEATHER_CACHE_MINUTES', 5),
+=======
+        'provider' => env('WEATHER_API_PROVIDER', env('WEATHER_PROVIDER', 'open_meteo')),
+        'latitude' => env('WEATHER_LATITUDE', env('ICLIMATE_WEATHER_LAT', env('ICLIMATE_LATITUDE', 13.98))),
+        'longitude' => env('WEATHER_LONGITUDE', env('ICLIMATE_WEATHER_LON', env('ICLIMATE_LONGITUDE', 120.65))),
+        'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', 'Asia/Manila')),
+        'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
+        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 1),
+        'weekly_cache_minutes' => env('WEATHER_FORECAST_CACHE_MINUTES', 45),
+>>>>>>> Stashed changes
         'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
     ],
 
     'open_meteo' => [
         'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
-        'latitude' => env('ICLIMATE_LATITUDE', 14.033),
-        'longitude' => env('ICLIMATE_LONGITUDE', 120.650),
+        'latitude' => env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 13.98)),
+        'longitude' => env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.65)),
         'timezone' => env('ICLIMATE_TIMEZONE', 'Asia/Manila'),
         'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),

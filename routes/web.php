@@ -3,6 +3,7 @@
 use App\Http\Controllers\AIChatController;
 use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ChatbotResponseController;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
@@ -248,6 +249,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('system-logs', SystemLogController::class)
         ->only(['index', 'show'])
+        ->middleware('role:'.User::ROLE_IT_EXPERT);
+
+    Route::patch('chatbot-responses/{chatbotResponse}/activate', [ChatbotResponseController::class, 'activate'])
+        ->middleware('role:'.User::ROLE_IT_EXPERT)
+        ->name('chatbot-responses.activate');
+
+    Route::patch('chatbot-responses/{chatbotResponse}/deactivate', [ChatbotResponseController::class, 'deactivate'])
+        ->middleware('role:'.User::ROLE_IT_EXPERT)
+        ->name('chatbot-responses.deactivate');
+
+    Route::resource('chatbot-responses', ChatbotResponseController::class)
+        ->parameters(['chatbot-responses' => 'chatbotResponse'])
+        ->except(['show'])
         ->middleware('role:'.User::ROLE_IT_EXPERT);
 });
 
