@@ -650,17 +650,18 @@
         }
         @media (max-width: 1199.98px) { .priority-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 767.98px) {
-            .farmer-hero-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .farmer-hero-grid { grid-template-columns: 1fr; }
+            .quick-grid, .priority-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero-grid {
                 grid-template-areas:
                     "copy"
                     "actions"
                     "weather";
             }
-            .farmer-hero-summary { grid-template-columns: 1fr; }
+            .farmer-hero-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .farmer-hero-actions .field-chip { flex: 1 1 100%; width: 100%; justify-content: flex-start; }
-            .climate-grid, .quick-grid, .priority-grid { grid-template-columns: 1fr; }
-            .weather-mini-grid { grid-template-columns: 1fr; }
+            .climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .weather-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-top: 0; }
             .farmer-hero { padding: 1.1rem 1rem; margin-bottom: 1rem; }
             .farmer-hero h1 { margin-bottom: .2rem; }
@@ -673,7 +674,9 @@
             .dashboard-section-label:first-of-type { margin-top: 0; }
             .section-note { margin-top: .1rem; }
             .climate-grid { gap: .6rem; margin-bottom: .35rem; padding-bottom: .25rem; }
-            .field-card { padding: .8rem .9rem; gap: .35rem; }
+            .field-card { min-height: 0; padding: .8rem .75rem; gap: .35rem; }
+            .field-icon { width: 28px; height: 28px; }
+            .field-status { white-space: normal; text-align: right; justify-content: flex-end; }
             .field-value { font-size: 1.55rem; }
             .weather-live-card { padding: .8rem; }
             .weather-live-head { margin-bottom: .55rem; }
@@ -696,6 +699,12 @@
             .advisory-card { padding: .85rem .95rem; }
             .farmer-list-item { padding: .65rem 0; gap: .7rem; }
             .empty-soft { padding: 1.25rem; }
+        }
+        @media (max-width: 380px) {
+            .quick-grid, .priority-grid { grid-template-columns: 1fr; }
+            .field-card { padding: .75rem .68rem; }
+            .field-label, .field-note { font-size: .82rem; }
+            .field-value { font-size: 1.42rem; }
         }
     </style>
 

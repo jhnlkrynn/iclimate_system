@@ -151,13 +151,22 @@
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
         .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 700; }
-        .chart-box { position: relative; min-height: 280px; padding: 1rem; border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; }
-        .chart-box canvas { width: 100% !important; height: 220px !important; }
+        .chart-box { position: relative; min-height: 330px; padding: 1rem; border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; overflow-x: auto; }
+        .chart-box canvas { width: 100% !important; min-width: 420px; height: 260px !important; }
         .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
-        .farmer-org-chart-shell { position: relative; min-height: 500px; overflow-x: auto; padding: .5rem .25rem 0; }
-        .farmer-org-chart-inner { min-width: 1180px; height: 480px; }
+        .farmer-org-chart-title { color: var(--mao-ink); font-family: 'Inter', system-ui, sans-serif !important; font-size: 20px; font-weight: 600 !important; line-height: 1.3; letter-spacing: 0; }
+        .farmer-org-chart-shell { position: relative; overflow-x: auto; padding: .5rem .25rem .75rem; }
+        .farmer-org-chart-inner { min-width: 720px; height: 300px; }
         .farmer-org-chart-inner canvas { width: 100% !important; height: 100% !important; }
+        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
+        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(95,143,120,.24); border-radius: 8px; background: #fff; color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
+        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: #f7fbf8; }
+        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
+        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
+        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
+        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
@@ -289,6 +298,8 @@
             .mao-hero { padding: .9rem; }
             .mao-chip { font-size: .72rem; padding: .38rem .6rem; }
         }
+        @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .farmer-org-chart-shell { min-height: 0; overflow-x: auto; padding-bottom: .5rem; } .farmer-org-chart-inner { min-width: 520px; height: 300px; } .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
+        @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } .farmer-org-chart-inner { min-width: 460px; } }
 
         /* Product UI restraint pass */
         .mao-console .btn { border-radius: 8px !important; box-shadow: none !important; }
@@ -403,7 +414,7 @@
         <section class="mao-panel mb-4">
             <div class="mao-panel-header">
                 <div>
-                    <h2 class="mao-panel-title">FARMERS BY ORGANIZATION</h2>
+                    <h2 class="mao-panel-title farmer-org-chart-title">Farmers by Organization</h2>
                     <p class="mao-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
                 </div>
                 <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
@@ -411,9 +422,11 @@
             <div class="mao-panel-body">
                 <div class="farmer-org-chart-shell">
                     <div class="farmer-org-chart-inner">
-                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization bar chart" role="img"></canvas>
+                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
                     </div>
                 </div>
+                <div id="farmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
+                <div id="farmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
             </div>
         </section>
 
@@ -866,23 +879,23 @@
             const organizationChartData = @json($farmerOrganizationChart);
 
             if (organizationCanvas && window.Chart && organizationChartData?.labels?.length) {
-                const wrapOrganizationLabel = (label, max = 18) => {
-                    const words = String(label).split(' ');
-                    const lines = [];
-                    let current = '';
+                const chartLabels = window.iClimateChartLabels || {};
+                const organizationDisplayLabels = organizationChartData.labels.map((label) => label === 'None' ? 'No Organization' : label);
+                const maxOrganizationCount = Math.max(...organizationChartData.counts, 0);
+                const organizationColors = [
+                    '#1F5A46', '#4B7185', '#8FAF9A', '#B84A4A', '#C58B2A', '#2F855A',
+                    '#256D85', '#7B8F45', '#8B5E3C', '#6F8978', '#3A7D44', '#596E79',
+                    '#9A6B2F', '#4E6E5D', '#8C4A5B', '#5F8F78', '#64748B',
+                ];
+                const colorForOrganization = (index) => organizationColors[index % organizationColors.length];
+                const escapeLegendText = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
+                const countLabel = (count) => `${count} farmer${count === 1 ? '' : 's'}`;
+                const statusTarget = document.getElementById('farmersByOrganizationStatus');
+                const setOrganizationStatus = (index) => {
+                    const count = Number(organizationChartData.counts[index] ?? 0);
+                    const label = organizationDisplayLabels[index] || 'Organization';
 
-                    words.forEach((word) => {
-                        const next = current ? `${current} ${word}` : word;
-                        if (next.length > max && current) {
-                            lines.push(current);
-                            current = word;
-                        } else {
-                            current = next;
-                        }
-                    });
-
-                    if (current) lines.push(current);
-                    return lines.length ? lines : [String(label)];
+                    if (statusTarget) statusTarget.textContent = `${label}: ${countLabel(count)}`;
                 };
 
                 const maxOrganizationCount = Math.max(...organizationChartData.counts, 0);
@@ -908,6 +921,7 @@
                     afterDatasetsDraw(chart) {
                         const { ctx } = chart;
                         const meta = chart.getDatasetMeta(0);
+                        const zeroY = chart.scales.y?.getPixelForValue(0) ?? chart.chartArea.bottom;
 
                         ctx.save();
                         ctx.font = '700 12px Inter, system-ui, sans-serif';
@@ -923,26 +937,47 @@
                                 ctx.textBaseline = 'bottom';
                                 ctx.fillText(value, bar.x, bar.y - 8);
                             }
+                        ctx.font = '700 16px Inter, system-ui, sans-serif';
+                        ctx.fillStyle = '#1F2937';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        meta.data.forEach((bar, index) => {
+                            const value = Number(chart.data.datasets[0].data[index] ?? 0);
+                            const labelY = value > 0 ? bar.y - 6 : zeroY - 6;
+                            ctx.fillText(String(value), bar.x, labelY);
                         });
                         ctx.restore();
                     },
                 };
+                const legendTarget = document.getElementById('farmersByOrganizationLegend');
+                if (legendTarget) {
+                    legendTarget.innerHTML = organizationDisplayLabels.map((label, index) => {
+                        const count = Number(organizationChartData.counts[index] ?? 0);
+                        const ariaLabel = `${label}: ${countLabel(count)}`;
 
-                new Chart(organizationCanvas, {
+                        return `
+                            <button type="button" class="farmer-org-legend-item" data-organization-index="${index}" aria-label="${escapeLegendText(ariaLabel)}" title="${escapeLegendText(ariaLabel)}">
+                                <span class="farmer-org-legend-swatch" style="background:${colorForOrganization(index)}"></span>
+                                <span class="farmer-org-legend-name">${escapeLegendText(label)}</span>
+                                <span class="farmer-org-legend-count">${count}</span>
+                            </button>
+                        `;
+                    }).join('');
+                }
+
+                const organizationChart = new Chart(organizationCanvas, {
                     type: 'bar',
                     data: {
-                        labels: organizationChartData.labels.map((label) => wrapOrganizationLabel(label)),
+                        labels: organizationDisplayLabels,
                         datasets: [{
                             label: 'Registered farmers',
                             data: organizationChartData.counts,
                             borderWidth: 1,
-                            borderColor: '#1F5A46',
-                            backgroundColor: organizationChartData.counts.map((count, index) => organizationChartData.labels[index] === 'None'
-                                ? 'rgba(100, 116, 139, .72)'
-                                : count > 0 ? 'rgba(31, 90, 70, .86)' : 'rgba(143, 175, 154, .32)'),
+                            borderColor: organizationDisplayLabels.map((label, index) => colorForOrganization(index)),
+                            backgroundColor: organizationDisplayLabels.map((label, index) => colorForOrganization(index)),
                             borderRadius: 7,
-                            barPercentage: .72,
-                            categoryPercentage: .82,
+                            barPercentage: .68,
+                            categoryPercentage: .72,
                         }],
                     },
                     options: {
@@ -951,11 +986,12 @@
                         maintainAspectRatio: false,
                         animation: { duration: 420 },
                         layout: { padding: isHorizontal ? { right: 32 } : { top: 24, right: 12 } },
+                        layout: { padding: { top: 24, right: 14, bottom: 4, left: 4 } },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    title: (items) => organizationChartData.labels[items[0].dataIndex] || '',
+                                    title: (items) => organizationDisplayLabels[items[0].dataIndex] || '',
                                     label: (context) => {
                                         const value = (isHorizontal ? context.parsed.x : context.parsed.y) || 0;
                                         return `${value} registered farmer${value === 1 ? '' : 's'}`;
@@ -976,19 +1012,47 @@
                             },
                         } : {
                             x: {
-                                ticks: { color: '#1F2937', maxRotation: 45, minRotation: 45, autoSkip: false, font: { size: 11, weight: 600 } },
+                                ticks: chartLabels.horizontalCategoryTicks
+                                    ? chartLabels.horizontalCategoryTicks({ display: false, color: '#1F2937', autoSkip: false, padding: 0, font: { size: 14, weight: 600 } })
+                                    : { display: false, color: '#1F2937', maxRotation: 0, minRotation: 0, autoSkip: false, padding: 0, font: { size: 14, weight: 600 } },
                                 grid: { display: false, drawBorder: false },
                             },
                             y: {
                                 beginAtZero: true,
                                 suggestedMax: maxOrganizationCount + 1,
-                                ticks: { precision: 0, color: '#64748B' },
-                                grid: { color: 'rgba(95,143,120,.18)', drawBorder: false },
+                                ticks: { precision: 0, color: '#1F2937', font: { size: 14, weight: 700 }, padding: 8 },
+                                grid: { color: 'rgba(95,143,120,.16)', drawBorder: false },
                             },
                         },
                     },
                     plugins: [organizationValueLabels],
                 });
+
+                const activateOrganization = (index) => {
+                    const bar = organizationChart.getDatasetMeta(0).data[index];
+                    if (!bar) return;
+
+                    organizationChart.setActiveElements([{ datasetIndex: 0, index }]);
+                    organizationChart.tooltip?.setActiveElements([{ datasetIndex: 0, index }], { x: bar.x, y: bar.y });
+                    organizationChart.update();
+                    setOrganizationStatus(index);
+                };
+                const clearOrganization = () => {
+                    organizationChart.setActiveElements([]);
+                    organizationChart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+                    organizationChart.update();
+                };
+
+                legendTarget?.querySelectorAll('[data-organization-index]').forEach((item) => {
+                    const index = Number(item.dataset.organizationIndex);
+
+                    item.addEventListener('mouseenter', () => activateOrganization(index));
+                    item.addEventListener('focus', () => activateOrganization(index));
+                    item.addEventListener('click', () => activateOrganization(index));
+                    item.addEventListener('mouseleave', clearOrganization);
+                    item.addEventListener('blur', clearOrganization);
+                });
+                organizationCanvas.addEventListener('focus', () => setOrganizationStatus(0));
             }
 
             document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
@@ -1019,6 +1083,8 @@
             const chartData = @json($weatherChartData);
             const mapAreas = @json($dashboardMapAreas);
             const labels = chartData.labels || [];
+            const chartLabels = window.iClimateChartLabels || {};
+            const readableLabels = labels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
             const weatherRoot = document.querySelector('[data-mao-weather-root]');
             let maoWeatherPollTimer = null;
 
@@ -1026,6 +1092,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
+                layout: { padding: { top: 8, right: 14, bottom: 10, left: 4 } },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -1035,8 +1102,13 @@
                     },
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, color: 'rgba(13,31,24,.55)' } },
-                    y: { beginAtZero: true, grid: { color: 'rgba(13,31,24,.08)' }, ticks: { color: 'rgba(13,31,24,.55)' } },
+                    x: {
+                        grid: { display: false },
+                        ticks: chartLabels.horizontalCategoryTicks
+                            ? chartLabels.horizontalCategoryTicks({ color: '#334155', autoSkip: labels.length > 8, maxTicksLimit: 8, font: { size: 12, weight: 600, lineHeight: 1.25 } })
+                            : { maxRotation: 0, minRotation: 0, autoSkip: labels.length > 8, maxTicksLimit: 8, color: '#334155', font: { size: 12, weight: 600 } },
+                    },
+                    y: { beginAtZero: true, grid: { color: 'rgba(13,31,24,.08)' }, ticks: { color: '#475569', font: { size: 12, weight: 600 }, padding: 8 } },
                 },
             });
 
@@ -1047,7 +1119,7 @@
                 return new Chart(canvas, {
                     type: 'line',
                     data: {
-                        labels,
+                        labels: readableLabels,
                         datasets: [{
                             label,
                             data: values || [],
@@ -1066,7 +1138,7 @@
 
             const weatherCharts = {
                 rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
-                temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', '°C'),
+                temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C'),
                 humidity: makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%'),
                 windSpeed: makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', 'km/h'),
             };
@@ -1077,7 +1149,7 @@
             const updateWeatherChart = (chart, labels, values) => {
                 if (!chart || !Array.isArray(labels) || !Array.isArray(values)) return;
 
-                chart.data.labels = labels;
+                chart.data.labels = labels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
                 chart.data.datasets[0].data = values;
                 chart.update('none');
             };

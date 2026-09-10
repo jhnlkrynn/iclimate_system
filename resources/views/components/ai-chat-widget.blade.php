@@ -374,15 +374,15 @@
     @media (max-width: 575.98px) {
         .ic-ai-widget {
             right: 8px !important;
-            bottom: 8px !important;
+            bottom: max(8px, env(safe-area-inset-bottom)) !important;
             left: auto !important;
         }
 
         .ic-ai-panel {
             position: fixed !important;
-            inset: auto 8px 8px 8px !important;
+            inset: auto 8px max(8px, env(safe-area-inset-bottom)) 8px !important;
             width: auto !important;
-            height: calc(100dvh - 16px) !important;
+            height: calc(100dvh - max(16px, env(safe-area-inset-bottom) + 8px)) !important;
             border-radius: 16px;
         }
 
@@ -472,6 +472,7 @@
             <span class="ic-ai-dot"></span>
             <span class="ic-ai-dot"></span>
         </div>
+
         <div class="ic-ai-chips" aria-label="Suggested questions">
             @foreach($icAiChips as $chip)
                 <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
