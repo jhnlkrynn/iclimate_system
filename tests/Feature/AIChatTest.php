@@ -21,7 +21,7 @@ class AIChatTest extends TestCase
     public function test_authenticated_user_can_get_ai_farming_assistant_response(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => [
                     'predicted_weather' => 'Rain',
                     'confidence' => 84,
@@ -60,7 +60,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_extracts_farmer_scenario_from_natural_language(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Dry', 'confidence' => 80],
                 'rice_yield_prediction' => ['predicted_yield' => 2.4, 'unit' => 'tons/hectare'],
                 'warnings' => [['title' => 'Drought', 'reason' => 'Low rainfall']],
@@ -85,7 +85,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_uses_random_forest_model_for_missing_weather_inputs(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Rain', 'confidence' => 83],
                 'rice_yield_prediction' => ['predicted_yield' => 4.4, 'unit' => 'tons/hectare'],
                 'warnings' => [],
@@ -127,7 +127,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_uses_previous_intent_for_follow_up_question(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Rain', 'confidence' => 81],
                 'rice_yield_prediction' => ['predicted_yield' => 4.1, 'unit' => 'tons/hectare'],
                 'warnings' => [],
@@ -155,7 +155,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_uses_raw_model_yield_without_calibration(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Rain', 'confidence' => 85],
                 'rice_yield_prediction' => ['predicted_yield' => 2.0, 'unit' => 'tons/hectare'],
                 'warnings' => [],
@@ -195,7 +195,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_lowers_reliability_for_unrealistic_inputs(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Dry', 'confidence' => 90],
                 'rice_yield_prediction' => ['predicted_yield' => 3.8, 'unit' => 'tons/hectare'],
                 'warnings' => [],
@@ -267,7 +267,7 @@ class AIChatTest extends TestCase
         ]);
 
         Http::fake(function ($request) {
-            if (str_contains((string) $request->url(), '127.0.0.1:5001/predict')) {
+            if (str_contains((string) $request->url(), '127.0.0.1:19999/predict')) {
                 throw new ConnectionException('Connection refused');
             }
 
@@ -337,7 +337,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.weather_prediction', null)
             ->assertJsonPath('chat.rice_yield_prediction', null);
 
-        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '127.0.0.1:5001/predict'));
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '127.0.0.1:19999/predict'));
     }
 
     public function test_ai_assistant_rejects_unsupported_system_question_without_external_ai(): void
@@ -379,7 +379,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.weather_prediction', null)
             ->assertJsonPath('chat.rice_yield_prediction', null);
 
-        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '127.0.0.1:5001/predict'));
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '127.0.0.1:19999/predict'));
     }
 
     public function test_ai_assistant_explains_weather_data_sources_without_running_prediction(): void
@@ -511,7 +511,7 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_answers_tagalog_prediction_questions_in_tagalog(): void
     {
         Http::fake([
-            '127.0.0.1:5001/predict' => Http::response([
+            '127.0.0.1:19999/predict' => Http::response([
                 'weather_prediction' => ['predicted_weather' => 'Rain', 'confidence' => 84],
                 'rice_yield_prediction' => ['predicted_yield' => 4.25, 'unit' => 'tons/hectare'],
                 'warnings' => [],

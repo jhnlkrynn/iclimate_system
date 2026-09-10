@@ -255,6 +255,12 @@
         .log-dot svg { width: 17px; height: 17px; }
         .row-title { font-weight: 700; color: var(--it-ink); line-height: 1.25; }
         .row-sub { color: var(--it-muted); font-size: .82rem; margin-top: .12rem; }
+        .it-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
+        .it-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--it-red); }
+        .it-risk-badge-moderate { background: rgba(197,139,42,.14); color: #C58B2A; }
+        .it-risk-badge-low { background: rgba(95,143,120,.14); color: var(--it-green); }
+        .it-risk-interpretation { font-weight: 500; color: var(--it-ink); }
+        .it-risk-score-meta { font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; font-weight: 600; }
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .quick-action {
             min-height: 104px;
@@ -629,13 +635,33 @@
                     </div>
                     <div class="modal-body">
                         <div class="it-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
-                        <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records.</p>
+                        <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
                         @forelse($highRiskAreasList as $area)
+                            @php
+                                $riskScoreValue = (float) $area->risk_score;
+                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
+                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
+                                    'severe', 'high' => 'it-risk-badge-severe',
+                                    'moderate' => 'it-risk-badge-moderate',
+                                    default => 'it-risk-badge-low',
+                                };
+                            @endphp
                             <div class="log-row">
                                 <div class="log-dot"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div class="flex-grow-1">
-                                    <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="row-title">
+                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
+                                        <span class="it-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
+                                    </div>
+                                    <div class="row-sub it-risk-interpretation">{{ $riskInterpretation }}</div>
                                     <div class="row-sub">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="row-sub it-risk-score-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
                                 </div>
                             </div>
                         @empty

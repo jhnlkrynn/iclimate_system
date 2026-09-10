@@ -26,6 +26,11 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <!-- Deliberately unroutable: tests must Http::fake() the ML service themselves.
+             Without this, a dev running python_scripts/main.py locally on the real
+             configured port would make tests silently hit it for real instead of
+             getting a fast connection-refused. -->
+        <env name="FARMING_AI_API_URL" value="http://127.0.0.1:19999"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

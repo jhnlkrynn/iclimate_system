@@ -111,7 +111,7 @@ Alpine.start();
  * These are safe for Laravel forms: no fake auth redirects, no static .html navigation,
  * and no prevention of server-side validation/submission.
  */
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     bindNavbarState();
     bindMobileNavigation();
     bindScrollSpy();
@@ -126,7 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
     bindResponsiveCollapse();
     bindChartTabs();
     bindStatDrawers();
-});
+}
+
+// The dynamic `leaflet.heat` import above is awaited at module top-level, which can
+// delay this script past the point where `DOMContentLoaded` already fired. Falling
+// back to an immediate call when the document is already ready keeps drawers, tabs,
+// and every other binding here from silently never running.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 function bindNavbarState() {
     const navbar = document.getElementById('navbar');

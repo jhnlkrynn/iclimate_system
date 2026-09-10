@@ -513,6 +513,24 @@
         .list-title { font-weight: 700; color: var(--fc-ink); line-height: 1.3; font-size: var(--text-base); }
         .list-text { color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .2rem; line-height: 1.55; }
         .list-meta { color: var(--fc-ink-mid); font-family: 'DM Mono', monospace; font-size: var(--text-xs); margin-top: .4rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; line-height: 1.4; }
+        .fc-risk-badge {
+            display: inline-flex;
+            align-items: center;
+            margin-left: .5rem;
+            padding: .15rem .55rem;
+            border-radius: var(--radius-pill);
+            font-family: 'DM Mono', monospace;
+            font-size: var(--text-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .fc-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--fc-coral); }
+        .fc-risk-badge-moderate { background: rgba(197,139,42,.14); color: var(--fc-warning); }
+        .fc-risk-badge-low { background: rgba(95,143,120,.14); color: var(--fc-green-700); }
+        .fc-risk-interpretation { font-weight: 500; color: var(--fc-ink); }
         .status-pill {
             display: inline-flex;
             align-items: center;
@@ -774,7 +792,7 @@
                             <div class="weather-live-meta">
                                 <strong>Lian, Batangas</strong><br>
                                 Feels like <span data-weather-feels-like>{{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</span><br>
-                                Source: <span data-weather-provider>{{ $weatherSourceDisplay }}</span><br>
+                                Source: <span data-weather-provider>{{ strtoupper($weatherSourceDisplay) }}</span><br>
                                 <span data-weather-freshness>{{ $weatherFetchedIso ? 'Near-real-time weather data' : 'Weather timestamp unavailable' }}</span>
                             </div>
                         </div>
@@ -903,20 +921,6 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
-        <div class="fc-stat-panel" id="statPanelTemperature" hidden>
-            <div class="fc-modal-content">
-                <div class="fc-modal-header">
-                    <h2 class="modal-title h5">Temperature Detail</h2>
-                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="fc-modal-body">
-                    <div class="fc-modal-headline" data-weather-temperature-modal>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-modal-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSourceDisplay) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                    <p class="fc-modal-note">Current temperature and apparent temperature come from the normalized weather provider payload for Lian, Batangas. Compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
-                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
-                </div>
-                <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -937,20 +941,6 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
-        <div class="fc-stat-panel" id="statPanelRainfall" hidden>
-            <div class="fc-modal-content">
-                <div class="fc-modal-header">
-                    <h2 class="modal-title h5">Rainfall Detail</h2>
-                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="fc-modal-body">
-                    <div class="fc-modal-headline" data-weather-rain-modal>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-rain-sub>Today&apos;s rainfall uses daily total precipitation from {{ strtoupper($weatherSourceDisplay) }}. Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}. {{ $weatherUpdateLine }}</p>
-                    <p class="fc-modal-note">The headline is today&apos;s accumulated rainfall, not the current interval. Current precipitation is shown separately to avoid mixing rainfall definitions.</p>
-                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
-                </div>
-                <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -971,20 +961,6 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                     </div>
-        <div class="fc-stat-panel" id="statPanelHumidity" hidden>
-            <div class="fc-modal-content">
-                <div class="fc-modal-header">
-                    <h2 class="modal-title h5">Humidity Detail</h2>
-                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="fc-modal-body">
-                    <div class="fc-modal-headline" data-weather-humidity-modal>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'No weather data yet' }}</div>
-                    <p class="fc-modal-sub" data-weather-humidity-sub>{{ $weatherSourceLine }} &middot; Source: {{ strtoupper($weatherSourceDisplay) }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                    <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. Monitor fields closely when humidity stays elevated.</p>
-                    @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
-                </div>
-                <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
                 </div>
             </div>
         </div>
@@ -1021,30 +997,6 @@
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-primary" href="{{ route('notifications.index') }}">Open Notifications</a>
                     </div>
-        <div class="fc-stat-panel" id="statPanelAlerts" hidden>
-            <div class="fc-modal-content">
-                <div class="fc-modal-header">
-                    <h2 class="modal-title h5">Weather Alerts</h2>
-                    <button type="button" class="fc-panel-close" data-panel-close aria-label="Close">&times;</button>
-                </div>
-                <div class="fc-modal-body">
-                    <div class="fc-modal-headline">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
-                    <p class="fc-modal-sub">Unread warning notifications that mention weather, rainfall, storms, floods, drought, heat, typhoon, PAGASA, or climate.</p>
-                    @forelse($weatherAlertNotifications ?? collect() as $notification)
-                        <div class="farmer-list-item">
-                            <div class="list-mark">{{ $notification->is_read ? 'OK' : 'NEW' }}</div>
-                            <div>
-                                <div class="list-title">{{ $notification->title }}</div>
-                                <div class="list-text">{{ str($notification->message)->limit(140) }}</div>
-                                <div class="list-meta">{{ $notification->type }} &middot; {{ $notification->created_at?->shortDateTime() }}</div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="empty-soft"><strong>0 active weather alerts</strong><div class="small mt-1" style="color: var(--fc-ink-light);">No unread iClimate weather warnings are active for your account.</div></div>
-                    @endforelse
-                </div>
-                <div class="fc-modal-footer">
-                    <a class="fc-btn fc-btn-primary" href="{{ route('notifications.index') }}">Open Notifications</a>
                 </div>
             </div>
         </div>
@@ -1058,14 +1010,33 @@
                     </div>
                     <div class="modal-body fc-modal-body">
                         <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
-                        <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map.</p>
+                        <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
                         @forelse($highRiskAreasList as $area)
+                            @php
+                                $riskScoreValue = (float) $area->risk_score;
+                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
+                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
+                                    'severe', 'high' => 'fc-risk-badge-severe',
+                                    'moderate' => 'fc-risk-badge-moderate',
+                                    default => 'fc-risk-badge-low',
+                                };
+                            @endphp
                             <div class="farmer-list-item">
                                 <div class="list-mark"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div>
-                                    <div class="list-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+                                    <div class="list-title">
+                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
+                                        <span class="fc-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
+                                    </div>
+                                    <div class="list-text fc-risk-interpretation">{{ $riskInterpretation }}</div>
                                     <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="list-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
+                                    <div class="list-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
                                 </div>
                             </div>
                         @empty

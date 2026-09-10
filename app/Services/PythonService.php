@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
 
+/**
+ * HTTP client for the iClimate ML service (python_scripts/main.py, FastAPI).
+ * Method name kept as farmingAssistant() for compatibility with existing
+ * callers/tests — it now talks to FastAPI's /predict route, not Flask.
+ */
 class PythonService
 {
     public function farmingAssistant(array $payload): array
