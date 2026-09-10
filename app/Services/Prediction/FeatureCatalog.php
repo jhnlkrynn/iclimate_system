@@ -223,10 +223,47 @@ final class FeatureCatalog
      */
     public static function byModelKey(string $modelKey, string $schema = self::SCHEMA_DEPLOYED): ?array
     {
-        foreach (self::FEATURES as $feature) {
+        foreach (self::FEATURES as $key => $feature) {
             if (($feature['model_keys'][$schema] ?? null) === $modelKey) {
-                return $feature;
+                return ['key' => $key, ...$feature];
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * At-a-glance status for a feature's current numeric value, reusing the
+     * exact same thresholds already shown elsewhere on the prediction pages
+     * (WeatherLabeler) so a value never gets described two different ways
+     * in two different places. Returns null for features that don't have a
+     * meaningful "good/bad" direction (e.g. farm area, season, irrigation
+     * type) — forcing a badge onto those would be arbitrary, not helpful.
+     *
+     * @return array{label: string, tone: string}|null
+     */
+    public static function classify(string $key, float $value): ?array
+    {
+        if ($key === 'temp_range') {
+            return $value > 8.0
+                ? ['label' => 'Volatile', 'tone' => 'tone-amber']
+                : ['label' => 'Stable', 'tone' => 'tone-green'];
+        }
+
+        if (str_contains($key, 'rainfall')) {
+            return match (WeatherLabeler::fromRainfall($value)) {
+                'Heavy Rain' => ['label' => 'Heavy Rain', 'tone' => 'tone-red'],
+                'Dry' => ['label' => 'Dry', 'tone' => 'tone-amber'],
+                default => ['label' => 'Workable Range', 'tone' => 'tone-green'],
+            };
+        }
+
+        if (str_contains($key, 'temp')) {
+            return match (WeatherLabeler::fromTemperature($value)) {
+                'Hot' => ['label' => 'Hot', 'tone' => 'tone-red'],
+                'Cool' => ['label' => 'Cool', 'tone' => 'tone-amber'],
+                default => ['label' => 'Favorable', 'tone' => 'tone-green'],
+            };
         }
 
         return null;

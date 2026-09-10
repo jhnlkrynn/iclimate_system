@@ -349,12 +349,16 @@
                     $modelFeatureRows = collect($mlResult['features'] ?? [])
                         ->map(function ($value, $modelKey) {
                             $entry = \App\Services\Prediction\FeatureCatalog::byModelKey((string) $modelKey, \App\Services\Prediction\FeatureCatalog::SCHEMA_DEPLOYED);
+                            $status = is_numeric($value) && $entry
+                                ? \App\Services\Prediction\FeatureCatalog::classify($entry['key'], (float) $value)
+                                : null;
 
                             return [
                                 'value' => $value,
                                 'label' => $entry['label'] ?? $modelKey,
                                 'unit' => $entry['unit'] ?? '',
                                 'description' => $entry['description'] ?? null,
+                                'status' => $status,
                             ];
                         })
                         ->values();
@@ -365,8 +369,13 @@
                         <div class="row g-2 mt-2">
                             @foreach($modelFeatureRows as $row)
                                 <div class="col-md-6 col-lg-4">
-                                    <div class="wp-advisory h-100">
-                                        <div class="wp-label mb-1">{{ $row['label'] }}@if($row['unit'])<span class="text-muted fw-normal"> ({{ $row['unit'] }})</span>@endif</div>
+                                    <div class="wp-advisory h-100 {{ $row['status']['tone'] ?? '' }}">
+                                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                            <div class="wp-label mb-0">{{ $row['label'] }}@if($row['unit'])<span class="text-muted fw-normal"> ({{ $row['unit'] }})</span>@endif</div>
+                                            @if($row['status'])
+                                                <span class="wp-status" style="margin-top: 0;">{{ $row['status']['label'] }}</span>
+                                            @endif
+                                        </div>
                                         <div class="wp-card-value">{{ is_numeric($row['value']) ? number_format((float) $row['value'], 2) : ($row['value'] ?? 'N/A') }}</div>
                                         @if($row['description'])
                                             <div class="ds-note mt-1">{{ $row['description'] }}</div>
@@ -402,6 +411,48 @@
                         <div class="col-lg-4"><div class="ds-card h-100 primary"><div class="ds-title">Yield</div><div class="ds-value">{{ $decision['overall_recommendation']['yield'] }}</div></div></div>
                         <div class="col-lg-4"><div class="ds-card h-100 primary"><div class="ds-title">Action</div><div class="ds-value">{{ $decision['overall_recommendation']['planting'] }}</div><div class="ds-note">{{ $decision['overall_recommendation']['irrigation'] }}</div></div></div>
                     </div>
+                </div>
+            </div>
+        @endif
+
+        @if(! empty($shortTermOutlook))
+            <div class="wp-panel mb-4">
+                <div class="wp-panel-header">
+                    <h2 class="h5 fw-bold mb-1">Short-Term Planning Outlook</h2>
+                    <div class="small text-muted">{{ $shortTermOutlook['planning_tip'] }}</div>
+                </div>
+                <div class="wp-panel-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="wp-advisory h-100">
+                                <div class="wp-label mb-1">Rainfall Trend This Month</div>
+                                <div class="wp-card-value">{{ $shortTermOutlook['rainfall_trend']['direction'] }} ({{ $shortTermOutlook['rainfall_trend']['delta'] >= 0 ? '+' : '' }}{{ number_format($shortTermOutlook['rainfall_trend']['delta'], 1) }} {{ $shortTermOutlook['rainfall_trend']['unit'] }})</div>
+                                <div class="ds-note">From {{ number_format($shortTermOutlook['rainfall_trend']['start'], 1) }} to {{ number_format($shortTermOutlook['rainfall_trend']['end'], 1) }} {{ $shortTermOutlook['rainfall_trend']['unit'] }}, last month vs. this month's forecast.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="wp-advisory h-100">
+                                <div class="wp-label mb-1">Temperature Trend This Month</div>
+                                <div class="wp-card-value">{{ $shortTermOutlook['temperature_trend']['direction'] }} ({{ $shortTermOutlook['temperature_trend']['delta'] >= 0 ? '+' : '' }}{{ number_format($shortTermOutlook['temperature_trend']['delta'], 1) }} {{ $shortTermOutlook['temperature_trend']['unit'] }})</div>
+                                <div class="ds-note">From {{ number_format($shortTermOutlook['temperature_trend']['start'], 1) }} to {{ number_format($shortTermOutlook['temperature_trend']['end'], 1) }} {{ $shortTermOutlook['temperature_trend']['unit'] }}, last month vs. this month's forecast.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        @foreach($shortTermOutlook['weeks'] as $week)
+                            <div class="col-md-6 col-lg-3">
+                                <div class="wp-advisory h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <div class="wp-label mb-0">{{ $week['label'] }}</div>
+                                        <span class="small text-muted">{{ $week['date_range_label'] }}</span>
+                                    </div>
+                                    <div class="wp-card-value">{{ number_format($week['rainfall'], 1) }} mm <span class="small text-muted fw-normal">/ {{ number_format($week['temperature'], 1) }}°C</span></div>
+                                    <div class="ds-note mt-1">{{ $week['advisory'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="wp-note">{{ $shortTermOutlook['disclaimer'] }}</div>
                 </div>
             </div>
         @endif

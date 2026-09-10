@@ -80,7 +80,11 @@ class IntentClassifierService
     {
         $text = str($question)->lower()->toString();
 
-        if (str($text)->contains([
+        // "sino ka"/"ano ka" are checked with word boundaries, not plain
+        // substring matching — "ano ka" is otherwise a false-positive
+        // substring of unrelated text like "paano kaba" ("p-AANO KA-ba"),
+        // which would misfire this identity-question shortcut.
+        if (preg_match('/\b(sino|ano)\s+ka\b/u', $text) === 1 || str($text)->contains([
             'tagalog',
             'filipino',
             'pilipino',
@@ -88,8 +92,6 @@ class IntentClassifierService
             'ingles',
             'who are you',
             'what are you',
-            'sino ka',
-            'ano ka',
         ])) {
             return [
                 'intent' => self::SYSTEM_HELP,
@@ -113,20 +115,47 @@ class IntentClassifierService
         $detected = $this->fallbackDetector->detect($question, $memory);
         $intent = $this->mapLegacyIntent((string) $detected['intent'], $text);
 
-        if ($this->looksLikeAmbiguousPrediction($text)) {
-            $intent = self::UNKNOWN;
-        } elseif ($this->looksLikeYieldPrediction($text)) {
-            $intent = self::RICE_YIELD_PREDICTION;
-        } elseif ($this->looksLikeRisk($text)) {
-            $intent = self::CLIMATE_RISK;
-        } elseif ($this->looksLikeCurrentWeather($text)) {
-            $intent = self::CURRENT_WEATHER;
-        } elseif ($this->looksLikeApiForecast($text)) {
-            $intent = self::WEATHER_FORECAST;
-        } elseif ($this->looksLikeMonthlyModelPrediction($text)) {
-            $intent = self::WEATHER_PREDICTION;
-        } elseif ($this->looksLikeAdvisory($text)) {
-            $intent = self::WEATHER_ADVISORY;
+        // The keyword cascade below exists to catch cases the legacy
+        // detector handles poorly (e.g. distinguishing "current weather"
+        // from "forecast"). It must not run once the legacy detector has
+        // already landed on a specific, unambiguous intent — otherwise
+        // incidental keyword overlap silently reroutes a correct
+        // classification into an unrelated one. Concretely: "Should I
+        // plant rice THIS WEEK?" is unambiguously a planting question, but
+        // without this guard it gets reclassified as a weather forecast
+        // request purely because it contains "this week"; "how do you
+        // PREDICT WEATHER?" is a meta/about-the-system question, not an
+        // actual prediction request, but contains a phrase the cascade
+        // treats as a weather-prediction trigger.
+        $protectedFromCascade = [
+            self::PLANTING_RECOMMENDATION,
+            self::IRRIGATION_RECOMMENDATION,
+            self::SYSTEM_HELP,
+            self::PROFILE_ACCOUNT,
+            self::COMMUNITY,
+            self::REPORTS,
+        ];
+
+        if (! in_array($intent, $protectedFromCascade, true)) {
+            if ($this->looksLikePlantingAction($text)) {
+                $intent = self::PLANTING_RECOMMENDATION;
+            } elseif ($this->looksLikeIrrigationAction($text)) {
+                $intent = self::IRRIGATION_RECOMMENDATION;
+            } elseif ($this->looksLikeAmbiguousPrediction($text)) {
+                $intent = self::UNKNOWN;
+            } elseif ($this->looksLikeYieldPrediction($text)) {
+                $intent = self::RICE_YIELD_PREDICTION;
+            } elseif ($this->looksLikeRisk($text)) {
+                $intent = self::CLIMATE_RISK;
+            } elseif ($this->looksLikeCurrentWeather($text)) {
+                $intent = self::CURRENT_WEATHER;
+            } elseif ($this->looksLikeApiForecast($text)) {
+                $intent = self::WEATHER_FORECAST;
+            } elseif ($this->looksLikeMonthlyModelPrediction($text)) {
+                $intent = self::WEATHER_PREDICTION;
+            } elseif ($this->looksLikeAdvisory($text)) {
+                $intent = self::WEATHER_ADVISORY;
+            }
         }
 
         $pendingIntent = (string) data_get($memory, 'pending_intent', '');
@@ -239,6 +268,7 @@ class IntentClassifierService
             'predict rice yield',
             'rice yield',
             'yield for',
+            'yield',
             'tons per hectare',
             'tons/ha',
             'estimate my harvest',
@@ -249,6 +279,23 @@ class IntentClassifierService
             'ani',
             'aanihin',
         ]);
+    }
+
+    /**
+     * An explicit "should I plant" style question is unambiguous even when
+     * it's also full of supporting weather numbers (rainfall/temperature/
+     * humidity) that would otherwise outweigh it in the legacy detector's
+     * keyword scoring, or contains an incidental forecast-lookalike phrase
+     * like "this week". Checked before every other cascade branch.
+     */
+    private function looksLikePlantingAction(string $text): bool
+    {
+        return str($text)->contains(['should i plant', 'dapat ba akong magtanim', 'dapat bang magtanim']);
+    }
+
+    private function looksLikeIrrigationAction(string $text): bool
+    {
+        return str($text)->contains(['should i irrigate', 'dapat ba akong magpatubig', 'dapat bang magpatubig']);
     }
 
     private function looksLikeAmbiguousPrediction(string $text): bool

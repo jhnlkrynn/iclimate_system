@@ -181,7 +181,7 @@ class AIChatTest extends TestCase
         }
 
         $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
-            'question' => 'Predict rice yield for wet season.',
+            'question' => 'Predict rice yield for 2 hectares, wet season.',
         ]);
 
         $response->assertOk()
@@ -206,7 +206,7 @@ class AIChatTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
 
         $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
-            'question' => 'Rainfall is 800mm, temperature 45c, humidity 20%. Predict yield.',
+            'question' => 'Rainfall is 800mm, temperature 45c, humidity 20%. Predict yield for 2 hectares.',
         ]);
 
         $response->assertOk()
@@ -242,7 +242,7 @@ class AIChatTest extends TestCase
         }
 
         $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
-            'question' => 'What is my predicted rice yield? Dry season, irrigated farm, rainfall is 121mm, temperature is 31.1c, humidity is 87.9%, wind is 39.8',
+            'question' => 'What is my predicted rice yield for 2 hectares? Dry season, irrigated farm, rainfall is 121mm, temperature is 31.1c, humidity is 87.9%, wind is 39.8',
         ]);
 
         $response->assertOk()

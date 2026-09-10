@@ -204,6 +204,14 @@
             width: 100% !important;
             height: 100% !important;
         }
+        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
+        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(95,143,120,.24); border-radius: 8px; background: #fff; color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
+        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: #f7fbf8; }
+        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
+        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
+        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
+        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
         .module-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .module-link {
             display: block;
@@ -361,6 +369,7 @@
             .farmer-org-chart-inner { min-width: 720px; height: 780px; }
             .farmer-org-chart-shell { min-height: 420px; max-height: 64vh; overflow: auto; }
             .farmer-org-chart-inner { min-width: 680px; height: 420px; }
+            .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; }
         }
         @media (max-width: 380px) {
             .it-stat-grid, .farmer-org-grid { grid-template-columns: 1fr; }
@@ -538,6 +547,60 @@
                 </div>
             </button>
         </section>
+
+        <div class="dashboard-section-label">
+            <div>
+                <h2 class="section-title">Farmers by Organization</h2>
+                <p class="section-note">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+            </div>
+        </div>
+
+        <section class="it-panel mb-4">
+            <div class="it-panel-header">
+                <div>
+                    <h2 class="it-panel-title">FARMERS BY ORGANIZATION</h2>
+                    <p class="it-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+                </div>
+                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
+            </div>
+            <div class="it-panel-body">
+                <div class="farmer-org-grid">
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farmers</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</div>
+                        <div class="farmer-org-card-note">Registered farmer profiles</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Organizations</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div>
+                        <div class="farmer-org-card-note">Farmer associations on record</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Farmers Without Organization</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['farmersWithoutOrganization']) }}</div>
+                        <div class="farmer-org-card-note">Not yet linked to an association</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farm Area</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmArea'], 2) }} ha</div>
+                        <div class="farmer-org-card-note">Combined registered farm area</div>
+                    </div>
+                </div>
+                <div class="farmer-org-chart-shell">
+                    <div class="farmer-org-chart-inner">
+                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
+                    </div>
+                </div>
+                <div id="adminFarmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
+                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
+            </div>
+        </section>
+        @include('dashboards.partials.farmer-organization-chart', [
+            'chartData' => $farmerOrganizationChart,
+            'canvasId' => 'adminFarmersByOrganizationChart',
+            'legendId' => 'adminFarmersByOrganizationLegend',
+            'statusId' => 'adminFarmersByOrganizationStatus',
+        ])
 
         <div class="ic-drawer" id="itStatUsers" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatUsersLabel">

@@ -82,13 +82,7 @@ class NotificationController extends CrudController
 
     protected function baseQuery(Request $request): Builder
     {
-        $query = UserNotification::query()->with('user');
-
-        if (! in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true)) {
-            $query->where('user_id', $request->user()->id);
-        }
-
-        return $query;
+        return UserNotification::query()->with('user')->where('user_id', $request->user()->id);
     }
 
     public function markRead(Request $request, int $notification): RedirectResponse

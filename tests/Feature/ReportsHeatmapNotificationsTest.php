@@ -25,12 +25,20 @@ class ReportsHeatmapNotificationsTest extends TestCase
         $this->actingAs($mao)->post(route('reports.generate'), [
             'report_type' => 'climate_records',
             'season' => 'Wet',
-        ])->assertOk();
+        ])->assertRedirect(route('reports.results', [
+            'report_type' => 'climate_records',
+            'season' => 'Wet',
+        ]));
 
         $this->assertDatabaseHas('reports', [
             'report_type' => 'Climate Records Report',
             'generated_by' => $mao->id,
         ]);
+
+        $this->actingAs($mao)->get(route('reports.results', [
+            'report_type' => 'climate_records',
+            'season' => 'Wet',
+        ]))->assertOk()->assertSee('Climate Records Report');
 
         $this->actingAs($mao)->get(route('reports.export', [
             'report_type' => 'climate_records',

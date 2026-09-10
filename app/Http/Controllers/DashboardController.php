@@ -185,6 +185,7 @@ class DashboardController extends Controller
     {
         return view('dashboards.it-expert', $this->stats() + [
             ...$this->adminAggregates(),
+            ...$this->farmerOrganizationDashboardData(),
             'latestLogs' => SystemLog::query()->with('user')->latest()->take(6)->get(),
             'latestUsers' => User::query()->latest()->take(5)->get(),
             'recentFarmers' => User::query()->where('role', User::ROLE_FARMER)->latest()->take(6)->get(),
