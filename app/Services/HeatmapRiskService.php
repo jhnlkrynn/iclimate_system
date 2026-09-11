@@ -102,7 +102,7 @@ class HeatmapRiskService
                     'rainfall_status' => $this->rainfallStatus($rainfall),
                     'planting_advisory' => $decision['planting']['recommendation'],
                     'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-                    'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
+                    'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Estimated recommendation confidence (heuristic, not statistical): '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
                 ];
 
                 if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
