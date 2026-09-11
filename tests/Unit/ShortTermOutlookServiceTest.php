@@ -10,7 +10,7 @@ class ShortTermOutlookServiceTest extends TestCase
 {
     public function test_builds_four_weeks_covering_the_full_target_month(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
         $targetMonth = CarbonImmutable::parse('2026-11-01');
 
         $outlook = $service->build([
@@ -34,7 +34,7 @@ class ShortTermOutlookServiceTest extends TestCase
 
     public function test_interpolates_monotonically_between_previous_and_target_values(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
         $targetMonth = CarbonImmutable::parse('2026-06-01');
 
         $outlook = $service->build([
@@ -61,7 +61,7 @@ class ShortTermOutlookServiceTest extends TestCase
 
     public function test_flat_input_produces_stable_trend_and_constant_weeks(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
         $targetMonth = CarbonImmutable::parse('2026-03-01');
 
         $outlook = $service->build([
@@ -83,7 +83,7 @@ class ShortTermOutlookServiceTest extends TestCase
 
     public function test_planning_tip_prioritizes_rainfall_trend_over_temperature_trend(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
         $targetMonth = CarbonImmutable::parse('2026-09-01');
 
         // Both rainfall and temperature are rising — rainfall is the
@@ -101,7 +101,7 @@ class ShortTermOutlookServiceTest extends TestCase
 
     public function test_disclaimer_is_always_present_and_labels_this_as_an_approximation(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
 
         $outlook = $service->build([
             'previous_rainfall' => 150.0,
@@ -115,7 +115,7 @@ class ShortTermOutlookServiceTest extends TestCase
 
     public function test_missing_previous_values_fall_back_to_the_current_value_instead_of_erroring(): void
     {
-        $service = new ShortTermOutlookService();
+        $service = new ShortTermOutlookService;
 
         $outlook = $service->build([
             'rainfall' => 200.0,

@@ -362,5 +362,4 @@ class HeatmapRiskService
 
         return $temperature >= 32 ? 'Heat' : 'Drought';
     }
-
 }

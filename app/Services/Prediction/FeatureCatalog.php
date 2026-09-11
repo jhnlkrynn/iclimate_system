@@ -147,7 +147,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_DEPLOYED],
             'model_keys' => ['deployed' => 'Seasonal_Rainfall'],
             'description' => 'Cumulative rainfall recorded so far within the current wet/dry season, as opposed to a rolling calendar window.',
-            'behavior' => "Ties the rainfall figure to the Philippine wet/dry season cycle specifically, since rice planting decisions are usually made in reference to the season, not the calendar month. High seasonal rainfall in the wet season is expected and normal; the same total in the dry season would be unusual and worth flagging.",
+            'behavior' => 'Ties the rainfall figure to the Philippine wet/dry season cycle specifically, since rice planting decisions are usually made in reference to the season, not the calendar month. High seasonal rainfall in the wet season is expected and normal; the same total in the dry season would be unusual and worth flagging.',
         ],
         'seasonal_temp' => [
             'label' => 'Seasonal Temperature',
@@ -179,7 +179,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_TARGET],
             'model_keys' => ['target' => 'wind_speed'],
             'description' => 'Wind speed for the target period. Same status as humidity — computed on every request but only reaches the TARGET schema and the rule-based fallback today.',
-            'behavior' => "Low impact under normal conditions. The app penalizes yield once wind speed passes ~20km/h (lodging risk — stalks bending/breaking) and more heavily past ~30km/h (storm-level, structural crop damage).",
+            'behavior' => 'Low impact under normal conditions. The app penalizes yield once wind speed passes ~20km/h (lodging risk — stalks bending/breaking) and more heavily past ~30km/h (storm-level, structural crop damage).',
         ],
         'irrigation_type' => [
             'label' => 'Irrigation Type',

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FarmerProfile;
 use App\Models\FarmerOrganization;
+use App\Models\FarmerProfile;
 use App\Models\User;
 use App\Support\LianBarangays;
 use Illuminate\Database\Eloquent\Builder;

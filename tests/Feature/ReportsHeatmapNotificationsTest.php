@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\ClimateRecord;
-use App\Models\FeedPost;
 use App\Models\FarmBoundary;
 use App\Models\FarmerProfile;
+use App\Models\FeedPost;
 use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;

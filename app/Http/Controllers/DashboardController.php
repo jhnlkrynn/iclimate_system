@@ -19,6 +19,7 @@ use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\WeatherApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -292,7 +293,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array{count: int, items: \Illuminate\Support\Collection<int, UserNotification>}
+     * @return array{count: int, items: Collection<int, UserNotification>}
      */
     private function weatherAlertsFor(Request $request): array
     {
