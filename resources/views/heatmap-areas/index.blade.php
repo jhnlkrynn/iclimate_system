@@ -594,6 +594,13 @@
         </div>
     </section>
 
+    <div class="alert alert-warning">
+        <strong>Methodology note:</strong> Per-barangay risk exposure values on this map are
+        engineering estimates, not derived from official hazard, flood-zone, or elevation data.
+        Treat relative comparisons between barangays with caution until sourced hazard data is
+        incorporated.
+    </div>
+
     @php
         $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
             + (request()->filled('risk_level') ? 1 : 0)
