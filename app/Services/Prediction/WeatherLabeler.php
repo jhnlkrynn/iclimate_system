@@ -4,6 +4,12 @@ namespace App\Services\Prediction;
 
 final class WeatherLabeler
 {
+    /**
+     * Keep these thresholds identical to python_scripts/rice_yield_service.py's
+     * weather_label() function — there is no shared config between the two
+     * languages, so a change here without the matching Python change will
+     * silently make PHP and the ML service disagree on weather labels.
+     */
     public static function fromRainfall(float $rainfall): string
     {
         return match (true) {

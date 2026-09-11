@@ -90,6 +90,8 @@ def rice_features(features: dict) -> pd.DataFrame:
 
 
 def weather_label(raw_value) -> str:
+    """Keep these thresholds identical to WeatherLabeler::fromRainfall() in
+    app/Services/Prediction/WeatherLabeler.php — see tests/Unit/WeatherLabelerTest.php."""
     try:
         rainfall = float(raw_value)
     except (TypeError, ValueError):
