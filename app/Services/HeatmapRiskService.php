@@ -10,6 +10,7 @@ use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class HeatmapRiskService
 {
@@ -55,63 +56,72 @@ class HeatmapRiskService
         $barangays = $this->barangays();
 
         foreach ($barangays as $barangay) {
-            $production = RiceProduction::query()
-                ->where('barangay', $barangay)
-                ->latest('year')
-                ->latest('id')
-                ->first();
+            try {
+                $production = RiceProduction::query()
+                    ->where('barangay', $barangay)
+                    ->latest('year')
+                    ->latest('id')
+                    ->first();
 
-            $averageYield = $this->averageYieldForBarangay($barangay);
+                $averageYield = $this->averageYieldForBarangay($barangay);
 
-            if (! $weather['has_weather'] && ! $production && $averageYield === null) {
+                if (! $weather['has_weather'] && ! $production && $averageYield === null) {
+                    continue;
+                }
+
+                $storedYield = $production?->yield_per_hectare !== null
+                    ? (float) $production->yield_per_hectare
+                    : $averageYield;
+
+                $rainfall = $weather['rainfall'];
+                $temperature = $weather['temperature'];
+                $season = $weather['season'] ?? $production?->season ?? ClimateRecord::SEASON_WET;
+                $farmType = $this->farmTypeFor($production?->irrigation_type);
+                $modelYield = $this->predictedYieldForBarangay($weather, $production, $farmType, $season);
+                $yield = $modelYield ?? $storedYield;
+                $yieldSource = $modelYield !== null
+                    ? 'trained rice yield model estimate'
+                    : ($storedYield !== null ? 'stored barangay production record' : 'no yield estimate available');
+
+                $decision = $this->decisionSupport->evaluate([
+                    'barangay' => $barangay,
+                    'farm_type' => $farmType,
+                    'rainfall' => $rainfall,
+                    'temperature' => $temperature,
+                    'wind_speed' => $weather['wind_speed'],
+                    'humidity' => $weather['humidity'],
+                    'season' => $season,
+                    'predicted_yield' => $yield,
+                ]);
+
+                $updates = [
+                    'risk_level' => $decision['risk']['level'],
+                    'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
+                    'risk_score' => $decision['risk']['score'],
+                    'predicted_yield' => $yield,
+                    'rainfall_status' => $this->rainfallStatus($rainfall),
+                    'planting_advisory' => $decision['planting']['recommendation'],
+                    'irrigation_recommendation' => $decision['irrigation']['recommendation'],
+                    'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
+                ];
+
+                if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
+                    $updates['latitude'] = $this->defaultLatitude($barangay);
+                    $updates['longitude'] = $this->defaultLongitude($barangay);
+                }
+
+                HeatmapArea::query()->updateOrCreate(
+                    ['barangay' => $barangay],
+                    $updates
+                );
+            } catch (\Throwable $exception) {
+                Log::error('Heatmap risk refresh failed for one barangay; skipping it.', [
+                    'barangay' => $barangay,
+                    'message' => $exception->getMessage(),
+                ]);
+
                 continue;
             }
-
-            $storedYield = $production?->yield_per_hectare !== null
-                ? (float) $production->yield_per_hectare
-                : $averageYield;
-
-            $rainfall = $weather['rainfall'];
-            $temperature = $weather['temperature'];
-            $season = $weather['season'] ?? $production?->season ?? ClimateRecord::SEASON_WET;
-            $farmType = $this->farmTypeFor($production?->irrigation_type);
-            $modelYield = $this->predictedYieldForBarangay($weather, $production, $farmType, $season);
-            $yield = $modelYield ?? $storedYield;
-            $yieldSource = $modelYield !== null
-                ? 'trained rice yield model estimate'
-                : ($storedYield !== null ? 'stored barangay production record' : 'no yield estimate available');
-
-            $decision = $this->decisionSupport->evaluate([
-                'barangay' => $barangay,
-                'farm_type' => $farmType,
-                'rainfall' => $rainfall,
-                'temperature' => $temperature,
-                'wind_speed' => $weather['wind_speed'],
-                'humidity' => $weather['humidity'],
-                'season' => $season,
-                'predicted_yield' => $yield,
-            ]);
-
-            $updates = [
-                'risk_level' => $decision['risk']['level'],
-                'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
-                'risk_score' => $decision['risk']['score'],
-                'predicted_yield' => $yield,
-                'rainfall_status' => $this->rainfallStatus($rainfall),
-                'planting_advisory' => $decision['planting']['recommendation'],
-                'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-                'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
-            ];
-
-            if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
-                $updates['latitude'] = $this->defaultLatitude($barangay);
-                $updates['longitude'] = $this->defaultLongitude($barangay);
-            }
-
-            HeatmapArea::query()->updateOrCreate(
-                ['barangay' => $barangay],
-                $updates
-            );
         }
     }
 
