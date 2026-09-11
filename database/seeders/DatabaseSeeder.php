@@ -24,6 +24,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing']) && ! env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD')) {
+            throw new \RuntimeException(
+                'Refusing to seed default accounts outside local/testing without an explicit ICLIMATE_DEFAULT_ACCOUNT_PASSWORD.'
+            );
+        }
+
         $defaultPassword = (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', Str::password(24));
 
         $farmer = User::query()->updateOrCreate(
