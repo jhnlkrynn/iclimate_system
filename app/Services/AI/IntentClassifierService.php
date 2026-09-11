@@ -80,6 +80,7 @@ class IntentClassifierService
     {
         $text = str($question)->lower()->toString();
 
+<<<<<<< Updated upstream
         if ($this->fallbackDetector->requiresPrediction(
             IntentDetectionService::SYSTEM_HELP,
             $text
@@ -92,6 +93,9 @@ class IntentClassifierService
             'paano mo pinipredict',
             'paano mo hinuhulaan',
         ])) {
+=======
+        if ($this->looksLikeMethodQuestion($text)) {
+>>>>>>> Stashed changes
             return [
                 'intent' => self::SYSTEM_HELP,
                 'confidence' => 1.0,
@@ -102,7 +106,48 @@ class IntentClassifierService
             ];
         }
 
+<<<<<<< Updated upstream
         if (str($text)->contains([
+=======
+        if ($this->looksLikePlantingAction($text)) {
+            return [
+                'intent' => self::PLANTING_RECOMMENDATION,
+                'confidence' => 1.0,
+                'entities' => $this->normalizeEntities([], $question),
+                'source' => 'local_planting_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
+
+        if ($this->looksLikeIrrigationAction($text)) {
+            return [
+                'intent' => self::IRRIGATION_RECOMMENDATION,
+                'confidence' => 1.0,
+                'entities' => $this->normalizeEntities([], $question),
+                'source' => 'local_irrigation_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
+
+        if ($this->looksLikeYieldPrediction($text)) {
+            return [
+                'intent' => self::RICE_YIELD_PREDICTION,
+                'confidence' => 1.0,
+                'entities' => $this->normalizeEntities([], $question),
+                'source' => 'local_yield_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
+
+        // "sino ka"/"ano ka" are checked with word boundaries, not plain
+        // substring matching — "ano ka" is otherwise a false-positive
+        // substring of unrelated text like "paano kaba" ("p-AANO KA-ba"),
+        // which would misfire this identity-question shortcut.
+        if (preg_match('/\b(sino|ano)\s+ka\b/u', $text) === 1 || str($text)->contains([
+>>>>>>> Stashed changes
             'tagalog',
             'filipino',
             'pilipino',
@@ -390,6 +435,48 @@ class IntentClassifierService
     private function looksLikeAdvisory(string $text): bool
     {
         return str($text)->contains(['advisory', 'advisories', 'warning', 'alert', 'babala', 'pagasa']);
+    }
+
+    private function looksLikeMethodQuestion(string $text): bool
+    {
+        return str($text)->contains([
+            'how do you predict',
+            'how do you gather',
+            'how does iclimate gather',
+            'how does the system gather',
+            'where do you get weather',
+            'where does iclimate get weather',
+            'where does the system get weather',
+            'how do you get weather',
+            'how do you collect weather',
+            'how does iclimate collect weather',
+            'weather data source',
+            'weather source',
+            'how does iclimate predict',
+            'how does the system predict',
+            'how is weather predicted',
+            'how are predictions made',
+            'explain weather prediction',
+            'explain rice yield prediction',
+            'paano ka mag predict',
+            'paano nag predict',
+            'paano mo pinipredict',
+            'paano mo hinuhulaan',
+            'paano hinuhulaan',
+            'what algorithm',
+            'how accurate is',
+            'what is rmse',
+            'what is mae',
+            'what is r2',
+            'what is r-squared',
+            'explain the machine learning model',
+            'why random forest',
+            'why is random forest used',
+            'how was my prediction calculated',
+            'how is my prediction calculated',
+            'prediction calculated',
+            'how was this calculated',
+        ]);
     }
 
     private function validIntent(string $intent): bool

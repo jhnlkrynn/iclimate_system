@@ -28,8 +28,8 @@ class AgriculturalRiskScorerTest extends TestCase
 
         $this->assertSame(0.87, $result['score']);
         $this->assertSame('Severe', $result['level']);
-        $this->assertSame('Severe Risk', $result['label']);
-        $this->assertSame('red', $result['color']);
+        $this->assertSame('Critical/Severe Risk', $result['label']);
+        $this->assertSame('#d7191c', $result['color']);
     }
 
     public function test_favorable_inputs_score_as_low(): void
@@ -45,7 +45,7 @@ class AgriculturalRiskScorerTest extends TestCase
 
         $this->assertSame(0.29, $result['score']);
         $this->assertSame('Low', $result['level']);
-        $this->assertSame('green', $result['color']);
+        $this->assertSame('#2c7bb6', $result['color']);
     }
 
     public function test_mixed_inputs_score_as_moderate(): void
@@ -61,7 +61,7 @@ class AgriculturalRiskScorerTest extends TestCase
 
         $this->assertSame(0.6, $result['score']);
         $this->assertSame('Moderate', $result['level']);
-        $this->assertSame('yellow', $result['color']);
+        $this->assertSame('#fff34d', $result['color']);
     }
 
     public function test_missing_temperature_defaults_to_lowest_risk_band(): void

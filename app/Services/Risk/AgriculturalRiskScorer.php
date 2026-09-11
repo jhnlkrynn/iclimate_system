@@ -2,15 +2,13 @@
 
 namespace App\Services\Risk;
 
+use App\Support\HeatMapLegend;
+
 final class AgriculturalRiskScorer
 {
     private const BARANGAY_EXPOSURE = [
         'Bagong Pook' => 0.55,
         'Balibago' => 0.70,
-        'Barangay 1 (Pob.)' => 0.50,
-        'Barangay 2 (Pob.)' => 0.50,
-        'Barangay 3 (Pob.)' => 0.55,
-        'Barangay 4 (Pob.)' => 0.55,
         'Barangay 5 (Pob.)' => 0.50,
         'Binubusan' => 0.45,
         'Bungahan' => 0.65,
@@ -28,7 +26,7 @@ final class AgriculturalRiskScorer
 
     /**
      * @param  array{rainfall: float, temperature: float, predicted_yield: ?float, farm_type: string, barangay: string, stress_factor_count: int}  $input
-     * @return array{score: float, level: string, label: string, color: string}
+     * @return array{score: float, level: string, label: string, color: string, class: string}
      */
     public function score(array $input): array
     {
@@ -76,17 +74,14 @@ final class AgriculturalRiskScorer
             + $stressPenalty;
 
         $score = round(max(0.05, min(0.98, $score)), 2);
-        $level = $this->levelFromScore($score);
+        $legend = HeatMapLegend::fromScore($score);
 
         return [
             'score' => $score,
-            'level' => $level,
-            'label' => $level.' Risk',
-            'color' => match ($level) {
-                'Severe', 'High' => 'red',
-                'Moderate' => 'yellow',
-                default => 'green',
-            },
+            'level' => $legend['level'],
+            'label' => $legend['label'],
+            'color' => $legend['color'],
+            'class' => $legend['class'],
         ];
     }
 
@@ -101,13 +96,4 @@ final class AgriculturalRiskScorer
         };
     }
 
-    private function levelFromScore(float $score): string
-    {
-        return match (true) {
-            $score >= 0.85 => 'Severe',
-            $score >= 0.68 => 'High',
-            $score >= 0.45 => 'Moderate',
-            default => 'Low',
-        };
-    }
 }

@@ -14,8 +14,13 @@ use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\TyphoonSafetyService;
+use App\Services\HeatmapRiskService;
 use App\Services\Weather\FarmerDashboardWeatherService;
+<<<<<<< Updated upstream
 use App\Services\Weather\WeatherForecastService;
+=======
+use App\Support\HeatMapLegend;
+>>>>>>> Stashed changes
 use App\Services\WeatherApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,12 +30,16 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+<<<<<<< Updated upstream
     public function farmer(Request $request, FarmerDashboardWeatherService $weather, WeatherForecastService $weeklyForecast, TyphoonSafetyService $typhoonSafety): View
+=======
+    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, HeatmapRiskService $riskService): View
+>>>>>>> Stashed changes
     {
         $dashboardWeather = $weather->current($request->boolean('refresh_weather'));
         $weeklyWeatherForecast = $weeklyForecast->forecast($request->boolean('refresh_weather'));
         $dashboardData = $this->stats();
-        $dashboardData['highRiskHeatMapAreas'] = HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count();
+        $dashboardData['highRiskHeatMapAreas'] = $riskService->verifiedQuery()->where('risk_score', '>=', 0.68)->count();
         $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
         $weatherAlerts = $this->weatherAlertsFor($request);
 
@@ -52,9 +61,14 @@ class DashboardController extends Controller
             'dashboardWeather' => $dashboardWeather,
             'dashboardWeatherResponse' => $weather->responsePayload($dashboardWeather),
             'weatherGuidance' => $weather->guidance($dashboardWeather),
+<<<<<<< Updated upstream
             'weeklyWeatherForecast' => $weeklyWeatherForecast,
             'highRiskAreasList' => HeatmapArea::query()
                 ->whereIn('risk_level', ['High', 'Severe'])
+=======
+            'highRiskAreasList' => $riskService->verifiedQuery()
+                ->where('risk_score', '>=', 0.68)
+>>>>>>> Stashed changes
                 ->orderByDesc('risk_score')
                 ->take(8)
                 ->get(),
@@ -87,7 +101,11 @@ class DashboardController extends Controller
         ]);
     }
 
+<<<<<<< Updated upstream
     public function mao(WeatherApiService $weatherApi, WeatherForecastService $weeklyForecast, TyphoonSafetyService $typhoonSafety): View
+=======
+    public function mao(WeatherApiService $weatherApi, TyphoonSafetyService $typhoonSafety, HeatmapRiskService $riskService): View
+>>>>>>> Stashed changes
     {
         $climateChartRecords = ClimateRecord::query()
             ->orderByDesc('record_date')
@@ -96,7 +114,7 @@ class DashboardController extends Controller
             ->sortBy('record_date')
             ->values();
 
-        $heatmapAreas = HeatmapArea::query()
+        $heatmapAreas = $riskService->verifiedQuery()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->orderBy('barangay')
@@ -133,11 +151,11 @@ class DashboardController extends Controller
             'recentRiceProductions' => RiceProduction::query()->latest()->take(5)->get(),
             'latestAdvisories' => PlantingAdvisory::query()->latest()->take(5)->get(),
             'latestFeedPosts' => FeedPost::query()->with('author')->whereNull('archived_at')->latest()->take(4)->get(),
-            'latestHeatmapAreas' => HeatmapArea::query()->latest()->take(5)->get(),
+            'latestHeatmapAreas' => $riskService->verifiedQuery()->latest()->take(5)->get(),
             'latestReports' => Report::query()->with('generatedBy')->latest()->take(4)->get(),
             'recentFarmerProfiles' => FarmerProfile::query()->latest()->take(6)->get(),
-            'highRiskAreasList' => HeatmapArea::query()
-                ->whereIn('risk_level', ['High', 'Severe'])
+            'highRiskAreasList' => $riskService->verifiedQuery()
+                ->where('risk_score', '>=', 0.68)
                 ->orderByDesc('risk_score')
                 ->take(8)
                 ->get(),
@@ -145,6 +163,7 @@ class DashboardController extends Controller
             'weatherChartData' => $weatherChartData,
             'weatherDataSource' => $weatherDataSource,
             'liveWeather' => $liveWeather,
+<<<<<<< Updated upstream
             'weeklyWeatherForecast' => $weeklyWeatherForecast,
             'riskLevelCounts' => [
                 'Low' => (clone $heatmapAreas)->where('risk_level', 'Low')->count(),
@@ -152,29 +171,47 @@ class DashboardController extends Controller
                 'High' => (clone $heatmapAreas)->where('risk_level', 'High')->count(),
                 'Severe' => (clone $heatmapAreas)->where('risk_level', 'Severe')->count(),
             ],
+=======
+            'riskLevelCounts' => $heatmapAreas
+                ->map(fn (HeatmapArea $area): string => HeatMapLegend::fromArea($area)['level'])
+                ->countBy()
+                ->all(),
+>>>>>>> Stashed changes
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
             'typhoonSafetyResponses' => $typhoonSafetyResponses,
             'typhoonSafetySafeCount' => $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count(),
             'typhoonSafetyNeedsHelpCount' => $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count(),
             'typhoonSafetyNoResponseCount' => max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count()),
-            'dashboardMapAreas' => $heatmapAreas->map(fn (HeatmapArea $area) => [
-                'barangay' => $area->barangay,
-                'latitude' => (float) $area->latitude,
-                'longitude' => (float) $area->longitude,
-                'risk_level' => $area->risk_level,
-                'risk_score' => (float) $area->risk_score,
-                'risk_type' => $area->risk_type,
-                'predicted_yield' => $area->predicted_yield !== null ? (float) $area->predicted_yield : null,
-                'predicted_yield_source' => str_contains(strtolower((string) $area->description), 'trained rice yield model') ? 'Trained rice yield model' : 'Stored production record',
-                'rainfall_status' => $area->rainfall_status,
-                'planting_advisory' => $area->planting_advisory,
-                'irrigation_recommendation' => $area->irrigation_recommendation,
-                'description' => $area->description,
-            ])->values(),
+            'dashboardMapAreas' => $heatmapAreas->map(function (HeatmapArea $area): array {
+                $legend = HeatMapLegend::fromArea($area);
+
+                return [
+                    'barangay' => $area->barangay,
+                    'latitude' => (float) $area->latitude,
+                    'longitude' => (float) $area->longitude,
+                    'risk_level' => $legend['level'],
+                    'risk_label' => $legend['label'],
+                    'risk_color' => $legend['color'],
+                    'risk_class' => $legend['class'],
+                    'risk_score' => $area->risk_score !== null ? (float) $area->risk_score : null,
+                    'risk_type' => $area->risk_type,
+                    'risk_reason' => trim(implode('; ', array_filter([
+                        $area->risk_type ? 'Risk type: '.$area->risk_type : null,
+                        $area->rainfall_status ? 'Rainfall: '.$area->rainfall_status : null,
+                    ]))) ?: 'No risk reason recorded.',
+                    'predicted_yield' => $area->predicted_yield !== null ? (float) $area->predicted_yield : null,
+                    'predicted_yield_source' => str_contains(strtolower((string) $area->description), 'trained rice yield model') ? 'Trained rice yield model' : 'Stored production record',
+                    'rainfall_status' => $area->rainfall_status,
+                    'planting_advisory' => $area->planting_advisory,
+                    'irrigation_recommendation' => $area->irrigation_recommendation,
+                    'description' => $area->description,
+                    'updated_at' => $area->updated_at?->shortDateTime('M d, Y g:i A'),
+                ];
+            })->values(),
         ]);
     }
 
-    public function admin(): View
+    public function admin(HeatmapRiskService $riskService): View
     {
         return view('dashboards.it-expert', $this->stats() + [
             ...$this->adminAggregates(),
@@ -183,8 +220,8 @@ class DashboardController extends Controller
             'latestUsers' => User::query()->latest()->take(5)->get(),
             'recentFarmers' => User::query()->where('role', User::ROLE_FARMER)->latest()->take(6)->get(),
             'latestReports' => Report::query()->with('generatedBy')->latest()->take(5)->get(),
-            'highRiskAreasList' => HeatmapArea::query()
-                ->whereIn('risk_level', ['High', 'Severe'])
+            'highRiskAreasList' => $riskService->verifiedQuery()
+                ->where('risk_score', '>=', 0.68)
                 ->orderByDesc('risk_score')
                 ->take(8)
                 ->get(),
@@ -193,13 +230,15 @@ class DashboardController extends Controller
 
     private function maoAggregates(): array
     {
+        $riskService = app(HeatmapRiskService::class);
+
         return Cache::remember('dashboard:mao-aggregates', now()->addSeconds(45), fn () => [
             'riceProductionTotal' => RiceProduction::query()->sum('total_production'),
             'riceAreaTotal' => RiceProduction::query()->sum('area_hectares'),
             'avgYield' => RiceProduction::query()->avg('yield_per_hectare') ?: 0,
             'profileCount' => FarmerProfile::count(),
             'reportCount' => Report::count(),
-            'heatMapCount' => HeatmapArea::count(),
+            'heatMapCount' => $riskService->verifiedQuery()->count(),
             'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', 'Published')->count(),
             'communityPostCount' => FeedPost::query()->whereNull('archived_at')->count(),
         ]);
@@ -207,6 +246,8 @@ class DashboardController extends Controller
 
     private function adminAggregates(): array
     {
+        $riskService = app(HeatmapRiskService::class);
+
         return Cache::remember('dashboard:admin-aggregates', now()->addSeconds(45), fn () => [
             'userCount' => User::count(),
             'activeUsers' => User::query()->where('status', User::STATUS_ACTIVE)->count(),
@@ -224,7 +265,7 @@ class DashboardController extends Controller
                 'Advisories' => PlantingAdvisory::count(),
                 'Community Feed' => FeedPost::query()->whereNull('archived_at')->count(),
                 'Notifications' => UserNotification::count(),
-                'Heat Map Areas' => HeatmapArea::count(),
+                'Heat Map Areas' => $riskService->verifiedQuery()->count(),
                 'Reports' => Report::count(),
             ],
         ]);
@@ -232,6 +273,8 @@ class DashboardController extends Controller
 
     private function stats(): array
     {
+        $riskService = app(HeatmapRiskService::class);
+
         return Cache::remember('dashboard:shared-stats', now()->addSeconds(45), fn () => [
             'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
             'totalClimateRecords' => ClimateRecord::count(),
@@ -239,8 +282,8 @@ class DashboardController extends Controller
             'totalAdvisories' => PlantingAdvisory::count(),
             'totalCommunityPosts' => FeedPost::query()->whereNull('archived_at')->count(),
             'totalNotifications' => UserNotification::count(),
-            'totalHeatMapAreas' => HeatmapArea::count(),
-            'highRiskHeatMapAreas' => HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count(),
+            'totalHeatMapAreas' => $riskService->verifiedQuery()->count(),
+            'highRiskHeatMapAreas' => $riskService->verifiedQuery()->where('risk_score', '>=', 0.68)->count(),
         ]);
     }
 

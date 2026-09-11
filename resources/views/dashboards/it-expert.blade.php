@@ -209,6 +209,17 @@
         .log-dot svg { width: 17px; height: 17px; }
         .row-title { font-weight: 700; color: var(--it-ink); line-height: 1.25; }
         .row-sub { color: var(--it-muted); font-size: .82rem; margin-top: .12rem; }
+<<<<<<< Updated upstream
+=======
+        .it-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
+        .it-risk-badge-low { background: rgba(44,123,182,.14); color: #174f78; }
+        .it-risk-badge-moderate { background: rgba(255,243,77,.28); color: #665f00; }
+        .it-risk-badge-high { background: rgba(253,174,33,.2); color: #7a4b00; }
+        .it-risk-badge-severe { background: rgba(215,25,28,.14); color: #8b1114; }
+        .it-risk-badge-insufficient { background: rgba(107,114,128,.14); color: #374151; }
+        .it-risk-interpretation { font-weight: 500; color: var(--it-ink); }
+        .it-risk-score-meta { font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; font-weight: 600; }
+>>>>>>> Stashed changes
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .quick-action {
             min-height: 104px;
@@ -365,7 +376,7 @@
                         <div><div class="it-label">Heat Map Areas</div><div class="it-value">{{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }}</div></div>
                         <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18s6-6 6-10.5A6 6 0 0 0 4 7.5C4 12 10 18 10 18Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="7.5" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg></div>
                     </div>
-                    <div class="it-note">{{ number_format($highRiskHeatMapAreas) }} high or severe risk areas</div>
+                    <div class="it-note">{{ number_format($highRiskHeatMapAreas) }} High or Critical/Severe risk areas</div>
                     <div class="it-tap-hint">View details &rarr;</div>
                 </div>
             </button>
@@ -517,6 +528,7 @@
                         <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+<<<<<<< Updated upstream
                         <div class="it-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
                         <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records.</p>
                         @forelse($highRiskAreasList as $area)
@@ -525,6 +537,39 @@
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
                                     <div class="row-sub">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+=======
+                        <div class="it-modal-headline">{{ number_format($highRiskHeatMapAreas) }} High or Critical/Severe</div>
+                        <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
+                        @forelse($highRiskAreasList as $area)
+                            @php
+                                $riskLegend = \App\Support\HeatMapLegend::fromArea($area);
+                                $riskScoreValue = $area->risk_score !== null ? (float) $area->risk_score : null;
+                                $riskLevelLabel = $riskLegend['label'];
+                                $riskInterpretation = match (strtolower($riskLegend['level'])) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                                $riskBadgeClass = match (strtolower($riskLegend['level'])) {
+                                    'severe' => 'it-risk-badge-severe',
+                                    'high' => 'it-risk-badge-high',
+                                    'moderate' => 'it-risk-badge-moderate',
+                                    'insufficient data' => 'it-risk-badge-insufficient',
+                                    default => 'it-risk-badge-low',
+                                };
+                            @endphp
+                            <div class="log-row">
+                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">
+                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
+                                        <span class="it-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }}</span>
+                                    </div>
+                                    <div class="row-sub it-risk-interpretation">{{ $riskInterpretation }}</div>
+                                    <div class="row-sub">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="row-sub it-risk-score-meta">Risk score {{ $riskScoreValue !== null ? number_format($riskScoreValue, 2) : 'N/A' }} / 1.00</div>
+>>>>>>> Stashed changes
                                 </div>
                             </div>
                         @empty

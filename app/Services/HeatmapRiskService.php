@@ -9,7 +9,9 @@ use App\Services\Geo\LianBarangayBoundaryService;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
+use App\Support\LianBarangays;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class HeatmapRiskService
@@ -17,6 +19,16 @@ class HeatmapRiskService
     /** @var array<string, float|null> */
     private array $yieldPredictionMemo = [];
 
+<<<<<<< Updated upstream
+=======
+    public const PLACEHOLDER_NAMES = [
+        'Barangay 1 (Pob.)',
+        'Barangay 2 (Pob.)',
+        'Barangay 3 (Pob.)',
+        'Barangay 4 (Pob.)',
+    ];
+
+>>>>>>> Stashed changes
     public function __construct(
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly WeatherApiService $weatherApi,
@@ -28,8 +40,12 @@ class HeatmapRiskService
 
     public function refresh(): void
     {
+<<<<<<< Updated upstream
         $this->ensureDefaultAreas();
         $this->removeDuplicateAreas();
+=======
+        $this->removePlaceholderAreas();
+>>>>>>> Stashed changes
 
         $weather = $this->weatherInputs();
 
@@ -100,18 +116,27 @@ class HeatmapRiskService
     private function barangays(array $coordinates): Collection
     {
         return HeatmapArea::query()
+            ->whereNotIn('barangay', self::PLACEHOLDER_NAMES)
             ->pluck('barangay')
+<<<<<<< Updated upstream
             ->merge(RiceProduction::query()->pluck('barangay'))
             ->merge(array_keys($coordinates))
+=======
+            ->merge(RiceProduction::query()->whereIn('barangay', LianBarangays::all())->pluck('barangay'))
+>>>>>>> Stashed changes
             ->filter()
             ->unique()
             ->values();
     }
 
-    private function ensureDefaultAreas(): void
+    public function verifiedQuery(): Builder
     {
-        $legacyPoblacion = HeatmapArea::query()->where('barangay', 'Poblacion')->first();
+        return HeatmapArea::query()
+            ->whereNotIn('barangay', self::PLACEHOLDER_NAMES)
+            ->whereIn('barangay', LianBarangays::all());
+    }
 
+<<<<<<< Updated upstream
         if ($legacyPoblacion && ! HeatmapArea::query()->where('barangay', 'Barangay 1 (Pob.)')->exists()) {
             $legacyPoblacion->forceFill(['barangay' => 'Barangay 1 (Pob.)'])->save();
         }
@@ -153,10 +178,16 @@ class HeatmapRiskService
                 'description' => 'Insufficient verified inputs to calculate barangay risk.',
             ]);
         }
+=======
+    public function removePlaceholderAreas(): void
+    {
+        HeatmapArea::query()->whereIn('barangay', self::PLACEHOLDER_NAMES)->delete();
+>>>>>>> Stashed changes
     }
 
     private function removeDuplicateAreas(): void
     {
+<<<<<<< Updated upstream
         HeatmapArea::query()
             ->select('barangay')
             ->whereNotNull('barangay')
@@ -174,6 +205,18 @@ class HeatmapRiskService
 
                 $areas->slice(1)->each->delete();
             });
+=======
+        $coordinate = LianBarangays::coordinateFor($barangay);
+
+        return $coordinate[0] ?? null;
+    }
+
+    private function defaultLongitude(string $barangay): ?float
+    {
+        $coordinate = LianBarangays::coordinateFor($barangay);
+
+        return $coordinate[1] ?? null;
+>>>>>>> Stashed changes
     }
 
     private function averageYieldForBarangay(string $barangay): ?float

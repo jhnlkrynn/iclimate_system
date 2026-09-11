@@ -386,9 +386,19 @@ class PredictionService
 
         return $intent === IntentDetectionService::SYSTEM_HELP
             && str($text)->contains([
+                'how do you predict',
                 'how do you gather',
                 'how do you get',
                 'how do you collect',
+                'how does iclimate predict',
+                'how does the system predict',
+                'how is weather predicted',
+                'how are predictions made',
+                'explain weather prediction',
+                'explain rice yield prediction',
+                'paano mo pinipredict',
+                'paano mo hinuhulaan',
+                'paano hinuhulaan',
                 'where do you get',
                 'weather source',
                 'weather data source',

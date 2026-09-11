@@ -7,6 +7,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\HeatmapRiskService;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -148,7 +149,11 @@ class RoleAssistantService
         }
 
         $production = RiceProduction::query()->where('barangay', $barangay)->latest('year')->take(5)->get();
-        $heatmap = HeatmapArea::query()->where('barangay', $barangay)->latest()->first();
+        $heatmap = HeatmapArea::query()
+            ->whereNotIn('barangay', HeatmapRiskService::PLACEHOLDER_NAMES)
+            ->where('barangay', $barangay)
+            ->latest()
+            ->first();
 
         $lines = [];
 

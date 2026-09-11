@@ -51,15 +51,16 @@ class HeatmapAreaController extends CrudController
     public function index(Request $request): View
     {
         $this->authorizeView($request);
+        $riskService = app(HeatmapRiskService::class);
         $shouldRefresh = $request->boolean('refresh')
-            || ! HeatmapArea::query()->whereNotNull('latitude')->whereNotNull('longitude')->exists();
+            || ! $riskService->verifiedQuery()->whereNotNull('latitude')->whereNotNull('longitude')->exists();
 
         if ($shouldRefresh) {
-            app(HeatmapRiskService::class)->refresh();
+            $riskService->refresh();
             Cache::put('heatmap:last-refresh', now()->toDateTimeString(), now()->addDay());
         }
 
-        $query = $this->baseQuery($request);
+        $query = $riskService->verifiedQuery();
         $search = trim((string) $request->query('search', ''));
 
         if ($search !== '') {

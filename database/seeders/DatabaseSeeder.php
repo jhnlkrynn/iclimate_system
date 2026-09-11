@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Announcement;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
-use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
@@ -86,10 +85,6 @@ class DatabaseSeeder extends Seeder
 
         if (RiceProduction::query()->doesntExist()) {
             RiceProduction::factory()->count(5)->create();
-        }
-
-        if (HeatmapArea::query()->count() < 22) {
-            HeatmapArea::factory()->count(5)->create();
         }
 
         if (Announcement::query()->doesntExist()) {

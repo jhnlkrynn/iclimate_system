@@ -127,6 +127,16 @@
         .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
         .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+<<<<<<< Updated upstream
+=======
+        .mao-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
+        .mao-risk-badge-low { background: rgba(44,123,182,.14); color: #174f78; }
+        .mao-risk-badge-moderate { background: rgba(255,243,77,.28); color: #665f00; }
+        .mao-risk-badge-high { background: rgba(253,174,33,.2); color: #7a4b00; }
+        .mao-risk-badge-severe { background: rgba(215,25,28,.14); color: #8b1114; }
+        .mao-risk-badge-insufficient { background: rgba(107,114,128,.14); color: #374151; }
+        .mao-risk-interpretation { font-weight: 500; color: var(--mao-ink); }
+>>>>>>> Stashed changes
         .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
         .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
@@ -135,9 +145,20 @@
         .quick-action strong { display: block; color: var(--mao-ink); }
         .quick-action span { display: block; color: var(--mao-muted); font-size: .82rem; margin-top: .25rem; }
         .heat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); }
+        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(107,114,128,.34); background: rgba(255,255,255,.76); }
         .risk-card strong { color: var(--mao-ink); }
+<<<<<<< Updated upstream
         .risk-card.severe, .risk-card.high { border-color: rgba(216,91,69,.45); background: linear-gradient(135deg, #fff3ee, #f5e7db); }
+=======
+        .risk-card.low { border-left: 5px solid #2c7bb6; }
+        .risk-card.moderate { border-left: 5px solid #fff34d; }
+        .risk-card.high { border-left: 5px solid #fdae21; }
+        .risk-card.severe { border-left: 5px solid #d7191c; }
+        .risk-card.insufficient-data { border-left: 5px solid #6b7280; }
+        .variable-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin-bottom: 1rem; }
+        .variable-info-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .85rem .9rem; }
+        .variable-info-card .row-text { margin-top: .3rem; }
+>>>>>>> Stashed changes
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
@@ -164,21 +185,16 @@
             min-height: 380px;
             border-radius: 8px;
             overflow: hidden;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(16, 77, 196, .45), transparent 20rem),
-                radial-gradient(circle at 70% 38%, rgba(255, 24, 18, .35), transparent 18rem),
-                linear-gradient(135deg, #0736a8, #15cfe0 28%, #59f03d 48%, #fff118 62%, #ff850f 78%, #f71912);
+            background: #d8e6df;
         }
-        .thermo-map .leaflet-tile-pane { filter: saturate(1.65) contrast(1.05); opacity: .22; }
-        .thermo-map .leaflet-overlay-pane canvas { mix-blend-mode: multiply; filter: saturate(1.55) contrast(1.08); }
-        .thermo-point { width: 12px; height: 12px; border-radius: 999px; border: 2px solid rgba(13,31,24,.78); background: rgba(255,255,255,.86); box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24); }
+        .thermo-point { width: 18px; height: 18px; border-radius: 999px; border: 3px solid rgba(255,255,255,.95); display: block; box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24); }
         .leaflet-popup-content { width: min(320px, calc(100vw - 4.5rem)) !important; min-width: 0; margin: .85rem; }
         .leaflet-popup-content-wrapper { border-radius: 8px; }
         .map-popup { color: var(--mao-ink); font-size: .86rem; line-height: 1.35; }
         .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid rgba(95,143,120,.3); padding-bottom: .58rem; margin-bottom: .62rem; }
         .map-popup-name { color: var(--mao-ink); font-size: 1rem; font-weight: 700; line-height: 1.18; }
         .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, rgba(95,143,120,.14)); color: var(--popup-color, #1F4D3A); font-size: .7rem; font-weight: 700; }
-        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #5F8F78); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
+        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #6b7280); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
         .map-popup-box { border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; padding: .52rem .58rem; }
         .map-popup-label { color: var(--mao-muted); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -206,10 +222,19 @@
         .map-detail-close { position: absolute; top: .5rem; right: .5rem; width: 30px; height: 30px; border: 1px solid rgba(95,143,120,.3); border-radius: 8px; background: #fff; color: var(--mao-ink); font-weight: 700; line-height: 1; }
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
         .risk-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+<<<<<<< Updated upstream
         .risk-level-card { border: 1px solid rgba(95,143,120,.72); border-radius: 8px; background: #fff; padding: .9rem; }
         .risk-level-card.low { border-left: 5px solid #5F8F78; }
         .risk-level-card.moderate { border-left: 5px solid #ffd166; }
         .risk-level-card.high, .risk-level-card.severe { border-left: 5px solid #d85b45; }
+=======
+        .risk-level-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .9rem; }
+        .risk-level-card.low { border-left: 5px solid #2c7bb6; }
+        .risk-level-card.moderate { border-left: 5px solid #fff34d; }
+        .risk-level-card.high { border-left: 5px solid #fdae21; }
+        .risk-level-card.severe { border-left: 5px solid #d7191c; }
+        .risk-level-card.insufficient-data { border-left: 5px solid #6b7280; }
+>>>>>>> Stashed changes
         .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 700; line-height: 1; margin-top: .35rem; }
         .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 700; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
@@ -325,8 +350,13 @@
         <section class="mao-stat-grid">
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+<<<<<<< Updated upstream
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }}</div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+=======
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} High or Critical/Severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+>>>>>>> Stashed changes
         </section>
 
 <<<<<<< Updated upstream
@@ -448,6 +478,7 @@
                         <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+<<<<<<< Updated upstream
                         <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
                         <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records.</p>
                         @forelse($highRiskAreasList as $area)
@@ -455,6 +486,37 @@
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $area->barangay }} &middot; {{ $area->risk_type }}</div>
+=======
+                        <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} High or Critical/Severe</div>
+                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
+                        @forelse($highRiskAreasList as $area)
+                            @php
+                                $riskLegend = \App\Support\HeatMapLegend::fromArea($area);
+                                $riskScoreValue = $area->risk_score !== null ? (float) $area->risk_score : null;
+                                $riskLevelLabel = $riskLegend['label'];
+                                $riskInterpretation = match (strtolower($riskLegend['level'])) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                                $riskBadgeClass = match (strtolower($riskLegend['level'])) {
+                                    'severe' => 'mao-risk-badge-severe',
+                                    'high' => 'mao-risk-badge-high',
+                                    'moderate' => 'mao-risk-badge-moderate',
+                                    'insufficient data' => 'mao-risk-badge-insufficient',
+                                    default => 'mao-risk-badge-low',
+                                };
+                            @endphp
+                            <div class="mao-list-item">
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">
+                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
+                                        <span class="mao-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }}</span>
+                                    </div>
+                                    <div class="row-text mao-risk-interpretation">{{ $riskInterpretation }}</div>
+>>>>>>> Stashed changes
                                     <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
                                     <div class="row-meta">Risk score {{ number_format($area->risk_score, 2) }}</div>
                                 </div>
@@ -529,10 +591,7 @@
                         @if($dashboardMapAreas->count())
                             <div class="dashboard-map-shell">
                                 <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
-                                    <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                                    <x-heat-map-layer-controls attribute="data-dashboard-layer" include-yield />
                                 </div>
                                 <div id="dashboardRiskMap" class="dashboard-map"></div>
                                 <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
@@ -548,28 +607,39 @@
                         <div class="chart-title">Barangay Risk Levels</div>
                         <div class="chart-note">Quick count of mapped barangays per risk level.</div>
                         <div class="risk-level-grid mb-3">
-                            @foreach(['Low', 'Moderate', 'High', 'Severe'] as $level)
-                                <div class="risk-level-card {{ strtolower($level) }}">
-                                    <div class="mao-label">{{ $level }}</div>
-                                    <div class="risk-level-value">{{ number_format($riskLevelCounts[$level] ?? 0) }}</div>
-                                    <div class="mao-note">barangay(s)</div>
+                            @foreach(\App\Support\HeatMapLegend::legendRows() as $legendRow)
+                                <div class="risk-level-card {{ strtolower(str_replace(' ', '-', $legendRow['level'])) }}">
+                                    <div class="mao-label">{{ $legendRow['label'] }}</div>
+                                    <div class="risk-level-value">{{ number_format($riskLevelCounts[$legendRow['level']] ?? 0) }}</div>
+                                    <div class="mao-note">barangays</div>
                                 </div>
                             @endforeach
                         </div>
                         <div class="heat-grid">
                             @forelse($dashboardMapAreas->take(6) as $area)
-                                <div class="risk-card {{ strtolower($area['risk_level']) }}">
+                                <div class="risk-card {{ strtolower(str_replace(' ', '-', $area['risk_level'])) }}">
                                     <div class="d-flex justify-content-between gap-2 mb-2">
                                         <strong>{{ $area['barangay'] }}</strong>
-                                        <span class="status-pill">{{ $area['risk_level'] }}</span>
+                                        <span class="status-pill">{{ $area['risk_label'] ?? $area['risk_level'] }}</span>
                                     </div>
-                                    <div class="row-text">{{ $area['risk_type'] }} | Score {{ number_format($area['risk_score'], 2) }}</div>
+                                    <div class="row-text">{{ $area['risk_type'] }} | Score {{ $area['risk_score'] !== null ? number_format($area['risk_score'], 2) : 'N/A' }}</div>
                                     <div class="row-meta">{{ $area['rainfall_status'] ?: 'Rainfall not recorded' }}</div>
                                 </div>
                             @empty
                                 <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map risk records will appear here.</div></div>
                             @endforelse
                         </div>
+                        @if($dashboardMapAreas->count() > 6)
+                            <div class="mt-3 text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">View All Barangays</a>
+                            </div>
+                        @endif
+                        <details class="ic-collapse mt-3">
+                            <summary><span class="ic-collapse-title">Legend</span></summary>
+                            <div class="risk-card">
+                                <x-heat-map-risk-legend />
+                            </div>
+                        </details>
                     </div>
                 </div>
 
@@ -677,7 +747,8 @@
                     <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Leaflet-based barangay risk records for rainfall, yield, irrigation, and climate impact.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
                     <div class="mao-panel-body list-compact"><div class="heat-grid">
                         @forelse($latestHeatmapAreas as $area)
-                            <div class="risk-card {{ strtolower($area->risk_level) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ $area->barangay }}</strong><span class="status-pill {{ in_array($area->risk_level, ['High','Severe']) ? 'muted' : '' }}">{{ $area->risk_level }}</span></div><div class="row-text">{{ $area->risk_type }} risk | {{ $area->predicted_yield !== null ? number_format($area->predicted_yield, 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str($area->irrigation_recommendation ?: $area->description)->limit(70) }}</div></div>
+                            @php($legend = \App\Support\HeatMapLegend::fromArea($area))
+                            <div class="risk-card {{ strtolower(str_replace(' ', '-', $legend['level'])) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ $area->barangay }}</strong><span class="status-pill {{ in_array($legend['level'], ['High','Severe']) ? 'muted' : '' }}">{{ $legend['label'] }}</span></div><div class="row-text">{{ $area->risk_type }} risk | {{ $area->predicted_yield !== null ? number_format($area->predicted_yield, 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str($area->irrigation_recommendation ?: $area->description)->limit(70) }}</div></div>
                         @empty
                             <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
                         @endforelse
@@ -761,6 +832,7 @@
         'canvasId' => 'farmersByOrganizationChart',
         'statusId' => 'farmersByOrganizationStatus',
     ])
+<<<<<<< Updated upstream
     @php
         $maoWeatherChartPayload = [
             'labels' => array_values((array) data_get($weatherChartData, 'labels', [])),
@@ -777,6 +849,10 @@
     @endphp
     <script type="application/json" id="maoWeatherChartPayload">{!! $maoWeatherChartPayloadJson !!}</script>
     <script type="application/json" id="maoMapAreaPayload">{!! $maoMapAreaPayloadJson !!}</script>
+>>>>>>> Stashed changes
+=======
+    <script type="application/json" id="maoWeatherChartData">@json($weatherChartData)</script>
+    <script type="application/json" id="maoDashboardMapAreas">@json($dashboardMapAreas)</script>
 >>>>>>> Stashed changes
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -805,6 +881,7 @@
             });
 
             const MAO_WEATHER_POLL_INTERVAL = 60000;
+<<<<<<< Updated upstream
             const readJsonPayload = (id, fallback) => {
                 try {
                     return JSON.parse(document.getElementById(id)?.textContent || JSON.stringify(fallback));
@@ -814,6 +891,10 @@
             };
             const chartData = readJsonPayload('maoWeatherChartPayload', { labels: [], rainfall: [], temperature: [], humidity: [], windSpeed: [] });
             const mapAreas = readJsonPayload('maoMapAreaPayload', []);
+=======
+            const chartData = JSON.parse(document.getElementById('maoWeatherChartData')?.textContent || '{}');
+            const mapAreas = JSON.parse(document.getElementById('maoDashboardMapAreas')?.textContent || '[]');
+>>>>>>> Stashed changes
             const labels = chartData.labels || [];
             const weatherRoot = document.querySelector('[data-mao-weather-root]');
             let maoWeatherPollTimer = null;
@@ -926,32 +1007,29 @@
 
             const mapEl = document.getElementById('dashboardRiskMap');
             if (mapEl && mapAreas.length && window.L) {
-                mapEl.classList.add('thermo-map');
-                const intensityFor = (riskLevel, score) => {
-                    const numericScore = Number(score || 0);
-                    if (numericScore > 0) return Math.max(.12, numericScore);
-                    if (['High', 'Severe'].includes(riskLevel)) return .92;
-                    if (riskLevel === 'Moderate') return .58;
-                    return .22;
+                const riskLegend = @json(\App\Support\HeatMapLegend::levels());
+                const yieldScore = (area) => area.predicted_yield === null || area.predicted_yield === undefined ? null : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
+                const rainfallScore = (area) => {
+                    const rainfall = String(area.rainfall_status || '').toLowerCase();
+                    if (!rainfall) return null;
+                    if (rainfall.includes('low')) return .9;
+                    if (rainfall.includes('high')) return .65;
+                    return .3;
                 };
-                const thermographicGradient = {
-                    .05: '#123cba',
-                    .18: '#1769d1',
-                    .32: '#17d8dc',
-                    .48: '#69f23a',
-                    .62: '#fff118',
-                    .78: '#ff7a0f',
-                    1: '#f71912',
+                const irrigationScore = (area) => {
+                    if (!area.irrigation_recommendation && (area.risk_score === null || area.risk_score === undefined)) return null;
+
+                    return String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/)
+                        ? .9
+                        : Number(area.risk_score);
                 };
-                const yieldScore = (area) => area.predicted_yield === null ? .5 : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
-                const rainfallScore = (area) => String(area.rainfall_status || '').toLowerCase().includes('low') ? .9 : (String(area.rainfall_status || '').toLowerCase().includes('high') ? .65 : .3);
-                const irrigationScore = (area) => String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/) ? .9 : (area.risk_score || .3);
-                const impactScore = (area) => intensityFor(area.risk_level, area.risk_score);
+                const impactScore = (area) => area.risk_score === null || area.risk_score === undefined ? null : Number(area.risk_score);
                 const scoreFor = (area, layer) => ({ rainfall: rainfallScore, yield: yieldScore, irrigation: irrigationScore, impact: impactScore }[layer] || impactScore)(area);
-                let heatLayer = null;
+                let boundaryLayer = null;
                 let markerLayer = null;
                 let activeDashboardLayer = 'impact';
                 let selectedDashboardArea = null;
+                let apiFeatures = [];
 
                 const plainRiskMessage = (area) => {
                     if (['High', 'Severe'].includes(area.risk_level)) {
@@ -1040,13 +1118,28 @@
                     return plainAction(area);
                 };
                 const popupStyle = (area) => {
-                    if (['High', 'Severe'].includes(area.risk_level)) {
-                        return '--popup-accent:#d85b45;--popup-bg:#fde8e2;--popup-color:#9f3728;';
-                    }
-                    if (area.risk_level === 'Moderate') {
-                        return '--popup-accent:#ffd166;--popup-bg:#fff4cf;--popup-color:#8a5a00;';
-                    }
-                    return '--popup-accent:#5F8F78;--popup-bg:rgba(95,143,120,.14);--popup-color:#1F4D3A;';
+                    const color = area?.risk_color || legendForScore(area?.risk_score).color;
+
+                    return `--popup-accent:${color};--popup-bg:#f7fbf8;--popup-color:#0d1f18;`;
+                };
+                const hexToRgba = (hex, alpha = 1) => {
+                    const clean = String(hex || '#6b7280').replace('#', '');
+                    const number = parseInt(clean, 16);
+
+                    return `rgba(${(number >> 16) & 255},${(number >> 8) & 255},${number & 255},${alpha})`;
+                };
+                const legendForScore = (score) => {
+                    if (score === null || score === undefined || !Number.isFinite(Number(score))) return riskLegend['Insufficient Data'];
+                    const value = Number(score);
+                    if (value >= Number(riskLegend.Severe.minimum)) return riskLegend.Severe;
+                    if (value >= Number(riskLegend.High.minimum)) return riskLegend.High;
+                    if (value >= Number(riskLegend.Moderate.minimum)) return riskLegend.Moderate;
+                    return riskLegend.Low;
+                };
+                const colorForArea = (area, layer, alpha = .82) => {
+                    if (layer === 'impact') return hexToRgba(area?.risk_color || legendForScore(area?.risk_score).color, alpha);
+
+                    return hexToRgba(legendForScore(scoreFor(area, layer)).color, alpha);
                 };
                 const popup = (area, layer = activeDashboardLayer) => {
                     const mainDetail = layerMainDetail(area, layer);
@@ -1078,6 +1171,16 @@
                                     <div class="map-popup-label">Rice harvest</div>
                                     <div class="map-popup-value">${escapeHtml(harvestEstimate(area))}</div>
                                     <div class="map-popup-note">${escapeHtml(plainYield(area))}</div>
+                                </div>
+                                <div class="map-popup-box">
+                                    <div class="map-popup-label">Risk reason</div>
+                                    <div class="map-popup-value">${escapeHtml(area.risk_reason || plainConcern(area))}</div>
+                                    <div class="map-popup-note">Score ${escapeHtml(area.risk_score === null || area.risk_score === undefined ? 'N/A' : Number(area.risk_score).toFixed(2))}.</div>
+                                </div>
+                                <div class="map-popup-box">
+                                    <div class="map-popup-label">Data source</div>
+                                    <div class="map-popup-value">${escapeHtml(area.source_credit || 'iClimate verified risk records')}</div>
+                                    <div class="map-popup-note">Last update: ${escapeHtml(area.updated_at || 'No update time recorded')}.</div>
                                 </div>
                             </div>
                             <div class="map-popup-advice">
@@ -1115,62 +1218,84 @@
                     attribution: '&copy; OpenStreetMap contributors',
                 }).addTo(map);
 
+                const apiAreaFor = (feature) => feature?.properties?.heatmap || null;
+                const apiFeaturesForLayer = () => apiFeatures.length
+                    ? apiFeatures.filter((feature) => apiAreaFor(feature))
+                    : mapAreas.map((area) => ({
+                        type: 'Feature',
+                        properties: { barangay: area.barangay, heatmap: area },
+                        geometry: { type: 'Point', coordinates: [area.longitude, area.latitude] },
+                    }));
+
                 const renderDashboardLayer = (layer = 'impact') => {
                     activeDashboardLayer = layer;
-                    if (heatLayer) map.removeLayer(heatLayer);
+                    if (boundaryLayer) map.removeLayer(boundaryLayer);
                     if (markerLayer) map.removeLayer(markerLayer);
 
-                    if (L.heatLayer) {
-                        heatLayer = L.heatLayer(mapAreas.map((area) => [
-                            area.latitude,
-                            area.longitude,
-                            Math.max(.12, scoreFor(area, layer)),
-                        ]), {
-                            radius: 72,
-                            blur: 44,
-                            maxZoom: 14,
-                            minOpacity: .42,
-                            gradient: thermographicGradient,
-                        }).addTo(map);
-                    }
+                    const features = apiFeaturesForLayer();
+                    boundaryLayer = L.geoJSON(features, {
+                        style: (feature) => {
+                            const area = apiAreaFor(feature);
+                            return {
+                                color: '#18392d',
+                                weight: 1.5,
+                                fillColor: colorForArea(area, layer, .56),
+                                fillOpacity: .62,
+                            };
+                        },
+                        pointToLayer: (feature, latlng) => {
+                            const area = apiAreaFor(feature);
 
-                    markerLayer = L.featureGroup(mapAreas.flatMap((area) => {
-                        const clickZone = L.circleMarker([area.latitude, area.longitude], {
-                            radius: 34,
-                            stroke: false,
-                            fillOpacity: 0,
-                            interactive: true,
-                        });
-                        const marker = L.marker([area.latitude, area.longitude], {
-                            icon: L.divIcon({
-                                className: '',
-                                html: '<span class="thermo-point"></span>',
-                                iconSize: [12, 12],
-                                iconAnchor: [6, 6],
-                            }),
-                        });
+                            return L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: '',
+                                    html: `<span class="thermo-point" style="background:${colorForArea(area, layer, .95)}"></span>`,
+                                    iconSize: [18, 18],
+                                    iconAnchor: [9, 9],
+                                }),
+                            });
+                        },
+                        onEachFeature: (feature, layerItem) => {
+                            const area = apiAreaFor(feature);
+                            if (!area) return;
 
-                        clickZone.on('click', () => showDetails(area, layer));
-                        marker.on('click', () => showDetails(area, layer));
-
-                        marker.bindTooltip(area.barangay, {
-                            permanent: true,
-                            direction: 'top',
-                            offset: [0, -10],
-                            className: 'barangay-tooltip',
-                        });
-
-                        return [clickZone, marker];
-                    })).addTo(map);
+                            layerItem.on('click', () => showDetails(area, layer));
+                            layerItem.bindTooltip(area.barangay, {
+                                permanent: false,
+                                direction: 'top',
+                                offset: [0, -10],
+                                className: 'barangay-tooltip',
+                            });
+                        },
+                    }).addTo(map);
 
                     if (selectedDashboardArea && detailPanel?.classList.contains('show')) {
                         showDetails(selectedDashboardArea, layer);
                     }
                 };
 
-                renderDashboardLayer();
-                map.fitBounds(markerLayer.getBounds().pad(.2));
-                setTimeout(() => map.invalidateSize(), 150);
+                const fitDashboardMap = () => {
+                    const layer = boundaryLayer || markerLayer;
+                    if (layer?.getBounds?.()?.isValid()) {
+                        map.fitBounds(layer.getBounds().pad(.08));
+                    } else {
+                        map.fitBounds([[13.94, 120.59], [14.08, 120.73]], { padding: [12, 12] });
+                    }
+                    setTimeout(() => map.invalidateSize(), 150);
+                };
+
+                fetch("{{ url('/api/heatmaps/lian-barangays') }}", { headers: { Accept: 'application/json' } })
+                    .then((response) => response.ok ? response.json() : Promise.reject(response))
+                    .then((payload) => {
+                        apiFeatures = Array.isArray(payload.features) ? payload.features : [];
+                    })
+                    .catch(() => {
+                        apiFeatures = [];
+                    })
+                    .finally(() => {
+                        renderDashboardLayer();
+                        fitDashboardMap();
+                    });
 
                 document.querySelectorAll('[data-dashboard-layer]').forEach((button) => {
                     button.addEventListener('click', () => {
@@ -1181,6 +1306,7 @@
                         button.classList.add('active');
                         button.setAttribute('aria-pressed', 'true');
                         renderDashboardLayer(button.dataset.dashboardLayer);
+                        fitDashboardMap();
                     });
                 });
             }

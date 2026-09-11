@@ -5,6 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+<<<<<<< Updated upstream
+=======
+/**
+ * @property-read Carbon|null $record_date
+ * @property string|null $season
+ * @property string|null $source
+ */
+>>>>>>> Stashed changes
 class ClimateRecord extends Model
 {
     use HasFactory;

@@ -6,6 +6,7 @@ use App\Models\AIChat;
 use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
+use App\Services\HeatmapRiskService;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\PredictionService;
 use App\Services\Weather\FarmerDashboardWeatherService;
@@ -300,7 +301,7 @@ class AIOrchestratorService
     private function climateRisk(User $user, string $question, string $language, array $memory, array $entities): array
     {
         $barangay = (string) ($entities['barangay'] ?? $user->barangay ?? $user->farmerProfile?->barangay ?? '');
-        $query = HeatmapArea::query();
+        $query = HeatmapArea::query()->whereNotIn('barangay', HeatmapRiskService::PLACEHOLDER_NAMES);
         if ($barangay !== '') {
             $query->where('barangay', 'like', '%'.$barangay.'%');
         }

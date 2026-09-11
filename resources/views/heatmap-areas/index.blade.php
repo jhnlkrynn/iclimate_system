@@ -1,24 +1,4 @@
 @php
-    $mapPayload = $mapAreas->map(fn ($area) => [
-        'id' => $area->id,
-        'barangay' => $area->barangay,
-        'latitude' => (float) $area->latitude,
-        'longitude' => (float) $area->longitude,
-        'risk_level' => $area->risk_level,
-        'risk_type' => $area->risk_type,
-        'risk_score' => (float) $area->risk_score,
-        'predicted_yield' => $area->predicted_yield !== null ? (float) $area->predicted_yield : null,
-        'predicted_yield_source' => str_contains(strtolower((string) $area->description), 'trained rice yield model') ? 'Trained rice yield model' : 'Stored production record',
-        'rainfall_status' => $area->rainfall_status,
-        'planting_advisory' => $area->planting_advisory,
-        'irrigation_recommendation' => $area->irrigation_recommendation,
-        'description' => $area->description,
-        'data_quality' => str_contains(strtolower((string) $area->description), 'auto-updated from')
-            ? 'Calculated from weather, yield, and local exposure inputs'
-            : 'Baseline barangay location; refresh needed for live risk',
-        'is_baseline' => ! str_contains(strtolower((string) $area->description), 'auto-updated from'),
-        'updated_at' => $area->updated_at?->shortDateTime('M d, Y'),
-    ])->values();
     $riskSource = optional($mapAreas->first())->description;
     $priorityAreas = $mapAreas->sortByDesc('risk_score')->take(5)->values();
     $topPriority = $priorityAreas->first();
@@ -57,7 +37,6 @@
             background: #07160f;
         }
         .api-map-tiles,
-        .api-heatmap-canvas,
         .api-heatmap-svg {
             position: absolute;
             inset: 0;
@@ -90,7 +69,6 @@
             font-weight: 800;
             text-decoration: none;
         }
-        .api-heatmap-canvas { z-index: 1; filter: blur(10px) saturate(1.45) contrast(1.08); opacity: .72; mix-blend-mode: multiply; transform: scale(1.035); }
         .api-heatmap-svg { z-index: 2; }
         .map-loading-overlay {
             position: absolute; inset: 0; z-index: 50;
@@ -133,6 +111,42 @@
             dominant-baseline: central;
         }
         .api-heatmap-label.is-selected { font-size: .014px; stroke-width: .006; }
+<<<<<<< Updated upstream
+=======
+        .api-heatmap-point {
+            cursor: pointer;
+            stroke: rgba(255,255,255,.95);
+            stroke-width: .004;
+            vector-effect: non-scaling-stroke;
+            filter: drop-shadow(0 .004px .01px rgba(13,31,24,.35));
+        }
+        .api-heatmap-point-ring {
+            fill: rgba(255,255,255,.12);
+            stroke: rgba(13,31,24,.5);
+            stroke-width: .0025;
+            vector-effect: non-scaling-stroke;
+            pointer-events: none;
+        }
+        .api-farm-boundary {
+            fill: rgba(255, 255, 255, .08);
+            stroke: #ffffff;
+            stroke-width: .005;
+            stroke-dasharray: .012 .006;
+            vector-effect: non-scaling-stroke;
+            pointer-events: none;
+        }
+        .api-farm-boundary-label {
+            fill: #ffffff;
+            font-size: .013px;
+            font-weight: 900;
+            paint-order: stroke;
+            stroke: #123f32;
+            stroke-width: .006;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+>>>>>>> Stashed changes
         .easy-read-map .api-heatmap-label { font-size: .012px; stroke-width: .0055; }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
         .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
@@ -286,10 +300,19 @@
         .risk-advice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
         .risk-advice { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .95rem; }
         .risk-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+<<<<<<< Updated upstream
         .risk-low { --accent: #52b788; --chip-bg: #d8f3dc; --chip-color: #2d6a4f; }
         .risk-moderate { --accent: #ffd166; --chip-bg: #fff4cf; --chip-color: #8a5a00; }
         .risk-high, .risk-severe { --accent: #d85b45; --chip-bg: #fde8e2; --chip-color: #9f3728; }
         .map-popup { color: #1b2b23; font-size: .86rem; line-height: 1.35; }
+=======
+        .risk-low { --accent: #2c7bb6; --chip-bg: #e6f2fb; --chip-color: #174f78; }
+        .risk-moderate { --accent: #fff34d; --chip-bg: #fffbd1; --chip-color: #665f00; }
+        .risk-high { --accent: #fdae21; --chip-bg: #fff0d2; --chip-color: #7a4b00; }
+        .risk-severe { --accent: #d7191c; --chip-bg: #fde2e2; --chip-color: #8b1114; }
+        .risk-insufficient { --accent: #6b7280; --chip-bg: #f3f4f6; --chip-color: #374151; }
+        .map-popup { color: #1b2b23; font-size: .875rem; line-height: 1.45; }
+>>>>>>> Stashed changes
         .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
         .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
         .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .28rem .52rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .7rem; font-weight: 900; }
@@ -542,10 +565,7 @@
             <div class="map-shell">
                 <div class="map-toolbar" aria-label="Heat map layer controls">
                     <span class="pagasa-official-badge">PAGASA Official Source</span>
-                    <button class="layer-btn active" type="button" data-layer="impact" aria-pressed="true">Climate Impact</button>
-                    <button class="layer-btn" type="button" data-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                    <button class="layer-btn" type="button" data-layer="farm_type" aria-pressed="false">Farm Type</button>
-                    <button class="layer-btn" type="button" data-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
+                    <x-heat-map-layer-controls include-farm-type />
                 </div>
                 <div class="map-control-panel">
                     <label class="risk-label mb-2 d-block" for="mapBarangayFocus">Focus Barangay</label>
@@ -617,6 +637,7 @@
                     <div class="text-muted">No priority areas yet.</div>
                 @endif
             </div>
+<<<<<<< Updated upstream
             <div class="risk-stat risk-high">
                 <div class="risk-label">Mapped Barangays</div>
                 <div class="risk-value">{{ number_format($mapAreas->count()) }}</div>
@@ -646,6 +667,33 @@
                     <div class="legend-row"><span class="legend-swatch" style="background:#6b7280"></span> Unknown</div>
                 </div>
             </div>
+=======
+            <div class="risk-mini-stats">
+                <div class="risk-stat risk-high">
+                    <div class="risk-label">Mapped Barangays</div>
+                    <div class="risk-value">{{ number_format($mapAreas->count()) }}</div>
+                    <div class="text-muted small mt-2">Records available for the Lian barangay heatmap API.</div>
+                </div>
+                <div class="risk-stat risk-moderate">
+                    <div class="risk-label">High Priority Areas</div>
+                    <div class="risk-value">{{ number_format($mapAreas->filter(fn ($area) => $area->risk_score !== null && (float) $area->risk_score >= 0.68)->count()) }}</div>
+                    <div class="text-muted small mt-2">Barangays needing close MAO monitoring.</div>
+                </div>
+                <div class="risk-stat risk-low">
+                    <div class="risk-label">Average Predicted Yield</div>
+                    <div class="risk-value">{{ number_format($mapAreas->whereNotNull('predicted_yield')->avg('predicted_yield') ?? 0, 2) }}</div>
+                    <div class="text-muted small mt-2">Tons/hectare across mapped records.</div>
+                </div>
+            </div>
+            <details class="ic-collapse">
+                <summary><span class="ic-collapse-title">Legend</span></summary>
+                <div class="risk-stat">
+                    <div class="d-grid gap-2">
+                        <x-heat-map-risk-legend include-farm-type />
+                    </div>
+                </div>
+            </details>
+>>>>>>> Stashed changes
             <div class="risk-stat risk-low">
                 <div class="risk-label">PAGASA Official Signal</div>
                 <div class="risk-info-value mt-2">{{ $pagasaSignal['title'] }}</div>
@@ -682,18 +730,23 @@
             <div class="barangay-risk-list">
                 @foreach ($records as $record)
                     @php
-                        $riskClass = 'risk-'.strtolower($record->risk_level);
-                        $riskScore = (float) $record->risk_score;
-                        $riskMeaning = $record->risk_level === 'High' || $record->risk_level === 'Severe'
+                        $legend = \App\Support\HeatMapLegend::fromArea($record);
+                        $riskClass = $legend['class'];
+                        $riskScore = $record->risk_score !== null ? (float) $record->risk_score : null;
+                        $riskMeaning = $legend['level'] === 'High' || $legend['level'] === 'Severe'
                             ? 'Needs close monitoring because weather, yield, or field exposure may affect rice production.'
-                            : ($record->risk_level === 'Moderate'
+                            : ($legend['level'] === 'Moderate'
                                 ? 'Watch conditions and prepare support if rainfall or temperature worsens.'
-                                : 'Current ML and weather inputs suggest normal monitoring is enough.');
-                        $scoreMeaning = $riskScore >= .65
+                                : ($legend['level'] === \App\Support\HeatMapLegend::INSUFFICIENT
+                                    ? 'There is not enough verified data to classify this barangay.'
+                                    : 'Current ML and weather inputs suggest normal monitoring is enough.'));
+                        $scoreMeaning = $riskScore === null
+                            ? 'No verified risk score is available.'
+                            : ($riskScore >= .68
                             ? 'High score: stronger chance of climate impact.'
-                            : ($riskScore >= .50
+                            : ($riskScore >= .45
                                 ? 'Medium score: some warning signs are present.'
-                                : 'Low score: current inputs are favorable.');
+                                : 'Low score: current inputs are favorable.'));
                         $yieldMeaning = $record->predicted_yield !== null
                             ? 'Estimated tons per hectare from available barangay production data.'
                             : 'No barangay yield record is available yet, so risk is based more on weather and exposure.';
@@ -710,13 +763,13 @@
                                 <div class="barangay-name">{{ $record->barangay }}</div>
                             </div>
                             <div class="d-flex flex-column align-items-start align-items-lg-end gap-2">
-                                <span class="risk-chip {{ $riskClass }}">{{ $record->risk_level }} Risk</span>
+                                <span class="risk-chip {{ $riskClass }}">{{ $legend['label'] }}</span>
                                 @if(str_contains(strtolower((string) $record->description), 'auto-updated from'))
                                     <span class="accuracy-badge">Calculated input</span>
                                 @else
                                     <span class="accuracy-badge baseline">Baseline location</span>
                                 @endif
-                                <div class="risk-help text-lg-end m-0">Score {{ number_format($riskScore, 2) }}. {{ $scoreMeaning }}</div>
+                                <div class="risk-help text-lg-end m-0">Score {{ $riskScore !== null ? number_format($riskScore, 2) : 'N/A' }}. {{ $scoreMeaning }}</div>
                             </div>
                         </div>
 
@@ -738,11 +791,32 @@
                                 </div>
                             </div>
 
+<<<<<<< Updated upstream
                             <div class="risk-summary-grid">
                                 <div class="risk-info-box">
                                     <div class="risk-info-label">Predicted Yield</div>
                                     <div class="risk-info-value">{{ $record->predicted_yield !== null ? number_format($record->predicted_yield, 2).' t/ha' : 'No prediction' }}</div>
                                     <div class="risk-help">{{ $yieldMeaning }}</div>
+=======
+                            <details class="ic-collapse">
+                                <summary><span class="ic-collapse-title">Yield, Source &amp; Advisories</span></summary>
+                                <div class="risk-summary-grid">
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Predicted Yield</div>
+                                        <div class="risk-info-value">{{ $record->predicted_yield !== null ? number_format($record->predicted_yield, 2).' t/ha' : 'No prediction' }}</div>
+                                        <div class="risk-help">{{ $yieldMeaning }}</div>
+                                    </div>
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Data Source</div>
+                                        <div class="risk-info-value">ML + Weather API</div>
+                                        <div class="risk-help">{{ $record->description ?: 'No source note available.' }} Last update: {{ $record->updated_at?->shortDateTime('M d, Y g:i A') ?? 'No update time recorded' }}.</div>
+                                    </div>
+                                    <div class="risk-info-box">
+                                        <div class="risk-info-label">Monitoring Level</div>
+                                        <div class="risk-info-value">{{ in_array($legend['level'], ['High', 'Severe'], true) ? 'Close monitoring' : ($legend['level'] === 'Moderate' ? 'Regular monitoring' : ($legend['level'] === \App\Support\HeatMapLegend::INSUFFICIENT ? 'Needs verified data' : 'Routine monitoring')) }}</div>
+                                        <div class="risk-help">Use this as a quick guide for MAO follow-up priority.</div>
+                                    </div>
+>>>>>>> Stashed changes
                                 </div>
                                 <div class="risk-info-box">
                                     <div class="risk-info-label">Data Source</div>
@@ -807,12 +881,17 @@
             const boundaryNotice = document.getElementById('boundaryNotice');
 <<<<<<< Updated upstream
             const pagasaSignal = @json($pagasaSignal);
+<<<<<<< Updated upstream
 =======
             const mapUpdatedAgo = document.getElementById('mapUpdatedAgo');
             const pagasaSignal = {{ \Illuminate\Support\Js::from($pagasaSignal) }};
             const myFarmBoundary = {{ \Illuminate\Support\Js::from($myFarmBoundary) }};
             const refreshSeconds = {{ \Illuminate\Support\Js::from((int) config('heatmap.refresh_seconds', 60)) }};
             const refreshMs = Math.max(5, Number(refreshSeconds) || 5) * 1000;
+>>>>>>> Stashed changes
+=======
+            const myFarmBoundary = @json($myFarmBoundary);
+            const riskLegend = @json(\App\Support\HeatMapLegend::levels());
 >>>>>>> Stashed changes
             let activeLayer = 'impact';
             const easyReadMode = false;
@@ -822,9 +901,8 @@
 
             if (!mapEl) return;
 
-            mapEl.innerHTML = '<div class="api-map-tiles" aria-hidden="true"></div><canvas class="api-heatmap-canvas" aria-hidden="true"></canvas><svg class="api-heatmap-svg" role="img" aria-label="Lian barangay risk heatmap"></svg><a class="api-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap contributors</a>';
+            mapEl.innerHTML = '<div class="api-map-tiles" aria-hidden="true"></div><svg class="api-heatmap-svg" role="img" aria-label="Lian barangay risk heatmap"></svg><a class="api-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap contributors</a>';
             const tileLayer = mapEl.querySelector('.api-map-tiles');
-            const canvas = mapEl.querySelector('canvas');
             const svg = mapEl.querySelector('svg');
 
             const escapeHtml = (value) => String(value ?? '')
@@ -842,6 +920,7 @@
                 irrigation: 'Irrigation priority',
             }[layer] || 'Climate impact');
 
+<<<<<<< Updated upstream
             const colorFor = (value, alpha = 1) => {
                 if (!Number.isFinite(Number(value))) {
                     return `rgba(107,114,128,${alpha})`;
@@ -853,8 +932,31 @@
                     : value >= .26 ? [44, 186, 108]
                     : value >= .12 ? [46, 199, 201]
                     : [44, 123, 182];
+=======
+            const hexToRgba = (hex, alpha = 1) => {
+                const clean = String(hex || '#6b7280').replace('#', '');
+                const value = clean.length === 3
+                    ? clean.split('').map((char) => char + char).join('')
+                    : clean;
+                const number = parseInt(value, 16);
+>>>>>>> Stashed changes
 
-                return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
+                return `rgba(${(number >> 16) & 255},${(number >> 8) & 255},${number & 255},${alpha})`;
+            };
+
+            const legendForScore = (score) => {
+                if (score === null || score === undefined || !Number.isFinite(Number(score))) return riskLegend['Insufficient Data'];
+                const value = Number(score);
+                if (value >= Number(riskLegend.Severe.minimum)) return riskLegend.Severe;
+                if (value >= Number(riskLegend.High.minimum)) return riskLegend.High;
+                if (value >= Number(riskLegend.Moderate.minimum)) return riskLegend.Moderate;
+                return riskLegend.Low;
+            };
+
+            const riskColorFor = (area, layer, alpha = 1) => {
+                if (layer === 'impact') return hexToRgba(area?.risk_color || legendForScore(area?.risk_score).color, alpha);
+
+                return hexToRgba(legendForScore(scoreFor(area, layer)).color, alpha);
             };
 
             const visualScoreFor = (area, layer, features) => {
@@ -873,6 +975,7 @@
                 return .16 + ((raw - min) / (max - min)) * .76;
             };
 
+<<<<<<< Updated upstream
             const heatColorFor = (value, alpha = .82) => {
                 if (!Number.isFinite(Number(value))) {
                     return `rgba(107,114,128,${alpha})`;
@@ -887,6 +990,8 @@
                 return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
             };
 
+=======
+>>>>>>> Stashed changes
             const farmTypeColorFor = (area, alpha = .82) => {
                 const farmType = String(area?.farm_system || '').toLowerCase();
                 const color = farmType.includes('mixed') ? [168, 85, 247]
@@ -897,30 +1002,13 @@
                 return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`;
             };
 
-            const heatSamplesFor = (feature, project, rect, score) => {
-                const [lng, lat] = centroidFor(feature);
-                const offsets = [
-                    [0, 0, 1],
-                    [.0034, .0016, .52],
-                    [-.0028, .0022, .46],
-                    [.0018, -.003, .42],
-                    [-.0032, -.0018, .38],
-                ];
-
-                return offsets.map(([lngOffset, latOffset, weight]) => {
-                    const [nx, ny] = project([lng + lngOffset, lat + latOffset]);
-
-                    return {
-                        x: nx * rect.width,
-                        y: ny * rect.height,
-                        score: Math.max(.08, Math.min(1, score * weight)),
-                    };
-                });
-            };
-
             const scoreFor = (area, layer) => {
+<<<<<<< Updated upstream
                 if (!area) return 0;
                 if (area.status === 'insufficient_data' || area.risk_score === null) return Number.NaN;
+=======
+                if (!area) return null;
+>>>>>>> Stashed changes
                 if (layer === 'rainfall') {
                     const rainfall = String(area.live_weather?.rainfall_status || area.rainfall_status || '').toLowerCase();
                     const rain24h = Number(area.live_weather?.rainfall_24h_mm);
@@ -932,13 +1020,17 @@
                     }
                     if (rainfall.includes('low')) return .9;
                     if (rainfall.includes('high')) return .65;
-                    return .3;
+                    return rainfall ? .3 : null;
                 }
                 if (layer === 'yield') {
                     const yieldValue = area.recorded_yield_latest !== null && area.recorded_yield_latest !== undefined
                         ? Number(area.recorded_yield_latest)
                         : null;
+<<<<<<< Updated upstream
                     if (!Number.isFinite(yieldValue)) return Number.NaN;
+=======
+                    if (!Number.isFinite(yieldValue)) return null;
+>>>>>>> Stashed changes
                     if (yieldValue < 3) return .9;
                     if (yieldValue < 4) return .6;
                     return .25;
@@ -948,15 +1040,26 @@
                     if (farmType.includes('mixed')) return .55;
                     if (farmType.includes('rainfed')) return .78;
                     if (farmType.includes('irrigated')) return .32;
+<<<<<<< Updated upstream
                     return Number.isFinite(Number(area.components?.farm_system)) ? Number(area.components.farm_system) : Number.NaN;
+=======
+                    return null;
+>>>>>>> Stashed changes
                 }
                 if (layer === 'irrigation') {
                     return String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/)
                         ? .9
+<<<<<<< Updated upstream
                         : Number(area.risk_score);
                 }
 
                 return Number(area.risk_score);
+=======
+                        : (area.risk_score === null || area.risk_score === undefined ? null : Number(area.risk_score));
+                }
+
+                return area.risk_score === null || area.risk_score === undefined ? null : Number(area.risk_score);
+>>>>>>> Stashed changes
             };
 
             const liveWeather = (area) => area?.live_weather && area.live_weather.status !== 'unavailable'
@@ -1166,10 +1269,17 @@
 
                 return [
                     ...cards,
+<<<<<<< Updated upstream
                     ['PAGASA advisory', section(area, 'pagasa').available ? pagasaSignalText() : 'No active stored PAGASA advisory', section(area, 'pagasa').scope || 'PAGASA data remains separate from forecast and observed records.'],
                     ['PAGASA live observation', availableText(section(area, 'official_observed').available), section(area, 'official_observed').available ? `${section(area, 'official_observed').station_name || 'PAGASA station'}; ${section(area, 'official_observed').updated_at || 'time unavailable'}` : 'No usable official station values returned by PAGASA WIS/OAPI.'],
                     ['Observed climate', availableText(section(area, 'observed').available), section(area, 'observed').updated_at || 'No stored observed climate record.'],
                     ['Forecast source', weather?.source || 'Insufficient data', weatherTimeText(weather)],
+=======
+                    ['Risk reason', area.risk_reason || plainConcern(area), `Score ${area.risk_score !== null && area.risk_score !== undefined ? Number(area.risk_score).toFixed(2) : 'N/A'}.`],
+                    ['Data source', area.source_credit || 'iClimate verified risk records', area.description || 'No source note recorded.'],
+                    ['Last update', area.updated_at || 'No update time recorded', 'Timestamp from the mapped heat-map record.'],
+                    ['Latest PAGASA signal', pagasaSignalText(), 'Official advisory reference.'],
+>>>>>>> Stashed changes
                 ].map(([label, value, note]) => `
                     <div class="map-popup-box">
                         <div class="map-popup-label">${escapeHtml(label)}</div>
@@ -1187,6 +1297,8 @@
             const featureArea = (feature) => feature?.properties?.heatmap || null;
             const featureName = (feature) => featureArea(feature)?.barangay || feature?.properties?.barangay || '';
 
+            const isPointFeature = (feature) => feature?.geometry?.type === 'Point';
+
             const ringsFor = (geometry) => {
                 if (!geometry) return [];
                 if (geometry.type === 'Polygon') return geometry.coordinates || [];
@@ -1194,7 +1306,11 @@
                 return [];
             };
 
-            const allPoints = (features) => features.flatMap((feature) => ringsFor(feature.geometry).flat());
+            const allPoints = (features) => features.flatMap((feature) => {
+                if (feature?.geometry?.type === 'Point') return [feature.geometry.coordinates];
+
+                return ringsFor(feature.geometry).flat();
+            });
             const mercatorPoint = ([lng, lat]) => {
                 const clampedLat = Math.max(Math.min(Number(lat), 85.05112878), -85.05112878);
                 const sin = Math.sin((clampedLat * Math.PI) / 180);
@@ -1222,6 +1338,10 @@
             };
 
             const centroidFor = (feature) => {
+                if (feature?.geometry?.type === 'Point') {
+                    return feature.geometry.coordinates || [0, 0];
+                }
+
                 const ring = ringsFor(feature.geometry)[0] || [];
                 if (!ring.length) return [0, 0];
                 const total = ring.reduce((carry, point) => [carry[0] + Number(point[0]), carry[1] + Number(point[1])], [0, 0]);
@@ -1255,6 +1375,7 @@
                 return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
             }).join(' ') + ' Z').join(' ');
 
+<<<<<<< Updated upstream
             const drawHeat = (features, project) => {
                 const rect = mapEl.getBoundingClientRect();
                 const scale = window.devicePixelRatio || 1;
@@ -1291,6 +1412,39 @@
                     });
 
                 ctx.globalCompositeOperation = 'source-over';
+=======
+            const clusterPointItems = (items, rect) => {
+                const groups = new Map();
+                items.forEach((item) => {
+                    const key = `${Math.round(item.x * rect.width / 28)}:${Math.round(item.y * rect.height / 28)}`;
+                    groups.set(key, [...(groups.get(key) || []), item]);
+                });
+
+                groups.forEach((group) => {
+                    if (group.length < 2) return;
+                    group.forEach((item, index) => {
+                        const angle = (Math.PI * 2 * index) / group.length;
+                        const radius = Math.min(34, 13 + group.length * 2);
+                        item.x += Math.cos(angle) * radius / Math.max(rect.width, 1);
+                        item.y += Math.sin(angle) * radius / Math.max(rect.height, 1);
+                    });
+                });
+
+                return items;
+            };
+
+            const farmBoundaryPathFor = (project) => {
+                const points = myFarmBoundary?.coordinates || [];
+                if (points.length < 3) return '';
+                const path = points.map((point, index) => {
+                    const [x, y] = project([Number(point.lng), Number(point.lat)]);
+                    return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
+                }).join(' ') + ' Z';
+                const center = points.reduce((total, point) => [total[0] + Number(point.lng), total[1] + Number(point.lat)], [0, 0]);
+                const [labelX, labelY] = project([center[0] / points.length, center[1] / points.length]);
+
+                return `<path class="api-farm-boundary" d="${path}"></path><text class="api-farm-boundary-label" x="${labelX.toFixed(6)}" y="${labelY.toFixed(6)}">My farm</text>`;
+>>>>>>> Stashed changes
             };
 
             const renderTiles = (renderer) => {
@@ -1333,14 +1487,18 @@
 
                 detailPanel.innerHTML = `
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                    <div class="map-popup" style="--popup-accent:${colorFor(scoreFor(area, activeLayer), 1)};--popup-bg:#f7fbf8;--popup-color:#0d1f18;">
+                    <div class="map-popup" style="--popup-accent:${riskColorFor(area, activeLayer, 1)};--popup-bg:#f7fbf8;--popup-color:#0d1f18;">
                         <div class="map-popup-title">
                             <div>
                                 <div class="map-popup-label">Barangay</div>
                                 <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
                                 <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(activeLayer))}</div>
                             </div>
+<<<<<<< Updated upstream
                             <span class="map-popup-badge">${escapeHtml(area.display_level || area.risk_level || 'Insufficient data')}${area.status === 'calculated' ? ' Risk' : ''}</span>
+=======
+                            <span class="map-popup-badge">${escapeHtml(area.risk_label || `${area.risk_level} Risk`)}</span>
+>>>>>>> Stashed changes
                         </div>
                         <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, activeLayer))}</div>
                         <div class="map-popup-grid">${popupMetricCards(area, activeLayer)}</div>
@@ -1410,32 +1568,46 @@
                 const renderer = rendererFor(features);
                 svg.setAttribute('viewBox', renderer.viewBox);
                 renderTiles(renderer);
-                drawHeat(features, renderer.project);
 
                 const rect = mapEl.getBoundingClientRect();
-                const items = features.map((feature) => {
+                const items = clusterPointItems(features.map((feature) => {
                     const area = featureArea(feature);
                     const score = visualScoreFor(area, activeLayer, features);
                     const [lng, lat] = centroidFor(feature);
                     const [x, y] = renderer.project([lng, lat]);
 
                     return { feature, area, score, x, y };
-                });
+                }), rect);
                 const labels = labelLayoutFor(items, rect);
 
                 svg.innerHTML = labels.map((item) => {
                     const selected = item.selected;
                     const fill = activeLayer === 'farm_type'
+<<<<<<< Updated upstream
                         ? farmTypeColorFor(item.area, easyReadMode ? .28 : .08)
                         : colorFor(item.score, easyReadMode ? .06 : .004);
                     const title = `${item.area.barangay}: ${item.area.display_level || item.area.risk_level || 'Insufficient data'}${item.area.reason ? `. ${item.area.reason}` : ''}`;
+=======
+                        ? farmTypeColorFor(item.area, easyReadMode ? .55 : .42)
+                        : riskColorFor(item.area, activeLayer, isPointFeature(item.feature) ? .92 : .42);
+                    if (isPointFeature(item.feature)) {
+                        const radius = selected ? .018 : .014;
+
+                        return `
+                            <circle class="api-heatmap-point-ring" cx="${item.x.toFixed(6)}" cy="${item.y.toFixed(6)}" r="${(radius * 1.9).toFixed(6)}"></circle>
+                            <circle class="api-heatmap-point ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" cx="${item.x.toFixed(6)}" cy="${item.y.toFixed(6)}" r="${radius.toFixed(6)}" fill="${fill}"></circle>
+                            ${item.visible ? `<text class="api-heatmap-label ${selected ? 'is-selected' : ''}" x="${item.x.toFixed(6)}" y="${(item.y - .032).toFixed(6)}">${escapeHtml(item.text)}</text>` : ''}
+                        `;
+                    }
+
+>>>>>>> Stashed changes
                     return `
                         <path class="api-heatmap-region ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" d="${pathFor(item.feature, renderer.project)}" fill="${fill}"><title>${escapeHtml(title)}</title></path>
                         ${item.visible ? `<text class="api-heatmap-label ${selected ? 'is-selected' : ''}" x="${item.x.toFixed(6)}" y="${item.y.toFixed(6)}">${escapeHtml(item.text)}</text>` : ''}
                     `;
                 }).join('');
 
-                svg.querySelectorAll('.api-heatmap-region').forEach((path) => {
+                svg.querySelectorAll('.api-heatmap-region, .api-heatmap-point').forEach((path) => {
                     path.addEventListener('click', () => {
                         const feature = features.find((item) => featureName(item) === path.dataset.barangay);
                         showDetails(featureArea(feature));

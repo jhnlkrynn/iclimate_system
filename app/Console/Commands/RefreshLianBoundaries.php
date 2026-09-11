@@ -34,7 +34,7 @@ class RefreshLianBoundaries extends Command
             $geojson = $response->json();
         } catch (\Throwable $exception) {
             $this->warn('GeoRisk boundary refresh failed: '.$exception->getMessage());
-            $this->warn('The heatmap API will continue using the bundled fallback GeoJSON.');
+            $this->warn('The heatmap API will use verified iClimate barangay point records until official boundaries are available.');
 
             return self::FAILURE;
         }

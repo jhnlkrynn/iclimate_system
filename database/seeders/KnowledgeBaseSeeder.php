@@ -373,8 +373,8 @@ class KnowledgeBaseSeeder extends Seeder
             ],
             [
                 'category' => $category, 'confidence' => 82,
-                'en' => ['q' => 'How do I read the heat map and its legend?', 'a' => 'The heat map colors represent climate risk level per barangay -- for example green for low, yellow for moderate, orange for high, and red for severe risk of flood, drought, typhoon, or heat.', 'k' => ['heat map', 'heatmap', 'map legend', 'risk level']],
-                'tl' => ['q' => 'Paano basahin ang heat map at ang legend nito?', 'a' => 'Ang kulay sa heat map ay kumakatawan sa antas ng climate risk kada barangay -- hal. berde para sa mababa, dilaw para sa katamtaman, orange para sa mataas, at pula para sa malubhang panganib ng baha, tagtuyot, bagyo, o init.', 'k' => ['heat map', 'legend', 'risk']],
+                'en' => ['q' => 'How do I read the heat map and its legend?', 'a' => 'The heat map colors represent climate risk level per barangay -- blue for low, yellow for moderate, orange for high, red for critical/severe, and gray for insufficient data.', 'k' => ['heat map', 'heatmap', 'map legend', 'risk level']],
+                'tl' => ['q' => 'Paano basahin ang heat map at ang legend nito?', 'a' => 'Ang kulay sa heat map ay kumakatawan sa antas ng climate risk kada barangay -- asul para sa mababa, dilaw para sa katamtaman, orange para sa mataas, pula para sa critical/severe, at gray kung kulang ang datos.', 'k' => ['heat map', 'legend', 'risk']],
             ],
             [
                 'category' => $category, 'confidence' => 80,

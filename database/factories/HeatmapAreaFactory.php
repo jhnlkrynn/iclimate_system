@@ -13,10 +13,6 @@ class HeatmapAreaFactory extends Factory
         $barangays = [
             'Bagong Pook' => [14.0182000, 120.6408000],
             'Balibago' => [13.9898000, 120.6524000],
-            'Barangay 1 (Pob.)' => [14.0361000, 120.6507000],
-            'Barangay 2 (Pob.)' => [14.0371000, 120.6530000],
-            'Barangay 3 (Pob.)' => [14.0349000, 120.6489000],
-            'Barangay 4 (Pob.)' => [14.0383000, 120.6484000],
             'Barangay 5 (Pob.)' => [14.0339000, 120.6525000],
             'Binubusan' => [14.0296000, 120.6364000],
             'Bungahan' => [14.0480000, 120.6285000],
