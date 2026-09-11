@@ -16,8 +16,8 @@ Routes:
 Run standalone for local testing:
     uvicorn python_scripts.main:app --host 127.0.0.1 --port 8000 --reload
 
-Not yet wired to PHP (Phase 3) — this stands alongside the existing Flask
-app/local script/rules fallback until it's verified here first.
+This is the live ML backend — app/Services/PythonService.php posts to this
+service's /predict route. The legacy Flask app has been removed.
 """
 
 from contextlib import asynccontextmanager
