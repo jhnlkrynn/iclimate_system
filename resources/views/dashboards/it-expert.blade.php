@@ -165,9 +165,11 @@
             margin-bottom: 1rem;
         }
         .farmer-org-card {
-            border: 1px solid rgba(95,143,120,.5);
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: 10px;
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
             padding: .9rem;
         }
         .farmer-org-card-label {
@@ -205,8 +207,8 @@
             height: 100% !important;
         }
         .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
-        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(95,143,120,.24); border-radius: 8px; background: #fff; color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
-        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: #f7fbf8; }
+        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(12px) saturate(160%); color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
+        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: rgba(247,251,248,.78); }
         .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
         .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
         .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
@@ -316,9 +318,11 @@
         .section-note { color: #7FD6B5; font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
-            border: 1px solid var(--it-line);
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: 18px;
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
             box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
             overflow: hidden;
         }
@@ -384,27 +388,31 @@
         .it-hero {
             border-radius: 16px;
             padding: 1.25rem 1.4rem;
-            background: #174230;
+            background: linear-gradient(145deg, rgba(22,59,45,.6) 0%, rgba(31,77,58,.5) 100%);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
             box-shadow: 0 6px 16px rgba(13,31,24,.12);
         }
         .it-hero::before { opacity: .28; }
         .it-eyebrow { text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif; font-size: .82rem; }
-        .it-live-chip { border-radius: 8px; background: rgba(255,255,255,.08); font-family: 'Inter', sans-serif; letter-spacing: 0; }
+        .it-live-chip { border-radius: 8px; background: rgba(255,255,255,.12); backdrop-filter: blur(8px); font-family: 'Inter', sans-serif; letter-spacing: 0; }
         .it-pulse { width: 8px; height: 8px; box-shadow: none; }
         .it-card,
         .it-panel,
         .module-link,
         .quick-action {
-            border: 1px solid #c9d7ce;
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: 12px;
-            background: #fff;
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
             box-shadow: 0 1px 2px rgba(13,31,24,.08);
         }
         .it-card:hover,
         .module-link:hover,
         .quick-action:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(13,31,24,.10); }
         .it-panel-header,
-        .it-modal-header { background: #f5f7f4; }
+        .it-modal-header { background: rgba(245,247,244,.55); backdrop-filter: blur(8px); }
         .it-icon,
         .log-dot,
         .avatar-soft { width: 32px; height: 32px; border-radius: 8px; box-shadow: none; }

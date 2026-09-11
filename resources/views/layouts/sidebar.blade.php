@@ -130,7 +130,7 @@
 
         foreach ($sidebarSections as [$sectionLabel, $links]) {
             $html .= '<div class="sidebar-section">'.e($sectionLabel).'</div>';
-            $html .= '<div class="d-grid gap-1 mb-2">';
+            $html .= '<div class="sidebar-stack d-grid gap-1">';
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $html .= '<a class="sidebar-link '.$active.'" href="'.e(route($route)).'">';
@@ -166,11 +166,11 @@
 </aside>
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header" style="background: var(--ic-sidebar-bg); border-bottom: 1px solid rgba(255,255,255,.1);">
+    <div class="offcanvas-header" style="border-bottom: 1px solid rgba(255,255,255,.14);">
         <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: #fff;">iClimate</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body p-0 d-flex flex-column" style="background: var(--ic-sidebar-bg);">
+    <div class="offcanvas-body p-0 d-flex flex-column">
         @include('layouts.partials.sidebar-brand')
         <div class="px-3 flex-grow-1 overflow-auto">
             {!! $renderSidebarNav() !!}

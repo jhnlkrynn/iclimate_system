@@ -100,8 +100,10 @@
             padding: 1.5rem 1.65rem;
             margin-bottom: 1.5rem;
             color: #fff;
-            background: linear-gradient(145deg, var(--fc-green-950) 0%, var(--fc-green-900) 100%);
-            border: 1px solid rgba(255,255,255,.12);
+            background: linear-gradient(145deg, rgba(18,63,50,.6) 0%, rgba(31,90,70,.5) 100%);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            border: 1px solid rgba(255,255,255,.16);
             box-shadow: var(--shadow-md);
         }
         .farmer-hero::before {
@@ -152,9 +154,10 @@
             margin-top: 1.35rem;
         }
         .farmer-hero-summary-item {
-            border: 1px solid rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.18);
             border-radius: var(--radius-md);
-            background: rgba(255,255,255,.06);
+            background: rgba(255,255,255,.1);
+            backdrop-filter: blur(8px);
             padding: .75rem .85rem;
         }
         .farmer-hero-summary-item span {
@@ -204,10 +207,11 @@
             display: inline-flex;
             align-items: center;
             gap: .5rem;
-            border: 1px solid rgba(255,255,255,.18);
+            border: 1px solid rgba(255,255,255,.2);
             border-radius: var(--radius-md);
             padding: .5rem .85rem;
-            background: rgba(255,255,255,.1);
+            background: rgba(255,255,255,.12);
+            backdrop-filter: blur(8px);
             color: rgba(255,255,255,.85);
             font-family: 'DM Mono', monospace;
             font-size: var(--text-sm);
@@ -258,9 +262,11 @@
         }
         .field-card {
             position: relative;
-            border: 1px solid rgba(201,215,206,.95);
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: var(--radius-lg);
-            background: #ffffff;
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
             padding: 1rem 1.1rem;
             text-decoration: none;
             display: flex; flex-direction: column; gap: .5rem;
@@ -314,7 +320,7 @@
         .fc-modal-content { background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--fc-ink-mid); border: 1px solid var(--fc-sand-dark); border-radius: var(--radius-lg); box-shadow: 0 1.25rem 3rem rgba(13,31,24,.18); overflow: hidden; }
         .fc-modal-header { background: linear-gradient(90deg, var(--fc-green-50), var(--fc-green-100)); border-bottom: 1px solid var(--fc-border); color: var(--fc-ink); }
         .fc-modal-header .modal-title { color: var(--fc-ink); font-family: 'DM Serif Display', serif; }
-        .fc-modal-body { overflow-y: auto; background: #ffffff; padding: 1rem; }
+        .fc-modal-body { overflow-y: auto; background: transparent; padding: 1rem; }
         .fc-modal-footer { border-top: 1px solid var(--fc-border); background: var(--fc-green-50); padding: .8rem 1rem; }
         .fc-modal-headline { font-family: 'DM Serif Display', serif; font-size: var(--text-2xl); color: var(--fc-ink); line-height: 1.18; }
         .fc-modal-sub { color: var(--fc-ink-mid); font-size: var(--text-sm); margin: .25rem 0 .75rem; }
@@ -381,11 +387,13 @@
         .weather-live-card {
             width: 100%;
             min-width: 0;
-            border: 1px solid rgba(201,215,206,.95);
+            border: 1px solid rgba(255,255,255,.6);
             border-radius: var(--radius-lg);
-            background: #ffffff;
+            background: rgba(255,255,255,.82);
+            backdrop-filter: var(--glass-blur-strong, blur(30px) saturate(180%));
+            -webkit-backdrop-filter: var(--glass-blur-strong, blur(30px) saturate(180%));
             padding: 1rem;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 10px 34px rgba(8,25,19,.22);
         }
         .weather-live-head {
             display: flex;
@@ -460,9 +468,10 @@
             margin-top: 1rem;
         }
         .forecast-day {
-            border: 1px solid var(--fc-border);
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: var(--radius-md);
-            background: #ffffff;
+            background: rgba(255,255,255,.6);
+            backdrop-filter: blur(10px) saturate(150%);
             padding: .7rem;
             text-align: center;
         }
@@ -472,10 +481,12 @@
 
         /* -- PANELS ------------------------------------------ */
         .farmer-panel {
-            border: 1px solid rgba(201,215,206,.95);
+            border: 1px solid rgba(255,255,255,.55);
             border-radius: var(--radius-lg);
-            background: #ffffff;
-            box-shadow: var(--shadow-sm);
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            box-shadow: var(--glass-light-shadow, 0 10px 34px rgba(8,25,19,.16));
             overflow: hidden;
         }
         .farmer-panel-header {
@@ -551,8 +562,9 @@
         .advisory-card {
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
-            border: 1px solid var(--fc-border);
-            background: var(--fc-green-50);
+            border: 1px solid rgba(255,255,255,.5);
+            background: rgba(238,243,239,.55);
+            backdrop-filter: blur(8px) saturate(150%);
             min-height: 100%;
         }
         .advisory-card strong { color: var(--fc-ink); display: block; margin: .5rem 0 .35rem; font-size: var(--text-base); line-height: 1.35; }
@@ -563,19 +575,21 @@
             min-height: 108px;
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
-            border: 1px solid var(--fc-border);
-            background: var(--fc-green-50);
+            border: 1px solid rgba(255,255,255,.5);
+            background: rgba(238,243,239,.55);
+            backdrop-filter: blur(8px) saturate(150%);
             color: inherit;
             text-decoration: none;
             display: block;
             transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s, background .2s;
         }
-        .quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--fc-green-500); background: var(--fc-green-100); }
+        .quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); border-color: var(--fc-green-500); background: rgba(143,175,154,.32); }
         .quick-action strong { display: block; color: var(--fc-ink); font-size: var(--text-base); font-weight: 700; }
         .quick-action span { display: block; color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .3rem; line-height: 1.5; }
         .empty-soft {
             border: 1.5px dashed var(--fc-sand-dark);
-            background: var(--fc-green-50);
+            background: rgba(238,243,239,.55);
+            backdrop-filter: blur(8px) saturate(150%);
             border-radius: var(--radius-md);
             padding: 1.75rem;
             text-align: center;
@@ -590,13 +604,15 @@
             gap: 1rem;
             min-height: 160px;
             padding: 1.4rem 1.3rem;
-            border: 1.5px solid var(--fc-sand-dark);
+            border: 1.5px solid rgba(255,255,255,.55);
             border-radius: var(--radius-xl);
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            box-shadow: var(--shadow-sm);
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            box-shadow: var(--glass-light-shadow, 0 10px 34px rgba(8,25,19,.16));
             text-decoration: none;
             color: inherit;
-            transition: box-shadow .25s var(--ease), transform .25s var(--ease), border-color .25s;
+            transition: box-shadow .25s var(--ease), transform .25s var(--ease), border-color .25s, background .25s;
         }
         .priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--fc-green-700); }
         .priority-card strong { display: block; color: var(--fc-ink); font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.1rem; margin-bottom: .4rem; }
@@ -617,10 +633,12 @@
         /* -- COLLAPSIBLE GROUPS --------------------------------- */
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         .dashboard-group {
-            border: 1.5px solid var(--fc-sand-dark);
+            border: 1.5px solid rgba(255,255,255,.55);
             border-radius: var(--radius-lg);
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            box-shadow: var(--shadow-sm);
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            box-shadow: var(--glass-light-shadow, 0 10px 34px rgba(8,25,19,.16));
             overflow: hidden;
         }
         .dashboard-group > summary {

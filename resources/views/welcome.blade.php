@@ -167,8 +167,10 @@
       top: 0; left: 0; right: 0;
       z-index: 100;
       height: var(--nav-h);
-      background: var(--green-800);
-      border-bottom: 1px solid var(--border);
+      background: rgba(31,77,58,.55);
+      backdrop-filter: blur(22px) saturate(170%);
+      -webkit-backdrop-filter: blur(22px) saturate(170%);
+      border-bottom: 1px solid rgba(255,255,255,.14);
     }
     .nav-container {
       max-width: 1120px; margin: 0 auto;
@@ -436,15 +438,16 @@
       display: flex; align-items: center; gap: 12px;
       flex: 1;
       min-width: 150px;
-      background: var(--white);
-      border: 1.5px solid var(--border);
+      background: rgba(255,255,255,.78);
+      border: 1.5px solid rgba(255,255,255,.6);
       border-radius: var(--radius-lg);
       padding: 14px 16px;
       box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(18px) saturate(170%);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
       transition: background .2s ease, border-color .2s ease;
     }
-    .trust-item:hover { background: var(--green-50); border-color: rgba(95,143,120,.32); }
+    .trust-item:hover { background: rgba(238,246,240,.85); border-color: rgba(95,143,120,.32); }
     .trust-icon {
       width: 40px; height: 40px;
       flex-shrink: 0;
@@ -1231,6 +1234,7 @@
     .form-input {
       width: 100%;
       background: rgba(15,41,32,.4);
+      backdrop-filter: blur(10px);
       border: 1.5px solid rgba(143,175,154,.28);
       border-radius: var(--radius-md);
       padding: 10px 14px;
@@ -1459,10 +1463,12 @@
         display: flex; flex-direction: column;
         position: fixed;
         top: var(--nav-h); left: 0; right: 0;
-        background: var(--green-800);
+        background: rgba(31,77,58,.72);
+        backdrop-filter: blur(24px) saturate(170%);
+        -webkit-backdrop-filter: blur(24px) saturate(170%);
         padding: 16px 24px;
         gap: 4px;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid rgba(255,255,255,.14);
         box-shadow: var(--shadow-md);
         z-index: 99;
       }
