@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
 use App\Services\Weather\OpenMeteoService;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -113,5 +113,4 @@ class AuthenticatedSessionController extends Controller
 
         return redirect('/')->with('success', 'You have logged out successfully.');
     }
-
 }

@@ -9,18 +9,31 @@ use Illuminate\Support\Arr;
 class IntentClassifierService
 {
     public const GENERAL_CHAT = 'general_chat';
+
     public const CURRENT_WEATHER = 'current_weather';
+
     public const WEATHER_FORECAST = 'weather_forecast';
+
     public const WEATHER_PREDICTION = 'weather_prediction';
+
     public const RICE_YIELD_PREDICTION = 'rice_yield_prediction';
+
     public const PLANTING_RECOMMENDATION = 'planting_recommendation';
+
     public const IRRIGATION_RECOMMENDATION = 'irrigation_recommendation';
+
     public const CLIMATE_RISK = 'climate_risk';
+
     public const WEATHER_ADVISORY = 'weather_advisory';
+
     public const SYSTEM_HELP = 'system_help';
+
     public const PROFILE_ACCOUNT = 'profile_account';
+
     public const COMMUNITY = 'community';
+
     public const REPORTS = 'reports';
+
     public const UNKNOWN = 'unknown';
 
     private const SUPPORTED_INTENTS = [

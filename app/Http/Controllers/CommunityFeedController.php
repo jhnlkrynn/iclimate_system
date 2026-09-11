@@ -146,7 +146,8 @@ class CommunityFeedController extends Controller
 
     private function canManagePost(User $user, FeedPost $post): bool
     {
-        return $this->canPost($user);
+        return $this->canPost($user)
+            && ((int) $post->user_id === (int) $user->id || $user->role === User::ROLE_IT_EXPERT);
     }
 
     private function validatePost(Request $request): array

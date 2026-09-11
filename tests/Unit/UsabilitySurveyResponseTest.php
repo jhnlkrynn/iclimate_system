@@ -66,7 +66,7 @@ class UsabilitySurveyResponseTest extends TestCase
         $this->assertSame('Worst Imaginable', UsabilitySurveyResponse::adjectiveRating(10));
     }
 
-    public function test_isAboveBenchmark_reflects_the_published_industry_average(): void
+    public function test_is_above_benchmark_reflects_the_published_industry_average(): void
     {
         $above = $this->makeResponse(array_fill(1, 10, 5)); // scores 50, below 68
         $this->assertFalse($above->isAboveBenchmark());
@@ -84,7 +84,7 @@ class UsabilitySurveyResponseTest extends TestCase
      */
     private function makeResponse(array $answers): UsabilitySurveyResponse
     {
-        $response = new UsabilitySurveyResponse();
+        $response = new UsabilitySurveyResponse;
 
         foreach ($answers as $number => $value) {
             $response->{"item_{$number}"} = $value;

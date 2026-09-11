@@ -2,6 +2,14 @@
 
 namespace App\Services\Risk;
 
+/**
+ * NOTE ON METHODOLOGY: BARANGAY_EXPOSURE below and the risk-weighting formula
+ * in score() are engineering-judgment placeholder values, not derived from
+ * cited hazard/flood-zone/elevation data. See docs/system_audit_fix_plan.md
+ * (Phase 3/4) for the plan to replace these with real MDRRMO/LGU hazard data
+ * once available. Do not present this as empirically-derived risk analysis
+ * without disclosing that caveat to whoever is viewing it.
+ */
 final class AgriculturalRiskScorer
 {
     private const BARANGAY_EXPOSURE = [

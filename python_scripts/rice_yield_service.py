@@ -1,10 +1,9 @@
 """
-Consolidated rice-yield + weather-label prediction logic, in-process (no
-subprocess, no Flask). This is the same contract farming_assistant_api.py's
-Flask /predict route served (which is what PredictionEngine.php's primary
-path — PythonService::farmingAssistant() — already sends requests to), now
-importable directly by the FastAPI service instead of requiring a separate
-process and an HTTP round-trip on the same machine.
+Consolidated rice-yield + weather-label prediction logic, in-process. This
+is the contract PredictionEngine.php's primary path —
+PythonService::farmingAssistant() — sends requests to, importable directly
+by the FastAPI service instead of requiring a separate process and an HTTP
+round-trip on the same machine.
 
 Feature schema matches PredictionEngine::buildModelInput() (PHP) exactly —
 see FEATURE_MAP / WEATHER_FEATURE_MAP below. This is the DEPLOYED schema
@@ -57,39 +56,50 @@ def load_models(force: bool = False) -> dict:
     return _models
 
 
-def _feature(features: dict, key: str, default=0):
+_REQUIRED_WEATHER_FEATURES = {"previous_rainfall", "previous_temp", "previous_humidity", "previous_wind_speed", "month_num", "season"}
+_REQUIRED_RICE_FEATURES = {
+    "rainfall", "temp_avg", "temp_range", "area", "previous_rainfall", "previous_temp",
+    "rainfall_6m", "temp_3m", "temp_6m", "seasonal_rainfall", "seasonal_temp", "season",
+}
+
+
+def _feature(features: dict, key: str, default=0, *, required: bool = False):
+    if required and key not in features:
+        raise ValueError(f"Missing required feature: {key}")
     return features.get(key, default)
 
 
 def weather_features(features: dict) -> pd.DataFrame:
     return pd.DataFrame([{
-        "Previous_Rainfall": float(_feature(features, "previous_rainfall", _feature(features, "rainfall", 180))),
-        "Previous_Temperature": float(_feature(features, "previous_temp", _feature(features, "temp_avg", 29))),
-        "Previous_Humidity": float(_feature(features, "previous_humidity", _feature(features, "humidity", 78))),
-        "Previous_Wind_Speed": float(_feature(features, "previous_wind_speed", _feature(features, "wind_speed", 8))),
-        "Month_Num": int(_feature(features, "month_num", 1)),
-        "Season": str(_feature(features, "season", "Wet")),
+        "Previous_Rainfall": float(_feature(features, "previous_rainfall", required=True)),
+        "Previous_Temperature": float(_feature(features, "previous_temp", required=True)),
+        "Previous_Humidity": float(_feature(features, "previous_humidity", required=True)),
+        "Previous_Wind_Speed": float(_feature(features, "previous_wind_speed", required=True)),
+        "Month_Num": int(_feature(features, "month_num", required=True)),
+        "Season": str(_feature(features, "season", required=True)),
     }])
 
 
 def rice_features(features: dict) -> pd.DataFrame:
     return pd.DataFrame([{
-        "RAINFALL": float(_feature(features, "rainfall", 180)),
-        "TEMP_AVG": float(_feature(features, "temp_avg", 29)),
-        "TEMP_RANGE": float(_feature(features, "temp_range", 8)),
-        "Area": float(_feature(features, "area", 1)),
-        "Previous_Rainfall": float(_feature(features, "previous_rainfall", 180)),
-        "Previous_Temp": float(_feature(features, "previous_temp", 29)),
-        "Rainfall_6M": float(_feature(features, "rainfall_6m", 180)),
-        "Temp_3M": float(_feature(features, "temp_3m", 29)),
-        "Temp_6M": float(_feature(features, "temp_6m", 29)),
-        "Seasonal_Rainfall": float(_feature(features, "seasonal_rainfall", 900)),
-        "Seasonal_Temp": float(_feature(features, "seasonal_temp", 29)),
-        "Season": str(_feature(features, "season", "Wet")),
+        "RAINFALL": float(_feature(features, "rainfall", required=True)),
+        "TEMP_AVG": float(_feature(features, "temp_avg", required=True)),
+        "TEMP_RANGE": float(_feature(features, "temp_range", required=True)),
+        "Area": float(_feature(features, "area", required=True)),
+        "Previous_Rainfall": float(_feature(features, "previous_rainfall", required=True)),
+        "Previous_Temp": float(_feature(features, "previous_temp", required=True)),
+        "Rainfall_6M": float(_feature(features, "rainfall_6m", required=True)),
+        "Temp_3M": float(_feature(features, "temp_3m", required=True)),
+        "Temp_6M": float(_feature(features, "temp_6m", required=True)),
+        "Seasonal_Rainfall": float(_feature(features, "seasonal_rainfall", required=True)),
+        "Seasonal_Temp": float(_feature(features, "seasonal_temp", required=True)),
+        "Season": str(_feature(features, "season", required=True)),
     }])
 
 
 def weather_label(raw_value) -> str:
+    """Keep these thresholds identical to WeatherLabeler::fromRainfall() in
+    app/Services/Prediction/WeatherLabeler.php — see tests/Unit/WeatherLabelerTest.php."""
     try:
         rainfall = float(raw_value)
     except (TypeError, ValueError):
@@ -208,10 +218,9 @@ def predict(features: dict) -> dict:
     seasonal_rainfall, seasonal_temp, humidity, wind_speed, season, farm_type,
     month_num.
 
-    Returns the same response shape farming_assistant_api.py's Flask /predict
-    returned for prediction_type="rice_yield", so PredictionEngine.php's
-    parsing (data_get($apiResult, 'rice_yield_prediction', $apiResult) etc.)
-    needs no changes when pointed at this service instead.
+    Returns the response shape for prediction_type="rice_yield" that
+    PredictionEngine.php's parsing expects (data_get($apiResult,
+    'rice_yield_prediction', $apiResult) etc.).
     """
     models = load_models()
 

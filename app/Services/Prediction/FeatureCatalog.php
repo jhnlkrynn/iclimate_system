@@ -99,7 +99,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_DEPLOYED, self::SCHEMA_TARGET],
             'model_keys' => ['deployed' => 'Area', 'target' => 'area_hectares'],
             'description' => "The farmer's (or the prediction request's) field size.",
-            'behavior' => "Included as a model input, but it scales total production, not yield-per-hectare — its effect on the model's yield-per-hectare output should be small and is mainly there to let the model pick up any farm-size-correlated effects present in the training data (e.g. larger fields tending toward one irrigation type).",
+            'behavior' => "Included as a model input, but it scales total production, not yield-per-hectare — its effect on the model's yield-per-hectare output should be small and is mainly there to let the model pick up any farm-size-correlated effects present in the training data (e.g. larger fields tending toward one irrigation type). Kept in the TARGET schema on the theory that larger farms tend to have better access to mechanization, credit, and bulk input pricing (economies of scale), which can shift yield-per-hectare even after normalizing for size — not because area itself directly causes a higher rate.",
         ],
         'previous_rainfall' => [
             'label' => 'Previous Month Rainfall',
@@ -147,7 +147,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_DEPLOYED],
             'model_keys' => ['deployed' => 'Seasonal_Rainfall'],
             'description' => 'Cumulative rainfall recorded so far within the current wet/dry season, as opposed to a rolling calendar window.',
-            'behavior' => "Ties the rainfall figure to the Philippine wet/dry season cycle specifically, since rice planting decisions are usually made in reference to the season, not the calendar month. High seasonal rainfall in the wet season is expected and normal; the same total in the dry season would be unusual and worth flagging.",
+            'behavior' => 'Ties the rainfall figure to the Philippine wet/dry season cycle specifically, since rice planting decisions are usually made in reference to the season, not the calendar month. High seasonal rainfall in the wet season is expected and normal; the same total in the dry season would be unusual and worth flagging.',
         ],
         'seasonal_temp' => [
             'label' => 'Seasonal Temperature',
@@ -179,7 +179,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_TARGET],
             'model_keys' => ['target' => 'wind_speed'],
             'description' => 'Wind speed for the target period. Same status as humidity — computed on every request but only reaches the TARGET schema and the rule-based fallback today.',
-            'behavior' => "Low impact under normal conditions. The app penalizes yield once wind speed passes ~20km/h (lodging risk — stalks bending/breaking) and more heavily past ~30km/h (storm-level, structural crop damage).",
+            'behavior' => 'Low impact under normal conditions. The app penalizes yield once wind speed passes ~20km/h (lodging risk — stalks bending/breaking) and more heavily past ~30km/h (storm-level, structural crop damage).',
         ],
         'irrigation_type' => [
             'label' => 'Irrigation Type',

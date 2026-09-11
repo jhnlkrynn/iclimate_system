@@ -54,9 +54,7 @@ class FarmerDashboardWeatherService
         'wind_gusts_10m_max',
     ];
 
-    public function __construct(private readonly WeatherIconMapper $icons)
-    {
-    }
+    public function __construct(private readonly WeatherIconMapper $icons) {}
 
     public function current(bool $force = false): array
     {

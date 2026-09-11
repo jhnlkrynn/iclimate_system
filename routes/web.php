@@ -6,17 +6,18 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\FarmBoundaryController;
+use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
+use App\Http\Controllers\ModelEvaluationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\RiceProductionController;
+use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
 use App\Http\Controllers\UsabilitySurveyController;
@@ -217,6 +218,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions',
             [WeatherPredictionController::class, 'index']
         )->name('weather-predictions.index');
+
+        Route::get(
+            'model-evaluation',
+            [ModelEvaluationController::class, 'index']
+        )->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->name('model-evaluation.index');
 
         Route::post(
             'weather-predictions/predict',

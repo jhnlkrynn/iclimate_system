@@ -89,6 +89,12 @@ class ModelEvaluationService
             'features' => $this->featureLabels(),
             'rows' => $rows,
             'best_algorithm' => $best,
+            'schema_caveat' => 'These metrics were computed on a candidate feature set (see '
+                .'app/Services/Prediction/FeatureCatalog.php::SCHEMA_TARGET). The currently '
+                .'deployed model, rice_yield_model_final.pkl, was trained on a different, older '
+                .'feature set and has not yet been evaluated against this data. Do not treat '
+                .'these numbers as the deployed model\'s real-world accuracy until it is '
+                .'retrained on this schema (see docs/system_audit_fix_plan.md, Phase 3).',
             'source' => [
                 'name' => 'iClimate ML service (python_scripts/evaluation_service.py)',
                 'type' => 'Live cross-validated evaluation',

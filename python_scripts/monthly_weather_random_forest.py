@@ -220,6 +220,28 @@ def not_ready(message: str, months_available: int, target_month: date) -> dict:
     }
 
 
+def _leave_one_out_mae(x_train: np.ndarray, y_train: np.ndarray, max_features: int, target_seed_key: str) -> float:
+    """Cheap real validation signal for small samples — not a replacement for
+    proper k-fold CV, but strictly better than reporting no accuracy measure
+    at all. Only called when there are >=5 samples (see caller)."""
+    errors = []
+
+    for i in range(len(y_train)):
+        train_idx = [j for j in range(len(y_train)) if j != i]
+        forest = RandomForestRegressor(
+            n_estimators=45,
+            max_depth=7,
+            min_samples_split=2,
+            max_features=max_features,
+            random_state=zlib.crc32(f"{target_seed_key}-loo-{i}".encode()),
+        )
+        forest.fit(x_train[train_idx], y_train[train_idx])
+        prediction = forest.predict(x_train[[i]])[0]
+        errors.append(abs(prediction - y_train[i]))
+
+    return float(mean(errors))
+
+
 def predict(target_month: date, climate_records: list[dict]) -> dict:
     monthly = monthly_climate_records(climate_records)
 
@@ -261,12 +283,15 @@ def predict(target_month: date, climate_records: list[dict]) -> dict:
         forest.fit(x_train, y_train)
         predicted_value = float(forest.predict(x_target)[0])
 
+        loo_mae = _leave_one_out_mae(x_train, y_train, max_features, target) if len(y_train) >= 5 else None
+
         predictions[target] = round(predicted_value, 2)
         training[target] = {
             "trees": forest.n_estimators,
             "samples": len(samples),
             "features": len(feature_order),
             "stability": target_stability(samples, target),
+            "loo_mae": round(loo_mae, 2) if loo_mae is not None else None,
         }
 
     predictions["season"] = season_for_month(target_month.month)

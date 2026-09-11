@@ -256,6 +256,7 @@
                 <div class="wp-panel-body">
                     <p class="mb-0 text-muted">{{ $result['message'] }}</p>
                     <div class="wp-source-line">Source credit: {{ $weatherModelSourceNote }}</div>
+                    <div class="small text-muted">Confidence is a heuristic based on data recency and variability, not a statistical prediction interval.</div>
                     <details class="ic-collapse">
                         <summary><span class="ic-collapse-title">How this forecast is made</span></summary>
                         <div class="wp-guide-flow" aria-label="How the weather forecast output is made">
@@ -333,7 +334,7 @@
             $scoreTone = $score >= 90 ? 'tone-green' : ($score >= 70 ? 'tone-blue' : ($score >= 50 ? 'tone-amber' : 'tone-red'));
         @endphp
         <div class="wp-panel mb-4 {{ $yieldTone }}">
-            <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Rice Yield Prediction Result</h2><div class="small text-muted">Source: {{ $yieldSource }}{{ ! empty($mlResult['api_confidence']) ? ' | Confidence '.$mlResult['api_confidence'].'%' : '' }}</div></div>
+            <div class="wp-panel-header"><h2 class="h5 fw-bold mb-1">Rice Yield Prediction Result</h2><div class="small text-muted">Source: {{ $yieldSource }}{{ ! empty($mlResult['api_confidence']) ? ' | Estimated confidence '.$mlResult['api_confidence'].'%' : '' }}</div></div>
             <div class="wp-panel-body">
                 <div class="wp-source-line mb-3">Source credit: {{ $yieldSourceCredit }}</div>
                 <details class="ic-collapse">
