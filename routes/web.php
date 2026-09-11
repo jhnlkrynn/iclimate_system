@@ -19,6 +19,7 @@ use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
+use App\Http\Controllers\UsabilitySurveyController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WeatherPredictionController;
 use App\Models\User;
@@ -244,6 +245,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->middleware('throttle:10,1')->name('reports.generate');
 
         Route::get(
+            'reports/results',
+            [ReportController::class, 'results']
+        )->name('reports.results');
+
+        Route::get(
             'reports/print',
             [ReportController::class, 'print']
         )->name('reports.print');
@@ -255,6 +261,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('reports', ReportController::class);
 
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Usability Survey (System Usability Scale) — Objective 4
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(
+        'role:'.
+        User::ROLE_FARMER.','.
+        User::ROLE_MAO.','.
+        User::ROLE_IT_EXPERT
+    )->group(function () {
+        Route::get('usability-survey', [UsabilitySurveyController::class, 'create'])
+            ->name('usability-survey.create');
+
+        Route::post('usability-survey', [UsabilitySurveyController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('usability-survey.store');
+    });
+
+    Route::middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)->group(function () {
+        Route::get('usability-survey/results', [UsabilitySurveyController::class, 'results'])
+            ->name('usability-survey.results');
+
+        Route::get('usability-survey/results/export', [UsabilitySurveyController::class, 'exportCsv'])
+            ->name('usability-survey.export');
     });
 
     Route::resource('users', UserManagementController::class)

@@ -50,6 +50,15 @@
         .ai-result-card { border:1px solid #d4edda; border-left:5px solid var(--accent,#52b788); border-radius:8px; background:#fff; padding:.75rem; }
         .ai-result-label { color:var(--ai-muted); font-size:.68rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
         .ai-result-value { color:var(--ai-ink); font-weight:900; margin-top:.25rem; line-height:1.25; overflow-wrap:anywhere; }
+        .ai-feature-list { display:grid; gap:.4rem; }
+        .ai-feature-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; padding:.4rem .55rem; border:1px solid #e3ece6; border-radius:8px; background:#fbfdfb; font-size:.8rem; }
+        .ai-feature-dot { width:.55rem; height:.55rem; border-radius:999px; flex:0 0 auto; background:#c3d3ca; }
+        .ai-feature-dot.tone-green { background:#52b788; }
+        .ai-feature-dot.tone-amber { background:#ffd166; }
+        .ai-feature-dot.tone-red { background:#d85b45; }
+        .ai-feature-label { color:var(--ai-muted); font-weight:800; }
+        .ai-feature-value { color:var(--ai-ink); font-weight:900; margin-left:auto; }
+        .ai-feature-status { color:var(--ai-muted); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
         .ai-aside { position:sticky; top:1rem; }
         .ai-prompt-sections { display:grid; gap:0; }
         .ai-typing { display:none; padding:0 1rem 1rem; color:var(--ai-muted); font-weight:800; }
@@ -146,6 +155,42 @@
                                             <div class="ai-result-card ai-irrigation"><div class="ai-result-label">Irrigation</div><div class="ai-result-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
                                         @endif
                                     </div>
+                                    @php
+                                        $yieldFeatureRows = in_array('yield', $visibleCards, true)
+                                            ? collect(data_get($chat->rice_yield_prediction, 'features', []))
+                                                ->map(function ($value, $modelKey) {
+                                                    $entry = \App\Services\Prediction\FeatureCatalog::byModelKey((string) $modelKey, \App\Services\Prediction\FeatureCatalog::SCHEMA_DEPLOYED);
+                                                    $status = is_numeric($value) && $entry
+                                                        ? \App\Services\Prediction\FeatureCatalog::classify($entry['key'], (float) $value)
+                                                        : null;
+
+                                                    return [
+                                                        'value' => $value,
+                                                        'label' => $entry['label'] ?? $modelKey,
+                                                        'unit' => $entry['unit'] ?? '',
+                                                        'status' => $status,
+                                                    ];
+                                                })
+                                                ->values()
+                                            : collect();
+                                    @endphp
+                                    @if($yieldFeatureRows->isNotEmpty())
+                                        <details class="ic-collapse mt-2">
+                                            <summary><span class="ic-collapse-title">Why this yield estimate</span></summary>
+                                            <div class="ai-feature-list mt-2">
+                                                @foreach($yieldFeatureRows as $row)
+                                                    <div class="ai-feature-row">
+                                                        <span class="ai-feature-dot {{ $row['status']['tone'] ?? '' }}"></span>
+                                                        <span class="ai-feature-label">{{ $row['label'] }}</span>
+                                                        <span class="ai-feature-value">{{ is_numeric($row['value']) ? number_format((float) $row['value'], 2) : $row['value'] }}{{ $row['unit'] ? ' '.$row['unit'] : '' }}</span>
+                                                        @if($row['status'])
+                                                            <span class="ai-feature-status">{{ $row['status']['label'] }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </details>
+                                    @endif
                                 @endif
                             </div>
                         </div>

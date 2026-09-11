@@ -229,6 +229,13 @@ class AIOrchestratorService
      */
     private function modelBackedPrediction(User $user, string $question, string $language, array $memory, string $intent, array $entities): array
     {
+        // Check date validity first: an already-invalid date (e.g. a past
+        // month) should produce the date-rejection message, not an area
+        // clarification prompt for a request that can never succeed anyway.
+        if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && $this->predictionService->hasInvalidTargetDate($question)) {
+            return $this->predictionService->answer($user, $question);
+        }
+
         if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && ! $this->hasArea($entities) && ! $user->farmerProfile?->farm_area) {
             return $this->clarification($language, $memory, 'rice_yield_prediction', 'I can predict your rice yield. What farm area in hectares should I use? For example: 2.5 hectares.', 'Kaya kong i-predict ang rice yield mo. Ilang ektarya ang gagamitin ko? Halimbawa: 2.5 hectares.');
         }

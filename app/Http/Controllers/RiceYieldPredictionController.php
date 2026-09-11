@@ -7,6 +7,7 @@ use App\Http\Requests\RiceYieldPredictionRequest;
 use App\Models\FarmerProfile;
 use App\Services\Prediction\PredictionDateValidator;
 use App\Services\Prediction\RiceYieldPredictionService;
+use App\Services\Prediction\ShortTermOutlookService;
 use App\Services\Prediction\WeatherPredictionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,7 @@ class RiceYieldPredictionController extends Controller
         PredictionDateValidator $dateValidator,
         RiceYieldPredictionService $riceYield,
         WeatherPredictionService $weatherPrediction,
+        ShortTermOutlookService $shortTermOutlook,
     ): View {
         $validated = $request->validated();
         $targetDate = CarbonImmutable::parse($validated['prediction_date']);
@@ -73,6 +75,7 @@ class RiceYieldPredictionController extends Controller
             'result' => $weatherResult,
             'defaultModelInput' => $engineResult['model_input'],
             'mlResult' => $this->buildMlResult($sharedResult),
+            'shortTermOutlook' => $shortTermOutlook->build($engineResult['model_input'], $targetMonth),
             'error' => null,
         ]);
     }

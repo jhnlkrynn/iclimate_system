@@ -30,6 +30,7 @@
             'user-management' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6.5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.3 15c.6-3 2.3-4.6 4.7-4.6s4.1 1.6 4.7 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4.5a2.2 2.2 0 0 1 0 4.3M14.2 10.6c1.5.5 2.4 1.9 2.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'system-logs' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="2.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 2.5v-.2a1.2 1.2 0 0 1 1.2-1h1.6a1.2 1.2 0 0 1 1.2 1v.2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8h5M6.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'ai' => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+            'feedback' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M4 3.5h10a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H8l-3.5 3v-3H4A1.5 1.5 0 0 1 2.5 11V5A1.5 1.5 0 0 1 4 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 7.2h6M6 9.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
             default => '',
         };
     };
@@ -50,6 +51,7 @@
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
         'system-logs' => ['system-logs.index', ['system-logs.*']],
+        'usability-survey' => ['usability-survey.create', ['usability-survey.*']],
     ];
 
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
@@ -72,6 +74,7 @@
             $navLink('Weather & Yield', 'weather', 'weather'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
+            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [];
     } elseif ($isMao) {
@@ -87,6 +90,7 @@
             $navLink('Live Forecasting', 'live-forecasting', 'live-forecasting'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
             $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
+            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [
             $navLink('Community Feed', 'community', 'community'),
@@ -106,6 +110,7 @@
             $navLink('Live Forecasting', 'live-forecasting', 'live-forecasting'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
             $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
+            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [
             $navLink('Planting Advisories', 'advisories', 'advisories'),

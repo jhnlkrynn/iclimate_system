@@ -42,23 +42,29 @@
             </div>
 
             <section class="print-meta">
-                <div class="meta-box"><div class="meta-label">Rows</div><div class="meta-value">{{ number_format($rows->count()) }}</div></div>
+                <div class="meta-box"><div class="meta-label">Rows</div><div class="meta-value">{{ number_format($totalRows) }}</div></div>
                 <div class="meta-box"><div class="meta-label">Date Range</div><div class="meta-value">{{ ($filters['date_from'] ?? null) ?: 'Start' }} to {{ ($filters['date_to'] ?? null) ?: 'Latest' }}</div></div>
                 <div class="meta-box"><div class="meta-label">Barangay</div><div class="meta-value">{{ ($filters['barangay'] ?? null) ?: 'All' }}</div></div>
                 <div class="meta-box"><div class="meta-label">Season / Year</div><div class="meta-value">{{ ($filters['season'] ?? null) ?: 'All seasons' }}{{ ! empty($filters['year']) ? ' / '.$filters['year'] : '' }}</div></div>
             </section>
 
-            <div class="alert alert-light border small">
-                This report is generated from iClimate records using the selected filters. Review source records before making final operational decisions.
-            </div>
-            <div class="card border-0 shadow-sm">
-                <div class="table-responsive">
-                    <table class="table table-bordered mb-0">
-                        <thead><tr>@foreach ($columns as $label)<th>{{ $label }}</th>@endforeach</tr></thead>
-                        <tbody>@forelse ($rows as $row)<tr>@foreach ($columns as $field => $label)<td>{{ data_get($row, $field) }}</td>@endforeach</tr>@empty<tr><td colspan="{{ count($columns) }}" class="text-center text-muted">No records found.</td></tr>@endforelse</tbody>
-                    </table>
+            @if($tooManyRows)
+                <div class="alert alert-warning border">
+                    <strong>Too many rows to print at once.</strong> This filter matches {{ number_format($totalRows) }} records, more than the {{ number_format($rowCap) }}-row print limit. Narrow the date range, season, or barangay filter and print again, or use <strong>Download CSV</strong> instead — CSV export has no row limit.
                 </div>
-            </div>
+            @else
+                <div class="alert alert-light border small">
+                    This report is generated from iClimate records using the selected filters. Review source records before making final operational decisions.
+                </div>
+                <div class="card border-0 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead><tr>@foreach ($columns as $label)<th>{{ $label }}</th>@endforeach</tr></thead>
+                            <tbody>@forelse ($rows as $row)<tr>@foreach ($columns as $field => $label)<td>{{ data_get($row, $field) }}</td>@endforeach</tr>@empty<tr><td colspan="{{ count($columns) }}" class="text-center text-muted">No records found.</td></tr>@endforelse</tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </main>
     </body>
 </html>

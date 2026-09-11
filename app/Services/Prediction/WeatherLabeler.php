@@ -13,4 +13,13 @@ final class WeatherLabeler
             default => 'Cloudy',
         };
     }
+
+    public static function fromTemperature(float $temperature): string
+    {
+        return match (true) {
+            $temperature > 32 => 'Hot',
+            $temperature < 24 => 'Cool',
+            default => 'Favorable',
+        };
+    }
 }

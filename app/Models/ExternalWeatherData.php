@@ -5,7 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon|null $forecast_date
+ * @property-read Carbon|null $fetched_at
+ */
 class ExternalWeatherData extends Model
 {
     protected $fillable = [

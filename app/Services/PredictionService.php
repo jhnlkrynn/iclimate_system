@@ -32,6 +32,20 @@ class PredictionService
         private readonly RiceYieldPredictionService $riceYield,
     ) {}
 
+    /**
+     * Whether the date implied by the question (or the default target date,
+     * if none is mentioned) is invalid — used by AIOrchestratorService to
+     * check date validity before deciding whether to ask for a missing
+     * farm area, so an already-invalid date isn't masked by an area
+     * clarification prompt for a request that could never succeed anyway.
+     */
+    public function hasInvalidTargetDate(string $question): bool
+    {
+        $targetDate = $this->parseTargetDateFromQuestion($question) ?? PredictionDateValidator::defaultTargetDate();
+
+        return $this->dateValidator->validate($targetDate) !== null;
+    }
+
     public function answer(User $user, string $question): array
     {
         $startedAt = microtime(true);
@@ -353,11 +367,14 @@ class PredictionService
     {
         $text = str($question)->lower()->toString();
 
-        if (str($text)->contains([
+        // "sino ka"/"ano ka" use word-boundary matching, not plain
+        // substring — "ano ka" is otherwise a false-positive substring of
+        // unrelated text like "paano kaba" ("p-AANO KA-ba"), which would
+        // wrongly treat an out-of-scope question as a supported identity
+        // question and answer it instead of rejecting it.
+        if (preg_match('/\b(sino|ano)\s+ka\b/u', $text) === 1 || str($text)->contains([
             'who are you',
             'what are you',
-            'sino ka',
-            'ano ka',
             'tagalog',
             'filipino',
             'pilipino',
@@ -577,8 +594,15 @@ class PredictionService
     {
         $text = str($question)->lower()->toString();
 
+        // SYSTEM_HELP is deliberately excluded from this always-supported
+        // list: genuine system-help questions are already answered earlier
+        // in the chain (shouldUseLocalSystemAnswer, the seeded Knowledge
+        // Base, or builtInAnswer's specific keyword/answer pairs). If a
+        // SYSTEM_HELP-classified question reaches this point without any
+        // of those matching, that's a signal it probably isn't a real,
+        // answerable system question — it should still be judged by the
+        // keyword check below rather than automatically approved.
         if (in_array($intent, [
-            IntentDetectionService::SYSTEM_HELP,
             IntentDetectionService::ANNOUNCEMENT,
             IntentDetectionService::NOTIFICATION,
             IntentDetectionService::CALENDAR,
@@ -638,7 +662,7 @@ class PredictionService
             return 'Oo, puwede akong sumagot sa Tagalog o mixed Tagalog-English. Itanong mo lang ang kailangan mo tungkol sa iClimate, panahon, ani, pagtatanim, patubig, advisory, o problema sa palay.';
         }
 
-        if (str($text)->contains(['who are you', 'what are you', 'sino ka', 'ano ka'])) {
+        if (preg_match('/\b(sino|ano)\s+ka\b/u', $text) === 1 || str($text)->contains(['who are you', 'what are you'])) {
             return str_contains($language, 'Tagalog')
                 ? 'Ako si Climora AI, ang iClimate rice guidance assistant para sa Lian, Batangas. Tumutulong ako sa tanong tungkol sa panahon, ani ng palay, pagtatanim, patubig, advisories, climate risk, at paggamit ng iClimate system.'
                 : 'I am Climora AI, the iClimate rice guidance assistant for Lian, Batangas. I help with weather, rice yield, planting, irrigation, advisories, climate risk, and using the iClimate system.';

@@ -121,7 +121,7 @@
     @if ($selected)
         <div class="report-summary-grid">
             <div class="report-stat"><div class="report-stat-label">Report Type</div><div class="h5 fw-bold mb-0 mt-2">{{ $selected }}</div></div>
-            <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->count()) }}</div></div>
+            <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->total()) }}</div></div>
             <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->shortDateTime('M d, Y') }}</div></div>
         </div>
 
@@ -130,7 +130,7 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
                     <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the generated rows below, then download the shown report as CSV.</div></div>
                     <div class="report-result-actions d-flex flex-wrap gap-2 align-items-start">
-                        <span class="badge text-bg-light border align-self-start">{{ number_format($rows->count()) }} row(s)</span>
+                        <span class="badge text-bg-light border align-self-start">{{ number_format($rows->total()) }} row(s){{ $rows->lastPage() > 1 ? ' - page '.$rows->currentPage().' of '.$rows->lastPage() : '' }}</span>
                         <form method="GET" action="{{ route('reports.print') }}" target="_blank">
                             @foreach ($filters as $key => $value)
                                 @if (! blank($value))
@@ -169,6 +169,7 @@
                         </div>
                     @endforeach
                 </div>
+                <div class="card-body border-top d-flex justify-content-end">{{ $rows->links() }}</div>
             @else
                 <div class="card-body">
                     <div class="report-empty-state text-center p-5">

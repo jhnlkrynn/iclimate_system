@@ -21,6 +21,17 @@
             'My rice leaves are turning yellow',
         ],
     };
+
+    // Static label/unit lookup for the "Why this yield estimate" panel,
+    // keyed by the deployed model column name so JS (for messages sent
+    // live without a page reload) doesn't have to duplicate
+    // FeatureCatalog's content — only its classify() thresholds, which
+    // are small enough to mirror directly (see classifyFeature() below;
+    // keep both in sync with FeatureCatalog::classify()).
+    $icAiFeatureCatalog = collect(\App\Services\Prediction\FeatureCatalog::forSchema(\App\Services\Prediction\FeatureCatalog::SCHEMA_DEPLOYED))
+        ->mapWithKeys(fn (array $feature, string $key): array => [
+            $feature['model_keys']['deployed'] => ['key' => $key, 'label' => $feature['label'], 'unit' => $feature['unit']],
+        ]);
 @endphp
 
 <style>
@@ -256,6 +267,16 @@
         line-height: 1.25;
     }
 
+    .ai-feature-list { display: grid; gap: .4rem; }
+    .ai-feature-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .4rem .55rem; border: 1px solid var(--ai-line); border-radius: 8px; background: #fbfdfb; font-size: .78rem; }
+    .ai-feature-dot { width: .55rem; height: .55rem; border-radius: 999px; flex: 0 0 auto; background: #c3d3ca; }
+    .ai-feature-dot.tone-green { background: #52b788; }
+    .ai-feature-dot.tone-amber { background: #ffd166; }
+    .ai-feature-dot.tone-red { background: #d85b45; }
+    .ai-feature-label { color: var(--ai-muted); font-weight: 800; }
+    .ai-feature-value { color: var(--ai-ink); font-weight: 900; margin-left: auto; }
+    .ai-feature-status { color: var(--ai-muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+
     .ic-ai-typing {
         display: none;
         align-items: center;
@@ -416,6 +437,7 @@
     }
 </style>
 
+<script type="application/json" id="icAiFeatureCatalog">{!! json_encode($icAiFeatureCatalog, JSON_UNESCAPED_SLASHES) !!}</script>
 <div id="icAiWidget" class="ic-ai-widget" data-message-url="{{ route('ai-chat.message') }}">
     <section class="ic-ai-panel" role="dialog" aria-modal="false" aria-labelledby="icAiTitle">
         <header class="ic-ai-header">
@@ -451,6 +473,40 @@
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
                                 </div>
+                            @endif
+                            @php
+                                $widgetYieldFeatureRows = collect(data_get($chat->rice_yield_prediction, 'features', []))
+                                    ->map(function ($value, $modelKey) {
+                                        $entry = \App\Services\Prediction\FeatureCatalog::byModelKey((string) $modelKey, \App\Services\Prediction\FeatureCatalog::SCHEMA_DEPLOYED);
+                                        $status = is_numeric($value) && $entry
+                                            ? \App\Services\Prediction\FeatureCatalog::classify($entry['key'], (float) $value)
+                                            : null;
+
+                                        return [
+                                            'value' => $value,
+                                            'label' => $entry['label'] ?? $modelKey,
+                                            'unit' => $entry['unit'] ?? '',
+                                            'status' => $status,
+                                        ];
+                                    })
+                                    ->values();
+                            @endphp
+                            @if($widgetYieldFeatureRows->isNotEmpty())
+                                <details class="ic-collapse mt-2">
+                                    <summary><span class="ic-collapse-title">Why this yield estimate</span></summary>
+                                    <div class="ai-feature-list mt-2">
+                                        @foreach($widgetYieldFeatureRows as $row)
+                                            <div class="ai-feature-row">
+                                                <span class="ai-feature-dot {{ $row['status']['tone'] ?? '' }}"></span>
+                                                <span class="ai-feature-label">{{ $row['label'] }}</span>
+                                                <span class="ai-feature-value">{{ is_numeric($row['value']) ? number_format((float) $row['value'], 2) : $row['value'] }}{{ $row['unit'] ? ' '.$row['unit'] : '' }}</span>
+                                                @if($row['status'])
+                                                    <span class="ai-feature-status">{{ $row['status']['label'] }}</span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </details>
                             @endif
                         </div>
                         <div class="ic-ai-msg-time">{{ $chat->created_at?->shortTime() }}</div>
@@ -519,6 +575,52 @@
         const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const shouldSaveConversation = () => localStorage.getItem(saveStorageKey) !== '0';
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
+        const featureCatalog = (() => {
+            try {
+                return JSON.parse(document.getElementById('icAiFeatureCatalog')?.textContent || '{}');
+            } catch {
+                return {};
+            }
+        })();
+        // Mirrors App\Services\Prediction\FeatureCatalog::classify() — keep both in sync.
+        const classifyFeature = (key, value) => {
+            if (typeof value !== 'number' || Number.isNaN(value)) return null;
+
+            if (key === 'temp_range') {
+                return value > 8 ? { label: 'Volatile', tone: 'tone-amber' } : { label: 'Stable', tone: 'tone-green' };
+            }
+            if (key.includes('rainfall')) {
+                if (value >= 300) return { label: 'Heavy Rain', tone: 'tone-red' };
+                if (value <= 70) return { label: 'Dry', tone: 'tone-amber' };
+                return { label: 'Workable Range', tone: 'tone-green' };
+            }
+            if (key.includes('temp')) {
+                if (value > 32) return { label: 'Hot', tone: 'tone-red' };
+                if (value < 24) return { label: 'Cool', tone: 'tone-amber' };
+                return { label: 'Favorable', tone: 'tone-green' };
+            }
+
+            return null;
+        };
+        const yieldFeatureList = (chat) => {
+            const features = chat.rice_yield_prediction?.features;
+            if (!features || typeof features !== 'object') return '';
+
+            const rows = Object.entries(features).map(([modelKey, rawValue]) => {
+                const meta = featureCatalog[modelKey] || { key: modelKey, label: modelKey, unit: '' };
+                const numericValue = typeof rawValue === 'number' ? rawValue : parseFloat(rawValue);
+                const status = classifyFeature(meta.key, numericValue);
+                const displayValue = Number.isFinite(numericValue) ? numericValue.toFixed(2) : escapeHtml(String(rawValue));
+                const unitSuffix = meta.unit ? ` ${escapeHtml(meta.unit)}` : '';
+                const statusHtml = status ? `<span class="ai-feature-status">${escapeHtml(status.label)}</span>` : '';
+
+                return `<div class="ai-feature-row"><span class="ai-feature-dot ${status ? status.tone : ''}"></span><span class="ai-feature-label">${escapeHtml(meta.label)}</span><span class="ai-feature-value">${displayValue}${unitSuffix}</span>${statusHtml}</div>`;
+            }).join('');
+
+            if (!rows) return '';
+
+            return `<details class="ic-collapse mt-2"><summary><span class="ic-collapse-title">Why this yield estimate</span></summary><div class="ai-feature-list mt-2">${rows}</div></details>`;
+        };
         const relevantPredictionCards = (chat) => {
             switch (chat.intent) {
                 case 'Weather Prediction': return ['weather'];
@@ -546,7 +648,10 @@
             if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
             if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
 
-            return cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
+            const grid = cards.length ? `<div class="ic-ai-results">${cards.join('')}</div>` : '';
+            const features = visibleCards.includes('yield') ? yieldFeatureList(chat) : '';
+
+            return grid + features;
         };
         const addMessage = (role, message, extra = '') => {
             body.insertAdjacentHTML(
