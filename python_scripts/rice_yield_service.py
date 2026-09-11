@@ -1,10 +1,9 @@
 """
-Consolidated rice-yield + weather-label prediction logic, in-process (no
-subprocess, no Flask). This is the same contract farming_assistant_api.py's
-Flask /predict route served (which is what PredictionEngine.php's primary
-path — PythonService::farmingAssistant() — already sends requests to), now
-importable directly by the FastAPI service instead of requiring a separate
-process and an HTTP round-trip on the same machine.
+Consolidated rice-yield + weather-label prediction logic, in-process. This
+is the contract PredictionEngine.php's primary path —
+PythonService::farmingAssistant() — sends requests to, importable directly
+by the FastAPI service instead of requiring a separate process and an HTTP
+round-trip on the same machine.
 
 Feature schema matches PredictionEngine::buildModelInput() (PHP) exactly —
 see FEATURE_MAP / WEATHER_FEATURE_MAP below. This is the DEPLOYED schema
@@ -219,10 +218,9 @@ def predict(features: dict) -> dict:
     seasonal_rainfall, seasonal_temp, humidity, wind_speed, season, farm_type,
     month_num.
 
-    Returns the same response shape farming_assistant_api.py's Flask /predict
-    returned for prediction_type="rice_yield", so PredictionEngine.php's
-    parsing (data_get($apiResult, 'rice_yield_prediction', $apiResult) etc.)
-    needs no changes when pointed at this service instead.
+    Returns the response shape for prediction_type="rice_yield" that
+    PredictionEngine.php's parsing expects (data_get($apiResult,
+    'rice_yield_prediction', $apiResult) etc.).
     """
     models = load_models()
 
