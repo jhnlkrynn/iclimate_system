@@ -99,7 +99,7 @@ final class FeatureCatalog
             'schemas' => [self::SCHEMA_DEPLOYED, self::SCHEMA_TARGET],
             'model_keys' => ['deployed' => 'Area', 'target' => 'area_hectares'],
             'description' => "The farmer's (or the prediction request's) field size.",
-            'behavior' => "Included as a model input, but it scales total production, not yield-per-hectare — its effect on the model's yield-per-hectare output should be small and is mainly there to let the model pick up any farm-size-correlated effects present in the training data (e.g. larger fields tending toward one irrigation type).",
+            'behavior' => "Included as a model input, but it scales total production, not yield-per-hectare — its effect on the model's yield-per-hectare output should be small and is mainly there to let the model pick up any farm-size-correlated effects present in the training data (e.g. larger fields tending toward one irrigation type). Kept in the TARGET schema on the theory that larger farms tend to have better access to mechanization, credit, and bulk input pricing (economies of scale), which can shift yield-per-hectare even after normalizing for size — not because area itself directly causes a higher rate.",
         ],
         'previous_rainfall' => [
             'label' => 'Previous Month Rainfall',
