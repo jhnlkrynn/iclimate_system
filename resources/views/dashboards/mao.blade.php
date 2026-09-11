@@ -146,6 +146,14 @@
         .chart-box canvas { width: 100% !important; height: 220px !important; }
         .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
+<<<<<<< Updated upstream
+=======
+        .farmer-org-chart-title { color: var(--mao-ink); font-family: 'Inter', system-ui, sans-serif !important; font-size: 19px; font-weight: 600 !important; line-height: 1.25; letter-spacing: 0; }
+        .farmer-org-chart-shell { position: relative; overflow: hidden; padding: .1rem 0 0; width: 100%; }
+        .farmer-org-chart-inner { width: 100%; max-width: 100%; min-width: 0; height: 460px; overflow: hidden; }
+        .farmer-org-chart-inner canvas { width: 100% !important; height: 100% !important; }
+        .farmer-org-chart-status { margin-top: .35rem; color: #1F2937; font-size: 14px; font-weight: 700; line-height: 1.3; }
+>>>>>>> Stashed changes
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
@@ -239,7 +247,50 @@
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
         @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+<<<<<<< Updated upstream
         @media (max-width: 767.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .chart-box canvas { height: 240px !important; } .dashboard-map { height: 360px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; } }
+=======
+        @media (max-width: 767.98px) {
+            .mao-stat-grid, .visual-grid, .quick-grid, .heat-grid, .variable-info-grid { grid-template-columns: 1fr; }
+            .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid, .variable-info-grid { gap: .6rem; }
+            .variable-info-card { padding: .75rem; }
+            .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .mao-stat-grid { margin-bottom: .9rem; }
+            .mao-card-body { padding: .85rem; }
+            .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .mao-panel-header { padding: .85rem .85rem .6rem; }
+            .mao-panel-body { padding: .8rem; }
+            .mao-list-item { padding: .65rem 0; gap: .65rem; }
+            .dashboard-section-label { margin: 1rem 0 .6rem; }
+            .dashboard-group-body { padding: .75rem; }
+            .dashboard-group > summary { padding: .8rem .85rem; }
+            .mao-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .live-weather-card { padding: .7rem; }
+            .live-weather-grid { margin-bottom: .75rem; }
+            .risk-level-card { padding: .65rem; }
+            .risk-level-value { font-size: 1.5rem; }
+            .risk-card { padding: .75rem; }
+            .quick-action { min-height: 84px; padding: .8rem; }
+            .chart-box { padding: .75rem; min-height: 240px; }
+            .chart-box canvas { height: 200px !important; }
+            .farmer-org-chart-shell { min-height: 0; }
+            .farmer-org-chart-inner { min-width: 0; height: 430px; }
+            .dashboard-map { height: 300px; }
+            .dashboard-map-shell { overflow: visible; }
+            .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; }
+            .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; min-height: 40px; }
+            .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 300px; margin-top: .75rem; }
+        }
+        @media (max-width: 399.98px) {
+            .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; }
+            .mao-value { font-size: clamp(1.4rem, 7vw, 1.75rem); }
+            .risk-level-value { font-size: 1.35rem; }
+            .mao-hero { padding: .9rem; }
+            .mao-chip { font-size: .72rem; padding: .38rem .6rem; }
+        }
+        @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .farmer-org-chart-shell { min-height: 0; overflow: hidden; padding-bottom: 0; } .farmer-org-chart-inner { min-width: 0; height: 560px; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
+        @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } }
+>>>>>>> Stashed changes
 
     </style>
 
@@ -278,6 +329,27 @@
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
         </section>
 
+<<<<<<< Updated upstream
+=======
+        <section class="mao-panel mb-4">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title farmer-org-chart-title">Farmers by Organization</h2>
+                    <p class="mao-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+                </div>
+                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
+            </div>
+            <div class="mao-panel-body">
+                <div class="farmer-org-chart-shell">
+                    <div class="farmer-org-chart-inner">
+                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
+                    </div>
+                </div>
+                <div id="farmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
+            </div>
+        </section>
+
+>>>>>>> Stashed changes
         <div class="ic-drawer" id="maoStatFarmers" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatFarmersLabel">
                 <div class="modal-content border-0 mao-modal-content">
@@ -682,6 +754,30 @@
         </details>
         </div>
     </div>
+<<<<<<< Updated upstream
+=======
+    @include('dashboards.partials.farmer-organization-chart', [
+        'chartData' => $farmerOrganizationChart,
+        'canvasId' => 'farmersByOrganizationChart',
+        'statusId' => 'farmersByOrganizationStatus',
+    ])
+    @php
+        $maoWeatherChartPayload = [
+            'labels' => array_values((array) data_get($weatherChartData, 'labels', [])),
+            'rainfall' => array_values((array) data_get($weatherChartData, 'rainfall', [])),
+            'temperature' => array_values((array) data_get($weatherChartData, 'temperature', [])),
+            'humidity' => array_values((array) data_get($weatherChartData, 'humidity', [])),
+            'windSpeed' => array_values((array) data_get($weatherChartData, 'windSpeed', [])),
+        ];
+        $maoMapAreaPayload = $dashboardMapAreas instanceof \Illuminate\Support\Collection
+            ? $dashboardMapAreas->values()->all()
+            : array_values((array) $dashboardMapAreas);
+        $maoWeatherChartPayloadJson = json_encode($maoWeatherChartPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        $maoMapAreaPayloadJson = json_encode($maoMapAreaPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+    @endphp
+    <script type="application/json" id="maoWeatherChartPayload">{!! $maoWeatherChartPayloadJson !!}</script>
+    <script type="application/json" id="maoMapAreaPayload">{!! $maoMapAreaPayloadJson !!}</script>
+>>>>>>> Stashed changes
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
@@ -709,8 +805,15 @@
             });
 
             const MAO_WEATHER_POLL_INTERVAL = 60000;
-            const chartData = @json($weatherChartData);
-            const mapAreas = @json($dashboardMapAreas);
+            const readJsonPayload = (id, fallback) => {
+                try {
+                    return JSON.parse(document.getElementById(id)?.textContent || JSON.stringify(fallback));
+                } catch (error) {
+                    return fallback;
+                }
+            };
+            const chartData = readJsonPayload('maoWeatherChartPayload', { labels: [], rainfall: [], temperature: [], humidity: [], windSpeed: [] });
+            const mapAreas = readJsonPayload('maoMapAreaPayload', []);
             const labels = chartData.labels || [];
             const weatherRoot = document.querySelector('[data-mao-weather-root]');
             let maoWeatherPollTimer = null;

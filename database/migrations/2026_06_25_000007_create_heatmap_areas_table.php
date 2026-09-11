@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('barangay')->index();
             $table->enum('risk_level', ['Low', 'Moderate', 'High', 'Severe'])->index();
-            $table->enum('risk_type', ['Flood', 'Drought', 'Typhoon', 'Heat'])->index();
+            $table->string('risk_type', 64)->index();
             $table->text('description')->nullable();
             $table->timestamps();
         });

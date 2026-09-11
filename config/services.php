@@ -99,6 +99,23 @@ return [
         'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),
     ],
 
+<<<<<<< Updated upstream
+=======
+    'pagasa_wis' => [
+        'enabled' => env('PAGASA_WIS_ENABLED', true),
+        'base_url' => env('PAGASA_WIS_BASE_URL', 'https://wis.pagasa.dost.gov.ph/oapi'),
+        'collection' => env('PAGASA_WIS_COLLECTION', 'urn:wmo:md:ph-pagasa:core.surface-based-observations.synop'),
+        'station_id' => env('PAGASA_WIS_STATION_ID'),
+        'bbox' => env('PAGASA_WIS_BBOX', '120.30,13.50,121.30,14.50'),
+        'timeout' => env('PAGASA_WIS_TIMEOUT', 12),
+        'cache_seconds' => env('PAGASA_WIS_CACHE_SECONDS', 60),
+        'stale_after_minutes' => env('PAGASA_WIS_STALE_AFTER_MINUTES', 30),
+    ],
+
+    // iClimate ML service (python_scripts/main.py, FastAPI) — rice yield +
+    // weather predictions and live model-evaluation metrics. Config key kept
+    // as "farming_ai" for compatibility with existing callers/tests.
+>>>>>>> Stashed changes
     'farming_ai' => [
         'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:5001'),
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),

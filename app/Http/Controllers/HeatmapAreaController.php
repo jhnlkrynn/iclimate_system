@@ -29,7 +29,7 @@ class HeatmapAreaController extends CrudController
 
     protected array $searchable = ['barangay', 'risk_level', 'risk_type', 'rainfall_status', 'planting_advisory', 'irrigation_recommendation', 'description'];
 
-    protected array $filterable = ['risk_level' => ['Low', 'Moderate', 'High', 'Severe'], 'risk_type' => ['Flood', 'Drought', 'Typhoon', 'Heat']];
+    protected array $filterable = ['risk_level' => ['Low', 'Moderate', 'High', 'Severe'], 'risk_type' => ['Flood', 'Drought', 'Typhoon', 'Heat', 'Insufficient data']];
 
     public function __construct()
     {
@@ -38,7 +38,7 @@ class HeatmapAreaController extends CrudController
             ['name' => 'latitude', 'label' => 'Latitude', 'type' => 'number', 'step' => '0.0000001'],
             ['name' => 'longitude', 'label' => 'Longitude', 'type' => 'number', 'step' => '0.0000001'],
             ['name' => 'risk_level', 'label' => 'Risk Level', 'type' => 'select', 'options' => ['Low' => 'Low', 'Moderate' => 'Moderate', 'High' => 'High', 'Severe' => 'Severe']],
-            ['name' => 'risk_type', 'label' => 'Risk Type', 'type' => 'select', 'options' => ['Flood' => 'Flood', 'Drought' => 'Drought', 'Typhoon' => 'Typhoon', 'Heat' => 'Heat']],
+            ['name' => 'risk_type', 'label' => 'Risk Type', 'type' => 'select', 'options' => ['Flood' => 'Flood', 'Drought' => 'Drought', 'Typhoon' => 'Typhoon', 'Heat' => 'Heat', 'Insufficient data' => 'Insufficient data']],
             ['name' => 'risk_score', 'label' => 'Climate Impact Score', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'predicted_yield', 'label' => 'Predicted Rice Yield', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'rainfall_status', 'label' => 'Rainfall Status'],
@@ -114,7 +114,7 @@ class HeatmapAreaController extends CrudController
                 ->values(),
             'canManage' => $this->canManage($request),
             'riskLevels' => ['Low', 'Moderate', 'High', 'Severe'],
-            'riskTypes' => ['Flood', 'Drought', 'Typhoon', 'Heat'],
+            'riskTypes' => ['Flood', 'Drought', 'Typhoon', 'Heat', 'Insufficient data'],
             'search' => $search,
             'latestPagasaAdvisory' => $latestPagasaAdvisory,
             'pagasaMapUrl' => 'https://www.pagasa.dost.gov.ph/?vm=r',
@@ -129,7 +129,7 @@ class HeatmapAreaController extends CrudController
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'risk_level' => ['required', Rule::in(['Low', 'Moderate', 'High', 'Severe'])],
-            'risk_type' => ['required', Rule::in(['Flood', 'Drought', 'Typhoon', 'Heat'])],
+            'risk_type' => ['required', Rule::in(['Flood', 'Drought', 'Typhoon', 'Heat', 'Insufficient data'])],
             'risk_score' => ['nullable', 'numeric', 'between:0,1'],
             'predicted_yield' => ['nullable', 'numeric', 'min:0'],
             'rainfall_status' => ['nullable', 'string', 'max:255'],

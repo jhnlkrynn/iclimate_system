@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
+use App\Services\Geo\LianBarangayBoundaryService;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
@@ -16,43 +17,24 @@ class HeatmapRiskService
     /** @var array<string, float|null> */
     private array $yieldPredictionMemo = [];
 
-    private const DEFAULT_AREAS = [
-        'Bagong Pook' => [14.0182000, 120.6408000],
-        'Balibago' => [13.9898000, 120.6524000],
-        'Barangay 1 (Pob.)' => [14.0361000, 120.6507000],
-        'Barangay 2 (Pob.)' => [14.0371000, 120.6530000],
-        'Barangay 3 (Pob.)' => [14.0349000, 120.6489000],
-        'Barangay 4 (Pob.)' => [14.0383000, 120.6484000],
-        'Barangay 5 (Pob.)' => [14.0339000, 120.6525000],
-        'Binubusan' => [14.0296000, 120.6364000],
-        'Bungahan' => [14.0480000, 120.6285000],
-        'Cumba' => [14.0205000, 120.7045000],
-        'Humayingan' => [14.0108000, 120.6888000],
-        'Kapito' => [14.0557000, 120.6765000],
-        'Lumaniag' => [14.0479000, 120.6613000],
-        'Luyahan' => [13.9926000, 120.6355000],
-        'Malaruhatan' => [14.0119000, 120.6669000],
-        'Matabungkay' => [13.9593000, 120.6227000],
-        'Prenza' => [14.0353000, 120.6822000],
-        'Puting-Kahoy' => [14.0290000, 120.7015000],
-        'San Diego' => [13.9793000, 120.6118000],
-    ];
-
     public function __construct(
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly WeatherApiService $weatherApi,
         private readonly DecisionSupportService $decisionSupport,
         private readonly AgriculturalRiskScorer $riskScorer,
         private readonly PredictionEngine $predictionEngine,
+        private readonly LianBarangayBoundaryService $boundaries,
     ) {}
 
     public function refresh(): void
     {
         $this->ensureDefaultAreas();
+        $this->removeDuplicateAreas();
 
         $weather = $this->weatherInputs();
 
-        $barangays = $this->barangays();
+        $coordinates = $this->boundaries->centroids();
+        $barangays = $this->barangays($coordinates);
 
         foreach ($barangays as $barangay) {
             $production = RiceProduction::query()
@@ -103,9 +85,9 @@ class HeatmapRiskService
                 'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Recommendation confidence: '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
             ];
 
-            if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
-                $updates['latitude'] = $this->defaultLatitude($barangay);
-                $updates['longitude'] = $this->defaultLongitude($barangay);
+            if (isset($coordinates[$barangay])) {
+                $updates['latitude'] = $coordinates[$barangay][0];
+                $updates['longitude'] = $coordinates[$barangay][1];
             }
 
             HeatmapArea::query()->updateOrCreate(
@@ -115,12 +97,12 @@ class HeatmapRiskService
         }
     }
 
-    private function barangays(): Collection
+    private function barangays(array $coordinates): Collection
     {
         return HeatmapArea::query()
             ->pluck('barangay')
             ->merge(RiceProduction::query()->pluck('barangay'))
-            ->merge(array_keys(self::DEFAULT_AREAS))
+            ->merge(array_keys($coordinates))
             ->filter()
             ->unique()
             ->values();
@@ -134,7 +116,7 @@ class HeatmapRiskService
             $legacyPoblacion->forceFill(['barangay' => 'Barangay 1 (Pob.)'])->save();
         }
 
-        foreach (self::DEFAULT_AREAS as $barangay => [$latitude, $longitude]) {
+        foreach ($this->boundaries->centroids() as $barangay => [$latitude, $longitude]) {
             $area = HeatmapArea::query()
                 ->where('barangay', $barangay)
                 ->orderByRaw('latitude is null')
@@ -145,13 +127,13 @@ class HeatmapRiskService
                 $area->fill([
                     'latitude' => $area->latitude ?? $latitude,
                     'longitude' => $area->longitude ?? $longitude,
-                    'risk_level' => $area->risk_level ?: 'Moderate',
-                    'risk_type' => $area->risk_type ?: 'Drought',
-                    'risk_score' => $area->risk_score ?? 0.50,
-                    'rainfall_status' => $area->rainfall_status ?: 'Pending climate update',
-                    'planting_advisory' => $area->planting_advisory ?: 'Review latest climate and rice production data before planting.',
-                    'irrigation_recommendation' => $area->irrigation_recommendation ?: 'Monitor field water availability and update after the next rainfall record.',
-                    'description' => $area->description ?: 'Default Lian barangay map point.',
+                    'risk_level' => $area->risk_level ?: 'Low',
+                    'risk_type' => $area->risk_type ?: 'Insufficient data',
+                    'risk_score' => $area->risk_score ?? 0,
+                    'rainfall_status' => $area->rainfall_status ?: 'Insufficient data',
+                    'planting_advisory' => $area->planting_advisory ?: 'Insufficient data. Add verified weather, PAGASA, climate, production, or prediction inputs before acting.',
+                    'irrigation_recommendation' => $area->irrigation_recommendation ?: 'Insufficient data. Verify field water conditions before changing irrigation schedules.',
+                    'description' => $area->description ?: 'Insufficient verified inputs to calculate barangay risk.',
                 ])->save();
 
                 continue;
@@ -161,26 +143,37 @@ class HeatmapRiskService
                 'barangay' => $barangay,
                 'latitude' => $latitude,
                 'longitude' => $longitude,
-                'risk_level' => 'Moderate',
-                'risk_type' => 'Drought',
-                'risk_score' => 0.50,
+                'risk_level' => 'Low',
+                'risk_type' => 'Insufficient data',
+                'risk_score' => 0,
                 'predicted_yield' => null,
-                'rainfall_status' => 'Pending climate update',
-                'planting_advisory' => 'Review latest climate and rice production data before planting.',
-                'irrigation_recommendation' => 'Monitor field water availability and update after the next rainfall record.',
-                'description' => 'Default Lian barangay map point.',
+                'rainfall_status' => 'Insufficient data',
+                'planting_advisory' => 'Insufficient data. Add verified weather, PAGASA, climate, production, or prediction inputs before acting.',
+                'irrigation_recommendation' => 'Insufficient data. Verify field water conditions before changing irrigation schedules.',
+                'description' => 'Insufficient verified inputs to calculate barangay risk.',
             ]);
         }
     }
 
-    private function defaultLatitude(string $barangay): ?float
+    private function removeDuplicateAreas(): void
     {
-        return self::DEFAULT_AREAS[$barangay][0] ?? null;
-    }
+        HeatmapArea::query()
+            ->select('barangay')
+            ->whereNotNull('barangay')
+            ->groupBy('barangay')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('barangay')
+            ->each(function (string $barangay): void {
+                $areas = HeatmapArea::query()
+                    ->where('barangay', $barangay)
+                    ->orderByRaw('latitude is null')
+                    ->orderByRaw('longitude is null')
+                    ->orderByDesc('updated_at')
+                    ->orderBy('id')
+                    ->get();
 
-    private function defaultLongitude(string $barangay): ?float
-    {
-        return self::DEFAULT_AREAS[$barangay][1] ?? null;
+                $areas->slice(1)->each->delete();
+            });
     }
 
     private function averageYieldForBarangay(string $barangay): ?float

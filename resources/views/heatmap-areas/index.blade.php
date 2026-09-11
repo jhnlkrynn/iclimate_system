@@ -559,6 +559,20 @@
                         <span>Layer: <strong id="activeLayerLabel">Climate Impact</strong></span>
                         <span class="map-selected-pill" id="selectedBarangayLabel">No barangay selected</span>
                     </div>
+<<<<<<< Updated upstream
+=======
+                    <div class="map-live-status">
+                        <span>Map data: <strong id="mapUpdatedAgo">Waiting for update</strong></span>
+                        <span>Server check: <strong>{{ (int) config('heatmap.refresh_seconds', 60) }}s</strong></span>
+                    </div>
+                    @if (auth()->user()->role === \App\Models\User::ROLE_FARMER)
+                        @if ($myFarmBoundary)
+                            <div class="small mt-2" style="color: var(--ic-ink-mid);">White outline: <strong>My Farm Boundary</strong> · {{ number_format($myFarmBoundary['area_hectares'], 4) }} ha</div>
+                        @else
+                            <a class="small mt-2 d-inline-block" href="{{ route('farmer.boundary.edit') }}">Add your farm boundary to this map</a>
+                        @endif
+                    @endif
+>>>>>>> Stashed changes
                 </div>
                 <div id="boundaryNotice" class="alert alert-warning position-absolute m-3 bottom-0 start-0 end-0 d-none" style="z-index: 500;">
                     Loading the Lian barangay heatmap API. If the official boundary API is unavailable, iClimate will use its local fallback boundary file.
@@ -791,11 +805,20 @@
             const selectedLabel = document.getElementById('selectedBarangayLabel');
             const activeLayerLabel = document.getElementById('activeLayerLabel');
             const boundaryNotice = document.getElementById('boundaryNotice');
+<<<<<<< Updated upstream
             const pagasaSignal = @json($pagasaSignal);
+=======
+            const mapUpdatedAgo = document.getElementById('mapUpdatedAgo');
+            const pagasaSignal = {{ \Illuminate\Support\Js::from($pagasaSignal) }};
+            const myFarmBoundary = {{ \Illuminate\Support\Js::from($myFarmBoundary) }};
+            const refreshSeconds = {{ \Illuminate\Support\Js::from((int) config('heatmap.refresh_seconds', 60)) }};
+            const refreshMs = Math.max(5, Number(refreshSeconds) || 5) * 1000;
+>>>>>>> Stashed changes
             let activeLayer = 'impact';
             const easyReadMode = false;
             let heatmapData = null;
             let selectedBarangay = '';
+            let latestMapGeneratedAt = null;
 
             if (!mapEl) return;
 
@@ -820,6 +843,9 @@
             }[layer] || 'Climate impact');
 
             const colorFor = (value, alpha = 1) => {
+                if (!Number.isFinite(Number(value))) {
+                    return `rgba(107,114,128,${alpha})`;
+                }
                 const stops = value >= .88 ? [127, 0, 0]
                     : value >= .74 ? [215, 25, 28]
                     : value >= .58 ? [253, 174, 33]
@@ -833,6 +859,7 @@
 
             const visualScoreFor = (area, layer, features) => {
                 const raw = scoreFor(area, layer);
+                if (!Number.isFinite(raw)) return .12;
                 const scores = features
                     .map((feature) => scoreFor(featureArea(feature), layer))
                     .filter((score) => Number.isFinite(score));
@@ -847,6 +874,9 @@
             };
 
             const heatColorFor = (value, alpha = .82) => {
+                if (!Number.isFinite(Number(value))) {
+                    return `rgba(107,114,128,${alpha})`;
+                }
                 const score = Math.max(0, Math.min(1, value));
                 const stops = score >= .82 ? [185, 28, 28]
                     : score >= .64 ? [239, 68, 68]
@@ -890,6 +920,7 @@
 
             const scoreFor = (area, layer) => {
                 if (!area) return 0;
+                if (area.status === 'insufficient_data' || area.risk_score === null) return Number.NaN;
                 if (layer === 'rainfall') {
                     const rainfall = String(area.live_weather?.rainfall_status || area.rainfall_status || '').toLowerCase();
                     const rain24h = Number(area.live_weather?.rainfall_24h_mm);
@@ -907,7 +938,7 @@
                     const yieldValue = area.recorded_yield_latest !== null && area.recorded_yield_latest !== undefined
                         ? Number(area.recorded_yield_latest)
                         : null;
-                    if (!Number.isFinite(yieldValue)) return .5;
+                    if (!Number.isFinite(yieldValue)) return Number.NaN;
                     if (yieldValue < 3) return .9;
                     if (yieldValue < 4) return .6;
                     return .25;
@@ -917,15 +948,15 @@
                     if (farmType.includes('mixed')) return .55;
                     if (farmType.includes('rainfed')) return .78;
                     if (farmType.includes('irrigated')) return .32;
-                    return .44;
+                    return Number.isFinite(Number(area.components?.farm_system)) ? Number(area.components.farm_system) : Number.NaN;
                 }
                 if (layer === 'irrigation') {
                     return String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/)
                         ? .9
-                        : Number(area.risk_score || .3);
+                        : Number(area.risk_score);
                 }
 
-                return Number(area.risk_score || 0);
+                return Number(area.risk_score);
             };
 
             const liveWeather = (area) => area?.live_weather && area.live_weather.status !== 'unavailable'
@@ -943,7 +974,35 @@
             const weatherTimeText = (weather) => {
                 if (!weather?.observed_at) return 'No observation time from provider.';
 
-                return `Observed ${weather.observed_at}; fetched ${weather.fetched_at || 'recently'}.`;
+                return `${weather.stale ? 'Outdated cached forecast. ' : ''}Observed ${weather.observed_at}; fetched ${weather.fetched_at || 'recently'}.`;
+            };
+
+            const sourceListText = (area) => Array.isArray(area?.sources) && area.sources.length
+                ? area.sources.map((source) => `${source.label || source.type}${source.stale ? ' (outdated)' : ''}`).join('; ')
+                : 'Insufficient verified source data.';
+
+            const sourceTimeText = (area) => area?.updated_at
+                ? `Updated ${new Date(area.updated_at).toLocaleString()}`
+                : 'No update time available.';
+
+            const section = (area, key) => area?.data_sections?.[key] || {};
+
+            const availableText = (value) => value ? 'Available' : 'Insufficient data';
+
+            const formatAgo = (dateLike) => {
+                if (!dateLike) return 'Waiting for update';
+                const timestamp = new Date(dateLike).getTime();
+                if (!Number.isFinite(timestamp)) return 'Update time unavailable';
+                const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+                if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
+                const minutes = Math.floor(seconds / 60);
+                if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+                const hours = Math.floor(minutes / 60);
+                return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+            };
+
+            const updateAgoLabels = () => {
+                if (mapUpdatedAgo) mapUpdatedAgo.textContent = formatAgo(latestMapGeneratedAt);
             };
 
             const farmTypeText = (area) => area?.farm_system || 'Unknown';
@@ -964,6 +1023,7 @@
             };
 
             const plainConcern = (area) => {
+                if (area?.status === 'insufficient_data') return 'Insufficient data';
                 const concern = String(area?.risk_type || '').toLowerCase();
                 if (concern.includes('flood')) return 'Flooding or poor drainage';
                 if (concern.includes('drought')) return 'Low water / drought';
@@ -973,6 +1033,9 @@
             };
 
             const plainRain = (area) => {
+                if (area?.status === 'insufficient_data' && !liveWeather(area)) {
+                    return 'Insufficient verified weather data for a barangay rainfall risk calculation.';
+                }
                 const weather = liveWeather(area);
                 const rainfall = String(weather?.rainfall_status || area?.rainfall_status || '').toLowerCase();
                 if (weather) {
@@ -1002,9 +1065,9 @@
             const yieldHeadline = (area) => {
                 const latest = recordedYield(area);
                 if (latest) return `Latest recorded yield: ${latest}.`;
-                if (area?.predicted_yield !== null && area?.predicted_yield !== undefined) return `No barangay yield record is stored yet. Estimate is based on the trained model: ${harvestEstimate(area)}.`;
+                if (section(area, 'ml_predicted').available) return `Validated model estimate: ${harvestEstimate(area)}.`;
 
-                return 'No barangay yield record is stored yet. No trained-model estimate is available.';
+                return 'Insufficient verified yield or validated prediction data.';
             };
 
             const yieldSourceNote = (area) => {
@@ -1012,10 +1075,13 @@
                     return `${area.production_record_count || 1} production record(s); latest ${area.recorded_yield_year || 'year not set'}${area.recorded_yield_season ? `, ${area.recorded_yield_season} season` : ''}.`;
                 }
 
-                return 'No stored harvest record for this barangay; iClimate is using the trained model estimate until local yield data is added.';
+                return section(area, 'ml_predicted').available
+                    ? 'Validated trained model prediction is available for this barangay.'
+                    : 'No stored harvest record or validated trained-model prediction is available for this barangay.';
             };
 
             const layerTakeaway = (area, layer) => {
+                if (area?.status === 'insufficient_data') return area.reason || 'Insufficient data to calculate this barangay risk.';
                 if (layer === 'rainfall') return plainRain(area);
                 if (layer === 'yield') return yieldHeadline(area);
                 if (layer === 'farm_type') return `${farmTypeText(area)} rice farm record.`;
@@ -1048,9 +1114,10 @@
             };
 
             const localDifferenceText = (area) => {
-                const score = Number(area?.risk_score || 0);
+                const score = Number(area?.risk_score);
                 const exposure = exposureText(area);
 
+                if (!Number.isFinite(score)) return area?.weather_scope_note || 'No verified data source can support a local difference estimate yet.';
                 if (score >= .5) return `This barangay has ${exposure} exposure, so it ranks higher than lower-score barangays even under the same municipal forecast.`;
                 if (score >= .45) return `This barangay has ${exposure} exposure, so it remains on watch while conditions are generally manageable.`;
 
@@ -1065,9 +1132,9 @@
                 const weather = liveWeather(area);
                 const cards = {
                     impact: [
-                        ['Main risk reason', plainConcern(area), `Local score ${Number(area?.risk_score || 0).toFixed(2)}.`],
-                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
-                        ['Decision support', supportScoreText(area), `${confidenceText(area)} confidence.`],
+                        ['Risk status', area.display_level || area.risk_level || 'Insufficient data', area.reason || 'No risk reason available.'],
+                        ['Weather values', weather ? `${mmText(weather.rainfall_24h_mm)} 24h, ${mmText(weather.rainfall_7d_mm)} 7d` : 'Insufficient data', area.weather_scope_note || 'Weather scope not recorded.'],
+                        ['Data sources', sourceListText(area), sourceTimeText(area)],
                     ],
                     rainfall: [
                         ['Live rainfall status', weather?.rainfall_status || area.rainfall_status || 'Not recorded', plainRain(area)],
@@ -1080,7 +1147,7 @@
                     yield: [
                         ['Latest recorded yield', recordedYield(area) || 'No barangay record', yieldSourceNote(area)],
                         ['Average recorded yield', averageRecordedYield(area) || 'No barangay average', area?.production_record_count ? `Computed from ${area.production_record_count} rice production record(s).` : 'Add rice production records for this barangay to make this accurate.'],
-                        ['Trained model estimate', harvestEstimate(area), hasYieldRecord(area) ? 'Forecast support value; use recorded yield above when available.' : 'Used because no barangay yield record is stored yet.'],
+                        ['Validated model estimate', section(area, 'ml_predicted').available ? harvestEstimate(area) : 'Insufficient data', section(area, 'ml_predicted').available ? 'Only shown when the stored record identifies a trained rice yield model result.' : 'No validated ML prediction is available for this barangay.'],
                         ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
                     ],
                     farm_type: [
@@ -1099,7 +1166,10 @@
 
                 return [
                     ...cards,
-                    ['Latest PAGASA signal', pagasaSignalText(), 'Official advisory reference.'],
+                    ['PAGASA advisory', section(area, 'pagasa').available ? pagasaSignalText() : 'No active stored PAGASA advisory', section(area, 'pagasa').scope || 'PAGASA data remains separate from forecast and observed records.'],
+                    ['PAGASA live observation', availableText(section(area, 'official_observed').available), section(area, 'official_observed').available ? `${section(area, 'official_observed').station_name || 'PAGASA station'}; ${section(area, 'official_observed').updated_at || 'time unavailable'}` : 'No usable official station values returned by PAGASA WIS/OAPI.'],
+                    ['Observed climate', availableText(section(area, 'observed').available), section(area, 'observed').updated_at || 'No stored observed climate record.'],
+                    ['Forecast source', weather?.source || 'Insufficient data', weatherTimeText(weather)],
                 ].map(([label, value, note]) => `
                     <div class="map-popup-box">
                         <div class="map-popup-label">${escapeHtml(label)}</div>
@@ -1200,7 +1270,7 @@
 
                 features
                     .slice()
-                    .sort((a, b) => scoreFor(featureArea(a), activeLayer) - scoreFor(featureArea(b), activeLayer))
+                    .sort((a, b) => visualScoreFor(featureArea(a), activeLayer, features) - visualScoreFor(featureArea(b), activeLayer, features))
                     .forEach((feature) => {
                         const area = featureArea(feature);
                         const baseScore = Math.max(.08, Math.min(1, visualScoreFor(area, activeLayer, features)));
@@ -1270,11 +1340,11 @@
                                 <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
                                 <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(activeLayer))}</div>
                             </div>
-                            <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
+                            <span class="map-popup-badge">${escapeHtml(area.display_level || area.risk_level || 'Insufficient data')}${area.status === 'calculated' ? ' Risk' : ''}</span>
                         </div>
                         <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, activeLayer))}</div>
                         <div class="map-popup-grid">${popupMetricCards(area, activeLayer)}</div>
-                        <div class="map-popup-advice"><div class="map-popup-label">What to do now</div><div class="map-popup-value">${escapeHtml(area.irrigation_recommendation || area.planting_advisory || 'Visit or contact farmers in this barangay before major field work.')}</div></div>
+                        <div class="map-popup-advice"><div class="map-popup-label">What to do now</div><div class="map-popup-value">${escapeHtml(area.status === 'insufficient_data' ? 'Insufficient data. Verify PAGASA, field, and farm records before major field work.' : (area.irrigation_recommendation || area.planting_advisory || 'Visit or contact farmers in this barangay before major field work.'))}</div></div>
                     </div>
                 `;
                 detailPanel.classList.add('show');
@@ -1358,8 +1428,9 @@
                     const fill = activeLayer === 'farm_type'
                         ? farmTypeColorFor(item.area, easyReadMode ? .28 : .08)
                         : colorFor(item.score, easyReadMode ? .06 : .004);
+                    const title = `${item.area.barangay}: ${item.area.display_level || item.area.risk_level || 'Insufficient data'}${item.area.reason ? `. ${item.area.reason}` : ''}`;
                     return `
-                        <path class="api-heatmap-region ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" d="${pathFor(item.feature, renderer.project)}" fill="${fill}"></path>
+                        <path class="api-heatmap-region ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" d="${pathFor(item.feature, renderer.project)}" fill="${fill}"><title>${escapeHtml(title)}</title></path>
                         ${item.visible ? `<text class="api-heatmap-label ${selected ? 'is-selected' : ''}" x="${item.x.toFixed(6)}" y="${item.y.toFixed(6)}">${escapeHtml(item.text)}</text>` : ''}
                     `;
                 }).join('');
@@ -1374,19 +1445,35 @@
 
             const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
 
-            fetch(apiUrl, { headers: { Accept: 'application/json' } })
+            const loadHeatmap = (showLoading = false) => {
+                if (showLoading) mapLoadingOverlay?.classList.remove('d-none');
+
+                return fetch(apiUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' })
                 .then((response) => response.ok ? response.json() : Promise.reject(response))
                 .then((data) => {
                     heatmapData = data;
+                    latestMapGeneratedAt = data.generated_at || new Date().toISOString();
+                    updateAgoLabels();
                     renderMap();
+                    if (selectedBarangay) {
+                        const feature = (heatmapData?.features || []).find((item) => featureName(item) === selectedBarangay);
+                        if (feature) showDetails(featureArea(feature));
+                    }
                 })
                 .catch(() => {
                     boundaryNotice?.classList.remove('d-none');
-                    boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap API right now.';
+                    boundaryNotice.textContent = heatmapData
+                        ? 'Unable to refresh the Lian barangay heatmap API right now. Retaining the latest loaded data.'
+                        : 'Unable to load the Lian barangay heatmap API right now.';
                 })
                 .finally(() => {
                     mapLoadingOverlay?.classList.add('d-none');
                 });
+            };
+
+            loadHeatmap(true);
+            setInterval(updateAgoLabels, 1000);
+            setInterval(() => loadHeatmap(false), refreshMs);
 
             document.querySelectorAll('[data-layer]').forEach((button) => {
                 button.addEventListener('click', () => {
