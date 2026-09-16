@@ -3,13 +3,13 @@
         .report-shell { display: grid; gap: 1rem; }
         .report-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
         .report-stat { border: 1px solid #d4edda; border-radius: 18px; background: #fff; padding: 1rem; }
-        .report-stat-label { color: #5a7a64; font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-        .report-stat-value { color: #0d1f18; font-size: 1.8rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
+        .report-stat-label { color: #476651; font-size: .95rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+        .report-stat-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .report-action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
         .report-live-strip { display: grid; grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr)); gap: .75rem; }
         .report-live-item { border: 1px solid var(--ic-border); border-radius: 14px; background: var(--ic-panel); padding: .85rem; min-width: 0; }
-        .report-live-item strong { display: block; color: var(--ic-ink); font-size: 1.25rem; line-height: 1.1; }
-        .report-live-item span { display: block; color: var(--ic-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+        .report-live-item strong { display: block; color: var(--ic-ink); font-size: 1.4rem; line-height: 1.15; }
+        .report-live-item span { display: block; color: var(--ic-muted); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .3rem; }
         .report-empty-state { border: 1px dashed rgba(116,198,157,.34); border-radius: 18px; background: var(--ic-panel); color: var(--ic-ink); }
         .report-empty-state .h5 { color: var(--ic-ink); }
         .report-empty-state .text-muted { color: var(--ic-muted) !important; }
@@ -25,14 +25,24 @@
             background: var(--ic-green-50) !important;
             box-shadow: 0 .65rem 1.2rem rgba(13,31,24,.08);
         }
-        .report-table th { white-space: nowrap; }
+        .report-page { font-size: 1.05rem; }
+        .report-page .form-label,
+        .report-page .form-control,
+        .report-page .form-select,
+        .report-page .btn { font-size: 1rem; }
+        .report-page .form-control,
+        .report-page .form-select,
+        .report-page .btn { min-height: 48px; }
+        .report-page .small { font-size: .95rem; }
+        .report-table { font-size: 1rem; }
+        .report-table th { white-space: nowrap; font-size: 1rem; }
+        .report-table th, .report-table td { padding: .9rem .85rem; vertical-align: middle; }
         .report-mobile-list { display: none; gap: .75rem; }
-        .report-mobile-card { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .9rem; }
+        .report-mobile-card { border: 1px solid #d4edda; border-radius: 12px; background: #fff; padding: 1rem; }
         .report-mobile-row { display: grid; grid-template-columns: minmax(110px, .42fr) minmax(0, 1fr); gap: .75rem; padding: .45rem 0; }
         .report-mobile-row + .report-mobile-row { border-top: 1px solid #eef7ec; }
-        .report-mobile-label { color: #5a7a64; font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-        .report-mobile-value { color: #0d1f18; font-weight: 700; overflow-wrap: anywhere; }
-        .history-card-list { display: none; gap: .75rem; }
+        .report-mobile-label { color: #476651; font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
+        .report-mobile-value { color: #0d1f18; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
         @media (max-width: 991.98px) {
             .report-summary-grid { grid-template-columns: 1fr; }
             .report-live-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -40,13 +50,13 @@
         }
         @media (max-width: 767.98px) {
             .report-action-bar, .report-action-bar .btn { width: 100%; }
-            .report-results-table, .report-history-table { display: none; }
-            .report-mobile-list, .history-card-list { display: grid; }
+            .report-results-table { display: none; }
+            .report-mobile-list { display: grid; }
             .report-mobile-row { grid-template-columns: 1fr; gap: .2rem; }
             .report-live-strip { grid-template-columns: 1fr; }
             .report-shell { gap: .75rem; }
             .report-stat { padding: .75rem; border-radius: 14px; }
-            .report-stat-value { font-size: 1.4rem; }
+            .report-stat-value { font-size: 1.75rem; }
             .report-live-item { padding: .65rem; }
             .card-body.p-4 { padding: 1rem !important; }
             .card-body.p-3 { padding: .75rem !important; }
@@ -58,11 +68,22 @@
     <div class="report-page">
     <section class="page-hero">
         <div>
-            <div class="eyebrow mb-2">Analytics Workspace</div>
+            <div class="eyebrow mb-2">iClimate Reports</div>
             <h1 class="h2 fw-bold mb-2">Reports</h1>
-            <p class="mb-0" style="color: var(--ic-ink-mid);">Generate filtered reports from current iClimate records. Dummy report history is excluded.</p>
+            <p class="mb-0" style="color: var(--ic-ink-mid);">Generate filtered reports directly from current iClimate records.</p>
         </div>
     </section>
+
+    @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
+            <strong>Python analytics is processing this report.</strong>
+            This page will refresh automatically when the saved result is ready.
+        </div>
+    @elseif ($analyticsRun?->status === 'failed')
+        <div class="alert alert-danger border">
+            <strong>Report processing failed.</strong> {{ $analyticsRun->error }}
+        </div>
+    @endif
 
     <div class="report-shell">
     <div class="card no-lift">
@@ -109,8 +130,10 @@
                 <div class="col-lg-8 report-action-bar align-self-end">
                     <button class="btn btn-primary" type="submit" data-loading-text="Generating...">Generate Report</button>
                     @if ($selected)
-                        <button class="btn report-white-action" formaction="{{ route('reports.print') }}" formmethod="GET" formtarget="_blank" type="submit" data-loading-text="Opening...">Print Report</button>
-                        <button class="btn report-white-action" formaction="{{ route('reports.export') }}" formmethod="GET" type="submit" data-loading-text="Exporting...">Export CSV</button>
+                        @if ($selectedReport)
+                            <a class="btn report-white-action" href="{{ route('reports.print', ['report' => $selectedReport->id]) }}" target="_blank">Print Report</a>
+                            <a class="btn report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Export CSV</a>
+                        @endif
                     @endif
                 </div>
             </form>
@@ -119,11 +142,47 @@
     </details>
 
     @if ($selected)
+        @if ($reportTypeInfo)
+            <div class="card no-lift">
+                <div class="card-body p-3">
+                    <div class="fw-bold mb-1">About this report</div>
+                    <p class="mb-1">{{ $reportTypeInfo['purpose'] }}</p>
+                    <p class="mb-0 text-muted small"><strong>Good for:</strong> {{ $reportTypeInfo['good_for'] }}</p>
+                </div>
+            </div>
+        @endif
+
         <div class="report-summary-grid">
             <div class="report-stat"><div class="report-stat-label">Report Type</div><div class="h5 fw-bold mb-0 mt-2">{{ $selected }}</div></div>
             <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->total()) }}</div></div>
-            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ now()->shortDateTime('M d, Y') }}</div></div>
+            <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ $generatedAt?->format('M d, Y, g:i A') }}</div></div>
         </div>
+
+        @if (! empty($reportSummary))
+            <div class="card no-lift">
+                <div class="card-body p-3">
+                    <div class="fw-bold mb-2">Result Summary</div>
+                    <div class="report-summary-grid">
+                        @foreach ($reportSummary as $item)
+                            <div class="report-stat"><div class="report-stat-label">{{ $item['label'] }}</div><div class="h5 fw-bold mb-0 mt-2">{{ $item['value'] }}</div></div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($weatherBasis)
+            <div class="card no-lift">
+                <div class="card-body p-3">
+                    <div class="fw-bold mb-1">Weather Basis</div>
+                    @if ($weatherBasis['has_data'])
+                        <p class="mb-0">During {{ $weatherBasis['range_label'] }}, recorded conditions averaged {{ number_format($weatherBasis['avg_rainfall'], 1) }} mm rainfall and {{ number_format($weatherBasis['avg_temperature'], 1) }}&deg;C, based on {{ number_format($weatherBasis['record_count']) }} climate record(s) for that period.</p>
+                    @else
+                        <p class="mb-0 text-muted">No climate records are stored for {{ $weatherBasis['range_label'] }}, so weather context isn't available for this report.</p>
+                    @endif
+                </div>
+            </div>
+        @endif
 
         <div class="card no-lift">
             <div class="card-header border-0 py-3">
@@ -131,22 +190,10 @@
                     <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the generated rows below, then download the shown report as CSV.</div></div>
                     <div class="report-result-actions d-flex flex-wrap gap-2 align-items-start">
                         <span class="badge text-bg-light border align-self-start">{{ number_format($rows->total()) }} row(s){{ $rows->lastPage() > 1 ? ' - page '.$rows->currentPage().' of '.$rows->lastPage() : '' }}</span>
-                        <form method="GET" action="{{ route('reports.print') }}" target="_blank">
-                            @foreach ($filters as $key => $value)
-                                @if (! blank($value))
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                @endif
-                            @endforeach
-                            <button class="btn btn-sm fw-bold report-white-action" type="submit" data-loading-text="Opening...">Print Report</button>
-                        </form>
-                        <form method="GET" action="{{ route('reports.export') }}">
-                            @foreach ($filters as $key => $value)
-                                @if (! blank($value))
-                                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                                @endif
-                            @endforeach
-                            <button class="btn btn-sm fw-bold report-white-action" type="submit" data-loading-text="Exporting...">Download CSV</button>
-                        </form>
+                        @if ($selectedReport)
+                            <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.print', ['report' => $selectedReport->id]) }}" target="_blank">Print Report</a>
+                            <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Download CSV</a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -173,7 +220,7 @@
             @else
                 <div class="card-body">
                     <div class="report-empty-state text-center p-5">
-                        <div class="h5 mb-2">No report records found</div>
+                        <div class="h5 mb-2">No records found</div>
                         <div class="text-muted">No current iClimate records match the selected filters. Try widening the date range or choosing All Barangays.</div>
                     </div>
                 </div>
@@ -181,45 +228,22 @@
         </div>
     @endif
 
-    <details class="ic-collapse">
-        <summary>
-            <span class="ic-collapse-title">
-                Report History
-                @if($history->total())
-                    <span class="ic-collapse-count">{{ $history->total() }}</span>
-                @endif
-            </span>
-        </summary>
-    <div class="card no-lift">
-        <div class="card-header border-0 py-3"><h2 class="h5 mb-1">Report History</h2><div class="small text-muted">Only real reports generated from current iClimate records are shown.</div></div>
-        <div class="table-responsive report-history-table">
-            <table class="table table-hover report-table mb-0">
-                <thead><tr><th>Type</th><th>Title</th><th>Generated By</th><th>Date</th><th>Rows</th></tr></thead>
-                <tbody>
-                    @forelse ($history as $report)
-                        <tr><td>{{ $report->report_type }}</td><td>{{ $report->title }}</td><td>{{ $report->generatedBy?->name }}</td><td>{{ $report->created_at }}</td><td>{{ data_get($report->payload, 'row_count', '-') }}</td></tr>
-                    @empty
-                        <tr><td colspan="5" class="text-center text-muted py-4">No report history yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="card-body history-card-list">
-            @forelse ($history as $report)
-                <div class="report-mobile-card">
-                    <div class="fw-bold">{{ $report->title }}</div>
-                    <div class="small text-muted mb-2">{{ $report->report_type }}</div>
-                    <div class="report-mobile-row"><div class="report-mobile-label">Generated By</div><div class="report-mobile-value">{{ $report->generatedBy?->name }}</div></div>
-                    <div class="report-mobile-row"><div class="report-mobile-label">Date</div><div class="report-mobile-value">{{ $report->created_at }}</div></div>
-                    <div class="report-mobile-row"><div class="report-mobile-label">Rows</div><div class="report-mobile-value">{{ data_get($report->payload, 'row_count', '-') }}</div></div>
-                </div>
-            @empty
-                <div class="text-center text-muted py-4">No report history yet.</div>
-            @endforelse
-        </div>
-        <div class="card-body border-top d-flex justify-content-end">{{ $history->links() }}</div>
     </div>
-    </details>
-    </div>
+    @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <script>
+            (() => {
+                const banner = document.querySelector('[data-analytics-run]');
+                if (!banner) return;
+                const check = async () => {
+                    try {
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const run = await response.json();
+                        if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                    } catch (_) {}
+                };
+                window.setInterval(check, 2500);
+            })();
+        </script>
+    @endif
     </div>
 </x-app-layout>

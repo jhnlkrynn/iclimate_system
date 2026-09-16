@@ -15,6 +15,7 @@ class ResponsiveLayoutTest extends TestCase
         $farmerDashboard = file_get_contents(resource_path('views/dashboards/farmer.blade.php'));
         $itDashboard = file_get_contents(resource_path('views/dashboards/it-expert.blade.php'));
         $heatmap = file_get_contents(resource_path('views/heatmap-areas/index.blade.php'));
+        $crudIndex = file_get_contents(resource_path('views/crud/index.blade.php'));
 
         $this->assertStringContainsString('data-bs-target="#mobileSidebar"', $navigation);
         $this->assertStringContainsString('offcanvas offcanvas-start', $sidebar);
@@ -28,7 +29,8 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('.farmer-hero-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerDashboard);
         $this->assertStringContainsString('.climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerDashboard);
         $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
-        $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto;', $maoDashboard);
+        // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
+        $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
         $this->assertStringContainsString('.it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itDashboard);
         $this->assertStringContainsString('height: min(52vh, 320px)', $maoDashboard);
         $this->assertStringContainsString('#barangayRiskMap { height: min(58vh, 360px); min-height: 280px; }', $heatmap);

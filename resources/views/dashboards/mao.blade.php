@@ -136,21 +136,31 @@
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
         .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
         .mao-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
-        .mao-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--mao-red); }
-        .mao-risk-badge-moderate { background: rgba(197,139,42,.14); color: #C58B2A; }
-        .mao-risk-badge-low { background: rgba(95,143,120,.14); color: var(--mao-green); }
+        .mao-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
+        .mao-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
+        .mao-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
+        .mao-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
         .mao-risk-interpretation { font-weight: 500; color: var(--mao-ink); }
         .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
         .status-pill.muted { background: var(--mao-green-50); color: var(--mao-muted); }
+        .status-pill.risk-badge-lg { padding: .38rem .8rem; font-size: .74rem; font-weight: 900; }
+        .status-pill.risk-badge-lg.low { background: #dcfce7; color: #15803d; }
+        .status-pill.risk-badge-lg.moderate { background: #fef9c3; color: #854d0e; }
+        .status-pill.risk-badge-lg.high { background: #ffedd5; color: #c2410c; }
+        .status-pill.risk-badge-lg.severe { background: #fee2e2; color: #b91c1c; }
         .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
         .quick-action { min-height: 108px; padding: 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,.5); background: rgba(238,243,239,.55); backdrop-filter: blur(8px) saturate(150%); color: inherit; text-decoration: none; }
         .quick-action:hover { transform: translateY(-2px); border-color: rgba(95,143,120,.55); }
         .quick-action strong { display: block; color: var(--mao-ink); }
         .quick-action span { display: block; color: var(--mao-muted); font-size: .82rem; margin-top: .25rem; }
         .heat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(95,143,120,.72); background: var(--mao-green-50); }
+        .risk-card { padding: 1rem; border-radius: 8px; border: 1px solid rgba(34,197,94,.4); border-left: 5px solid #22c55e; background: #f0fdf4; }
         .risk-card strong { color: var(--mao-ink); }
-        .risk-card.severe, .risk-card.high { border-color: rgba(216,91,69,.45); background: linear-gradient(135deg, #fff3ee, #f5e7db); }
+        .risk-card.moderate { border-color: rgba(250,204,21,.55); border-left-color: #facc15; background: #fefce8; }
+        .risk-card.high { border-color: rgba(249,115,22,.5); border-left-color: #f97316; background: #fff7ed; }
+        .risk-card.severe { border-color: rgba(239,68,68,.5); border-left-color: #ef4444; background: #fef2f2; }
+        .risk-card .risk-card-meta { display: grid; gap: .3rem; margin-top: .55rem; padding-top: .55rem; border-top: 1px dashed rgba(95,143,120,.35); font-size: .78rem; color: var(--mao-muted); }
+        .risk-card .risk-card-meta strong { color: var(--mao-ink); font-weight: 700; }
         .variable-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin-bottom: 1rem; }
         .variable-info-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .85rem .9rem; }
         .variable-info-card .row-text { margin-top: .3rem; }
@@ -158,22 +168,19 @@
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .9rem; }
         .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 700; }
-        .chart-box { position: relative; min-height: 330px; padding: 1rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); overflow-x: auto; }
+        .chart-box { position: relative; min-height: 330px; padding: 1rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); }
+        .chart-canvas-scroll { overflow-x: auto; }
         .chart-box canvas { width: 100% !important; min-width: 420px; height: 260px !important; }
+        .chart-interpretation { margin-top: .85rem; padding: .85rem .9rem; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.78); }
+        .chart-interpretation-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem .6rem; margin-bottom: .5rem; }
+        .chart-interpretation-label { font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; color: var(--mao-muted); }
+        .chart-interpretation-row { color: var(--mao-ink); font-size: .88rem; line-height: 1.5; }
+        .chart-interpretation-row + .chart-interpretation-row { margin-top: .4rem; }
+        .chart-interpretation-action strong { font-weight: 900; }
+        .chart-render-state { display: flex; align-items: center; justify-content: center; min-width: 420px; min-height: 260px; padding: 1rem; border: 1px dashed rgba(95,143,120,.42); border-radius: 8px; background: rgba(247,251,248,.9); color: #334155; font-size: 1rem; font-weight: 700; line-height: 1.5; text-align: center; }
+        .chart-render-state[hidden] { display: none; }
         .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
-        .farmer-org-chart-title { color: var(--mao-ink); font-family: 'Inter', system-ui, sans-serif !important; font-size: 20px; font-weight: 600 !important; line-height: 1.3; letter-spacing: 0; }
-        .farmer-org-chart-shell { position: relative; overflow-x: auto; padding: .5rem .25rem .75rem; }
-        .farmer-org-chart-inner { min-width: 720px; height: 300px; }
-        .farmer-org-chart-inner canvas { width: 100% !important; height: 100% !important; }
-        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
-        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(12px) saturate(160%); color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
-        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: rgba(247,251,248,.78); }
-        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
-        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
-        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
-        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
-        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
         .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
@@ -184,14 +191,33 @@
             min-height: 380px;
             border-radius: 8px;
             overflow: hidden;
-            background:
-                radial-gradient(circle at 20% 30%, rgba(16, 77, 196, .45), transparent 20rem),
-                radial-gradient(circle at 70% 38%, rgba(255, 24, 18, .35), transparent 18rem),
-                linear-gradient(135deg, #0736a8, #15cfe0 28%, #59f03d 48%, #fff118 62%, #ff850f 78%, #f71912);
+            background: #dbe8e0;
         }
-        .thermo-map .leaflet-tile-pane { filter: saturate(1.65) contrast(1.05); opacity: .22; }
-        .thermo-map .leaflet-overlay-pane canvas { mix-blend-mode: multiply; filter: saturate(1.55) contrast(1.08); }
-        .thermo-point { width: 12px; height: 12px; border-radius: 999px; border: 2px solid rgba(13,31,24,.78); background: rgba(255,255,255,.86); box-shadow: 0 0 0 5px rgba(255,255,255,.22), 0 .35rem .8rem rgba(13,31,24,.24); }
+        .dashboard-map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem .9rem;
+            align-items: center;
+            margin: .6rem 0 .85rem;
+            padding: .65rem .85rem;
+            border: 1px solid rgba(95,143,120,.35);
+            border-radius: 8px;
+            background: rgba(255,255,255,.7);
+            backdrop-filter: blur(12px) saturate(160%);
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--mao-ink);
+        }
+        .dashboard-map-legend .legend-swatch { display: inline-flex; align-items: center; gap: .4rem; }
+        .dashboard-map-legend .legend-dot { width: .85rem; height: .85rem; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.18); }
+        .thermo-point {
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            border: 2.5px solid rgba(13,31,24,.85);
+            background: var(--risk-dot-color, #22c55e);
+            box-shadow: 0 0 0 4px rgba(255,255,255,.55), 0 .35rem .8rem rgba(13,31,24,.28);
+        }
         .leaflet-popup-content { width: min(320px, calc(100vw - 4.5rem)) !important; min-width: 0; margin: .85rem; }
         .leaflet-popup-content-wrapper { border-radius: 8px; }
         .map-popup { color: var(--mao-ink); font-size: .86rem; line-height: 1.35; }
@@ -228,9 +254,10 @@
         .map-detail-panel .map-popup-title { padding-right: 2rem; }
         .risk-level-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
         .risk-level-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .9rem; }
-        .risk-level-card.low { border-left: 5px solid #5F8F78; }
-        .risk-level-card.moderate { border-left: 5px solid #ffd166; }
-        .risk-level-card.high, .risk-level-card.severe { border-left: 5px solid #d85b45; }
+        .risk-level-card.low { border-left: 5px solid #22c55e; }
+        .risk-level-card.moderate { border-left: 5px solid #facc15; }
+        .risk-level-card.high { border-left: 5px solid #f97316; }
+        .risk-level-card.severe { border-left: 5px solid #ef4444; }
         .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 700; line-height: 1; margin-top: .35rem; }
         .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 700; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
@@ -241,6 +268,16 @@
         .section-title { color: var(--mao-accent-light); font-family: 'DM Mono', monospace !important; font-size: .74rem; font-weight: 600 !important; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
         .section-note { color: var(--mao-mint); font-size: .84rem; margin: 0; }
         .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .schedule-monitor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .schedule-monitor-card { border: 1px solid var(--mao-border); border-radius: 10px; padding: 1rem; background: #fff; color: var(--mao-ink); }
+        .schedule-monitor-card h3 { font-size: 1.05rem; font-weight: 800; margin: 0; }
+        .schedule-monitor-meta { color: var(--mao-muted); font-size: .9rem; line-height: 1.55; }
+        .schedule-yield-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .85rem; }
+        .schedule-yield-box { border-radius: 8px; padding: .7rem; background: rgba(31,42,36,.045); }
+        .schedule-yield-box span { display: block; color: var(--mao-muted); font-size: .78rem; font-weight: 700; }
+        .schedule-yield-box strong { display: block; margin-top: .2rem; font-size: 1rem; }
+        .schedule-guidance { margin-top: .85rem; border-left: 4px solid #6c757d; border-radius: 6px; padding: .75rem .85rem; background: rgba(108,117,125,.08); font-size: .9rem; line-height: 1.55; }
+        .schedule-guidance.urgent { border-left-color: #b02a37; background: rgba(220,53,69,.08); }
         .dashboard-group {
             border: 1px solid var(--mao-line);
             border-radius: 18px;
@@ -291,8 +328,8 @@
             .quick-action { min-height: 84px; padding: .8rem; }
             .chart-box { padding: .75rem; min-height: 240px; }
             .chart-box canvas { height: 200px !important; }
-            .farmer-org-chart-shell { min-height: 500px; }
-            .farmer-org-chart-inner { min-width: 1180px; height: 480px; }
+            .chart-interpretation { padding: .7rem .75rem; margin-top: .7rem; }
+            .chart-interpretation-row { font-size: .84rem; }
             .dashboard-map { height: 300px; }
             .dashboard-map-shell { overflow: visible; }
             .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; }
@@ -306,8 +343,8 @@
             .mao-hero { padding: .9rem; }
             .mao-chip { font-size: .72rem; padding: .38rem .6rem; }
         }
-        @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .farmer-org-chart-shell { min-height: 0; overflow-x: auto; padding-bottom: .5rem; } .farmer-org-chart-inner { min-width: 520px; height: 300px; } .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
-        @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } .farmer-org-chart-inner { min-width: 460px; } }
+        @media (max-width: 767.98px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .visual-grid, .quick-grid, .heat-grid, .schedule-monitor-grid { grid-template-columns: 1fr; } .schedule-yield-grid { grid-template-columns: 1fr; } .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; } .mao-card-body, .live-weather-card, .risk-level-card { padding: .78rem; } .mao-value, .risk-level-value { font-size: 1.55rem; } .chart-box { min-height: 280px; padding: .75rem; } .chart-box canvas { min-width: 360px; height: 220px !important; } .dashboard-map { height: min(52vh, 320px); min-height: 260px; } .dashboard-map-shell { overflow: visible; } .map-toolbar { position: relative; inset: auto; margin-bottom: .75rem; overflow-x: auto; flex-wrap: nowrap; pointer-events: auto; -webkit-overflow-scrolling: touch; } .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .76rem; } .map-detail-panel { position: relative; inset: auto; width: auto; max-height: 260px; margin-top: .75rem; } }
+        @media (max-width: 380px) { .mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: 1fr; } }
 
         /* Product UI restraint pass */
         .mao-console .btn { border-radius: 8px !important; box-shadow: none !important; }
@@ -389,6 +426,44 @@
     </style>
 
     @php
+        $latestClimate = $latestClimate ?? null;
+        $profileCount = $profileCount ?? 0;
+        $totalClimateRecords = $totalClimateRecords ?? 0;
+        $riceProductionTotal = $riceProductionTotal ?? 0;
+        $riceAreaTotal = $riceAreaTotal ?? 0;
+        $avgYield = $avgYield ?? 0;
+        $heatMapCount = $heatMapCount ?? 0;
+        $highRiskHeatMapAreas = $highRiskHeatMapAreas ?? 0;
+        $weatherDataSource = $weatherDataSource ?? 'Stored climate records';
+        $liveWeather = $liveWeather ?? null;
+        $farmerOrganizationSummary = array_replace([
+            'totalFarmers' => 0,
+            'totalOrganizations' => 0,
+            'farmersWithoutOrganization' => 0,
+            'totalFarmArea' => 0,
+        ], $farmerOrganizationSummary ?? []);
+        $weatherChartData = array_replace([
+            'labels' => [],
+            'rainfall' => [],
+            'temperature' => [],
+            'humidity' => [],
+            'windSpeed' => [],
+        ], $weatherChartData ?? []);
+        $riskLevelCounts = array_replace([
+            'Low' => 0,
+            'Moderate' => 0,
+            'High' => 0,
+            'Severe' => 0,
+        ], $riskLevelCounts ?? []);
+        $recentFarmerProfiles = collect($recentFarmerProfiles ?? []);
+        $recentClimateRecords = collect($recentClimateRecords ?? []);
+        $recentRiceProductions = collect($recentRiceProductions ?? []);
+        $highRiskAreasList = collect($highRiskAreasList ?? []);
+        $dashboardMapAreas = collect($dashboardMapAreas ?? [])->values();
+        $latestHeatmapAreas = collect($latestHeatmapAreas ?? []);
+        $latestAdvisories = collect($latestAdvisories ?? []);
+        $latestFeedPosts = collect($latestFeedPosts ?? []);
+        $latestReports = collect($latestReports ?? []);
         $latestSeason = $latestClimate?->season ?? 'N/A';
     @endphp
 
@@ -409,6 +484,23 @@
             </div>
         </section>
 
+        @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0 || ($maoActionItems['highRiskAreaCount'] ?? 0) > 0)
+            <div class="dashboard-section-label">
+                <div>
+                    <h2 class="section-title">Needs Your Attention</h2>
+                    <p class="section-note">Items that need MAO action right now.</p>
+                </div>
+            </div>
+            <section class="mao-stat-grid mb-4">
+                @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0)
+                    <a class="mao-card text-decoration-none" href="{{ route('planting-advisories.index') }}"><div class="mao-card-body"><div class="mao-label">Farmer Feedback Awaiting Reply</div><div class="mao-value">{{ number_format($maoActionItems['feedbackAwaitingResponse']) }}</div><div class="mao-note">Farmers are waiting on a response</div><div class="mao-tap-hint">Open advisories &rarr;</div></div></a>
+                @endif
+                @if (($maoActionItems['highRiskAreaCount'] ?? 0) > 0)
+                    <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">High/Severe Risk Barangays</div><div class="mao-value">{{ number_format($maoActionItems['highRiskAreaCount']) }}</div><div class="mao-note">May need field follow-up</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+                @endif
+            </section>
+        @endif
+
         <div class="dashboard-section-label">
             <div>
                 <h2 class="section-title">Office Overview</h2>
@@ -421,25 +513,7 @@
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-        </section>
-
-        <section class="mao-panel mb-4">
-            <div class="mao-panel-header">
-                <div>
-                    <h2 class="mao-panel-title farmer-org-chart-title">Farmers by Organization</h2>
-                    <p class="mao-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
-                </div>
-                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
-            </div>
-            <div class="mao-panel-body">
-                <div class="farmer-org-chart-shell">
-                    <div class="farmer-org-chart-inner">
-                        <canvas id="farmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
-                    </div>
-                </div>
-                <div id="farmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                <div id="farmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
-            </div>
+            <a href="{{ route('farmer-profiles.index') }}" class="mao-card text-decoration-none"><div class="mao-card-body"><div class="mao-label">Farmer Organizations</div><div class="mao-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div><div class="mao-note">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers registered</div><div class="mao-tap-hint">View breakdown &rarr;</div></div></a>
         </section>
 
         <div class="ic-drawer" id="maoStatFarmers" aria-hidden="true">
@@ -487,7 +561,7 @@
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
                                 <div class="flex-grow-1">
                                     <div class="row-title">{{ $record->record_date?->format('M d, Y') }} &middot; {{ $record->season }} Season</div>
-                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}°C, humidity {{ number_format($record->humidity, 1) }}%.</div>
+                                    <div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%.</div>
                                     <div class="row-meta">Source: {{ $record->source }}</div>
                                 </div>
                             </div>
@@ -553,7 +627,8 @@
                                     default => 'Low risk: conditions are currently favorable for this barangay.',
                                 };
                                 $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe', 'high' => 'mao-risk-badge-severe',
+                                    'severe' => 'mao-risk-badge-severe',
+                                    'high' => 'mao-risk-badge-high',
                                     'moderate' => 'mao-risk-badge-moderate',
                                     default => 'mao-risk-badge-low',
                                 };
@@ -568,6 +643,21 @@
                                     <div class="row-text mao-risk-interpretation">{{ $riskInterpretation }}</div>
                                     <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
                                     <div class="row-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
+                                    @if ($area->risk_breakdown)
+                                        <details class="ic-collapse mt-2">
+                                            <summary><span class="ic-collapse-title">How is this score calculated?</span></summary>
+                                            <ul class="mb-2 ps-3">
+                                                @foreach ($area->risk_breakdown['factors'] as $factor)
+                                                    <li class="row-text">
+                                                        <strong>{{ $factor['label'] }}{{ $factor['weight_percent'] !== null ? ' ('.$factor['weight_percent'].'% weight)' : '' }}:</strong>
+                                                        {{ $factor['risk_value'] !== null ? number_format($factor['risk_value'], 2) : '+'.number_format($factor['contribution'], 2) }}
+                                                        &mdash; {{ $factor['detail'] }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                            <div class="row-meta">{{ $area->risk_breakdown['caveat'] }}</div>
+                                        </details>
+                                    @endif
                                 </div>
                             </div>
                         @empty
@@ -580,6 +670,64 @@
                 </div>
             </div>
         </div>
+
+        <details class="dashboard-group" open id="farmer-schedule-monitor">
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Farmer Planting and Harvest Calendar</h2>
+                    <p class="dashboard-group-note">Monitor farmer schedules, yield predictions, history comparisons, and follow-up needs.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+                @unless($plantingScheduleFeatureReady ?? true)
+                    <div class="alert alert-warning mb-4" role="status"><strong>Farm calendar is temporarily unavailable.</strong> The dashboard remains available while the database update is completed.</div>
+                @endunless
+                <form class="row g-2 align-items-end mb-4" method="GET" action="{{ route('mao.dashboard') }}#farmer-schedule-monitor">
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_month">Month</label><select class="form-select" id="schedule_month" name="schedule_month"><option value="">All</option>@foreach(range(1,12) as $month)<option value="{{ $month }}" @selected(($scheduleFilters['month'] ?? 0) === $month)>{{ \Illuminate\Support\Carbon::create(2000,$month,1)->format('F') }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_season">Season</label><select class="form-select" id="schedule_season" name="schedule_season"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::SEASONS as $season)<option value="{{ $season }}" @selected(($scheduleFilters['season'] ?? '') === $season)>{{ $season }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_barangay">Barangay</label><select class="form-select" id="schedule_barangay" name="schedule_barangay"><option value="">All</option>@foreach($scheduleBarangays as $barangay)<option value="{{ $barangay }}" @selected(($scheduleFilters['barangay'] ?? '') === $barangay)>{{ $barangay }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farm_type">Farm type</label><select class="form-select" id="schedule_farm_type" name="schedule_farm_type"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::FARM_TYPES as $farmType)<option value="{{ $farmType }}" @selected(($scheduleFilters['farm_type'] ?? '') === $farmType)>{{ $farmType }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farmer">Farmer</label><select class="form-select" id="schedule_farmer" name="schedule_farmer"><option value="">All</option>@foreach($scheduleFarmers as $farmer)<option value="{{ $farmer->id }}" @selected(($scheduleFilters['farmer'] ?? 0) === $farmer->id)>{{ $farmer->name }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_status">Status</label><select class="form-select" id="schedule_status" name="schedule_status"><option value="">All</option>@foreach(['upcoming_planting','planted','upcoming_harvest','harvested','delayed','needs_review'] as $status)<option value="{{ $status }}" @selected(($scheduleFilters['status'] ?? '') === $status)>{{ str($status)->replace('_',' ')->title() }}</option>@endforeach</select></div>
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('mao.dashboard') }}#farmer-schedule-monitor">Clear</a><a class="btn btn-outline-primary ms-lg-auto" href="{{ route('calendar.index') }}">Open full calendar</a></div>
+                </form>
+
+                <div class="schedule-monitor-grid">
+                    @forelse($farmerSchedules as $schedule)
+                        @php
+                            $farmerName = $schedule->farmer?->farmerProfile?->full_name ?: $schedule->farmer?->name ?: 'Unknown farmer';
+                            $confidenceNeedsReview = $schedule->prediction_confidence === null || (float)$schedule->prediction_confidence < 70;
+                        @endphp
+                        <article class="schedule-monitor-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div><h3>{{ $farmerName }}</h3><div class="schedule-monitor-meta">{{ $schedule->barangay ?: 'Location not available' }} &middot; {{ $schedule->season }} &middot; {{ $schedule->farm_type }}</div></div>
+                                <span class="badge {{ in_array($schedule->monitoringStatus(), ['delayed','needs_review']) ? 'text-bg-warning' : 'text-bg-success' }}">{{ $schedule->monitoringStatusLabel() }}</span>
+                            </div>
+                            <div class="schedule-monitor-meta mt-2"><strong>Planting:</strong> {{ $schedule->planting_date?->format('M d, Y') }}<br><strong>Scheduled harvest:</strong> {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</div>
+
+                            <div class="schedule-yield-grid">
+                                <div class="schedule-yield-box"><span>Current predicted yield</span><strong>{{ $schedule->predicted_yield !== null ? number_format((float)$schedule->predicted_yield, 2).' t/ha' : 'Prediction unavailable' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Previous same-month average</span><strong>{{ $schedule->historical_same_month_average !== null ? number_format((float)$schedule->historical_same_month_average, 2).' t/ha' : 'No history' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Difference</span><strong>{{ $schedule->yield_difference !== null ? (($schedule->yield_difference > 0 ? '+' : '').number_format((float)$schedule->yield_difference, 2).' t/ha') : 'Not available' }}</strong></div>
+                            </div>
+
+                            @if($schedule->predicted_yield === null)
+                                <div class="schedule-guidance"><strong>Prediction unavailable</strong><br>{{ $schedule->prediction_unavailable_reason ?: 'Required prediction data is incomplete.' }}<br><span class="text-muted">This result needs MAO review before using it for decisions.</span></div>
+                            @elseif($schedule->historical_same_month_average === null)
+                                <div class="schedule-guidance"><strong>No previous yield history available for comparison.</strong><br>No claim is made that this prediction is better or worse. Continue observing weather and verify the field condition.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                            @elseif($schedule->comparison_interpretation === 'lower')
+                                <div class="schedule-guidance urgent"><strong>Recommended Actions</strong><br>{{ $schedule->recommended_actions }}@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or required data is incomplete. Review before making decisions.</span>@endif</div>
+                            @else
+                                <div class="schedule-guidance"><strong>Warnings / Notes</strong><br>Yield is {{ $schedule->comparison_interpretation ?: 'stable' }} compared with the previous same-month average. Continue observing weather changes, verify field condition, and keep the farmer advisory updated.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="empty-state text-center p-4" style="grid-column:1/-1"><strong>No farmer schedules match these filters.</strong><p class="text-muted mb-0 mt-1">Saved farmer schedules will appear here.</p></div>
+                    @endforelse
+                </div>
+            </div>
+        </details>
 
         <div class="dashboard-focus-grid">
         <details class="dashboard-group" open>
@@ -624,22 +772,22 @@
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
                             <div class="mao-label">Current Rain</div>
-                            <div class="risk-level-value" data-mao-current-rain>{{ number_format($liveWeather['current_rainfall_mm'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-rain>{{ number_format(data_get($liveWeather, 'current_rainfall_mm', 0), 1) }}</div>
                             <div class="mao-note">mm right now</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Temperature</div>
-                            <div class="risk-level-value" data-mao-current-temperature>{{ number_format($liveWeather['current_temperature_c'], 1) }}</div>
-                            <div class="mao-note">°C current reading</div>
+                            <div class="risk-level-value" data-mao-current-temperature>{{ number_format(data_get($liveWeather, 'current_temperature_c', 0), 1) }}</div>
+                            <div class="mao-note">&deg;C current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Humidity</div>
-                            <div class="risk-level-value" data-mao-current-humidity>{{ number_format($liveWeather['humidity_percent'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-humidity>{{ number_format(data_get($liveWeather, 'humidity_percent', 0), 1) }}</div>
                             <div class="mao-note">% current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Wind Speed</div>
-                            <div class="risk-level-value" data-mao-current-wind>{{ number_format($liveWeather['wind_speed_kmh'], 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-wind>{{ number_format(data_get($liveWeather, 'wind_speed_kmh', 0), 1) }}</div>
                             <div class="mao-note">km/h current reading</div>
                         </div>
                     </div>
@@ -648,7 +796,13 @@
                 <div class="row g-4 mb-4">
                     <div class="col-xl-8">
                         <div class="chart-title">Municipal Heat Map</div>
-                        <div class="chart-note">Barangay markers colored by climate and production risk. Start here before reviewing weather charts.</div>
+                        <div class="chart-note">Shows which barangays need attention. Click a barangay to see the reason and recommended action.</div>
+                        <div class="dashboard-map-legend" role="note" aria-label="Heat map color legend">
+                            <span class="legend-swatch"><span class="legend-dot" style="background:#22c55e"></span> Green = Low</span>
+                            <span class="legend-swatch"><span class="legend-dot" style="background:#facc15"></span> Yellow = Moderate</span>
+                            <span class="legend-swatch"><span class="legend-dot" style="background:#f97316"></span> Orange = High</span>
+                            <span class="legend-swatch"><span class="legend-dot" style="background:#ef4444"></span> Red = Severe</span>
+                        </div>
                         @if($dashboardMapAreas->count())
                             <div class="dashboard-map-shell">
                                 <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
@@ -681,13 +835,29 @@
                         </div>
                         <div class="heat-grid">
                             @forelse($dashboardMapAreas->take(6) as $area)
-                                <div class="risk-card {{ strtolower($area['risk_level']) }}">
+                                @php
+                                    $cardLevel = data_get($area, 'risk_level', 'Moderate');
+                                    $cardReason = match (strtolower((string) data_get($area, 'risk_type'))) {
+                                        'flood' => 'High rainfall / flood risk',
+                                        'drought' => 'Low rainfall / drought risk',
+                                        'typhoon' => 'Storm or strong wind exposure',
+                                        'heat' => 'High temperature stress',
+                                        default => data_get($area, 'risk_type') ?: 'Climate exposure',
+                                    };
+                                    $cardAction = data_get($area, 'irrigation_recommendation') ?: data_get($area, 'planting_advisory') ?: 'Visit or contact farmers here before major field work.';
+                                    $cardUpdated = data_get($area, 'updated_at');
+                                @endphp
+                                <div class="risk-card {{ strtolower($cardLevel) }}">
                                     <div class="d-flex justify-content-between gap-2 mb-2">
-                                        <strong>{{ $area['barangay'] }}</strong>
-                                        <span class="status-pill">{{ $area['risk_level'] }}</span>
+                                        <strong>{{ data_get($area, 'barangay', 'Unspecified barangay') }}</strong>
+                                        <span class="status-pill risk-badge-lg {{ strtolower($cardLevel) }}">{{ $cardLevel }}</span>
                                     </div>
-                                    <div class="row-text">{{ $area['risk_type'] }} | Score {{ number_format($area['risk_score'], 2) }}</div>
-                                    <div class="row-meta">{{ $area['rainfall_status'] ?: 'Rainfall not recorded' }}</div>
+                                    <div class="row-text">Score {{ number_format(data_get($area, 'risk_score', 0), 2) }}</div>
+                                    <div class="risk-card-meta">
+                                        <div><strong>Main reason:</strong> {{ $cardReason }}</div>
+                                        <div><strong>Suggested action:</strong> {{ $cardAction }}</div>
+                                        <div><strong>Last updated:</strong> {{ $cardUpdated ? $cardUpdated->shortDateTime('M d, Y') : 'Not yet refreshed' }}</div>
+                                    </div>
                                 </div>
                             @empty
                                 <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map risk records will appear here.</div></div>
@@ -696,7 +866,6 @@
                     </div>
                 </div>
 
-                @if(! empty($weatherChartData['labels']))
                     <div class="mb-4" data-chart-tabs>
                         <div class="ic-chart-tabs">
                             <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
@@ -708,35 +877,131 @@
                             <div class="chart-box" data-chart-pane="rainfall">
                                 <div class="chart-title">Rainfall Chart</div>
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
-                                <canvas id="rainfallChart"></canvas>
+                                <div class="chart-canvas-scroll">
+                                    <div class="chart-render-state" data-chart-state="rainfall" role="status">Loading real weather data...</div>
+                                    <canvas id="rainfallChart" aria-busy="true"></canvas>
+                                </div>
+                                @include('dashboards.partials.chart-interpretation', ['key' => 'rainfall'])
                             </div>
                             <div class="chart-box" data-chart-pane="temperature">
                                 <div class="chart-title">Temperature Chart</div>
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast average temperature.' : 'Recent recorded average temperature.' }}</div>
-                                <canvas id="temperatureChart"></canvas>
+                                <div class="chart-canvas-scroll">
+                                    <div class="chart-render-state" data-chart-state="temperature" role="status">Loading real weather data...</div>
+                                    <canvas id="temperatureChart" aria-busy="true"></canvas>
+                                </div>
+                                @include('dashboards.partials.chart-interpretation', ['key' => 'temperature'])
                             </div>
                             <div class="chart-box" data-chart-pane="humidity">
                                 <div class="chart-title">Humidity Chart</div>
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast humidity percentage.' : 'Recent recorded humidity percentage.' }}</div>
-                                <canvas id="humidityChart"></canvas>
+                                <div class="chart-canvas-scroll">
+                                    <div class="chart-render-state" data-chart-state="humidity" role="status">Loading real weather data...</div>
+                                    <canvas id="humidityChart" aria-busy="true"></canvas>
+                                </div>
+                                @include('dashboards.partials.chart-interpretation', ['key' => 'humidity'])
                             </div>
                             <div class="chart-box" data-chart-pane="wind">
                                 <div class="chart-title">Wind Speed Chart</div>
                                 <div class="chart-note">{{ $liveWeather ? 'Live forecast wind speed.' : 'Recent recorded wind speed.' }}</div>
-                                <canvas id="windSpeedChart"></canvas>
+                                <div class="chart-canvas-scroll">
+                                    <div class="chart-render-state" data-chart-state="windSpeed" role="status">Loading real weather data...</div>
+                                    <canvas id="windSpeedChart" aria-busy="true"></canvas>
+                                </div>
+                                @include('dashboards.partials.chart-interpretation', ['key' => 'windSpeed'])
                             </div>
                         </div>
                     </div>
-                @else
-                    <div class="empty-soft mb-4"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Open-Meteo is unavailable and there are no saved climate records to show.</div></div>
-                @endif
 
             </div>
         </section>
             </div>
         </details>
 
-        <details class="dashboard-group">
+        <details class="dashboard-group" open>
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Production And Risk Records</h2>
+                    <p class="dashboard-group-note">Recent rice production entries and barangay risk status.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
+            <div class="col-xl-7">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('rice-productions.index') }}">Open Records</a></div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($recentRiceProductions as $production)
+                            <div class="mao-list-item">
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
+                                <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No production records yet</strong><div class="small text-muted mt-1">Rice production entries will appear here.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Each barangay's current risk level, at a glance, with the recommended irrigation action.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
+                    <div class="mao-panel-body list-compact"><div class="heat-grid">
+                        @forelse($latestHeatmapAreas as $area)
+                            @php
+                                $areaRiskLevel = data_get($area, 'risk_level', 'Moderate') ?: 'Moderate';
+                            @endphp
+                            <div class="risk-card {{ strtolower($areaRiskLevel) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ data_get($area, 'barangay', 'Unspecified barangay') }}</strong><span class="status-pill {{ in_array($areaRiskLevel, ['High','Severe']) ? 'muted' : '' }}">{{ $areaRiskLevel }}</span></div><div class="row-text">{{ data_get($area, 'risk_type', 'Climate') }} risk | {{ data_get($area, 'predicted_yield') !== null ? number_format(data_get($area, 'predicted_yield'), 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str(data_get($area, 'irrigation_recommendation') ?: data_get($area, 'description', 'No recommendation yet'))->limit(70) }}</div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
+                        @endforelse
+                    </div></div>
+                </div>
+            </div>
+        </div>
+            </div>
+        </details>
+
+        <details class="dashboard-group" open>
+            <summary>
+                <div>
+                    <h2 class="dashboard-group-title">Publishing Center</h2>
+                    <p class="dashboard-group-note">Latest advisories and community feed posts for farmers.</p>
+                </div>
+                <span class="dashboard-group-toggle"></span>
+            </summary>
+            <div class="dashboard-group-body">
+        <div class="row g-4 mb-0">
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a></div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($latestAdvisories as $advisory)
+                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
+                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->displaySummary())->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Community Feed Posts</h2><p class="mao-panel-sub">Latest posts published for farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('community-feed.index') }}">New Post</a></div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($latestFeedPosts as $post)
+                            <div class="mao-list-item"><div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div><div><div class="row-title">{{ $post->title }}</div><div class="row-text">{{ str($post->body)->limit(95) }}</div><div class="row-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div></div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No community posts yet</strong><div class="small text-muted mt-1">Published feed posts will appear here.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+            </div>
+        </details>
+
+        <details class="dashboard-group" open>
             <summary>
                 <div>
                     <h2 class="dashboard-group-title">Daily Operations</h2>
@@ -778,86 +1043,7 @@
             </div>
         </details>
 
-        <details class="dashboard-group">
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Production And Risk Records</h2>
-                    <p class="dashboard-group-note">Recent rice production entries and barangay risk status.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-7">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('rice-productions.index') }}">Open Records</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($recentRiceProductions as $production)
-                            <div class="mao-list-item">
-                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
-                                <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
-                            </div>
-                        @empty
-                            <div class="empty-soft"><strong>No production records yet</strong><div class="small text-muted mt-1">Rice production entries will appear here.</div></div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-5">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Leaflet-based barangay risk records for rainfall, yield, irrigation, and climate impact.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
-                    <div class="mao-panel-body list-compact"><div class="heat-grid">
-                        @forelse($latestHeatmapAreas as $area)
-                            <div class="risk-card {{ strtolower($area->risk_level) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ $area->barangay }}</strong><span class="status-pill {{ in_array($area->risk_level, ['High','Severe']) ? 'muted' : '' }}">{{ $area->risk_level }}</span></div><div class="row-text">{{ $area->risk_type }} risk | {{ $area->predicted_yield !== null ? number_format($area->predicted_yield, 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str($area->irrigation_recommendation ?: $area->description)->limit(70) }}</div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
-                        @endforelse
-                    </div></div>
-                </div>
-            </div>
-        </div>
-            </div>
-        </details>
-
-        <details class="dashboard-group">
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Publishing Center</h2>
-                    <p class="dashboard-group-note">Latest advisories and community feed posts for farmers.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-6">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($latestAdvisories as $advisory)
-                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-6">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Community Feed Posts</h2><p class="mao-panel-sub">Latest posts published for farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('community-feed.index') }}">New Post</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($latestFeedPosts as $post)
-                            <div class="mao-list-item"><div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div><div><div class="row-title">{{ $post->title }}</div><div class="row-text">{{ str($post->body)->limit(95) }}</div><div class="row-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div></div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No community posts yet</strong><div class="small text-muted mt-1">Published feed posts will appear here.</div></div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-            </div>
-        </details>
-
-        <details class="dashboard-group">
+        <details class="dashboard-group" open>
             <summary>
                 <div>
                     <h2 class="dashboard-group-title">Reports</h2>
@@ -885,14 +1071,11 @@
         </details>
         </div>
     </div>
-    @include('dashboards.partials.farmer-organization-chart', [
-        'chartData' => $farmerOrganizationChart,
-        'canvasId' => 'farmersByOrganizationChart',
-        'legendId' => 'farmersByOrganizationLegend',
-        'statusId' => 'farmersByOrganizationStatus',
-    ])
+    <script type="application/json" id="mao-weather-chart-data">{!! json_encode($weatherChartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script type="application/json" id="mao-map-areas">{!! json_encode($dashboardMapAreas, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        const initializeMaoDashboard = async () => {
+            await (window.iClimateVisualsReady || Promise.resolve());
             document.querySelectorAll('[data-toggle-detail]').forEach((card) => {
                 card.addEventListener('click', () => {
                     const panel = document.getElementById(card.dataset.toggleDetail);
@@ -918,15 +1101,32 @@
             });
 
             const MAO_WEATHER_POLL_INTERVAL = 60000;
-            const chartData = @json($weatherChartData);
-            const mapAreas = @json($dashboardMapAreas);
-            const labels = chartData.labels || [];
+            const parseMaoJson = (id, fallback) => {
+                const source = document.getElementById(id)?.textContent;
+                if (!source) return fallback;
+
+                try {
+                    return JSON.parse(source);
+                } catch (error) {
+                    return fallback;
+                }
+            };
+            const maoWeatherChartData = parseMaoJson('mao-weather-chart-data', {
+                labels: [],
+                rainfall: [],
+                temperature: [],
+                humidity: [],
+                windSpeed: [],
+            });
+            const maoMapAreas = parseMaoJson('mao-map-areas', []);
+            const maoValidMapAreas = maoMapAreas.filter((area) => Number.isFinite(Number(area.latitude)) && Number.isFinite(Number(area.longitude)));
+            const labels = maoWeatherChartData.labels || [];
             const chartLabels = window.iClimateChartLabels || {};
             const readableLabels = labels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
             const weatherRoot = document.querySelector('[data-mao-weather-root]');
             let maoWeatherPollTimer = null;
 
-            const chartOptions = (unit) => ({
+            const chartOptions = (unit, labelCount) => ({
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
@@ -943,53 +1143,242 @@
                     x: {
                         grid: { display: false },
                         ticks: chartLabels.horizontalCategoryTicks
-                            ? chartLabels.horizontalCategoryTicks({ color: '#334155', autoSkip: labels.length > 8, maxTicksLimit: 8, font: { size: 12, weight: 600, lineHeight: 1.25 } })
-                            : { maxRotation: 0, minRotation: 0, autoSkip: labels.length > 8, maxTicksLimit: 8, color: '#334155', font: { size: 12, weight: 600 } },
+                            ? chartLabels.horizontalCategoryTicks({ color: '#334155', autoSkip: labelCount > 8, maxTicksLimit: 8, font: { size: 14, weight: 600, lineHeight: 1.25 } })
+                            : { maxRotation: 0, minRotation: 0, autoSkip: labelCount > 8, maxTicksLimit: 8, color: '#334155', font: { size: 14, weight: 600 } },
                     },
-                    y: { beginAtZero: true, grid: { color: 'rgba(13,31,24,.08)' }, ticks: { color: '#475569', font: { size: 12, weight: 600 }, padding: 8 } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(13,31,24,.08)' }, ticks: { color: '#475569', font: { size: 14, weight: 600 }, padding: 8 } },
                 },
             });
 
-            const makeChart = (id, label, values, color, unit) => {
+            const setWeatherChartState = (key, message = '', ready = false) => {
+                const state = document.querySelector(`[data-chart-state="${key}"]`);
+                if (state) {
+                    state.textContent = message;
+                    state.hidden = ready;
+                }
+            };
+            const makeChart = (key, id, label, seriesLabels, values, color, unit) => {
                 const canvas = document.getElementById(id);
-                if (!canvas || !labels.length) return null;
+                if (!canvas) return null;
 
-                return new Chart(canvas, {
-                    type: 'line',
-                    data: {
-                        labels: readableLabels,
-                        datasets: [{
-                            label,
-                            data: values || [],
-                            borderColor: color,
-                            backgroundColor: `${color}22`,
-                            fill: true,
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: .36,
-                        }],
-                    },
-                    options: chartOptions(unit),
-                });
+                const normalizedLabels = Array.isArray(seriesLabels) ? seriesLabels : [];
+                const normalizedValues = Array.isArray(values)
+                    ? values.slice(0, normalizedLabels.length).map((value) => Number(value))
+                    : [];
+
+                if (!window.Chart) {
+                    canvas.hidden = true;
+                    setWeatherChartState(key, 'This chart could not load. Refresh the page to try again.');
+                    return null;
+                }
+
+                if (!normalizedLabels.length || !normalizedValues.some(Number.isFinite)) {
+                    canvas.hidden = true;
+                    setWeatherChartState(key, 'No weather records found for this chart.');
+                    return null;
+                }
+
+                try {
+                    canvas.hidden = false;
+                    const chart = new window.Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: normalizedLabels.map((item) => chartLabels.wrap ? chartLabels.wrap(item, 12, 2) : item),
+                            datasets: [{
+                                label,
+                                data: normalizedValues,
+                                borderColor: color,
+                                backgroundColor: `${color}22`,
+                                fill: true,
+                                borderWidth: 3,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                tension: .36,
+                            }],
+                        },
+                        options: chartOptions(unit, normalizedLabels.length),
+                    });
+                    canvas.removeAttribute('aria-busy');
+                    setWeatherChartState(key, '', true);
+
+                    return chart;
+                } catch (error) {
+                    canvas.hidden = true;
+                    setWeatherChartState(key, 'This chart could not be drawn. The weather values remain available above.');
+                    console.error(`iClimate ${label} chart failed to render.`, error);
+
+                    return null;
+                }
             };
 
-            const weatherCharts = {
-                rainfall: makeChart('rainfallChart', 'Rainfall', chartData.rainfall, '#1677b8', 'mm'),
-                temperature: makeChart('temperatureChart', 'Temperature', chartData.temperature, '#d85b45', 'C'),
-                humidity: makeChart('humidityChart', 'Humidity', chartData.humidity, '#52b788', '%'),
-                windSpeed: makeChart('windSpeedChart', 'Wind Speed', chartData.windSpeed, '#f4b63f', 'km/h'),
+            const weatherChartDefinitions = {
+                rainfall: { id: 'rainfallChart', label: 'Rainfall', color: '#1677b8', unit: 'mm' },
+                temperature: { id: 'temperatureChart', label: 'Temperature', color: '#d85b45', unit: 'C' },
+                humidity: { id: 'humidityChart', label: 'Humidity', color: '#52b788', unit: '%' },
+                windSpeed: { id: 'windSpeedChart', label: 'Wind Speed', color: '#f4b63f', unit: 'km/h' },
             };
+
+            // --- Plain-language chart interpretation -----------------------------------
+            // Reads only the values/labels the chart is currently showing. Never invents numbers.
+            const friendlyDate = (label) => {
+                if (!label) return 'the latest date';
+                if (/^\d{4}-\d{2}-\d{2}/.test(String(label))) {
+                    const parsed = new Date(`${String(label).slice(0, 10)}T00:00:00`);
+                    if (!Number.isNaN(parsed.getTime())) {
+                        return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }
+                }
+                return String(label);
+            };
+            const pairSeries = (seriesLabels, values) => (Array.isArray(seriesLabels) ? seriesLabels : [])
+                .map((label, index) => ({ label, value: Number(values?.[index]) }))
+                .filter((point) => Number.isFinite(point.value));
+            const peakOf = (points) => points.reduce((best, point) => (!best || point.value > best.value ? point : best), null);
+            const fmtValue = (value) => {
+                const rounded = Math.round(value * 10) / 10;
+                return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+            };
+            const STATUS_BADGE_CLASS = { safe: 'low', monitor: 'moderate', warning: 'high', critical: 'severe' };
+            const STATUS_BADGE_TEXT = { safe: 'Safe', monitor: 'Monitor', warning: 'Warning', critical: 'Critical' };
+
+            const interpretRainfall = (points) => {
+                const peak = peakOf(points);
+                const date = friendlyDate(peak.label);
+                const value = fmtValue(peak.value);
+                let category, status, action;
+                if (peak.value < 7.5) {
+                    category = 'light'; status = 'safe';
+                    action = 'No major flood risk expected. Continue normal field activities.';
+                } else if (peak.value < 15) {
+                    category = 'moderate'; status = 'monitor';
+                    action = 'Watch upcoming weather updates and prepare drainage in low-lying farms.';
+                } else if (peak.value <= 40) {
+                    category = 'heavy'; status = 'warning';
+                    action = 'Monitor flood-prone barangays and advise farmers to delay fertilizer or pesticide application.';
+                } else {
+                    category = 'very heavy'; status = 'critical';
+                    action = 'Alert flood-prone barangays immediately and advise farmers to postpone all field work until rain subsides.';
+                }
+
+                return { text: `Rainfall is highest on ${date} at ${value} mm, which means ${category} rain is expected.`, action, status };
+            };
+
+            const interpretTemperature = (points) => {
+                const latest = points[points.length - 1];
+                const first = points[0];
+                const diff = latest.value - first.value;
+                const trend = diff >= 1.5 ? 'rising' : diff <= -1.5 ? 'falling' : 'stable';
+                const tooHot = latest.value >= 35;
+                const extreme = latest.value >= 38;
+                const status = extreme ? 'critical' : tooHot ? 'warning' : (trend === 'rising' ? 'monitor' : 'safe');
+                const condition = tooHot ? 'too hot' : 'normal';
+                let action;
+                if (extreme) action = 'Issue a heat advisory. Advise farmers to increase irrigation frequency and avoid midday field work.';
+                else if (tooHot) action = 'Advise farmers to irrigate early morning or late afternoon and watch for heat stress on crops.';
+                else if (trend === 'rising') action = 'Temperature is climbing. Keep water levels sufficient for crops in the coming days.';
+                else if (trend === 'falling') action = 'Temperature is dropping. Watch young seedlings for possible cold stress.';
+                else action = 'No action needed. Continue regular farm activities.';
+
+                return { text: `Temperature is ${trend} and is currently ${fmtValue(latest.value)}°C, which is ${condition} for this time of year.`, action, status };
+            };
+
+            const interpretHumidity = (points) => {
+                const latest = points[points.length - 1];
+                const veryHigh = latest.value >= 90;
+                const high = latest.value >= 80;
+                const status = veryHigh ? 'critical' : high ? 'warning' : 'safe';
+                const condition = high ? 'high' : 'normal';
+                let action;
+                if (veryHigh) action = 'Very high humidity greatly raises fungal and blast disease risk. Apply preventive fungicide and inspect crops closely.';
+                else if (high) action = 'High humidity increases the risk of fungal diseases and pests. Monitor crops closely and improve field ventilation or drainage.';
+                else action = 'Humidity is within a normal range. Continue routine crop monitoring.';
+
+                return { text: `Humidity is currently ${fmtValue(latest.value)}%, which is ${condition}${high ? ' and raises disease risk' : ''}.`, action, status };
+            };
+
+            const interpretWindSpeed = (points) => {
+                const peak = peakOf(points);
+                const date = friendlyDate(peak.label);
+                const value = fmtValue(peak.value);
+                let category, status, action;
+                if (peak.value < 20) {
+                    category = 'calm'; status = 'safe';
+                    action = 'Safe for spraying, harvesting, and general field work.';
+                } else if (peak.value <= 40) {
+                    category = 'moderate'; status = 'monitor';
+                    action = 'Field work is generally safe, but avoid spraying pesticides during peak wind hours.';
+                } else if (peak.value <= 60) {
+                    category = 'strong'; status = 'warning';
+                    action = 'Postpone pesticide spraying and harvesting. Secure lightweight farm structures and equipment.';
+                } else {
+                    category = 'very strong'; status = 'critical';
+                    action = 'Suspend all outdoor field work. Advise farmers to secure structures and prepare for possible storm damage.';
+                }
+
+                return { text: `Wind speed reaches ${value} km/h on ${date}, which is ${category} wind.`, action, status };
+            };
+
+            const INTERPRETERS = { rainfall: interpretRainfall, temperature: interpretTemperature, humidity: interpretHumidity, windSpeed: interpretWindSpeed };
+
+            const updateInterpretation = (key, seriesLabels, values) => {
+                const box = document.querySelector(`[data-interpretation="${key}"]`);
+                if (!box) return;
+
+                const textEl = box.querySelector('[data-role="text"]');
+                const actionEl = box.querySelector('[data-role="action"]');
+                const badgeEl = box.querySelector('[data-role="badge"]');
+                const points = pairSeries(seriesLabels, values);
+
+                if (points.length < 1 || !INTERPRETERS[key]) {
+                    if (textEl) textEl.textContent = 'Not enough weather data yet to explain this chart.';
+                    if (actionEl) actionEl.textContent = 'Check back once more readings are recorded.';
+                    if (badgeEl) { badgeEl.textContent = 'No data'; badgeEl.className = 'status-pill risk-badge-lg'; }
+                    return;
+                }
+
+                const result = INTERPRETERS[key](points);
+                if (textEl) textEl.textContent = result.text;
+                if (actionEl) actionEl.textContent = result.action;
+                if (badgeEl) {
+                    badgeEl.textContent = STATUS_BADGE_TEXT[result.status] || result.status;
+                    badgeEl.className = `status-pill risk-badge-lg ${STATUS_BADGE_CLASS[result.status] || ''}`;
+                }
+            };
+            // -----------------------------------------------------------------------------
+
+            const weatherCharts = {};
+            Object.entries(weatherChartDefinitions).forEach(([key, definition]) => {
+                weatherCharts[key] = makeChart(
+                    key,
+                    definition.id,
+                    definition.label,
+                    labels,
+                    maoWeatherChartData[key],
+                    definition.color,
+                    definition.unit,
+                );
+                updateInterpretation(key, labels, maoWeatherChartData[key]);
+            });
             const setMaoText = (selector, value) => {
                 document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
             };
             const formatOne = (value) => Number.isFinite(Number(value)) ? Number(value).toFixed(1) : 'N/A';
-            const updateWeatherChart = (chart, labels, values) => {
-                if (!chart || !Array.isArray(labels) || !Array.isArray(values)) return;
+            const updateWeatherChart = (key, seriesLabels, values) => {
+                if (!Array.isArray(seriesLabels) || !Array.isArray(values)) return;
 
-                chart.data.labels = labels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
+                let chart = weatherCharts[key];
+                if (!chart) {
+                    const definition = weatherChartDefinitions[key];
+                    weatherCharts[key] = makeChart(key, definition.id, definition.label, seriesLabels, values, definition.color, definition.unit);
+                    updateInterpretation(key, seriesLabels, values);
+                    return;
+                }
+
+                chart.data.labels = seriesLabels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
                 chart.data.datasets[0].data = values;
                 chart.update('none');
+                setWeatherChartState(key, '', true);
+                updateInterpretation(key, seriesLabels, values);
             };
             const renderMaoWeather = (payload) => {
                 const weather = payload?.weather;
@@ -1002,20 +1391,31 @@
                 setMaoText('[data-mao-current-wind]', formatOne(weather.wind_speed_kmh));
 
                 const series = weather.daily_series || {};
-                updateWeatherChart(weatherCharts.rainfall, series.labels, series.rainfall);
-                updateWeatherChart(weatherCharts.temperature, series.labels, series.temperature);
-                updateWeatherChart(weatherCharts.humidity, series.labels, series.humidity);
-                updateWeatherChart(weatherCharts.windSpeed, series.labels, series.windSpeed);
+                updateWeatherChart('rainfall', series.labels, series.rainfall);
+                updateWeatherChart('temperature', series.labels, series.temperature);
+                updateWeatherChart('humidity', series.labels, series.humidity);
+                updateWeatherChart('windSpeed', series.labels, series.windSpeed);
             };
             const refreshMaoWeather = async () => {
                 if (!weatherRoot?.dataset.maoWeatherUrl || document.visibilityState !== 'visible') return;
 
                 try {
                     const response = await fetch(weatherRoot.dataset.maoWeatherUrl, { headers: { Accept: 'application/json' } });
-                    if (!response.ok) return;
-                    renderMaoWeather(await response.json());
+                    if (!response.ok) throw new Error(`Weather endpoint returned ${response.status}`);
+                    const payload = await response.json();
+                    if (!payload?.weather) {
+                        Object.keys(weatherChartDefinitions).forEach((key) => {
+                            if (!weatherCharts[key]) setWeatherChartState(key, 'No live or stored weather records found.');
+                        });
+                        return;
+                    }
+                    renderMaoWeather(payload);
                 } catch (error) {
                     // Keep the last visible weather values when the live source is temporarily unavailable.
+                    Object.keys(weatherChartDefinitions).forEach((key) => {
+                        if (!weatherCharts[key]) setWeatherChartState(key, 'Weather data is temporarily unavailable. Please try again shortly.');
+                    });
+                    console.error('iClimate weather dashboard refresh failed.', error);
                 }
             };
             const startMaoWeatherPolling = () => {
@@ -1023,6 +1423,7 @@
                 maoWeatherPollTimer = setInterval(refreshMaoWeather, MAO_WEATHER_POLL_INTERVAL);
             };
 
+            refreshMaoWeather();
             startMaoWeatherPolling();
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
@@ -1035,31 +1436,18 @@
             });
 
             const mapEl = document.getElementById('dashboardRiskMap');
-            if (mapEl && mapAreas.length && window.L) {
+            if (mapEl && maoValidMapAreas.length && window.L) {
                 mapEl.classList.add('thermo-map');
-                const intensityFor = (riskLevel, score) => {
-                    const numericScore = Number(score || 0);
-                    if (numericScore > 0) return Math.max(.12, numericScore);
-                    if (['High', 'Severe'].includes(riskLevel)) return .92;
-                    if (riskLevel === 'Moderate') return .58;
-                    return .22;
-                };
-                const thermographicGradient = {
-                    .05: '#123cba',
-                    .18: '#1769d1',
-                    .32: '#17d8dc',
-                    .48: '#69f23a',
-                    .62: '#fff118',
-                    .78: '#ff7a0f',
-                    1: '#f71912',
-                };
+                const RISK_COLORS = { Low: '#22c55e', Moderate: '#facc15', High: '#f97316', Severe: '#ef4444' };
+                const riskColorFor = (riskLevel) => RISK_COLORS[riskLevel] || '#9aa5b1';
+                const LABEL_ZOOM_THRESHOLD = 14;
                 const yieldScore = (area) => area.predicted_yield === null ? .5 : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
                 const rainfallScore = (area) => String(area.rainfall_status || '').toLowerCase().includes('low') ? .9 : (String(area.rainfall_status || '').toLowerCase().includes('high') ? .65 : .3);
                 const irrigationScore = (area) => String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/) ? .9 : (area.risk_score || .3);
-                const impactScore = (area) => intensityFor(area.risk_level, area.risk_score);
+                const impactScore = (area) => Number(area.risk_score || 0);
                 const scoreFor = (area, layer) => ({ rainfall: rainfallScore, yield: yieldScore, irrigation: irrigationScore, impact: impactScore }[layer] || impactScore)(area);
-                let heatLayer = null;
                 let markerLayer = null;
+                let markerTooltips = [];
                 let activeDashboardLayer = 'impact';
                 let selectedDashboardArea = null;
 
@@ -1150,13 +1538,14 @@
                     return plainAction(area);
                 };
                 const popupStyle = (area) => {
-                    if (['High', 'Severe'].includes(area.risk_level)) {
-                        return '--popup-accent:#d85b45;--popup-bg:#fde8e2;--popup-color:#9f3728;';
-                    }
-                    if (area.risk_level === 'Moderate') {
-                        return '--popup-accent:#ffd166;--popup-bg:#fff4cf;--popup-color:#8a5a00;';
-                    }
-                    return '--popup-accent:#5F8F78;--popup-bg:rgba(95,143,120,.14);--popup-color:#1F4D3A;';
+                    const colors = {
+                        Severe: '--popup-bg:#fee2e2;--popup-color:#b91c1c;',
+                        High: '--popup-bg:#ffedd5;--popup-color:#c2410c;',
+                        Moderate: '--popup-bg:#fef9c3;--popup-color:#854d0e;',
+                        Low: '--popup-bg:#dcfce7;--popup-color:#15803d;',
+                    };
+
+                    return `--popup-accent:${riskColorFor(area.risk_level)};${colors[area.risk_level] || colors.Low}`;
                 };
                 const popup = (area, layer = activeDashboardLayer) => {
                     const mainDetail = layerMainDetail(area, layer);
@@ -1168,7 +1557,7 @@
                                 <div>
                                     <div class="map-popup-label">Barangay</div>
                                     <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
-                                    <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(layer))}</div>
+                                    <div class="map-popup-note">Risk score ${Number(area.risk_score || 0).toFixed(2)} &middot; Showing: ${escapeHtml(layerTitle(layer))}</div>
                                 </div>
                                 <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
                             </div>
@@ -1207,9 +1596,11 @@
                         ${popup(area, layer)}
                     `;
                     detailPanel.classList.add('show');
+                    applyLabelVisibility();
                     detailPanel.querySelector('.map-detail-close')?.addEventListener('click', () => {
                         detailPanel.classList.remove('show');
                         selectedDashboardArea = null;
+                        applyLabelVisibility();
                         detailPanel.innerHTML = `
                             <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
                             <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
@@ -1225,26 +1616,22 @@
                     attribution: '&copy; OpenStreetMap contributors',
                 }).addTo(map);
 
+                const applyLabelVisibility = () => {
+                    const showLabels = map.getZoom() >= LABEL_ZOOM_THRESHOLD;
+                    markerTooltips.forEach(({ marker, area }) => {
+                        const shouldShow = showLabels || (selectedDashboardArea && selectedDashboardArea.barangay === area.barangay);
+                        if (shouldShow && !marker.isTooltipOpen()) marker.openTooltip();
+                        if (!shouldShow && marker.isTooltipOpen()) marker.closeTooltip();
+                    });
+                };
+
                 const renderDashboardLayer = (layer = 'impact') => {
                     activeDashboardLayer = layer;
-                    if (heatLayer) map.removeLayer(heatLayer);
                     if (markerLayer) map.removeLayer(markerLayer);
+                    markerTooltips = [];
 
-                    if (L.heatLayer) {
-                        heatLayer = L.heatLayer(mapAreas.map((area) => [
-                            area.latitude,
-                            area.longitude,
-                            Math.max(.12, scoreFor(area, layer)),
-                        ]), {
-                            radius: 72,
-                            blur: 44,
-                            maxZoom: 14,
-                            minOpacity: .42,
-                            gradient: thermographicGradient,
-                        }).addTo(map);
-                    }
-
-                    markerLayer = L.featureGroup(mapAreas.flatMap((area) => {
+                    markerLayer = L.featureGroup(maoValidMapAreas.flatMap((area) => {
+                        const color = riskColorFor(area.risk_level);
                         const clickZone = L.circleMarker([area.latitude, area.longitude], {
                             radius: 34,
                             stroke: false,
@@ -1254,9 +1641,9 @@
                         const marker = L.marker([area.latitude, area.longitude], {
                             icon: L.divIcon({
                                 className: '',
-                                html: '<span class="thermo-point"></span>',
-                                iconSize: [12, 12],
-                                iconAnchor: [6, 6],
+                                html: `<span class="thermo-point" style="--risk-dot-color:${color}" title="${escapeHtml(area.risk_level)} risk"></span>`,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10],
                             }),
                         });
 
@@ -1264,14 +1651,17 @@
                         marker.on('click', () => showDetails(area, layer));
 
                         marker.bindTooltip(area.barangay, {
-                            permanent: true,
+                            permanent: false,
                             direction: 'top',
                             offset: [0, -10],
                             className: 'barangay-tooltip',
                         });
+                        markerTooltips.push({ marker, area });
 
                         return [clickZone, marker];
                     })).addTo(map);
+
+                    applyLabelVisibility();
 
                     if (selectedDashboardArea && detailPanel?.classList.contains('show')) {
                         showDetails(selectedDashboardArea, layer);
@@ -1280,6 +1670,7 @@
 
                 renderDashboardLayer();
                 map.fitBounds(markerLayer.getBounds().pad(.2));
+                map.on('zoomend', applyLabelVisibility);
                 setTimeout(() => map.invalidateSize(), 150);
 
                 document.querySelectorAll('[data-dashboard-layer]').forEach((button) => {
@@ -1294,6 +1685,12 @@
                     });
                 });
             }
-        });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeMaoDashboard, { once: true });
+        } else {
+            initializeMaoDashboard();
+        }
     </script>
 </x-app-layout>

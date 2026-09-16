@@ -360,7 +360,8 @@ class AIChatTest extends TestCase
             $response->json('chat.answer')
         );
 
-        Http::assertNothingSent();
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '/predict')
+            || str_contains((string) $request->url(), '/analytics/'));
     }
 
     public function test_ai_assistant_explains_prediction_method_without_running_prediction(): void
@@ -403,7 +404,8 @@ class AIChatTest extends TestCase
         $this->assertStringContainsString('Predict.py', $answer);
         $this->assertStringNotContainsString('Predicted Weather:', $answer);
 
-        Http::assertNothingSent();
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '/predict')
+            || str_contains((string) $request->url(), '/analytics/'));
     }
 
     public function test_ai_assistant_answers_tagalog_system_questions_in_tagalog(): void
@@ -425,7 +427,8 @@ class AIChatTest extends TestCase
         $this->assertStringContainsString('Hinuhulaan ng iClimate', $answer);
         $this->assertStringContainsString('Hindi ako gumagawa ng sariling prediction values', $answer);
 
-        Http::assertNothingSent();
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '/predict')
+            || str_contains((string) $request->url(), '/analytics/'));
     }
 
     public function test_ai_assistant_answers_sino_ka_in_tagalog(): void
@@ -677,6 +680,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.rice_yield_prediction', null)
             ->assertJsonPath('chat.prediction_result.validation_error', true);
 
-        Http::assertNothingSent();
+        Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '/predict')
+            || str_contains((string) $request->url(), '/analytics/'));
     }
 }

@@ -2,9 +2,21 @@
 
 namespace App\Providers;
 
+use App\Models\ClimateRecord;
+use App\Models\FarmerOrganization;
+use App\Models\FarmerProfile;
+use App\Models\FeedPost;
+use App\Models\HeatmapArea;
+use App\Models\Notification;
+use App\Models\PlantingAdvisory;
+use App\Models\Report;
+use App\Models\RiceProduction;
+use App\Models\User;
+use App\Support\HeatmapCache;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use PDO;
 
@@ -35,7 +47,60 @@ class AppServiceProvider extends ServiceProvider
             return trim($this->format($dateFormat).' '.$this->shortTime());
         });
 
+        $this->registerDataCacheInvalidation();
+
         $this->createMysqlDatabaseForMigrations();
+    }
+
+    private function registerDataCacheInvalidation(): void
+    {
+        $flush = static function (): void {
+            foreach ([
+                'dashboard:shared-stats',
+                'dashboard:mao-aggregates',
+                'dashboard:admin-aggregates',
+                'dashboard:farmer-organizations',
+                'dashboard:recent-operational-data',
+                'reports:filter-barangays',
+                'reports:source-stats',
+            ] as $key) {
+                Cache::forget($key);
+            }
+        };
+
+        foreach ([
+            User::class,
+            FarmerProfile::class,
+            FarmerOrganization::class,
+            ClimateRecord::class,
+            RiceProduction::class,
+            HeatmapArea::class,
+            PlantingAdvisory::class,
+            FeedPost::class,
+            Notification::class,
+            Report::class,
+        ] as $model) {
+            $model::saved($flush);
+            $model::deleted($flush);
+        }
+
+        $invalidateHeatmap = static function (): void {
+            HeatmapCache::invalidate();
+        };
+
+        foreach ([ClimateRecord::class, RiceProduction::class, FarmerProfile::class, HeatmapArea::class] as $model) {
+            $model::saved($invalidateHeatmap);
+            $model::deleted($invalidateHeatmap);
+        }
+
+        $markRiskRefreshDue = static function (): void {
+            Cache::forget('heatmap:lian:risk-refresh-window');
+        };
+
+        foreach ([ClimateRecord::class, RiceProduction::class, FarmerProfile::class] as $model) {
+            $model::saved($markRiskRefreshDue);
+            $model::deleted($markRiskRefreshDue);
+        }
     }
 
     private function createMysqlDatabaseForMigrations(): void

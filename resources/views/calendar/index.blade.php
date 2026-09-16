@@ -25,6 +25,8 @@
     .calendar-page .calendar-event.type-harvesting { --event-accent: #8FAF9A; }
             .calendar-page .calendar-event.type-irrigation { --event-accent: #0dcaf0; }
             .calendar-page .calendar-event.type-community { --event-accent: #b7e4c7; }
+            .calendar-page .calendar-event.type-schedule-planting { --event-accent: #198754; background: rgba(25,135,84,.08); }
+            .calendar-page .calendar-event.type-schedule-harvest { --event-accent: #d18b00; background: rgba(255,193,7,.12); }
             .calendar-page .calendar-event-more { font-size: .875rem; color: var(--ic-muted); padding-left: .25rem; line-height: 1.35; }
             .calendar-page .upcoming-item { display: flex; gap: .75rem; padding: .75rem 0; border-bottom: 1px solid var(--ic-border); }
             .calendar-page .upcoming-item:hover { background: rgba(82,183,136,.06); margin-inline: -.55rem; padding-inline: .55rem; border-radius: 10px; }
@@ -34,6 +36,8 @@
             .calendar-page .upcoming-date-month { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ic-muted); }
             .calendar-page .upcoming-title { color: var(--ic-ink); line-height: 1.25; }
             .calendar-page .upcoming-title:hover { color: var(--ic-green-700); }
+            .calendar-page .schedule-record { border: 1px solid var(--ic-border); border-radius: 10px; padding: 1rem; background: rgba(255,255,255,.7); }
+            .calendar-page .schedule-record strong { font-size: 1.05rem; color: var(--ic-ink); }
             @media (max-width: 767.98px) {
                 .calendar-page .calendar-grid { grid-template-columns: 1fr; padding: .5rem; gap: .4rem; }
                 .calendar-page .calendar-weekday { display: none; }
@@ -55,8 +59,25 @@
                     <h1 class="h2 fw-bold mb-2">Calendar</h1>
                     <p class="mb-0" style="color: var(--ic-ink-mid);">See when advisories start and expire, laid out by day, so you can plan planting and harvesting activities ahead of time.</p>
                 </div>
+                @if(($plantingScheduleFeatureReady ?? true) && auth()->user()->role === \App\Models\User::ROLE_FARMER)
+                    <a class="btn btn-primary btn-lg" href="{{ route('farmer.planting-schedules.create') }}">+ Add schedule</a>
+                @endif
             </div>
         </section>
+
+        @if(session('schedule_warnings'))
+            <div class="alert alert-warning" role="alert">
+                <strong>Schedule saved with a date warning.</strong>
+                <ul class="mb-0 mt-2">@foreach(session('schedule_warnings') as $warning)<li>{{ $warning }}</li>@endforeach</ul>
+            </div>
+        @endif
+
+        @unless($plantingScheduleFeatureReady ?? true)
+            <div class="alert alert-warning" role="status"><strong>Farmer schedules are temporarily unavailable.</strong> Advisories and community events are still shown while the database update is completed.</div>
+        @endunless
+        @if(session('schedule_feature_warning'))
+            <div class="alert alert-warning" role="status">{{ session('schedule_feature_warning') }}</div>
+        @endif
 
         <div class="row g-3">
             <div class="col-xl-8">
@@ -149,5 +170,44 @@
                 </details>
             </div>
         </div>
+
+        @if(($plantingScheduleFeatureReady ?? true) && auth()->user()->role === \App\Models\User::ROLE_FARMER)
+            <section class="card no-lift mt-3">
+                <div class="card-header border-0 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div><div class="fw-bold fs-5">My planting and harvest records</div><div class="text-muted">Edit progress or remove an incorrect record.</div></div>
+                    <a class="btn btn-primary" href="{{ route('farmer.planting-schedules.create') }}">Add schedule</a>
+                </div>
+                <div class="card-body pt-0 d-grid gap-3">
+                    @forelse($schedules as $schedule)
+                        <article class="schedule-record">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                <div>
+                                    <strong>{{ $schedule->planting_date?->format('M d, Y') }} planting &rarr; {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</strong>
+                                    <div class="mt-1">{{ $schedule->season }} season &middot; {{ $schedule->farm_type }} &middot; {{ $schedule->barangay ?: 'Location not provided' }}</div>
+                                    <div class="text-muted mt-1">Status: {{ $schedule->monitoringStatusLabel() }}</div>
+                                    <div class="mt-2">
+                                        @if($schedule->predicted_yield !== null)
+                                            <span class="badge text-bg-success fs-6">Predicted: {{ number_format((float)$schedule->predicted_yield, 2) }} t/ha</span>
+                                        @else
+                                            <span class="badge text-bg-secondary fs-6">Prediction unavailable</span>
+                                            <div class="text-muted mt-1">{{ $schedule->prediction_unavailable_reason }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-wrap align-items-start gap-2">
+                                    <a class="btn btn-outline-primary" href="{{ route('farmer.planting-schedules.edit', $schedule) }}">Edit</a>
+                                    <form method="POST" action="{{ route('farmer.planting-schedules.destroy', $schedule) }}" onsubmit="return confirm('Delete this schedule?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-outline-danger" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    @empty
+                        <div class="empty-state text-center p-4"><strong>No farm schedule yet.</strong><p class="text-muted mb-0 mt-1">Add your planting date and expected harvest to begin.</p></div>
+                    @endforelse
+                </div>
+            </section>
+        @endif
     </div>
 </x-app-layout>

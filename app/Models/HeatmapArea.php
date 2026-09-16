@@ -21,6 +21,9 @@ class HeatmapArea extends Model
         'planting_advisory',
         'irrigation_recommendation',
         'description',
+        'main_risk_reason',
+        'suggested_action',
+        'risk_computed_at',
     ];
 
     protected $casts = [
@@ -28,5 +31,28 @@ class HeatmapArea extends Model
         'longitude' => 'decimal:7',
         'risk_score' => 'decimal:2',
         'predicted_yield' => 'decimal:2',
+        'risk_computed_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $area): void {
+            if (! $area->isDirty(['risk_score', 'risk_level', 'risk_type', 'description', 'planting_advisory', 'irrigation_recommendation'])) {
+                return;
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'main_risk_reason')) {
+                $area->main_risk_reason = $area->description
+                    ?: "{$area->risk_type} risk with a computed score of ".number_format((float) $area->risk_score, 2).'.';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'suggested_action')) {
+                $area->suggested_action = $area->irrigation_recommendation
+                    ?: $area->planting_advisory
+                    ?: 'Continue routine field monitoring.';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'risk_computed_at')) {
+                $area->risk_computed_at = now();
+            }
+        });
+    }
 }

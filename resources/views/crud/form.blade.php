@@ -25,6 +25,7 @@
                             $type = $field['type'] ?? 'text';
                             $value = old($name, $record ? data_get($record, $name) : '');
                             if (is_array($value)) { $value = json_encode($value, JSON_PRETTY_PRINT); }
+                            if ($value instanceof \DateTimeInterface && in_array($type, ['date', 'month'], true)) { $value = $value->format($type === 'month' ? 'Y-m' : 'Y-m-d'); }
                         @endphp
                         <div class="col-md-{{ $type === 'textarea' ? '12' : '6' }}">
                             <div class="soft-section p-3 h-100">

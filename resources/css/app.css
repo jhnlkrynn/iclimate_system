@@ -993,6 +993,30 @@ textarea {
 }
 
 /* -- iClimate mobile compaction: one chart at a time on small screens - */
+.farmer-org-chart-inner {
+    position: relative;
+}
+
+.farmer-org-chart-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    padding: 1rem;
+    border: 1px dashed rgba(95, 143, 120, .42);
+    border-radius: 8px;
+    background: rgba(247, 251, 248, .9);
+    color: #334155;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.farmer-org-chart-state[hidden] {
+    display: none;
+}
+
 .ic-chart-tabs {
     display: none;
     flex-wrap: wrap;

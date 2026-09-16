@@ -67,6 +67,34 @@ class LianBarangays
 
     public static function coordinateFor(string $barangay): ?array
     {
-        return self::COORDINATES[$barangay] ?? null;
+        $canonical = self::canonicalName($barangay);
+
+        return $canonical ? self::COORDINATES[$canonical] : null;
+    }
+
+    public static function canonicalName(?string $barangay): ?string
+    {
+        $needle = self::normalize((string) $barangay);
+
+        if ($needle === '') {
+            return null;
+        }
+
+        foreach (array_keys(self::COORDINATES) as $name) {
+            if (self::normalize($name) === $needle) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalize(string $barangay): string
+    {
+        $value = strtolower($barangay);
+        $value = str_replace(['barangay', 'brgy', '(pob.)', 'pob.', 'poblacion', '-', '.'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value) ?: '';
+
+        return trim(preg_replace('/\s+/', ' ', $value) ?: '');
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
+use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClimateRecordController;
@@ -8,8 +9,8 @@ use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmBoundaryController;
 use App\Http\Controllers\FarmerProfileController;
+use App\Http\Controllers\FarmerPlantingScheduleController;
 use App\Http\Controllers\HeatmapAreaController;
-use App\Http\Controllers\LiveForecastingController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ModelEvaluationController;
 use App\Http\Controllers\NotificationController;
@@ -20,10 +21,10 @@ use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\RiceYieldPredictionController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
-use App\Http\Controllers\UsabilitySurveyController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WeatherPredictionController;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -33,6 +34,10 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return redirect()->route(request()->user()->dashboardRoute());
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/analytics-runs/{analyticsRun}', [AnalyticsRunController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('analytics-runs.show');
 
 Route::get('/captcha/{context}', CaptchaImageController::class)
     ->middleware('throttle:20,1')
@@ -49,6 +54,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('farmer.dashboard.weather');
 
     Route::middleware('role:'.User::ROLE_FARMER)->group(function () {
+        Route::get('/farmer/planting-schedules/create', [FarmerPlantingScheduleController::class, 'create'])->name('farmer.planting-schedules.create');
+        Route::post('/farmer/planting-schedules', [FarmerPlantingScheduleController::class, 'store'])->name('farmer.planting-schedules.store');
+        Route::get('/farmer/planting-schedules/{plantingSchedule}/edit', [FarmerPlantingScheduleController::class, 'edit'])->name('farmer.planting-schedules.edit');
+        Route::put('/farmer/planting-schedules/{plantingSchedule}', [FarmerPlantingScheduleController::class, 'update'])->name('farmer.planting-schedules.update');
+        Route::delete('/farmer/planting-schedules/{plantingSchedule}', [FarmerPlantingScheduleController::class, 'destroy'])->name('farmer.planting-schedules.destroy');
+
         Route::get('/farmer/boundary', [FarmBoundaryController::class, 'edit'])
             ->name('farmer.boundary.edit');
         Route::put('/farmer/boundary', [FarmBoundaryController::class, 'update'])
@@ -118,6 +129,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('management/advisories/{advisory}/archive', [PlantingAdvisoryController::class, 'archive'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.archive');
+
+        Route::post('planting-advisories/{plantingAdvisory}/feedback', [PlantingAdvisoryController::class, 'feedback'])
+            ->middleware('throttle:20,1')
+            ->name('planting-advisories.feedback');
+
+        Route::post('advisory-feedback/{advisoryFeedback}/respond', [PlantingAdvisoryController::class, 'respondToFeedback'])
+            ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
+            ->name('advisory-feedback.respond');
 
         Route::resource('planting-advisories', PlantingAdvisoryController::class);
 
@@ -235,10 +254,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             [RiceYieldPredictionController::class, 'predict']
         )->middleware('throttle:20,1')->name('rice-yield-predictions.predict');
 
-        Route::get(
-            'live-forecasting',
-            [LiveForecastingController::class, 'index']
-        )->name('live-forecasting.index');
+        /*
+        |--------------------------------------------------------------------------
+        | Live Forecasting — Legacy Redirect
+        |--------------------------------------------------------------------------
+        */
+        Route::any('live-forecasting', function (Request $request) {
+            return redirect()->route($request->user()->dashboardRoute());
+        });
+        Route::any('live-forecasting/{any}', function (Request $request) {
+            return redirect()->route($request->user()->dashboardRoute());
+        })->where('any', '.*');
 
         /*
         |--------------------------------------------------------------------------
@@ -266,37 +292,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
             [ReportController::class, 'exportCsv']
         )->name('reports.export');
 
-        Route::resource('reports', ReportController::class);
+        Route::resource('reports', ReportController::class)
+            ->only(['index', 'show', 'destroy'])
+            ->whereNumber('report');
 
     });
 
     /*
     |--------------------------------------------------------------------------
-    | Usability Survey (System Usability Scale) — Objective 4
+    | Usability Survey (System Evaluation) — Legacy Redirect
     |--------------------------------------------------------------------------
     */
-
-    Route::middleware(
-        'role:'.
-        User::ROLE_FARMER.','.
-        User::ROLE_MAO.','.
-        User::ROLE_IT_EXPERT
-    )->group(function () {
-        Route::get('usability-survey', [UsabilitySurveyController::class, 'create'])
-            ->name('usability-survey.create');
-
-        Route::post('usability-survey', [UsabilitySurveyController::class, 'store'])
-            ->middleware('throttle:10,1')
-            ->name('usability-survey.store');
+    Route::any('usability-survey', function (Request $request) {
+        return redirect()->route($request->user()->dashboardRoute());
     });
+    Route::any('usability-survey/{any}', function (Request $request) {
+        return redirect()->route($request->user()->dashboardRoute());
+    })->where('any', '.*');
 
-    Route::middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)->group(function () {
-        Route::get('usability-survey/results', [UsabilitySurveyController::class, 'results'])
-            ->name('usability-survey.results');
-
-        Route::get('usability-survey/results/export', [UsabilitySurveyController::class, 'exportCsv'])
-            ->name('usability-survey.export');
+    /*
+    |--------------------------------------------------------------------------
+    | Farmer Organizations (List Page) — Legacy Redirect
+    |--------------------------------------------------------------------------
+    | The dedicated organizations list/detail page was removed. The dashboard
+    | "Farmers by Organization" chart (unrelated, kept) still reads live data
+    | directly — see DashboardController::farmerOrganizationDashboardData().
+    */
+    Route::any('farmer-organizations', function (Request $request) {
+        return redirect()->route($request->user()->dashboardRoute());
     });
+    Route::any('farmer-organizations/{any}', function (Request $request) {
+        return redirect()->route($request->user()->dashboardRoute());
+    })->where('any', '.*');
 
     Route::resource('users', UserManagementController::class)
         ->middleware('role:'.User::ROLE_IT_EXPERT);

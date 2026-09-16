@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
+use App\Models\HeatmapAreaForecast;
 use App\Models\RiceProduction;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class HeatmapRiskService
@@ -51,69 +53,37 @@ class HeatmapRiskService
     {
         $this->ensureDefaultAreas();
 
-        $weather = $this->weatherInputs();
-
+        $targetMonth = CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+        $weather = $this->weatherInputs($targetMonth);
         $barangays = $this->barangays();
+        $productionByBarangay = $this->productionByBarangay($barangays);
 
         foreach ($barangays as $barangay) {
             try {
-                $production = RiceProduction::query()
-                    ->where('barangay', $barangay)
-                    ->latest('year')
-                    ->latest('id')
-                    ->first();
+                $updates = $this->computeUpdatesForBarangay(
+                    $barangay,
+                    $weather,
+                    $productionByBarangay->get($barangay, collect()),
+                    $targetMonth,
+                );
 
-                $averageYield = $this->averageYieldForBarangay($barangay);
-
-                if (! $weather['has_weather'] && ! $production && $averageYield === null) {
+                if ($updates === null) {
                     continue;
                 }
 
-                $storedYield = $production?->yield_per_hectare !== null
-                    ? (float) $production->yield_per_hectare
-                    : $averageYield;
-
-                $rainfall = $weather['rainfall'];
-                $temperature = $weather['temperature'];
-                $season = $weather['season'] ?? $production?->season ?? ClimateRecord::SEASON_WET;
-                $farmType = $this->farmTypeFor($production?->irrigation_type);
-                $modelYield = $this->predictedYieldForBarangay($weather, $production, $farmType, $season);
-                $yield = $modelYield ?? $storedYield;
-                $yieldSource = $modelYield !== null
-                    ? 'trained rice yield model estimate'
-                    : ($storedYield !== null ? 'stored barangay production record' : 'no yield estimate available');
-
-                $decision = $this->decisionSupport->evaluate([
-                    'barangay' => $barangay,
-                    'farm_type' => $farmType,
-                    'rainfall' => $rainfall,
-                    'temperature' => $temperature,
-                    'wind_speed' => $weather['wind_speed'],
-                    'humidity' => $weather['humidity'],
-                    'season' => $season,
-                    'predicted_yield' => $yield,
-                ]);
-
-                $updates = [
-                    'risk_level' => $decision['risk']['level'],
-                    'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
-                    'risk_score' => $decision['risk']['score'],
-                    'predicted_yield' => $yield,
-                    'rainfall_status' => $this->rainfallStatus($rainfall),
-                    'planting_advisory' => $decision['planting']['recommendation'],
-                    'irrigation_recommendation' => $decision['irrigation']['recommendation'],
-                    'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Estimated recommendation confidence (heuristic, not statistical): '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
-                ];
-
                 if ($this->defaultLatitude($barangay) !== null && $this->defaultLongitude($barangay) !== null) {
-                    $updates['latitude'] = $this->defaultLatitude($barangay);
-                    $updates['longitude'] = $this->defaultLongitude($barangay);
+                    $updates['fields']['latitude'] = $this->defaultLatitude($barangay);
+                    $updates['fields']['longitude'] = $this->defaultLongitude($barangay);
                 }
 
                 HeatmapArea::query()->updateOrCreate(
                     ['barangay' => $barangay],
-                    $updates
+                    $updates['fields']
                 );
+
+                if (isset($updates['risk_breakdown'])) {
+                    Cache::put(self::riskBreakdownCacheKey($barangay), $updates['risk_breakdown'], now()->addDays(7));
+                }
             } catch (\Throwable $exception) {
                 Log::error('Heatmap risk refresh failed for one barangay; skipping it.', [
                     'barangay' => $barangay,
@@ -123,6 +93,154 @@ class HeatmapRiskService
                 continue;
             }
         }
+    }
+
+    /**
+     * Precomputes and stores barangay-level risk/yield forecasts for each of
+     * the next $months calendar months, so the heat map can offer a month
+     * selector without recalculating on every request. Weather is forecast
+     * once per month (municipality-wide, via MonthlyWeatherRandomForest,
+     * which already accepts an arbitrary target month) and then blended per
+     * barangay with that barangay's own rice production history and
+     * exposure profile, mirroring refresh()'s current-month computation.
+     */
+    public function refreshForecasts(int $months = 6): void
+    {
+        $this->ensureDefaultAreas();
+
+        $barangays = $this->barangays();
+        $productionByBarangay = $this->productionByBarangay($barangays);
+
+        for ($offset = 1; $offset <= $months; $offset++) {
+            $targetMonth = CarbonImmutable::now()->addMonthsNoOverflow($offset)->startOfMonth();
+
+            try {
+                $weather = $this->weatherInputs($targetMonth);
+            } catch (\Throwable $exception) {
+                Log::error('Heatmap forecast weather lookup failed for a target month; skipping it.', [
+                    'target_month' => $targetMonth->format('Y-m'),
+                    'message' => $exception->getMessage(),
+                ]);
+
+                continue;
+            }
+
+            foreach ($barangays as $barangay) {
+                try {
+                    $updates = $this->computeUpdatesForBarangay(
+                        $barangay,
+                        $weather,
+                        $productionByBarangay->get($barangay, collect()),
+                        $targetMonth,
+                    );
+
+                    if ($updates === null) {
+                        continue;
+                    }
+
+                    HeatmapAreaForecast::query()->updateOrCreate(
+                        ['barangay' => $barangay, 'forecast_month' => $targetMonth->toDateString()],
+                        [...$updates['fields'], 'computed_at' => now()],
+                    );
+                } catch (\Throwable $exception) {
+                    Log::error('Heatmap forecast refresh failed for one barangay; skipping it.', [
+                        'barangay' => $barangay,
+                        'target_month' => $targetMonth->format('Y-m'),
+                        'message' => $exception->getMessage(),
+                    ]);
+
+                    continue;
+                }
+            }
+        }
+    }
+
+    /**
+     * @return array{fields: array<string, mixed>, risk_breakdown?: array}|null
+     */
+    private function computeUpdatesForBarangay(
+        string $barangay,
+        array $weather,
+        Collection $productionRecords,
+        CarbonImmutable $targetMonth,
+    ): ?array {
+        $production = $productionRecords->first();
+        $averageYield = $productionRecords->whereNotNull('yield_per_hectare')->avg('yield_per_hectare');
+        $averageYield = $averageYield !== null ? round((float) $averageYield, 2) : null;
+
+        if (! $weather['has_weather'] && ! $production && $averageYield === null) {
+            return null;
+        }
+
+        $storedYield = $production?->yield_per_hectare !== null
+            ? (float) $production->yield_per_hectare
+            : $averageYield;
+
+        $rainfall = $weather['rainfall'];
+        $temperature = $weather['temperature'];
+        $season = $weather['season'] ?? $production?->season ?? ClimateRecord::SEASON_WET;
+        $farmType = $this->farmTypeFor($production?->irrigation_type);
+        $modelYield = $this->predictedYieldForBarangay($weather, $production, $farmType, $season, $targetMonth);
+        $yield = $modelYield ?? $storedYield;
+        $yieldSource = $modelYield !== null
+            ? 'trained rice yield model estimate'
+            : ($storedYield !== null ? 'stored barangay production record' : 'no yield estimate available');
+
+        $decision = $this->decisionSupport->evaluate([
+            'barangay' => $barangay,
+            'farm_type' => $farmType,
+            'rainfall' => $rainfall,
+            'temperature' => $temperature,
+            'wind_speed' => $weather['wind_speed'],
+            'humidity' => $weather['humidity'],
+            'season' => $season,
+            'predicted_yield' => $yield,
+        ]);
+
+        $fields = [
+            'risk_level' => $decision['risk']['level'],
+            'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
+            'risk_score' => $decision['risk']['score'],
+            'predicted_yield' => $yield,
+            'rainfall_status' => $this->rainfallStatus($rainfall),
+            'planting_advisory' => $decision['planting']['recommendation'],
+            'irrigation_recommendation' => $decision['irrigation']['recommendation'],
+            'description' => $weather['description'].' Yield source: '.$yieldSource.'. Barangay exposure: '.$this->riskScorer->exposureLabel($barangay).'. Estimated recommendation confidence (heuristic, not statistical): '.$decision['confidence']['label'].'. Decision support score: '.$decision['score']['value'].' ('.$decision['score']['interpretation'].').',
+        ];
+
+        return isset($decision['risk_breakdown'])
+            ? ['fields' => $fields, 'risk_breakdown' => $decision['risk_breakdown']]
+            : ['fields' => $fields];
+    }
+
+    private function productionByBarangay(Collection $barangays): Collection
+    {
+        return RiceProduction::query()
+            ->select([
+                'id', 'barangay', 'season', 'irrigation_type', 'yield_per_hectare',
+                'area_hectares', 'total_production', 'year',
+            ])
+            ->whereIn('barangay', $barangays)
+            ->orderByDesc('year')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('barangay');
+    }
+
+    /**
+     * The labeled risk-score breakdown computed for a barangay during the
+     * most recent refresh(), or null if it hasn't been computed yet. Reads
+     * from cache rather than recomputing, since recomputation would require
+     * re-running the same weather/ML calls refresh() already performs.
+     */
+    public function riskBreakdownFor(string $barangay): ?array
+    {
+        return Cache::get(self::riskBreakdownCacheKey($barangay));
+    }
+
+    private static function riskBreakdownCacheKey(string $barangay): string
+    {
+        return 'heatmap:risk-breakdown:'.$barangay;
     }
 
     private function barangays(): Collection
@@ -138,18 +256,22 @@ class HeatmapRiskService
 
     private function ensureDefaultAreas(): void
     {
-        $legacyPoblacion = HeatmapArea::query()->where('barangay', 'Poblacion')->first();
+        $areas = HeatmapArea::query()
+            ->whereIn('barangay', [...array_keys(self::DEFAULT_AREAS), 'Poblacion'])
+            ->orderByRaw('latitude is null')
+            ->orderBy('id')
+            ->get()
+            ->unique('barangay')
+            ->keyBy('barangay');
+        $legacyPoblacion = $areas->get('Poblacion');
 
-        if ($legacyPoblacion && ! HeatmapArea::query()->where('barangay', 'Barangay 1 (Pob.)')->exists()) {
+        if ($legacyPoblacion && ! $areas->has('Barangay 1 (Pob.)')) {
             $legacyPoblacion->forceFill(['barangay' => 'Barangay 1 (Pob.)'])->save();
+            $areas->put('Barangay 1 (Pob.)', $legacyPoblacion);
         }
 
         foreach (self::DEFAULT_AREAS as $barangay => [$latitude, $longitude]) {
-            $area = HeatmapArea::query()
-                ->where('barangay', $barangay)
-                ->orderByRaw('latitude is null')
-                ->orderBy('id')
-                ->first();
+            $area = $areas->get($barangay);
 
             if ($area) {
                 $area->fill([
@@ -162,7 +284,11 @@ class HeatmapRiskService
                     'planting_advisory' => $area->planting_advisory ?: 'Review latest climate and rice production data before planting.',
                     'irrigation_recommendation' => $area->irrigation_recommendation ?: 'Monitor field water availability and update after the next rainfall record.',
                     'description' => $area->description ?: 'Default Lian barangay map point.',
-                ])->save();
+                ]);
+
+                if ($area->isDirty()) {
+                    $area->save();
+                }
 
                 continue;
             }
@@ -193,26 +319,21 @@ class HeatmapRiskService
         return self::DEFAULT_AREAS[$barangay][1] ?? null;
     }
 
-    private function averageYieldForBarangay(string $barangay): ?float
+    private function weatherInputs(CarbonImmutable $targetMonth): array
     {
-        $average = RiceProduction::query()
-            ->where('barangay', $barangay)
-            ->avg('yield_per_hectare');
-
-        return $average !== null ? round((float) $average, 2) : null;
-    }
-
-    private function weatherInputs(): array
-    {
-        $latestClimate = ClimateRecord::query()->latest('record_date')->first();
         $recentClimate = ClimateRecord::query()
+            ->select(['record_date', 'rainfall', 'temperature', 'humidity', 'wind_speed', 'season'])
             ->latest('record_date')
             ->take(6)
             ->get();
+        $latestClimate = $recentClimate->first();
 
-        $targetMonth = CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
         $mlForecast = $this->weatherForest->predict($targetMonth);
-        $apiForecast = $this->weatherApi->forecast();
+        // A short-range day-by-day forecast is only meaningful for the
+        // immediate next month; for months further out it would be blended
+        // in as if it were still current, so it's skipped entirely.
+        $isImmediateMonth = $targetMonth->isSameMonth(CarbonImmutable::now()->addMonthNoOverflow());
+        $apiForecast = $isImmediateMonth ? $this->weatherApi->forecast() : null;
 
         $rainfallValues = [];
         $temperatureValues = [];
@@ -273,7 +394,7 @@ class HeatmapRiskService
      * would compute for the same inputs. Falls back to the barangay's stored
      * production average (handled by the caller) if the model can't be reached.
      */
-    private function predictedYieldForBarangay(array $weather, ?RiceProduction $production, string $farmType, string $season): ?float
+    private function predictedYieldForBarangay(array $weather, ?RiceProduction $production, string $farmType, string $season, CarbonImmutable $targetMonth): ?float
     {
         $area = (float) ($production?->area_hectares ?? 1);
 
@@ -299,7 +420,7 @@ class HeatmapRiskService
             'wind_speed' => (float) ($weather['wind_speed'] ?? 0),
             'season' => in_array($season, [ClimateRecord::SEASON_WET, ClimateRecord::SEASON_DRY], true) ? $season : ClimateRecord::SEASON_WET,
             'farm_type' => $farmType,
-            'month_num' => (int) CarbonImmutable::now()->addMonthNoOverflow()->format('n'),
+            'month_num' => (int) $targetMonth->format('n'),
         ];
 
         $memoKey = md5(json_encode($modelInput));

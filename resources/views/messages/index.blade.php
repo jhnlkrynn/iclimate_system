@@ -238,6 +238,11 @@
                         <div class="p-3 text-muted">No conversations yet. Use the search box above to message someone.</div>
                     @endforelse
                 </div>
+                @if(($conversationPaginator ?? null)?->hasPages())
+                    <div class="border-top p-2">
+                        {{ $conversationPaginator->links() }}
+                    </div>
+                @endif
             </aside>
 
             <main class="msg-panel">

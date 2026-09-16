@@ -194,13 +194,15 @@
         }
         .farmer-org-chart-shell {
             position: relative;
-            min-height: 720px;
+            min-height: 400px;
             overflow-x: auto;
+            overflow-y: hidden;
             padding: .5rem .25rem 0;
         }
         .farmer-org-chart-inner {
-            min-width: min(100%, 860px);
-            height: 720px;
+            min-width: 0;
+            width: 100%;
+            height: 400px;
         }
         .farmer-org-chart-inner canvas {
             width: 100% !important;
@@ -266,9 +268,10 @@
         .row-title { font-weight: 700; color: var(--it-ink); line-height: 1.25; }
         .row-sub { color: var(--it-muted); font-size: .82rem; margin-top: .12rem; }
         .it-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
-        .it-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--it-red); }
-        .it-risk-badge-moderate { background: rgba(197,139,42,.14); color: #C58B2A; }
-        .it-risk-badge-low { background: rgba(95,143,120,.14); color: var(--it-green); }
+        .it-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
+        .it-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
+        .it-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
+        .it-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
         .it-risk-interpretation { font-weight: 500; color: var(--it-ink); }
         .it-risk-score-meta { font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; font-weight: 600; }
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -369,10 +372,8 @@
             .dashboard-group-body { padding: .75rem; }
             .dashboard-group > summary { padding: .8rem .85rem; }
             .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
-            .farmer-org-chart-shell { min-height: 780px; }
-            .farmer-org-chart-inner { min-width: 720px; height: 780px; }
-            .farmer-org-chart-shell { min-height: 420px; max-height: 64vh; overflow: auto; }
-            .farmer-org-chart-inner { min-width: 680px; height: 420px; }
+            .farmer-org-chart-shell { min-height: 380px; overflow-x: auto; overflow-y: hidden; }
+            .farmer-org-chart-inner { min-width: 0; width: 100%; height: 380px; }
             .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; }
         }
         @media (max-width: 380px) {
@@ -596,11 +597,12 @@
                 </div>
                 <div class="farmer-org-chart-shell">
                     <div class="farmer-org-chart-inner">
-                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
+                        <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading real farmer organization data...</div>
+                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." aria-busy="true" role="img" tabindex="0"></canvas>
                     </div>
                 </div>
                 <div id="adminFarmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
+                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite">Loading real farmer organization data...</div>
             </div>
         </section>
         @include('dashboards.partials.farmer-organization-chart', [
@@ -718,7 +720,8 @@
                                     default => 'Low risk: conditions are currently favorable for this barangay.',
                                 };
                                 $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe', 'high' => 'it-risk-badge-severe',
+                                    'severe' => 'it-risk-badge-severe',
+                                    'high' => 'it-risk-badge-high',
                                     'moderate' => 'it-risk-badge-moderate',
                                     default => 'it-risk-badge-low',
                                 };

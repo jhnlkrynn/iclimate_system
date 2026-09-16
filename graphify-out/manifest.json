@@ -1,9 +1,9 @@
 {
   ".claude/settings.json": {
-    "mtime": 1786676433.328688,
-    "seen": 1787710260.6919835,
-    "ast_hash": "c04d2d3a1ffb2100d7d2a9371a0ed1b2",
-    "semantic_hash": "c04d2d3a1ffb2100d7d2a9371a0ed1b2"
+    "mtime": 1789147277.338566,
+    "seen": 1789213212.0433147,
+    "ast_hash": "acb1a44c28f092d3c52d971f57e5e9d3",
+    "semantic_hash": "acb1a44c28f092d3c52d971f57e5e9d3"
   },
   ".snapshots/config.json": {
     "mtime": 1784872540.883722,
@@ -48,10 +48,10 @@
     "semantic_hash": "4a7d061b626cb8240730c925600e2a2a"
   },
   "app/Console/Commands/GenerateAgriculturalAdvisories.php": {
-    "mtime": 1784872540.8894804,
-    "seen": 1787710260.692002,
-    "ast_hash": "43f980e876896ab067d91d535b189fcf",
-    "semantic_hash": "43f980e876896ab067d91d535b189fcf"
+    "mtime": 1789231396.1580718,
+    "seen": 1789232392.7280862,
+    "ast_hash": "d2bebff1f0c5bdcc99bd8345157bef37",
+    "semantic_hash": "d2bebff1f0c5bdcc99bd8345157bef37"
   },
   "app/Console/Commands/RefreshLianBarangayWeather.php": {
     "mtime": 1784872540.8894804,
@@ -60,64 +60,52 @@
     "semantic_hash": "d31adc32718333df2db49f0c3bb904e4"
   },
   "app/Console/Commands/RefreshLianBoundaries.php": {
-    "mtime": 1784872540.8905177,
-    "seen": 1787710260.6920044,
+    "mtime": 1789147277.3473203,
+    "seen": 1789213212.0458019,
     "ast_hash": "3b974a99e58d2bebb74f862ac736e57f",
     "semantic_hash": "3b974a99e58d2bebb74f862ac736e57f"
   },
   "app/Console/Commands/RunIClimateAutomation.php": {
-    "mtime": 1785250290.6950016,
-    "seen": 1787710260.692006,
-    "ast_hash": "a7ccbbbf0bed5dca48806e2d8c264a13",
-    "semantic_hash": "a7ccbbbf0bed5dca48806e2d8c264a13"
+    "mtime": 1789225205.3312352,
+    "seen": 1789232392.728508,
+    "ast_hash": "d98ef4372368920df4a9e55932254828",
+    "semantic_hash": "d98ef4372368920df4a9e55932254828"
   },
   "app/Enums/PredictionType.php": {
-    "mtime": 1786723289.3411324,
-    "seen": 1787710260.6920078,
+    "mtime": 1789147277.3473203,
+    "seen": 1789213212.0460978,
     "ast_hash": "6af5a5360aada278a19aad096a484c98",
     "semantic_hash": "6af5a5360aada278a19aad096a484c98"
   },
   "app/Http/Controllers/AIChatController.php": {
-    "mtime": 1786696274.331709,
-    "seen": 1787710260.692009,
+    "mtime": 1789147277.3473203,
+    "seen": 1789213212.0461023,
     "ast_hash": "91f4a2d4a3cf54d57a7df495f22f17be",
     "semantic_hash": "91f4a2d4a3cf54d57a7df495f22f17be"
   },
-  "app/Http/Controllers/AnnouncementController.php": {
-    "mtime": 1784872540.8929722,
-    "seen": 1787710260.6920102,
-    "ast_hash": "2d13cf41d39edb5f322e93e780032519",
-    "semantic_hash": "2d13cf41d39edb5f322e93e780032519"
-  },
-  "app/Http/Controllers/Api/LianBoundaryController.php": {
-    "mtime": 1785249227.9545298,
-    "seen": 1787710260.6920116,
-    "ast_hash": "84e9b1718ff68e0b737221881c4a9c85",
-    "semantic_hash": "84e9b1718ff68e0b737221881c4a9c85"
-  },
   "app/Http/Controllers/Api/LianHeatmapController.php": {
-    "mtime": 1786676433.330531,
-    "seen": 1787710260.6920125,
-    "ast_hash": "c541d258e183f57c134e52448efaa0f2",
-    "semantic_hash": "c541d258e183f57c134e52448efaa0f2"
+    "mtime": 1789550609.9135773,
+    "seen": 1789551241.4358814,
+    "ast_hash": "bb28f4643ca38b2fca283d4e78915ba1",
+    "semantic_hash": "bb28f4643ca38b2fca283d4e78915ba1"
   },
   "app/Http/Controllers/Api/LianWeatherController.php": {
-    "mtime": 1785249123.142306,
-    "seen": 1787710260.692014,
-    "ast_hash": "c11659b4b7b6f4ba3c9fc7eed06736a7",
-    "semantic_hash": "c11659b4b7b6f4ba3c9fc7eed06736a7"
+    "mtime": 1789232627.4175775,
+    "seen": 1789233731.5545688,
+    "ast_hash": "8869cfb5d2dbd4d83af6270d13bbba53",
+    "semantic_hash": "8869cfb5d2dbd4d83af6270d13bbba53"
   },
   "app/Http/Controllers/Api/MobileAuthController.php": {
-    "mtime": 1785318113.731518,
-    "seen": 1787710260.6920154,
-    "ast_hash": "a0da808f8508712af83aa27e80655908",
-    "semantic_hash": "a0da808f8508712af83aa27e80655908"
+    "mtime": 1789147277.3553095,
+    "seen": 1789213212.0464683,
+    "ast_hash": "7166aa7e712d37fe5e7f0e1173f29815",
+    "semantic_hash": "7166aa7e712d37fe5e7f0e1173f29815"
   },
   "app/Http/Controllers/Auth/AuthenticatedSessionController.php": {
-    "mtime": 1787666333.960617,
-    "seen": 1787710260.6920166,
-    "ast_hash": "54632d38530a5ec6f5a0f20d6242316a",
-    "semantic_hash": "54632d38530a5ec6f5a0f20d6242316a"
+    "mtime": 1789541001.3521154,
+    "seen": 1789551241.436226,
+    "ast_hash": "b27d0404ebf95a5b4bbc4323ea8308bd",
+    "semantic_hash": "b27d0404ebf95a5b4bbc4323ea8308bd"
   },
   "app/Http/Controllers/Auth/CaptchaImageController.php": {
     "mtime": 1784872540.898377,
@@ -162,10 +150,10 @@
     "semantic_hash": "4c6934c157d0f2e36457b437e08a44b2"
   },
   "app/Http/Controllers/Auth/RegisteredUserController.php": {
-    "mtime": 1784872540.9032922,
-    "seen": 1787710260.692027,
-    "ast_hash": "388c22952c03596c6c5517fa1ce67a05",
-    "semantic_hash": "388c22952c03596c6c5517fa1ce67a05"
+    "mtime": 1789147277.3573084,
+    "seen": 1789213212.0486233,
+    "ast_hash": "1b303068710d82bf4cfba5b544a6e04b",
+    "semantic_hash": "1b303068710d82bf4cfba5b544a6e04b"
   },
   "app/Http/Controllers/Auth/VerifyEmailController.php": {
     "mtime": 1784872540.9032922,
@@ -174,10 +162,10 @@
     "semantic_hash": "f7ba8245c1fa0f3e7d8591364c8f8943"
   },
   "app/Http/Controllers/CalendarController.php": {
-    "mtime": 1784898930.4724782,
-    "seen": 1787710260.6920295,
-    "ast_hash": "510bffce39f5ed0559a6c08ba87b3e9d",
-    "semantic_hash": "510bffce39f5ed0559a6c08ba87b3e9d"
+    "mtime": 1789405193.8067923,
+    "seen": 1789551241.437749,
+    "ast_hash": "c3fea9c685cc6a4c2c84c7f9e101fcf5",
+    "semantic_hash": "c3fea9c685cc6a4c2c84c7f9e101fcf5"
   },
   "app/Http/Controllers/ClimateRecordController.php": {
     "mtime": 1785250218.1810615,
@@ -186,10 +174,10 @@
     "semantic_hash": "942510003b6c2180aa91045d7e7be2ad"
   },
   "app/Http/Controllers/CommunityFeedController.php": {
-    "mtime": 1784872540.9051037,
-    "seen": 1787710260.692032,
-    "ast_hash": "48cfac4968128550c8f86a6230bf9edb",
-    "semantic_hash": "48cfac4968128550c8f86a6230bf9edb"
+    "mtime": 1789147296.316235,
+    "seen": 1789213212.0492928,
+    "ast_hash": "bb8616c6e289cd222b0e5ba0f1c97916",
+    "semantic_hash": "bb8616c6e289cd222b0e5ba0f1c97916"
   },
   "app/Http/Controllers/Controller.php": {
     "mtime": 1784872540.9051037,
@@ -204,52 +192,46 @@
     "semantic_hash": "dfe55e7f85c651e5a1364081660a7985"
   },
   "app/Http/Controllers/DashboardController.php": {
-    "mtime": 1786680219.6989884,
-    "seen": 1787710260.6920357,
-    "ast_hash": "a656532b202e2a7154b596377740c646",
-    "semantic_hash": "a656532b202e2a7154b596377740c646"
+    "mtime": 1789405192.4474018,
+    "seen": 1789551241.4383972,
+    "ast_hash": "f5b359806cfc91210ce164905fdd76b4",
+    "semantic_hash": "f5b359806cfc91210ce164905fdd76b4"
   },
   "app/Http/Controllers/FarmerProfileController.php": {
-    "mtime": 1784872540.9070022,
-    "seen": 1787710260.6920369,
-    "ast_hash": "613fdb87d3457c3f9640cbae842e4fe0",
-    "semantic_hash": "613fdb87d3457c3f9640cbae842e4fe0"
+    "mtime": 1789399702.3492901,
+    "seen": 1789551241.4385796,
+    "ast_hash": "abef08e99912519b0d6cc1d71d36c436",
+    "semantic_hash": "abef08e99912519b0d6cc1d71d36c436"
   },
   "app/Http/Controllers/HeatmapAreaController.php": {
-    "mtime": 1785250110.484668,
-    "seen": 1787710260.6920378,
-    "ast_hash": "b56799022a5be4d75782abc7adb81c70",
-    "semantic_hash": "b56799022a5be4d75782abc7adb81c70"
-  },
-  "app/Http/Controllers/LiveForecastingController.php": {
-    "mtime": 1784872540.908176,
-    "seen": 1787710260.6920393,
-    "ast_hash": "a989697d86b3d38962dd1e922e9ae60e",
-    "semantic_hash": "a989697d86b3d38962dd1e922e9ae60e"
+    "mtime": 1789406112.319756,
+    "seen": 1789407965.4576197,
+    "ast_hash": "07518e4bf2df58a44d7110490b6cf726",
+    "semantic_hash": "07518e4bf2df58a44d7110490b6cf726"
   },
   "app/Http/Controllers/MessagingController.php": {
-    "mtime": 1786287766.1370347,
-    "seen": 1787710260.6920404,
-    "ast_hash": "0e0a3c6a4e6efaf4b4dfb6856bccfc7b",
-    "semantic_hash": "0e0a3c6a4e6efaf4b4dfb6856bccfc7b"
+    "mtime": 1789232390.662893,
+    "seen": 1789232392.733004,
+    "ast_hash": "8f0b05c2bac9c5e434d84637979e2bdb",
+    "semantic_hash": "8f0b05c2bac9c5e434d84637979e2bdb"
   },
   "app/Http/Controllers/ModelEvaluationController.php": {
-    "mtime": 1784872540.9087603,
-    "seen": 1787710260.6920416,
-    "ast_hash": "a217c526da96242d015fff1b4c5924ba",
-    "semantic_hash": "a217c526da96242d015fff1b4c5924ba"
+    "mtime": 1789225172.7872715,
+    "seen": 1789232392.733006,
+    "ast_hash": "323f5de47934351313e9491258e3af76",
+    "semantic_hash": "323f5de47934351313e9491258e3af76"
   },
   "app/Http/Controllers/NotificationController.php": {
-    "mtime": 1786287766.1380763,
-    "seen": 1787710260.692043,
-    "ast_hash": "3e322bba96de83084f2dc8096422d033",
-    "semantic_hash": "3e322bba96de83084f2dc8096422d033"
+    "mtime": 1789232532.1130338,
+    "seen": 1789233731.562335,
+    "ast_hash": "1a0aece7fb602097429201ec856b02c3",
+    "semantic_hash": "1a0aece7fb602097429201ec856b02c3"
   },
   "app/Http/Controllers/PlantingAdvisoryController.php": {
-    "mtime": 1785250269.0357742,
-    "seen": 1787710260.692044,
-    "ast_hash": "f892305c055071f82bcff7c51fa3ade4",
-    "semantic_hash": "f892305c055071f82bcff7c51fa3ade4"
+    "mtime": 1789405653.1088367,
+    "seen": 1789551241.4392292,
+    "ast_hash": "afc2a311b8dcd8ab9f14c69ffd72e443",
+    "semantic_hash": "afc2a311b8dcd8ab9f14c69ffd72e443"
   },
   "app/Http/Controllers/PredictionController.php": {
     "mtime": 1784872540.9115877,
@@ -264,22 +246,22 @@
     "semantic_hash": "2951d93e0803ea1aba041d8d7ed264c8"
   },
   "app/Http/Controllers/ReportController.php": {
-    "mtime": 1784900251.0567732,
-    "seen": 1787710260.6920485,
-    "ast_hash": "5037c2704b5f6a590f2a05d54eca49cc",
-    "semantic_hash": "5037c2704b5f6a590f2a05d54eca49cc"
+    "mtime": 1789397652.494094,
+    "seen": 1789398649.832523,
+    "ast_hash": "1f80e5b9d58856c174ee74986f5fe3e1",
+    "semantic_hash": "1f80e5b9d58856c174ee74986f5fe3e1"
   },
   "app/Http/Controllers/RiceProductionController.php": {
-    "mtime": 1784872540.9128664,
-    "seen": 1787710260.69205,
-    "ast_hash": "153867d703012a0438d248e16fa5eaad",
-    "semantic_hash": "153867d703012a0438d248e16fa5eaad"
+    "mtime": 1789403942.0552154,
+    "seen": 1789551241.4397326,
+    "ast_hash": "afa0a6fe8675886eefcce6a32c093d90",
+    "semantic_hash": "afa0a6fe8675886eefcce6a32c093d90"
   },
   "app/Http/Controllers/RiceYieldPredictionController.php": {
-    "mtime": 1786724694.338481,
-    "seen": 1787710260.692051,
-    "ast_hash": "e5d995656206feee24a72c6bcac2c5a3",
-    "semantic_hash": "e5d995656206feee24a72c6bcac2c5a3"
+    "mtime": 1789224984.7152236,
+    "seen": 1789232392.7336023,
+    "ast_hash": "b3e91ecf3e094fcbb62c278b779bc3bf",
+    "semantic_hash": "b3e91ecf3e094fcbb62c278b779bc3bf"
   },
   "app/Http/Controllers/SystemLogController.php": {
     "mtime": 1784900316.38959,
@@ -300,10 +282,10 @@
     "semantic_hash": "73bb5c8940d04bcebdab250d85279148"
   },
   "app/Http/Controllers/WeatherPredictionController.php": {
-    "mtime": 1786723325.7492964,
-    "seen": 1787710260.6920555,
-    "ast_hash": "fd34572f2d5ddce1655d1f8473708272",
-    "semantic_hash": "fd34572f2d5ddce1655d1f8473708272"
+    "mtime": 1789397727.0768988,
+    "seen": 1789398649.8332863,
+    "ast_hash": "a9e08a26086d09e92b468a90dcec8462",
+    "semantic_hash": "a9e08a26086d09e92b468a90dcec8462"
   },
   "app/Http/Middleware/RoleMiddleware.php": {
     "mtime": 1784872540.9158278,
@@ -312,14 +294,14 @@
     "semantic_hash": "559590722b61112dd5f4399c759a857f"
   },
   "app/Http/Middleware/SecurityHeaders.php": {
-    "mtime": 1784872540.916881,
-    "seen": 1787710260.6920578,
+    "mtime": 1788966052.4171574,
+    "seen": 1789213212.0516386,
     "ast_hash": "52d20da8df2198965fb4515f71059475",
     "semantic_hash": "52d20da8df2198965fb4515f71059475"
   },
   "app/Http/Middleware/TrackUserActivity.php": {
-    "mtime": 1787667205.4503841,
-    "seen": 1787710260.6920588,
+    "mtime": 1789147277.3659718,
+    "seen": 1789213212.0516405,
     "ast_hash": "f3d0f208108da895259d9dbe245d9d7e",
     "semantic_hash": "f3d0f208108da895259d9dbe245d9d7e"
   },
@@ -336,14 +318,14 @@
     "semantic_hash": "157e8a763201c520841d9b562eb6cf42"
   },
   "app/Http/Requests/RiceYieldPredictionRequest.php": {
-    "mtime": 1786723863.3364024,
-    "seen": 1787710260.6920624,
+    "mtime": 1789147277.367535,
+    "seen": 1789213212.0519686,
     "ast_hash": "228da80cfa80fa05086b51de784aa423",
     "semantic_hash": "228da80cfa80fa05086b51de784aa423"
   },
   "app/Http/Requests/WeatherPredictionRequest.php": {
-    "mtime": 1786723862.328866,
-    "seen": 1787710260.6920638,
+    "mtime": 1789147277.367535,
+    "seen": 1789213212.05197,
     "ast_hash": "b1726fe5d5c40383aa9aa13792b9c6d4",
     "semantic_hash": "b1726fe5d5c40383aa9aa13792b9c6d4"
   },
@@ -372,10 +354,10 @@
     "semantic_hash": "ef621a13259f101f916c45521cd125b5"
   },
   "app/Models/ClimateRecord.php": {
-    "mtime": 1784872540.9238048,
-    "seen": 1787710260.6920702,
-    "ast_hash": "6d31b8a3bbe2550bc2ceb84a2d6a7c16",
-    "semantic_hash": "6d31b8a3bbe2550bc2ceb84a2d6a7c16"
+    "mtime": 1789147277.367535,
+    "seen": 1789213212.0525837,
+    "ast_hash": "25dd8ddc725a8f23b642b890e8a7786f",
+    "semantic_hash": "25dd8ddc725a8f23b642b890e8a7786f"
   },
   "app/Models/Conversation.php": {
     "mtime": 1784872540.925002,
@@ -390,16 +372,16 @@
     "semantic_hash": "62fa5aa706e0c2b63805e9b5d64364e8"
   },
   "app/Models/ExternalWeatherData.php": {
-    "mtime": 1784872540.9261904,
-    "seen": 1787710260.6920738,
-    "ast_hash": "7b165023ce446c7154df99e463ae143b",
-    "semantic_hash": "7b165023ce446c7154df99e463ae143b"
+    "mtime": 1789147277.367535,
+    "seen": 1789213212.0529296,
+    "ast_hash": "3cd960783a41dbe0bc4affaf8f428354",
+    "semantic_hash": "3cd960783a41dbe0bc4affaf8f428354"
   },
   "app/Models/FarmerProfile.php": {
-    "mtime": 1784872540.9268074,
-    "seen": 1787710260.692075,
-    "ast_hash": "c0675324234d63fd514bc69bff567f68",
-    "semantic_hash": "c0675324234d63fd514bc69bff567f68"
+    "mtime": 1789350705.2409801,
+    "seen": 1789350995.0735497,
+    "ast_hash": "0ff21f01ac1e80cfe4dda39a02ac0ab3",
+    "semantic_hash": "0ff21f01ac1e80cfe4dda39a02ac0ab3"
   },
   "app/Models/FeedComment.php": {
     "mtime": 1784872540.9273796,
@@ -426,10 +408,10 @@
     "semantic_hash": "d5f63ada2c4723076326eeedfb843e4c"
   },
   "app/Models/HeatmapArea.php": {
-    "mtime": 1784872540.9303799,
-    "seen": 1787710260.6920815,
-    "ast_hash": "f16ace34c2fc10ff230b3043e0b21e24",
-    "semantic_hash": "f16ace34c2fc10ff230b3043e0b21e24"
+    "mtime": 1789357461.7407622,
+    "seen": 1789359139.3139935,
+    "ast_hash": "c02370482399992be887acc28bdd290a",
+    "semantic_hash": "c02370482399992be887acc28bdd290a"
   },
   "app/Models/KnowledgeBase.php": {
     "mtime": 1784872540.9309976,
@@ -444,22 +426,22 @@
     "semantic_hash": "a701b1a064cd017cb3e93721dc9d02c7"
   },
   "app/Models/PlantingAdvisory.php": {
-    "mtime": 1785250178.7056005,
-    "seen": 1787710260.6920853,
-    "ast_hash": "a9169e36a6d88cbc132325913bb1f81e",
-    "semantic_hash": "a9169e36a6d88cbc132325913bb1f81e"
+    "mtime": 1789551227.4298632,
+    "seen": 1789551241.445079,
+    "ast_hash": "89508e20c53d9041cfef709e8eadcc99",
+    "semantic_hash": "89508e20c53d9041cfef709e8eadcc99"
   },
   "app/Models/Report.php": {
-    "mtime": 1784872540.9328008,
-    "seen": 1787710260.6920865,
-    "ast_hash": "43b87ec5620864db3d0a3888e2d34756",
-    "semantic_hash": "43b87ec5620864db3d0a3888e2d34756"
+    "mtime": 1789397475.8333602,
+    "seen": 1789398649.8374727,
+    "ast_hash": "a920e451fe95abb9680a733990c6797f",
+    "semantic_hash": "a920e451fe95abb9680a733990c6797f"
   },
   "app/Models/RiceProduction.php": {
-    "mtime": 1784872540.933429,
-    "seen": 1787710260.692088,
-    "ast_hash": "bbd6c3ab0876317e6c500bee7e6bee07",
-    "semantic_hash": "bbd6c3ab0876317e6c500bee7e6bee07"
+    "mtime": 1789404394.3078084,
+    "seen": 1789551241.44523,
+    "ast_hash": "c4a4d12f2edb110c4786712cc1ff4b9e",
+    "semantic_hash": "c4a4d12f2edb110c4786712cc1ff4b9e"
   },
   "app/Models/SystemLog.php": {
     "mtime": 1784872540.9345973,
@@ -474,38 +456,38 @@
     "semantic_hash": "b68b30913b88056d5f05df7b150c0435"
   },
   "app/Models/User.php": {
-    "mtime": 1786287766.1412299,
-    "seen": 1787710260.692092,
-    "ast_hash": "b1e607632091bbe4b4a58a99ccb64dcf",
-    "semantic_hash": "b1e607632091bbe4b4a58a99ccb64dcf"
+    "mtime": 1789403822.1799736,
+    "seen": 1789551241.4457262,
+    "ast_hash": "28fb8272a573d730f766aa9012e7f559",
+    "semantic_hash": "28fb8272a573d730f766aa9012e7f559"
   },
   "app/Providers/AppServiceProvider.php": {
-    "mtime": 1786287766.1412299,
-    "seen": 1787710260.6920931,
-    "ast_hash": "1d2066952429c7176c1a67326b6641b7",
-    "semantic_hash": "1d2066952429c7176c1a67326b6641b7"
+    "mtime": 1789354619.9219368,
+    "seen": 1789354935.2327175,
+    "ast_hash": "38055412482162f7b240c7f76fea1187",
+    "semantic_hash": "38055412482162f7b240c7f76fea1187"
   },
   "app/Services/AI/AIOrchestratorService.php": {
-    "mtime": 1786723587.983473,
-    "seen": 1787710260.6920943,
-    "ast_hash": "a2343de5d8442b290de9a1765a9c8ef4",
-    "semantic_hash": "a2343de5d8442b290de9a1765a9c8ef4"
+    "mtime": 1789147277.3739278,
+    "seen": 1789213212.0551097,
+    "ast_hash": "256d24c8295e014860c4145f7eaebf9c",
+    "semantic_hash": "256d24c8295e014860c4145f7eaebf9c"
   },
   "app/Services/AI/GroqChatService.php": {
-    "mtime": 1786723600.5005243,
-    "seen": 1787710260.6920955,
-    "ast_hash": "6584bdd8efb6902915a6b334b373ce67",
-    "semantic_hash": "6584bdd8efb6902915a6b334b373ce67"
+    "mtime": 1789306288.1220424,
+    "seen": 1789306776.1791754,
+    "ast_hash": "9e513e27b3a8545b41a54784025ec944",
+    "semantic_hash": "9e513e27b3a8545b41a54784025ec944"
   },
   "app/Services/AI/IntentClassifierService.php": {
-    "mtime": 1786723573.9420762,
-    "seen": 1787710260.6920967,
-    "ast_hash": "44776abce45fa372bd4e2f61e2f52178",
-    "semantic_hash": "44776abce45fa372bd4e2f61e2f52178"
+    "mtime": 1789147296.318402,
+    "seen": 1789213212.0551133,
+    "ast_hash": "7f9cbaf71dc3bd72d8dca8b5f7627e41",
+    "semantic_hash": "7f9cbaf71dc3bd72d8dca8b5f7627e41"
   },
   "app/Services/AI/IntentDetectionService.php": {
-    "mtime": 1786723599.4532013,
-    "seen": 1787710260.692098,
+    "mtime": 1789147277.3760746,
+    "seen": 1789213212.0551152,
     "ast_hash": "10fe06484a91300987f7e39e21dc478c",
     "semantic_hash": "10fe06484a91300987f7e39e21dc478c"
   },
@@ -516,8 +498,8 @@
     "semantic_hash": "cbcd7ea6d0c8201bdaa9c83c74ac66bf"
   },
   "app/Services/AI/RoleAssistantService.php": {
-    "mtime": 1786287766.143497,
-    "seen": 1787710260.692101,
+    "mtime": 1789147277.3773768,
+    "seen": 1789213212.0552964,
     "ast_hash": "b094d70e17e995459427131a7b4cd35a",
     "semantic_hash": "b094d70e17e995459427131a7b4cd35a"
   },
@@ -534,40 +516,40 @@
     "semantic_hash": "2ce3141243295387493bcb0d90119076"
   },
   "app/Services/Advisories/PagasaAdvisoryService.php": {
-    "mtime": 1785250267.998935,
-    "seen": 1787710260.6921058,
-    "ast_hash": "2a08895a63602ded8d803f293dc3b63b",
-    "semantic_hash": "2a08895a63602ded8d803f293dc3b63b"
+    "mtime": 1789551227.4313092,
+    "seen": 1789551241.4470894,
+    "ast_hash": "20aac58cfb980e0649c034701332d207",
+    "semantic_hash": "20aac58cfb980e0649c034701332d207"
   },
   "app/Services/DecisionSupportService.php": {
-    "mtime": 1786287766.1442971,
-    "seen": 1787710260.692107,
-    "ast_hash": "bf24c340c5fb5efb3e0bdbd9bd38091a",
-    "semantic_hash": "bf24c340c5fb5efb3e0bdbd9bd38091a"
+    "mtime": 1789393510.3990343,
+    "seen": 1789398649.8403165,
+    "ast_hash": "20e311a38ee5c6ac8bee9ac23cd28b0e",
+    "semantic_hash": "20e311a38ee5c6ac8bee9ac23cd28b0e"
   },
   "app/Services/HeatmapRiskService.php": {
-    "mtime": 1786676433.3352563,
-    "seen": 1787710260.6921096,
-    "ast_hash": "cb1e2a95a490b5bfe895b146e703aaeb",
-    "semantic_hash": "cb1e2a95a490b5bfe895b146e703aaeb"
+    "mtime": 1789546873.8560903,
+    "seen": 1789551241.448171,
+    "ast_hash": "bc5f368794b85ebbd87d8b2fe46d08f7",
+    "semantic_hash": "bc5f368794b85ebbd87d8b2fe46d08f7"
   },
   "app/Services/MachineLearning/ModelEvaluationService.php": {
-    "mtime": 1784872540.9484422,
-    "seen": 1787710260.692111,
-    "ast_hash": "0707905c268983794e69f65685bd1020",
-    "semantic_hash": "0707905c268983794e69f65685bd1020"
+    "mtime": 1789147296.32199,
+    "seen": 1789213212.056085,
+    "ast_hash": "f5b9672d245d9b600b8f58a9cd01bf45",
+    "semantic_hash": "f5b9672d245d9b600b8f58a9cd01bf45"
   },
   "app/Services/MachineLearning/MonthlyWeatherRandomForest.php": {
-    "mtime": 1785249116.802948,
-    "seen": 1787710260.6921124,
+    "mtime": 1789147277.38124,
+    "seen": 1789213212.056087,
     "ast_hash": "dffefead91bb0a1cd41ae7c3475076e0",
     "semantic_hash": "dffefead91bb0a1cd41ae7c3475076e0"
   },
   "app/Services/PredictionService.php": {
-    "mtime": 1786697046.0203483,
-    "seen": 1787710260.6921139,
-    "ast_hash": "14965cb2c2ed21c4939a07388aa6f92c",
-    "semantic_hash": "14965cb2c2ed21c4939a07388aa6f92c"
+    "mtime": 1789147277.3865337,
+    "seen": 1789213212.056089,
+    "ast_hash": "ccf02636337db1d5571bf3008e5d7a9e",
+    "semantic_hash": "ccf02636337db1d5571bf3008e5d7a9e"
   },
   "app/Services/Prediction/PredictionDateValidator.php": {
     "mtime": 1786287766.145458,
@@ -576,40 +558,40 @@
     "semantic_hash": "09d04063eadcf8b7f9b907a9e2ee799c"
   },
   "app/Services/Prediction/PredictionEngine.php": {
-    "mtime": 1786723347.968667,
-    "seen": 1787710260.6921182,
-    "ast_hash": "06ba3b4bb278f6111fd2e3eba24e69a0",
-    "semantic_hash": "06ba3b4bb278f6111fd2e3eba24e69a0"
+    "mtime": 1789147277.3825102,
+    "seen": 1789213212.0563087,
+    "ast_hash": "f3a8b1d62c4f2a5f055210b9f7030686",
+    "semantic_hash": "f3a8b1d62c4f2a5f055210b9f7030686"
   },
   "app/Services/Prediction/RiceYieldPredictionService.php": {
-    "mtime": 1786724680.85996,
-    "seen": 1787710260.6921198,
+    "mtime": 1789147277.3835127,
+    "seen": 1789213212.0563111,
     "ast_hash": "e1258f84245492bfcc2b473c298809a3",
     "semantic_hash": "e1258f84245492bfcc2b473c298809a3"
   },
   "app/Services/Prediction/WeatherLabeler.php": {
-    "mtime": 1786287766.1465364,
-    "seen": 1787710260.6921215,
-    "ast_hash": "e7ac779c15a6f4249fdf3be8ae0866c9",
-    "semantic_hash": "e7ac779c15a6f4249fdf3be8ae0866c9"
+    "mtime": 1789147296.322997,
+    "seen": 1789213212.0563154,
+    "ast_hash": "11887066acc43bfe98ac7e2982b7ce7b",
+    "semantic_hash": "11887066acc43bfe98ac7e2982b7ce7b"
   },
   "app/Services/Prediction/WeatherPredictionService.php": {
-    "mtime": 1786723290.2165873,
-    "seen": 1787710260.692123,
+    "mtime": 1789147277.3855183,
+    "seen": 1789213212.0563173,
     "ast_hash": "a2d5e1a17045003e27d90fdabed10b9b",
     "semantic_hash": "a2d5e1a17045003e27d90fdabed10b9b"
   },
   "app/Services/PythonService.php": {
-    "mtime": 1784872540.9502182,
-    "seen": 1787710260.692124,
-    "ast_hash": "dc053bf368490bbbfb9a7d379304b5e9",
-    "semantic_hash": "dc053bf368490bbbfb9a7d379304b5e9"
+    "mtime": 1789147277.3875222,
+    "seen": 1789213212.0563202,
+    "ast_hash": "b732dfad78a589198367a31a810afe99",
+    "semantic_hash": "b732dfad78a589198367a31a810afe99"
   },
   "app/Services/Risk/AgriculturalRiskScorer.php": {
-    "mtime": 1786287766.1475935,
-    "seen": 1787710260.6921248,
-    "ast_hash": "84f50266695130a41dbf0fac0486cc1f",
-    "semantic_hash": "84f50266695130a41dbf0fac0486cc1f"
+    "mtime": 1789393265.9705784,
+    "seen": 1789398649.8421311,
+    "ast_hash": "934c61c50da1956b7882633913e69871",
+    "semantic_hash": "934c61c50da1956b7882633913e69871"
   },
   "app/Services/Security/CaptchaService.php": {
     "mtime": 1785247902.1295507,
@@ -630,20 +612,20 @@
     "semantic_hash": "5f7fff0169287c2d5128a9532659a958"
   },
   "app/Services/WeatherApiService.php": {
-    "mtime": 1786291363.8198822,
-    "seen": 1787710260.6921299,
-    "ast_hash": "51d43ea66227c1fb715b421afc45e3b0",
-    "semantic_hash": "51d43ea66227c1fb715b421afc45e3b0"
+    "mtime": 1789355943.1310482,
+    "seen": 1789356140.932223,
+    "ast_hash": "3e4d401b1387486129e17a0ddb1eadcc",
+    "semantic_hash": "3e4d401b1387486129e17a0ddb1eadcc"
   },
   "app/Services/Weather/FarmerDashboardWeatherService.php": {
-    "mtime": 1786679883.997164,
-    "seen": 1787710260.6921308,
-    "ast_hash": "10769748b1e4c751edb310b3f56a1839",
-    "semantic_hash": "10769748b1e4c751edb310b3f56a1839"
+    "mtime": 1789147296.3244267,
+    "seen": 1789213212.057142,
+    "ast_hash": "449e09d30771bd683898b02fcce1d753",
+    "semantic_hash": "449e09d30771bd683898b02fcce1d753"
   },
   "app/Services/Weather/LianBarangayWeatherService.php": {
-    "mtime": 1785250661.343964,
-    "seen": 1787710260.692132,
+    "mtime": 1789147277.3905182,
+    "seen": 1789213212.0571463,
     "ast_hash": "2a054dd38386b7e6b1bc74d46be469c6",
     "semantic_hash": "2a054dd38386b7e6b1bc74d46be469c6"
   },
@@ -666,16 +648,16 @@
     "semantic_hash": "23f6e9cf09cca11dfcc114afb7a20c95"
   },
   "app/Support/LianBarangays.php": {
-    "mtime": 1784872540.9571276,
-    "seen": 1787710260.692137,
-    "ast_hash": "9615aaa78362c28d40f07d9a5bb6919c",
-    "semantic_hash": "9615aaa78362c28d40f07d9a5bb6919c"
+    "mtime": 1789308075.2582517,
+    "seen": 1789308514.9168065,
+    "ast_hash": "daa5d68a96179cd404a1495caa4f2e53",
+    "semantic_hash": "daa5d68a96179cd404a1495caa4f2e53"
   },
   "app/Support/LianFarmTypes.php": {
-    "mtime": 1784872540.9577205,
-    "seen": 1787710260.692138,
-    "ast_hash": "5184e423d7cca31daa79a3a9320273d9",
-    "semantic_hash": "5184e423d7cca31daa79a3a9320273d9"
+    "mtime": 1789147277.3925214,
+    "seen": 1789213212.0584047,
+    "ast_hash": "0916c4fd3e0910f5dacc921a0f61adcb",
+    "semantic_hash": "0916c4fd3e0910f5dacc921a0f61adcb"
   },
   "app/View/Components/AppLayout.php": {
     "mtime": 1784872540.9588761,
@@ -708,10 +690,10 @@
     "semantic_hash": "888c810b5a4720916f07aa05dd2c2dd3"
   },
   "composer.json": {
-    "mtime": 1784872540.9629407,
-    "seen": 1787710260.692145,
-    "ast_hash": "4bc6b967549efaab937ac4141ea8777c",
-    "semantic_hash": "4bc6b967549efaab937ac4141ea8777c"
+    "mtime": 1789147296.3384733,
+    "seen": 1789213212.0592413,
+    "ast_hash": "b681040069c6dfff0e6727c6ebb49d94",
+    "semantic_hash": "b681040069c6dfff0e6727c6ebb49d94"
   },
   "config/app.php": {
     "mtime": 1784872540.9657362,
@@ -756,8 +738,8 @@
     "semantic_hash": "18601a927b48d38337ba2077426a7d60"
   },
   "config/prediction.php": {
-    "mtime": 1786723324.8072796,
-    "seen": 1787710260.6921546,
+    "mtime": 1789147277.3925214,
+    "seen": 1789213212.060257,
     "ast_hash": "67a20ca555b4e9b89dd8746258ab0552",
     "semantic_hash": "67a20ca555b4e9b89dd8746258ab0552"
   },
@@ -768,10 +750,10 @@
     "semantic_hash": "f98ce92e7bf51db1fabaf8a30e12fc5a"
   },
   "config/services.php": {
-    "mtime": 1786681660.4276948,
-    "seen": 1787710260.692157,
-    "ast_hash": "7762564c7b6173cecc2a9391f488755a",
-    "semantic_hash": "7762564c7b6173cecc2a9391f488755a"
+    "mtime": 1789360471.3017285,
+    "seen": 1789365509.3770776,
+    "ast_hash": "cf1e6c30a405a9c7c403e066b1a4d330",
+    "semantic_hash": "cf1e6c30a405a9c7c403e066b1a4d330"
   },
   "config/session.php": {
     "mtime": 1784872540.971946,
@@ -798,8 +780,8 @@
     "semantic_hash": "cd82157eda47326fd522f69412373a25"
   },
   "database/factories/HeatmapAreaFactory.php": {
-    "mtime": 1784872540.9766374,
-    "seen": 1787710260.692163,
+    "mtime": 1789147277.3955188,
+    "seen": 1789213212.0610356,
     "ast_hash": "fd55448c9318fc58edcab3e175bd13a5",
     "semantic_hash": "fd55448c9318fc58edcab3e175bd13a5"
   },
@@ -816,10 +798,10 @@
     "semantic_hash": "7aa7629378b8c10f8a578c3432e53913"
   },
   "database/factories/ReportFactory.php": {
-    "mtime": 1784872540.9790864,
-    "seen": 1787710260.6921682,
-    "ast_hash": "59f3240857d9031fa3c7ce890a5d3aea",
-    "semantic_hash": "59f3240857d9031fa3c7ce890a5d3aea"
+    "mtime": 1789223115.463072,
+    "seen": 1789232392.7535655,
+    "ast_hash": "0bdd83defa67c2003c41f1a4d2f70843",
+    "semantic_hash": "0bdd83defa67c2003c41f1a4d2f70843"
   },
   "database/factories/RiceProductionFactory.php": {
     "mtime": 1784872540.9809048,
@@ -894,8 +876,8 @@
     "semantic_hash": "27d8c4e032ad0fbfc50baff2fcf824bb"
   },
   "database/migrations/2026_06_25_000007_create_heatmap_areas_table.php": {
-    "mtime": 1784872540.9909954,
-    "seen": 1787710260.6921885,
+    "mtime": 1789147277.3965216,
+    "seen": 1789213212.0632093,
     "ast_hash": "f8004dea3ed7d31ca972d4876268d79c",
     "semantic_hash": "f8004dea3ed7d31ca972d4876268d79c"
   },
@@ -918,8 +900,8 @@
     "semantic_hash": "f508651d36d6e9b104010d76cf799199"
   },
   "database/migrations/2026_06_30_000002_seed_lian_barangay_heatmap_defaults.php": {
-    "mtime": 1784872540.994088,
-    "seen": 1787710260.6921933,
+    "mtime": 1789147277.3975165,
+    "seen": 1789213212.063652,
     "ast_hash": "c6111124fcbcb9e72f2c0c7fc36e3e4f",
     "semantic_hash": "c6111124fcbcb9e72f2c0c7fc36e3e4f"
   },
@@ -1008,14 +990,14 @@
     "semantic_hash": "aaf7e86868718f24990b5451b5193c1c"
   },
   "database/seeders/DatabaseSeeder.php": {
-    "mtime": 1784900287.5634453,
-    "seen": 1787710260.6922107,
-    "ast_hash": "59e353c603559ca67651dcf8cdafb290",
-    "semantic_hash": "59e353c603559ca67651dcf8cdafb290"
+    "mtime": 1789147296.3434978,
+    "seen": 1789213212.0658216,
+    "ast_hash": "42ea66b59bace4b60cfe0731182dcf8b",
+    "semantic_hash": "42ea66b59bace4b60cfe0731182dcf8b"
   },
   "database/seeders/KnowledgeBaseSeeder.php": {
-    "mtime": 1784872541.0068514,
-    "seen": 1787710260.6922119,
+    "mtime": 1789147277.4027052,
+    "seen": 1789213212.0658252,
     "ast_hash": "9122d0628a147e0b89df2cac7585edbb",
     "semantic_hash": "9122d0628a147e0b89df2cac7585edbb"
   },
@@ -1032,14 +1014,14 @@
     "semantic_hash": "8e586b373707718a21836482d01e00fc"
   },
   "docs/figures/generate_iclimate_figures.py": {
-    "mtime": 1787107686.3587456,
-    "seen": 1787710260.6922176,
+    "mtime": 1789147277.4195802,
+    "seen": 1789213212.0661142,
     "ast_hash": "e029a76dd4607796b5bd95baebaf041c",
     "semantic_hash": "e029a76dd4607796b5bd95baebaf041c"
   },
   "package.json": {
-    "mtime": 1784872541.0150788,
-    "seen": 1787710260.6922188,
+    "mtime": 1789321204.6222425,
+    "seen": 1789321444.1691077,
     "ast_hash": "aae782cd9bec39d3b7c7a02d3c2677e3",
     "semantic_hash": "aae782cd9bec39d3b7c7a02d3c2677e3"
   },
@@ -1055,12 +1037,6 @@
     "ast_hash": "d8eda274115af5fd2aaa8230af329ef7",
     "semantic_hash": "d8eda274115af5fd2aaa8230af329ef7"
   },
-  "python_scripts/farming_assistant_api.py": {
-    "mtime": 1786723364.4993162,
-    "seen": 1787710260.6922224,
-    "ast_hash": "785bb1dff8f5cf8317dc8107e4ec9af6",
-    "semantic_hash": "785bb1dff8f5cf8317dc8107e4ec9af6"
-  },
   "python_scripts/predict.py": {
     "mtime": 1785249255.9753337,
     "seen": 1787710260.6922235,
@@ -1068,10 +1044,10 @@
     "semantic_hash": "0899ef10d468e2eae0dc5efbc435cab3"
   },
   "resources/js/app.js": {
-    "mtime": 1786685132.8661716,
-    "seen": 1787710260.6922247,
-    "ast_hash": "4d7159d4e6be933d961838da03453bf8",
-    "semantic_hash": "4d7159d4e6be933d961838da03453bf8"
+    "mtime": 1789542955.6325848,
+    "seen": 1789551241.4662218,
+    "ast_hash": "e10b34ff38f36ebbe1a41122fc0dc186",
+    "semantic_hash": "e10b34ff38f36ebbe1a41122fc0dc186"
   },
   "resources/js/bootstrap.js": {
     "mtime": 1784872541.075162,
@@ -1080,8 +1056,8 @@
     "semantic_hash": "78f909acc19aea4717eddca5a87c1ba3"
   },
   "resources/js/scroll-animations.js": {
-    "mtime": 1786685113.7525413,
-    "seen": 1787710260.6922271,
+    "mtime": 1789147277.7727275,
+    "seen": 1789213212.0670624,
     "ast_hash": "28e16dca96df9a9b3338ab1fc54176ee",
     "semantic_hash": "28e16dca96df9a9b3338ab1fc54176ee"
   },
@@ -1092,34 +1068,34 @@
     "semantic_hash": "2462737c43cd1ebf0ac65d70ff230267"
   },
   "resources/views/advisories/index.blade.php": {
-    "mtime": 1786693047.4217734,
-    "seen": 1787710260.6922293,
-    "ast_hash": "94856ae3a95cb43dd2fc60c19f7690ff",
-    "semantic_hash": "94856ae3a95cb43dd2fc60c19f7690ff"
+    "mtime": 1789551227.43273,
+    "seen": 1789551241.466857,
+    "ast_hash": "38531caba0b44e036ae370ffa730a4c3",
+    "semantic_hash": "38531caba0b44e036ae370ffa730a4c3"
   },
   "resources/views/advisories/management.blade.php": {
-    "mtime": 1786287766.1535232,
-    "seen": 1787710260.6922307,
-    "ast_hash": "86a22a90a7493496aae42d2606be34c9",
-    "semantic_hash": "86a22a90a7493496aae42d2606be34c9"
+    "mtime": 1789551227.4351182,
+    "seen": 1789551241.4668589,
+    "ast_hash": "5ee81a0da1bf6d542aaff33d7fe83fe6",
+    "semantic_hash": "5ee81a0da1bf6d542aaff33d7fe83fe6"
   },
   "resources/views/advisories/partials/badges.blade.php": {
-    "mtime": 1786690276.4260051,
-    "seen": 1787710260.6922317,
+    "mtime": 1789147277.7748735,
+    "seen": 1789213212.0672557,
     "ast_hash": "ebb270f0efbe82e8b2aea3bb4a5ffea8",
     "semantic_hash": "ebb270f0efbe82e8b2aea3bb4a5ffea8"
   },
   "resources/views/advisories/show.blade.php": {
-    "mtime": 1786691694.2633545,
-    "seen": 1787710260.6922328,
-    "ast_hash": "6292fe76537fb1bbfce37831c630c009",
-    "semantic_hash": "6292fe76537fb1bbfce37831c630c009"
+    "mtime": 1789551227.436121,
+    "seen": 1789551241.4670143,
+    "ast_hash": "48795fb35378d0993ebbd9e910b5cca5",
+    "semantic_hash": "48795fb35378d0993ebbd9e910b5cca5"
   },
   "resources/views/ai-chat/index.blade.php": {
-    "mtime": 1786689851.7278616,
-    "seen": 1787710260.6922343,
-    "ast_hash": "7c8424390a06d101ed9067e0166edd35",
-    "semantic_hash": "7c8424390a06d101ed9067e0166edd35"
+    "mtime": 1789147277.779716,
+    "seen": 1789213212.0672596,
+    "ast_hash": "2066d59a0660207cf7bf66d2f69e9cf9",
+    "semantic_hash": "2066d59a0660207cf7bf66d2f69e9cf9"
   },
   "resources/views/auth/confirm-password.blade.php": {
     "mtime": 1786287766.1552284,
@@ -1134,16 +1110,16 @@
     "semantic_hash": "cc3564e8446397c3ddb3ed17b62ebc46"
   },
   "resources/views/auth/login.blade.php": {
-    "mtime": 1786692277.3931134,
-    "seen": 1787710260.6922386,
-    "ast_hash": "4679486882d11af4b346b2a3320fe54a",
-    "semantic_hash": "4679486882d11af4b346b2a3320fe54a"
+    "mtime": 1789541018.151507,
+    "seen": 1789551241.4674528,
+    "ast_hash": "b03aa453d5ff527dadddc5b1871abbaa",
+    "semantic_hash": "b03aa453d5ff527dadddc5b1871abbaa"
   },
   "resources/views/auth/register.blade.php": {
-    "mtime": 1786692278.2119348,
-    "seen": 1787710260.6922398,
-    "ast_hash": "f2af25ac04473562b7e4ea137d8399c5",
-    "semantic_hash": "f2af25ac04473562b7e4ea137d8399c5"
+    "mtime": 1789147277.779716,
+    "seen": 1789213212.0675626,
+    "ast_hash": "2d7ee01f3e56b2d31d06460aa72c3d78",
+    "semantic_hash": "2d7ee01f3e56b2d31d06460aa72c3d78"
   },
   "resources/views/auth/reset-password.blade.php": {
     "mtime": 1786287766.15977,
@@ -1158,22 +1134,22 @@
     "semantic_hash": "5a323fb1008a429b84d43f122a4611f2"
   },
   "resources/views/calendar/index.blade.php": {
-    "mtime": 1786692695.3811793,
-    "seen": 1787710260.6922457,
-    "ast_hash": "75da734791dfcd323f8e621e1c7ac0e1",
-    "semantic_hash": "75da734791dfcd323f8e621e1c7ac0e1"
+    "mtime": 1789405221.297823,
+    "seen": 1789551241.4678907,
+    "ast_hash": "db1d9f5acd1db2e8299c784bff2d334f",
+    "semantic_hash": "db1d9f5acd1db2e8299c784bff2d334f"
   },
   "resources/views/community-feed/index.blade.php": {
-    "mtime": 1786692835.0434003,
-    "seen": 1787710260.6922474,
-    "ast_hash": "02cba5085d504ff05bb4c582a50fcccf",
-    "semantic_hash": "02cba5085d504ff05bb4c582a50fcccf"
+    "mtime": 1789147277.7830935,
+    "seen": 1789213212.0678687,
+    "ast_hash": "239ea7827516beb9782947b3772145ab",
+    "semantic_hash": "239ea7827516beb9782947b3772145ab"
   },
   "resources/views/components/ai-chat-widget.blade.php": {
-    "mtime": 1786722964.8881278,
-    "seen": 1787710260.692249,
-    "ast_hash": "5f55542ca005a2fcb49507b8c5e94838",
-    "semantic_hash": "5f55542ca005a2fcb49507b8c5e94838"
+    "mtime": 1789397376.3997712,
+    "seen": 1789398649.8602169,
+    "ast_hash": "2bfa941670a66c43043bea82a5edbe37",
+    "semantic_hash": "2bfa941670a66c43043bea82a5edbe37"
   },
   "resources/views/components/application-logo.blade.php": {
     "mtime": 1784872541.0917573,
@@ -1206,8 +1182,8 @@
     "semantic_hash": "9ee9c7ba3068b63a0b2955e32f858e9b"
   },
   "resources/views/components/flash-toast.blade.php": {
-    "mtime": 1786689971.3437672,
-    "seen": 1787710260.6922576,
+    "mtime": 1789147277.7877498,
+    "seen": 1789213212.068603,
     "ast_hash": "69cadf6d83fa8fe98def5e23810dde9e",
     "semantic_hash": "69cadf6d83fa8fe98def5e23810dde9e"
   },
@@ -1266,22 +1242,22 @@
     "semantic_hash": "034c30b1984f338b6e21926a85517511"
   },
   "resources/views/crud/form.blade.php": {
-    "mtime": 1786287766.16238,
-    "seen": 1787710260.6922693,
-    "ast_hash": "39184232d0fd8bf9c22cce25c62bea92",
-    "semantic_hash": "39184232d0fd8bf9c22cce25c62bea92"
+    "mtime": 1789404373.4975572,
+    "seen": 1789551241.470427,
+    "ast_hash": "6c8f94fe60c0565ef84f9745454f4d40",
+    "semantic_hash": "6c8f94fe60c0565ef84f9745454f4d40"
   },
   "resources/views/crud/index.blade.php": {
-    "mtime": 1786676433.352612,
-    "seen": 1787710260.6922703,
-    "ast_hash": "12b11e34cd06deaa43154af4702de35b",
-    "semantic_hash": "12b11e34cd06deaa43154af4702de35b"
+    "mtime": 1789408077.8993528,
+    "seen": 1789551241.4704294,
+    "ast_hash": "3291d54d8f48bf4ff7202cefd9e6f1fe",
+    "semantic_hash": "3291d54d8f48bf4ff7202cefd9e6f1fe"
   },
   "resources/views/crud/show.blade.php": {
-    "mtime": 1786287766.16238,
-    "seen": 1787710260.6922717,
-    "ast_hash": "24184800b1d51b0003ccfbab3960ef10",
-    "semantic_hash": "24184800b1d51b0003ccfbab3960ef10"
+    "mtime": 1789147277.7904992,
+    "seen": 1789213212.0701916,
+    "ast_hash": "befa4b08f8f234f30225f598885bf8da",
+    "semantic_hash": "befa4b08f8f234f30225f598885bf8da"
   },
   "resources/views/dashboard.blade.php": {
     "mtime": 1784872541.102748,
@@ -1290,26 +1266,26 @@
     "semantic_hash": "dbd3c392969b3e20ce2b33444cc39ffa"
   },
   "resources/views/dashboards/farmer.blade.php": {
-    "mtime": 1786692561.448122,
-    "seen": 1787710260.6922739,
-    "ast_hash": "6a837a5872c0fc92d354f2e0066159e4",
-    "semantic_hash": "6a837a5872c0fc92d354f2e0066159e4"
+    "mtime": 1789551227.4391239,
+    "seen": 1789551241.470739,
+    "ast_hash": "0542f68a77ae6a51fecff5c66117aa9f",
+    "semantic_hash": "0542f68a77ae6a51fecff5c66117aa9f"
   },
   "resources/views/dashboards/it-expert.blade.php": {
-    "mtime": 1786692666.4592676,
-    "seen": 1787710260.6922753,
-    "ast_hash": "c6292764554a960247e0fa00310e5b53",
-    "semantic_hash": "c6292764554a960247e0fa00310e5b53"
+    "mtime": 1789408077.903385,
+    "seen": 1789551241.4707415,
+    "ast_hash": "e1a7bccabd72fb4fe4a3acdb0d6c2fd7",
+    "semantic_hash": "e1a7bccabd72fb4fe4a3acdb0d6c2fd7"
   },
   "resources/views/dashboards/mao.blade.php": {
-    "mtime": 1786692634.696421,
-    "seen": 1787710260.6922765,
-    "ast_hash": "a871e1790ef4575e6ea4233505f0b5c1",
-    "semantic_hash": "a871e1790ef4575e6ea4233505f0b5c1"
+    "mtime": 1789542844.227673,
+    "seen": 1789551241.470743,
+    "ast_hash": "9a0ca17e966bc2e8e89733ab5ace5ca4",
+    "semantic_hash": "9a0ca17e966bc2e8e89733ab5ace5ca4"
   },
   "resources/views/dashboards/partials/climate-trend-table.blade.php": {
-    "mtime": 1786691695.8015268,
-    "seen": 1787710260.6922774,
+    "mtime": 1789147277.7937386,
+    "seen": 1789213212.0703435,
     "ast_hash": "ab67052f21bef4c777832a9a4e7ceef1",
     "semantic_hash": "ab67052f21bef4c777832a9a4e7ceef1"
   },
@@ -1362,70 +1338,64 @@
     "semantic_hash": "db2a3ddb9d658dab28ef68d105cdae72"
   },
   "resources/views/errors/minimal.blade.php": {
-    "mtime": 1786691348.1968586,
-    "seen": 1787710260.692289,
+    "mtime": 1789147277.7966986,
+    "seen": 1789213212.0714872,
     "ast_hash": "bd9456fb7e856e080b709b0086091662",
     "semantic_hash": "bd9456fb7e856e080b709b0086091662"
   },
   "resources/views/heatmap-areas/index.blade.php": {
-    "mtime": 1786693277.6027749,
-    "seen": 1787710260.6922903,
-    "ast_hash": "a878df2ae41c90d22f183dc1eefaec1f",
-    "semantic_hash": "a878df2ae41c90d22f183dc1eefaec1f"
+    "mtime": 1789550535.6801114,
+    "seen": 1789551241.472475,
+    "ast_hash": "276035497df039c31ffb10e0b3b31f36",
+    "semantic_hash": "276035497df039c31ffb10e0b3b31f36"
   },
   "resources/views/layouts/app.blade.php": {
-    "mtime": 1786694593.648011,
-    "seen": 1787710260.6922913,
-    "ast_hash": "3332e6821e1e1cf5aff7074355e23225",
-    "semantic_hash": "3332e6821e1e1cf5aff7074355e23225"
+    "mtime": 1789542290.9444468,
+    "seen": 1789551241.4724774,
+    "ast_hash": "69b69cc5fd1daa8bb1280f290cd309d1",
+    "semantic_hash": "69b69cc5fd1daa8bb1280f290cd309d1"
   },
   "resources/views/layouts/guest.blade.php": {
-    "mtime": 1786692242.0089684,
-    "seen": 1787710260.6922927,
+    "mtime": 1789147277.8012857,
+    "seen": 1789213212.0714965,
     "ast_hash": "8e7372e35a10dea2935ae9020a880899",
     "semantic_hash": "8e7372e35a10dea2935ae9020a880899"
   },
   "resources/views/layouts/navigation.blade.php": {
-    "mtime": 1785249899.2390852,
-    "seen": 1787710260.6922936,
-    "ast_hash": "8beece76c49cda7bdbc6fcf260d89f66",
-    "semantic_hash": "8beece76c49cda7bdbc6fcf260d89f66"
+    "mtime": 1789147277.8012857,
+    "seen": 1789213212.0714982,
+    "ast_hash": "957704a0820ee67a822648c27ff952fc",
+    "semantic_hash": "957704a0820ee67a822648c27ff952fc"
   },
   "resources/views/layouts/partials/dark-workspace.blade.php": {
-    "mtime": 1786691171.6844897,
-    "seen": 1787710260.6922948,
+    "mtime": 1789147277.8043919,
+    "seen": 1789213212.0715005,
     "ast_hash": "3f975f2340d2928cb9b58344cb56d575",
     "semantic_hash": "3f975f2340d2928cb9b58344cb56d575"
   },
   "resources/views/layouts/partials/sidebar-brand.blade.php": {
-    "mtime": 1784872541.1182525,
-    "seen": 1787710260.692296,
-    "ast_hash": "f9597002985ebfa709dc286d12792684",
-    "semantic_hash": "f9597002985ebfa709dc286d12792684"
+    "mtime": 1789541935.8160968,
+    "seen": 1789551241.472956,
+    "ast_hash": "aeecbef104a27d11058ae3ab9701afda",
+    "semantic_hash": "aeecbef104a27d11058ae3ab9701afda"
   },
   "resources/views/layouts/sidebar.blade.php": {
-    "mtime": 1786722965.7952116,
-    "seen": 1787710260.6922972,
-    "ast_hash": "6aa797c15ff3748f7b7aa183a42d5528",
-    "semantic_hash": "6aa797c15ff3748f7b7aa183a42d5528"
-  },
-  "resources/views/live-forecasting/index.blade.php": {
-    "mtime": 1786676433.3673458,
-    "seen": 1787710260.6922982,
-    "ast_hash": "2ec423c33be45d7a1b1f4da1fd8d342b",
-    "semantic_hash": "2ec423c33be45d7a1b1f4da1fd8d342b"
+    "mtime": 1789542244.4101944,
+    "seen": 1789551241.4729583,
+    "ast_hash": "933cccd4cc68093feb9775282883ca54",
+    "semantic_hash": "933cccd4cc68093feb9775282883ca54"
   },
   "resources/views/messages/index.blade.php": {
-    "mtime": 1786692745.0565593,
-    "seen": 1787710260.6922996,
-    "ast_hash": "2e75b7cbd659d8d8e3d5dda96d01a2bd",
-    "semantic_hash": "2e75b7cbd659d8d8e3d5dda96d01a2bd"
+    "mtime": 1789232392.8072038,
+    "seen": 1789233731.6445613,
+    "ast_hash": "66452c9c220d3eb782c6a170cbbdd673",
+    "semantic_hash": "66452c9c220d3eb782c6a170cbbdd673"
   },
   "resources/views/model-evaluation/index.blade.php": {
-    "mtime": 1786689876.3090065,
-    "seen": 1787710260.6923008,
-    "ast_hash": "d34d35506b1d2dad19f7c9a8abefcef5",
-    "semantic_hash": "d34d35506b1d2dad19f7c9a8abefcef5"
+    "mtime": 1789225174.1154842,
+    "seen": 1789232392.775599,
+    "ast_hash": "ce5753a904d010288f4747f2c099f5fb",
+    "semantic_hash": "ce5753a904d010288f4747f2c099f5fb"
   },
   "resources/views/modules/placeholder.blade.php": {
     "mtime": 1784872541.1254547,
@@ -1434,10 +1404,10 @@
     "semantic_hash": "c25acfb073647b38223de1175268a18f"
   },
   "resources/views/profile/edit.blade.php": {
-    "mtime": 1786287766.1766453,
-    "seen": 1787710260.6923037,
-    "ast_hash": "442eb9db4937d2a92ea7158f304b464c",
-    "semantic_hash": "442eb9db4937d2a92ea7158f304b464c"
+    "mtime": 1789147277.8072462,
+    "seen": 1789213212.071839,
+    "ast_hash": "f51674c6bf6c31988e652837ad7e4109",
+    "semantic_hash": "f51674c6bf6c31988e652837ad7e4109"
   },
   "resources/views/profile/partials/delete-user-form.blade.php": {
     "mtime": 1786676433.3685231,
@@ -1458,52 +1428,52 @@
     "semantic_hash": "28a4cc04efc02794c33d6155e235ecb1"
   },
   "resources/views/reports/index.blade.php": {
-    "mtime": 1786676433.373309,
-    "seen": 1787710260.6923084,
-    "ast_hash": "2e014e333bbed4725d76160451b59c61",
-    "semantic_hash": "2e014e333bbed4725d76160451b59c61"
+    "mtime": 1789397511.2757518,
+    "seen": 1789398649.8671072,
+    "ast_hash": "66bb2a015d96ec1bdd3e851c5e402c21",
+    "semantic_hash": "66bb2a015d96ec1bdd3e851c5e402c21"
   },
   "resources/views/reports/print.blade.php": {
-    "mtime": 1784872541.130877,
-    "seen": 1787710260.6923099,
-    "ast_hash": "f483c76d57718bf461d819a1373bb308",
-    "semantic_hash": "f483c76d57718bf461d819a1373bb308"
+    "mtime": 1789397523.4844153,
+    "seen": 1789398649.867109,
+    "ast_hash": "1da81041cdb40ec617771d3dd14e9f9b",
+    "semantic_hash": "1da81041cdb40ec617771d3dd14e9f9b"
   },
   "resources/views/weather-predictions/index.blade.php": {
-    "mtime": 1786725329.7005546,
-    "seen": 1787710260.692311,
-    "ast_hash": "8bf3d17544104a0a6ba7c7d4748ecb72",
-    "semantic_hash": "8bf3d17544104a0a6ba7c7d4748ecb72"
+    "mtime": 1789397735.4590623,
+    "seen": 1789398649.8671107,
+    "ast_hash": "05b9c2cb80697008e7387f945cb81583",
+    "semantic_hash": "05b9c2cb80697008e7387f945cb81583"
   },
   "resources/views/welcome.blade.php": {
-    "mtime": 1786693009.2096543,
-    "seen": 1787710260.6923122,
-    "ast_hash": "fac7a10f2df662e64e492989b2d02f92",
-    "semantic_hash": "fac7a10f2df662e64e492989b2d02f92"
+    "mtime": 1789356822.0405302,
+    "seen": 1789357014.555685,
+    "ast_hash": "5342265dbf7483b6f8474d7c5e2e22b8",
+    "semantic_hash": "5342265dbf7483b6f8474d7c5e2e22b8"
   },
   "routes/api.php": {
-    "mtime": 1784872541.1350627,
-    "seen": 1787710260.6923137,
+    "mtime": 1789542946.8831835,
+    "seen": 1789551241.4746747,
     "ast_hash": "a7fad9756453aa500f4c6bcf79e9b25d",
     "semantic_hash": "a7fad9756453aa500f4c6bcf79e9b25d"
   },
   "routes/auth.php": {
-    "mtime": 1784872541.1355777,
-    "seen": 1787710260.6923149,
-    "ast_hash": "93815c21914c9b4f44d85fe45233825b",
-    "semantic_hash": "93815c21914c9b4f44d85fe45233825b"
+    "mtime": 1789540665.195315,
+    "seen": 1789551241.4746776,
+    "ast_hash": "b0f98d6e585129f383c0d0afd8ea08ef",
+    "semantic_hash": "b0f98d6e585129f383c0d0afd8ea08ef"
   },
   "routes/console.php": {
-    "mtime": 1784872541.1367533,
-    "seen": 1787710260.692316,
-    "ast_hash": "90845633b4674f4e45269948597f5f7a",
-    "semantic_hash": "90845633b4674f4e45269948597f5f7a"
+    "mtime": 1789546914.8570538,
+    "seen": 1789551241.4746792,
+    "ast_hash": "6c649a406a1c97899ea8c0997ad65bba",
+    "semantic_hash": "6c649a406a1c97899ea8c0997ad65bba"
   },
   "routes/web.php": {
-    "mtime": 1786723323.8938444,
-    "seen": 1787710260.6923172,
-    "ast_hash": "9c180f1c24862594e7781e2442fa73d0",
-    "semantic_hash": "9c180f1c24862594e7781e2442fa73d0"
+    "mtime": 1789403940.3782048,
+    "seen": 1789551241.4746816,
+    "ast_hash": "d839b25ba5a24e15958fb32760f22b97",
+    "semantic_hash": "d839b25ba5a24e15958fb32760f22b97"
   },
   "tailwind.config.js": {
     "mtime": 1784872541.1517534,
@@ -1512,16 +1482,16 @@
     "semantic_hash": "dd4bf1ba753a8d6ff773105a67189a13"
   },
   "tests/Feature/AIChatTest.php": {
-    "mtime": 1786695772.440062,
-    "seen": 1787710260.6923196,
-    "ast_hash": "5db6ab6662f62b3c8e5d0b298148a772",
-    "semantic_hash": "5db6ab6662f62b3c8e5d0b298148a772"
+    "mtime": 1789231563.4906445,
+    "seen": 1789232392.7776978,
+    "ast_hash": "e0155fd2024e33c772316e6b7c174bc6",
+    "semantic_hash": "e0155fd2024e33c772316e6b7c174bc6"
   },
   "tests/Feature/AIHybridOrchestratorTest.php": {
-    "mtime": 1786723670.0861554,
-    "seen": 1787710260.6923208,
-    "ast_hash": "752d00371da675e93fda360179d75442",
-    "semantic_hash": "752d00371da675e93fda360179d75442"
+    "mtime": 1789147277.8199558,
+    "seen": 1789213212.072769,
+    "ast_hash": "45623d2ad32e3d596b9d5f09d5dfe050",
+    "semantic_hash": "45623d2ad32e3d596b9d5f09d5dfe050"
   },
   "tests/Feature/Auth/AuthenticationTest.php": {
     "mtime": 1785247902.13753,
@@ -1554,10 +1524,10 @@
     "semantic_hash": "26ae197fdda088a1dfe448d3a79f81cf"
   },
   "tests/Feature/Auth/RegistrationTest.php": {
-    "mtime": 1784872541.1570108,
-    "seen": 1787710260.6923282,
-    "ast_hash": "5ff2a9a797569fc8865b1227130cddca",
-    "semantic_hash": "5ff2a9a797569fc8865b1227130cddca"
+    "mtime": 1789147277.8211212,
+    "seen": 1789213212.073505,
+    "ast_hash": "2f5a71ec9ebbe09f09807d99613783ff",
+    "semantic_hash": "2f5a71ec9ebbe09f09807d99613783ff"
   },
   "tests/Feature/CommunicationPlatformTest.php": {
     "mtime": 1784872541.1576133,
@@ -1572,22 +1542,16 @@
     "semantic_hash": "5711f6a79e1d3655a537b467e7ef7204"
   },
   "tests/Feature/FarmerDashboardRealtimeWeatherTest.php": {
-    "mtime": 1786291707.266106,
-    "seen": 1787710260.6923318,
-    "ast_hash": "91ce81a06b64c07e7864adfbf5a02bdb",
-    "semantic_hash": "91ce81a06b64c07e7864adfbf5a02bdb"
+    "mtime": 1789147277.8211212,
+    "seen": 1789213212.0738122,
+    "ast_hash": "f9a3e76eaaac38a17033aa0adfd11ade",
+    "semantic_hash": "f9a3e76eaaac38a17033aa0adfd11ade"
   },
   "tests/Feature/FarmerDashboardWeatherTest.php": {
-    "mtime": 1786688857.5456488,
-    "seen": 1787710260.6923363,
-    "ast_hash": "167ee3c635af2453273ff6c484d9126b",
-    "semantic_hash": "167ee3c635af2453273ff6c484d9126b"
-  },
-  "tests/Feature/ModelEvaluationTest.php": {
-    "mtime": 1784872541.159403,
-    "seen": 1787710260.6923378,
-    "ast_hash": "b8d217c47fc8c5c671038710db6c41c5",
-    "semantic_hash": "b8d217c47fc8c5c671038710db6c41c5"
+    "mtime": 1789400651.4878798,
+    "seen": 1789551241.476965,
+    "ast_hash": "7698c6663124bf472ad04989530995ff",
+    "semantic_hash": "7698c6663124bf472ad04989530995ff"
   },
   "tests/Feature/OnlineAgriculturalAdvisorySystemTest.php": {
     "mtime": 1786291760.5766497,
@@ -1602,10 +1566,10 @@
     "semantic_hash": "3105f6e123cc2dd8b0de2af28c66e2d7"
   },
   "tests/Feature/PredictionParityTest.php": {
-    "mtime": 1786723652.652238,
-    "seen": 1787710260.6923416,
-    "ast_hash": "844b9e39b73b7c7c1476d8e1b444bbcd",
-    "semantic_hash": "844b9e39b73b7c7c1476d8e1b444bbcd"
+    "mtime": 1789231217.104343,
+    "seen": 1789232392.7808743,
+    "ast_hash": "4cec06cc45cdd270f4a50fddc62065cc",
+    "semantic_hash": "4cec06cc45cdd270f4a50fddc62065cc"
   },
   "tests/Feature/ProfileTest.php": {
     "mtime": 1784872541.161782,
@@ -1614,10 +1578,10 @@
     "semantic_hash": "198cba3e6561abe548cc34787a312e44"
   },
   "tests/Feature/ReportsHeatmapNotificationsTest.php": {
-    "mtime": 1784872541.162396,
-    "seen": 1787710260.692344,
-    "ast_hash": "d3cc31af5484bc173ba8a0c835688df7",
-    "semantic_hash": "d3cc31af5484bc173ba8a0c835688df7"
+    "mtime": 1789397652.84637,
+    "seen": 1789398649.871236,
+    "ast_hash": "fcb3059b016430e8b73b83deedbe240a",
+    "semantic_hash": "fcb3059b016430e8b73b83deedbe240a"
   },
   "tests/Feature/RiskParityTest.php": {
     "mtime": 1786287766.189901,
@@ -1644,10 +1608,10 @@
     "semantic_hash": "7e915d1fdedec0db736bec9ff1eaebbb"
   },
   "tests/Feature/WeatherPredictionTest.php": {
-    "mtime": 1786724742.3627424,
-    "seen": 1787710260.6923501,
-    "ast_hash": "bec137eddfd4841ce04525fe706d8d9a",
-    "semantic_hash": "bec137eddfd4841ce04525fe706d8d9a"
+    "mtime": 1789397771.8121545,
+    "seen": 1789398649.8721564,
+    "ast_hash": "8b7d5b6adb773f52116f00c8fdd30cc6",
+    "semantic_hash": "8b7d5b6adb773f52116f00c8fdd30cc6"
   },
   "tests/TestCase.php": {
     "mtime": 1784872541.1659844,
@@ -1656,10 +1620,10 @@
     "semantic_hash": "7e567dc27e68d5b57bae16af07f68907"
   },
   "tests/Unit/AgriculturalRiskScorerTest.php": {
-    "mtime": 1786287766.1916473,
-    "seen": 1787710260.6923525,
-    "ast_hash": "eeb1d2807c67046e1141f044354bcd3e",
-    "semantic_hash": "eeb1d2807c67046e1141f044354bcd3e"
+    "mtime": 1789393384.9364915,
+    "seen": 1789398649.8722997,
+    "ast_hash": "ddeab6b17219985857ee282cd2ef0092",
+    "semantic_hash": "ddeab6b17219985857ee282cd2ef0092"
   },
   "tests/Unit/ExampleTest.php": {
     "mtime": 1784872541.1672025,
@@ -1668,16 +1632,16 @@
     "semantic_hash": "3f679e9508c834f0ad95943455fcd836"
   },
   "tests/Unit/WeatherApiServiceTest.php": {
-    "mtime": 1786291391.9058166,
-    "seen": 1787710260.692355,
-    "ast_hash": "b27acc790ed26c588f01a88c17b06a7c",
-    "semantic_hash": "b27acc790ed26c588f01a88c17b06a7c"
+    "mtime": 1789355934.2126377,
+    "seen": 1789356140.978317,
+    "ast_hash": "d4fdfcbd2e6982920d26e37bd5927e87",
+    "semantic_hash": "d4fdfcbd2e6982920d26e37bd5927e87"
   },
   "tests/Unit/WeatherIconMapperTest.php": {
-    "mtime": 1786289618.2144485,
-    "seen": 1787710260.692356,
-    "ast_hash": "1dfff16058a45ede29210cab4ab7de20",
-    "semantic_hash": "1dfff16058a45ede29210cab4ab7de20"
+    "mtime": 1789147296.3579395,
+    "seen": 1789213212.0752838,
+    "ast_hash": "4f91510ff7ca2e1f67caadc0ddc85af7",
+    "semantic_hash": "4f91510ff7ca2e1f67caadc0ddc85af7"
   },
   "vite.config.js": {
     "mtime": 1784872541.1683276,
@@ -1686,16 +1650,16 @@
     "semantic_hash": "804b9fdf6105c34a0a14bed82a9d6026"
   },
   ".agents/rules/graphify.md": {
-    "mtime": 1787709869.428797,
-    "seen": 1787710260.6923587,
-    "ast_hash": "a0e4d192b9e2e17256124dbfc8e24e6a",
-    "semantic_hash": "a0e4d192b9e2e17256124dbfc8e24e6a"
+    "mtime": 1789147277.338566,
+    "seen": 1789357443.0525913,
+    "ast_hash": "f1e53ecc9194573d3c28fc116c743a2e",
+    "semantic_hash": ""
   },
   ".agents/workflows/graphify.md": {
-    "mtime": 1787709869.430813,
-    "seen": 1787710260.6923597,
-    "ast_hash": "a831cf3669f1e6ab85d8a80ebe655f99",
-    "semantic_hash": "a831cf3669f1e6ab85d8a80ebe655f99"
+    "mtime": 1789147277.338566,
+    "seen": 1789357443.0525932,
+    "ast_hash": "6d73634a678cf1e1c71930adf80bd1f0",
+    "semantic_hash": ""
   },
   ".snapshots/readme.md": {
     "mtime": 1784872540.8843262,
@@ -1716,8 +1680,8 @@
     "semantic_hash": "cf00b9c00bd2483fbb9b7f5ac0ccb4dd"
   },
   "docs/capstone/ICLIMATE_CHAPTERS_1_TO_3_MASTER.md": {
-    "mtime": 1787106038.9498985,
-    "seen": 1787710260.6923647,
+    "mtime": 1789147277.4071236,
+    "seen": 1789357443.0526018,
     "ast_hash": "f1fdbf6d005366be73e3a4cf8702ede7",
     "semantic_hash": "f1fdbf6d005366be73e3a4cf8702ede7"
   },
@@ -1752,70 +1716,70 @@
     "semantic_hash": "b6216d61c03e6ce0c9aea6ca7808f7ca"
   },
   "docs/capstone/ICLIMATE_CHAPTERS_1_TO_3.pdf": {
-    "mtime": 1787106043.2646627,
-    "seen": 1787710260.6923723,
+    "mtime": 1789147277.4071236,
+    "seen": 1789357443.0526285,
     "ast_hash": "de8d33db99632299a5fa1bd179b05b76",
     "semantic_hash": "de8d33db99632299a5fa1bd179b05b76"
   },
   "docs/figures/fig01-theoretical-framework.svg": {
-    "mtime": 1787107693.1215713,
-    "seen": 1787710260.6923733,
-    "ast_hash": "b0c246635b080dee10d4936441df12bd",
-    "semantic_hash": "b0c246635b080dee10d4936441df12bd"
+    "mtime": 1789147277.4071236,
+    "seen": 1789357443.05263,
+    "ast_hash": "73130c513dd9e68200109d027634baa3",
+    "semantic_hash": ""
   },
   "docs/figures/fig02-conceptual-framework.svg": {
-    "mtime": 1787107693.1215713,
-    "seen": 1787710260.6923745,
-    "ast_hash": "50ab96147bda8360c2b27d93e7d45900",
-    "semantic_hash": "50ab96147bda8360c2b27d93e7d45900"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526314,
+    "ast_hash": "35eb61c37afd8c6980b517cc39d4b182",
+    "semantic_hash": ""
   },
   "docs/figures/fig03-agile-methodology.svg": {
-    "mtime": 1787107693.122579,
-    "seen": 1787710260.6923773,
-    "ast_hash": "7a14c3fc9b6b1ac1061469074f294e3d",
-    "semantic_hash": "7a14c3fc9b6b1ac1061469074f294e3d"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526326,
+    "ast_hash": "e3660c7b8a293de36bbdbeb0c465ad9a",
+    "semantic_hash": ""
   },
   "docs/figures/fig04-system-architecture.svg": {
-    "mtime": 1787107693.122579,
-    "seen": 1787710260.6923785,
-    "ast_hash": "a88a136ca32fe6e2a39799d4cbe0049d",
-    "semantic_hash": "a88a136ca32fe6e2a39799d4cbe0049d"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526338,
+    "ast_hash": "5998bc118e6ade883103c7b8372fa220",
+    "semantic_hash": ""
   },
   "docs/figures/fig05-requirement-analysis.svg": {
-    "mtime": 1787107693.1240523,
-    "seen": 1787710260.69238,
-    "ast_hash": "d049920e7d5658bf73f503a7b73fec6c",
-    "semantic_hash": "d049920e7d5658bf73f503a7b73fec6c"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.052635,
+    "ast_hash": "ebc1c43ee1b406baf6f3af94bb91b36c",
+    "semantic_hash": ""
   },
   "docs/figures/fig06-use-case-diagram.svg": {
-    "mtime": 1787107693.1240523,
-    "seen": 1787710260.6923811,
-    "ast_hash": "2df3d3356733b64e94e1039b2faf9b03",
-    "semantic_hash": "2df3d3356733b64e94e1039b2faf9b03"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526361,
+    "ast_hash": "05eedebaaee549ce1e129cbf549360ec",
+    "semantic_hash": ""
   },
   "docs/figures/fig07-context-diagram.svg": {
-    "mtime": 1787107693.1254554,
-    "seen": 1787710260.692382,
-    "ast_hash": "76c57bccd1b240f70e1f0cf733730ea0",
-    "semantic_hash": "76c57bccd1b240f70e1f0cf733730ea0"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526426,
+    "ast_hash": "69c0d7fa9e16eebe9c51946ea5597497",
+    "semantic_hash": ""
   },
   "docs/figures/fig08-data-flow-diagram.svg": {
-    "mtime": 1787107693.1254554,
-    "seen": 1787710260.6923835,
-    "ast_hash": "08782d1b83b45bfb5c3462df319285cf",
-    "semantic_hash": "08782d1b83b45bfb5c3462df319285cf"
+    "mtime": 1789147277.4113102,
+    "seen": 1789357443.0526452,
+    "ast_hash": "2d8cbb90751da59e97e82d17bc8f1d84",
+    "semantic_hash": ""
   },
   "docs/figures/fig09-entity-relationship-diagram.svg": {
-    "mtime": 1787107693.1264546,
-    "seen": 1787710260.6923847,
-    "ast_hash": "3bd059339e1f3a525eeaac3938087596",
-    "semantic_hash": "3bd059339e1f3a525eeaac3938087596"
+    "mtime": 1789147277.4195802,
+    "seen": 1789357443.0526474,
+    "ast_hash": "dcf78ad1271b0c8199d0f459bfb59b73",
+    "semantic_hash": ""
   },
   "docs/figures/fig10-development-flow.svg": {
-    "mtime": 1787107693.127455,
-    "seen": 1787710260.6923862,
-    "ast_hash": "bfd0443cb9c4a0d5132b9a3c0471fca5",
-    "semantic_hash": "bfd0443cb9c4a0d5132b9a3c0471fca5"
+    "mtime": 1789147277.4195802,
+    "seen": 1789357443.052649,
+    "ast_hash": "428653db831def4f942233151e2f45a3",
+    "semantic_hash": ""
   },
   "public/images/ai assistant.png": {
     "mtime": 1785247902.1347868,
@@ -1960,5 +1924,641 @@
     "seen": 1787710260.6924155,
     "ast_hash": "8cebcbf2a1d5fdcac254f00639903088",
     "semantic_hash": "8cebcbf2a1d5fdcac254f00639903088"
+  },
+  "app/Console/Commands/ExportRiceYieldTrainingData.php": {
+    "mtime": 1789231385.1116562,
+    "seen": 1789232392.727675,
+    "ast_hash": "a36a04a1467623c1d6bdd0946f9c7d6d",
+    "semantic_hash": "a36a04a1467623c1d6bdd0946f9c7d6d"
+  },
+  "app/Http/Controllers/FarmBoundaryController.php": {
+    "mtime": 1789147277.3582046,
+    "seen": 1789213212.0496547,
+    "ast_hash": "fdfc5451ec71d2491cba1c5f462b2d3e",
+    "semantic_hash": "fdfc5451ec71d2491cba1c5f462b2d3e"
+  },
+  "app/Models/FarmBoundary.php": {
+    "mtime": 1789147277.367535,
+    "seen": 1789213212.0529315,
+    "ast_hash": "4dd410e75737c8e1bb359c324bf1f9eb",
+    "semantic_hash": "4dd410e75737c8e1bb359c324bf1f9eb"
+  },
+  "app/Models/FarmerOrganization.php": {
+    "mtime": 1789147277.3709009,
+    "seen": 1789213212.0529344,
+    "ast_hash": "6e5fde30d5116d62d0afef08282757b7",
+    "semantic_hash": "6e5fde30d5116d62d0afef08282757b7"
+  },
+  "app/Models/UsabilitySurveyResponse.php": {
+    "mtime": 1789147277.3729298,
+    "seen": 1789213212.0547826,
+    "ast_hash": "c14ebbec3d901ebbb2527cafb50143d1",
+    "semantic_hash": "c14ebbec3d901ebbb2527cafb50143d1"
+  },
+  "app/Services/FarmBoundaryMeasurementService.php": {
+    "mtime": 1789147277.3785663,
+    "seen": 1789213212.0560787,
+    "ast_hash": "825c4ef06833092a13edd7da5c2c18b2",
+    "semantic_hash": "825c4ef06833092a13edd7da5c2c18b2"
+  },
+  "app/Services/Prediction/FeatureCatalog.php": {
+    "mtime": 1789147296.322997,
+    "seen": 1789213212.056091,
+    "ast_hash": "2a38d440538b8d324523fddfbd347d03",
+    "semantic_hash": "2a38d440538b8d324523fddfbd347d03"
+  },
+  "app/Services/Prediction/ShortTermOutlookService.php": {
+    "mtime": 1789147277.3845177,
+    "seen": 1789213212.056313,
+    "ast_hash": "db3fabc7712a940f23b29f4fa32ea2fd",
+    "semantic_hash": "db3fabc7712a940f23b29f4fa32ea2fd"
+  },
+  "database/factories/FarmBoundaryFactory.php": {
+    "mtime": 1789147277.3945189,
+    "seen": 1789213212.0608957,
+    "ast_hash": "cfbac47bfbcf6d0c5cd77d49467ee7df",
+    "semantic_hash": "cfbac47bfbcf6d0c5cd77d49467ee7df"
+  },
+  "database/factories/UsabilitySurveyResponseFactory.php": {
+    "mtime": 1789147296.34249,
+    "seen": 1789213212.061757,
+    "ast_hash": "01bc8cc60818ad6bb951e01b48d70c5e",
+    "semantic_hash": "01bc8cc60818ad6bb951e01b48d70c5e"
+  },
+  "database/migrations/2026_08_19_000001_create_farm_boundaries_table.php": {
+    "mtime": 1789147277.3985176,
+    "seen": 1789213212.0656638,
+    "ast_hash": "2c1e3e62a3aa72e9bc85cca25c33f75b",
+    "semantic_hash": "2c1e3e62a3aa72e9bc85cca25c33f75b"
+  },
+  "database/migrations/2026_08_27_000001_create_farmer_organizations_table.php": {
+    "mtime": 1789147277.3985176,
+    "seen": 1789213212.065666,
+    "ast_hash": "30982cce45598cd7506f13ca3cc43af5",
+    "semantic_hash": "30982cce45598cd7506f13ca3cc43af5"
+  },
+  "database/migrations/2026_08_27_000002_add_farmer_organization_to_farmer_profiles_table.php": {
+    "mtime": 1789147277.3995836,
+    "seen": 1789213212.0656676,
+    "ast_hash": "665918986bdca2b095037c41e3567a72",
+    "semantic_hash": "665918986bdca2b095037c41e3567a72"
+  },
+  "database/migrations/2026_09_10_150841_create_usability_survey_responses_table.php": {
+    "mtime": 1789147277.400697,
+    "seen": 1789213212.065669,
+    "ast_hash": "7bf4ea23be9e612204b40c5252112104",
+    "semantic_hash": "7bf4ea23be9e612204b40c5252112104"
+  },
+  "database/migrations/2026_09_11_153159_add_unique_constraints_to_rice_productions_and_climate_records.php": {
+    "mtime": 1789147296.34249,
+    "seen": 1789213212.0656714,
+    "ast_hash": "babb90bc34d7c357137c05f522a111db",
+    "semantic_hash": "babb90bc34d7c357137c05f522a111db"
+  },
+  "database/seeders/FarmerOrganizationSeeder.php": {
+    "mtime": 1789147277.401706,
+    "seen": 1789213212.0658236,
+    "ast_hash": "fb20fd666f76c457fb357921eb1601e8",
+    "semantic_hash": "fb20fd666f76c457fb357921eb1601e8"
+  },
+  "python_scripts/compare_yield_features.py": {
+    "mtime": 1789147277.7551856,
+    "seen": 1789213212.0666196,
+    "ast_hash": "542d6a6044815742ee8c539aa6a09caa",
+    "semantic_hash": "542d6a6044815742ee8c539aa6a09caa"
+  },
+  "python_scripts/evaluation_service.py": {
+    "mtime": 1789147277.7635086,
+    "seen": 1789213212.0666482,
+    "ast_hash": "e852dfad2f649c2a3ae4b5d4e0db478c",
+    "semantic_hash": "e852dfad2f649c2a3ae4b5d4e0db478c"
+  },
+  "python_scripts/generate_smoketest_data.py": {
+    "mtime": 1789147277.7635086,
+    "seen": 1789213212.0666497,
+    "ast_hash": "d863f16c40ff2b01ddaa9753ca50ccd8",
+    "semantic_hash": "d863f16c40ff2b01ddaa9753ca50ccd8"
+  },
+  "python_scripts/main.py": {
+    "mtime": 1789224808.892338,
+    "seen": 1789232392.7627137,
+    "ast_hash": "bb2aca291800756b76ba138fbc5dfbc3",
+    "semantic_hash": "bb2aca291800756b76ba138fbc5dfbc3"
+  },
+  "python_scripts/monthly_weather_random_forest.py": {
+    "mtime": 1789147296.3472602,
+    "seen": 1789213212.066653,
+    "ast_hash": "59759bc17e510c2a5329d497ec394558",
+    "semantic_hash": "59759bc17e510c2a5329d497ec394558"
+  },
+  "python_scripts/rice_yield_service.py": {
+    "mtime": 1789147296.349,
+    "seen": 1789213212.0668616,
+    "ast_hash": "756d5c43571ff4a12649c8dae2705c78",
+    "semantic_hash": "756d5c43571ff4a12649c8dae2705c78"
+  },
+  "python_scripts/tests/__init__.py": {
+    "mtime": 1789147296.3501565,
+    "seen": 1789213212.066863,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "python_scripts/tests/test_smoke.py": {
+    "mtime": 1789305338.2997932,
+    "seen": 1789305629.7976356,
+    "ast_hash": "3acea9cb34c7365c9bd6465687a816a0",
+    "semantic_hash": "3acea9cb34c7365c9bd6465687a816a0"
+  },
+  "python_scripts/train_rice_yield_model.py": {
+    "mtime": 1789147277.7672193,
+    "seen": 1789213212.0668657,
+    "ast_hash": "e9827d488f54211ca386359de66907a4",
+    "semantic_hash": "e9827d488f54211ca386359de66907a4"
+  },
+  "resources/views/dashboards/partials/farmer-organization-chart.blade.php": {
+    "mtime": 1789408077.903385,
+    "seen": 1789551241.4710581,
+    "ast_hash": "3d30fdd1d38920556605e4a12ec8195f",
+    "semantic_hash": "3d30fdd1d38920556605e4a12ec8195f"
+  },
+  "resources/views/farm-boundaries/edit.blade.php": {
+    "mtime": 1789147277.7987056,
+    "seen": 1789213212.0714898,
+    "ast_hash": "152ddd4758b70e42970d606b22a39554",
+    "semantic_hash": "152ddd4758b70e42970d606b22a39554"
+  },
+  "tests/Feature/AdminDashboardOrganizationChartTest.php": {
+    "mtime": 1789147277.8211212,
+    "seen": 1789213212.072771,
+    "ast_hash": "50917dc5577189254729a8e0a25d5c4d",
+    "semantic_hash": "50917dc5577189254729a8e0a25d5c4d"
+  },
+  "tests/Feature/CommunityFeedAuthorizationTest.php": {
+    "mtime": 1789147296.3545444,
+    "seen": 1789213212.0736623,
+    "ast_hash": "48a08e77f419d93c99756cd04e28be82",
+    "semantic_hash": "48a08e77f419d93c99756cd04e28be82"
+  },
+  "tests/Feature/FarmBoundaryTest.php": {
+    "mtime": 1789147277.8211212,
+    "seen": 1789213212.07381,
+    "ast_hash": "bb40af785fbfb4ddef512782d65af71d",
+    "semantic_hash": "bb40af785fbfb4ddef512782d65af71d"
+  },
+  "tests/Feature/ResponsiveLayoutTest.php": {
+    "mtime": 1789400787.3617601,
+    "seen": 1789551241.4780247,
+    "ast_hash": "4191ec80a24d7700ecddc4e30ac2cf28",
+    "semantic_hash": "4191ec80a24d7700ecddc4e30ac2cf28"
+  },
+  "tests/Feature/UsabilitySurveyTest.php": {
+    "mtime": 1789360142.1580503,
+    "seen": 1789365509.4049404,
+    "ast_hash": "cc5f25078ebc26442a441fe1d46c3e09",
+    "semantic_hash": "cc5f25078ebc26442a441fe1d46c3e09"
+  },
+  "tests/Unit/ShortTermOutlookServiceTest.php": {
+    "mtime": 1789147296.3568888,
+    "seen": 1789213212.0751355,
+    "ast_hash": "37bd00e381b7c6ad13923711188b0b9e",
+    "semantic_hash": "37bd00e381b7c6ad13923711188b0b9e"
+  },
+  "tests/Unit/UsabilitySurveyResponseTest.php": {
+    "mtime": 1789147296.3579395,
+    "seen": 1789213212.0751374,
+    "ast_hash": "5017d754f0852fdc3afe6542677951c7",
+    "semantic_hash": "5017d754f0852fdc3afe6542677951c7"
+  },
+  "tests/Unit/WeatherLabelerTest.php": {
+    "mtime": 1789147296.3590052,
+    "seen": 1789213212.0752854,
+    "ast_hash": "fae39c2d702af72fd98ba8a954a55fc7",
+    "semantic_hash": "fae39c2d702af72fd98ba8a954a55fc7"
+  },
+  "app/Console/Commands/QueueDatasetProcessing.php": {
+    "mtime": 1789225175.5274715,
+    "seen": 1789232392.728089,
+    "ast_hash": "3fd22e2df0472b6e65dd69ee122fab34",
+    "semantic_hash": "3fd22e2df0472b6e65dd69ee122fab34"
+  },
+  "app/Http/Controllers/AnalyticsRunController.php": {
+    "mtime": 1789224722.9075515,
+    "seen": 1789232392.7289197,
+    "ast_hash": "e3317e85fb9381d7033ec0a6877d8a0d",
+    "semantic_hash": "e3317e85fb9381d7033ec0a6877d8a0d"
+  },
+  "app/Jobs/RunPythonAnalytics.php": {
+    "mtime": 1789231288.3460863,
+    "seen": 1789232392.7360947,
+    "ast_hash": "a6f68316f1c9c45f38a3e60c336433d6",
+    "semantic_hash": "a6f68316f1c9c45f38a3e60c336433d6"
+  },
+  "app/Models/AnalyticsRun.php": {
+    "mtime": 1789231288.3144543,
+    "seen": 1789232392.7367308,
+    "ast_hash": "0b1b97eef6c5504521c2dfa945b7b187",
+    "semantic_hash": "0b1b97eef6c5504521c2dfa945b7b187"
+  },
+  "app/Services/Analytics/AnalyticsDispatcher.php": {
+    "mtime": 1789230926.1635132,
+    "seen": 1789232392.742742,
+    "ast_hash": "1eb433b1d094174a6ca6d64ff848d3b2",
+    "semantic_hash": "1eb433b1d094174a6ca6d64ff848d3b2"
+  },
+  "app/Services/Analytics/AnalyticsPayloadFactory.php": {
+    "mtime": 1789224672.6477363,
+    "seen": 1789232392.7427447,
+    "ast_hash": "781697d5897b1430179b891956a9fd13",
+    "semantic_hash": "781697d5897b1430179b891956a9fd13"
+  },
+  "app/Services/Analytics/AnalyticsResultPersister.php": {
+    "mtime": 1789224719.068402,
+    "seen": 1789232392.7427475,
+    "ast_hash": "f0e7d21d8c05e312c3f9f455d055a574",
+    "semantic_hash": "f0e7d21d8c05e312c3f9f455d055a574"
+  },
+  "app/Services/Analytics/PythonAnalyticsClient.php": {
+    "mtime": 1789231496.9779308,
+    "seen": 1789232392.7427495,
+    "ast_hash": "0bb2855c742e2c083dee2228c03cc666",
+    "semantic_hash": "0bb2855c742e2c083dee2228c03cc666"
+  },
+  "database/migrations/2026_09_12_140000_mark_real_generated_reports_and_remove_dummy_history.php": {
+    "mtime": 1789220384.647147,
+    "seen": 1789232392.760401,
+    "ast_hash": "558fe0f10bcc8a2a16b74e0e5dbf682c",
+    "semantic_hash": "558fe0f10bcc8a2a16b74e0e5dbf682c"
+  },
+  "database/migrations/2026_09_12_143000_remove_reports_without_saved_database_records.php": {
+    "mtime": 1789223117.5126944,
+    "seen": 1789232392.760404,
+    "ast_hash": "1f1e679ba314f04457a1af6356a4c6b1",
+    "semantic_hash": "1f1e679ba314f04457a1af6356a4c6b1"
+  },
+  "database/migrations/2026_09_12_150000_create_analytics_runs_table.php": {
+    "mtime": 1789224666.2356455,
+    "seen": 1789232392.7604063,
+    "ast_hash": "a8ebfa00fa8356f902f30fdd4eed61ab",
+    "semantic_hash": "a8ebfa00fa8356f902f30fdd4eed61ab"
+  },
+  "python_scripts/analytics_tasks.py": {
+    "mtime": 1789307072.3933485,
+    "seen": 1789307532.617472,
+    "ast_hash": "029c52b38950b1fa8dad83646ba1bae7",
+    "semantic_hash": "029c52b38950b1fa8dad83646ba1bae7"
+  },
+  "python_scripts/tests/test_analytics_tasks.py": {
+    "mtime": 1789307225.727053,
+    "seen": 1789307532.6186676,
+    "ast_hash": "210665033e2b9ebd64e8f86921f16f42",
+    "semantic_hash": "210665033e2b9ebd64e8f86921f16f42"
+  },
+  "resources/views/advisories/_analytics-status.blade.php": {
+    "mtime": 1789225087.1955018,
+    "seen": 1789232392.7643595,
+    "ast_hash": "7f19df6025b48d1a82556cae66f8f940",
+    "semantic_hash": "7f19df6025b48d1a82556cae66f8f940"
+  },
+  "tests/Feature/PythonAnalyticsQueueTest.php": {
+    "mtime": 1789307211.5046034,
+    "seen": 1789307532.6341028,
+    "ast_hash": "d3dc3ad1c6a1789fc31217d500b1d9b5",
+    "semantic_hash": "d3dc3ad1c6a1789fc31217d500b1d9b5"
+  },
+  "database/migrations/2026_09_13_000001_add_runtime_performance_indexes.php": {
+    "mtime": 1789232424.2505686,
+    "seen": 1789233731.613762,
+    "ast_hash": "d30cd865a8f9f06ff1a6a27af5b5a199",
+    "semantic_hash": "d30cd865a8f9f06ff1a6a27af5b5a199"
+  },
+  "app/Services/Weather/MonthlyWeatherCalendarService.php": {
+    "mtime": 1789355807.906478,
+    "seen": 1789356140.9326222,
+    "ast_hash": "9f309ba23f8e45359d46abf4bf12383e",
+    "semantic_hash": "9f309ba23f8e45359d46abf4bf12383e"
+  },
+  "tests/Feature/LiveForecastingTest.php": {
+    "mtime": 1789360471.3027315,
+    "seen": 1789365509.403296,
+    "ast_hash": "1d7edbc8bb8ab5b6c2292448bd8b6e71",
+    "semantic_hash": "1d7edbc8bb8ab5b6c2292448bd8b6e71"
+  },
+  "database/migrations/2026_09_14_000001_add_rsbsa_no_to_farmer_profiles_table.php": {
+    "mtime": 1789350701.2835839,
+    "seen": 1789350995.0912373,
+    "ast_hash": "97d86c2a6f71ea0b50047abdc8524b22",
+    "semantic_hash": "97d86c2a6f71ea0b50047abdc8524b22"
+  },
+  "database/seeders/FarmerMasterlistSeeder.php": {
+    "mtime": 1789408077.8993528,
+    "seen": 1789551241.4631448,
+    "ast_hash": "b62c5a122fc5d994377ca2b85646e4ec",
+    "semantic_hash": "b62c5a122fc5d994377ca2b85646e4ec"
+  },
+  "resources/views/dashboards/partials/chart-interpretation.blade.php": {
+    "mtime": 1789353247.2656384,
+    "seen": 1789353453.385298,
+    "ast_hash": "2894c6f5fef874f41879bf3dd71fe15a",
+    "semantic_hash": "2894c6f5fef874f41879bf3dd71fe15a"
+  },
+  "app/Jobs/RefreshHeatmapRisk.php": {
+    "mtime": 1789354565.8874319,
+    "seen": 1789354935.2285135,
+    "ast_hash": "b3163447579274ef5ae95004d52d5f2a",
+    "semantic_hash": "b3163447579274ef5ae95004d52d5f2a"
+  },
+  "app/Support/HeatmapCache.php": {
+    "mtime": 1789354073.2731917,
+    "seen": 1789354935.2388175,
+    "ast_hash": "76df168acf976aeff96cfff0f0dbf705",
+    "semantic_hash": "76df168acf976aeff96cfff0f0dbf705"
+  },
+  "database/migrations/2026_09_14_010000_precompute_heatmap_risk_fields_and_indexes.php": {
+    "mtime": 1789354603.870676,
+    "seen": 1789354935.249715,
+    "ast_hash": "e79817442465399b3e5789d68082fe5b",
+    "semantic_hash": "e79817442465399b3e5789d68082fe5b"
+  },
+  "tests/Feature/HeatmapPerformanceTest.php": {
+    "mtime": 1789550664.4580643,
+    "seen": 1789551241.4769733,
+    "ast_hash": "b48a44449b34233ae881725fa9a6ce12",
+    "semantic_hash": "b48a44449b34233ae881725fa9a6ce12"
+  },
+  "tests/Unit/MonthlyWeatherCalendarServiceTest.php": {
+    "mtime": 1789356032.1123455,
+    "seen": 1789356140.9778798,
+    "ast_hash": "fc0e43d3bac81dc1c63d6c25bf4e1ae9",
+    "semantic_hash": "fc0e43d3bac81dc1c63d6c25bf4e1ae9"
+  },
+  "CLAUDE.md": {
+    "mtime": 1789308744.5314555,
+    "seen": 1789357443.0525975,
+    "ast_hash": "eb4b3ea2d54d50ca35099c74c041a76f",
+    "semantic_hash": ""
+  },
+  "docker-compose.yml": {
+    "mtime": 1789147277.4037056,
+    "seen": 1789357443.0526006,
+    "ast_hash": "46bb36cea0487ab103112540ec62fa27",
+    "semantic_hash": ""
+  },
+  "docs/python-analytics.md": {
+    "mtime": 1789231071.8551438,
+    "seen": 1789357443.052609,
+    "ast_hash": "92e6e5ecd80cdf3f33fae9ae60bd358a",
+    "semantic_hash": ""
+  },
+  "docs/system_audit_fix_plan.md": {
+    "mtime": 1789147296.3434978,
+    "seen": 1789357443.0526104,
+    "ast_hash": "a1a97d42ab51b0851c72acd3051a778f",
+    "semantic_hash": ""
+  },
+  "docs/system_audit_fix_plan_addendum.md": {
+    "mtime": 1789147296.3434978,
+    "seen": 1789357443.0526114,
+    "ast_hash": "91add0d25a629c6746e5302fc35700ab",
+    "semantic_hash": ""
+  },
+  "docs/system_audit_implementation_plan.md": {
+    "mtime": 1789147296.345358,
+    "seen": 1789357443.0526123,
+    "ast_hash": "8fb07ccc0b291045d97d1664ec373bfe",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_131503_fix_iclimate_reports__fetch_real_reports_once__sor.md": {
+    "mtime": 1789218903.1237483,
+    "seen": 1789357443.0526133,
+    "ast_hash": "fd7b94a1a9cc9d0eb1f8375b42bc18f7",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_132949_check_our_iclimate_laravel_system_and_list_the_hos.md": {
+    "mtime": 1789219789.0032992,
+    "seen": 1789357443.0526145,
+    "ast_hash": "f06cdcba8790fa4a3efaa9e9f48931ea",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_134536_fix_iclimate_reports_so_generate_report_fetches_re.md": {
+    "mtime": 1789220736.919919,
+    "seen": 1789357443.0526154,
+    "ast_hash": "13485ab14a74c0c0740e02fbea927acf",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_142816_fix_reports_so_generated_reports_display_actual_da.md": {
+    "mtime": 1789223296.2693222,
+    "seen": 1789357443.0526161,
+    "ast_hash": "a837514faa46b9f191a75dbb0820ea51",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_143918_can_you_remove_this_on_reports_tab__report_history.md": {
+    "mtime": 1789223958.9402356,
+    "seen": 1789357443.0526173,
+    "ast_hash": "bcdd16f1b64ab8bdfce186cee0ec08df",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_164638_refactor_iclimate_so_all_heavy_ml_ai_analytics_pro.md": {
+    "mtime": 1789231598.9810767,
+    "seen": 1789357443.0526183,
+    "ast_hash": "cbb75e2dc54476c957df13bcd04ccc6e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_170857_optimize_the_whole_iclimate_system_for_speed_and_s.md": {
+    "mtime": 1789232937.4910233,
+    "seen": 1789357443.0526192,
+    "ast_hash": "0611075cf09c9416c817423495e9e58b",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260912_172856_fix_the_iclimate_dashboard__the_mao_dashboard_char.md": {
+    "mtime": 1789234136.9583755,
+    "seen": 1789357443.0526202,
+    "ast_hash": "b6809c540e7fd76e0aa2b206e8858632",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260913_133353_efficiently_test_all_iclimate_functions_and_fix_on.md": {
+    "mtime": 1789306433.3581805,
+    "seen": 1789357443.0526211,
+    "ast_hash": "bcb2efc6f36d440e0f8e6a11b4c241f6",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260913_135134_fix_and_improve_the_iclimate_weather_prediction_pa.md": {
+    "mtime": 1789307494.569763,
+    "seen": 1789357443.052622,
+    "ast_hash": "e491538dc8d64bf1d9951dbabe368def",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_025839_optimize_the_iclimate_heat_map_areas_page_so_the_h.md": {
+    "mtime": 1789354719.1894867,
+    "seen": 1789357443.052623,
+    "ast_hash": "982876e7e89860e3cf157029379899f9",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_030631_fix_weather_prediction_fallback_location__if_user.md": {
+    "mtime": 1789355191.561079,
+    "seen": 1789357443.052624,
+    "ast_hash": "6d71cfcdbe906acdd1e7273db81c5a11",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_032128_clean_up_the_iclimate_weather_prediction_page_and.md": {
+    "mtime": 1789356088.4849935,
+    "seen": 1789357443.052625,
+    "ast_hash": "aceffb7818d998657761370abf131960",
+    "semantic_hash": ""
+  },
+  "python_scripts/requirements.txt": {
+    "mtime": 1789147296.349,
+    "seen": 1789357443.052627,
+    "ast_hash": "ab72de7344ac06f98f6dd4d6c64632f8",
+    "semantic_hash": ""
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1789394770.807824,
+    "seen": 1789398649.8265102,
+    "ast_hash": "d2f4e350ad6314b232f588392cda7d7b",
+    "semantic_hash": "d2f4e350ad6314b232f588392cda7d7b"
+  },
+  "app/Models/AdvisoryFeedback.php": {
+    "mtime": 1789397821.2971063,
+    "seen": 1789398649.834915,
+    "ast_hash": "eaa39dba80aeff376443dbd36c863b32",
+    "semantic_hash": "eaa39dba80aeff376443dbd36c863b32"
+  },
+  "app/Services/Advisory/AdvisoryVerificationService.php": {
+    "mtime": 1789397846.3709774,
+    "seen": 1789398649.8396933,
+    "ast_hash": "699b6c9ad939d909276f4a931f82242f",
+    "semantic_hash": "699b6c9ad939d909276f4a931f82242f"
+  },
+  "app/Support/ReportTypeCatalog.php": {
+    "mtime": 1789397459.9222076,
+    "seen": 1789398649.8441174,
+    "ast_hash": "ab3de779d0fc437ac132e2119a6d73ef",
+    "semantic_hash": "ab3de779d0fc437ac132e2119a6d73ef"
+  },
+  "database/factories/AdvisoryFeedbackFactory.php": {
+    "mtime": 1789397834.77809,
+    "seen": 1789398649.846596,
+    "ast_hash": "f33a370ca708351ec05b98687096c81a",
+    "semantic_hash": "f33a370ca708351ec05b98687096c81a"
+  },
+  "database/migrations/2026_09_14_225652_create_advisory_feedback_table.php": {
+    "mtime": 1789397816.2001517,
+    "seen": 1789398649.8542588,
+    "ast_hash": "dcce8444d4427fab9c5ab9da1736aa7c",
+    "semantic_hash": "dcce8444d4427fab9c5ab9da1736aa7c"
+  },
+  "tests/Feature/AdvisoryFeedbackTest.php": {
+    "mtime": 1789405655.7358048,
+    "seen": 1789551241.475262,
+    "ast_hash": "5e0ba8f5f51190386e964095b8228325",
+    "semantic_hash": "5e0ba8f5f51190386e964095b8228325"
+  },
+  "tests/Feature/MaoDashboardActionItemsTest.php": {
+    "mtime": 1789402251.902251,
+    "seen": 1789551241.4771204,
+    "ast_hash": "b5d9d4e999536d2d4d87db335f2f5923",
+    "semantic_hash": "b5d9d4e999536d2d4d87db335f2f5923"
+  },
+  "app/Http/Controllers/FarmerPlantingScheduleController.php": {
+    "mtime": 1789405260.7047145,
+    "seen": 1789551241.4385772,
+    "ast_hash": "4898be8d5928a62a3063dd6b3258d842",
+    "semantic_hash": "4898be8d5928a62a3063dd6b3258d842"
+  },
+  "app/Models/FarmerPlantingSchedule.php": {
+    "mtime": 1789404394.2887657,
+    "seen": 1789551241.4438634,
+    "ast_hash": "aad1093eff9f4f6f67153a152f1f3262",
+    "semantic_hash": "aad1093eff9f4f6f67153a152f1f3262"
+  },
+  "app/Services/FarmerOrganizationSummaryService.php": {
+    "mtime": 1789399655.9997323,
+    "seen": 1789551241.448169,
+    "ast_hash": "4c1df236da5c374b91be25887b6b97b8",
+    "semantic_hash": "4c1df236da5c374b91be25887b6b97b8"
+  },
+  "app/Services/PlantingSchedulePredictionService.php": {
+    "mtime": 1789404370.8694935,
+    "seen": 1789551241.4485974,
+    "ast_hash": "b129fdb4a23be51b036d4e974a04f6db",
+    "semantic_hash": "b129fdb4a23be51b036d4e974a04f6db"
+  },
+  "database/migrations/2026_09_15_000001_create_farmer_planting_schedules_table.php": {
+    "mtime": 1789403819.2115653,
+    "seen": 1789551241.4628413,
+    "ast_hash": "8f1164841d8814fd04fc833c247a290a",
+    "semantic_hash": "8f1164841d8814fd04fc833c247a290a"
+  },
+  "resources/views/planting-schedules/form.blade.php": {
+    "mtime": 1789404374.7998836,
+    "seen": 1789551241.4734166,
+    "ast_hash": "fe232d06f5b85f7280739532092bc1ce",
+    "semantic_hash": "fe232d06f5b85f7280739532092bc1ce"
+  },
+  "tests/Feature/FarmerOrganizationChartRelocationTest.php": {
+    "mtime": 1789401518.584338,
+    "seen": 1789551241.476968,
+    "ast_hash": "f2ba15b748dce5851c79fcb709e3dc64",
+    "semantic_hash": "f2ba15b748dce5851c79fcb709e3dc64"
+  },
+  "tests/Feature/FarmerOrganizationRemovalTest.php": {
+    "mtime": 1789400216.8794346,
+    "seen": 1789551241.47697,
+    "ast_hash": "cb4b47374f6983a9d2247b971a2909da",
+    "semantic_hash": "cb4b47374f6983a9d2247b971a2909da"
+  },
+  "tests/Feature/FarmerPlantingHarvestCalendarTest.php": {
+    "mtime": 1789405254.25896,
+    "seen": 1789551241.4769719,
+    "ast_hash": "57388639f9ac72e18bf2204dbc12c8c5",
+    "semantic_hash": "57388639f9ac72e18bf2204dbc12c8c5"
+  },
+  "graphify-out/memory/query_20260914_164956_add_a_farmer_planting_and_harvest_calendar_feature.md": {
+    "mtime": 1789404596.1639235,
+    "seen": 1789407965.4580712,
+    "ast_hash": "156450cc8696f8779e87662c24a273cc",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_170413_error_500_on_login_to_the_mao_dashboard_after_addi.md": {
+    "mtime": 1789405453.2190824,
+    "seen": 1789407965.4580727,
+    "ast_hash": "5343b168fb923e7cc9d46559dc19176e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260914_170942_planting_schedule_calendar_shows_error_500_after_c.md": {
+    "mtime": 1789405782.7310464,
+    "seen": 1789407965.4580736,
+    "ast_hash": "8d544bf4f9eb347911313e76d7fd937c",
+    "semantic_hash": ""
+  },
+  "app/Console/Commands/RefreshHeatmapForecasts.php": {
+    "mtime": 1789546903.248837,
+    "seen": 1789551241.4348373,
+    "ast_hash": "7ac185770a3d036afca11b53bb3ca950",
+    "semantic_hash": "7ac185770a3d036afca11b53bb3ca950"
+  },
+  "app/Http/Controllers/Api/LianBoundaryController.php": {
+    "mtime": 1789542941.5392022,
+    "seen": 1789551241.4358785,
+    "ast_hash": "84e9b1718ff68e0b737221881c4a9c85",
+    "semantic_hash": "84e9b1718ff68e0b737221881c4a9c85"
+  },
+  "app/Jobs/RefreshHeatmapForecasts.php": {
+    "mtime": 1789546891.0424807,
+    "seen": 1789551241.441636,
+    "ast_hash": "ade2ff94ab336f28b9c2df5d725cfd13",
+    "semantic_hash": "ade2ff94ab336f28b9c2df5d725cfd13"
+  },
+  "app/Models/HeatmapAreaForecast.php": {
+    "mtime": 1789546803.0131936,
+    "seen": 1789551241.4447799,
+    "ast_hash": "3ca25b0d4bb62ed4d4108cc1491e3509",
+    "semantic_hash": "3ca25b0d4bb62ed4d4108cc1491e3509"
+  },
+  "database/migrations/2026_09_16_081946_create_heatmap_area_forecasts_table.php": {
+    "mtime": 1789546795.7110257,
+    "seen": 1789551241.4628437,
+    "ast_hash": "ddb51e1d62f7562f41268ae82d534f67",
+    "semantic_hash": "ddb51e1d62f7562f41268ae82d534f67"
   }
 }

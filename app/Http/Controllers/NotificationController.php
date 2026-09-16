@@ -8,6 +8,7 @@ use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class NotificationController extends CrudController
@@ -41,15 +42,20 @@ class NotificationController extends CrudController
         $data = $this->validated($request);
         $recipients = $this->recipients($data);
 
-        foreach ($recipients as $user) {
-            UserNotification::query()->create([
-                'user_id' => $user->id,
+        $timestamp = now();
+        $recipients->pluck('id')->chunk(500)->each(function ($userIds) use ($data, $timestamp): void {
+            UserNotification::query()->insert($userIds->map(fn (int $userId): array => [
+                'user_id' => $userId,
                 'title' => $data['title'],
                 'message' => $data['message'],
                 'type' => $data['type'],
                 'is_read' => false,
-            ]);
-        }
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ])->all());
+        });
+        Cache::forget('dashboard:shared-stats');
+        Cache::forget('dashboard:admin-aggregates');
         SystemAuditLogger::record('Sent Notification', $request, [
             'title' => $data['title'],
             'type' => $data['type'],
@@ -131,11 +137,11 @@ class NotificationController extends CrudController
     private function recipients(array $data)
     {
         return match ($data['recipient_scope']) {
-            'all' => User::query()->where('status', User::STATUS_ACTIVE)->get(),
-            'farmers' => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->get(),
-            'mao' => User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get(),
-            'it_experts' => User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->get(),
-            'specific' => User::query()->whereKey($data['user_id'])->get(),
+            'all' => User::query()->where('status', User::STATUS_ACTIVE)->get(['id']),
+            'farmers' => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->get(['id']),
+            'mao' => User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get(['id']),
+            'it_experts' => User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->get(['id']),
+            'specific' => User::query()->whereKey($data['user_id'])->get(['id']),
         };
     }
 }

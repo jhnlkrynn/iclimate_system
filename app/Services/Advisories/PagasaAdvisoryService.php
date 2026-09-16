@@ -84,6 +84,10 @@ class PagasaAdvisoryService
         $validUntil = $source['horizon'] === 'weekly' ? now()->addDays(7) : now()->addHours(6);
         $title = $this->titleFrom($excerpt, $location, $source['horizon']);
         $message = $this->messageFrom($excerpt, $source['url']);
+        $matchedBarangays = $this->matchedBarangays($excerpt);
+        $targetBarangay = count($matchedBarangays) === 1 ? $matchedBarangays[0] : null;
+        $summary = $this->summaryFrom($location, $severity, $targetBarangay);
+        $message = $this->messageFrom($excerpt, $source['url'], $location, $severity, $targetBarangay);
         $horizonLabel = $source['horizon'] === 'weekly' ? 'PAGASA Online Weekly Outlook' : 'PAGASA Online Advisory';
         $sourceName = $source['horizon'] === 'weekly'
             ? PlantingAdvisory::SOURCE_PAGASA_WEEKLY_OUTLOOK
@@ -97,6 +101,7 @@ class PagasaAdvisoryService
             'type' => 'Climate',
             'advisory_type' => PlantingAdvisory::TYPE_CLIMATE,
             'summary' => Str::limit($message, 180),
+            'summary' => $summary,
             'message' => $message,
             'recommended_action' => $this->recommendedAction($severity),
             'severity' => $severity,
@@ -135,6 +140,8 @@ class PagasaAdvisoryService
     private function normalizeText(string $html): string
     {
         $html = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', ' ', $html) ?? $html;
+        $html = preg_replace('/<(script|style|header|nav|footer|menu|aside)\b[^>]*>.*?<\/\1>/is', ' ', $html) ?? $html;
+        $html = preg_replace('/<div\b[^>]*(class|id)=["\'][^"\']*(navbar|nav-|menu|footer|header)[^"\']*["\'][^>]*>.*?<\/div>/is', ' ', $html) ?? $html;
         $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim((string) preg_replace('/\s+/', ' ', $text));
@@ -202,6 +209,7 @@ class PagasaAdvisoryService
     {
         $lowerText = Str::lower($text);
         $keywords = ['lian', 'batangas', 'heavy rainfall warning', 'rainfall warning', 'thunderstorm warning', 'weather advisory'];
+        $keywords = ['lian', 'batangas', 'heavy rainfall warning', 'orange warning', 'red warning', 'thunderstorm warning', 'rainfall advisory'];
         $positions = collect($keywords)
             ->map(fn (string $keyword) => strpos($lowerText, $keyword))
             ->filter(fn ($position) => $position !== false)
@@ -209,8 +217,35 @@ class PagasaAdvisoryService
 
         $position = (int) ($positions->min() ?: 0);
         $start = max(0, $position - 500);
+        $start = max(0, $position - 80);
 
         return trim(Str::limit(substr($text, $start, 1400), 1200));
+        return trim(Str::limit(substr($text, $start, 600), 500));
+    }
+
+    private function cleanExcerpt(string $text): string
+    {
+        $navTerms = [
+            'Toggle navigation', 'GOVPH', 'Home Weather', 'General Weather',
+            'Daily Weather Forecast', 'Weather Outlook', 'Selected Philippine Cities',
+            'Asian Cities Weather Forecast', 'Selected Tourist Areas', 'Weekly Weather Outlook',
+            'Weather Advisory Aviation', 'SIGMET', 'METAR', 'Terminal Aerodrome Forecast',
+            'Terminal Aerodome Forecast', 'Airways and Terminal Forecast', 'Marine High Seas',
+            'Gale Warning', 'Flood Information', 'Dam Information', 'Projects Hydromet Data',
+            'Tropical Cyclone Bulletin', 'Severe Wind Impact', 'Storm Surge',
+            'Tropical Cyclone Warning for Agriculture', 'Climate Monitoring', 'Climate Forum',
+            'Climate Prediction', 'TenDay: Weather Forecast', 'Sub Seasonal',
+            'Seasonal Forecast', 'Dynamic Downscaling',
+        ];
+
+        $cleaned = str_ireplace($navTerms, ' ', $text);
+        $cleaned = trim((string) preg_replace('/\s+/', ' ', $cleaned));
+
+        if (strlen($cleaned) < 15 || preg_match('/^(official\s+pagasa|source\s+url)/i', $cleaned)) {
+            return '';
+        }
+
+        return Str::limit($cleaned, 240);
     }
 
     private function severityFrom(string $excerpt): string
@@ -240,17 +275,66 @@ class PagasaAdvisoryService
     }
 
     private function messageFrom(string $excerpt, string $url): string
+    private function summaryFrom(string $location, string $severity, ?string $targetBarangay = null): string
     {
         return "Official PAGASA online advisory page detected for Lian/Batangas. Details from PAGASA online page: {$excerpt} Source URL: {$url}";
+        $place = $targetBarangay ? $targetBarangay : ($location ?: 'Lian and Batangas');
+
+        return match ($severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => "PAGASA Alert: Heavy rainfall and flood risk in {$place}. Secure crops and pause field work.",
+            PlantingAdvisory::SEVERITY_HIGH => "PAGASA Warning: Moderate to heavy rain expected in {$place}. Delay spraying and check drainage.",
+            PlantingAdvisory::SEVERITY_MODERATE => "PAGASA Notice: Rainshowers and thunderstorms over {$place}. Check field water before irrigating.",
+            default => "PAGASA Update: Light to moderate rains expected in {$place}. Check field moisture before irrigating or applying fertilizer.",
+        };
+    }
+
+    private function recommendedAction(string $severity): string
+    private function messageFrom(string $excerpt, string $url, string $location, string $severity, ?string $targetBarangay = null): string
+    {
+        if (in_array($severity, [PlantingAdvisory::SEVERITY_HIGH, PlantingAdvisory::SEVERITY_CRITICAL], true)) {
+            return 'Monitor PAGASA online advisories and LGU announcements closely, avoid risky field work during severe weather, secure farm materials, and prepare drainage or flood response actions where needed.';
+        $place = $targetBarangay ? "{$targetBarangay}, Lian, Batangas" : ($location ?: 'Lian and Batangas');
+        $cleanDetails = $this->cleanExcerpt($excerpt);
+
+        $situation = match ($severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => 'Heavy rainfall and emergency flood threats are expected across the area.',
+            PlantingAdvisory::SEVERITY_HIGH => 'Moderate to heavy rains and possible localized flooding are expected.',
+            PlantingAdvisory::SEVERITY_MODERATE => 'Scattered rainshowers and localized thunderstorms are expected.',
+            default => 'Light to moderate rainfall and cloudy skies are expected.',
+        };
+
+        $advice = match ($severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => 'Stop outdoor farm work immediately. Move tools, fertilizer, and animals to higher ground. Keep drainage canals clear.',
+            PlantingAdvisory::SEVERITY_HIGH => 'Pause pesticide and fertilizer application. Clear farm dikes and drainage pathways to avoid standing water.',
+            PlantingAdvisory::SEVERITY_MODERATE => 'Inspect field water levels before irrigating. Postpone chemical spraying if rain is approaching.',
+            default => 'Inspect field moisture before watering or fertilizing. Normal farm activities may proceed while watching the weather.',
+        };
+
+        $lines = [
+            "Official PAGASA Weather Advisory for {$place}.",
+            "",
+            "• Weather Situation: {$situation}",
+            "• Farm Guidance: {$advice}",
+        ];
+
+        if ($cleanDetails !== '') {
+            $lines[] = "• Details: {$cleanDetails}";
+        }
+
+        return 'Review the PAGASA online advisory, adjust farm activities based on actual field conditions, and continue monitoring official updates for Lian, Batangas.';
+        $lines[] = "• Source: PAGASA Online Weather Bulletin ({$url})";
+
+        return implode("\n", $lines);
     }
 
     private function recommendedAction(string $severity): string
     {
-        if (in_array($severity, [PlantingAdvisory::SEVERITY_HIGH, PlantingAdvisory::SEVERITY_CRITICAL], true)) {
-            return 'Monitor PAGASA online advisories and LGU announcements closely, avoid risky field work during severe weather, secure farm materials, and prepare drainage or flood response actions where needed.';
-        }
-
-        return 'Review the PAGASA online advisory, adjust farm activities based on actual field conditions, and continue monitoring official updates for Lian, Batangas.';
+        return match ($severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => 'Pause outdoor farm work, clear paddy drainage channels, and move equipment or harvested rice to elevated storage.',
+            PlantingAdvisory::SEVERITY_HIGH => 'Postpone chemical spraying, inspect field dikes to avoid overflowing, and monitor official weather warnings.',
+            PlantingAdvisory::SEVERITY_MODERATE => 'Check paddy water levels before watering or spraying, and keep field outlets clear of weeds and debris.',
+            default => 'Check paddy water levels before watering or fertilizing. Adjust farm tasks according to actual rainfall in your area.',
+        };
     }
 
     private function priorityForSeverity(string $severity): int

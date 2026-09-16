@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdvisoryFeedback;
+use App\Models\AnalyticsRun;
 use App\Models\ExternalWeatherData;
+use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
-use App\Services\Advisories\AdvisoryGenerationService;
-use App\Services\Advisories\PagasaAdvisoryService;
+use App\Services\Advisory\AdvisoryVerificationService;
+use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
-use App\Services\Weather\OpenMeteoService;
 use App\Support\LianBarangays;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -27,9 +28,9 @@ class PlantingAdvisoryController extends Controller
 
     private const STATUSES = ['pending_review', 'published', 'expired', 'rejected', 'archived'];
 
-    public function index(Request $request, TyphoonSafetyService $typhoonSafety, PagasaAdvisoryService $pagasa): View
+    public function index(Request $request, TyphoonSafetyService $typhoonSafety): View
     {
-        $pagasaSummary = $pagasa->fetchAndStore(false);
+        $pagasaSummary = ['advisories_created' => 0, 'errors' => []];
         $query = $this->filteredQuery($request)
             ->when($request->user()->role === User::ROLE_FARMER, function ($query) use ($request) {
                 $query->active()->forBarangay($request->user()->barangay);
@@ -57,6 +58,7 @@ class PlantingAdvisoryController extends Controller
             'barangays' => LianBarangays::all(),
             'canManage' => $this->canManage($request),
             'pagasaSummary' => $pagasaSummary,
+            'analyticsRun' => $this->requestedAnalyticsRun($request),
         ]);
     }
 
@@ -77,6 +79,7 @@ class PlantingAdvisoryController extends Controller
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
             'barangays' => LianBarangays::all(),
+            'analyticsRun' => $this->requestedAnalyticsRun($request),
         ]);
     }
 
@@ -114,16 +117,88 @@ class PlantingAdvisoryController extends Controller
         return redirect()->route('planting-advisories.show', $advisory)->with('success', 'Advisory saved successfully.');
     }
 
-    public function show(Request $request, PlantingAdvisory $plantingAdvisory): View
+    public function show(Request $request, PlantingAdvisory $plantingAdvisory, AdvisoryVerificationService $verification): View
     {
         if ($request->user()->role === User::ROLE_FARMER && (! $plantingAdvisory->isActive() || ! $this->isVisibleToFarmer($plantingAdvisory, $request->user()))) {
             abort(403);
         }
 
+        $feedbackFeatureReady = Schema::hasTable('advisory_feedback');
+        $relations = ['weatherData', 'rule', 'approvedBy', 'postedBy'];
+
+        if ($feedbackFeatureReady) {
+            array_push($relations, 'feedback.user', 'feedback.respondedBy');
+        }
+
+        $plantingAdvisory->load($relations);
+
+        // Keep advisory details available during a rolling deployment even if
+        // the optional feedback migration has not reached this database yet.
+        if (! $feedbackFeatureReady) {
+            $plantingAdvisory->setRelation('feedback', collect());
+        }
+
         return view('advisories.show', [
-            'advisory' => $plantingAdvisory->load(['weatherData', 'rule', 'approvedBy', 'postedBy']),
+            'advisory' => $plantingAdvisory,
             'canManage' => $this->canManage($request),
+            'verification' => $verification->score($plantingAdvisory),
+            'feedbackFeatureReady' => $feedbackFeatureReady,
+            'myFeedback' => $feedbackFeatureReady && $request->user()->role === User::ROLE_FARMER
+                ? $plantingAdvisory->feedback->firstWhere('user_id', $request->user()->id)
+                : null,
         ]);
+    }
+
+    public function feedback(Request $request, PlantingAdvisory $plantingAdvisory): RedirectResponse
+    {
+        abort_unless($request->user()->role === User::ROLE_FARMER, 403);
+
+        if (! Schema::hasTable('advisory_feedback')) {
+            return back()->with('error', 'Advisory feedback is temporarily unavailable while the database update is completed.');
+        }
+
+        $data = $request->validate([
+            'is_helpful' => ['required', 'boolean'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        AdvisoryFeedback::query()->updateOrCreate(
+            ['planting_advisory_id' => $plantingAdvisory->id, 'user_id' => $request->user()->id],
+            ['is_helpful' => $data['is_helpful'], 'comment' => $data['comment'] ?? null],
+        );
+
+        return back()->with('success', 'Thanks — your feedback on this advisory was saved.');
+    }
+
+    public function respondToFeedback(Request $request, int $advisoryFeedback): RedirectResponse
+    {
+        $this->authorizeManage($request);
+
+        if (! Schema::hasTable('advisory_feedback')) {
+            return back()->with('error', 'Advisory feedback is temporarily unavailable while the database update is completed.');
+        }
+
+        $advisoryFeedback = AdvisoryFeedback::query()->findOrFail($advisoryFeedback);
+
+        $data = $request->validate([
+            'mao_response' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $advisoryFeedback->update([
+            'mao_response' => $data['mao_response'],
+            'mao_responded_at' => now(),
+            'mao_responded_by' => $request->user()->id,
+        ]);
+
+        Notification::query()->create([
+            'user_id' => $advisoryFeedback->user_id,
+            'title' => 'MAO responded to your advisory feedback',
+            'message' => $data['mao_response'],
+            'type' => 'Advisory',
+            'is_read' => false,
+        ]);
+
+        return back()->with('success', 'Response sent to the farmer.');
     }
 
     public function edit(Request $request, PlantingAdvisory $plantingAdvisory): View
@@ -233,58 +308,44 @@ class PlantingAdvisoryController extends Controller
         return back()->with('success', 'Advisory archived.');
     }
 
-    public function refreshWeather(Request $request, OpenMeteoService $weather): RedirectResponse
+    public function refreshWeather(Request $request, AnalyticsDispatcher $analytics): RedirectResponse
     {
         $this->authorizeManage($request);
-        $result = $weather->fetchForecast(true);
-        SystemAuditLogger::record('Refreshed Advisory Weather', $request, [
-            'ok' => $result['ok'] ?? null,
-            'records_saved' => $result['records_saved'] ?? null,
-            'message' => $result['message'] ?? null,
-        ]);
+        $run = $analytics->dispatch('advisory_ai', ['reason' => 'weather_refresh'], $request->user());
 
-        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+        return redirect()->route('planting-advisories.index', ['run' => $run->uuid])
+            ->with('success', 'Advisory analysis was queued for Python processing.');
     }
 
-    public function regenerate(Request $request, AdvisoryGenerationService $service, PagasaAdvisoryService $pagasa): RedirectResponse
+    public function regenerate(Request $request, AnalyticsDispatcher $analytics): RedirectResponse
     {
         $this->authorizeManage($request);
-        $pagasaSummary = $pagasa->fetchAndStore(true);
-        $summary = $service->generate(fetchWeather: true, forceWeather: true);
-        $message = "{$pagasaSummary['advisories_created']} PAGASA online advisories and {$summary['advisories_created']} forecast-based advisories were created. {$pagasaSummary['advisories_skipped_as_duplicates']} PAGASA online duplicates and {$summary['advisories_skipped_as_duplicates']} forecast duplicates were skipped. {$summary['advisories_expired']} expired advisory records were updated.";
+        $run = $analytics->dispatch('advisory_ai', ['reason' => 'manual_regeneration'], $request->user());
 
-        $errors = array_merge($pagasaSummary['errors'] ?? [], $summary['errors'] ?? []);
+        return redirect()->route('management.advisories.index', ['run' => $run->uuid])
+            ->with('success', 'Advisory generation was queued for Python processing.');
+    }
 
-        if ($errors) {
-            Log::warning('Advisory regeneration completed with errors.', [
-                'pagasa' => $pagasaSummary,
-                'forecast' => $summary,
-            ]);
+    public function refreshPagasa(Request $request, AnalyticsDispatcher $analytics): RedirectResponse
+    {
+        $this->authorizeManage($request);
+        $run = $analytics->dispatch('advisory_ai', ['reason' => 'pagasa_refresh'], $request->user());
+
+        return redirect()->route('planting-advisories.index', ['run' => $run->uuid])
+            ->with('success', 'PAGASA advisory analysis was queued for Python processing.');
+    }
+
+    private function requestedAnalyticsRun(Request $request): ?AnalyticsRun
+    {
+        if (! $request->filled('run')) {
+            return null;
         }
-        SystemAuditLogger::record('Generated Live Advisories', $request, [
-            'pagasa_created' => $pagasaSummary['advisories_created'] ?? 0,
-            'forecast_created' => $summary['advisories_created'] ?? 0,
-            'forecast_expired' => $summary['advisories_expired'] ?? 0,
-            'errors' => $errors,
-        ]);
 
-        return back()->with($errors ? 'error' : 'success', $message);
-    }
-
-    public function refreshPagasa(Request $request, PagasaAdvisoryService $pagasa, AdvisoryGenerationService $service): RedirectResponse
-    {
-        $pagasaSummary = $pagasa->fetchAndStore(true);
-        $forecastSummary = $service->generate(fetchWeather: true, forceWeather: true);
-        $errors = array_merge($pagasaSummary['errors'] ?? [], $forecastSummary['errors'] ?? []);
-        $message = "{$pagasaSummary['advisories_created']} PAGASA online advisories and {$forecastSummary['advisories_created']} forecast-based advisories created. PAGASA online pages checked: {$pagasaSummary['sources_checked']}.";
-        SystemAuditLogger::record('Refreshed PAGASA Online Advisories', $request, [
-            'sources_checked' => $pagasaSummary['sources_checked'] ?? 0,
-            'pagasa_created' => $pagasaSummary['advisories_created'] ?? 0,
-            'forecast_created' => $forecastSummary['advisories_created'] ?? 0,
-            'errors' => $errors,
-        ]);
-
-        return back()->with($errors ? 'error' : 'success', $message);
+        return AnalyticsRun::query()
+            ->where('uuid', $request->query('run'))
+            ->where('type', 'advisory_ai')
+            ->where('requested_by', $request->user()->id)
+            ->firstOrFail();
     }
 
     private function filteredQuery(Request $request)

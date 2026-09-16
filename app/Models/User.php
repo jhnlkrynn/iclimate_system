@@ -48,6 +48,11 @@ class User extends Authenticatable
         return $this->hasOne(FarmerProfile::class);
     }
 
+    public function plantingSchedules(): HasMany
+    {
+        return $this->hasMany(FarmerPlantingSchedule::class);
+    }
+
     public function isOnline(): bool
     {
         return (bool) $this->last_active_at?->gt(now()->subMinutes(self::ONLINE_WINDOW_MINUTES));

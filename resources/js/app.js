@@ -1,39 +1,7 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { initScrollAnimations } from './scroll-animations';
-import {
-    Chart,
-    ArcElement,
-    BarController,
-    BarElement,
-    CategoryScale,
-    DoughnutController,
-    Filler,
-    Legend,
-    LinearScale,
-    LineController,
-    LineElement,
-    PointElement,
-    Tooltip,
-} from 'chart.js';
-import L from 'leaflet';
-
 import Alpine from 'alpinejs';
-
-Chart.register(
-    ArcElement,
-    BarController,
-    BarElement,
-    CategoryScale,
-    DoughnutController,
-    Filler,
-    Legend,
-    LinearScale,
-    LineController,
-    LineElement,
-    PointElement,
-    Tooltip,
-);
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -75,32 +43,96 @@ const horizontalCategoryTicks = (overrides = {}) => ({
     autoSkip: false,
     padding: 10,
     font: {
-        size: 12,
+        size: 14,
         weight: 600,
         lineHeight: 1.25,
     },
     ...overrides,
     font: {
-        size: 12,
+        size: 14,
         weight: 600,
         lineHeight: 1.25,
         ...(overrides.font ?? {}),
     },
 });
 
-Chart.defaults.color = '#1F2937';
-Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
-Chart.defaults.font.size = 12;
-Chart.defaults.plugins.tooltip.titleFont = { size: 13, weight: '700' };
-Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
-
 window.iClimateChartLabels = {
     wrap: wrapChartLabel,
     horizontalCategoryTicks,
 };
-window.Chart = Chart;
-window.L = L;
-await import('leaflet.heat');
+
+const chartSelector = [
+    '#farmersByOrganizationChart',
+    '#farmersByOrganizationChartCompact',
+    '#adminFarmersByOrganizationChart',
+    '#rainfallChart',
+    '#temperatureChart',
+    '#humidityChart',
+    '#windSpeedChart',
+].join(',');
+
+const leafletSelector = '#boundaryMap, #staffBoundaryMap, #dashboardRiskMap, #barangayRiskMap';
+const leafletHeatSelector = '#barangayRiskMap';
+
+// Inline dashboard scripts are parsed before this deferred module executes. Give
+// every consumer one stable promise instead of making it race dynamic imports.
+window.iClimateVisualsReady = (async () => {
+    if (document.querySelector(chartSelector)) {
+        try {
+            const {
+                Chart,
+                ArcElement,
+                BarController,
+                BarElement,
+                CategoryScale,
+                DoughnutController,
+                Filler,
+                Legend,
+                LinearScale,
+                LineController,
+                LineElement,
+                PointElement,
+                Tooltip,
+            } = await import('chart.js');
+
+            Chart.register(
+                ArcElement,
+                BarController,
+                BarElement,
+                CategoryScale,
+                DoughnutController,
+                Filler,
+                Legend,
+                LinearScale,
+                LineController,
+                LineElement,
+                PointElement,
+                Tooltip,
+            );
+            Chart.defaults.color = '#1F2937';
+            Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+            Chart.defaults.font.size = 14;
+            Chart.defaults.plugins.tooltip.titleFont = { size: 15, weight: '700' };
+            Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
+            window.Chart = Chart;
+        } catch (error) {
+            console.error('iClimate could not load Chart.js.', error);
+        }
+    }
+
+    if (document.querySelector(leafletSelector)) {
+        try {
+            const { default: Leaflet } = await import('leaflet');
+            window.L = Leaflet;
+
+            if (document.querySelector(leafletHeatSelector)) {
+                await import('leaflet.heat');
+            }
+        } catch (error) {
+            console.error('iClimate could not load Leaflet.', error);
+        }
+    }
+})();
 
 window.Alpine = Alpine;
 
@@ -128,10 +160,7 @@ function initApp() {
     bindStatDrawers();
 }
 
-// The dynamic `leaflet.heat` import above is awaited at module top-level, which can
-// delay this script past the point where `DOMContentLoaded` already fired. Falling
-// back to an immediate call when the document is already ready keeps drawers, tabs,
-// and every other binding here from silently never running.
+// Support cached/back-forward pages where DOMContentLoaded has already fired.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {

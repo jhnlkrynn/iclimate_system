@@ -18,6 +18,7 @@ class FarmerProfile extends Model
     protected $fillable = [
         'user_id',
         'farmer_organization_id',
+        'rsbsa_no',
         'full_name',
         'contact_number',
         'address',

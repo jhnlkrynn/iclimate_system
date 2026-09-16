@@ -5,6 +5,13 @@
 @endphp
 
 <x-app-layout>
+    @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
+            <strong>Python is processing the dataset and model metrics.</strong> This page will update automatically.
+        </div>
+    @elseif (($analyticsRun ?? null)?->status === 'failed')
+        <div class="alert alert-danger border"><strong>Dataset processing failed.</strong> {{ $analyticsRun->error }}</div>
+    @endif
     <style>
         .me-hero {
             border-radius: 8px;
@@ -623,4 +630,19 @@
             renderComparison();
         });
     </script>
+    @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <script>
+            (() => {
+                const banner = document.querySelector('[data-analytics-run]');
+                if (!banner) return;
+                window.setInterval(async () => {
+                    try {
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const run = await response.json();
+                        if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                    } catch (_) {}
+                }, 2500);
+            })();
+        </script>
+    @endif
 </x-app-layout>

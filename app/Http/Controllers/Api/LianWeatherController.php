@@ -11,7 +11,7 @@ class LianWeatherController extends Controller
 {
     public function __invoke(Request $request, LianBarangayWeatherService $weather): JsonResponse
     {
-        $records = $weather->all(refresh: $request->boolean('refresh') || ! $request->boolean('cached_weather'));
+        $records = $weather->all(refresh: $request->boolean('refresh'));
 
         return response()->json([
             'source' => 'Open-Meteo Forecast API',
@@ -22,6 +22,6 @@ class LianWeatherController extends Controller
             'generated_at' => now()->toDateTimeString(),
             'accuracy_note' => 'Weather values are forecast/model estimates for each barangay coordinate, not official PAGASA rain-gauge observations per barangay.',
             'data' => array_values($records),
-        ]);
+        ])->header('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
     }
 }

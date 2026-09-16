@@ -717,6 +717,10 @@
             open: openAssistant,
             close: closeAssistant,
             toggle: () => widget.classList.contains('open') ? closeAssistant() : openAssistant(),
+            ask: (question) => {
+                openAssistant();
+                submitQuestion(question);
+            },
         };
 
         document.addEventListener('click', (event) => {

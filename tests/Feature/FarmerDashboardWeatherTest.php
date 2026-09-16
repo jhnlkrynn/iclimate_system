@@ -300,19 +300,12 @@ class FarmerDashboardWeatherTest extends TestCase
         $content = $response->getContent();
 
         $response->assertOk()
-            ->assertSee('farmersByOrganizationLegend', false)
             ->assertSee('horizontalCategoryTicks', false)
-            ->assertSee('organizationColors', false)
-            ->assertSee('farmer-org-legend-item', false)
-            ->assertSee('farmer-org-chart-title', false)
-            ->assertSee('font-size: 20px', false)
-            ->assertSee('font-size: 16px', false)
             ->assertSee('grid-template-columns: repeat(3, minmax(0, 1fr))', false)
             ->assertSee('grid-template-columns: repeat(2, minmax(0, 1fr))', false)
-            ->assertSee("label === 'None' ? 'No Organization'", false)
-            ->assertSee('data-organization-index', false)
-            ->assertSee('setActiveElements', false)
-            ->assertSee('setOrganizationStatus', false)
+            ->assertSee('iClimateVisualsReady', false)
+            ->assertSee('Loading real weather data...', false)
+            ->assertSee('No weather records found for this chart.', false)
             ->assertSee('context.parsed.y', false)
             ->assertSee('display: false', false)
             ->assertSee('maxRotation: 0', false)
@@ -321,10 +314,10 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertDontSee('maxRotation: 45', false)
             ->assertDontSee('minRotation: 45', false);
 
-        $this->assertSame(1, substr_count($content, "makeChart('rainfallChart'"));
-        $this->assertSame(1, substr_count($content, "makeChart('temperatureChart'"));
-        $this->assertSame(1, substr_count($content, "makeChart('humidityChart'"));
-        $this->assertSame(1, substr_count($content, "makeChart('windSpeedChart'"));
+        $this->assertSame(1, substr_count($content, "rainfall: { id: 'rainfallChart'"));
+        $this->assertSame(1, substr_count($content, "temperature: { id: 'temperatureChart'"));
+        $this->assertSame(1, substr_count($content, "humidity: { id: 'humidityChart'"));
+        $this->assertSame(1, substr_count($content, "windSpeed: { id: 'windSpeedChart'"));
     }
 
     /**

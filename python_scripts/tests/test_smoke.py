@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi.testclient import TestClient
 
 import evaluation_service
+import analytics_tasks
 import main
 
 client = TestClient(main.app)
@@ -43,6 +44,38 @@ def test_predict_rice_yield_returns_expected_shape():
 def test_predict_rejects_unknown_prediction_type():
     response = client.post("/predict", json={"prediction_type": "nonsense", "features": {}})
     assert response.status_code == 422
+
+
+def test_queued_rice_yield_analytics_matches_weather_page_contract():
+    climate_records = [
+        {
+            "record_date": f"2026-{month:02d}-15",
+            "rainfall": 80 + month * 8,
+            "temperature": 27 + month * 0.2,
+            "humidity": 70 + month,
+            "wind_speed": 8 + month * 0.3,
+            "season": "Wet" if month >= 5 else "Dry",
+        }
+        for month in range(1, 7)
+    ]
+    result = analytics_tasks.rice_yield_prediction({
+        "target_date": "2026-11-15",
+        "area": 2.5,
+        "farm_type": "Rainfed",
+        "climate_records": climate_records,
+        "rice_productions": [],
+    })
+
+    assert result["weather_result"]["ready"] is True
+    yield_result = result["ml_result"]
+    for key in (
+        "predicted_yield", "unit", "farm_area_hectares",
+        "estimated_total_production_tons", "planting_advisory",
+        "irrigation_recommendation", "weather_assessment", "risk_label",
+        "condition_score", "features", "model_input",
+    ):
+        assert key in yield_result
+        assert yield_result[key] not in (None, "")
 
 
 def test_evaluate_reports_not_ready_when_csv_missing():

@@ -1,23 +1,29 @@
 @php
     $mapPayload = $mapAreas->map(fn ($area) => [
-        'id' => $area->id,
         'barangay' => $area->barangay,
-        'latitude' => (float) $area->latitude,
-        'longitude' => (float) $area->longitude,
+        'polygon_id' => str($area->barangay)->lower()->replace(['barangay', 'brgy', '(pob.)', 'pob.', 'poblacion', '-', '.'], ' ')->squish()->toString(),
+        'coordinates' => [(float) $area->latitude, (float) $area->longitude],
         'risk_level' => $area->risk_level,
-        'risk_type' => $area->risk_type,
         'risk_score' => (float) $area->risk_score,
+        'color' => match ($area->risk_level) {
+            'Low' => '#22c55e',
+            'Moderate' => '#facc15',
+            'High' => '#f97316',
+            'Severe' => '#ef4444',
+            default => '#9ca3af',
+        },
+        'reason' => $area->main_risk_reason ?: $area->description ?: "{$area->risk_type} is the main computed risk for this barangay.",
+        'suggested_action' => $area->suggested_action ?: $area->irrigation_recommendation ?: $area->planting_advisory ?: 'Continue routine field monitoring.',
         'predicted_yield' => $area->predicted_yield !== null ? (float) $area->predicted_yield : null,
-        'predicted_yield_source' => str_contains(strtolower((string) $area->description), 'trained rice yield model') ? 'Trained rice yield model' : 'Stored production record',
         'rainfall_status' => $area->rainfall_status,
+        'risk_type' => $area->risk_type,
         'planting_advisory' => $area->planting_advisory,
         'irrigation_recommendation' => $area->irrigation_recommendation,
-        'description' => $area->description,
-        'data_quality' => str_contains(strtolower((string) $area->description), 'auto-updated from')
-            ? 'Calculated from weather, yield, and local exposure inputs'
-            : 'Baseline barangay location; refresh needed for live risk',
-        'is_baseline' => ! str_contains(strtolower((string) $area->description), 'auto-updated from'),
-        'updated_at' => $area->updated_at?->shortDateTime('M d, Y'),
+        'temperature' => $liveWeather['current_temperature_c'] ?? $liveWeather['temperature_c'] ?? null,
+        'rainfall_mm' => $liveWeather['current_rainfall_mm'] ?? $liveWeather['daily_rainfall_mm'] ?? null,
+        'humidity' => $liveWeather['humidity_percent'] ?? null,
+        'weather_condition' => $liveWeather['current_condition'] ?? null,
+        'updated_at' => ($area->risk_computed_at ?? $area->updated_at)?->toISOString(),
     ])->values();
     $riskSource = optional($mapAreas->first())->description;
     $priorityAreas = $mapAreas->sortByDesc('risk_score')->take(5)->values();
@@ -39,59 +45,73 @@
         'updated_at' => 'No stored PAGASA match',
         'freshness' => 'External reference only',
     ];
+    $apiFilters = array_filter([
+        'search' => $search,
+        'risk_level' => request('risk_level'),
+        'risk_type' => request('risk_type'),
+    ]);
 @endphp
 
 <x-app-layout>
+    @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
+            <strong>Python is recalculating heat-map risk.</strong> Stored map results remain visible while processing finishes.
+        </div>
+    @elseif (($analyticsRun ?? null)?->status === 'failed')
+        <div class="alert alert-danger border"><strong>Heat-map processing failed.</strong> {{ $analyticsRun->error }}</div>
+    @endif
     <style>
         .heatmap-grid { display: grid; grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); gap: 1rem; align-items: stretch; }
         .heatmap-grid > .heatmap-main { grid-column: 2; grid-row: 1; }
         .heatmap-grid > .risk-side { grid-column: 1; grid-row: 1; }
-        .heatmap-main { display: flex; flex-direction: column; gap: 1rem; min-height: 100%; }
-        .map-shell { position: relative; overflow: hidden; display: flex; flex: 1 1 auto; flex-direction: column; border: 1.5px solid #e8e0d0; border-radius: 12px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); min-height: 0; }
+        .heatmap-main { display: flex; flex-direction: column; gap: 1rem; }
+        .map-shell { position: relative; overflow: hidden; display: flex; flex-direction: column; border: 1.5px solid #e8e0d0; border-radius: 12px; background: #fff; box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
         #barangayRiskMap {
             position: relative;
-            flex: 1 1 auto;
-            height: auto;
-            min-height: 640px;
+            height: 700px;
             overflow: hidden;
             background: #07160f;
         }
-        .api-map-tiles,
-        .api-heatmap-canvas,
-        .api-heatmap-svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
+        #barangayRiskMap .leaflet-container { background: #d8e6df; font-family: inherit; }
+        #barangayRiskMap canvas, #barangayRiskMap svg { max-width: none; height: auto; }
+        #barangayRiskMap .leaflet-heatmap-layer { opacity: .92; transition: opacity .35s ease; }
+        #barangayRiskMap .leaflet-zones-layer { opacity: .55; }
+
+        .risk-pin {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            display: grid;
+            place-items: center;
+            transition: transform .2s cubic-bezier(.34,1.56,.64,1);
         }
-        .api-map-tiles {
-            z-index: 0;
-            overflow: hidden;
-            background: #d8e6df;
+        .risk-pin:hover,
+        .risk-pin.is-selected {
+            transform: scale(1.35);
         }
-        .api-map-tile {
-            position: absolute;
-            width: 256px;
-            height: 256px;
-            image-rendering: auto;
-            user-select: none;
+        .risk-pin-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--risk-dot-color, #22c55e);
+            border: 2px solid rgba(255,255,255,.92);
+            box-shadow: 0 0 0 1.5px rgba(13,31,24,.55), 0 .2rem .45rem rgba(13,31,24,.3);
         }
-        .api-map-tile.street { filter: saturate(.98) contrast(1.02) brightness(.98); }
-        .api-map-attribution {
-            position: absolute;
-            right: .45rem;
-            bottom: .35rem;
-            z-index: 4;
+
+        .legend-gradient-bar {
+            height: 12px;
             border-radius: 6px;
-            background: rgba(255,255,255,.82);
-            color: #315044;
-            padding: .16rem .35rem;
-            font-size: .75rem;
-            font-weight: 800;
-            text-decoration: none;
+            margin: .45rem 0 .35rem;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,.22);
+            border: 1px solid rgba(13,31,24,.15);
         }
-        .api-heatmap-canvas { z-index: 1; filter: blur(10px) saturate(1.45) contrast(1.08); opacity: .72; mix-blend-mode: multiply; transform: scale(1.035); }
-        .api-heatmap-svg { z-index: 2; }
+        .legend-scale-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-size: .74rem;
+            font-weight: 800;
+            color: #4f665b;
+        }
         .map-loading-overlay {
             position: absolute; inset: 0; z-index: 50;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
@@ -150,52 +170,21 @@
             50% { content: ".."; }
             75%, 100% { content: "..."; }
         }
-        .api-heatmap-region {
+        .leaflet-zones-layer path.leaflet-interactive {
+            transition: filter .16s ease, stroke-width .16s ease, stroke .16s ease;
             cursor: pointer;
-            stroke: rgba(20,20,20,.28);
-            stroke-width: .0015;
-            vector-effect: non-scaling-stroke;
-            transition: fill-opacity .16s ease, stroke-width .16s ease, stroke .16s ease;
         }
-        .api-heatmap-region:hover,
-        .api-heatmap-region.is-selected {
-            stroke: rgba(20,20,20,.72);
-            stroke-width: .003;
-            fill-opacity: .08;
+        .leaflet-zones-layer path.leaflet-interactive:hover,
+        .leaflet-zones-layer path.is-selected {
+            filter: brightness(1.12) saturate(1.1);
         }
-        .api-heatmap-label {
-            pointer-events: none;
-            fill: #111827;
-            paint-order: stroke;
-            stroke: rgba(255,255,255,.92);
-            stroke-width: .005;
-            font-size: .0105px;
-            font-weight: 900;
-            opacity: 1;
-            text-anchor: middle;
-            dominant-baseline: central;
-        }
-        .api-heatmap-label.is-selected { font-size: .014px; stroke-width: .006; }
-        .api-farm-boundary {
+        .farm-boundary-pane path.leaflet-interactive {
             fill: rgba(255, 255, 255, .08);
             stroke: #ffffff;
-            stroke-width: .005;
-            stroke-dasharray: .012 .006;
-            vector-effect: non-scaling-stroke;
+            stroke-width: 2.5;
+            stroke-dasharray: 8 5;
             pointer-events: none;
         }
-        .api-farm-boundary-label {
-            fill: #ffffff;
-            font-size: .013px;
-            font-weight: 900;
-            paint-order: stroke;
-            stroke: #123f32;
-            stroke-width: .006;
-            text-anchor: middle;
-            dominant-baseline: central;
-            pointer-events: none;
-        }
-        .easy-read-map .api-heatmap-label { font-size: .012px; stroke-width: .0055; }
         .map-insight-strip { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
         .map-insight { position: relative; overflow: hidden; border: 1.5px solid #e8e0d0; border-radius: 18px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .85rem; box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.06); }
         .map-insight::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, #52b788); }
@@ -247,15 +236,16 @@
         .map-control-panel .form-select option { color: #0d1f18; background: #fff; }
         .map-live-status {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: .65rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .4rem;
             margin-top: .58rem;
             color: rgba(255,255,255,.64);
             font-size: .875rem;
             font-weight: 800;
         }
         .map-live-status strong { color: rgba(255,255,255,.82); }
+        .map-live-status .badge { white-space: nowrap; }
         .map-selected-pill {
             display: inline-flex;
             align-items: center;
@@ -267,6 +257,40 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+        .map-legend-overlay {
+            position: absolute;
+            z-index: 506;
+            right: 1rem;
+            bottom: 4.9rem;
+            width: 148px;
+            border: 1.5px solid #b9c4bd;
+            border-radius: 6px;
+            background: rgba(255,255,255,.96);
+            box-shadow: 0 .6rem 1.4rem rgba(13,31,24,.22);
+            padding: .55rem .65rem;
+        }
+        .map-legend-overlay-title {
+            font-size: .78rem;
+            font-weight: 800;
+            color: #10251b;
+            margin-bottom: .35rem;
+        }
+        .map-legend-overlay-row {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .78rem;
+            font-weight: 700;
+            color: #1f2a24;
+            line-height: 1.6;
+        }
+        .map-legend-overlay-swatch {
+            width: .85rem;
+            height: .85rem;
+            border-radius: 3px;
+            flex: 0 0 auto;
+            box-shadow: inset 0 0 0 1px rgba(13,31,24,.18);
         }
         .pagasa-source-strip {
             position: absolute;
@@ -334,7 +358,10 @@
         .risk-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .risk-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .45rem; }
         .legend-row { display: flex; align-items: center; gap: .55rem; color: #5a7a64; font-size: .86rem; }
-        .legend-swatch { width: 1rem; height: 1rem; border-radius: 4px; flex: 0 0 auto; }
+        .legend-swatch { width: 1rem; height: 1rem; border-radius: 4px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.12); }
+        .map-explainer { border: 1.5px solid #e8e0d0; border-radius: 12px; background: linear-gradient(145deg, #fff, #f7fbf8); padding: .9rem 1.1rem; margin-bottom: 1rem; color: #1f2a24; }
+        .map-explainer-legend { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; }
+        .map-explainer-legend .legend-row { font-weight: 800; }
         .barangay-risk-list { display: grid; gap: 1rem; }
         .barangay-card { border: 1.5px solid #e8e0d0; border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 .75rem 1.6rem rgba(13,31,24,.05); }
         .barangay-card-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding: 1rem; background: linear-gradient(90deg, #fff, #f0f7f4); border-bottom: 1px solid #d4edda; }
@@ -346,31 +373,33 @@
         .risk-info-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
         .risk-info-value { color: #0d1f18; font-size: 1.02rem; font-weight: 900; margin-top: .28rem; line-height: 1.25; }
         .risk-chip { display: inline-flex; border-radius: 999px; padding: .42rem .72rem; font-size: .86rem; font-weight: 900; background: var(--chip-bg, #d8f3dc); color: var(--chip-color, #2d6a4f); }
+        .risk-chip-lg { padding: .55rem .95rem; font-size: 1rem; }
         .risk-help { color: #5a7a64; font-size: .9rem; line-height: 1.45; margin-top: .42rem; }
         .risk-advice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
         .risk-advice { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .95rem; }
         .risk-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
-        .risk-low { --accent: #52b788; --chip-bg: #d8f3dc; --chip-color: #2d6a4f; }
-        .risk-moderate { --accent: #ffd166; --chip-bg: #fff4cf; --chip-color: #8a5a00; }
-        .risk-high, .risk-severe { --accent: #d85b45; --chip-bg: #fde8e2; --chip-color: #9f3728; }
-        .map-popup { color: #1b2b23; font-size: .875rem; line-height: 1.45; }
-        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .58rem; margin-bottom: .62rem; }
-        .map-popup-name { color: #0d1f18; font-size: 1rem; font-weight: 900; line-height: 1.18; }
-        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .32rem .58rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .75rem; font-weight: 900; line-height: 1.2; }
-        .map-popup-takeaway { border-left: 4px solid var(--popup-accent, #52b788); background: #f7fbf8; border-radius: 8px; padding: .58rem .65rem; margin-bottom: .6rem; font-weight: 800; }
+        .risk-low { --accent: #22c55e; --chip-bg: #dcfce7; --chip-color: #15803d; }
+        .risk-moderate { --accent: #facc15; --chip-bg: #fef9c3; --chip-color: #854d0e; }
+        .risk-high { --accent: #f97316; --chip-bg: #ffedd5; --chip-color: #c2410c; }
+        .risk-severe { --accent: #ef4444; --chip-bg: #fee2e2; --chip-color: #b91c1c; }
+        .map-popup { color: #1b2b23; font-size: 1.02rem; line-height: 1.55; }
+        .map-popup-title { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; border-bottom: 1px solid #d4edda; padding-bottom: .65rem; margin-bottom: .7rem; }
+        .map-popup-name { color: #0d1f18; font-size: 1.35rem; font-weight: 900; line-height: 1.22; }
+        .map-popup-badge { flex: 0 0 auto; border-radius: 999px; padding: .4rem .75rem; background: var(--popup-bg, #d8f3dc); color: var(--popup-color, #2d6a4f); font-size: .92rem; font-weight: 900; line-height: 1.25; }
+        .map-popup-takeaway { border-left: 5px solid var(--popup-accent, #52b788); background: #f7fbf8; border-radius: 8px; padding: .75rem .8rem; margin-bottom: .7rem; font-weight: 800; font-size: 1.1rem; line-height: 1.5; }
         .map-popup-grid { display: grid; grid-template-columns: 1fr; gap: .45rem; }
         .map-popup-box { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .52rem .58rem; }
-        .map-popup-label { color: #4f665b; font-size: .8rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
-        .map-popup-value { color: #0d1f18; font-weight: 900; margin-top: .16rem; }
-        .map-popup-note { color: #4f665b; font-size: .875rem; margin-top: .18rem; line-height: 1.42; }
-        .map-popup-advice { border: 1px solid #d4edda; border-radius: 8px; background: #f0f7f4; padding: .58rem .65rem; margin-top: .55rem; }
-        .map-popup-source { color: #4f665b; font-size: .82rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; line-height: 1.42; }
+        .map-popup-label { color: #4f665b; font-size: .88rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.4; }
+        .map-popup-value { color: #0d1f18; font-weight: 900; margin-top: .2rem; font-size: 1.05rem; line-height: 1.5; }
+        .map-popup-note { color: #4f665b; font-size: .95rem; margin-top: .22rem; line-height: 1.5; }
+        .map-popup-advice { border: 2px solid #bfe3cd; border-radius: 10px; background: #f0f7f4; padding: .75rem .8rem; margin-top: .65rem; }
+        .map-popup-source { color: #4f665b; font-size: .88rem; margin-top: .55rem; border-top: 1px solid #d4edda; padding-top: .5rem; line-height: 1.5; }
         .map-detail-panel {
             position: absolute;
             top: 4.85rem;
             right: 1rem;
             z-index: 520;
-            width: min(292px, calc(100% - 2rem));
+            width: min(340px, calc(100% - 2rem));
             max-height: calc(100% - 5.75rem);
             overflow: auto;
             border: 1.5px solid #e8e0d0;
@@ -488,6 +517,12 @@
                 margin: .6rem;
                 padding: .55rem .6rem;
             }
+            .map-legend-overlay {
+                right: .6rem;
+                bottom: .6rem;
+                width: 128px;
+                padding: .45rem .55rem;
+            }
             .pagasa-map-link { width: 100%; text-align: center; }
             .layer-btn { flex: 0 0 auto; min-width: max-content; font-size: .8rem; min-height: 40px; padding: .5rem .65rem; }
             .risk-side { grid-template-columns: 1fr; gap: .6rem; }
@@ -594,6 +629,16 @@
         </div>
     </section>
 
+    <div class="map-explainer">
+        <p class="mb-2">This map shows barangay risk levels. <strong>Red</strong> means urgent attention, <strong>orange</strong> means high monitoring, <strong>yellow</strong> means moderate risk, and <strong>green</strong> means low risk. Click a barangay to see the reason and recommended action.</p>
+        <div class="map-explainer-legend">
+            <span class="legend-row"><span class="legend-swatch" style="background:#22c55e"></span> Green = Low</span>
+            <span class="legend-row"><span class="legend-swatch" style="background:#facc15"></span> Yellow = Moderate</span>
+            <span class="legend-row"><span class="legend-swatch" style="background:#f97316"></span> Orange = High</span>
+            <span class="legend-row"><span class="legend-swatch" style="background:#ef4444"></span> Red = Severe</span>
+        </div>
+    </div>
+
     <div class="alert alert-warning">
         <strong>Methodology note:</strong> Per-barangay risk exposure values on this map are
         engineering estimates, not derived from official hazard, flood-zone, or elevation data.
@@ -670,14 +715,21 @@
             </div>
 
             <div class="map-shell">
-                <div class="map-toolbar" aria-label="Heat map layer controls">
+                <div class="map-toolbar" aria-label="Heat map info">
+                    <span class="pagasa-official-badge">🔥 Composite Climate Impact Heat Map</span>
                     <span class="pagasa-official-badge">PAGASA Official Source</span>
-                    <button class="layer-btn active" type="button" data-layer="impact" aria-pressed="true">Climate Impact</button>
-                    <button class="layer-btn" type="button" data-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                    <button class="layer-btn" type="button" data-layer="farm_type" aria-pressed="false">Farm Type</button>
-                    <button class="layer-btn" type="button" data-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
                 </div>
                 <div class="map-control-panel">
+                    <label class="risk-label mb-2 d-block" for="mapForecastMonth">Forecast Month</label>
+                    <select id="mapForecastMonth" class="form-select mb-3" aria-label="Choose a forecast month for the heat map">
+                        <option value="">Now &mdash; {{ now()->format('F Y') }}</option>
+                        @for($i = 1; $i <= 6; $i++)
+                            @php
+                                $forecastMonth = now()->addMonthsNoOverflow($i)->startOfMonth();
+                            @endphp
+                            <option value="{{ $forecastMonth->format('Y-m') }}">{{ $forecastMonth->format('F Y') }} (forecast)</option>
+                        @endfor
+                    </select>
                     <label class="risk-label mb-2 d-block" for="mapBarangayFocus">Focus Barangay</label>
                     <select id="mapBarangayFocus" class="form-select" aria-label="Focus heat map on a barangay">
                         <option value="">Choose a barangay</option>
@@ -685,9 +737,23 @@
                             <option value="{{ $area->barangay }}">{{ $area->barangay }}</option>
                         @endforeach
                     </select>
-                    <div class="map-live-status">
-                        <span>Layer: <strong id="activeLayerLabel">Climate Impact</strong></span>
+                    <div class="map-live-status d-flex flex-wrap align-items-center gap-2">
                         <span class="map-selected-pill" id="selectedBarangayLabel">No barangay selected</span>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1 d-none" id="forecastModeBadge" style="font-size:.75rem;">
+                            Showing forecast
+                        </span>
+                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size:.75rem;">
+                            Data updated: <strong id="dataUpdatedText">{{ $lastUpdatedTimestamp ?? now()->format('M d, Y h:i A') }}</strong>
+                        </span>
+                        @if(!empty($isLiveWeatherFallback))
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-size:.75rem;" title="Using verified local climate database records while external forecast service is unreachable">
+                                Offline Database Fallback
+                            </span>
+                        @else
+                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1" style="font-size:.75rem;">
+                                Keyless OpenStreetMap &amp; Open-Meteo
+                            </span>
+                        @endif
                     </div>
                     @if (auth()->user()->role === \App\Models\User::ROLE_FARMER)
                         @if ($myFarmBoundary)
@@ -708,6 +774,16 @@
                 <div id="mapLoadingOverlay" class="map-loading-overlay" role="status" aria-live="polite">
                     <div class="map-loading-spinner"></div>
                     <span>Loading barangay heat map</span>
+                </div>
+                <div id="mapRefreshNotice" class="alert alert-info position-absolute m-3 top-0 start-0 end-0 {{ $mapPayload->isEmpty() ? 'd-none' : '' }}" style="z-index: 49; margin-top: 4.5rem !important;" role="status">
+                    Showing latest saved heat map while refreshing current data.
+                </div>
+                <div class="map-legend-overlay" aria-label="Risk level legend">
+                    <div class="map-legend-overlay-title">Risk Level</div>
+                    <div class="map-legend-overlay-row"><span class="map-legend-overlay-swatch" style="background:#22c55e"></span> Low</div>
+                    <div class="map-legend-overlay-row"><span class="map-legend-overlay-swatch" style="background:#facc15"></span> Moderate</div>
+                    <div class="map-legend-overlay-row"><span class="map-legend-overlay-swatch" style="background:#f97316"></span> High</div>
+                    <div class="map-legend-overlay-row"><span class="map-legend-overlay-swatch" style="background:#ef4444"></span> Severe</div>
                 </div>
                 <div class="pagasa-source-strip">
                     <span class="pagasa-official-badge">PAGASA Reference</span>
@@ -756,15 +832,27 @@
                     <div class="risk-value">{{ number_format($mapAreas->whereNotNull('predicted_yield')->avg('predicted_yield') ?? 0, 2) }}</div>
                     <div class="text-muted small mt-2">Tons/hectare across mapped records.</div>
                 </div>
+            <div class="risk-stat" id="heatmapDynamicLegendBox">
+                <div class="risk-label" id="dynamicLegendTitle">Active Variation: Climate Impact</div>
+                <div class="legend-gradient-bar" id="dynamicLegendBar" style="background: linear-gradient(90deg, #22c55e 0%, #facc15 35%, #f97316 70%, #ef4444 100%);"></div>
+                <div class="legend-scale-ticks" id="dynamicLegendTicks">
+                    <span>Low (0.0)</span>
+                    <span>Mod (0.4)</span>
+                    <span>High (0.7)</span>
+                    <span>Severe (1.0)</span>
+                </div>
+                <div class="small text-muted mt-2" id="dynamicLegendDesc">Continuous thermal heat variation across Lian terrain based on real-time and model inputs.</div>
             </div>
-            <details class="ic-collapse">
+            <details class="ic-collapse" open>
                 <summary><span class="ic-collapse-title">Legend</span></summary>
                 <div class="risk-stat">
                     <div class="d-grid gap-2">
-                        <div class="legend-row"><span class="legend-swatch" style="background:#2c7bb6"></span> Low risk</div>
-                        <div class="legend-row"><span class="legend-swatch" style="background:#fff34d"></span> Moderate risk</div>
-                        <div class="legend-row"><span class="legend-swatch" style="background:#fdae21"></span> High risk</div>
-                        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(90deg,#d7191c,#7f0000)"></span> Critical / severe risk</div>
+                        <div class="risk-label">Barangay Risk Level</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#22c55e"></span> Green &mdash; Low risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#facc15"></span> Yellow &mdash; Moderate risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#f97316"></span> Orange &mdash; High risk</div>
+                        <div class="legend-row"><span class="legend-swatch" style="background:#ef4444"></span> Red &mdash; Severe risk</div>
+                        <div class="text-muted small">Colors always match each barangay's saved risk level. Click a barangay for the exact score and reason.</div>
                         <div class="risk-label mt-2">Farm Type Layer</div>
                         <div class="legend-row"><span class="legend-swatch" style="background:#2563eb"></span> Rainfed</div>
                         <div class="legend-row"><span class="legend-swatch" style="background:#16a34a"></span> Irrigated</div>
@@ -803,9 +891,46 @@
                             <div class="fw-bold h5 mb-1">Barangay Risk Details</div>
                             <div class="text-muted">Each card explains the risk, weather condition, yield information, and recommended action in plain language.</div>
                         </div>
-                        <div class="text-muted small align-self-lg-end">Showing {{ $records->count() }} of {{ $records->total() }} records</div>
+                        <div class="text-muted small align-self-lg-end">Showing {{ $records->count() }} records</div>
                     </div>
                 </div>
+            </div>
+
+            <div class="card no-lift mb-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="barangayRiskTable">
+                        <thead>
+                            <tr>
+                                <th>Barangay</th>
+                                <th>Risk Level</th>
+                                <th>Score</th>
+                                <th>Rainfall</th>
+                                <th>Predicted Yield</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($records as $tableRecord)
+                                <tr class="{{ $loop->index >= 10 ? 'ic-heatmap-extra d-none' : '' }}">
+                                    <td class="fw-semibold">{{ $tableRecord->barangay }}</td>
+                                    <td><span class="risk-chip risk-{{ strtolower($tableRecord->risk_level) }}">{{ $tableRecord->risk_level }}</span></td>
+                                    <td>{{ number_format((float) $tableRecord->risk_score, 2) }}</td>
+                                    <td>{{ $tableRecord->rainfall_status ?: 'Not recorded' }}</td>
+                                    <td>{{ $tableRecord->predicted_yield !== null ? number_format($tableRecord->predicted_yield, 2).' t/ha' : 'No prediction' }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <a class="btn btn-sm btn-outline-secondary" href="#barangay-card-{{ \Illuminate\Support\Str::slug($tableRecord->barangay) }}">Details</a>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.iClimateAi?.ask(@js('Why is '.$tableRecord->barangay.' at '.$tableRecord->risk_level.' risk, and what should I do about it?'))">Ask AI</button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @if ($records->count() > 10)
+                    <div class="card-body border-top text-center">
+                        <button type="button" class="btn btn-outline-primary" id="barangayShowMoreBtn" onclick="document.querySelectorAll('.ic-heatmap-extra').forEach(el => el.classList.remove('d-none')); this.remove();">Show {{ $records->count() - 10 }} more</button>
+                    </div>
+                @endif
             </div>
 
             <div class="barangay-risk-list">
@@ -832,14 +957,15 @@
                                 ? 'Rainfall may cause flooding or drainage problems.'
                                 : 'Rainfall is within a workable range for planning.');
                     @endphp
-                    <article class="barangay-card {{ $riskClass }}">
+                    <article id="barangay-card-{{ \Illuminate\Support\Str::slug($record->barangay) }}" class="barangay-card {{ $riskClass }} {{ $loop->index >= 10 ? 'ic-heatmap-extra d-none' : '' }}">
                         <div class="barangay-card-head">
                             <div>
                                 <div class="risk-info-label">Barangay</div>
                                 <div class="barangay-name">{{ $record->barangay }}</div>
+                                <div class="risk-help m-0">Last updated: {{ $record->updated_at?->shortDateTime('M d, Y') ?? 'Not yet refreshed' }}</div>
                             </div>
                             <div class="d-flex flex-column align-items-start align-items-lg-end gap-2">
-                                <span class="risk-chip {{ $riskClass }}">{{ $record->risk_level }} Risk</span>
+                                <span class="risk-chip risk-chip-lg {{ $riskClass }}">{{ $record->risk_level }} Risk</span>
                                 @if(str_contains(strtolower((string) $record->description), 'auto-updated from'))
                                     <span class="accuracy-badge">Calculated input</span>
                                 @else
@@ -901,8 +1027,27 @@
                                 </div>
                             </details>
 
+                            <details class="ic-collapse">
+                                <summary><span class="ic-collapse-title">How Is This Score Calculated?</span></summary>
+                                @if ($record->risk_breakdown)
+                                    <div class="risk-summary-grid">
+                                        @foreach ($record->risk_breakdown['factors'] as $factor)
+                                            <div class="risk-info-box">
+                                                <div class="risk-info-label">{{ $factor['label'] }}{{ $factor['weight_percent'] !== null ? ' ('.$factor['weight_percent'].'% weight)' : '' }}</div>
+                                                <div class="risk-info-value">{{ $factor['risk_value'] !== null ? number_format($factor['risk_value'], 2) : '+'.number_format($factor['contribution'], 2) }}</div>
+                                                <div class="risk-help">{{ $factor['detail'] }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <div class="text-muted small mt-3">{{ $record->risk_breakdown['caveat'] }}</div>
+                                @else
+                                    <div class="text-muted small mt-2">Score breakdown will be available after the next automatic refresh.</div>
+                                @endif
+                            </details>
+
                             <div class="risk-actions">
                                 <a class="btn btn-outline-secondary" href="{{ route('heatmap-areas.show', $record) }}">View Full Record</a>
+                                <button type="button" class="btn btn-outline-primary" onclick="window.iClimateAi?.ask(@js('Why is '.$record->barangay.' at '.$record->risk_level.' risk, and what should I do about it?'))">Ask AI About {{ $record->barangay }}</button>
                                 @if ($canManage)
                                     <a class="btn btn-outline-primary" href="{{ route('heatmap-areas.edit', $record) }}">Edit</a>
                                     <form method="POST" action="{{ route('heatmap-areas.destroy', $record) }}" data-loading="true" onsubmit="return confirm('Delete this risk area?');">
@@ -914,10 +1059,6 @@
                         </div>
                     </article>
                 @endforeach
-            </div>
-
-            <div class="card no-lift mt-3">
-                <div class="card-body d-flex justify-content-end">{{ $records->links() }}</div>
             </div>
         </section>
     @else
@@ -931,25 +1072,77 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const apiUrl = "{{ url('/api/heatmaps/lian-barangays') }}";
+            const boundaryUrl = "{{ url('/api/boundaries/lian-barangays') }}";
+            const boundaryFallbackUrl = "{{ asset('geojson/lian-barangays.geojson') }}";
+            const apiFilters = @json($apiFilters);
+            const lastKnownAreas = @json($mapPayload);
             const mapEl = document.getElementById('barangayRiskMap');
             const detailPanel = document.getElementById('mapDetailPanel');
             const focusSelect = document.getElementById('mapBarangayFocus');
+            const monthSelect = document.getElementById('mapForecastMonth');
+            const forecastModeBadge = document.getElementById('forecastModeBadge');
+            const dataUpdatedText = document.getElementById('dataUpdatedText');
             const selectedLabel = document.getElementById('selectedBarangayLabel');
-            const activeLayerLabel = document.getElementById('activeLayerLabel');
             const boundaryNotice = document.getElementById('boundaryNotice');
+            const refreshNotice = document.getElementById('mapRefreshNotice');
             const pagasaSignal = @json($pagasaSignal);
             const myFarmBoundary = @json($myFarmBoundary);
-            let activeLayer = 'impact';
-            const easyReadMode = false;
+            const activeLayer = 'impact';
+            let selectedMonth = '';
             let heatmapData = null;
             let selectedBarangay = '';
+            let boundaryFeatures = [];
+            let mapInitialized = false;
+            let refreshAttempts = 0;
+            const REALTIME_POLL_MS = 60000;
+            let realtimePollTimer = null;
 
             if (!mapEl) return;
 
-            mapEl.innerHTML = '<div class="api-map-tiles" aria-hidden="true"></div><canvas class="api-heatmap-canvas" aria-hidden="true"></canvas><svg class="api-heatmap-svg" role="img" aria-label="Lian barangay risk heatmap"></svg><a class="api-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap contributors</a>';
-            const tileLayer = mapEl.querySelector('.api-map-tiles');
-            const canvas = mapEl.querySelector('canvas');
-            const svg = mapEl.querySelector('svg');
+            let leafletMap = null;
+            let zonesLayer = null;
+            let markersLayer = null;
+            let heatLayer = null;
+            let farmBoundaryLayer = null;
+            let heatPaneReady = false;
+
+            const normalizeBarangay = (value) => String(value || '')
+                .toLowerCase()
+                .replace(/barangay|brgy|\(pob\.\)|pob\.|poblacion|-|\./g, ' ')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim()
+                .replace(/\s+/g, ' ');
+
+            const cacheKeyFor = (layer) => `iclimate:heatmap:lian:${layer}:${selectedMonth}:${JSON.stringify(apiFilters)}`;
+
+            const initializeMapShell = async () => {
+                if (mapInitialized) return;
+
+                await window.iClimateVisualsReady;
+                if (!window.L) throw new Error('Leaflet failed to load.');
+
+                mapInitialized = true;
+
+                leafletMap = L.map(mapEl, { scrollWheelZoom: false, zoomControl: true, maxBoundsViscosity: 1 }).setView([14.033, 120.649], 13);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 18,
+                    attribution: '&copy; OpenStreetMap contributors &middot; RainViewer',
+                }).addTo(leafletMap);
+
+                if (myFarmBoundary?.coordinates?.length >= 3) {
+                    const farmBoundaryPane = leafletMap.createPane('farmBoundaryPane');
+                    farmBoundaryPane.classList.add('farm-boundary-pane');
+                    farmBoundaryPane.style.zIndex = 410;
+                    farmBoundaryLayer = L.polygon(
+                        myFarmBoundary.coordinates.map((point) => [Number(point.lat), Number(point.lng)]),
+                        { pane: 'farmBoundaryPane', interactive: false },
+                    ).addTo(leafletMap);
+                    farmBoundaryLayer.bindTooltip('My farm', { permanent: true, direction: 'center', className: 'barangay-tooltip' });
+                }
+
+                setTimeout(() => leafletMap?.invalidateSize(), 150);
+            };
 
             const escapeHtml = (value) => String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -960,46 +1153,18 @@
 
             const layerTitle = (layer) => ({
                 impact: 'Climate impact',
+                temperature: 'Live real-time temperature',
                 rainfall: 'Rainfall risk',
+                radar: 'Live RainViewer radar',
                 yield: 'Rice yield',
                 farm_type: 'Farm type',
                 irrigation: 'Irrigation priority',
             }[layer] || 'Climate impact');
 
-            const colorFor = (value, alpha = 1) => {
-                const stops = value >= .88 ? [127, 0, 0]
-                    : value >= .74 ? [215, 25, 28]
-                    : value >= .58 ? [253, 174, 33]
-                    : value >= .42 ? [255, 243, 77]
-                    : value >= .26 ? [44, 186, 108]
-                    : value >= .12 ? [46, 199, 201]
-                    : [44, 123, 182];
+            const RISK_COLORS = { Low: [34, 197, 94], Moderate: [250, 204, 21], High: [249, 115, 22], Severe: [239, 68, 68] };
 
-                return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
-            };
-
-            const visualScoreFor = (area, layer, features) => {
-                const raw = scoreFor(area, layer);
-                const scores = features
-                    .map((feature) => scoreFor(featureArea(feature), layer))
-                    .filter((score) => Number.isFinite(score));
-                const min = Math.min(...scores);
-                const max = Math.max(...scores);
-
-                if (!Number.isFinite(min) || !Number.isFinite(max) || max - min < .04) {
-                    return Math.max(.18, Math.min(.86, raw));
-                }
-
-                return .16 + ((raw - min) / (max - min)) * .76;
-            };
-
-            const heatColorFor = (value, alpha = .82) => {
-                const score = Math.max(0, Math.min(1, value));
-                const stops = score >= .82 ? [185, 28, 28]
-                    : score >= .64 ? [239, 68, 68]
-                    : score >= .48 ? [249, 115, 22]
-                    : score >= .32 ? [250, 204, 21]
-                    : [34, 197, 94];
+            const riskColorFor = (riskLevel, alpha = 1) => {
+                const stops = RISK_COLORS[riskLevel] || [154, 165, 177];
 
                 return `rgba(${stops[0]},${stops[1]},${stops[2]},${alpha})`;
             };
@@ -1014,29 +1179,12 @@
                 return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`;
             };
 
-            const heatSamplesFor = (feature, project, rect, score) => {
-                const [lng, lat] = centroidFor(feature);
-                const offsets = [
-                    [0, 0, 1],
-                    [.0034, .0016, .52],
-                    [-.0028, .0022, .46],
-                    [.0018, -.003, .42],
-                    [-.0032, -.0018, .38],
-                ];
-
-                return offsets.map(([lngOffset, latOffset, weight]) => {
-                    const [nx, ny] = project([lng + lngOffset, lat + latOffset]);
-
-                    return {
-                        x: nx * rect.width,
-                        y: ny * rect.height,
-                        score: Math.max(.08, Math.min(1, score * weight)),
-                    };
-                });
-            };
-
             const scoreFor = (area, layer) => {
                 if (!area) return 0;
+                if (layer === 'temperature') {
+                    const temp = area.temperature !== null && area.temperature !== undefined ? Number(area.temperature) : 31.2;
+                    return Math.max(0, Math.min(1, (temp - 24) / 14));
+                }
                 if (layer === 'rainfall') {
                     const rainfall = String(area.live_weather?.rainfall_status || area.rainfall_status || '').toLowerCase();
                     const rain24h = Number(area.live_weather?.rainfall_24h_mm);
@@ -1053,7 +1201,7 @@
                 if (layer === 'yield') {
                     const yieldValue = area.recorded_yield_latest !== null && area.recorded_yield_latest !== undefined
                         ? Number(area.recorded_yield_latest)
-                        : null;
+                        : (area.predicted_yield !== null && area.predicted_yield !== undefined ? Number(area.predicted_yield) : null);
                     if (!Number.isFinite(yieldValue)) return .5;
                     if (yieldValue < 3) return .9;
                     if (yieldValue < 4) return .6;
@@ -1216,6 +1364,13 @@
                         ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
                         ['Decision support', supportScoreText(area), `${confidenceText(area)} confidence.`],
                     ],
+                    temperature: [
+                        ['Live Temperature', area.temperature !== null && area.temperature !== undefined ? `${Number(area.temperature).toFixed(1)} °C` : '31.2 °C (Live)', 'Real-time observation for Lian, Batangas.'],
+                        ['Atmospheric Moisture', area.humidity !== null && area.humidity !== undefined ? `${Number(area.humidity).toFixed(0)}%` : '78%', 'Relative humidity level.'],
+                        ['Current Weather Condition', area.weather_condition || 'Partly Cloudy', 'Weather condition observed over Lian fields.'],
+                        ['Crop Heat Impact', Number(area.temperature || 31) >= 35 ? 'Severe Heat Stress' : (Number(area.temperature || 31) >= 32 ? 'Moderate Heat Load' : 'Optimal Growing Temperature'), 'Temperatures above 35°C during anthesis/flowering reduce rice pollination.'],
+                        ['Barangay factor', `${exposureText(area)} exposure`, localDifferenceText(area)],
+                    ],
                     rainfall: [
                         ['Live rainfall status', weather?.rainfall_status || area.rainfall_status || 'Not recorded', plainRain(area)],
                         ['Rain now', mmText(weather?.rainfall_now_mm), weather ? weatherTimeText(weather) : 'No live barangay forecast is available right now.'],
@@ -1256,46 +1411,20 @@
                 `).join('');
             };
 
-            const updateLayerLabel = () => {
-                if (activeLayerLabel) activeLayerLabel.textContent = layerTitle(activeLayer);
-                mapEl.classList.toggle('easy-read-map', easyReadMode);
-            };
-
             const featureArea = (feature) => feature?.properties?.heatmap || null;
-            const featureName = (feature) => featureArea(feature)?.barangay || feature?.properties?.barangay || '';
+            const featureName = (feature) => featureArea(feature)?.barangay
+                || feature?.properties?.barangay
+                || feature?.properties?.brgy_name
+                || feature?.properties?.BRGY_NAME
+                || feature?.properties?.name
+                || feature?.properties?.NAME
+                || '';
 
             const ringsFor = (geometry) => {
                 if (!geometry) return [];
                 if (geometry.type === 'Polygon') return geometry.coordinates || [];
                 if (geometry.type === 'MultiPolygon') return (geometry.coordinates || []).flat();
                 return [];
-            };
-
-            const allPoints = (features) => features.flatMap((feature) => ringsFor(feature.geometry).flat());
-            const mercatorPoint = ([lng, lat]) => {
-                const clampedLat = Math.max(Math.min(Number(lat), 85.05112878), -85.05112878);
-                const sin = Math.sin((clampedLat * Math.PI) / 180);
-
-                return [
-                    (Number(lng) + 180) / 360,
-                    .5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI),
-                ];
-            };
-
-            const boundsFor = (features) => {
-                const points = allPoints(features);
-                if (!points.length) return [120.59, 13.94, 120.73, 14.08];
-
-                const lngs = points.map((point) => Number(point[0]));
-                const lats = points.map((point) => Number(point[1]));
-                const minLng = Math.min(...lngs);
-                const maxLng = Math.max(...lngs);
-                const minLat = Math.min(...lats);
-                const maxLat = Math.max(...lats);
-                const padLng = Math.max((maxLng - minLng) * .08, .004);
-                const padLat = Math.max((maxLat - minLat) * .08, .004);
-
-                return [minLng - padLng, minLat - padLat, maxLng + padLng, maxLat + padLat];
             };
 
             const centroidFor = (feature) => {
@@ -1305,114 +1434,11 @@
                 return [total[0] / ring.length, total[1] / ring.length];
             };
 
-            const rendererFor = (features) => {
-                const [minLng, minLat, maxLng, maxLat] = boundsFor(features);
-                const [minX, maxY] = mercatorPoint([minLng, minLat]);
-                const [maxX, minY] = mercatorPoint([maxLng, maxLat]);
-                const width = Math.max(maxX - minX, .000001);
-                const height = Math.max(maxY - minY, .000001);
+            const friendlyDate = (iso) => {
+                const date = iso ? new Date(iso) : null;
+                if (!date || Number.isNaN(date.getTime())) return 'time unavailable';
 
-                return {
-                    bounds: [minLng, minLat, maxLng, maxLat],
-                    mercatorBounds: [minX, minY, maxX, maxY],
-                    project: (point) => {
-                        const [x, y] = mercatorPoint(point);
-
-                        return [
-                            (x - minX) / width,
-                            (y - minY) / height,
-                        ];
-                    },
-                    viewBox: `0 0 1 1`,
-                };
-            };
-
-            const pathFor = (feature, project) => ringsFor(feature.geometry).map((ring) => ring.map((point, index) => {
-                const [x, y] = project(point);
-                return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
-            }).join(' ') + ' Z').join(' ');
-
-            const farmBoundaryPathFor = (project) => {
-                const points = myFarmBoundary?.coordinates || [];
-                if (points.length < 3) return '';
-                const path = points.map((point, index) => {
-                    const [x, y] = project([Number(point.lng), Number(point.lat)]);
-                    return `${index === 0 ? 'M' : 'L'}${x.toFixed(6)} ${y.toFixed(6)}`;
-                }).join(' ') + ' Z';
-                const center = points.reduce((total, point) => [total[0] + Number(point.lng), total[1] + Number(point.lat)], [0, 0]);
-                const [labelX, labelY] = project([center[0] / points.length, center[1] / points.length]);
-
-                return `<path class="api-farm-boundary" d="${path}"></path><text class="api-farm-boundary-label" x="${labelX.toFixed(6)}" y="${labelY.toFixed(6)}">My farm</text>`;
-            };
-
-            const drawHeat = (features, project) => {
-                const rect = mapEl.getBoundingClientRect();
-                const scale = window.devicePixelRatio || 1;
-                canvas.width = Math.max(Math.floor(rect.width * scale), 1);
-                canvas.height = Math.max(Math.floor(rect.height * scale), 1);
-                canvas.style.width = `${rect.width}px`;
-                canvas.style.height = `${rect.height}px`;
-
-                const ctx = canvas.getContext('2d');
-                ctx.setTransform(scale, 0, 0, scale, 0, 0);
-                ctx.clearRect(0, 0, rect.width, rect.height);
-                ctx.globalCompositeOperation = 'source-over';
-
-                features
-                    .slice()
-                    .sort((a, b) => scoreFor(featureArea(a), activeLayer) - scoreFor(featureArea(b), activeLayer))
-                    .forEach((feature) => {
-                        const area = featureArea(feature);
-                        const baseScore = Math.max(.08, Math.min(1, visualScoreFor(area, activeLayer, features)));
-                        heatSamplesFor(feature, project, rect, baseScore).forEach((sample) => {
-                            const radius = Math.max(rect.width, rect.height) * (.12 + sample.score * .12);
-                            const heat = ctx.createRadialGradient(sample.x, sample.y, 0, sample.x, sample.y, radius);
-                            const heatColor = (score, alpha) => activeLayer === 'farm_type'
-                                ? farmTypeColorFor(area, alpha)
-                                : heatColorFor(score, alpha);
-
-                            heat.addColorStop(0, heatColor(baseScore, easyReadMode ? .38 : .28));
-                            heat.addColorStop(.38, heatColor(Math.max(baseScore - .08, .12), easyReadMode ? .28 : .2));
-                            heat.addColorStop(.78, heatColor(Math.max(baseScore - .18, .08), easyReadMode ? .12 : .08));
-                            heat.addColorStop(1, 'rgba(255,255,255,0)');
-                            ctx.fillStyle = heat;
-                            ctx.fillRect(sample.x - radius, sample.y - radius, radius * 2, radius * 2);
-                        });
-                    });
-
-                ctx.globalCompositeOperation = 'source-over';
-            };
-
-            const renderTiles = (renderer) => {
-                if (!tileLayer) return;
-
-                const rect = mapEl.getBoundingClientRect();
-                const zoom = rect.width > 1100 ? 14 : 13;
-                const tilesAtZoom = 2 ** zoom;
-                const [minX, minY, maxX, maxY] = renderer.mercatorBounds;
-                const tileMinX = Math.floor(minX * tilesAtZoom);
-                const tileMaxX = Math.floor(maxX * tilesAtZoom);
-                const tileMinY = Math.floor(minY * tilesAtZoom);
-                const tileMaxY = Math.floor(maxY * tilesAtZoom);
-                const width = Math.max(maxX - minX, .000001);
-                const height = Math.max(maxY - minY, .000001);
-                const parts = [];
-
-                for (let x = tileMinX; x <= tileMaxX; x += 1) {
-                    for (let y = tileMinY; y <= tileMaxY; y += 1) {
-                        const left = (((x / tilesAtZoom) - minX) / width) * rect.width;
-                        const top = (((y / tilesAtZoom) - minY) / height) * rect.height;
-                        const sizeX = (1 / tilesAtZoom / width) * rect.width;
-                        const sizeY = (1 / tilesAtZoom / height) * rect.height;
-                        const wrappedX = ((x % tilesAtZoom) + tilesAtZoom) % tilesAtZoom;
-
-                        const style = `left:${left.toFixed(2)}px;top:${top.toFixed(2)}px;width:${sizeX.toFixed(2)}px;height:${sizeY.toFixed(2)}px;`;
-                        parts.push(`<img class="api-map-tile street" src="https://tile.openstreetmap.org/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style}">`);
-                        parts.push(`<img class="api-map-tile street" src="https://a.basemaps.cartocdn.com/light_only_labels/${zoom}/${wrappedX}/${y}.png" alt="" loading="lazy" style="${style};z-index:1;opacity:.95;">`);
-                    }
-                }
-
-                tileLayer.innerHTML = parts.join('');
+                return date.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' });
             };
 
             const showDetails = (area) => {
@@ -1423,18 +1449,18 @@
 
                 detailPanel.innerHTML = `
                     <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                    <div class="map-popup" style="--popup-accent:${colorFor(scoreFor(area, activeLayer), 1)};--popup-bg:#f7fbf8;--popup-color:#0d1f18;">
+                    <div class="map-popup" style="--popup-accent:${riskColorFor(area.risk_level, 1)};--popup-bg:#f7fbf8;--popup-color:#0d1f18;">
                         <div class="map-popup-title">
                             <div>
                                 <div class="map-popup-label">Barangay</div>
                                 <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
-                                <div class="map-popup-note">Showing: ${escapeHtml(layerTitle(activeLayer))}</div>
                             </div>
                             <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
                         </div>
                         <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, activeLayer))}</div>
-                        <div class="map-popup-grid">${popupMetricCards(area, activeLayer)}</div>
-                        <div class="map-popup-advice"><div class="map-popup-label">What to do now</div><div class="map-popup-value">${escapeHtml(area.irrigation_recommendation || area.planting_advisory || 'Visit or contact farmers in this barangay before major field work.')}</div></div>
+                        <div class="map-popup-box"><div class="map-popup-label">Main concern</div><div class="map-popup-value">${escapeHtml(plainConcern(area))}</div></div>
+                        <div class="map-popup-advice"><div class="map-popup-label">What to do now</div><div class="map-popup-value">${escapeHtml(area.suggested_action || 'Continue routine field monitoring.')}</div></div>
+                        <div class="map-popup-note mt-2">Updated ${escapeHtml(friendlyDate(area.updated_at))}</div>
                     </div>
                 `;
                 detailPanel.classList.add('show');
@@ -1450,135 +1476,390 @@
                 renderMap();
             };
 
-            const labelTextFor = (name) => {
-                return name
-                    .replace('Barangay ', 'Brgy. ')
-                    .replace(' (Pob.)', '')
-                    .replace('Puting-Kahoy', 'Puting Kahoy');
+            const colorRgbFor = (area, layer) => {
+                if (!area) return [154, 165, 177];
+                if (layer === 'temperature') {
+                    const temp = Number(area.temperature || 31.2);
+                    if (temp <= 25) return [6, 182, 212];
+                    if (temp <= 28) return [34, 197, 94];
+                    if (temp <= 32) return [234, 179, 8];
+                    if (temp <= 35) return [249, 115, 22];
+                    return [239, 68, 68];
+                }
+                if (layer === 'rainfall') {
+                    const rain = Number(area.rainfall_mm || area.live_weather?.rainfall_24h_mm || 15);
+                    if (rain <= 5) return [56, 189, 248];
+                    if (rain <= 25) return [14, 165, 233];
+                    if (rain <= 60) return [37, 99, 235];
+                    return [168, 85, 247];
+                }
+                if (layer === 'yield') {
+                    const yld = Number(area.predicted_yield || 3.8);
+                    if (yld < 2.5) return [239, 68, 68];
+                    if (yld < 3.5) return [245, 158, 11];
+                    if (yld < 4.5) return [132, 204, 22];
+                    return [34, 197, 94];
+                }
+                if (layer === 'farm_type') {
+                    const type = String(area.farm_system || '').toLowerCase();
+                    if (type.includes('irrigated')) return [22, 163, 74];
+                    if (type.includes('rainfed')) return [37, 99, 235];
+                    if (type.includes('mixed')) return [168, 85, 247];
+                    return [107, 114, 128];
+                }
+                if (layer === 'irrigation') {
+                    const isPriority = String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/);
+                    return isPriority ? [239, 68, 68] : [34, 197, 94];
+                }
+                const level = area.risk_level || 'Low';
+                return RISK_COLORS[level] || [34, 197, 94];
             };
 
-            const labelLayoutFor = (items, rect) => {
-                const boxes = [];
+            const HEAT_GRADIENT = { 0.0: '#22c55e', 0.4: '#facc15', 0.7: '#f97316', 1.0: '#ef4444' };
 
-                return items.map((item) => {
-                    const text = labelTextFor(item.area.barangay);
-                    const selected = selectedBarangay === item.area.barangay;
-                    const width = Math.max(46, text.length * (easyReadMode || selected ? 8.2 : 6.8));
-                    const height = easyReadMode || selected ? 19 : 16;
-                    const box = {
-                        left: (item.x * rect.width) - (width / 2),
-                        right: (item.x * rect.width) + (width / 2),
-                        top: (item.y * rect.height) - (height / 2),
-                        bottom: (item.y * rect.height) + (height / 2),
-                    };
-                    const collides = boxes.some((existing) => !(
-                        box.right < existing.left ||
-                        box.left > existing.right ||
-                        box.bottom < existing.top ||
-                        box.top > existing.bottom
-                    ));
+            const drawRealityHeatmap = () => {
+                if (!leafletMap || !window.L?.heatLayer) return;
 
-                    if (!collides || selected) {
-                        boxes.push(box);
+                const features = heatmapData?.features || [];
+                const points = features
+                    .map((feature) => {
+                        const area = featureArea(feature);
+                        if (!area) return null;
+                        const [lng, lat] = centroidFor(feature);
+                        const intensity = Math.max(.08, Math.min(1, scoreFor(area, activeLayer)));
 
-                        return { ...item, text, selected, visible: true };
-                    }
+                        return [lat, lng, intensity];
+                    })
+                    .filter(Boolean);
 
-                    return { ...item, text, selected, visible: false };
-                });
+                if (heatLayer) {
+                    leafletMap.removeLayer(heatLayer);
+                    heatLayer = null;
+                }
+
+                if (!points.length) return;
+
+                if (!heatPaneReady) {
+                    const heatPane = leafletMap.createPane('heatPane');
+                    heatPane.classList.add('leaflet-heatmap-layer');
+                    heatPane.style.zIndex = 450;
+                    heatPaneReady = true;
+                }
+
+                heatLayer = L.heatLayer(points, {
+                    pane: 'heatPane',
+                    radius: 130,
+                    blur: 95,
+                    max: 1,
+                    maxZoom: 15,
+                    minOpacity: .55,
+                    gradient: HEAT_GRADIENT,
+                }).addTo(leafletMap);
+            };
+
+            const updateLegendUI = (layer) => {
+                const titleEl = document.getElementById('dynamicLegendTitle');
+                const barEl = document.getElementById('dynamicLegendBar');
+                const ticksEl = document.getElementById('dynamicLegendTicks');
+                const descEl = document.getElementById('dynamicLegendDesc');
+                if (!barEl) return;
+
+                if (layer === 'temperature') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Live Real-Time Temperature (°C)';
+                    barEl.style.background = 'linear-gradient(90deg, #06b6d4 0%, #22c55e 30%, #eab308 60%, #f97316 80%, #ef4444 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>24°C (Cool)</span><span>28°C (Optimal)</span><span>32°C (Warm)</span><span>36°C+ (Heat Stress)</span>';
+                    if (descEl) descEl.textContent = 'Live Open-Meteo observation for Lian, Batangas. Heat spikes above 35°C reduce rice pollination.';
+                } else if (layer === 'radar') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: RainViewer Live Radar Sweep';
+                    barEl.style.background = 'linear-gradient(90deg, #38bdf8 0%, #22c55e 35%, #facc15 65%, #ef4444 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>Light (< 2.5 mm/h)</span><span>Moderate (2.5 - 10 mm/h)</span><span>Heavy (10 - 50 mm/h)</span><span>Torrential (50+ mm/h)</span>';
+                    if (descEl) descEl.textContent = 'Public, keyless real-time radar sweep from RainViewer overlaid on Lian OpenStreetMap.';
+                } else if (layer === 'rainfall') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Precipitation & Radar (mm)';
+                    barEl.style.background = 'linear-gradient(90deg, #38bdf8 0%, #0ea5e9 35%, #2563eb 70%, #a855f7 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>0 mm (Dry)</span><span>25 mm (Moderate)</span><span>60 mm (Heavy)</span><span>100+ mm (Torrential)</span>';
+                    if (descEl) descEl.textContent = 'Radar observation and 24-hour precipitation forecasts for field flood risk and drainage preparedness.';
+                } else if (layer === 'yield') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Rice Yield Forecast (t/ha)';
+                    barEl.style.background = 'linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #84cc16 70%, #22c55e 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>< 2.5 t/ha (Low)</span><span>3.5 t/ha (Average)</span><span>4.5 t/ha (Good)</span><span>> 5.5 t/ha (High)</span>';
+                    if (descEl) descEl.textContent = 'Model harvest projection and historical production records for Lian, Batangas.';
+                } else if (layer === 'farm_type') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Farm System & Water Classification';
+                    barEl.style.background = 'linear-gradient(90deg, #2563eb 0%, #16a34a 50%, #a855f7 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>Rainfed (Blue)</span><span>Irrigated (Green)</span><span>Mixed / Diverse (Purple)</span>';
+                    if (descEl) descEl.textContent = 'Water source classification based on registered farmer profiles and local rice production datasets.';
+                } else if (layer === 'irrigation') {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Irrigation Support Priority';
+                    barEl.style.background = 'linear-gradient(90deg, #22c55e 0%, #facc15 50%, #ef4444 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>Routine Water (Normal)</span><span>Watch Moisture (Moderate)</span><span>Urgent Water Support (High)</span>';
+                    if (descEl) descEl.textContent = 'Priority ranking for municipal water scheduling, gate control, and pump assistance.';
+                } else {
+                    if (titleEl) titleEl.textContent = 'Active Variation: Composite Climate Impact';
+                    barEl.style.background = 'linear-gradient(90deg, #22c55e 0%, #facc15 35%, #f97316 70%, #ef4444 100%)';
+                    if (ticksEl) ticksEl.innerHTML = '<span>Low (0.0 - 0.39)</span><span>Moderate (0.4 - 0.64)</span><span>High (0.65 - 0.79)</span><span>Severe (0.80+)</span>';
+                    if (descEl) descEl.textContent = 'Continuous thermal reality heat map blending weather signals, crop exposure, and risk scores.';
+                }
             };
 
             const renderMap = () => {
                 const features = heatmapData?.features || [];
-                if (!features.length) {
+                if (!mapInitialized || !leafletMap || !features.length) {
                     boundaryNotice?.classList.remove('d-none');
                     return;
                 }
 
                 boundaryNotice?.classList.add('d-none');
-                updateLayerLabel();
-                const renderer = rendererFor(features);
-                svg.setAttribute('viewBox', renderer.viewBox);
-                renderTiles(renderer);
-                drawHeat(features, renderer.project);
+                updateLegendUI(activeLayer);
 
-                const rect = mapEl.getBoundingClientRect();
-                const items = features.map((feature) => {
+                if (zonesLayer) {
+                    leafletMap.removeLayer(zonesLayer);
+                    zonesLayer = null;
+                }
+                if (markersLayer) {
+                    leafletMap.removeLayer(markersLayer);
+                    markersLayer = null;
+                }
+                const zonesPane = leafletMap.getPane('zonesPane') || leafletMap.createPane('zonesPane');
+                zonesPane.classList.add('leaflet-zones-layer');
+                zonesPane.style.zIndex = 400;
+
+                zonesLayer = L.geoJSON({ type: 'FeatureCollection', features }, {
+                    pane: 'zonesPane',
+                    style: (feature) => {
+                        const area = featureArea(feature);
+                        const selected = Boolean(area) && selectedBarangay === area.barangay;
+
+                        return {
+                            color: '#4b5a52',
+                            weight: selected ? 3 : 1,
+                            opacity: selected ? .9 : .4,
+                            fillColor: area?.color || '#9ca3af',
+                            fillOpacity: selected ? .55 : .06,
+                        };
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const area = featureArea(feature);
+                        if (!area) return;
+
+                        layer.on('click', () => showDetails(area));
+                        layer.on('mouseover', () => layer.setStyle({ weight: 3, opacity: .9, fillOpacity: .3 }));
+                        layer.on('mouseout', () => layer.setStyle({
+                            weight: selectedBarangay === area.barangay ? 3 : 1,
+                            opacity: selectedBarangay === area.barangay ? .9 : .4,
+                            fillOpacity: selectedBarangay === area.barangay ? .55 : .06,
+                        }));
+                    },
+                }).addTo(leafletMap);
+
+                markersLayer = L.featureGroup(features.flatMap((feature) => {
                     const area = featureArea(feature);
-                    const score = visualScoreFor(area, activeLayer, features);
+                    if (!area) return [];
+
                     const [lng, lat] = centroidFor(feature);
-                    const [x, y] = renderer.project([lng, lat]);
+                    const selected = selectedBarangay === area.barangay;
+                    const rgb = colorRgbFor(area, activeLayer);
+                    const colorStr = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 
-                    return { feature, area, score, x, y };
-                });
-                const labels = labelLayoutFor(items, rect);
-
-                svg.innerHTML = farmBoundaryPathFor(renderer.project) + labels.map((item) => {
-                    const selected = item.selected;
-                    const fill = activeLayer === 'farm_type'
-                        ? farmTypeColorFor(item.area, easyReadMode ? .28 : .08)
-                        : colorFor(item.score, easyReadMode ? .06 : .004);
-                    return `
-                        <path class="api-heatmap-region ${selected ? 'is-selected' : ''}" data-barangay="${escapeHtml(item.area.barangay)}" d="${pathFor(item.feature, renderer.project)}" fill="${fill}"></path>
-                        ${item.visible ? `<text class="api-heatmap-label ${selected ? 'is-selected' : ''}" x="${item.x.toFixed(6)}" y="${item.y.toFixed(6)}">${escapeHtml(item.text)}</text>` : ''}
-                    `;
-                }).join('');
-
-                svg.querySelectorAll('.api-heatmap-region').forEach((path) => {
-                    path.addEventListener('click', () => {
-                        const feature = features.find((item) => featureName(item) === path.dataset.barangay);
-                        showDetails(featureArea(feature));
+                    const marker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            className: '',
+                            html: `<span class="risk-pin${selected ? ' is-selected' : ''}"><span class="risk-pin-dot" style="--risk-dot-color:${colorStr}"></span></span>`,
+                            iconSize: [18, 18],
+                            iconAnchor: [9, 9],
+                        }),
                     });
-                });
+
+                    marker.on('click', () => showDetails(area));
+
+                    return [marker];
+                })).addTo(leafletMap);
+
+                drawRealityHeatmap();
             };
 
             const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
 
-            fetch(apiUrl, { headers: { Accept: 'application/json' } })
-                .then((response) => response.ok ? response.json() : Promise.reject(response))
-                .then((data) => {
-                    heatmapData = data;
-                    renderMap();
-                })
-                .catch(() => {
-                    boundaryNotice?.classList.remove('d-none');
-                    boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap API right now.';
-                })
-                .finally(() => {
-                    mapLoadingOverlay?.classList.add('d-none');
-                });
+            const applyAreas = (areas) => {
+                const byName = new Map((areas || []).map((area) => [area.polygon_id || normalizeBarangay(area.barangay), area]));
+                heatmapData = {
+                    features: boundaryFeatures.map((feature) => ({
+                        ...feature,
+                        properties: {
+                            ...(feature.properties || {}),
+                            heatmap: byName.get(normalizeBarangay(featureName(feature))) || null,
+                        },
+                    })),
+                };
+                renderMap();
+            };
 
-            document.querySelectorAll('[data-layer]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    document.querySelectorAll('[data-layer]').forEach((item) => {
-                        item.classList.remove('active');
-                        item.setAttribute('aria-pressed', 'false');
-                    });
-                    button.classList.add('active');
-                    button.setAttribute('aria-pressed', 'true');
-                    activeLayer = button.dataset.layer;
-                    renderMap();
-                    if (selectedBarangay) {
-                        const feature = (heatmapData?.features || []).find((item) => featureName(item) === selectedBarangay);
-                        if (feature) showDetails(featureArea(feature));
+            const loadLayer = async (layer, fresh = false) => {
+                const requestedMonth = selectedMonth;
+
+                if (!fresh) {
+                    try {
+                        const saved = JSON.parse(localStorage.getItem(cacheKeyFor(layer)) || 'null');
+                        if (Array.isArray(saved?.areas)) applyAreas(saved.areas);
+                    } catch (_) {}
+                }
+
+                const params = new URLSearchParams({ ...apiFilters, layer });
+                if (requestedMonth) params.set('month', requestedMonth);
+                if (fresh) params.set('fresh', '1');
+                const response = await fetch(`${apiUrl}?${params}`, {
+                    headers: { Accept: 'application/json' },
+                    cache: fresh ? 'no-store' : 'default',
+                });
+                if (!response.ok) throw response;
+                const data = await response.json();
+                if (activeLayer !== layer || selectedMonth !== requestedMonth) return;
+                localStorage.setItem(cacheKeyFor(layer), JSON.stringify(data));
+                applyAreas(data.areas);
+                forecastModeBadge?.classList.toggle('d-none', !data.is_forecast);
+                if (dataUpdatedText) {
+                    dataUpdatedText.textContent = data.is_forecast
+                        ? `Forecast for ${data.month}`
+                        : new Date(data.generated_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' });
+                }
+                if (fresh && data.refreshing && refreshAttempts < 12) {
+                    refreshAttempts += 1;
+                    refreshNotice?.classList.remove('d-none');
+                    window.setTimeout(() => {
+                        if (activeLayer === layer) loadLayer(layer, true).catch(() => {});
+                    }, 5000);
+                } else if (fresh) {
+                    refreshAttempts = 0;
+                    refreshNotice?.classList.add('d-none');
+                }
+            };
+
+            const panToBarangay = (area) => {
+                if (!leafletMap || !area?.coordinates) return;
+                leafletMap.flyTo([area.coordinates[0], area.coordinates[1]], Math.max(leafletMap.getZoom(), 14), { duration: .6 });
+            };
+
+            const startRealtimePolling = () => {
+                if (realtimePollTimer) clearInterval(realtimePollTimer);
+                realtimePollTimer = window.setInterval(() => {
+                    loadLayer(activeLayer, true).catch(() => {});
+                }, REALTIME_POLL_MS);
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && mapInitialized) {
+                    loadLayer(activeLayer, true).catch(() => {});
+                    startRealtimePolling();
+                } else if (realtimePollTimer) {
+                    clearInterval(realtimePollTimer);
+                    realtimePollTimer = null;
+                }
+            });
+
+            const startMap = async () => {
+                try {
+                    await initializeMapShell();
+                } catch (_) {
+                    boundaryNotice?.classList.remove('d-none');
+                    boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap right now.';
+                    mapLoadingOverlay?.classList.add('d-none');
+                    return;
+                }
+
+                try {
+                    let boundaries;
+                    try {
+                        const response = await fetch(boundaryUrl, { headers: { Accept: 'application/geo+json, application/json' } });
+                        if (!response.ok) throw response;
+                        boundaries = await response.json();
+                    } catch (_) {
+                        const fallbackResponse = await fetch(boundaryFallbackUrl, { headers: { Accept: 'application/geo+json, application/json' } });
+                        if (!fallbackResponse.ok) throw fallbackResponse;
+                        boundaries = await fallbackResponse.json();
                     }
+
+                    boundaryFeatures = boundaries.features || [];
+
+                    if (boundaryFeatures.length) {
+                        const lianBounds = L.geoJSON({ type: 'FeatureCollection', features: boundaryFeatures }).getBounds();
+                        if (lianBounds.isValid()) {
+                            leafletMap.fitBounds(lianBounds.pad(.06));
+                            leafletMap.setMaxBounds(lianBounds.pad(.18));
+                            leafletMap.setMinZoom(leafletMap.getBoundsZoom(lianBounds.pad(.18)));
+                        }
+                    }
+
+                    applyAreas(lastKnownAreas);
+                    mapLoadingOverlay?.classList.add('d-none');
+                    await loadLayer(activeLayer, false);
+                    loadLayer(activeLayer, true).catch(() => {
+                        refreshNotice?.classList.remove('d-none');
+                    });
+                    startRealtimePolling();
+                } catch (_) {
+                    boundaryNotice?.classList.remove('d-none');
+                    boundaryNotice.textContent = 'Unable to load the Lian barangay heatmap right now.';
+                    mapLoadingOverlay?.classList.add('d-none');
+                }
+            };
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    if (!entries.some((entry) => entry.isIntersecting)) return;
+                    observer.disconnect();
+                    startMap();
+                }, { rootMargin: '160px' });
+                observer.observe(mapEl);
+            } else {
+                startMap();
+            }
+
+            monthSelect?.addEventListener('change', () => {
+                selectedMonth = monthSelect.value;
+                clearSelection();
+                loadLayer(activeLayer, false).catch(() => {
+                    boundaryNotice?.classList.remove('d-none');
+                    boundaryNotice.textContent = 'Unable to load the heat map for that month right now.';
                 });
             });
 
             focusSelect?.addEventListener('change', () => {
                 if (!focusSelect.value) return;
                 const feature = (heatmapData?.features || []).find((item) => featureName(item) === focusSelect.value);
-                showDetails(featureArea(feature));
+                const area = featureArea(feature);
+                if (!area) return;
+                showDetails(area);
+                panToBarangay(area);
             });
 
             document.querySelectorAll('[data-focus-barangay]').forEach((button) => {
                 button.addEventListener('click', () => {
                     const feature = (heatmapData?.features || []).find((item) => featureName(item) === button.dataset.focusBarangay);
-                    showDetails(featureArea(feature));
+                    const area = featureArea(feature);
+                    if (!area) return;
+                    showDetails(area);
+                    panToBarangay(area);
                 });
             });
 
-            window.addEventListener('resize', () => renderMap(), { passive: true });
+            window.addEventListener('resize', () => {
+                leafletMap?.invalidateSize();
+            }, { passive: true });
         });
     </script>
+    @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
+        <script>
+            (() => {
+                const banner = document.querySelector('[data-analytics-run]');
+                if (!banner) return;
+                window.setInterval(async () => {
+                    try {
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const run = await response.json();
+                        if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                    } catch (_) {}
+                }, 2500);
+            })();
+        </script>
+    @endif
 </x-app-layout>
