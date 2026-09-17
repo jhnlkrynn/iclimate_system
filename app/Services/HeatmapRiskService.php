@@ -10,6 +10,7 @@ use App\Services\Prediction\PredictionEngine;
 use App\Services\Risk\AgriculturalRiskScorer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class HeatmapRiskService
@@ -54,6 +55,7 @@ class HeatmapRiskService
         $weather = $this->weatherInputs();
 
         $barangays = $this->barangays();
+        $failureCounterKey = 'metrics:heatmap-refresh:failures:'.today()->toDateString();
 
         foreach ($barangays as $barangay) {
             try {
@@ -98,6 +100,7 @@ class HeatmapRiskService
                     'risk_level' => $decision['risk']['level'],
                     'risk_type' => $this->riskTypeFromDecision($decision, $temperature),
                     'risk_score' => $decision['risk']['score'],
+                    'risk_components' => $decision['risk']['components'] ?? null,
                     'predicted_yield' => $yield,
                     'rainfall_status' => $this->rainfallStatus($rainfall),
                     'planting_advisory' => $decision['planting']['recommendation'],
@@ -120,9 +123,21 @@ class HeatmapRiskService
                     'message' => $exception->getMessage(),
                 ]);
 
+                if (! Cache::has($failureCounterKey)) {
+                    Cache::put($failureCounterKey, 0, now()->addDay());
+                }
+                Cache::increment($failureCounterKey);
+
                 continue;
             }
         }
+
+        Cache::put('heatmap:last-refresh', now()->toDateTimeString(), now()->addDay());
+    }
+
+    public static function refreshFailuresToday(): int
+    {
+        return (int) Cache::get('metrics:heatmap-refresh:failures:'.today()->toDateString(), 0);
     }
 
     private function barangays(): Collection

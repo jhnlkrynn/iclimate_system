@@ -7,7 +7,6 @@ use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\HeatmapRiskService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -57,7 +56,6 @@ class HeatmapAreaController extends CrudController
 
         if ($shouldRefresh) {
             app(HeatmapRiskService::class)->refresh();
-            Cache::put('heatmap:last-refresh', now()->toDateTimeString(), now()->addDay());
         }
 
         $query = $this->baseQuery($request);

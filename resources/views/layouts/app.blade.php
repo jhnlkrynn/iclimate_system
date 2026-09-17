@@ -18,7 +18,7 @@
                 --iclimate-surface: #F4F6F2;
                 --iclimate-border: #D8E0DA;
                 --iclimate-text: #1E2B25;
-                --iclimate-text-muted: #68756D;
+                --iclimate-text-muted: #4B5A50;
                 --iclimate-warning: #C58B2A;
                 --iclimate-danger: #B84A4A;
                 --iclimate-info: #4B7185;
@@ -158,7 +158,7 @@
             .sidebar-brand { position: relative; }
             .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .78rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-400); }
             .sidebar-location .pulse-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--iclimate-accent); flex-shrink: 0; }
-            .sidebar-tagline { font-family: 'Inter', sans-serif; font-size: .86rem; color: rgba(255,255,255,.6); line-height: 1.5; margin-top: .3rem; }
+            .sidebar-tagline { font-family: 'Inter', sans-serif; font-size: .86rem; color: rgba(255,255,255,.78); line-height: 1.5; margin-top: .3rem; }
             .sidebar-brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: .5rem; }
             .sidebar-logo-icon { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
             .sidebar-wordmark { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.25rem; color: #fff; letter-spacing: -0.01em; }
@@ -185,15 +185,15 @@
             .sidebar-link-arrow { flex-shrink: 0; opacity: 0; transform: translateX(-3px); transition: opacity .15s ease, transform .15s ease; }
             .sidebar-link:hover .sidebar-link-arrow { opacity: .55; transform: translateX(0); }
             .sidebar-link.active .sidebar-link-arrow { opacity: .9; transform: translateX(0); color: var(--iclimate-accent-light); }
-            .sidebar-section { color: rgba(255,255,255,.52); font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 700; text-transform: none; letter-spacing: 0; margin: 1.25rem .75rem .45rem; }
+            .sidebar-section { color: rgba(255,255,255,.72); font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 700; text-transform: none; letter-spacing: 0; margin: 1.25rem .75rem .45rem; }
             .sidebar-ai-card { width: calc(100% - 2rem); margin: .75rem 1rem 1rem; padding: .8rem .85rem; border-radius: 10px; background: rgba(143,175,154,.14); backdrop-filter: blur(10px); border: 1px solid rgba(143,175,154,.32); display: flex; align-items: center; gap: .75rem; cursor: pointer; transition: background .15s ease, border-color .15s ease; color: inherit; text-align: left; font: inherit; }
             .sidebar-ai-card:hover { background: rgba(143,175,154,.22); border-color: rgba(143,175,154,.48); }
             .sidebar-ai-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(143,175,154,.16); display: flex; align-items: center; justify-content: center; color: var(--iclimate-accent-light); flex-shrink: 0; }
             .sidebar-ai-title { color: #fff; font-weight: 700; font-size: .96rem; }
-            .sidebar-ai-sub { color: rgba(255,255,255,.65); font-size: .86rem; }
+            .sidebar-ai-sub { color: rgba(255,255,255,.8); font-size: .86rem; }
             .topbar { position: sticky; top: 0; z-index: 1020; background: var(--glass-dark-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-dark-border); box-shadow: 0 8px 28px rgba(5,16,12,.22); color: #fff; }
             .topbar-inner { min-height: 74px; min-width: 0; }
-            .topbar .text-muted { color: rgba(255,255,255,.6) !important; }
+            .topbar .text-muted { color: rgba(255,255,255,.78) !important; }
             .topbar .badge.text-bg-light { background: rgba(255,255,255,.12) !important; color: #fff !important; border-color: rgba(255,255,255,.2) !important; }
             .topbar .btn-outline-primary { --bs-btn-color: #fff; --bs-btn-border-color: rgba(255,255,255,.5); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: #fff; --bs-btn-hover-color: var(--ic-ink); }
             .topbar .btn-outline-secondary { --bs-btn-color: #fff; --bs-btn-border-color: rgba(255,255,255,.5); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: #fff; --bs-btn-hover-color: var(--ic-ink); }

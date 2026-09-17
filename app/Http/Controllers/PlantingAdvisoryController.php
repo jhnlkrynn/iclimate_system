@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdvisoryFeedback;
 use App\Models\ExternalWeatherData;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
@@ -12,6 +13,7 @@ use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\OpenMeteoService;
 use App\Support\LianBarangays;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -77,6 +79,29 @@ class PlantingAdvisoryController extends Controller
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
             'barangays' => LianBarangays::all(),
+        ]);
+    }
+
+    /**
+     * A farmer's "Helpful / Not Helpful" reaction on a published advisory —
+     * one vote per farmer per advisory, changeable. This is the lightweight
+     * of the two farmer-validation paths; the other is a post-season outcome
+     * report (not built yet).
+     */
+    public function feedback(Request $request, PlantingAdvisory $advisory): JsonResponse
+    {
+        $validated = $request->validate([
+            'helpful' => ['required', 'boolean'],
+        ]);
+
+        $feedback = AdvisoryFeedback::query()->updateOrCreate(
+            ['planting_advisory_id' => $advisory->id, 'user_id' => $request->user()->id],
+            ['helpful' => $validated['helpful']],
+        );
+
+        return response()->json([
+            'ok' => true,
+            'helpful' => $feedback->helpful,
         ]);
     }
 

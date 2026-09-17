@@ -717,6 +717,15 @@
             open: openAssistant,
             close: closeAssistant,
             toggle: () => widget.classList.contains('open') ? closeAssistant() : openAssistant(),
+            prefill: (question) => {
+                openAssistant();
+                if (input) {
+                    input.value = String(question ?? '');
+                    input.style.height = '';
+                    input.style.height = input.scrollHeight + 'px';
+                    input.focus();
+                }
+            },
         };
 
         document.addEventListener('click', (event) => {

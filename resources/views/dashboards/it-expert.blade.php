@@ -2,7 +2,7 @@
     <style>
         .it-console {
             --it-ink: #1F2937;
-            --it-muted: #64748B;
+            --it-muted: #475569;
             --it-green: #1F5A46;
             --it-green-bright: #8FAF9A;
             --it-blue: #4B7185;
@@ -80,6 +80,21 @@
             background: #C9D8CE;
             box-shadow: none;
         }
+        .it-highlights { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.25rem; }
+        .it-highlight { display: flex; align-items: flex-start; gap: .65rem; border-radius: 14px; padding: .75rem .95rem; border: 1px solid var(--it-line); background: linear-gradient(145deg, #ffffff, #f7fbf8); box-shadow: 0 .5rem 1.2rem rgba(20,32,51,.06); }
+        .it-highlight-critical { border-left: 5px solid var(--it-red); }
+        .it-highlight-warning { border-left: 5px solid #C58B2A; }
+        .it-highlight-info { border-left: 5px solid var(--it-blue); }
+        .it-highlight-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 999px; margin-top: .35rem; }
+        .it-highlight-critical .it-highlight-dot { background: var(--it-red); }
+        .it-highlight-warning .it-highlight-dot { background: #C58B2A; }
+        .it-highlight-info .it-highlight-dot { background: var(--it-blue); }
+        .it-highlight-title { color: var(--it-ink); font-weight: 700; font-size: .92rem; }
+        .it-highlight-message { color: var(--it-muted); font-size: .82rem; margin-top: .1rem; }
+        .it-pipeline-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .65rem 0; }
+        .it-pipeline-row + .it-pipeline-row { border-top: 1px solid var(--it-line); }
+        .it-pipeline-label { color: var(--it-muted); font-size: .82rem; }
+        .it-pipeline-value { color: var(--it-ink); font-weight: 700; font-size: .92rem; font-family: 'DM Mono', monospace; }
         .it-stat-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -158,62 +173,6 @@
         .it-panel-title { font-size: 1.05rem; margin: 0; color: var(--it-ink); }
         .it-panel-sub { margin: .15rem 0 0; color: var(--it-muted); font-size: .82rem; }
         .it-panel-body { padding: 1rem; }
-        .farmer-org-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: .85rem;
-            margin-bottom: 1rem;
-        }
-        .farmer-org-card {
-            border: 1px solid rgba(255,255,255,.55);
-            border-radius: 10px;
-            background: rgba(255,255,255,.66);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            padding: .9rem;
-        }
-        .farmer-org-card-label {
-            color: var(--it-muted);
-            font-family: 'DM Mono', monospace;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-        }
-        .farmer-org-card-value {
-            margin-top: .35rem;
-            color: var(--it-ink);
-            font-family: 'DM Serif Display', Georgia, serif;
-            font-size: clamp(1.45rem, 2.6vw, 2rem);
-            line-height: 1;
-        }
-        .farmer-org-card-note {
-            color: var(--it-muted);
-            font-size: .78rem;
-            margin-top: .45rem;
-        }
-        .farmer-org-chart-shell {
-            position: relative;
-            min-height: 720px;
-            overflow-x: auto;
-            padding: .5rem .25rem 0;
-        }
-        .farmer-org-chart-inner {
-            min-width: min(100%, 860px);
-            height: 720px;
-        }
-        .farmer-org-chart-inner canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
-        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(12px) saturate(160%); color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
-        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: rgba(247,251,248,.78); }
-        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
-        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
-        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
-        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
-        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
         .module-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .module-link {
             display: block;
@@ -316,49 +275,51 @@
             margin: 0;
         }
         .section-note { color: #7FD6B5; font-size: .84rem; margin: 0; }
-        .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-        .dashboard-group {
-            border: 1px solid rgba(255,255,255,.55);
-            border-radius: 18px;
-            background: rgba(255,255,255,.66);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            box-shadow: 0 .55rem 1.35rem rgba(20,32,51,.045);
-            overflow: hidden;
-        }
-        .dashboard-group > summary {
+        .dashboard-tabs {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: .95rem 1rem;
-            cursor: pointer;
-            list-style: none;
-            background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08));
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            border-bottom: 1px solid rgba(255,255,255,.18);
+            margin: 0 0 1.25rem;
         }
-        .dashboard-group > summary::-webkit-details-marker { display: none; }
-        .dashboard-group-title { color: var(--it-ink); font-family: 'Inter', sans-serif !important; font-size: .92rem; font-weight: 700 !important; text-transform: none; letter-spacing: -.005em; margin: 0; }
-        .dashboard-group-note { color: var(--it-muted); font-size: .82rem; margin: .1rem 0 0; }
-        .dashboard-group-toggle { color: var(--it-green); font-size: .78rem; font-weight: 700; white-space: nowrap; }
-        .dashboard-group-toggle::after { content: "Collapse"; }
-        .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
-        .dashboard-group-body { padding: 1rem; }
-        .dashboard-group-body > .row:last-child { margin-bottom: 0 !important; }
+        .dashboard-tabs::-webkit-scrollbar { display: none; }
+        .dashboard-tab {
+            flex: 0 0 auto;
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,.62);
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            padding: .75rem .2rem;
+            margin-right: 1.5rem;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color .16s ease, border-color .16s ease;
+        }
+        .dashboard-tab:hover { color: #fff; }
+        .dashboard-tab.active { color: #fff; border-bottom-color: var(--it-accent); }
+        .dashboard-tab-panel { display: none; }
+        .dashboard-tab-panel.active { display: block; animation: icPageEnter var(--ic-motion-slow, 420ms) both; }
+        .dashboard-tab-panel > .row:last-child { margin-bottom: 0 !important; }
         .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
-            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
+            .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
             .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
-            .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .module-list, .quick-grid { grid-template-columns: 1fr; }
-            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
+            .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
             .it-stat-grid { margin-bottom: .9rem; }
-            .it-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .it-panel-header, .dashboard-section-label { align-items: flex-start; flex-direction: column; }
             .it-panel-header { padding: .85rem .85rem .6rem; }
             .it-panel-body { padding: .8rem; }
             .it-card-body { padding: .85rem; }
-            .farmer-org-card { padding: .72rem; }
             .it-value { font-size: clamp(1.5rem, 6vw, 1.9rem); }
             .module-link { padding: .7rem; }
             .module-top { gap: .5rem; }
@@ -366,18 +327,12 @@
             .quick-action { min-height: 84px; padding: .8rem; }
             .role-row, .log-row, .user-row, .report-row { padding: .65rem 0; gap: .65rem; }
             .dashboard-section-label { margin: 1rem 0 .6rem; }
-            .dashboard-group-body { padding: .75rem; }
-            .dashboard-group > summary { padding: .8rem .85rem; }
+            .dashboard-tab { margin-right: 1rem; font-size: .84rem; }
             .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
-            .farmer-org-chart-shell { min-height: 780px; }
-            .farmer-org-chart-inner { min-width: 720px; height: 780px; }
-            .farmer-org-chart-shell { min-height: 420px; max-height: 64vh; overflow: auto; }
-            .farmer-org-chart-inner { min-width: 680px; height: 420px; }
-            .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; }
         }
         @media (max-width: 380px) {
-            .it-stat-grid, .farmer-org-grid { grid-template-columns: 1fr; }
-            .it-card-body, .farmer-org-card { padding: .72rem; }
+            .it-stat-grid { grid-template-columns: 1fr; }
+            .it-card-body { padding: .72rem; }
         }
 
         .it-console .empty-state { background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08)); border: 1px dashed rgba(95,143,120,.55); color: var(--it-muted); border-radius: 8px; }
@@ -432,7 +387,7 @@
         .it-eyebrow,
         .section-title,
         .it-label,
-        .dashboard-group-toggle {
+        .dashboard-tab {
             font-size: var(--text-sm);
             line-height: 1.35;
         }
@@ -441,7 +396,6 @@
         .it-note,
         .it-panel-sub,
         .row-sub,
-        .dashboard-group-note,
         .quick-action span,
         .it-modal-sub {
             font-size: var(--text-sm);
@@ -449,7 +403,6 @@
             color: var(--it-muted);
         }
         .it-panel-title,
-        .dashboard-group-title,
         .row-title,
         .quick-action strong,
         .module-name {
@@ -461,7 +414,6 @@
         .it-modal-headline { font-size: var(--text-2xl); line-height: 1.18; }
         .it-console .table th,
         .it-console .table td { font-size: var(--text-sm); line-height: 1.45; }
-        .farmer-org-card-label { letter-spacing: 0; text-transform: none; font-family: 'Inter', sans-serif; }
     </style>
 
     @php
@@ -495,6 +447,20 @@
                 </div>
             </div>
         </section>
+
+        @if(! empty($itHighlights))
+            <section class="it-highlights" aria-label="System health highlights">
+                @foreach($itHighlights as $highlight)
+                    <div class="it-highlight it-highlight-{{ $highlight['severity'] }}">
+                        <span class="it-highlight-dot"></span>
+                        <div>
+                            <div class="it-highlight-title">{{ $highlight['title'] }}</div>
+                            <div class="it-highlight-message">{{ $highlight['message'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </section>
+        @endif
 
         <div class="dashboard-section-label">
             <div>
@@ -555,60 +521,6 @@
                 </div>
             </button>
         </section>
-
-        <div class="dashboard-section-label">
-            <div>
-                <h2 class="section-title">Farmers by Organization</h2>
-                <p class="section-note">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
-            </div>
-        </div>
-
-        <section class="it-panel mb-4">
-            <div class="it-panel-header">
-                <div>
-                    <h2 class="it-panel-title">FARMERS BY ORGANIZATION</h2>
-                    <p class="it-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
-                </div>
-                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
-            </div>
-            <div class="it-panel-body">
-                <div class="farmer-org-grid">
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Farmers</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</div>
-                        <div class="farmer-org-card-note">Registered farmer profiles</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Organizations</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div>
-                        <div class="farmer-org-card-note">Farmer associations on record</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Farmers Without Organization</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['farmersWithoutOrganization']) }}</div>
-                        <div class="farmer-org-card-note">Not yet linked to an association</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Farm Area</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmArea'], 2) }} ha</div>
-                        <div class="farmer-org-card-note">Combined registered farm area</div>
-                    </div>
-                </div>
-                <div class="farmer-org-chart-shell">
-                    <div class="farmer-org-chart-inner">
-                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." role="img" tabindex="0"></canvas>
-                    </div>
-                </div>
-                <div id="adminFarmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite"></div>
-            </div>
-        </section>
-        @include('dashboards.partials.farmer-organization-chart', [
-            'chartData' => $farmerOrganizationChart,
-            'canvasId' => 'adminFarmersByOrganizationChart',
-            'legendId' => 'adminFarmersByOrganizationLegend',
-            'statusId' => 'adminFarmersByOrganizationStatus',
-        ])
 
         <div class="ic-drawer" id="itStatUsers" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatUsersLabel">
@@ -776,18 +688,16 @@
             </div>
         </div>
 
-        <div class="dashboard-focus-grid">
-        <details class="dashboard-group" open>
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Module And Access Health</h2>
-                    <p class="dashboard-group-note">Record coverage by module and role distribution.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
+        <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+            <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+            <button type="button" class="dashboard-tab" data-tab="activity" role="tab" aria-selected="false">Activity</button>
+            <button type="button" class="dashboard-tab" data-tab="admin" role="tab" aria-selected="false">Administration</button>
+        </div>
+
+        <div class="dashboard-tab-panels">
+        <div class="dashboard-tab-panel active" data-panel="overview">
         <div class="row g-4 mb-0">
-            <div class="col-xl-8">
+            <div class="col-xl-5">
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
@@ -816,7 +726,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-4">
+            <div class="col-xl-3">
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
@@ -839,19 +749,69 @@
                     </div>
                 </div>
             </div>
-        </div>
-            </div>
-        </details>
 
-        <details class="dashboard-group">
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">System Activity</h2>
-                    <p class="dashboard-group-note">Recent events and newly created user accounts.</p>
+            <div class="col-xl-4">
+                <div class="it-panel h-100">
+                    <div class="it-panel-header">
+                        <div>
+                            <h2 class="it-panel-title">Pipeline Health</h2>
+                            <p class="it-panel-sub">Background jobs the app depends on.</p>
+                        </div>
+                    </div>
+                    <div class="it-panel-body">
+                        <div class="it-pipeline-row">
+                            <span class="it-pipeline-label">Last heatmap refresh</span>
+                            <span class="it-pipeline-value">{{ $heatmapLastRefresh ? \Illuminate\Support\Carbon::parse($heatmapLastRefresh)->diffForHumans() : 'Never' }}</span>
+                        </div>
+                        <div class="it-pipeline-row">
+                            <span class="it-pipeline-label">Refresh failures today</span>
+                            <span class="it-pipeline-value">{{ $heatmapRefreshFailuresToday }}</span>
+                        </div>
+                        <div class="it-pipeline-row">
+                            <span class="it-pipeline-label">Prediction success rate</span>
+                            <span class="it-pipeline-value">{{ $predictionSuccessRate !== null ? number_format($predictionSuccessRate, 1).'%' : 'No calls today' }}</span>
+                        </div>
+                        <div class="it-pipeline-row">
+                            <span class="it-pipeline-label">Prediction calls today</span>
+                            <span class="it-pipeline-value">{{ $predictionAttemptsToday }} ({{ $predictionFailuresToday }} failed)</span>
+                        </div>
+                    </div>
                 </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
+            </div>
+        </div>
+
+        <div class="row g-4 mt-0">
+            <div class="col-12">
+                <div class="it-panel h-100">
+                    <div class="it-panel-header">
+                        <div>
+                            <h2 class="it-panel-title">Model Evaluation</h2>
+                            <p class="it-panel-sub">Rice-yield model accuracy — not yet evaluated against the deployed model's exact feature set (see caveat below).</p>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('model-evaluation.index') }}">Full Evaluation</a>
+                    </div>
+                    <div class="it-panel-body">
+                        @if($modelEvaluation['ready'] && $modelEvaluationBestRow)
+                            <div class="d-flex flex-wrap gap-4">
+                                <div><div class="it-label">Selected Model</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['algorithm'] }}</div></div>
+                                <div><div class="it-label">R&sup2;</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['r2'] !== null ? number_format((float) $modelEvaluationBestRow['r2'], 3) : 'N/A' }}</div></div>
+                                <div><div class="it-label">RMSE</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['rmse'] !== null ? number_format((float) $modelEvaluationBestRow['rmse'], 3) : 'N/A' }}</div></div>
+                                <div><div class="it-label">MAE</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['mae'] !== null ? number_format((float) $modelEvaluationBestRow['mae'], 3) : 'N/A' }}</div></div>
+                            </div>
+                            <p class="it-panel-sub mt-3 mb-0">{{ $modelEvaluation['schema_caveat'] }}</p>
+                        @else
+                            <div class="empty-state text-center p-3">
+                                <div class="fw-bold">Evaluation unavailable</div>
+                                <div class="small text-muted">{{ $modelEvaluation['message'] }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="activity">
         <div class="row g-4 mb-0">
             <div class="col-xl-7">
                 <div class="it-panel h-100">
@@ -888,7 +848,10 @@
                             <h2 class="it-panel-title">New User Accounts</h2>
                             <p class="it-panel-sub">Recently created users in the platform.</p>
                         </div>
-                        <a class="btn btn-sm btn-primary" href="{{ route('users.create') }}">Add User</a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('users.index') }}">View All</a>
+                            <a class="btn btn-sm btn-primary" href="{{ route('users.create') }}">Add User</a>
+                        </div>
                     </div>
                     <div class="it-panel-body list-compact">
                         @forelse($latestUsers as $user)
@@ -910,18 +873,9 @@
                 </div>
             </div>
         </div>
-            </div>
-        </details>
+        </div>
 
-        <details class="dashboard-group">
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Administration</h2>
-                    <p class="dashboard-group-note">Common maintenance actions and report history.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
+        <div class="dashboard-tab-panel" data-panel="admin">
         <div class="row g-4">
             <div class="col-xl-5">
                 <div class="it-panel h-100">
@@ -971,13 +925,60 @@
                 </div>
             </div>
         </div>
+
+        <div class="row g-4 mt-0">
+            <div class="col-12">
+                <div class="it-panel h-100">
+                    <div class="it-panel-header">
+                        <div>
+                            <h2 class="it-panel-title">Report &amp; Export Usage Audit</h2>
+                            <p class="it-panel-sub">Who is generating reports, and how often.</p>
+                        </div>
+                    </div>
+                    <div class="it-panel-body list-compact">
+                        @forelse($reportUsageAudit as $row)
+                            <div class="user-row">
+                                <div class="avatar-soft">{{ strtoupper(substr($row->generatedBy?->name ?? 'SY', 0, 2)) }}</div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $row->generatedBy?->name ?? 'System' }}</div>
+                                    <div class="row-sub">{{ $row->generatedBy?->role ?? 'N/A' }} &middot; last generated {{ \Illuminate\Support\Carbon::parse($row->last_generated_at)->diffForHumans() }}</div>
+                                </div>
+                                <span class="status-pill">{{ number_format($row->total) }} report{{ $row->total === 1 ? '' : 's' }}</span>
+                            </div>
+                        @empty
+                            <div class="empty-state text-center p-4">
+                                <div class="fw-bold">No report activity yet</div>
+                                <div class="small text-muted">Report generation and CSV exports will appear here once users start using the Reports Center.</div>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
-        </details>
+        </div>
+        </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('.dashboard-tabs .dashboard-tab');
+            const tabPanels = document.querySelectorAll('.dashboard-tab-panels .dashboard-tab-panel');
+
+            tabButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach((btn) => {
+                        btn.classList.toggle('active', btn === button);
+                        btn.setAttribute('aria-selected', btn === button ? 'true' : 'false');
+                    });
+                    tabPanels.forEach((panel) => {
+                        panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab);
+                    });
+                    tabPanels.forEach((panel) => {
+                        if (panel.dataset.panel !== button.dataset.tab) return;
+                        panel.querySelectorAll('canvas').forEach((canvas) => Chart.getChart(canvas)?.resize());
+                    });
+                });
+            });
         });
     </script>
 </x-app-layout>

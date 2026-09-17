@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlantingAdvisory extends Model
 {
@@ -104,6 +105,11 @@ class PlantingAdvisory extends Model
     public function rule(): BelongsTo
     {
         return $this->belongsTo(AdvisoryRule::class, 'advisory_rule_id');
+    }
+
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(AdvisoryFeedback::class);
     }
 
     public function scopeActive(Builder $query): Builder
