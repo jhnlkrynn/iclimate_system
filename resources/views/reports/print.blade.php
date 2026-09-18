@@ -33,7 +33,7 @@
                 <div>
                     <div class="text-uppercase fw-bold text-success small">iClimate Report</div>
                     <h1 class="h3 mb-1">{{ $title }}</h1>
-                    <p class="text-muted mb-0">Generated {{ now()->format('Y-m-d H:i') }}</p>
+                    <p class="text-muted mb-0">Generated {{ $generatedAt?->format('Y-m-d H:i') }}</p>
                 </div>
                 <div class="d-flex gap-2 no-print">
                     <button class="btn btn-primary" onclick="window.print()">Print</button>
@@ -47,6 +47,12 @@
                 <div class="meta-box"><div class="meta-label">Barangay</div><div class="meta-value">{{ ($filters['barangay'] ?? null) ?: 'All' }}</div></div>
                 <div class="meta-box"><div class="meta-label">Season / Year</div><div class="meta-value">{{ ($filters['season'] ?? null) ?: 'All seasons' }}{{ ! empty($filters['year']) ? ' / '.$filters['year'] : '' }}</div></div>
             </section>
+
+            @if ($reportTypeInfo ?? null)
+                <div class="alert alert-light border small">
+                    <strong>About this report:</strong> {{ $reportTypeInfo['purpose'] }}
+                </div>
+            @endif
 
             @if($tooManyRows)
                 <div class="alert alert-warning border">

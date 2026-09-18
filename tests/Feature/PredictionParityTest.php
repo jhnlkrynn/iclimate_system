@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\RunPythonAnalytics;
+use App\Models\AnalyticsRun;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
 use App\Models\RiceProduction;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class PredictionParityTest extends TestCase
@@ -92,17 +95,11 @@ class PredictionParityTest extends TestCase
         }
     }
 
-    public function test_prediction_page_consumes_same_standardized_result_shape(): void
+    public function test_prediction_page_queues_standardized_python_input(): void
     {
+        Queue::fake();
         $user = $this->farmer(2.5, FarmerProfile::FARM_TYPE_RAINFED);
         $targetDate = PredictionDateValidator::defaultTargetDate();
-
-        $serviceResult = app(RiceYieldPredictionService::class)->predictForUser(
-            $targetDate,
-            FarmerProfile::FARM_TYPE_RAINFED,
-            null,
-            $user,
-        );
 
         $pageResponse = $this->actingAs($user)->post(route('rice-yield-predictions.predict'), [
             'prediction_type' => 'rice_yield',
@@ -111,13 +108,13 @@ class PredictionParityTest extends TestCase
             'area' => 2.5,
         ]);
 
-        $pageResponse->assertOk()->assertSee('Prediction Result');
-        $pageResult = $pageResponse->viewData('mlResult');
-
-        $this->assertSame($serviceResult['predicted_yield_tons_per_hectare'], $pageResult['predicted_yield_tons_per_hectare']);
-        $this->assertSame($serviceResult['estimated_total_production_tons'], $pageResult['estimated_total_production_tons']);
-        $this->assertSame($serviceResult['model_version'], $pageResult['model_version']);
-        $this->assertSame($serviceResult['features'], $pageResult['features']);
+        $pageResponse->assertRedirect();
+        $run = AnalyticsRun::query()->latest('id')->firstOrFail();
+        $this->assertSame('rice_yield_prediction', $run->type);
+        $this->assertSame($targetDate->toDateString(), data_get($run->input, 'target_date'));
+        $this->assertSame(FarmerProfile::FARM_TYPE_RAINFED, data_get($run->input, 'farm_type'));
+        $this->assertSame(2.5, data_get($run->input, 'area'));
+        Queue::assertPushed(RunPythonAnalytics::class, fn (RunPythonAnalytics $job): bool => $job->analyticsRunId === $run->id);
     }
 
     public function test_shared_service_exposes_exact_model_feature_order(): void

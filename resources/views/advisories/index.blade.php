@@ -1,4 +1,5 @@
 <x-app-layout>
+    @include('advisories._analytics-status')
     <style>
         .advisory-safety-card {
             position: relative;
@@ -263,6 +264,7 @@
                         @foreach($advisories as $advisory)
                             <tr>
                                 <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->summary }}</div></td>
+                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->displaySummary() }}</div></td>
                                 <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
                                 <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
@@ -280,6 +282,7 @@
                 @foreach($advisories as $advisory)
                     <div class="ic-table-card">
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->summary }}</div></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->displaySummary() }}</div></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Type</div><div class="ic-table-card-value"><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Window</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Target</div><div class="ic-table-card-value">{{ $advisory->targetLabel() }}</div></div>

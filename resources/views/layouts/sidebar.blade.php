@@ -25,12 +25,10 @@
             'heatmap' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.8 0 5 2.3 5 5.2C14 11 9 16 9 16S4 11 4 7.2C4 4.3 6.2 2 9 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7.2" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>',
             'rice-production' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2c1.4 2 2.5 3.6 2.5 5.3A2.5 2.5 0 1 1 6.5 7.3C6.5 5.6 7.6 4 9 2Z" stroke="currentColor" stroke-width="1.4"/><path d="M9 9.8V16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9 12.5c-1.6 0-2.8.9-3.2 2.5M9 12.5c1.6 0 2.8.9 3.2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
             'farmer-profiles' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            'live-forecasting' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="3" y="9.5" width="2.6" height="5.5" fill="currentColor"/><rect x="7.7" y="6" width="2.6" height="9" fill="currentColor" opacity=".85"/><rect x="12.4" y="3" width="2.6" height="12" fill="currentColor" opacity=".6"/></svg>',
             'reports' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="3.5" y="2.5" width="11" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 6.5h5M6.5 9.5h5M6.5 12.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'user-management' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6.5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.3 15c.6-3 2.3-4.6 4.7-4.6s4.1 1.6 4.7 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4.5a2.2 2.2 0 0 1 0 4.3M14.2 10.6c1.5.5 2.4 1.9 2.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'system-logs' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="2.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 2.5v-.2a1.2 1.2 0 0 1 1.2-1h1.6a1.2 1.2 0 0 1 1.2 1v.2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8h5M6.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'ai' => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            'feedback' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M4 3.5h10a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H8l-3.5 3v-3H4A1.5 1.5 0 0 1 2.5 11V5A1.5 1.5 0 0 1 4 3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 7.2h6M6 9.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
             default => '',
         };
     };
@@ -44,14 +42,12 @@
         'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
         'weather' => ['weather-predictions.index', ['weather-predictions.*']],
-        'live-forecasting' => ['live-forecasting.index', ['live-forecasting.*']],
         'heatmap' => ['heatmap-areas.index', ['heatmap-areas.*']],
         'rice-production' => ['rice-productions.index', ['rice-productions.*']],
         'farmer-profiles' => ['farmer-profiles.index', ['farmer-profiles.*']],
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
         'system-logs' => ['system-logs.index', ['system-logs.*']],
-        'usability-survey' => ['usability-survey.create', ['usability-survey.*']],
     ];
 
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
@@ -74,12 +70,12 @@
             $navLink('Weather & Yield', 'weather', 'weather'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
-            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [];
     } elseif ($isMao) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLink('Farm Calendar', 'calendar', 'calendar'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Planting Advisories', 'advisories', 'advisories'),
             $navLink('Messages', 'messages', 'messages'),
@@ -87,10 +83,8 @@
         $moreGroup = [
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Weather Prediction', 'weather', 'weather'),
-            $navLink('Live Forecasting', 'live-forecasting', 'live-forecasting'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
             $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
-            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [
             $navLink('Community Feed', 'community', 'community'),
@@ -107,10 +101,8 @@
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Weather Prediction', 'weather', 'weather'),
-            $navLink('Live Forecasting', 'live-forecasting', 'live-forecasting'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
             $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
-            $navLink('System Evaluation', 'usability-survey', 'feedback'),
         ];
         $publishingGroup = [
             $navLink('Planting Advisories', 'advisories', 'advisories'),
@@ -129,6 +121,7 @@
         $html = '';
 
         foreach ($sidebarSections as [$sectionLabel, $links]) {
+            $html .= '<div class="sidebar-group">';
             $html .= '<div class="sidebar-section">'.e($sectionLabel).'</div>';
             $html .= '<div class="sidebar-stack d-grid gap-1">';
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge]) {
@@ -142,6 +135,7 @@
                 $html .= '<svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 $html .= '</span></a>';
             }
+            $html .= '</div>';
             $html .= '</div>';
         }
 

@@ -173,6 +173,64 @@
         .it-panel-title { font-size: 1.05rem; margin: 0; color: var(--it-ink); }
         .it-panel-sub { margin: .15rem 0 0; color: var(--it-muted); font-size: .82rem; }
         .it-panel-body { padding: 1rem; }
+        .farmer-org-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .85rem;
+            margin-bottom: 1rem;
+        }
+        .farmer-org-card {
+            border: 1px solid rgba(255,255,255,.55);
+            border-radius: 10px;
+            background: rgba(255,255,255,.66);
+            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
+            padding: .9rem;
+        }
+        .farmer-org-card-label {
+            color: var(--it-muted);
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .farmer-org-card-value {
+            margin-top: .35rem;
+            color: var(--it-ink);
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: clamp(1.45rem, 2.6vw, 2rem);
+            line-height: 1;
+        }
+        .farmer-org-card-note {
+            color: var(--it-muted);
+            font-size: .78rem;
+            margin-top: .45rem;
+        }
+        .farmer-org-chart-shell {
+            position: relative;
+            min-height: 400px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: .5rem .25rem 0;
+        }
+        .farmer-org-chart-inner {
+            min-width: 0;
+            width: 100%;
+            height: 400px;
+        }
+        .farmer-org-chart-inner canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
+        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(12px) saturate(160%); color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
+        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: rgba(247,251,248,.78); }
+        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
+        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
+        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
+        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
         .module-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
         .module-link {
             display: block;
@@ -225,9 +283,10 @@
         .row-title { font-weight: 700; color: var(--it-ink); line-height: 1.25; }
         .row-sub { color: var(--it-muted); font-size: .82rem; margin-top: .12rem; }
         .it-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
-        .it-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--it-red); }
-        .it-risk-badge-moderate { background: rgba(197,139,42,.14); color: #C58B2A; }
-        .it-risk-badge-low { background: rgba(95,143,120,.14); color: var(--it-green); }
+        .it-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
+        .it-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
+        .it-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
+        .it-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
         .it-risk-interpretation { font-weight: 500; color: var(--it-ink); }
         .it-risk-score-meta { font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; font-weight: 600; }
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -308,13 +367,13 @@
         .dashboard-tab-panel > .row:last-child { margin-bottom: 0 !important; }
         .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
         @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 1199.98px) { .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
-            .it-stat-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
-            .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
-            .it-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
+            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
+            .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .module-list, .quick-grid { grid-template-columns: 1fr; }
-            .it-stat-grid, .module-list, .quick-grid { gap: .6rem; }
+            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
             .it-stat-grid { margin-bottom: .9rem; }
             .it-panel-header, .dashboard-section-label { align-items: flex-start; flex-direction: column; }
             .it-panel-header { padding: .85rem .85rem .6rem; }
@@ -329,6 +388,9 @@
             .dashboard-section-label { margin: 1rem 0 .6rem; }
             .dashboard-tab { margin-right: 1rem; font-size: .84rem; }
             .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
+            .farmer-org-chart-shell { min-height: 380px; overflow-x: auto; overflow-y: hidden; }
+            .farmer-org-chart-inner { min-width: 0; width: 100%; height: 380px; }
+            .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; }
         }
         @media (max-width: 380px) {
             .it-stat-grid { grid-template-columns: 1fr; }
@@ -522,6 +584,61 @@
             </button>
         </section>
 
+        <div class="dashboard-section-label">
+            <div>
+                <h2 class="section-title">Farmers by Organization</h2>
+                <p class="section-note">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+            </div>
+        </div>
+
+        <section class="it-panel mb-4">
+            <div class="it-panel-header">
+                <div>
+                    <h2 class="it-panel-title">FARMERS BY ORGANIZATION</h2>
+                    <p class="it-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
+                </div>
+                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
+            </div>
+            <div class="it-panel-body">
+                <div class="farmer-org-grid">
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farmers</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</div>
+                        <div class="farmer-org-card-note">Registered farmer profiles</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Organizations</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div>
+                        <div class="farmer-org-card-note">Farmer associations on record</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Farmers Without Organization</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['farmersWithoutOrganization']) }}</div>
+                        <div class="farmer-org-card-note">Not yet linked to an association</div>
+                    </div>
+                    <div class="farmer-org-card">
+                        <div class="farmer-org-card-label">Total Farm Area</div>
+                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmArea'], 2) }} ha</div>
+                        <div class="farmer-org-card-note">Combined registered farm area</div>
+                    </div>
+                </div>
+                <div class="farmer-org-chart-shell">
+                    <div class="farmer-org-chart-inner">
+                        <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading real farmer organization data...</div>
+                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." aria-busy="true" role="img" tabindex="0"></canvas>
+                    </div>
+                </div>
+                <div id="adminFarmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
+                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite">Loading real farmer organization data...</div>
+            </div>
+        </section>
+        @include('dashboards.partials.farmer-organization-chart', [
+            'chartData' => $farmerOrganizationChart,
+            'canvasId' => 'adminFarmersByOrganizationChart',
+            'legendId' => 'adminFarmersByOrganizationLegend',
+            'statusId' => 'adminFarmersByOrganizationStatus',
+        ])
+
         <div class="ic-drawer" id="itStatUsers" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatUsersLabel">
                 <div class="modal-content border-0 it-modal-content">
@@ -630,7 +747,8 @@
                                     default => 'Low risk: conditions are currently favorable for this barangay.',
                                 };
                                 $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe', 'high' => 'it-risk-badge-severe',
+                                    'severe' => 'it-risk-badge-severe',
+                                    'high' => 'it-risk-badge-high',
                                     'moderate' => 'it-risk-badge-moderate',
                                     default => 'it-risk-badge-low',
                                 };

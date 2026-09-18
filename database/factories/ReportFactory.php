@@ -11,13 +11,22 @@ class ReportFactory extends Factory
 {
     public function definition(): array
     {
+        $reportTypeKey = fake()->randomElement(array_keys(Report::TYPES));
+        $reportType = Report::TYPES[$reportTypeKey];
+
         return [
-            'report_type' => fake()->randomElement(['Climate', 'Production', 'Advisory', 'Heat Map']),
-            'title' => fake()->sentence(5),
+            'report_type' => $reportType,
+            'title' => $reportType.' - '.now()->format('Y-m-d H:i'),
             'generated_by' => User::factory()->maoPersonnel(),
+            'is_generated' => true,
             'payload' => [
-                'summary' => fake()->sentence(),
+                'report_type' => $reportTypeKey,
+                'filters' => [],
+                'columns' => [],
+                'records' => [],
+                'row_count' => 0,
                 'generated_at' => now()->toDateTimeString(),
+                'format' => 'screen',
             ],
         ];
     }

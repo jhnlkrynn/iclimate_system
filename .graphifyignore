@@ -1,0 +1,10 @@
+# Ignore dependency and framework cache folders
+vendor/
+node_modules/
+.git/
+
+# Ignore compiled assets and logs
+storage/logs/
+public/build/
+dist/
+*.log

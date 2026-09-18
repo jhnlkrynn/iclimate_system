@@ -109,7 +109,7 @@ class PlantingAdvisory extends Model
 
     public function feedback(): HasMany
     {
-        return $this->hasMany(AdvisoryFeedback::class);
+        return $this->hasMany(AdvisoryFeedback::class, 'planting_advisory_id');
     }
 
     public function scopeActive(Builder $query): Builder
@@ -239,5 +239,52 @@ class PlantingAdvisory extends Model
             self::STATUS_REJECTED => 'text-bg-danger',
             self::STATUS_ARCHIVED => 'text-bg-dark',
         ][$this->status] ?? 'text-bg-light';
+    }
+
+    public function displaySummary(): string
+    {
+        $raw = (string) $this->summary;
+        if (str_contains($raw, 'Toggle navigation') || str_contains($raw, 'GOVPH') || str_contains($raw, 'Details from PAGASA online page:')) {
+            $location = $this->target_barangay ?: 'Lian and Batangas';
+
+            return match ($this->severity) {
+                self::SEVERITY_CRITICAL => "PAGASA Alert: Heavy rainfall and flood risk in {$location}. Secure crops and pause field work.",
+                self::SEVERITY_HIGH => "PAGASA Warning: Moderate to heavy rain expected in {$location}. Delay spraying and check drainage.",
+                self::SEVERITY_MODERATE => "PAGASA Notice: Rainshowers and thunderstorms over {$location}. Check field water before irrigating.",
+                default => "PAGASA Update: Light to moderate rains expected in {$location}. Check field moisture before irrigating or applying fertilizer.",
+            };
+        }
+
+        return $raw ?: (string) str($this->content)->limit(160);
+    }
+
+    public function displayMessage(): string
+    {
+        $raw = (string) ($this->message ?: $this->content ?: '');
+        if (str_contains($raw, 'Toggle navigation') || str_contains($raw, 'GOVPH') || str_contains($raw, 'METAR') || str_contains($raw, 'Details from PAGASA online page:')) {
+            $location = $this->target_barangay ? "{$this->target_barangay}, Lian, Batangas" : 'Lian and Batangas';
+            $severity = $this->severity ?: self::SEVERITY_INFORMATION;
+
+            $situation = match ($severity) {
+                self::SEVERITY_CRITICAL => 'Heavy rainfall and emergency flood threats are expected across the area.',
+                self::SEVERITY_HIGH => 'Moderate to heavy rains and possible localized flooding are expected.',
+                self::SEVERITY_MODERATE => 'Scattered rainshowers and localized thunderstorms are expected.',
+                default => 'Light to moderate rainfall and cloudy skies are expected.',
+            };
+
+            $advice = match ($severity) {
+                self::SEVERITY_CRITICAL => 'Stop all field activities immediately. Move farm tools, fertilizer, and animals to higher ground. Keep drainage canals clear.',
+                self::SEVERITY_HIGH => 'Pause pesticide and fertilizer spraying. Check farm dikes and clear drainage pathways to avoid standing water.',
+                self::SEVERITY_MODERATE => 'Inspect field water levels before irrigating. Postpone chemical spraying if rain is approaching.',
+                default => 'Inspect field moisture before watering or fertilizing. Normal farm activities may proceed while monitoring the weather.',
+            };
+
+            return "Official PAGASA Weather Advisory for {$location}.\n\n"
+                . "• Weather Situation: {$situation}\n"
+                . "• Farm Guidance: {$advice}\n"
+                . "• Source: PAGASA Online Weather Bulletin";
+        }
+
+        return $raw;
     }
 }

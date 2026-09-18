@@ -2113,19 +2113,19 @@
         <div class="hero-weather-strip">
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature) : 26 }}°C</div><div class="hws-label">Temperature</div></div>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</div><div class="hws-label">Temperature</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c1.6 2.2 3 4.3 3 6.1A3 3 0 1 1 7 8.1C7 6.3 8.4 4.2 10 2Z" stroke="currentColor" stroke-width="1.4"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->humidity) : 78 }}%</div><div class="hws-label">Humidity</div></div>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</div><div class="hws-label">Humidity</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 11.5h12.2a2.4 2.4 0 1 1-2.4 2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed) : 10 }} km/h</div><div class="hws-label">Wind Speed</div></div>
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed).' km/h' : '--' }}</div><div class="hws-label">Wind Speed</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="2.6" height="11" rx="1" fill="currentColor"/><rect x="8.7" y="6" width="2.6" height="8" rx="1" fill="currentColor" opacity=".7"/><rect x="13.4" y="8.5" width="2.6" height="5.5" rx="1" fill="currentColor" opacity=".5"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1) : '2.4' }} mm</div><div class="hws-label">Rainfall Today</div></div>
+            <div><div class="hws-val">{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</div><div class="hws-label">Rainfall Today</div></div>
           </div>
         </div>
       </div>

@@ -43,7 +43,7 @@ return [
         'longitude' => env('WEATHER_API_LONGITUDE', 120.65),
         'timezone' => env('WEATHER_API_TIMEZONE', env('APP_TIMEZONE', 'Asia/Manila')),
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
-        'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 10),
+        'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 45),
         'realtime' => env('WEATHER_API_REALTIME', true),
     ],
 
@@ -63,6 +63,7 @@ return [
         'base_url' => env('WEATHERAPI_BASE_URL', 'https://api.weatherapi.com/v1'),
         'timeout' => env('WEATHERAPI_TIMEOUT', 8),
     ],
+
 
     'open_meteo' => [
         'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
@@ -101,13 +102,18 @@ return [
     'farming_ai' => [
         'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:8010'),
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),
+        'connect_timeout' => env('FARMING_AI_CONNECT_TIMEOUT', 3),
+        'analytics_timeout' => env('FARMING_AI_ANALYTICS_TIMEOUT', 60),
+        'cache_minutes' => env('FARMING_AI_CACHE_MINUTES', 30),
+        'queue_connection' => env('FARMING_AI_QUEUE_CONNECTION', 'database'),
+        'queue' => env('FARMING_AI_QUEUE', 'analytics'),
     ],
 
     'groq' => [
         'enabled' => env('GROQ_ENABLED', env('GROQ_API_KEY') !== null),
         'key' => env('GROQ_API_KEY'),
         'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
-        'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+        'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
         'timeout' => env('GROQ_TIMEOUT', 12),
     ],
 

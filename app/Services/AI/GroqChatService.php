@@ -24,7 +24,7 @@ class GroqChatService
             ];
         }
 
-        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
 
         try {
@@ -73,7 +73,7 @@ class GroqChatService
             return null;
         }
 
-        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
 
         try {
@@ -137,7 +137,7 @@ class GroqChatService
             return null;
         }
 
-        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
 
         try {
@@ -204,7 +204,7 @@ class GroqChatService
             return null;
         }
 
-        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
         $recentQuestions = implode(' | ', array_slice((array) ($memory['recent_questions'] ?? []), 0, 3));
         $pendingIntent = (string) data_get($memory, 'pending_intent', '');
@@ -294,7 +294,7 @@ PROMPT,
             return null;
         }
 
-        $model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
         $languageInstruction = $this->languageInstruction($language);
         $toolJson = json_encode($toolResult, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

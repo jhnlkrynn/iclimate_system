@@ -28,6 +28,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 import evaluation_service
+import analytics_tasks
 import monthly_weather_random_forest
 import rice_yield_service
 
@@ -119,3 +120,13 @@ def forecast_monthly_weather(payload: MonthlyWeatherRequest):
 @app.get("/metrics")
 def metrics(dataset_path: Optional[str] = None):
     return evaluation_service.evaluate(dataset_path)
+
+
+@app.post("/analytics/{task_type}")
+def analytics(task_type: str, payload: dict):
+    try:
+        return analytics_tasks.run(task_type, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Analytics processing failed: {exc}") from exc

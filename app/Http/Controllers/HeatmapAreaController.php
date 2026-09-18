@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RefreshHeatmapRisk;
+use App\Models\ClimateRecord;
 use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\HeatmapRiskService;
+use App\Services\WeatherApiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -50,12 +54,22 @@ class HeatmapAreaController extends CrudController
 
     public function index(Request $request): View
     {
+        $heatmapRiskService = app(HeatmapRiskService::class);
         $this->authorizeView($request);
         $shouldRefresh = $request->boolean('refresh')
             || ! HeatmapArea::query()->whereNotNull('latitude')->whereNotNull('longitude')->exists();
 
-        if ($shouldRefresh) {
-            app(HeatmapRiskService::class)->refresh();
+        $refreshWindowClaimed = Cache::add(
+            'heatmap:lian:risk-refresh-window',
+            true,
+            now()->addMinutes(10),
+        );
+
+        if ($shouldRefresh || $refreshWindowClaimed) {
+            Cache::put('heatmap:lian:risk-refresh-pending', true, now()->addMinutes(5));
+            RefreshHeatmapRisk::dispatch()
+                ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
+                ->onQueue((string) config('services.farming_ai.queue', 'analytics'));
         }
 
         $query = $this->baseQuery($request);
@@ -100,23 +114,43 @@ class HeatmapAreaController extends CrudController
             }
         }
 
+        $latestRecordUpdated = HeatmapArea::query()->latest('updated_at')->value('updated_at');
+        $lastUpdatedTimestamp = $latestRecordUpdated
+            ? $latestRecordUpdated->timezone(config('app.timezone', 'Asia/Manila'))->format('M d, Y h:i A')
+            : now()->timezone(config('app.timezone', 'Asia/Manila'))->format('M d, Y h:i A');
+
+        $liveWeather = app(WeatherApiService::class)->forecast();
+        $isLiveWeatherFallback = false;
+        if (! $liveWeather) {
+            $latestClimate = ClimateRecord::query()->latest('record_date')->first();
+            if ($latestClimate) {
+                $isLiveWeatherFallback = true;
+                $liveWeather = [
+                    'current' => [
+                        'temperature' => (float) $latestClimate->temperature,
+                        'relative_humidity' => (int) $latestClimate->humidity,
+                        'wind_speed' => (float) $latestClimate->wind_speed,
+                        'precipitation' => (float) $latestClimate->rainfall,
+                        'weather_code' => 1,
+                        'is_day' => 1,
+                    ],
+                    'daily' => [],
+                    'source' => 'Verified Local Climate Database (Offline Fallback)',
+                ];
+            }
+        }
+
+        // Lian has ~19 barangays total, so the full filtered result set is rendered
+        // as one linear list (first 10 shown, rest revealed by a "Show more" toggle)
+        // rather than paginated — see HeatmapRiskService::DEFAULT_AREAS.
+        $records = $recordsQuery->orderBy('barangay')->get();
+        $records->each(function (HeatmapArea $record) use ($heatmapRiskService): void {
+            $record->setAttribute('risk_breakdown', $heatmapRiskService->riskBreakdownFor($record->barangay));
+        });
+
         return view('heatmap-areas.index', [
-            'records' => $recordsQuery->latest()->paginate(12)->withQueryString(),
+            'records' => $records,
             'mapAreas' => $mapAreasQuery
-                ->select([
-                    'id',
-                    'barangay',
-                    'latitude',
-                    'longitude',
-                    'risk_level',
-                    'risk_type',
-                    'risk_score',
-                    'predicted_yield',
-                    'rainfall_status',
-                    'planting_advisory',
-                    'irrigation_recommendation',
-                    'description',
-                ])
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->orderBy('barangay')
@@ -131,6 +165,10 @@ class HeatmapAreaController extends CrudController
             'pagasaMapUrl' => 'https://www.pagasa.dost.gov.ph/?vm=r',
             'pagasaRadarUrl' => 'https://www.pagasa.dost.gov.ph/radar',
             'myFarmBoundary' => $myFarmBoundary,
+            'analyticsRun' => null,
+            'liveWeather' => $liveWeather,
+            'lastUpdatedTimestamp' => $lastUpdatedTimestamp,
+            'isLiveWeatherFallback' => $isLiveWeatherFallback,
         ]);
     }
 

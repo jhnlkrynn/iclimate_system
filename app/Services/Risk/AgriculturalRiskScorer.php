@@ -34,11 +34,142 @@ final class AgriculturalRiskScorer
         'San Diego' => 0.85,
     ];
 
+    private const RAINFALL_WEIGHT = 0.34;
+
+    private const YIELD_WEIGHT = 0.27;
+
+    private const BARANGAY_EXPOSURE_WEIGHT = 0.18;
+
+    private const TEMPERATURE_WEIGHT = 0.14;
+
+    /**
+     * The weighting/placeholder-data caveat from this class's own docblock,
+     * reused verbatim so any user-facing explanation of the score carries it.
+     */
+    public const METHODOLOGY_CAVEAT = 'Barangay exposure ratings and these weights are engineering-judgment placeholders, not yet derived from validated MDRRMO/LGU hazard data. Treat this score as a planning aid, not a certified hazard assessment.';
+
     /**
      * @param  array{rainfall: float, temperature: float, predicted_yield: ?float, farm_type: string, barangay: string, stress_factor_count: int}  $input
      * @return array{score: float, level: string, label: string, color: string, components: array<string, array{value: float, weighted: float, label: string}>}
      */
     public function score(array $input): array
+    {
+        $c = $this->components($input);
+
+        $score = ($c['rainfallRisk'] * self::RAINFALL_WEIGHT)
+            + ($c['yieldRisk'] * self::YIELD_WEIGHT)
+            + ($c['temperatureRisk'] * self::TEMPERATURE_WEIGHT)
+            + ($c['exposure'] * self::BARANGAY_EXPOSURE_WEIGHT)
+            + $c['farmExposure']
+            + $c['stressPenalty'];
+
+        $score = round(max(0.05, min(0.98, $score)), 2);
+        $level = $this->levelFromScore($score);
+
+        return [
+            'score' => $score,
+            'level' => $level,
+            'label' => $level.' Risk',
+            'color' => match ($level) {
+                'Severe', 'High' => 'red',
+                'Moderate' => 'yellow',
+                default => 'green',
+            },
+            // Contribution breakdown for the "how was this risk calculated"
+            // view — same subscores used above, not a separate calculation.
+            'components' => [
+                'rainfall' => ['value' => $c['rainfallRisk'], 'weighted' => round($c['rainfallRisk'] * self::RAINFALL_WEIGHT, 3), 'label' => 'Rainfall risk'],
+                'yield' => ['value' => $c['yieldRisk'], 'weighted' => round($c['yieldRisk'] * self::YIELD_WEIGHT, 3), 'label' => 'Rice yield risk'],
+                'temperature' => ['value' => $c['temperatureRisk'], 'weighted' => round($c['temperatureRisk'] * self::TEMPERATURE_WEIGHT, 3), 'label' => 'Temperature risk'],
+                'exposure' => ['value' => $c['exposure'], 'weighted' => round($c['exposure'] * self::BARANGAY_EXPOSURE_WEIGHT, 3), 'label' => 'Barangay exposure (placeholder estimate)'],
+                'farm_type' => ['value' => $c['farmExposure'], 'weighted' => round($c['farmExposure'], 3), 'label' => strtolower($c['farmType']) === 'rainfed' ? 'Rainfed farm exposure' : 'Irrigated farm exposure'],
+                'stress_factors' => ['value' => $c['stressPenalty'], 'weighted' => round($c['stressPenalty'], 3), 'label' => 'Recent stress factors'],
+            ],
+        ];
+    }
+
+    /**
+     * Breaks the score() computation down into labeled, weighted factors so
+     * the UI can show *why* a score is what it is, using the exact same
+     * inputs and formula — never a separately-maintained approximation.
+     *
+     * @param  array{rainfall: float, temperature: float, predicted_yield: ?float, farm_type: string, barangay: string, stress_factor_count: int}  $input
+     * @return array{factors: list<array{key: string, label: string, weight_percent: ?int, risk_value: ?float, contribution: float, detail: string}>, caveat: string}
+     */
+    public function explain(array $input): array
+    {
+        $c = $this->components($input);
+
+        $factors = [
+            [
+                'key' => 'rainfall',
+                'label' => 'Rainfall level',
+                'weight_percent' => (int) round(self::RAINFALL_WEIGHT * 100),
+                'risk_value' => $c['rainfallRisk'],
+                'contribution' => round($c['rainfallRisk'] * self::RAINFALL_WEIGHT, 3),
+                'detail' => 'Based on '.number_format($c['rainfall'], 1).' mm of recorded/forecast rainfall.',
+            ],
+            [
+                'key' => 'predicted_yield',
+                'label' => 'Predicted rice yield',
+                'weight_percent' => (int) round(self::YIELD_WEIGHT * 100),
+                'risk_value' => $c['yieldRisk'],
+                'contribution' => round($c['yieldRisk'] * self::YIELD_WEIGHT, 3),
+                'detail' => $c['yield'] !== null
+                    ? 'Based on a predicted yield of '.number_format($c['yield'], 2).' t/ha.'
+                    : 'No yield prediction was available, so this factor defaults to a moderate risk value.',
+            ],
+            [
+                'key' => 'barangay_exposure',
+                'label' => 'Barangay exposure',
+                'weight_percent' => (int) round(self::BARANGAY_EXPOSURE_WEIGHT * 100),
+                'risk_value' => $c['exposure'],
+                'contribution' => round($c['exposure'] * self::BARANGAY_EXPOSURE_WEIGHT, 3),
+                'detail' => ($c['barangay'] !== '' ? $c['barangay'] : 'This barangay').' has a '.$this->exposureLabel($c['barangay']).' baseline exposure rating.',
+            ],
+            [
+                'key' => 'temperature',
+                'label' => 'Temperature',
+                'weight_percent' => (int) round(self::TEMPERATURE_WEIGHT * 100),
+                'risk_value' => $c['temperatureRisk'],
+                'contribution' => round($c['temperatureRisk'] * self::TEMPERATURE_WEIGHT, 3),
+                'detail' => 'Based on '.number_format($c['temperature'], 1).'°C recorded/forecast temperature.',
+            ],
+            [
+                'key' => 'farm_type',
+                'label' => 'Farm type adjustment',
+                'weight_percent' => null,
+                'risk_value' => null,
+                'contribution' => round($c['farmExposure'], 3),
+                'detail' => strtolower($c['farmType']) === 'rainfed'
+                    ? 'Rainfed farms add a higher baseline exposure than irrigated farms (+0.10).'
+                    : 'Irrigated farms add a lower baseline exposure than rainfed farms (+0.03).',
+            ],
+            [
+                'key' => 'stress_factors',
+                'label' => 'Compounding stress factors',
+                'weight_percent' => null,
+                'risk_value' => null,
+                'contribution' => round($c['stressPenalty'], 3),
+                'detail' => $c['stressFactorCount'] > 0
+                    ? $c['stressFactorCount'].' active stress factor(s) (e.g. drought, flooding, strong wind) added a small penalty.'
+                    : 'No compounding stress factors were detected.',
+            ],
+        ];
+
+        return [
+            'factors' => $factors,
+            'caveat' => self::METHODOLOGY_CAVEAT,
+        ];
+    }
+
+    /**
+     * Shared computation behind score() and explain() — kept in one place so
+     * the two never drift apart.
+     *
+     * @param  array{rainfall: float, temperature: float, predicted_yield: ?float, farm_type: string, barangay: string, stress_factor_count: int}  $input
+     */
+    private function components(array $input): array
     {
         $rainfall = (float) ($input['rainfall'] ?? 0);
         $temperature = (float) ($input['temperature'] ?? 0);
@@ -76,35 +207,19 @@ final class AgriculturalRiskScorer
         $farmExposure = strtolower($farmType) === 'rainfed' ? 0.10 : 0.03;
         $stressPenalty = min(0.12, $stressFactorCount * 0.025);
 
-        $score = ($rainfallRisk * 0.34)
-            + ($yieldRisk * 0.27)
-            + ($temperatureRisk * 0.14)
-            + ($exposure * 0.18)
-            + $farmExposure
-            + $stressPenalty;
-
-        $score = round(max(0.05, min(0.98, $score)), 2);
-        $level = $this->levelFromScore($score);
-
         return [
-            'score' => $score,
-            'level' => $level,
-            'label' => $level.' Risk',
-            'color' => match ($level) {
-                'Severe', 'High' => 'red',
-                'Moderate' => 'yellow',
-                default => 'green',
-            },
-            // Contribution breakdown for the "how was this risk calculated"
-            // view — same subscores used above, not a separate calculation.
-            'components' => [
-                'rainfall' => ['value' => $rainfallRisk, 'weighted' => round($rainfallRisk * 0.34, 3), 'label' => 'Rainfall risk'],
-                'yield' => ['value' => $yieldRisk, 'weighted' => round($yieldRisk * 0.27, 3), 'label' => 'Rice yield risk'],
-                'temperature' => ['value' => $temperatureRisk, 'weighted' => round($temperatureRisk * 0.14, 3), 'label' => 'Temperature risk'],
-                'exposure' => ['value' => $exposure, 'weighted' => round($exposure * 0.18, 3), 'label' => 'Barangay exposure (placeholder estimate)'],
-                'farm_type' => ['value' => $farmExposure, 'weighted' => round($farmExposure, 3), 'label' => strtolower($farmType) === 'rainfed' ? 'Rainfed farm exposure' : 'Irrigated farm exposure'],
-                'stress_factors' => ['value' => $stressPenalty, 'weighted' => round($stressPenalty, 3), 'label' => 'Recent stress factors'],
-            ],
+            'rainfall' => $rainfall,
+            'temperature' => $temperature,
+            'yield' => $yield,
+            'farmType' => $farmType,
+            'barangay' => $barangay,
+            'stressFactorCount' => $stressFactorCount,
+            'rainfallRisk' => $rainfallRisk,
+            'yieldRisk' => $yieldRisk,
+            'temperatureRisk' => $temperatureRisk,
+            'exposure' => $exposure,
+            'farmExposure' => $farmExposure,
+            'stressPenalty' => $stressPenalty,
         ];
     }
 

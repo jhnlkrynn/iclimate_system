@@ -5,97 +5,32 @@ namespace App\Http\Controllers;
 use App\Enums\PredictionType;
 use App\Http\Requests\RiceYieldPredictionRequest;
 use App\Models\FarmerProfile;
+use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\Prediction\PredictionDateValidator;
-use App\Services\Prediction\RiceYieldPredictionService;
-use App\Services\Prediction\ShortTermOutlookService;
-use App\Services\Prediction\WeatherPredictionService;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Log;
-use Illuminate\View\View;
-use Throwable;
+use Illuminate\Http\RedirectResponse;
 
 class RiceYieldPredictionController extends Controller
 {
     public function predict(
         RiceYieldPredictionRequest $request,
         PredictionDateValidator $dateValidator,
-        RiceYieldPredictionService $riceYield,
-        WeatherPredictionService $weatherPrediction,
-        ShortTermOutlookService $shortTermOutlook,
-    ): View {
+        AnalyticsDispatcher $analytics,
+    ): RedirectResponse {
         $validated = $request->validated();
         $targetDate = CarbonImmutable::parse($validated['prediction_date']);
-        $targetMonth = $targetDate->startOfMonth();
 
         if ($message = $dateValidator->validate($targetDate)) {
-            return view('weather-predictions.index', [
-                'targetMonth' => $targetMonth,
-                'targetDate' => $targetDate,
-                'result' => null,
-                'defaultModelInput' => [],
-                'mlResult' => null,
-                'error' => $message,
-            ]);
+            return back()->withErrors(['prediction_date' => $message])->withInput();
         }
 
-        try {
-            $weatherResult = $weatherPrediction->predict($targetDate, PredictionType::WEATHER->value);
-            $sharedResult = $riceYield->predictForUser(
-                $targetDate,
-                $validated['farm_type'] ?? $this->defaultFarmType($request),
-                (float) $validated['area'],
-                $request->user(),
-                [],
-                PredictionType::RICE_YIELD->value,
-            );
-        } catch (Throwable $exception) {
-            Log::error('Rice yield prediction failed.', [
-                'user_id' => $request->user()?->id,
-                'prediction_date' => $targetDate->toDateString(),
-                'farm_type' => $validated['farm_type'] ?? $this->defaultFarmType($request),
-                'area' => $validated['area'] ?? null,
-                'message' => $exception->getMessage(),
-            ]);
+        $run = $analytics->dispatch('rice_yield_prediction', [
+            'prediction_type' => PredictionType::RICE_YIELD->value,
+            'target_date' => $targetDate->toDateString(),
+            'farm_type' => $validated['farm_type'] ?? $request->user()?->farmerProfile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED,
+            'area' => (float) $validated['area'],
+        ], $request->user());
 
-            return view('weather-predictions.index', [
-                'targetMonth' => $targetMonth,
-                'targetDate' => $targetDate,
-                'result' => null,
-                'defaultModelInput' => [],
-                'mlResult' => null,
-                'error' => 'Rice-yield prediction could not be generated. Please verify the farm area and try again.',
-            ]);
-        }
-
-        $engineResult = $sharedResult['engine_result'];
-
-        return view('weather-predictions.index', [
-            'targetMonth' => $targetMonth,
-            'targetDate' => $targetDate,
-            'result' => $weatherResult,
-            'defaultModelInput' => $engineResult['model_input'],
-            'mlResult' => $this->buildMlResult($sharedResult),
-            'shortTermOutlook' => $shortTermOutlook->build($engineResult['model_input'], $targetMonth),
-            'error' => null,
-        ]);
-    }
-
-    private function defaultFarmType(RiceYieldPredictionRequest $request): string
-    {
-        return (string) ($request->user()?->farmerProfile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
-    }
-
-    /**
-     * @param  array<string, mixed>  $sharedResult
-     * @return array<string, mixed>
-     */
-    private function buildMlResult(array $sharedResult): array
-    {
-        unset($sharedResult['engine_result']);
-
-        return [
-            ...$sharedResult,
-            'source' => $sharedResult['source_name'] ?? $sharedResult['source'],
-        ];
+        return redirect()->route('weather-predictions.index', ['run' => $run->uuid]);
     }
 }

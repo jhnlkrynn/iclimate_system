@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FarmerPlantingSchedule;
 use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class CalendarController extends Controller
@@ -40,6 +42,20 @@ class CalendarController extends Controller
             ->orderBy('event_date')
             ->get();
 
+        $plantingScheduleFeatureReady = Schema::hasTable('farmer_planting_schedules');
+        $schedules = $plantingScheduleFeatureReady
+            ? FarmerPlantingSchedule::query()
+                ->with('farmer:id,name')
+                ->when($user->role === User::ROLE_FARMER, fn ($query) => $query->where('user_id', $user->id))
+                ->where(function ($query) use ($gridStart, $gridEnd) {
+                    $query->whereBetween('planting_date', [$gridStart, $gridEnd])
+                        ->orWhereBetween('scheduled_harvest_date', [$gridStart, $gridEnd])
+                        ->orWhereBetween('harvest_month', [$gridStart->copy()->startOfMonth(), $gridEnd->copy()->endOfMonth()]);
+                })
+                ->orderBy('planting_date')
+                ->get()
+            : collect();
+
         $eventsByDay = [];
         foreach ($advisories as $advisory) {
             $start = ($advisory->valid_from?->copy() ?? $gridStart->copy())->startOfDay();
@@ -59,6 +75,17 @@ class CalendarController extends Controller
 
         foreach ($feedEvents as $post) {
             $eventsByDay[$post->event_date->toDateString()][] = $this->feedCalendarEvent($post);
+        }
+
+        foreach ($schedules as $schedule) {
+            if ($schedule->planting_date->between($gridStart, $gridEnd)) {
+                $eventsByDay[$schedule->planting_date->toDateString()][] = $this->scheduleCalendarEvent($schedule, false);
+            }
+
+            $harvest = $schedule->scheduled_harvest_date ?? $schedule->harvest_month;
+            if ($harvest?->between($gridStart, $gridEnd)) {
+                $eventsByDay[$harvest->toDateString()][] = $this->scheduleCalendarEvent($schedule, true);
+            }
         }
 
         $weeks = [];
@@ -82,6 +109,18 @@ class CalendarController extends Controller
 
         $upcoming = $upcomingAdvisories
             ->concat($upcomingFeedEvents)
+            ->concat($schedules->flatMap(function (FarmerPlantingSchedule $schedule) use ($today) {
+                $events = [];
+                if ($schedule->planting_date->gte($today)) {
+                    $events[] = $this->scheduleCalendarEvent($schedule, false);
+                }
+                $harvest = $schedule->scheduled_harvest_date ?? $schedule->harvest_month;
+                if ($harvest?->gte($today)) {
+                    $events[] = $this->scheduleCalendarEvent($schedule, true);
+                }
+
+                return $events;
+            }))
             ->sortBy('starts_at')
             ->take(6);
 
@@ -98,6 +137,10 @@ class CalendarController extends Controller
             'previousYear' => $previous->year,
             'nextMonth' => $next->month,
             'nextYear' => $next->year,
+            'schedules' => $plantingScheduleFeatureReady && $user->role === User::ROLE_FARMER
+                ? $user->plantingSchedules()->latest('planting_date')->get()
+                : collect(),
+            'plantingScheduleFeatureReady' => $plantingScheduleFeatureReady,
         ]);
     }
 
@@ -124,6 +167,25 @@ class CalendarController extends Controller
             'type_key' => 'community',
             'type_label' => 'Event',
             'badge_class' => 'text-bg-light',
+        ];
+    }
+
+    private function scheduleCalendarEvent(FarmerPlantingSchedule $schedule, bool $harvest): array
+    {
+        $date = $harvest ? ($schedule->scheduled_harvest_date ?? $schedule->harvest_month) : $schedule->planting_date;
+
+        return [
+            'title' => ($harvest ? 'Harvest' : 'Planting').' - '.($schedule->barangay ?: 'Farm schedule'),
+            'summary' => $schedule->season.' season, '.$schedule->farm_type.' - '.$schedule->monitoringStatusLabel(),
+            'url' => auth()->user()?->role === User::ROLE_FARMER
+                ? route('farmer.planting-schedules.edit', $schedule)
+                : route('calendar.index', ['month' => $date?->month, 'year' => $date?->year]),
+            'starts_at' => $date,
+            'type_key' => $harvest ? 'schedule-harvest' : 'schedule-planting',
+            'type_label' => auth()->user()?->role === User::ROLE_FARMER
+                ? ($harvest ? 'My Harvest' : 'My Planting')
+                : ($harvest ? 'Farmer Harvest' : 'Farmer Planting'),
+            'badge_class' => $harvest ? 'text-bg-warning' : 'text-bg-success',
         ];
     }
 }

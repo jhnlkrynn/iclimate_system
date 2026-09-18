@@ -112,3 +112,13 @@ Schedule::command('iclimate:refresh-lian-boundaries')
     ->daily()
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
+
+Schedule::command('iclimate:process-datasets')
+    ->dailyAt('01:30')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
+
+Schedule::command('iclimate:refresh-heatmap-forecasts --months=6')
+    ->dailyAt('02:30')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);

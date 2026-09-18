@@ -1,29 +1,14 @@
 @php
     $errors = $errors ?? new \Illuminate\Support\ViewErrorBag;
-    $latestClimate = \App\Support\ClimateSnapshot::latest();
     $loginWeather = $loginWeather ?? [];
-    $weatherForecast = $loginWeather['forecast'] ?? null;
-    $weatherResult = $loginWeather['result'] ?? [];
-    $weatherTimezone = $loginWeather['timezone'] ?? config('services.open_meteo.timezone', 'Asia/Manila');
-    $currentWeather = $weatherForecast?->raw_response['current'] ?? [];
-    $weatherCode = data_get($currentWeather, 'weather_code') ?? $weatherForecast?->weather_code;
-    $temperature = data_get($currentWeather, 'temperature_2m') ?? $weatherForecast?->temperature ?? $latestClimate?->temperature ?? 26;
-    $humidity = data_get($currentWeather, 'relative_humidity_2m') ?? $weatherForecast?->humidity ?? $latestClimate?->humidity ?? 78;
-    $windSpeed = data_get($currentWeather, 'wind_speed_10m') ?? $weatherForecast?->wind_speed ?? $latestClimate?->wind_speed ?? 10;
-    $rainfall = (float) ($weatherForecast?->rainfall_mm ?? $latestClimate->rainfall ?? 2.4);
-    $weatherUpdatedAt = $weatherForecast?->fetched_at?->timezone($weatherTimezone) ?? $latestClimate?->updated_at ?? now($weatherTimezone);
-    $condition = match (true) {
-        in_array((int) $weatherCode, [95, 96, 99], true) => ['Thunderstorm', '&#9928;&#65039;'],
-        in_array((int) $weatherCode, [80, 81, 82, 61, 63, 65, 66, 67], true) => ['Rain', '&#127783;&#65039;'],
-        in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Drizzle', '&#127783;&#65039;'],
-        in_array((int) $weatherCode, [45, 48], true) => ['Foggy', '&#127787;&#65039;'],
-        in_array((int) $weatherCode, [1, 2, 3], true) => ['Cloudy', '&#9925;&#65039;'],
-        (int) $weatherCode === 0 => ['Clear', '&#9728;&#65039;'],
-        $rainfall >= 120 => ['Rain', '&#127783;&#65039;'],
-        $rainfall >= 70 => ['Cloudy', '&#9925;&#65039;'],
-        $rainfall >= 30 => ['Partly Cloudy', '&#127780;&#65039;'],
-        default => ['Sunny', '&#9728;&#65039;'],
-    };
+    $hasRealWeather = $loginWeather['has_real_weather'] ?? false;
+    $temperature = $loginWeather['temperature'] ?? null;
+    $humidity = $loginWeather['humidity'] ?? null;
+    $windSpeed = $loginWeather['wind_speed'] ?? null;
+    $rainfall = $loginWeather['rainfall'] ?? null;
+    $conditionLabel = $loginWeather['condition_label'] ?? 'Weather data unavailable';
+    $conditionEmoji = $loginWeather['condition_emoji'] ?? '🌦️';
+    $updatedLabel = $loginWeather['updated_label'] ?? 'No live or stored weather available';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
@@ -57,7 +42,7 @@
       background-color: #1F4D3A;
       background-image:
         linear-gradient(180deg, rgba(22,59,45,.82), rgba(22,59,45,.92)),
-        url('{{ asset('images/rice-hero-aerial.jpg') }}');
+        var(--login-bg-img, none);
       background-position: center;
       background-size: cover;
       background-repeat: no-repeat;
@@ -329,7 +314,7 @@
     }
   </style>
 </head>
-<body class="login-page">
+<body class="login-page" style="--login-bg-img: url('{{ asset('images/rice-hero-aerial.jpg') }}');">
   <x-flash-toast />
   <div class="scene-glow scene-glow-1"></div>
   <div class="scene-glow scene-glow-2"></div>
@@ -414,7 +399,7 @@
 
     </div>
 
-    <div class="weather-card">
+    <div class="weather-card" id="weatherCard" data-weather-endpoint="{{ route('login.weather') }}">
       <div class="weather-title">Today's Weather</div>
       <div class="weather-loc">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1c2.8 0 5 2.2 5 5.1C12 10 7 13 7 13S2 10 2 6.1C2 3.2 4.2 1 7 1Z" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="6" r="1.6" stroke="currentColor" stroke-width="1.2"/></svg>
@@ -422,9 +407,9 @@
       </div>
 
       <div class="weather-main">
-        <div class="weather-emoji">{!! $condition[1] !!}</div>
-        <div class="weather-temp">{{ round((float) $temperature) }}°C</div>
-        <div class="weather-cond">{{ $condition[0] }}</div>
+        <div class="weather-emoji" id="weatherEmoji">{{ $hasRealWeather ? $conditionEmoji : '🌦️' }}</div>
+        <div class="weather-temp" id="weatherTemp">{{ $temperature !== null ? $temperature.'°C' : '--' }}</div>
+        <div class="weather-cond" id="weatherCond">{{ $hasRealWeather ? $conditionLabel : 'Weather data temporarily unavailable' }}</div>
       </div>
 
       <div class="weather-divider"></div>
@@ -432,21 +417,21 @@
       <div class="weather-rows">
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2c1.4 2 2.7 3.9 2.7 5.8A2.7 2.7 0 1 1 6.3 7.8C6.3 5.9 7.6 4 9 2Z" stroke="currentColor" stroke-width="1.4"/></svg></span>
-          <span><span class="weather-row-val">{{ round((float) $humidity) }}%</span><br><span class="weather-row-label">Humidity</span></span>
+          <span><span class="weather-row-val" id="weatherHumidity">{{ $humidity !== null ? $humidity.'%' : '--' }}</span><br><span class="weather-row-label">Humidity</span></span>
         </div>
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 6h8a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 10h11a2.2 2.2 0 1 1-2.2 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
-          <span><span class="weather-row-val">{{ round((float) $windSpeed) }} km/h</span><br><span class="weather-row-label">Wind Speed</span></span>
+          <span><span class="weather-row-val" id="weatherWind">{{ $windSpeed !== null ? $windSpeed.' km/h' : '--' }}</span><br><span class="weather-row-label">Wind Speed</span></span>
         </div>
         <div class="weather-row">
           <span class="weather-row-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="4" y="2" width="2.4" height="10" rx="1" fill="currentColor"/><rect x="8" y="5" width="2.4" height="7" rx="1" fill="currentColor" opacity=".7"/><rect x="12" y="7.5" width="2.4" height="4.5" rx="1" fill="currentColor" opacity=".5"/></svg></span>
-          <span><span class="weather-row-val">{{ number_format($rainfall, 1) }} mm</span><br><span class="weather-row-label">Rainfall Today</span></span>
+          <span><span class="weather-row-val" id="weatherRainfall">{{ $rainfall !== null ? number_format((float) $rainfall, 1).' mm' : '--' }}</span><br><span class="weather-row-label">Rainfall Today</span></span>
         </div>
       </div>
 
       <div class="weather-updated">
-        <span class="weather-updated-dot"></span>
-        Updated {{ $weatherUpdatedAt->shortTime() }}
+        <span class="weather-updated-dot" id="weatherUpdatedDot" style="{{ $hasRealWeather ? '' : 'background:#d85b45;' }}"></span>
+        <span id="weatherUpdatedLabel">{{ $updatedLabel }}</span>
       </div>
     </div>
   </div>
@@ -476,6 +461,35 @@
       loginBtn.disabled = true;
       loginBtn.innerHTML = 'Signing in...';
     });
+
+    const weatherCard = document.getElementById('weatherCard');
+    const endpoint = weatherCard?.dataset.weatherEndpoint;
+
+    if (endpoint) {
+      const refreshWeather = () => {
+        fetch(endpoint, { headers: { Accept: 'application/json' } })
+          .then((response) => (response.ok ? response.json() : Promise.reject()))
+          .then((data) => {
+            document.getElementById('weatherEmoji').textContent = data.condition_emoji ?? '🌦️';
+            document.getElementById('weatherTemp').textContent = data.temperature !== null ? `${data.temperature}°C` : '--';
+            document.getElementById('weatherCond').textContent = data.has_real_weather
+              ? data.condition_label
+              : 'Weather data temporarily unavailable';
+            document.getElementById('weatherHumidity').textContent = data.humidity !== null ? `${data.humidity}%` : '--';
+            document.getElementById('weatherWind').textContent = data.wind_speed !== null ? `${data.wind_speed} km/h` : '--';
+            document.getElementById('weatherRainfall').textContent = data.rainfall !== null ? `${data.rainfall.toFixed(1)} mm` : '--';
+            document.getElementById('weatherUpdatedLabel').textContent = data.updated_label ?? 'No live or stored weather available';
+            document.getElementById('weatherUpdatedDot').style.background = data.has_real_weather ? '' : '#d85b45';
+          })
+          .catch(() => {});
+      };
+
+      refreshWeather();
+      setInterval(refreshWeather, 60000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshWeather();
+      });
+    }
   });
 </script>
 </body>

@@ -27,14 +27,16 @@ class DecisionSupportService
         $weatherWarnings = $this->weatherWarnings($rainfall, $windSpeed, $humidity);
         $yieldAdvisory = $this->yieldAdvisory($yield);
         $stressFactors = $this->stressFactors($rainfall, $windSpeed, $humidity, $yield, $season, $farmType);
-        $risk = $this->riskScorer->score([
+        $riskInput = [
             'rainfall' => $rainfall,
             'temperature' => $temperature,
             'predicted_yield' => $yield,
             'farm_type' => $farmType,
             'barangay' => $barangay,
             'stress_factor_count' => count($stressFactors),
-        ]);
+        ];
+        $risk = $this->riskScorer->score($riskInput);
+        $riskBreakdown = $this->riskScorer->explain($riskInput);
         $score = $this->decisionSupportScore($rainfall, $yield, $season, $farmType);
         $confidence = $this->confidenceLevel($rainfall, $yield, $stressFactors);
         $notifications = $this->notifications($planting, $irrigation, $weatherWarnings, $yieldAdvisory);
@@ -53,6 +55,7 @@ class DecisionSupportService
             'irrigation' => $irrigation,
             'yield' => $yieldAdvisory,
             'risk' => $risk,
+            'risk_breakdown' => $riskBreakdown,
             'score' => $score,
             'stress_factors' => $stressFactors,
             'confidence' => $confidence,

@@ -27,13 +27,16 @@ class MessagingController extends Controller
 
     public function index(Request $request): View
     {
-        $conversations = $this->conversationQuery($request->user())
+        $conversationPaginator = $this->conversationQuery($request->user())
             ->with(['participantOne', 'participantTwo', 'latestMessage'])
             ->orderByDesc('last_message_at')
-            ->get();
+            ->simplePaginate(30, ['*'], 'threads')
+            ->withQueryString();
+        $conversations = $conversationPaginator->getCollection();
 
         return view('messages.index', [
             'conversations' => $conversations,
+            'conversationPaginator' => $conversationPaginator,
             'activeConversation' => null,
             'messages' => collect(),
             'recipients' => $this->recipients($request->user()),
@@ -47,15 +50,24 @@ class MessagingController extends Controller
 
         $this->markRead($conversation, $request->user());
 
-        $conversations = $this->conversationQuery($request->user())
+        $conversationPaginator = $this->conversationQuery($request->user())
             ->with(['participantOne', 'participantTwo', 'latestMessage'])
             ->orderByDesc('last_message_at')
-            ->get();
+            ->simplePaginate(30, ['*'], 'threads')
+            ->withQueryString();
+        $conversations = $conversationPaginator->getCollection();
 
         return view('messages.index', [
             'conversations' => $conversations,
+            'conversationPaginator' => $conversationPaginator,
             'activeConversation' => $conversation->load(['participantOne', 'participantTwo']),
-            'messages' => $conversation->messages()->with('sender')->oldest()->get(),
+            'messages' => $conversation->messages()
+                ->with('sender')
+                ->latest('id')
+                ->limit(100)
+                ->get()
+                ->sortBy('id')
+                ->values(),
             'recipients' => $this->recipients($request->user()),
             'unreadCounts' => $this->unreadCounts($request->user(), $conversations),
         ]);
@@ -318,7 +330,8 @@ class MessagingController extends Controller
             ->when($user->role === User::ROLE_MAO, fn ($query) => $query->where('role', User::ROLE_FARMER))
             ->when($search, fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->orderBy('name')
-            ->get();
+            ->limit($search ? 20 : 50)
+            ->get(['id', 'name', 'role', 'last_active_at']);
     }
 
     private function canMessage(User $sender, User $recipient): bool

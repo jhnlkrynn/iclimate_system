@@ -538,9 +538,10 @@
             vertical-align: middle;
             white-space: nowrap;
         }
-        .fc-risk-badge-severe { background: rgba(184,74,74,.14); color: var(--fc-coral); }
-        .fc-risk-badge-moderate { background: rgba(197,139,42,.14); color: var(--fc-warning); }
-        .fc-risk-badge-low { background: rgba(95,143,120,.14); color: var(--fc-green-700); }
+        .fc-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
+        .fc-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
+        .fc-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
+        .fc-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
         .fc-risk-interpretation { font-weight: 500; color: var(--fc-ink); }
         .status-pill {
             display: inline-flex;
@@ -1133,7 +1134,8 @@
                                     default => 'Low risk: conditions are currently favorable for this barangay.',
                                 };
                                 $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe', 'high' => 'fc-risk-badge-severe',
+                                    'severe' => 'fc-risk-badge-severe',
+                                    'high' => 'fc-risk-badge-high',
                                     'moderate' => 'fc-risk-badge-moderate',
                                     default => 'fc-risk-badge-low',
                                 };
@@ -1277,11 +1279,12 @@
                                         </div>
                                         <strong>{{ $advisory->title }}</strong>
                                         <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
+                                        <div class="list-text">{{ str($advisory->displaySummary())->limit(120) }}</div>
                                         <div class="list-meta">{{ $advisory->target_barangay ?: 'All barangays' }}</div>
                                         <div class="advisory-feedback" data-advisory-feedback data-advisory-id="{{ $advisory->id }}">
                                             <span class="advisory-feedback-label">Was this helpful?</span>
-                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->helpful === true ? 'active-yes' : '' }}" data-feedback-value="1">Yes</button>
-                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->helpful === false ? 'active-no' : '' }}" data-feedback-value="0">No</button>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === true ? 'active-yes' : '' }}" data-feedback-value="1">Yes</button>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === false ? 'active-no' : '' }}" data-feedback-value="0">No</button>
                                             <span class="advisory-feedback-status"></span>
                                         </div>
                                     </div>
@@ -1312,6 +1315,7 @@
                             <div class="list-mark mb-3">ADV</div>
                             <div class="list-title">{{ $latestAdvisory->title }}</div>
                             <div class="list-text">{{ str($latestAdvisory->content)->limit(180) }}</div>
+                            <div class="list-text">{{ str($latestAdvisory->displaySummary())->limit(180) }}</div>
                             <div class="list-meta">{{ $latestAdvisory->type }} advisory</div>
                         @elseif($climateSummary)
                             <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
@@ -1473,7 +1477,7 @@
                                     'Accept': 'application/json',
                                     'X-CSRF-TOKEN': advisoryFeedbackToken,
                                 },
-                                body: JSON.stringify({ helpful }),
+                                body: JSON.stringify({ is_helpful: helpful }),
                             });
 
                             if (!response.ok) throw new Error('Request failed');

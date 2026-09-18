@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\User;
+use App\Services\FarmerOrganizationSummaryService;
 use App\Support\LianBarangays;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class FarmerProfileController extends CrudController
 {
@@ -56,6 +58,23 @@ class FarmerProfileController extends CrudController
             'farm_area' => ['nullable', 'numeric', 'min:0'],
             'farm_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
         ];
+    }
+
+    /**
+     * Adds the "Farmers by Organization" chart (moved here from the MAO
+     * dashboard) to the standard CRUD index, visible only to staff who can
+     * manage farmer profiles — farmers viewing their own single record
+     * don't need a municipality-wide aggregate.
+     */
+    public function index(Request $request): View
+    {
+        $view = parent::index($request);
+
+        if ($this->canManage($request)) {
+            $view->with(app(FarmerOrganizationSummaryService::class)->summarize());
+        }
+
+        return $view;
     }
 
     protected function baseQuery(Request $request): Builder

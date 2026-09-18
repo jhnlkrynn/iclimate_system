@@ -726,6 +726,10 @@
                     input.focus();
                 }
             },
+            ask: (question) => {
+                openAssistant();
+                submitQuestion(question);
+            },
         };
 
         document.addEventListener('click', (event) => {

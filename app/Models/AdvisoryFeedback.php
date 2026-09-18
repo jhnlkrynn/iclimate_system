@@ -2,21 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdvisoryFeedback extends Model
 {
+    use HasFactory;
+
     protected $table = 'advisory_feedback';
 
     protected $fillable = [
         'planting_advisory_id',
         'user_id',
-        'helpful',
+        'is_helpful',
+        'comment',
+        'mao_response',
+        'mao_responded_at',
+        'mao_responded_by',
     ];
 
     protected $casts = [
-        'helpful' => 'boolean',
+        'is_helpful' => 'boolean',
+        'mao_responded_at' => 'datetime',
     ];
 
     public function advisory(): BelongsTo
@@ -27,5 +35,10 @@ class AdvisoryFeedback extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function respondedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'mao_responded_by');
     }
 }

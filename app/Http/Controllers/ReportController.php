@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnalyticsRun;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
+use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\SystemAuditLogger;
+use App\Support\ReportTypeCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -31,13 +36,7 @@ class ReportController extends CrudController
 
     protected array $filterable = ['report_type' => ['Climate Records', 'Rice Production', 'Farmer Registration', 'Advisory', 'Community Feed']];
 
-    public const REPORT_TYPES = [
-        'climate_records' => 'Climate Records Report',
-        'rice_production' => 'Rice Production Report',
-        'farmer_registration' => 'Farmer Registration Report',
-        'advisory' => 'Advisory Report',
-        'community_feed' => 'Community Feed Report',
-    ];
+    public const REPORT_TYPES = Report::TYPES;
 
     /**
      * On-screen results are paginated so a filtered report with years of
@@ -68,18 +67,13 @@ class ReportController extends CrudController
     public function index(Request $request): View
     {
         $this->authorizeManage($request);
+        $analyticsRun = $this->requestedRun($request, 'report_analytics');
+        $reportId = data_get($analyticsRun?->result, 'report_id');
+        $report = $reportId
+            ? $this->reportHistory()->find($reportId)
+            : $this->reportHistory()->first();
 
-        return view('reports.index', [
-            'reportTypes' => self::REPORT_TYPES,
-            'history' => $this->reportHistory()->paginate(10),
-            'barangays' => $this->barangays(),
-            'seasons' => ['Wet', 'Dry'],
-            'sourceStats' => $this->sourceStats(),
-            'selected' => null,
-            'rows' => collect(),
-            'columns' => [],
-            'filters' => [],
-        ]);
+        return $this->reportView($request, $report, $analyticsRun);
     }
 
     /**
@@ -89,32 +83,23 @@ class ReportController extends CrudController
      * resubmits the form and creates a duplicate history row each time,
      * which the previous single-action version did.
      */
-    public function generate(Request $request): RedirectResponse
+    public function generate(Request $request, AnalyticsDispatcher $analytics): RedirectResponse
     {
         $this->authorizeManage($request);
         $data = $this->validatedFilters($request);
-        [$query] = $this->reportQuery($data);
         $label = self::REPORT_TYPES[$data['report_type']];
-        $rowCount = (clone $query)->count();
-
-        $report = Report::query()->create([
+        $run = $analytics->dispatch('report_analytics', [
+            'report_type' => $data['report_type'],
+            'filters' => $this->appliedFilters($data),
+        ], $request->user());
+        SystemAuditLogger::record('Queued Python report analytics', $request, [
             'report_type' => $label,
-            'title' => $label.' - '.now()->format('Y-m-d H:i'),
-            'generated_by' => $request->user()->id,
-            'payload' => [
-                'filters' => $data,
-                'row_count' => $rowCount,
-                'generated_at' => now()->toDateTimeString(),
-            ],
-        ]);
-        SystemAuditLogger::forModel('generated', $report, $request, [
-            'report_type' => $label,
-            'row_count' => $rowCount,
-            'filters' => $data,
+            'analytics_run_uuid' => $run->uuid,
+            'filters' => $this->appliedFilters($data),
         ]);
 
-        return redirect()->route('reports.results', $data)
-            ->with('success', $label.' generated and saved to report history.');
+        return redirect()->route('reports.index', ['run' => $run->uuid])
+            ->with('success', $label.' was queued for Python analytics processing.');
     }
 
     /**
@@ -122,42 +107,41 @@ class ReportController extends CrudController
      * is the GET target pagination links point at (report_type + filters
      * carried as query string via withQueryString()).
      */
-    public function results(Request $request): View
+    public function results(Request $request): RedirectResponse
     {
         $this->authorizeManage($request);
-        $data = $this->validatedFilters($request);
-        [$query, $columns] = $this->reportQuery($data);
-        $label = self::REPORT_TYPES[$data['report_type']];
 
-        return view('reports.index', [
-            'reportTypes' => self::REPORT_TYPES,
-            'history' => $this->reportHistory()->paginate(10),
-            'barangays' => $this->barangays(),
-            'seasons' => ['Wet', 'Dry'],
-            'sourceStats' => $this->sourceStats(),
-            'selected' => $label,
-            'rows' => $query->paginate(self::RESULTS_PER_PAGE)->withQueryString(),
-            'columns' => $columns,
-            'filters' => $data,
-        ]);
+        return redirect()->route('reports.index');
+    }
+
+    public function show(Request $request, int $id): View
+    {
+        $this->authorizeManage($request);
+        $report = $this->reportHistory()->findOrFail($id);
+
+        return $this->reportView($request, $report, null);
     }
 
     public function print(Request $request): View
     {
         $this->authorizeManage($request);
-        $data = $this->validatedFilters($request);
-        [$query, $columns] = $this->reportQuery($data);
-        $totalRows = (clone $query)->count();
+
+        abort_unless($request->filled('report'), 404);
+        $report = $this->reportHistory()->findOrFail($request->integer('report'));
+        $rows = collect($report->savedRecords());
+        $totalRows = $rows->count();
         $tooManyRows = $totalRows > self::PRINT_ROW_CAP;
 
         return view('reports.print', [
-            'title' => self::REPORT_TYPES[$data['report_type']],
-            'rows' => $tooManyRows ? collect() : $query->get(),
-            'columns' => $columns,
-            'filters' => $data,
+            'title' => $report->title,
+            'rows' => $tooManyRows ? collect() : $rows,
+            'columns' => $report->savedColumns(),
+            'filters' => $report->savedFilters(),
+            'generatedAt' => $report->created_at,
             'totalRows' => $totalRows,
             'tooManyRows' => $tooManyRows,
             'rowCap' => self::PRINT_ROW_CAP,
+            'reportTypeInfo' => ReportTypeCatalog::describe($report->typeKey()),
         ]);
     }
 
@@ -170,35 +154,19 @@ class ReportController extends CrudController
     public function exportCsv(Request $request): StreamedResponse
     {
         $this->authorizeManage($request);
-        $data = $this->validatedFilters($request);
-        [$query, $columns] = $this->reportQuery($data);
-        $title = self::REPORT_TYPES[$data['report_type']];
-        $rowCount = (clone $query)->count();
 
-        $report = Report::query()->create([
-            'report_type' => $title,
-            'title' => $title.' CSV Export - '.now()->format('Y-m-d H:i'),
-            'generated_by' => $request->user()->id,
-            'payload' => ['filters' => $data, 'row_count' => $rowCount, 'export' => 'csv'],
-        ]);
-        SystemAuditLogger::forModel('exported CSV for', $report, $request, [
-            'report_type' => $title,
-            'row_count' => $rowCount,
-            'filters' => $data,
-        ]);
+        abort_unless($request->filled('report'), 404);
+        $report = $this->reportHistory()->findOrFail($request->integer('report'));
+        $columns = $report->savedColumns();
+        $records = $report->savedRecords();
+        $filename = Str::slug($report->title).'.csv';
 
-        $filename = Str::slug($title).'-'.now()->format('Ymd-His').'.csv';
-
-        return response()->streamDownload(function () use ($query, $columns) {
+        return response()->streamDownload(function () use ($records, $columns) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, array_values($columns));
-
-            $query->chunk(500, function ($rows) use ($handle, $columns) {
-                foreach ($rows as $row) {
-                    fputcsv($handle, array_map(fn ($field) => data_get($row, $field), array_keys($columns)));
-                }
-            });
-
+            foreach ($records as $row) {
+                fputcsv($handle, array_map(fn ($field) => data_get($row, $field), array_keys($columns)));
+            }
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv']);
     }
@@ -234,120 +202,9 @@ class ReportController extends CrudController
         ]);
     }
 
-    /**
-     * Builds the filtered query for a report type without executing it, so
-     * callers can paginate, count, stream-chunk, or cap it as appropriate
-     * instead of every code path being forced through one unbounded get().
-     *
-     * @return array{0: Builder, 1: array<string, string>}
-     */
-    private function reportQuery(array $filters): array
-    {
-        return match ($filters['report_type']) {
-            'climate_records' => $this->climateReportQuery($filters),
-            'rice_production' => $this->riceReportQuery($filters),
-            'farmer_registration' => $this->farmerReportQuery($filters),
-            'advisory' => $this->advisoryReportQuery($filters),
-            'community_feed' => $this->communityFeedReportQuery($filters),
-        };
-    }
-
-    private function climateReportQuery(array $filters): array
-    {
-        $query = ClimateRecord::query();
-        $this->applyDateFilters($query, 'record_date', $filters);
-        $this->applySeasonFilter($query, $filters);
-        $query->latest('record_date');
-
-        return [$query, [
-            'record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'wind_speed' => 'Wind Speed', 'season' => 'Season', 'source' => 'Source',
-        ]];
-    }
-
-    private function riceReportQuery(array $filters): array
-    {
-        $query = RiceProduction::query();
-        $this->applyYearFilter($query, $filters);
-        $this->applyBarangayFilter($query, $filters);
-        $this->applySeasonFilter($query, $filters);
-        $query->latest('year');
-
-        return [$query, [
-            'barangay' => 'Barangay', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield/Ha', 'area_hectares' => 'Area', 'total_production' => 'Total', 'year' => 'Year',
-        ]];
-    }
-
-    private function farmerReportQuery(array $filters): array
-    {
-        $query = FarmerProfile::query();
-        $this->applyDateFilters($query, 'created_at', $filters);
-        $this->applyBarangayFilter($query, $filters);
-        $query->latest();
-
-        return [$query, [
-            'full_name' => 'Farmer', 'contact_number' => 'Contact', 'barangay' => 'Barangay', 'farm_area' => 'Farm Area', 'farm_type' => 'Farm Type', 'created_at' => 'Registered',
-        ]];
-    }
-
-    private function advisoryReportQuery(array $filters): array
-    {
-        $query = PlantingAdvisory::query();
-        $this->applyDateFilters($query, 'created_at', $filters);
-        if (! empty($filters['barangay'])) {
-            $query->where('target_barangay', $filters['barangay']);
-        }
-        $query->latest();
-
-        return [$query, [
-            'title' => 'Title', 'type' => 'Type', 'target_barangay' => 'Barangay', 'status' => 'Status', 'created_at' => 'Posted',
-        ]];
-    }
-
-    private function communityFeedReportQuery(array $filters): array
-    {
-        $query = FeedPost::query()->with('author');
-        $this->applyDateFilters($query, 'created_at', $filters);
-        $query->latest();
-
-        return [$query, [
-            'title' => 'Title', 'category' => 'Category', 'visibility' => 'Visibility', 'author.name' => 'Posted By', 'created_at' => 'Posted',
-        ]];
-    }
-
-    private function applyDateFilters(Builder $query, string $field, array $filters): void
-    {
-        if (! empty($filters['date_from'])) {
-            $query->whereDate($field, '>=', $filters['date_from']);
-        }
-        if (! empty($filters['date_to'])) {
-            $query->whereDate($field, '<=', $filters['date_to']);
-        }
-    }
-
-    private function applyYearFilter(Builder $query, array $filters): void
-    {
-        if (! empty($filters['year'])) {
-            $query->where('year', $filters['year']);
-        }
-    }
-
-    private function applyBarangayFilter(Builder $query, array $filters): void
-    {
-        if (! empty($filters['barangay'])) {
-            $query->where('barangay', $filters['barangay']);
-        }
-    }
-
-    private function applySeasonFilter(Builder $query, array $filters): void
-    {
-        if (! empty($filters['season'])) {
-            $query->where('season', $filters['season']);
-        }
-    }
-
     private function barangays(): array
     {
-        return collect()
+        return Cache::remember('reports:filter-barangays', now()->addMinutes(2), fn (): array => collect()
             ->merge(FarmerProfile::query()->pluck('barangay'))
             ->merge(RiceProduction::query()->pluck('barangay'))
             ->merge(PlantingAdvisory::query()->pluck('target_barangay'))
@@ -355,26 +212,157 @@ class ReportController extends CrudController
             ->unique()
             ->sort()
             ->values()
-            ->all();
+            ->all());
     }
 
     private function reportHistory(): Builder
     {
         return Report::query()
+            ->realGenerated()
             ->with('generatedBy')
-            ->whereIn('report_type', array_values(self::REPORT_TYPES))
-            ->latest();
+            ->latest('created_at')
+            ->latest('id');
+    }
+
+    private function reportView(Request $request, ?Report $report, ?AnalyticsRun $analyticsRun): View
+    {
+        $records = $report?->savedRecords() ?? [];
+        $filters = $report
+            ? ['report_type' => $report->typeKey()] + $report->savedFilters()
+            : [];
+
+        return view('reports.index', [
+            'reportTypes' => self::REPORT_TYPES,
+            'barangays' => $this->barangays(),
+            'seasons' => ['Wet', 'Dry'],
+            'sourceStats' => $this->sourceStats(),
+            'selected' => $report?->report_type,
+            'selectedReport' => $report,
+            'generatedAt' => $report?->created_at,
+            'rows' => $this->paginateSnapshot($records, $request),
+            'columns' => $report?->savedColumns() ?? [],
+            'filters' => $filters,
+            'analyticsRun' => $analyticsRun,
+            'reportTypeInfo' => $report ? ReportTypeCatalog::describe($report->typeKey()) : null,
+            'reportSummary' => $report?->summary() ?? [],
+            'weatherBasis' => $report ? $this->weatherBasis($report) : null,
+        ]);
+    }
+
+    /**
+     * For non-climate report types with an explicit date range filter, shows
+     * the rainfall/temperature conditions during that same period as
+     * supporting context — the "what was the weather doing" behind the
+     * report, without re-querying anything beyond the existing ClimateRecord
+     * table.
+     */
+    private function weatherBasis(Report $report): ?array
+    {
+        if ($report->typeKey() === 'climate_records') {
+            return null;
+        }
+
+        $filters = $report->savedFilters();
+        $from = $filters['date_from'] ?? null;
+        $to = $filters['date_to'] ?? null;
+
+        if (! $from && ! $to && isset($filters['year'])) {
+            $from = $filters['year'].'-01-01';
+            $to = $filters['year'].'-12-31';
+        }
+
+        if (! $from && ! $to) {
+            return null;
+        }
+
+        $query = ClimateRecord::query();
+        if ($from) {
+            $query->whereDate('record_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('record_date', '<=', $to);
+        }
+
+        $stats = $query->selectRaw('AVG(rainfall) as avg_rainfall, AVG(temperature) as avg_temperature, COUNT(*) as record_count')->first();
+
+        if (! $stats || (int) $stats->record_count === 0) {
+            return [
+                'has_data' => false,
+                'range_label' => $this->dateRangeLabel($from, $to),
+            ];
+        }
+
+        return [
+            'has_data' => true,
+            'range_label' => $this->dateRangeLabel($from, $to),
+            'avg_rainfall' => round((float) $stats->avg_rainfall, 1),
+            'avg_temperature' => round((float) $stats->avg_temperature, 1),
+            'record_count' => (int) $stats->record_count,
+        ];
+    }
+
+    private function dateRangeLabel(?string $from, ?string $to): string
+    {
+        return match (true) {
+            $from && $to => $from.' to '.$to,
+            (bool) $from => 'from '.$from,
+            (bool) $to => 'through '.$to,
+            default => 'the selected period',
+        };
+    }
+
+    private function requestedRun(Request $request, string $type): ?AnalyticsRun
+    {
+        if (! $request->filled('run')) {
+            return null;
+        }
+
+        return AnalyticsRun::query()
+            ->where('uuid', $request->query('run'))
+            ->where('type', $type)
+            ->where('requested_by', $request->user()->id)
+            ->firstOrFail();
+    }
+
+    private function paginateSnapshot(array $records, Request $request): LengthAwarePaginator
+    {
+        $page = max(1, $request->integer('results_page', 1));
+        $items = array_slice($records, ($page - 1) * self::RESULTS_PER_PAGE, self::RESULTS_PER_PAGE);
+
+        return (new LengthAwarePaginator(
+            $items,
+            count($records),
+            self::RESULTS_PER_PAGE,
+            $page,
+            ['path' => $request->url(), 'pageName' => 'results_page']
+        ))->withQueryString();
+    }
+
+    private function appliedFilters(array $data): array
+    {
+        $filterKeys = match ($data['report_type']) {
+            'climate_records' => ['date_from', 'date_to', 'season'],
+            'rice_production' => ['year', 'barangay', 'season'],
+            'farmer_registration' => ['date_from', 'date_to', 'barangay'],
+            'advisory' => ['date_from', 'date_to', 'barangay'],
+            'community_feed' => ['date_from', 'date_to'],
+        };
+
+        return collect($data)
+            ->only($filterKeys)
+            ->reject(fn ($value): bool => blank($value))
+            ->all();
     }
 
     private function sourceStats(): array
     {
-        return [
+        return Cache::remember('reports:source-stats', now()->addSeconds(30), fn (): array => [
             'climate_records' => ClimateRecord::query()->count(),
             'rice_production' => RiceProduction::query()->count(),
             'farmers' => FarmerProfile::query()->count(),
             'advisories' => PlantingAdvisory::query()->count(),
             'community_posts' => FeedPost::query()->count(),
             'last_refreshed' => now(),
-        ];
+        ]);
     }
 }
