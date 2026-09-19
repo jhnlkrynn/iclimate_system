@@ -50,7 +50,7 @@ final class AgriculturalRiskScorer
 
     /**
      * @param  array{rainfall: float, temperature: float, predicted_yield: ?float, farm_type: string, barangay: string, stress_factor_count: int}  $input
-     * @return array{score: float, level: string, label: string, color: string}
+     * @return array{score: float, level: string, label: string, color: string, components: array<string, array{value: float, weighted: float, label: string}>}
      */
     public function score(array $input): array
     {
@@ -75,6 +75,16 @@ final class AgriculturalRiskScorer
                 'Moderate' => 'yellow',
                 default => 'green',
             },
+            // Contribution breakdown for the "how was this risk calculated"
+            // view — same subscores used above, not a separate calculation.
+            'components' => [
+                'rainfall' => ['value' => $c['rainfallRisk'], 'weighted' => round($c['rainfallRisk'] * self::RAINFALL_WEIGHT, 3), 'label' => 'Rainfall risk'],
+                'yield' => ['value' => $c['yieldRisk'], 'weighted' => round($c['yieldRisk'] * self::YIELD_WEIGHT, 3), 'label' => 'Rice yield risk'],
+                'temperature' => ['value' => $c['temperatureRisk'], 'weighted' => round($c['temperatureRisk'] * self::TEMPERATURE_WEIGHT, 3), 'label' => 'Temperature risk'],
+                'exposure' => ['value' => $c['exposure'], 'weighted' => round($c['exposure'] * self::BARANGAY_EXPOSURE_WEIGHT, 3), 'label' => 'Barangay exposure (placeholder estimate)'],
+                'farm_type' => ['value' => $c['farmExposure'], 'weighted' => round($c['farmExposure'], 3), 'label' => strtolower($c['farmType']) === 'rainfed' ? 'Rainfed farm exposure' : 'Irrigated farm exposure'],
+                'stress_factors' => ['value' => $c['stressPenalty'], 'weighted' => round($c['stressPenalty'], 3), 'label' => 'Recent stress factors'],
+            ],
         ];
     }
 

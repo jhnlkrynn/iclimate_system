@@ -83,7 +83,6 @@ class PagasaAdvisoryService
         $validFrom = now();
         $validUntil = $source['horizon'] === 'weekly' ? now()->addDays(7) : now()->addHours(6);
         $title = $this->titleFrom($excerpt, $location, $source['horizon']);
-        $message = $this->messageFrom($excerpt, $source['url']);
         $matchedBarangays = $this->matchedBarangays($excerpt);
         $targetBarangay = count($matchedBarangays) === 1 ? $matchedBarangays[0] : null;
         $summary = $this->summaryFrom($location, $severity, $targetBarangay);
@@ -92,15 +91,12 @@ class PagasaAdvisoryService
         $sourceName = $source['horizon'] === 'weekly'
             ? PlantingAdvisory::SOURCE_PAGASA_WEEKLY_OUTLOOK
             : PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY;
-        $matchedBarangays = $this->matchedBarangays($excerpt);
-        $targetBarangay = count($matchedBarangays) === 1 ? $matchedBarangays[0] : null;
 
         return [
             'title' => $title,
             'content' => $message,
             'type' => 'Climate',
             'advisory_type' => PlantingAdvisory::TYPE_CLIMATE,
-            'summary' => Str::limit($message, 180),
             'summary' => $summary,
             'message' => $message,
             'recommended_action' => $this->recommendedAction($severity),
@@ -274,10 +270,8 @@ class PagasaAdvisoryService
         };
     }
 
-    private function messageFrom(string $excerpt, string $url): string
     private function summaryFrom(string $location, string $severity, ?string $targetBarangay = null): string
     {
-        return "Official PAGASA online advisory page detected for Lian/Batangas. Details from PAGASA online page: {$excerpt} Source URL: {$url}";
         $place = $targetBarangay ? $targetBarangay : ($location ?: 'Lian and Batangas');
 
         return match ($severity) {
@@ -288,11 +282,8 @@ class PagasaAdvisoryService
         };
     }
 
-    private function recommendedAction(string $severity): string
     private function messageFrom(string $excerpt, string $url, string $location, string $severity, ?string $targetBarangay = null): string
     {
-        if (in_array($severity, [PlantingAdvisory::SEVERITY_HIGH, PlantingAdvisory::SEVERITY_CRITICAL], true)) {
-            return 'Monitor PAGASA online advisories and LGU announcements closely, avoid risky field work during severe weather, secure farm materials, and prepare drainage or flood response actions where needed.';
         $place = $targetBarangay ? "{$targetBarangay}, Lian, Batangas" : ($location ?: 'Lian and Batangas');
         $cleanDetails = $this->cleanExcerpt($excerpt);
 
@@ -321,7 +312,6 @@ class PagasaAdvisoryService
             $lines[] = "• Details: {$cleanDetails}";
         }
 
-        return 'Review the PAGASA online advisory, adjust farm activities based on actual field conditions, and continue monitoring official updates for Lian, Batangas.';
         $lines[] = "• Source: PAGASA Online Weather Bulletin ({$url})";
 
         return implode("\n", $lines);

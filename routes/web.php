@@ -8,8 +8,9 @@ use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmBoundaryController;
-use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\FarmerPlantingScheduleController;
+use App\Http\Controllers\FarmerProfileController;
+use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ModelEvaluationController;
@@ -67,6 +68,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('farmer.boundary.update');
         Route::delete('/farmer/boundary', [FarmBoundaryController::class, 'destroy'])
             ->name('farmer.boundary.destroy');
+
+        Route::post('/planting-advisories/{plantingAdvisory}/feedback', [PlantingAdvisoryController::class, 'feedback'])
+            ->middleware('throttle:30,1')
+            ->name('planting-advisories.feedback');
     });
 
     Route::get('/api/weather/live', [DashboardController::class, 'liveWeather'])
@@ -129,10 +134,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('management/advisories/{advisory}/archive', [PlantingAdvisoryController::class, 'archive'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
             ->name('management.advisories.archive');
-
-        Route::post('planting-advisories/{plantingAdvisory}/feedback', [PlantingAdvisoryController::class, 'feedback'])
-            ->middleware('throttle:20,1')
-            ->name('planting-advisories.feedback');
 
         Route::post('advisory-feedback/{advisoryFeedback}/respond', [PlantingAdvisoryController::class, 'respondToFeedback'])
             ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
@@ -212,6 +213,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('messages.destroy-message');
 
         Route::resource('heatmap-areas', HeatmapAreaController::class);
+
+        Route::resource('field-reports', FieldReportController::class);
 
         Route::post('typhoon-safety', [TyphoonSafetyController::class, 'store'])
             ->middleware('throttle:10,1')

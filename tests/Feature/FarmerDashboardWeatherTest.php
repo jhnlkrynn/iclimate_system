@@ -75,7 +75,10 @@ class FarmerDashboardWeatherTest extends TestCase
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
 
-        $user = User::factory()->create();
+        // Barangay explicitly outside the heatmap fixtures below, so the
+        // farmer's own-barangay risk card doesn't shadow the "High Risk
+        // Areas" summary card this test is asserting on.
+        $user = User::factory()->create(['barangay' => null]);
         HeatmapArea::factory()->create(['risk_level' => 'High']);
         HeatmapArea::factory()->create(['risk_level' => 'Severe']);
         HeatmapArea::factory()->create(['risk_level' => 'Moderate']);

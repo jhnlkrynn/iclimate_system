@@ -24,12 +24,16 @@ class FarmerProfileController extends CrudController
 
     protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type'];
 
-    protected array $filterable = ['barangay' => ['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'San Diego'], 'farm_type' => ['Rainfed', 'Irrigated']];
-
     protected bool $farmerOwnRecordsOnly = true;
 
     public function __construct()
     {
+        $this->filterable = [
+            'barangay' => ['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'San Diego'],
+            'farm_type' => ['Rainfed', 'Irrigated'],
+            'farmer_organization_id' => $this->farmerOrganizationOptions(),
+        ];
+
         $this->fields = [
             ['name' => 'user_id', 'label' => 'User', 'type' => 'select', 'options' => $this->userOptions([User::ROLE_FARMER])],
             ['name' => 'farmer_organization_id', 'label' => 'Farmer Organization', 'type' => 'select', 'options' => $this->farmerOrganizationOptions()],

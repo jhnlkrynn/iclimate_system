@@ -16,6 +16,7 @@ class HeatmapArea extends Model
         'risk_level',
         'risk_type',
         'risk_score',
+        'risk_components',
         'predicted_yield',
         'rainfall_status',
         'planting_advisory',
@@ -30,6 +31,7 @@ class HeatmapArea extends Model
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'risk_score' => 'decimal:2',
+        'risk_components' => 'array',
         'predicted_yield' => 'decimal:2',
         'risk_computed_at' => 'datetime',
     ];

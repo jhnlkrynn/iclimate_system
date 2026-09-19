@@ -14,6 +14,7 @@ use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Support\LianBarangays;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -149,11 +150,22 @@ class PlantingAdvisoryController extends Controller
         ]);
     }
 
-    public function feedback(Request $request, PlantingAdvisory $plantingAdvisory): RedirectResponse
+    /**
+     * A farmer's "Helpful / Not Helpful" reaction on a published advisory —
+     * one vote per farmer per advisory, changeable, with an optional
+     * comment MAO can respond to (see respondToFeedback()). Serves both the
+     * advisory show page's HTML form and the farmer dashboard's inline AJAX
+     * widget, which expects a JSON response.
+     */
+    public function feedback(Request $request, PlantingAdvisory $plantingAdvisory): RedirectResponse|JsonResponse
     {
         abort_unless($request->user()->role === User::ROLE_FARMER, 403);
 
         if (! Schema::hasTable('advisory_feedback')) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Advisory feedback is temporarily unavailable while the database update is completed.'], 503);
+            }
+
             return back()->with('error', 'Advisory feedback is temporarily unavailable while the database update is completed.');
         }
 
@@ -162,10 +174,14 @@ class PlantingAdvisoryController extends Controller
             'comment' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        AdvisoryFeedback::query()->updateOrCreate(
+        $feedback = AdvisoryFeedback::query()->updateOrCreate(
             ['planting_advisory_id' => $plantingAdvisory->id, 'user_id' => $request->user()->id],
             ['is_helpful' => $data['is_helpful'], 'comment' => $data['comment'] ?? null],
         );
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'is_helpful' => $feedback->is_helpful]);
+        }
 
         return back()->with('success', 'Thanks — your feedback on this advisory was saved.');
     }

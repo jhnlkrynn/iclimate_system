@@ -2,7 +2,7 @@
     <style>
         .mao-console {
             --mao-ink: #1F2937;
-            --mao-muted: #64748B;
+            --mao-muted: #475569;
             --mao-green: #1F5A46;
             --mao-blue: #4B7185;
             --mao-accent: #8FAF9A;
@@ -167,6 +167,8 @@
         .visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
         .live-weather-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
         .live-weather-card { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .9rem; }
+        .forecast-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .6rem; overflow-x: auto; }
+        .forecast-strip-day { border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); padding: .7rem; text-align: center; }
         .source-badge { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; border: 1px solid rgba(22,119,184,.24); background: #eef7ff; color: #155a84; padding: .35rem .65rem; font-size: .76rem; font-weight: 700; }
         .chart-box { position: relative; min-height: 330px; padding: 1rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(16px) saturate(170%); }
         .chart-canvas-scroll { overflow-x: auto; }
@@ -259,6 +261,30 @@
         .risk-level-card.high { border-left: 5px solid #f97316; }
         .risk-level-card.severe { border-left: 5px solid #ef4444; }
         .risk-level-value { color: var(--mao-ink); font-size: 1.85rem; font-weight: 700; line-height: 1; margin-top: .35rem; }
+        .mao-highlights { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.25rem; }
+        .mao-highlight { display: flex; align-items: flex-start; gap: .65rem; border-radius: 14px; padding: .75rem .95rem; border: 1px solid rgba(255,255,255,.55); background: rgba(255,255,255,.7); backdrop-filter: blur(16px) saturate(170%); }
+        .mao-highlight-critical { border-left: 5px solid var(--mao-red); }
+        .mao-highlight-warning { border-left: 5px solid #C58B2A; }
+        .mao-highlight-info { border-left: 5px solid var(--mao-blue); }
+        .mao-highlight-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 999px; margin-top: .35rem; }
+        .mao-highlight-critical .mao-highlight-dot { background: var(--mao-red); }
+        .mao-highlight-warning .mao-highlight-dot { background: #C58B2A; }
+        .mao-highlight-info .mao-highlight-dot { background: var(--mao-blue); }
+        .mao-highlight-title { color: var(--mao-ink); font-weight: 700; font-size: .92rem; }
+        .mao-highlight-message { color: var(--mao-muted); font-size: .82rem; margin-top: .1rem; }
+        .mao-yoy-badge { display: inline-flex; align-items: center; gap: .3rem; border-radius: 999px; padding: .25rem .65rem; font-family: 'DM Mono', monospace; font-size: .72rem; font-weight: 700; }
+        .mao-yoy-up { background: rgba(184,74,74,.14); color: var(--mao-red); }
+        .mao-yoy-down { background: rgba(95,143,120,.16); color: var(--mao-green); }
+        .mao-yoy-flat { background: rgba(100,116,139,.14); color: var(--mao-muted); }
+        .mao-irrigation-toggle { display: inline-flex; gap: .35rem; margin-bottom: .75rem; }
+        .mao-irrigation-toggle button { border: 1px solid rgba(95,143,120,.35); background: transparent; color: var(--mao-muted); border-radius: 999px; padding: .3rem .8rem; font-size: .76rem; font-weight: 600; }
+        .mao-irrigation-toggle button.active { background: var(--mao-green); border-color: var(--mao-green); color: #fff; }
+        .mao-risk-breakdown { margin-top: .6rem; border-top: 1px solid rgba(95,143,120,.3); padding-top: .55rem; }
+        .mao-risk-breakdown-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; font-size: .72rem; }
+        .mao-risk-breakdown-label { flex: 0 0 128px; color: var(--mao-muted); }
+        .mao-risk-breakdown-bar { flex: 1 1 auto; height: 6px; border-radius: 999px; background: rgba(95,143,120,.14); overflow: hidden; }
+        .mao-risk-breakdown-bar-fill { height: 100%; background: var(--mao-blue); border-radius: 999px; }
+        .mao-risk-breakdown-value { flex: 0 0 38px; text-align: right; color: var(--mao-ink); font-weight: 700; }
         .barangay-tooltip { border: 0; border-radius: 999px; background: rgba(13,31,24,.88); color: #fff; font-size: .68rem; font-weight: 700; padding: .22rem .45rem; box-shadow: 0 .45rem 1rem rgba(13,31,24,.16); }
         .barangay-tooltip::before { display: none; }
         .empty-soft { border: 1px dashed #5F8F78; background: rgba(238,243,239,.55); backdrop-filter: blur(8px) saturate(150%); border-radius: 8px; padding: 1.5rem; text-align: center; }
@@ -303,22 +329,52 @@
         .dashboard-group:not([open]) .dashboard-group-toggle::after { content: "Expand"; }
         .dashboard-group-body { padding: 1rem; }
         .dashboard-group-body > .row:last-child, .dashboard-group-body > .mao-panel:last-child { margin-bottom: 0 !important; }
+        .dashboard-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            border-bottom: 1px solid rgba(255,255,255,.18);
+            margin: 0 0 1.25rem;
+        }
+        .dashboard-tabs::-webkit-scrollbar { display: none; }
+        .dashboard-tab {
+            flex: 0 0 auto;
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,.62);
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            padding: .75rem .2rem;
+            margin-right: 1.5rem;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color .16s ease, border-color .16s ease;
+        }
+        .dashboard-tab:hover { color: #fff; }
+        .dashboard-tab.active { color: #fff; border-bottom-color: var(--mao-accent); }
+        .dashboard-tab-panel { display: none; }
+        .dashboard-tab-panel.active { display: block; animation: icPageEnter var(--ic-motion-slow, 420ms) both; }
+        .dashboard-tab-panel > .row:last-child, .dashboard-tab-panel > .mao-panel:last-child, .dashboard-tab-panel > section.mao-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .mao-list-item:nth-of-type(n+5), .list-compact .risk-card:nth-of-type(n+5) { display: none; }
-        @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1199.98px) { .mao-stat-grid, .visual-grid, .live-weather-grid, .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
             .mao-stat-grid, .visual-grid, .quick-grid, .heat-grid, .variable-info-grid { grid-template-columns: 1fr; }
-            .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid, .variable-info-grid { gap: .6rem; }
+            .mao-stat-grid, .visual-grid, .live-weather-grid, .quick-grid, .heat-grid, .risk-level-grid, .variable-info-grid, .forecast-strip { gap: .6rem; }
             .variable-info-card { padding: .75rem; }
-            .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .live-weather-grid, .risk-level-grid, .forecast-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .mao-stat-grid { margin-bottom: .9rem; }
             .mao-card-body { padding: .85rem; }
-            .mao-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .mao-panel-header, .dashboard-section-label { align-items: flex-start; flex-direction: column; }
             .mao-panel-header { padding: .85rem .85rem .6rem; }
             .mao-panel-body { padding: .8rem; }
             .mao-list-item { padding: .65rem 0; gap: .65rem; }
             .dashboard-section-label { margin: 1rem 0 .6rem; }
-            .dashboard-group-body { padding: .75rem; }
-            .dashboard-group > summary { padding: .8rem .85rem; }
+            .dashboard-tab { margin-right: 1rem; font-size: .84rem; }
             .mao-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
             .live-weather-card { padding: .7rem; }
             .live-weather-grid { margin-bottom: .75rem; }
@@ -363,8 +419,7 @@
         .mao-chip { border-radius: 8px; background: rgba(255,255,255,.08); font-family: 'Inter', sans-serif; letter-spacing: 0; }
         .mao-pulse { width: 8px; height: 8px; box-shadow: none; }
         .mao-card,
-        .mao-panel,
-        .dashboard-group {
+        .mao-panel {
             border: 1px solid rgba(255,255,255,.55);
             border-radius: 12px;
             background: rgba(255,255,255,.66);
@@ -396,14 +451,13 @@
         .section-title,
         .mao-label,
         .row-meta,
-        .dashboard-group-toggle,
+        .dashboard-tab,
         .map-popup-label { font-size: var(--text-sm); line-height: 1.35; }
         .mao-hero p,
         .section-note,
         .mao-note,
         .mao-panel-sub,
         .row-text,
-        .dashboard-group-note,
         .quick-action span,
         .chart-note,
         .map-popup-note,
@@ -411,7 +465,6 @@
         .map-detail-empty { font-size: var(--text-sm); line-height: 1.5; color: var(--mao-muted); }
         .mao-panel-title,
         .chart-title,
-        .dashboard-group-title,
         .row-title,
         .quick-action strong,
         .map-popup-name { font-size: var(--text-base); line-height: 1.35; }
@@ -423,6 +476,9 @@
         .mao-modal-sub { font-size: var(--text-sm); line-height: 1.48; color: var(--mao-muted); }
         .mao-console .table th,
         .mao-console .table td { font-size: var(--text-sm); line-height: 1.45; }
+        .mao-monitoring-table { color: var(--mao-ink); }
+        .mao-monitoring-table thead th { background: rgba(95,143,120,.08); color: var(--mao-muted); text-transform: uppercase; letter-spacing: .04em; font-size: .72rem; font-weight: 700; border-color: rgba(95,143,120,.24); }
+        .mao-monitoring-table td { border-color: rgba(95,143,120,.16); vertical-align: middle; }
     </style>
 
     @php
@@ -483,6 +539,65 @@
                 </div>
             </div>
         </section>
+
+        @if(! empty($maoHighlights))
+            <section class="mao-highlights" aria-label="Highlights since your last visit">
+                @foreach($maoHighlights as $highlight)
+                    <div class="mao-highlight mao-highlight-{{ $highlight['severity'] }}">
+                        <span class="mao-highlight-dot"></span>
+                        <div>
+                            <div class="mao-highlight-title">{{ $highlight['title'] }}</div>
+                            <div class="mao-highlight-message">{{ $highlight['message'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </section>
+        @endif
+
+        @if($activeTyphoonSafetyEvent)
+            <section class="mao-panel mb-4" aria-label="Typhoon safety check-in">
+                <div class="mao-panel-header">
+                    <div>
+                        <h2 class="mao-panel-title">Typhoon Safety Check-In</h2>
+                        <p class="mao-panel-sub">"{{ $activeTyphoonSafetyEvent['title'] }}" &middot; {{ $activeTyphoonSafetyEvent['severity'] }}</p>
+                    </div>
+                    <span class="status-pill {{ $typhoonSafetyNeedsHelpCount > 0 ? '' : 'muted' }}">{{ $typhoonSafetyNeedsHelpCount }} need help</span>
+                </div>
+                <div class="mao-panel-body">
+                    <div class="risk-level-grid mb-3" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+                        <div class="risk-level-card low">
+                            <div class="mao-label">Safe</div>
+                            <div class="risk-level-value">{{ number_format($typhoonSafetySafeCount) }}</div>
+                            <div class="mao-note">farmer(s) checked in</div>
+                        </div>
+                        <div class="risk-level-card severe">
+                            <div class="mao-label">Needs Help</div>
+                            <div class="risk-level-value">{{ number_format($typhoonSafetyNeedsHelpCount) }}</div>
+                            <div class="mao-note">farmer(s) checked in</div>
+                        </div>
+                        <div class="risk-level-card moderate">
+                            <div class="mao-label">No Response</div>
+                            <div class="risk-level-value">{{ number_format($typhoonSafetyNoResponseCount) }}</div>
+                            <div class="mao-note">farmer(s) not yet checked in</div>
+                        </div>
+                    </div>
+                    @if($typhoonSafetyNeedsHelpCount > 0)
+                        <div class="mao-panel-body list-compact p-0">
+                            @foreach($typhoonSafetyResponses->where('status', \App\Models\TyphoonSafetyResponse::STATUS_NEEDS_HELP) as $response)
+                                <div class="mao-list-item">
+                                    <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+                                    <div class="flex-grow-1">
+                                        <div class="row-title">{{ $response->farmer?->name ?? 'Unknown farmer' }} &middot; {{ $response->farmer?->barangay ?? 'Barangay not on file' }}</div>
+                                        <div class="row-text">{{ $response->note ?: 'No additional note provided.' }}</div>
+                                        <div class="row-meta">Checked in {{ $response->responded_at?->diffForHumans() }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </section>
+        @endif
 
         @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0 || ($maoActionItems['highRiskAreaCount'] ?? 0) > 0)
             <div class="dashboard-section-label">
@@ -671,74 +786,54 @@
             </div>
         </div>
 
-        <details class="dashboard-group" open id="farmer-schedule-monitor">
-            <summary>
+        <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+            <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+            <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Heat Map &amp; Weather</button>
+            <button type="button" class="dashboard-tab" data-tab="production" role="tab" aria-selected="false">Monitoring &amp; Production</button>
+            <button type="button" class="dashboard-tab" data-tab="fieldreports" role="tab" aria-selected="false">Field Reports</button>
+            <button type="button" class="dashboard-tab" data-tab="publishing" role="tab" aria-selected="false">Publishing &amp; Activity</button>
+            <button type="button" class="dashboard-tab" data-tab="reportscenter" role="tab" aria-selected="false">Reports</button>
+        </div>
+
+        <div class="dashboard-tab-panels">
+        <div class="dashboard-tab-panel active" data-panel="overview">
+        <section class="mao-panel">
+            <div class="mao-panel-header">
                 <div>
-                    <h2 class="dashboard-group-title">Farmer Planting and Harvest Calendar</h2>
-                    <p class="dashboard-group-note">Monitor farmer schedules, yield predictions, history comparisons, and follow-up needs.</p>
+                    <h2 class="mao-panel-title">Current Cropping Season</h2>
+                    <p class="mao-panel-sub">Based on the latest recorded climate season and current production records.</p>
                 </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
-                @unless($plantingScheduleFeatureReady ?? true)
-                    <div class="alert alert-warning mb-4" role="status"><strong>Farm calendar is temporarily unavailable.</strong> The dashboard remains available while the database update is completed.</div>
-                @endunless
-                <form class="row g-2 align-items-end mb-4" method="GET" action="{{ route('mao.dashboard') }}#farmer-schedule-monitor">
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_month">Month</label><select class="form-select" id="schedule_month" name="schedule_month"><option value="">All</option>@foreach(range(1,12) as $month)<option value="{{ $month }}" @selected(($scheduleFilters['month'] ?? 0) === $month)>{{ \Illuminate\Support\Carbon::create(2000,$month,1)->format('F') }}</option>@endforeach</select></div>
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_season">Season</label><select class="form-select" id="schedule_season" name="schedule_season"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::SEASONS as $season)<option value="{{ $season }}" @selected(($scheduleFilters['season'] ?? '') === $season)>{{ $season }}</option>@endforeach</select></div>
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_barangay">Barangay</label><select class="form-select" id="schedule_barangay" name="schedule_barangay"><option value="">All</option>@foreach($scheduleBarangays as $barangay)<option value="{{ $barangay }}" @selected(($scheduleFilters['barangay'] ?? '') === $barangay)>{{ $barangay }}</option>@endforeach</select></div>
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farm_type">Farm type</label><select class="form-select" id="schedule_farm_type" name="schedule_farm_type"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::FARM_TYPES as $farmType)<option value="{{ $farmType }}" @selected(($scheduleFilters['farm_type'] ?? '') === $farmType)>{{ $farmType }}</option>@endforeach</select></div>
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farmer">Farmer</label><select class="form-select" id="schedule_farmer" name="schedule_farmer"><option value="">All</option>@foreach($scheduleFarmers as $farmer)<option value="{{ $farmer->id }}" @selected(($scheduleFilters['farmer'] ?? 0) === $farmer->id)>{{ $farmer->name }}</option>@endforeach</select></div>
-                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_status">Status</label><select class="form-select" id="schedule_status" name="schedule_status"><option value="">All</option>@foreach(['upcoming_planting','planted','upcoming_harvest','harvested','delayed','needs_review'] as $status)<option value="{{ $status }}" @selected(($scheduleFilters['status'] ?? '') === $status)>{{ str($status)->replace('_',' ')->title() }}</option>@endforeach</select></div>
-                    <div class="col-12 d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('mao.dashboard') }}#farmer-schedule-monitor">Clear</a><a class="btn btn-outline-primary ms-lg-auto" href="{{ route('calendar.index') }}">Open full calendar</a></div>
-                </form>
-
-                <div class="schedule-monitor-grid">
-                    @forelse($farmerSchedules as $schedule)
-                        @php
-                            $farmerName = $schedule->farmer?->farmerProfile?->full_name ?: $schedule->farmer?->name ?: 'Unknown farmer';
-                            $confidenceNeedsReview = $schedule->prediction_confidence === null || (float)$schedule->prediction_confidence < 70;
-                        @endphp
-                        <article class="schedule-monitor-card">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div><h3>{{ $farmerName }}</h3><div class="schedule-monitor-meta">{{ $schedule->barangay ?: 'Location not available' }} &middot; {{ $schedule->season }} &middot; {{ $schedule->farm_type }}</div></div>
-                                <span class="badge {{ in_array($schedule->monitoringStatus(), ['delayed','needs_review']) ? 'text-bg-warning' : 'text-bg-success' }}">{{ $schedule->monitoringStatusLabel() }}</span>
-                            </div>
-                            <div class="schedule-monitor-meta mt-2"><strong>Planting:</strong> {{ $schedule->planting_date?->format('M d, Y') }}<br><strong>Scheduled harvest:</strong> {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</div>
-
-                            <div class="schedule-yield-grid">
-                                <div class="schedule-yield-box"><span>Current predicted yield</span><strong>{{ $schedule->predicted_yield !== null ? number_format((float)$schedule->predicted_yield, 2).' t/ha' : 'Prediction unavailable' }}</strong></div>
-                                <div class="schedule-yield-box"><span>Previous same-month average</span><strong>{{ $schedule->historical_same_month_average !== null ? number_format((float)$schedule->historical_same_month_average, 2).' t/ha' : 'No history' }}</strong></div>
-                                <div class="schedule-yield-box"><span>Difference</span><strong>{{ $schedule->yield_difference !== null ? (($schedule->yield_difference > 0 ? '+' : '').number_format((float)$schedule->yield_difference, 2).' t/ha') : 'Not available' }}</strong></div>
-                            </div>
-
-                            @if($schedule->predicted_yield === null)
-                                <div class="schedule-guidance"><strong>Prediction unavailable</strong><br>{{ $schedule->prediction_unavailable_reason ?: 'Required prediction data is incomplete.' }}<br><span class="text-muted">This result needs MAO review before using it for decisions.</span></div>
-                            @elseif($schedule->historical_same_month_average === null)
-                                <div class="schedule-guidance"><strong>No previous yield history available for comparison.</strong><br>No claim is made that this prediction is better or worse. Continue observing weather and verify the field condition.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
-                            @elseif($schedule->comparison_interpretation === 'lower')
-                                <div class="schedule-guidance urgent"><strong>Recommended Actions</strong><br>{{ $schedule->recommended_actions }}@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or required data is incomplete. Review before making decisions.</span>@endif</div>
-                            @else
-                                <div class="schedule-guidance"><strong>Warnings / Notes</strong><br>Yield is {{ $schedule->comparison_interpretation ?: 'stable' }} compared with the previous same-month average. Continue observing weather changes, verify field condition, and keep the farmer advisory updated.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
-                            @endif
-                        </article>
-                    @empty
-                        <div class="empty-state text-center p-4" style="grid-column:1/-1"><strong>No farmer schedules match these filters.</strong><p class="text-muted mb-0 mt-1">Saved farmer schedules will appear here.</p></div>
-                    @endforelse
-                </div>
+                <span class="status-pill">{{ $cropStatus['season'] ?? 'Not recorded' }}</span>
             </div>
-        </details>
-
-        <div class="dashboard-focus-grid">
-        <details class="dashboard-group" open>
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Heat Map Intelligence</h2>
-                    <p class="dashboard-group-note">Barangay risk map first, with weather readings and charts below.</p>
+            <div class="mao-panel-body">
+                <div class="risk-level-grid mb-3" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+                    <div class="risk-level-card low">
+                        <div class="mao-label">Hectares Planted</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['total_hectares'], 1) }}</div>
+                        <div class="mao-note">total, latest records per barangay</div>
+                    </div>
+                    <div class="risk-level-card low">
+                        <div class="mao-label">Irrigated</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['irrigated_hectares'], 1) }}</div>
+                        <div class="mao-note">{{ $cropStatus['irrigated_barangays'] }} barangay(s)</div>
+                    </div>
+                    <div class="risk-level-card moderate">
+                        <div class="mao-label">Rainfed</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['rainfed_hectares'], 1) }}</div>
+                        <div class="mao-note">{{ $cropStatus['rainfed_barangays'] }} barangay(s)</div>
+                    </div>
+                    <div class="risk-level-card {{ $cropStatus['estimated_yield'] !== null && $cropStatus['actual_yield'] !== null && $cropStatus['estimated_yield'] > $cropStatus['actual_yield'] ? 'moderate' : 'low' }}">
+                        <div class="mao-label">Est. vs Actual Yield</div>
+                        <div class="risk-level-value" style="font-size:1.4rem;">{{ $cropStatus['estimated_yield'] !== null ? number_format($cropStatus['estimated_yield'], 2) : 'N/A' }} / {{ $cropStatus['actual_yield'] !== null ? number_format($cropStatus['actual_yield'], 2) : 'N/A' }}</div>
+                        <div class="mao-note">t/ha &middot; model estimate / recorded actual</div>
+                    </div>
                 </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
+                <p class="mao-note mb-0">Planting and harvesting progress are not yet tracked in iClimate — figures above reflect the latest production and yield records on file.</p>
+            </div>
+        </section>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="heatmap">
         <section class="mao-panel" data-mao-weather-root data-mao-weather-url="{{ route('mao.dashboard.weather') }}">
             <div class="mao-panel-header">
                 <div>
@@ -746,28 +841,13 @@
                     <p class="mao-panel-sub">Primary view for rainfall, yield, irrigation, and climate-impact risk by barangay.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="status-pill {{ $weatherWarning['level'] === 'Low' ? '' : 'muted' }}" title="Derived from current barangay risk levels">{{ $weatherWarning['label'] }}</span>
                     <span class="source-badge" data-mao-weather-source>{{ $weatherDataSource }}</span>
                     <a class="btn btn-sm btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Prediction</a>
                 </div>
             </div>
             <div class="mao-panel-body">
-                <div class="variable-info-grid">
-                    <div class="variable-info-card">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div class="row-title mb-0">Rainfall &amp; Temperature</div>
-                            <span class="status-pill">Used in yield model</span>
-                        </div>
-                        <p class="row-text mb-0">Water and heat directly drive how rice grows. The trained yield model uses rainfall and temperature &mdash; including recent, 3-month, 6-month, and seasonal averages &mdash; together with farm area and season as its main predictors.</p>
-                    </div>
-                    <div class="variable-info-card">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div class="row-title mb-0">Humidity &amp; Wind Speed</div>
-                            <span class="status-pill muted">Shown live, not yet in yield model</span>
-                        </div>
-                        <p class="row-text mb-0">Tracked live below for weather forecasting and risk warnings (e.g. high wind before harvest, high humidity disease risk). Not yet part of the trained yield model &mdash; validating whether they should be added requires more historical climate and production records than are currently on file.</p>
-                    </div>
-                </div>
                 @if($liveWeather)
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
@@ -793,10 +873,19 @@
                     </div>
                 @endif
 
-                <div class="row g-4 mb-4">
+                @if($weatherAnomaly['anomaly_percent'] !== null)
+                    <div class="mao-note mb-3">
+                        <strong style="color: var(--mao-ink);">Rainfall anomaly:</strong>
+                        {{ $weatherAnomaly['anomaly_label'] }}
+                        ({{ number_format($weatherAnomaly['current_daily_rainfall'], 1) }} mm/day forecast vs {{ number_format($weatherAnomaly['seasonal_avg_daily_rainfall'], 1) }} mm/day {{ $weatherAnomaly['season'] }}-season average &mdash;
+                        {{ $weatherAnomaly['anomaly_percent'] > 0 ? '+' : '' }}{{ number_format($weatherAnomaly['anomaly_percent'], 1) }}%).
+                    </div>
+                @endif
+
+                <div class="row g-4">
                     <div class="col-xl-8">
                         <div class="chart-title">Municipal Heat Map</div>
-                        <div class="chart-note">Shows which barangays need attention. Click a barangay to see the reason and recommended action.</div>
+                        <div class="chart-note">Barangay markers colored by climate and production risk. Start here before reviewing weather trends. Click a barangay to see the reason and recommended action.</div>
                         <div class="dashboard-map-legend" role="note" aria-label="Heat map color legend">
                             <span class="legend-swatch"><span class="legend-dot" style="background:#22c55e"></span> Green = Low</span>
                             <span class="legend-swatch"><span class="legend-dot" style="background:#facc15"></span> Yellow = Moderate</span>
@@ -865,7 +954,49 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
+        <section class="mao-panel">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title">Weather Trends &amp; Model Inputs</h2>
+                    <p class="mao-panel-sub">Forecast detail and the variables behind the yield model and the live readings above.</p>
+                </div>
+            </div>
+            <div class="mao-panel-body">
+                <div class="variable-info-grid">
+                    <div class="variable-info-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="row-title mb-0">Rainfall &amp; Temperature</div>
+                            <span class="status-pill">Used in yield model</span>
+                        </div>
+                        <p class="row-text mb-0">Water and heat directly drive how rice grows. The trained yield model uses rainfall and temperature &mdash; including recent, 3-month, 6-month, and seasonal averages &mdash; together with farm area and season as its main predictors.</p>
+                    </div>
+                    <div class="variable-info-card">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="row-title mb-0">Humidity &amp; Wind Speed</div>
+                            <span class="status-pill muted">Shown live, not yet in yield model</span>
+                        </div>
+                        <p class="row-text mb-0">Tracked live above for weather forecasting and risk warnings (e.g. high wind before harvest, high humidity disease risk). Not yet part of the trained yield model &mdash; validating whether they should be added requires more historical climate and production records than are currently on file.</p>
+                    </div>
+                </div>
+
+                @if(! empty($weatherChartData['labels']))
+                    <div class="chart-title">7-Day Forecast</div>
+                    <div class="chart-note">{{ $liveWeather ? 'Live daily forecast for Lian, Batangas.' : 'Recent recorded readings (live forecast unavailable).' }}</div>
+                    <div class="forecast-strip mb-3">
+                        @foreach(array_slice($weatherChartData['labels'], 0, 7) as $i => $label)
+                            <div class="forecast-strip-day">
+                                <div class="mao-label">{{ $label }}</div>
+                                <div class="risk-level-value" style="font-size:1.1rem;">{{ number_format($weatherChartData['rainfall'][$i] ?? 0, 0) }}mm</div>
+                                <div class="mao-note">{{ number_format($weatherChartData['temperature'][$i] ?? 0, 0) }}&deg;C &middot; {{ number_format($weatherChartData['windSpeed'][$i] ?? 0, 0) }}km/h wind</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                @if(! empty($weatherChartData['labels']))
                     <div class="mb-4" data-chart-tabs>
                         <div class="ic-chart-tabs">
                             <button type="button" class="ic-chart-tab active" data-chart-tab="rainfall">Rainfall</button>
@@ -912,104 +1043,113 @@
                             </div>
                         </div>
                     </div>
-
+                @else
+                    <div class="empty-soft"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Open-Meteo is unavailable and there are no saved climate records to show.</div></div>
+                @endif
             </div>
         </section>
-            </div>
-        </details>
+        </div>
 
-        <details class="dashboard-group" open>
+        <div class="dashboard-tab-panel" data-panel="production">
+        <details class="dashboard-group" id="farmer-schedule-monitor">
             <summary>
                 <div>
-                    <h2 class="dashboard-group-title">Production And Risk Records</h2>
-                    <p class="dashboard-group-note">Recent rice production entries and barangay risk status.</p>
+                    <h2 class="dashboard-group-title">Farmer Planting and Harvest Calendar</h2>
+                    <p class="dashboard-group-note">Monitor farmer schedules, yield predictions, history comparisons, and follow-up needs.</p>
                 </div>
                 <span class="dashboard-group-toggle"></span>
             </summary>
             <div class="dashboard-group-body">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-7">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('rice-productions.index') }}">Open Records</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($recentRiceProductions as $production)
-                            <div class="mao-list-item">
-                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
-                                <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
+                @unless($plantingScheduleFeatureReady ?? true)
+                    <div class="alert alert-warning mb-4" role="status"><strong>Farm calendar is temporarily unavailable.</strong> The dashboard remains available while the database update is completed.</div>
+                @endunless
+                <form class="row g-2 align-items-end mb-4" method="GET" action="{{ route('mao.dashboard') }}#farmer-schedule-monitor">
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_month">Month</label><select class="form-select" id="schedule_month" name="schedule_month"><option value="">All</option>@foreach(range(1,12) as $month)<option value="{{ $month }}" @selected(($scheduleFilters['month'] ?? 0) === $month)>{{ \Illuminate\Support\Carbon::create(2000,$month,1)->format('F') }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_season">Season</label><select class="form-select" id="schedule_season" name="schedule_season"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::SEASONS as $season)<option value="{{ $season }}" @selected(($scheduleFilters['season'] ?? '') === $season)>{{ $season }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_barangay">Barangay</label><select class="form-select" id="schedule_barangay" name="schedule_barangay"><option value="">All</option>@foreach($scheduleBarangays as $barangay)<option value="{{ $barangay }}" @selected(($scheduleFilters['barangay'] ?? '') === $barangay)>{{ $barangay }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farm_type">Farm type</label><select class="form-select" id="schedule_farm_type" name="schedule_farm_type"><option value="">All</option>@foreach(\App\Models\FarmerPlantingSchedule::FARM_TYPES as $farmType)<option value="{{ $farmType }}" @selected(($scheduleFilters['farm_type'] ?? '') === $farmType)>{{ $farmType }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_farmer">Farmer</label><select class="form-select" id="schedule_farmer" name="schedule_farmer"><option value="">All</option>@foreach($scheduleFarmers as $farmer)<option value="{{ $farmer->id }}" @selected(($scheduleFilters['farmer'] ?? 0) === $farmer->id)>{{ $farmer->name }}</option>@endforeach</select></div>
+                    <div class="col-6 col-lg-2"><label class="form-label fw-bold" for="schedule_status">Status</label><select class="form-select" id="schedule_status" name="schedule_status"><option value="">All</option>@foreach(['upcoming_planting','planted','upcoming_harvest','harvested','delayed','needs_review'] as $status)<option value="{{ $status }}" @selected(($scheduleFilters['status'] ?? '') === $status)>{{ str($status)->replace('_',' ')->title() }}</option>@endforeach</select></div>
+                    <div class="col-12 d-flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ route('mao.dashboard') }}#farmer-schedule-monitor">Clear</a><a class="btn btn-outline-primary ms-lg-auto" href="{{ route('calendar.index') }}">Open full calendar</a></div>
+                </form>
+
+                <div class="schedule-monitor-grid">
+                    @forelse($farmerSchedules as $schedule)
+                        @php
+                            $farmerName = $schedule->farmer?->farmerProfile?->full_name ?: $schedule->farmer?->name ?: 'Unknown farmer';
+                            $confidenceNeedsReview = $schedule->prediction_confidence === null || (float)$schedule->prediction_confidence < 70;
+                        @endphp
+                        <article class="schedule-monitor-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div><h3>{{ $farmerName }}</h3><div class="schedule-monitor-meta">{{ $schedule->barangay ?: 'Location not available' }} &middot; {{ $schedule->season }} &middot; {{ $schedule->farm_type }}</div></div>
+                                <span class="badge {{ in_array($schedule->monitoringStatus(), ['delayed','needs_review']) ? 'text-bg-warning' : 'text-bg-success' }}">{{ $schedule->monitoringStatusLabel() }}</span>
                             </div>
-                        @empty
-                            <div class="empty-soft"><strong>No production records yet</strong><div class="small text-muted mt-1">Rice production entries will appear here.</div></div>
-                        @endforelse
-                    </div>
+                            <div class="schedule-monitor-meta mt-2"><strong>Planting:</strong> {{ $schedule->planting_date?->format('M d, Y') }}<br><strong>Scheduled harvest:</strong> {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</div>
+
+                            <div class="schedule-yield-grid">
+                                <div class="schedule-yield-box"><span>Current predicted yield</span><strong>{{ $schedule->predicted_yield !== null ? number_format((float)$schedule->predicted_yield, 2).' t/ha' : 'Prediction unavailable' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Previous same-month average</span><strong>{{ $schedule->historical_same_month_average !== null ? number_format((float)$schedule->historical_same_month_average, 2).' t/ha' : 'No history' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Difference</span><strong>{{ $schedule->yield_difference !== null ? (($schedule->yield_difference > 0 ? '+' : '').number_format((float)$schedule->yield_difference, 2).' t/ha') : 'Not available' }}</strong></div>
+                            </div>
+
+                            @if($schedule->predicted_yield === null)
+                                <div class="schedule-guidance"><strong>Prediction unavailable</strong><br>{{ $schedule->prediction_unavailable_reason ?: 'Required prediction data is incomplete.' }}<br><span class="text-muted">This result needs MAO review before using it for decisions.</span></div>
+                            @elseif($schedule->historical_same_month_average === null)
+                                <div class="schedule-guidance"><strong>No previous yield history available for comparison.</strong><br>No claim is made that this prediction is better or worse. Continue observing weather and verify the field condition.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                            @elseif($schedule->comparison_interpretation === 'lower')
+                                <div class="schedule-guidance urgent"><strong>Recommended Actions</strong><br>{{ $schedule->recommended_actions }}@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or required data is incomplete. Review before making decisions.</span>@endif</div>
+                            @else
+                                <div class="schedule-guidance"><strong>Warnings / Notes</strong><br>Yield is {{ $schedule->comparison_interpretation ?: 'stable' }} compared with the previous same-month average. Continue observing weather changes, verify field condition, and keep the farmer advisory updated.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="empty-state text-center p-4" style="grid-column:1/-1"><strong>No farmer schedules match these filters.</strong><p class="text-muted mb-0 mt-1">Saved farmer schedules will appear here.</p></div>
+                    @endforelse
                 </div>
-            </div>
-            <div class="col-xl-5">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Each barangay's current risk level, at a glance, with the recommended irrigation action.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
-                    <div class="mao-panel-body list-compact"><div class="heat-grid">
-                        @forelse($latestHeatmapAreas as $area)
-                            @php
-                                $areaRiskLevel = data_get($area, 'risk_level', 'Moderate') ?: 'Moderate';
-                            @endphp
-                            <div class="risk-card {{ strtolower($areaRiskLevel) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ data_get($area, 'barangay', 'Unspecified barangay') }}</strong><span class="status-pill {{ in_array($areaRiskLevel, ['High','Severe']) ? 'muted' : '' }}">{{ $areaRiskLevel }}</span></div><div class="row-text">{{ data_get($area, 'risk_type', 'Climate') }} risk | {{ data_get($area, 'predicted_yield') !== null ? number_format(data_get($area, 'predicted_yield'), 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str(data_get($area, 'irrigation_recommendation') ?: data_get($area, 'description', 'No recommendation yet'))->limit(70) }}</div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
-                        @endforelse
-                    </div></div>
-                </div>
-            </div>
-        </div>
             </div>
         </details>
 
-        <details class="dashboard-group" open>
-            <summary>
+        <section class="mao-panel">
+            <div class="mao-panel-header">
                 <div>
-                    <h2 class="dashboard-group-title">Publishing Center</h2>
-                    <p class="dashboard-group-note">Latest advisories and community feed posts for farmers.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-6">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($latestAdvisories as $advisory)
-                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
-                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->displaySummary())->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
-                        @endforelse
-                    </div>
+                    <h2 class="mao-panel-title">Barangay Monitoring Table</h2>
+                    <p class="mao-panel-sub">{{ count($barangayMonitoring) }} barangay(s) tracked.</p>
                 </div>
             </div>
-            <div class="col-xl-6">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Community Feed Posts</h2><p class="mao-panel-sub">Latest posts published for farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('community-feed.index') }}">New Post</a></div>
-                    <div class="mao-panel-body list-compact">
-                        @forelse($latestFeedPosts as $post)
-                            <div class="mao-list-item"><div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div><div><div class="row-title">{{ $post->title }}</div><div class="row-text">{{ str($post->body)->limit(95) }}</div><div class="row-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div></div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No community posts yet</strong><div class="small text-muted mt-1">Published feed posts will appear here.</div></div>
-                        @endforelse
-                    </div>
+            <div class="mao-panel-body p-0">
+                <div class="table-responsive">
+                    <table class="table mao-monitoring-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Barangay</th>
+                                <th>Rice Area (ha)</th>
+                                <th>Production (tons)</th>
+                                <th>Avg Yield (t/ha)</th>
+                                <th>Risk Level</th>
+                                <th>Active Issue</th>
+                                <th>Last Monitored</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($barangayMonitoring as $row)
+                                <tr>
+                                    <td class="fw-bold">{{ $row['barangay'] }}</td>
+                                    <td>{{ $row['area_hectares'] !== null ? number_format($row['area_hectares'], 1) : '—' }}</td>
+                                    <td>{{ $row['production_volume'] !== null ? number_format($row['production_volume'], 1) : '—' }}</td>
+                                    <td>{{ $row['avg_yield'] !== null ? number_format($row['avg_yield'], 2) : '—' }}</td>
+                                    <td><span class="mao-risk-badge {{ in_array($row['risk_level'], ['High','Severe']) ? 'mao-risk-badge-severe' : ($row['risk_level'] === 'Moderate' ? 'mao-risk-badge-moderate' : 'mao-risk-badge-low') }}">{{ $row['risk_level'] ?: 'Unknown' }}</span></td>
+                                    <td>{{ $row['risk_type'] ?: '—' }}</td>
+                                    <td>{{ $row['last_monitored']?->diffForHumans() ?? 'Never' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="7" class="text-center py-4">No barangay records yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-            </div>
-        </details>
+        </section>
 
-        <details class="dashboard-group" open>
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Daily Operations</h2>
-                    <p class="dashboard-group-note">Climate records and common MAO actions.</p>
-                </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
         <div class="row g-4 mb-0">
             <div class="col-xl-8">
                 <div class="mao-panel h-100">
@@ -1040,25 +1180,256 @@
                 </div>
             </div>
         </div>
-            </div>
-        </details>
 
-        <details class="dashboard-group" open>
-            <summary>
-                <div>
-                    <h2 class="dashboard-group-title">Reports</h2>
-                    <p class="dashboard-group-note">Generate and review analytics outputs.</p>
+        <div class="row g-4 mb-0">
+            <div class="col-xl-7">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if($riceYoyDelta)
+                                <span class="mao-yoy-badge mao-yoy-{{ $riceYoyDelta['direction'] }}" title="Average yield/ha: {{ $riceYoyDelta['previous_year'] }} = {{ number_format($riceYoyDelta['previous_avg_yield'], 2) }}, {{ $riceYoyDelta['latest_year'] }} = {{ number_format($riceYoyDelta['latest_avg_yield'], 2) }}">
+                                    {{ $riceYoyDelta['direction'] === 'up' ? '▲' : ($riceYoyDelta['direction'] === 'down' ? '▼' : '—') }}
+                                    {{ number_format(abs($riceYoyDelta['delta_percent']), 1) }}% vs {{ $riceYoyDelta['previous_year'] }}
+                                </span>
+                            @endif
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('rice-productions.index') }}">Open Records</a>
+                        </div>
+                    </div>
+                    <div class="mao-panel-body list-compact">
+                        <div class="mao-irrigation-toggle" data-irrigation-toggle role="group" aria-label="Filter by farm type">
+                            <button type="button" class="active" data-irrigation-filter="all">All</button>
+                            <button type="button" data-irrigation-filter="Irrigated">Irrigated</button>
+                            <button type="button" data-irrigation-filter="Rainfed">Rainfed</button>
+                        </div>
+                        @forelse($recentRiceProductions as $production)
+                            @php
+                                $farmTypeTag = str_contains(strtolower((string) $production->irrigation_type), 'irrig') ? 'Irrigated' : 'Rainfed';
+                            @endphp
+                            <div class="mao-list-item" data-irrigation-row data-irrigation="{{ $farmTypeTag }}">
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
+                                <div class="flex-grow-1"><div class="row-title">{{ $production->barangay }} | {{ $production->season }} {{ $production->year }}</div><div class="row-text">{{ number_format($production->area_hectares, 2) }} ha, {{ number_format($production->yield_per_hectare, 2) }} yield/ha, total {{ number_format($production->total_production, 2) }}.</div><div class="row-meta">{{ $production->irrigation_type }}</div></div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No production records yet</strong><div class="small text-muted mt-1">Rice production entries will appear here.</div></div>
+                        @endforelse
+                    </div>
                 </div>
-                <span class="dashboard-group-toggle"></span>
-            </summary>
-            <div class="dashboard-group-body">
+            </div>
+            <div class="col-xl-5">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Leaflet-based barangay risk records for rainfall, yield, irrigation, and climate impact.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
+                    <div class="mao-panel-body list-compact"><div class="heat-grid">
+                        @forelse($latestHeatmapAreas as $area)
+                            <div class="risk-card {{ strtolower($area->risk_level) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ $area->barangay }}</strong><span class="status-pill {{ in_array($area->risk_level, ['High','Severe']) ? 'muted' : '' }}">{{ $area->risk_level }}</span></div><div class="row-text">{{ $area->risk_type }} risk | {{ $area->predicted_yield !== null ? number_format($area->predicted_yield, 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str($area->irrigation_recommendation ?: $area->description)->limit(70) }}</div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
+                        @endforelse
+                    </div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-0 mt-1">
+            <div class="col-12">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Rice Yield Trend</h2><p class="mao-panel-sub">Average yield per hectare by year, and this year's highest/lowest producing barangays.</p></div>
+                    </div>
+                    <div class="mao-panel-body">
+                        @if(count($riceYieldTrend['chart']['labels']) >= 2)
+                            <div class="chart-box mb-3" style="min-height:260px;">
+                                <canvas id="riceYieldTrendChart"></canvas>
+                            </div>
+                        @else
+                            <div class="empty-soft mb-3"><strong>Not enough years of data for a trend chart</strong><div class="small text-muted mt-1">At least two years of rice production records are needed.</div></div>
+                        @endif
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                @if($riceYieldTrend['highest_barangay'])
+                                    <div class="risk-level-card low">
+                                        <div class="mao-label">Highest Producing Barangay ({{ $riceYieldTrend['latest_year'] }})</div>
+                                        <div class="risk-level-value" style="font-size:1.3rem;">{{ $riceYieldTrend['highest_barangay']->barangay }}</div>
+                                        <div class="mao-note">{{ number_format((float) $riceYieldTrend['highest_barangay']->total_production, 1) }} tons total production</div>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="col-md-6">
+                                @if($riceYieldTrend['lowest_barangay'])
+                                    <div class="risk-level-card moderate">
+                                        <div class="mao-label">Lowest Producing Barangay ({{ $riceYieldTrend['latest_year'] }})</div>
+                                        <div class="risk-level-value" style="font-size:1.3rem;">{{ $riceYieldTrend['lowest_barangay']->barangay }}</div>
+                                        <div class="mao-note">{{ number_format((float) $riceYieldTrend['lowest_barangay']->total_production, 1) }} tons total production</div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="fieldreports">
+        <div class="row g-4 mb-0">
+            <div class="col-xl-4">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Open Issues by Type</h2><p class="mao-panel-sub">Not yet resolved.</p></div>
+                        <span class="status-pill {{ $fieldReportsPendingCount > 0 ? 'muted' : '' }}">{{ $fieldReportsPendingCount }} open</span>
+                    </div>
+                    <div class="mao-panel-body">
+                        @forelse(\App\Models\FieldReport::ISSUE_TYPES as $issueType)
+                            @php $count = $fieldReportsByIssueType[$issueType] ?? 0; @endphp
+                            @if($count > 0)
+                                <div class="mao-list-item">
+                                    <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+                                    <div class="flex-grow-1"><div class="row-title">{{ $issueType }}</div></div>
+                                    <span class="status-pill muted">{{ $count }}</span>
+                                </div>
+                            @endif
+                        @empty
+                        @endforelse
+                        @if($fieldReportsPendingCount === 0)
+                            <div class="empty-soft"><strong>No open issues</strong><div class="small text-muted mt-1">Field reports will appear here once submitted.</div></div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-8">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Recent Field Reports</h2><p class="mao-panel-sub">Latest issues reported from the field.</p></div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('field-reports.index') }}">View All</a>
+                            <a class="btn btn-sm btn-primary" href="{{ route('field-reports.create') }}">Log Report</a>
+                        </div>
+                    </div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($recentFieldReports as $report)
+                            @php
+                                $reportBadgeClass = match($report->status) {
+                                    'Resolved' => 'mao-risk-badge-low',
+                                    'Verified' => 'mao-risk-badge-moderate',
+                                    default => 'mao-risk-badge-severe',
+                                };
+                            @endphp
+                            <div class="mao-list-item">
+                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+                                <div class="flex-grow-1">
+                                    <div class="row-title">{{ $report->title }} <span class="mao-risk-badge {{ $reportBadgeClass }}">{{ $report->status }}</span></div>
+                                    <div class="row-text">{{ $report->barangay }} &middot; {{ $report->issue_type }}{{ $report->description ? ' — '.str($report->description)->limit(90) : '' }}</div>
+                                    <div class="row-meta">{{ $report->assignedTo?->name ? 'Assigned to '.$report->assignedTo->name : 'Unassigned' }} &middot; {{ $report->created_at?->diffForHumans() }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No field reports yet</strong><div class="small text-muted mt-1">Log a report to track pest/disease, flooding, drought, or crop-damage issues by barangay.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="publishing">
+        <div class="row g-4 mb-0">
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Advisory Management</h2><p class="mao-panel-sub">Latest advisories for rice farmers.</p></div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if($pendingAdvisoryCount > 0)
+                                <span class="status-pill">{{ number_format($pendingAdvisoryCount) }} pending review</span>
+                            @endif
+                            <a class="btn btn-sm btn-primary" href="{{ route('planting-advisories.create') }}">New Advisory</a>
+                        </div>
+                    </div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($latestAdvisories as $advisory)
+                            <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div><div><div class="row-title">{{ $advisory->title }}</div><div class="row-text">{{ str($advisory->content)->limit(95) }}</div><div class="row-meta">{{ $advisory->type }} | {{ $advisory->status }} | {{ $advisory->target_barangay ?: 'All barangays' }}</div></div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No advisories yet</strong><div class="small text-muted mt-1">Create advisories for farmers from this module.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Community Feed Posts</h2><p class="mao-panel-sub">Latest posts published for farmers.</p></div><a class="btn btn-sm btn-primary" href="{{ route('community-feed.index') }}">New Post</a></div>
+                    <div class="mao-panel-body list-compact">
+                        @forelse($latestFeedPosts as $post)
+                            <div class="mao-list-item"><div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div><div><div class="row-title">{{ $post->title }}</div><div class="row-text">{{ str($post->body)->limit(95) }}</div><div class="row-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div></div></div>
+                        @empty
+                            <div class="empty-soft"><strong>No community posts yet</strong><div class="small text-muted mt-1">Published feed posts will appear here.</div></div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="mao-panel">
+            <div class="mao-panel-header">
+                <div><h2 class="mao-panel-title">System Activity</h2><p class="mao-panel-sub">Most recent recorded events.</p></div>
+            </div>
+            <div class="mao-panel-body list-compact">
+                @forelse($recentActivity as $log)
+                    <div class="mao-list-item">
+                        <div class="list-mark"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                        <div class="flex-grow-1">
+                            <div class="row-title">{{ $log->action }}</div>
+                            <div class="row-meta">{{ $log->user?->name ?? 'System' }} &middot; {{ $log->created_at?->diffForHumans() }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-soft"><strong>No activity recorded yet</strong></div>
+                @endforelse
+            </div>
+        </section>
+
+        <div class="row g-4 mb-0">
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Agricultural Resources</h2><p class="mao-panel-sub">Seeds, fertilizer, equipment, and irrigation support.</p></div>
+                    </div>
+                    <div class="mao-panel-body">
+                        <div class="empty-soft"><strong>Not yet tracked</strong><div class="small text-muted mt-1">Resource inventory and distribution (seeds, fertilizer, equipment, irrigation support) is not yet a feature in iClimate. This card is a placeholder for that future module.</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="mao-panel h-100">
+                    <div class="mao-panel-header">
+                        <div><h2 class="mao-panel-title">Farmer Assistance Monitoring</h2><p class="mao-panel-sub">Requests and assistance provided, by barangay.</p></div>
+                    </div>
+                    <div class="mao-panel-body">
+                        <div class="empty-soft"><strong>Not yet tracked</strong><div class="small text-muted mt-1">Assistance requests and fulfillment tracking is not yet a feature in iClimate. This card is a placeholder for that future module.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="reportscenter">
         <div class="mao-panel">
-            <div class="mao-panel-header"><div><h2 class="mao-panel-title">Reports & Analytics</h2><p class="mao-panel-sub">Generate summaries for climate records, rice production, farmer registration, and advisories.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.index') }}">Reports Center</a></div>
+            <div class="mao-panel-header">
+                <div><h2 class="mao-panel-title">Reports & Analytics</h2><p class="mao-panel-sub">Generate summaries for climate records, rice production, farmer registration, and advisories.</p></div>
+                <div class="d-flex align-items-center gap-2">
+                    @if($latestExternalWeather)
+                        <span class="status-pill {{ $latestExternalWeather->freshnessLabel() === 'outdated' ? 'muted' : '' }}" title="Fetched {{ $latestExternalWeather->fetched_at?->diffForHumans() }}">
+                            Weather data: {{ ucfirst($latestExternalWeather->freshnessLabel()) }}
+                        </span>
+                    @endif
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.index') }}">Reports Center</a>
+                </div>
+            </div>
             <div class="mao-panel-body list-compact">
                 <div class="quick-grid mb-3">
-                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Climate Records Report']) }}"><strong>Climate Report</strong><span>Filter by dates, barangay, and season.</span></a>
-                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Rice Production Report']) }}"><strong>Rice Production Report</strong><span>Review year, season, area, and production totals.</span></a>
-                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Farmer Registration Report']) }}"><strong>Farmer Report</strong><span>Summarize farmer account and profile records.</span></a>
+                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Climate Records Report']) }}"><strong>Climate Report</strong><span>Track rainfall, temperature, and humidity trends to time planting and irrigation advisories.</span></a>
+                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Rice Production Report']) }}"><strong>Rice Production Report</strong><span>Compare yield and production across barangay, season, and year for planning.</span></a>
+                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Farmer Registration Report']) }}"><strong>Farmer Report</strong><span>Audit registered farmer accounts and profile completeness.</span></a>
+                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Advisory Report']) }}"><strong>Advisory Report</strong><span>Review what was published, when, and to which barangay.</span></a>
+                    <a class="quick-action" href="{{ route('reports.index', ['report_type' => 'Community Feed Report']) }}"><strong>Community Feed Report</strong><span>Check outreach activity — posts published and engagement.</span></a>
                 </div>
                 @forelse($latestReports as $report)
                     <div class="mao-list-item"><div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M4 3h10l4 4v12H4V3z" stroke="currentColor" stroke-width="1.4"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h8M7 13h6M7 16h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div><div class="flex-grow-1"><div class="row-title">{{ $report->title }}</div><div class="row-text">{{ $report->report_type }} generated by {{ $report->generatedBy?->name ?? 'System' }}.</div><div class="row-meta">{{ $report->created_at?->format('M d, Y') }}</div></div><a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a></div>
@@ -1067,10 +1438,26 @@
                 @endforelse
             </div>
         </div>
-            </div>
-        </details>
+        </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dashboardTabButtons = document.querySelectorAll('.dashboard-tabs .dashboard-tab');
+            const dashboardTabPanels = document.querySelectorAll('.dashboard-tab-panels .dashboard-tab-panel');
+            dashboardTabButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    dashboardTabButtons.forEach((btn) => {
+                        btn.classList.toggle('active', btn === button);
+                        btn.setAttribute('aria-selected', btn === button ? 'true' : 'false');
+                    });
+                    dashboardTabPanels.forEach((panel) => {
+                        panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab);
+                    });
+                });
+            });
+        });
+    </script>
     <script type="application/json" id="mao-weather-chart-data">{!! json_encode($weatherChartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script type="application/json" id="mao-map-areas">{!! json_encode($dashboardMapAreas, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script>
@@ -1097,6 +1484,22 @@
                     const panel = btn.closest('.mao-stat-panel');
                     if (panel) panel.hidden = true;
                     document.querySelectorAll('[data-toggle-detail]').forEach((other) => other.setAttribute('aria-expanded', 'false'));
+                });
+            });
+
+            document.querySelectorAll('[data-irrigation-toggle]').forEach((toggle) => {
+                const rows = toggle.parentElement?.querySelectorAll('[data-irrigation-row]') || [];
+
+                toggle.querySelectorAll('[data-irrigation-filter]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        toggle.querySelectorAll('[data-irrigation-filter]').forEach((other) => other.classList.remove('active'));
+                        button.classList.add('active');
+
+                        const filter = button.dataset.irrigationFilter;
+                        rows.forEach((row) => {
+                            row.hidden = filter !== 'all' && row.dataset.irrigation !== filter;
+                        });
+                    });
                 });
             });
 
@@ -1359,6 +1762,41 @@
                 );
                 updateInterpretation(key, labels, maoWeatherChartData[key]);
             });
+
+            const riceYieldTrendData = @json($riceYieldTrend['chart']);
+            const riceYieldTrendCanvas = document.getElementById('riceYieldTrendChart');
+            let riceYieldTrendChart = null;
+            if (riceYieldTrendCanvas && riceYieldTrendData.labels.length >= 2) {
+                riceYieldTrendChart = new Chart(riceYieldTrendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: riceYieldTrendData.labels,
+                        datasets: [{
+                            label: 'Average yield (t/ha)',
+                            data: riceYieldTrendData.avg_yield,
+                            borderColor: '#1F5A46',
+                            backgroundColor: '#1F5A4622',
+                            fill: true,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: .3,
+                        }],
+                    },
+                    options: chartOptions('t/ha'),
+                });
+            }
+
+            // Charts inside a hidden tab panel render at 0 width, since Chart.js
+            // sizes to its container at construction time. Resize once the panel
+            // containing a chart becomes active so it isn't left blank/undersized.
+            document.querySelectorAll('.dashboard-tabs .dashboard-tab').forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    if (tab.dataset.tab === 'heatmap') Object.values(weatherCharts).forEach((chart) => chart?.resize());
+                    if (tab.dataset.tab === 'production') riceYieldTrendChart?.resize();
+                });
+            });
+
             const setMaoText = (selector, value) => {
                 document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
             };
@@ -1583,6 +2021,30 @@
                                 <div class="map-popup-label">What to do now</div>
                                 <div class="map-popup-value">${escapeHtml(layerAction(area, layer))}</div>
                             </div>
+                            ${riskBreakdown(area)}
+                        </div>
+                    `;
+                };
+                const riskBreakdown = (area) => {
+                    if (!area.risk_components) return '';
+
+                    const rows = Object.values(area.risk_components).map((component) => {
+                        const percent = Math.round(Math.max(0, Math.min(1, Number(component.value) || 0)) * 100);
+
+                        return `
+                            <div class="mao-risk-breakdown-row">
+                                <span class="mao-risk-breakdown-label">${escapeHtml(component.label)}</span>
+                                <span class="mao-risk-breakdown-bar"><span class="mao-risk-breakdown-bar-fill" style="width:${percent}%;"></span></span>
+                                <span class="mao-risk-breakdown-value">+${escapeHtml(String(component.weighted))}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="mao-risk-breakdown">
+                            <div class="map-popup-label mb-2">How this risk score was calculated</div>
+                            ${rows}
+                            <div class="map-popup-note mt-2">Barangay exposure is an engineering-judgment estimate, not measured hazard data &mdash; treat it as a starting point, not a certainty.</div>
                         </div>
                     `;
                 };
@@ -1683,6 +2145,13 @@
                         button.setAttribute('aria-pressed', 'true');
                         renderDashboardLayer(button.dataset.dashboardLayer);
                     });
+                });
+
+                // Leaflet sizes itself to its container at construction time; the map
+                // starts inside a hidden tab panel, so it needs a resize nudge once
+                // that panel actually becomes visible.
+                document.querySelector('.dashboard-tab[data-tab="heatmap"]')?.addEventListener('click', () => {
+                    setTimeout(() => map.invalidateSize(), 50);
                 });
             }
         };

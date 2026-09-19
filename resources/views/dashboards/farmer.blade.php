@@ -23,8 +23,8 @@
             --fc-coral:     #B84A4A;
             --fc-warning:   #C58B2A;
             --fc-ink:       #1E2B25;
-            --fc-ink-mid:   #68756D;
-            --fc-ink-light: rgba(30,43,37,.64);
+            --fc-ink-mid:   #4B5A50;
+            --fc-ink-light: rgba(30,43,37,.78);
             --fc-border:    #D8E0DA;
             --radius-sm: 4px;
             --radius-md: 10px;
@@ -569,6 +569,40 @@
             min-height: 100%;
         }
         .advisory-card strong { color: var(--fc-ink); display: block; margin: .5rem 0 .35rem; font-size: var(--text-base); line-height: 1.35; }
+        .advisory-feedback { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; padding-top: .65rem; border-top: 1px solid var(--fc-border); }
+        .advisory-feedback-label { color: var(--fc-ink-light); font-size: var(--text-xs); margin-right: .15rem; }
+        .advisory-feedback-btn { border: 1px solid var(--fc-border); background: rgba(255,255,255,.6); color: var(--fc-ink-mid); border-radius: var(--radius-pill); padding: .3rem .75rem; font-size: var(--text-xs); font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; }
+        .advisory-feedback-btn.active-yes { background: rgba(95,143,120,.18); border-color: var(--fc-green-500); color: var(--fc-green-700); }
+        .advisory-feedback-btn.active-no { background: rgba(184,74,74,.14); border-color: var(--fc-coral); color: var(--fc-coral); }
+        .advisory-feedback-status { font-size: var(--text-xs); color: var(--fc-ink-light); margin-left: auto; }
+
+        /* -- HIGHLIGHTS STRIP ------------------------------------ */
+        .fc-highlights { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.1rem; }
+        .fc-highlight { display: flex; align-items: flex-start; gap: .65rem; border-radius: var(--radius-lg); padding: .8rem 1rem; border: 1px solid rgba(255,255,255,.55); background: rgba(255,255,255,.72); backdrop-filter: blur(16px) saturate(170%); box-shadow: var(--shadow-sm); }
+        .fc-highlight-critical { border-left: 5px solid var(--fc-coral); }
+        .fc-highlight-warning { border-left: 5px solid var(--fc-warning); }
+        .fc-highlight-info { border-left: 5px solid var(--fc-blue); }
+        .fc-highlight-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 999px; margin-top: .4rem; }
+        .fc-highlight-critical .fc-highlight-dot { background: var(--fc-coral); }
+        .fc-highlight-warning .fc-highlight-dot { background: var(--fc-warning); }
+        .fc-highlight-info .fc-highlight-dot { background: var(--fc-blue); }
+        .fc-highlight-title { color: var(--fc-ink); font-weight: 700; font-size: var(--text-base); }
+        .fc-highlight-message { color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .1rem; }
+
+        /* -- PREDICTION / ORGANIZATION CARDS ------------------------------------ */
+        .fc-yoy-badge { display: inline-flex; align-items: center; gap: .3rem; border-radius: var(--radius-pill); padding: .25rem .65rem; font-family: 'DM Mono', monospace; font-size: var(--text-xs); font-weight: 700; }
+        .fc-yoy-up { background: rgba(184,74,74,.14); color: var(--fc-coral); }
+        .fc-yoy-down { background: rgba(95,143,120,.16); color: var(--fc-green-700); }
+        .fc-yoy-flat { background: rgba(100,116,139,.14); color: var(--fc-ink-light); }
+        .fc-prediction-value { font-family: 'DM Serif Display', serif; font-size: var(--text-3xl); color: var(--fc-ink); line-height: 1; }
+        .fc-prediction-note { color: var(--fc-ink-mid); font-size: var(--text-sm); margin-top: .5rem; line-height: 1.55; }
+        .fc-prediction-limitation { display: flex; gap: .5rem; margin-top: .85rem; padding: .65rem .8rem; border-radius: var(--radius-md); background: var(--fc-green-50); border: 1px solid var(--fc-border); color: var(--fc-ink-mid); font-size: var(--text-xs); line-height: 1.5; }
+        .fc-risk-explainer { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--fc-border); }
+        .fc-risk-explainer summary { cursor: pointer; color: var(--fc-green-700); font-size: var(--text-sm); font-weight: 600; }
+        .fc-risk-bar-row { display: flex; align-items: center; gap: .5rem; margin: .5rem 0; font-size: var(--text-xs); }
+        .fc-risk-bar-label { flex: 0 0 150px; color: var(--fc-ink-mid); }
+        .fc-risk-bar { flex: 1 1 auto; height: 6px; border-radius: 999px; background: rgba(95,143,120,.14); overflow: hidden; }
+        .fc-risk-bar-fill { height: 100%; background: var(--fc-blue); border-radius: 999px; }
 
         /* -- QUICK ACTIONS ------------------------------------ */
         .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
@@ -631,36 +665,38 @@
         }
         .priority-card.priority-highlight .priority-icon { background: rgba(143,175,154,.16); border-color: rgba(143,175,154,.4); color: var(--fc-green-700); }
 
-        /* -- COLLAPSIBLE GROUPS --------------------------------- */
-        .dashboard-focus-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-        .dashboard-group {
-            border: 1.5px solid rgba(255,255,255,.55);
-            border-radius: var(--radius-lg);
-            background: rgba(255,255,255,.66);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            box-shadow: var(--glass-light-shadow, 0 10px 34px rgba(8,25,19,.16));
-            overflow: hidden;
-        }
-        .dashboard-group > summary {
+        /* -- DASHBOARD TABS --------------------------------- */
+        .dashboard-tabs {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 1.1rem 1.25rem;
-            cursor: pointer;
-            list-style: none;
-            background: var(--fc-green-50);
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            border-bottom: 1px solid rgba(255,255,255,.18);
+            margin: 0 0 1.25rem;
         }
-        .dashboard-group > summary::-webkit-details-marker { display: none; }
-        .dashboard-group-summary-main { display: flex; align-items: center; gap: .9rem; }
-        h2.dashboard-group-title { color: var(--fc-ink); font-size: var(--text-lg); margin: 0; }
-        .dashboard-group-note { color: var(--fc-ink-mid); font-size: var(--text-sm); margin: .15rem 0 0; line-height: 1.5; font-family: 'Inter', sans-serif; }
-        .dashboard-group-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; color: var(--fc-green-700); font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
-        .dashboard-group-toggle::before { content: "Collapse"; }
-        .dashboard-group:not([open]) .dashboard-group-toggle::before { content: "Expand"; }
-        .dashboard-group-body { padding: 1.25rem; }
-        .dashboard-group-body > .row:last-child, .dashboard-group-body > .farmer-panel:last-child { margin-bottom: 0 !important; }
+        .dashboard-tabs::-webkit-scrollbar { display: none; }
+        .dashboard-tab {
+            flex: 0 0 auto;
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,.62);
+            font-family: 'Inter', sans-serif;
+            font-size: var(--text-sm);
+            font-weight: 600;
+            padding: .75rem .2rem;
+            margin-right: 1.5rem;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color .16s ease, border-color .16s ease;
+        }
+        .dashboard-tab:hover { color: #fff; }
+        .dashboard-tab.active { color: #fff; border-bottom-color: var(--fc-accent); }
+        .dashboard-tab-panel { display: none; }
+        .dashboard-tab-panel.active { display: block; animation: icPageEnter var(--ic-motion-slow, 420ms) both; }
+        .dashboard-tab-panel > .row:last-child, .dashboard-tab-panel > .farmer-panel:last-child { margin-bottom: 0 !important; }
         .list-compact .farmer-list-item:nth-of-type(n+4), .list-compact .row > [class*="col-"]:nth-child(n+5) { display: none; }
 
         @media (max-width: 1399.98px) {
@@ -686,7 +722,7 @@
             .farmer-hero h1 { margin-bottom: .2rem; }
             .fc-eyebrow { margin-bottom: .6rem; }
             .fc-modal-table.table { min-width: 560px; }
-            .farmer-panel-header, .dashboard-section-label, .dashboard-group > summary { align-items: flex-start; flex-direction: column; }
+            .farmer-panel-header, .dashboard-section-label { align-items: flex-start; flex-direction: column; }
 
             /* -- tighter section rhythm on small screens -- */
             .dashboard-section-label { margin: 1.15rem 0 .6rem; gap: .35rem; }
@@ -706,12 +742,8 @@
             .forecast-day { padding: .5rem; }
             .farmer-panel-header { padding: .85rem .95rem .7rem; gap: .5rem; }
             .farmer-panel-body { padding: .9rem; }
-            .dashboard-group > summary { padding: .85rem .95rem; gap: .5rem; }
-            .dashboard-group-body { padding: .9rem; }
-            .dashboard-group-summary-main { gap: .65rem; }
-            .dashboard-focus-grid { gap: .75rem; }
-            .dashboard-focus-grid .row.g-4,
-            .dashboard-group-body .row.g-4 { --bs-gutter-y: .9rem; }
+            .dashboard-tab { margin-right: 1rem; font-size: .84rem; }
+            .dashboard-tab-panel .row.g-4 { --bs-gutter-y: .9rem; }
             .priority-grid, .quick-grid { gap: .6rem; }
             .priority-card { min-height: 0; padding: 1rem 1.05rem; gap: .65rem; }
             .quick-action { min-height: 72px; padding: .8rem .95rem; }
@@ -770,6 +802,12 @@
             : $climateSummary?->record_date?->format('M d, Y');
         $weatherForecastDays = $weatherPayload['forecast'] ?? [];
         $weatherFetchedIso = $dashboardWeatherResponse['fetched_at'] ?? ($weatherFetchedAt instanceof \Illuminate\Support\Carbon ? $weatherFetchedAt->toIso8601String() : null);
+
+        $aiPrefillQuestion = 'It\'s currently '.strtolower((string) $weatherCondition)
+            .($temperatureValue !== null ? ', '.number_format((float) $temperatureValue, 1).'°C' : '')
+            .' in '.($farmerBarangay ?: 'Lian, Batangas')
+            .($latestAdvisory ? '. There is a recent advisory: "'.$latestAdvisory->title.'"' : '')
+            .'. What should I do for my farm today?';
     @endphp
 
     <div class="farmer-console">
@@ -831,6 +869,29 @@
             </div>
         </section>
 
+        @if(! empty($farmerHighlights))
+            <section class="fc-highlights" aria-label="Highlights since your last visit" data-reveal="fade-up">
+                @foreach($farmerHighlights as $highlight)
+                    <div class="fc-highlight fc-highlight-{{ $highlight['severity'] }}">
+                        <span class="fc-highlight-dot"></span>
+                        <div>
+                            <div class="fc-highlight-title">{{ $highlight['title'] }}</div>
+                            <div class="fc-highlight-message">{{ $highlight['message'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </section>
+        @endif
+
+        <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+            <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
+            <button type="button" class="dashboard-tab" data-tab="forecast" role="tab" aria-selected="false">Forecast</button>
+            <button type="button" class="dashboard-tab" data-tab="community" role="tab" aria-selected="false">Community &amp; Profile</button>
+            <button type="button" class="dashboard-tab" data-tab="mobile" role="tab" aria-selected="false">Mobile Access</button>
+        </div>
+
+        <div class="dashboard-tab-panels">
+        <div class="dashboard-tab-panel active" data-panel="overview">
         <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
             <div class="fc-eyebrow on-light">At a glance</div>
         </div>
@@ -879,45 +940,41 @@
             <button type="button" class="field-card" data-drawer-open="#statModalRisk" data-reveal="fade-up" data-reveal-delay="280">
                 <div class="field-card-top">
                     <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                    <span class="field-status {{ $highRiskHeatMapAreas > 0 ? 'is-warn' : '' }}">{{ $highRiskHeatMapAreas > 0 ? 'Flagged' : 'Clear' }}</span>
+                    @if($farmerBarangayRisk)
+                        <span class="field-status {{ in_array($farmerBarangayRisk->risk_level, ['High','Severe']) ? 'is-warn' : '' }}">{{ $farmerBarangayRisk->risk_level }}</span>
+                    @else
+                        <span class="field-status {{ $highRiskHeatMapAreas > 0 ? 'is-warn' : '' }}">{{ $highRiskHeatMapAreas > 0 ? 'Flagged' : 'Clear' }}</span>
+                    @endif
                 </div>
-                <div class="field-label">High Risk Areas</div>
-                <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
-                <div class="field-note">High or severe barangay risk areas</div>
+                @if($farmerBarangayRisk)
+                    <div class="field-label">{{ $farmerBarangay }} Risk</div>
+                    <div class="field-value">{{ $farmerBarangayRisk->risk_level }}</div>
+                    <div class="field-note">{{ $farmerBarangayRisk->risk_type }} risk &middot; score {{ number_format((float) $farmerBarangayRisk->risk_score, 2) }}/1.00</div>
+                @else
+                    <div class="field-label">High Risk Areas</div>
+                    <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
+                    <div class="field-note">High or severe barangay risk areas</div>
+                @endif
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
         </section>
 
+        </div>
+
         @if($weatherForecastDays !== [])
-            <details class="dashboard-group">
-                <summary>
-                    <div class="dashboard-group-summary-main">
-                        <span class="list-mark">
-                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 7h13M6 2v3M12 2v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                        </span>
-                        <div>
-                            <h2 class="dashboard-group-title">7-Day Forecast</h2>
-                            <p class="dashboard-group-note">Extended outlook for Lian, Batangas.</p>
+            <div class="dashboard-tab-panel" data-panel="forecast">
+                <section class="forecast-strip" data-weather-forecast>
+                    @foreach($weatherForecastDays as $forecastDay)
+                        <div class="forecast-day">
+                            <strong>{{ $forecastDay['day'] ?? '' }}</strong>
+                            <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
+                            <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
+                            <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
+                            <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
                         </div>
-                    </div>
-                    <span class="dashboard-group-toggle">
-                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </span>
-                </summary>
-                <div class="dashboard-group-body">
-                    <section class="forecast-strip" data-weather-forecast>
-                        @foreach($weatherForecastDays as $forecastDay)
-                            <div class="forecast-day">
-                                <strong>{{ $forecastDay['day'] ?? '' }}</strong>
-                                <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
-                                <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
-                                <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
-                                <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
-                            </div>
-                        @endforeach
-                    </section>
-                </div>
-            </details>
+                    @endforeach
+                </section>
+            </div>
         @endif
 
         @php
@@ -1024,13 +1081,49 @@
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalRiskLabel">
                 <div class="modal-content fc-modal-content">
                     <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalRiskLabel">High Risk Barangays</h2>
+                        <h2 class="modal-title h5" id="statModalRiskLabel">{{ $farmerBarangayRisk ? $farmerBarangay.' Risk' : 'High Risk Barangays' }}</h2>
                         <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
-                        <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
-                        @forelse($highRiskAreasList as $area)
+                        @if($farmerBarangayRisk)
+                            @php
+                                $myRiskLevel = $farmerBarangayRisk->risk_level ?: 'Moderate';
+                                $myRiskInterpretation = match (strtolower($myRiskLevel)) {
+                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
+                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
+                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
+                                    default => 'Low risk: conditions are currently favorable for this barangay.',
+                                };
+                            @endphp
+                            <div class="fc-modal-headline">{{ $myRiskLevel }} risk</div>
+                            <p class="fc-modal-sub">{{ $myRiskInterpretation }}</p>
+                            <div class="farmer-list-item pt-0">
+                                <div class="list-mark"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
+                                <div>
+                                    <div class="list-title">{{ $farmerBarangayRisk->barangay }} &middot; {{ $farmerBarangayRisk->risk_type }}</div>
+                                    <div class="list-text">{{ $farmerBarangayRisk->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
+                                    <div class="list-meta">Risk score {{ number_format((float) $farmerBarangayRisk->risk_score, 2) }} / 1.00</div>
+                                </div>
+                            </div>
+                            @if($farmerBarangayRisk->risk_components)
+                                <details class="fc-risk-explainer">
+                                    <summary>How this risk score was calculated</summary>
+                                    @foreach($farmerBarangayRisk->risk_components as $component)
+                                        @php $percent = (int) round(max(0, min(1, (float) ($component['value'] ?? 0))) * 100); @endphp
+                                        <div class="fc-risk-bar-row">
+                                            <span class="fc-risk-bar-label">{{ $component['label'] ?? '' }}</span>
+                                            <span class="fc-risk-bar"><span class="fc-risk-bar-fill" style="width:{{ $percent }}%;"></span></span>
+                                        </div>
+                                    @endforeach
+                                    <p class="list-text mt-2">Barangay exposure is an engineering-judgment estimate, not measured hazard data &mdash; treat it as a starting point, not a certainty.</p>
+                                </details>
+                            @endif
+                            <p class="fc-modal-sub mt-3 mb-0">Other barangays currently flagged:</p>
+                        @else
+                            <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
+                            <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
+                        @endif
+                        @forelse($highRiskAreasList->where('barangay', '!=', $farmerBarangay) as $area)
                             @php
                                 $riskScoreValue = (float) $area->risk_score;
                                 $riskLevelLabel = $area->risk_level ?: 'Moderate';
@@ -1065,6 +1158,54 @@
                     </div>
                     <div class="modal-footer fc-modal-footer">
                         <a class="fc-btn fc-btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-tab-panel active" data-panel="overview">
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
+            <div class="fc-eyebrow on-light">Your Farm</div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="farmer-panel h-100" data-reveal="fade-up">
+                    <div class="farmer-panel-header">
+                        <div>
+                            <h2 class="farmer-panel-title">Predicted Rice Yield</h2>
+                            <p class="farmer-panel-sub">Estimate for your farm this season.</p>
+                        </div>
+                        <a class="fc-btn fc-btn-outline" href="{{ route('weather-predictions.index') }}">Full Prediction Tool</a>
+                    </div>
+                    <div class="farmer-panel-body">
+                        @if($farmerYieldPrediction)
+                            <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                                <div class="fc-prediction-value">{{ number_format((float) $farmerYieldPrediction['yield_tons_per_hectare'], 2) }} <span style="font-size:var(--text-base);color:var(--fc-ink-mid);">t/ha</span></div>
+                                @if($farmerYoyDelta)
+                                    <span class="fc-yoy-badge fc-yoy-{{ $farmerYoyDelta['direction'] }}">
+                                        {{ $farmerYoyDelta['direction'] === 'up' ? '▲' : ($farmerYoyDelta['direction'] === 'down' ? '▼' : '—') }}
+                                        {{ number_format(abs($farmerYoyDelta['delta_percent']), 1) }}% vs {{ $farmerYoyDelta['previous_year'] }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="list-meta mt-2">Farm type: {{ $farmerYieldPrediction['farm_type'] }} &middot; Area: {{ $farmerYieldPrediction['farm_area_hectares'] ?? 'N/A' }} ha &middot; Est. total: {{ $farmerYieldPrediction['estimated_total_production_tons'] !== null ? number_format((float) $farmerYieldPrediction['estimated_total_production_tons'], 2).' tons' : 'N/A' }}</div>
+
+                            @if($farmerYoyDelta && $farmerYoyDelta['direction'] === 'down')
+                                <p class="fc-prediction-note">Yield is trending down for {{ $farmerBarangay }} versus last year. {{ $farmerYieldPrediction['planting_advisory'] ?: 'Review irrigation and planting timing before this season.' }}</p>
+                            @elseif($farmerYoyDelta)
+                                <p class="fc-prediction-note">Stable compared to last year for {{ $farmerBarangay }} &mdash; continue monitoring conditions.</p>
+                            @else
+                                <p class="fc-prediction-note">{{ $farmerYieldPrediction['planting_advisory'] ?? 'Not enough historical data yet for a year-over-year comparison in your barangay.' }}</p>
+                            @endif
+
+                            <div class="fc-prediction-limitation">
+                                <span>&#9432;</span>
+                                <span>Model estimate ({{ $farmerYieldPrediction['condition_score_label'] ?? 'confidence not available' }}), not a guarantee. Uses recent weather and your farm profile &mdash; keep your profile updated for a more accurate figure.</span>
+                            </div>
+                        @else
+                            <div class="empty-soft"><strong>Prediction unavailable right now</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Try the full <a href="{{ route('weather-predictions.index') }}">Prediction tool</a> or check back later.</div></div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -1108,7 +1249,6 @@
             </a>
         </div>
 
-        <div class="dashboard-focus-grid">
         <div class="row g-4 mb-0">
             <div class="col-xl-8">
                 <div class="farmer-panel h-100" data-reveal="fade-right">
@@ -1117,11 +1257,15 @@
                             <h2 class="farmer-panel-title">Latest Planting Advisories</h2>
                             <p class="farmer-panel-sub">Published guidance from MAO Personnel.</p>
                         </div>
-                        <a class="fc-btn fc-btn-outline" href="{{ route('planting-advisories.index') }}">View All</a>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="fc-btn fc-btn-outline" data-ai-prefill="{{ $aiPrefillQuestion }}">Ask AI</button>
+                            <a class="fc-btn fc-btn-outline" href="{{ route('planting-advisories.index') }}">View All</a>
+                        </div>
                     </div>
                     <div class="farmer-panel-body">
                         <div class="row g-3">
                             @forelse($advisories as $advisory)
+                                @php $myFeedback = $myAdvisoryFeedback->get($advisory->id); @endphp
                                 <div class="col-md-6">
                                     <div class="advisory-card">
                                         <div class="d-flex justify-content-between gap-2">
@@ -1137,6 +1281,12 @@
                                         <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
                                         <div class="list-text">{{ str($advisory->displaySummary())->limit(120) }}</div>
                                         <div class="list-meta">{{ $advisory->target_barangay ?: 'All barangays' }}</div>
+                                        <div class="advisory-feedback" data-advisory-feedback data-advisory-id="{{ $advisory->id }}">
+                                            <span class="advisory-feedback-label">Was this helpful?</span>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === true ? 'active-yes' : '' }}" data-feedback-value="1">Yes</button>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === false ? 'active-no' : '' }}" data-feedback-value="0">No</button>
+                                            <span class="advisory-feedback-status"></span>
+                                        </div>
                                     </div>
                                 </div>
                             @empty
@@ -1179,23 +1329,9 @@
                 </div>
             </div>
         </div>
+        </div>
 
-        <details class="dashboard-group" data-reveal="scale">
-            <summary>
-                <div class="dashboard-group-summary-main">
-                    <span class="list-mark">
-                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    </span>
-                    <div>
-                        <h2 class="dashboard-group-title">Updates And Profile</h2>
-                        <p class="dashboard-group-note">Community posts, message access, and your registered farm details.</p>
-                    </div>
-                </div>
-                <span class="dashboard-group-toggle">
-                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-            </summary>
-            <div class="dashboard-group-body">
+        <div class="dashboard-tab-panel" data-panel="community">
         <div class="row g-4 mb-0">
             <div class="col-xl-4">
                 <div class="farmer-panel h-100" data-reveal="fade-up">
@@ -1266,29 +1402,17 @@
                             <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 10.5-4M3 5v4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9a6 6 0 0 1-10.5 4M15 13v-4h-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                             <div><div class="list-title">{{ $profile?->farm_type ?? 'Farm type not set' }}</div><div class="list-text">Farm irrigation type</div></div>
                         </div>
+                        <div class="farmer-list-item">
+                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="6" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 15c.4-2.8 1.8-4.3 3.5-4.3s3.1 1.5 3.5 4.3M8.5 15c.4-2.8 1.8-4.3 3.5-4.3s3.1 1.5 3.5 4.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+                            <div><div class="list-title">{{ $profile?->farmerOrganization?->name ?? 'No organization on file' }}</div><div class="list-text">Farmer's association</div></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-            </div>
-        </details>
+        </div>
 
-        <details class="dashboard-group" data-reveal="scale" data-reveal-delay="100">
-            <summary>
-                <div class="dashboard-group-summary-main">
-                    <span class="list-mark">
-                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="6" y="1.5" width="6" height="15" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.3 13.7h1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    </span>
-                    <div>
-                        <h2 class="dashboard-group-title">Mobile Access</h2>
-                        <p class="dashboard-group-note">All farmer modules in one place.</p>
-                    </div>
-                </div>
-                <span class="dashboard-group-toggle">
-                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-            </summary>
-            <div class="dashboard-group-body">
+        <div class="dashboard-tab-panel" data-panel="mobile">
         <div class="farmer-panel" data-reveal="fade-up">
             <div class="farmer-panel-header">
                 <div>
@@ -1308,13 +1432,68 @@
                 </div>
             </div>
         </div>
-            </div>
-        </details>
+        </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const dashboardTabButtons = document.querySelectorAll('.dashboard-tabs .dashboard-tab');
+            const dashboardTabPanels = document.querySelectorAll('.dashboard-tab-panels .dashboard-tab-panel');
+            dashboardTabButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    dashboardTabButtons.forEach((btn) => {
+                        btn.classList.toggle('active', btn === button);
+                        btn.setAttribute('aria-selected', btn === button ? 'true' : 'false');
+                    });
+                    dashboardTabPanels.forEach((panel) => {
+                        panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab);
+                    });
+                });
+            });
+
+            document.querySelectorAll('[data-ai-prefill]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    if (window.iClimateAi?.prefill) {
+                        window.iClimateAi.prefill(button.dataset.aiPrefill);
+                    }
+                });
+            });
+
+            const advisoryFeedbackToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            document.querySelectorAll('[data-advisory-feedback]').forEach((wrapper) => {
+                const advisoryId = wrapper.dataset.advisoryId;
+                const statusEl = wrapper.querySelector('.advisory-feedback-status');
+
+                wrapper.querySelectorAll('[data-feedback-value]').forEach((button) => {
+                    button.addEventListener('click', async () => {
+                        const helpful = button.dataset.feedbackValue === '1';
+
+                        try {
+                            const response = await fetch(`/planting-advisories/${advisoryId}/feedback`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': advisoryFeedbackToken,
+                                },
+                                body: JSON.stringify({ is_helpful: helpful }),
+                            });
+
+                            if (!response.ok) throw new Error('Request failed');
+
+                            wrapper.querySelectorAll('[data-feedback-value]').forEach((btn) => {
+                                btn.classList.remove('active-yes', 'active-no');
+                            });
+                            button.classList.add(helpful ? 'active-yes' : 'active-no');
+                            if (statusEl) statusEl.textContent = 'Thanks!';
+                        } catch (error) {
+                            if (statusEl) statusEl.textContent = 'Could not save — try again.';
+                        }
+                    });
+                });
+            });
+
             const dateTarget = document.querySelector('[data-current-date]');
 
             const MANILA_TIME_ZONE = @json($weatherTimezone);
