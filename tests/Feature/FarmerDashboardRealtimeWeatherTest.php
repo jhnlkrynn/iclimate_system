@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\ExternalWeatherData;
-use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +17,6 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
     {
         $farmer = User::factory()->farmer()->create();
         Notification::factory()->create(['user_id' => $farmer->id, 'is_read' => false]);
-        HeatmapArea::factory()->create(['risk_level' => 'High']);
 
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),

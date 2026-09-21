@@ -6,13 +6,11 @@ use App\Models\ClimateRecord;
 use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
-use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Models\User;
-use App\Support\HeatmapCache;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
@@ -74,7 +72,6 @@ class AppServiceProvider extends ServiceProvider
             FarmerOrganization::class,
             ClimateRecord::class,
             RiceProduction::class,
-            HeatmapArea::class,
             PlantingAdvisory::class,
             FeedPost::class,
             Notification::class,
@@ -82,24 +79,6 @@ class AppServiceProvider extends ServiceProvider
         ] as $model) {
             $model::saved($flush);
             $model::deleted($flush);
-        }
-
-        $invalidateHeatmap = static function (): void {
-            HeatmapCache::invalidate();
-        };
-
-        foreach ([ClimateRecord::class, RiceProduction::class, FarmerProfile::class, HeatmapArea::class] as $model) {
-            $model::saved($invalidateHeatmap);
-            $model::deleted($invalidateHeatmap);
-        }
-
-        $markRiskRefreshDue = static function (): void {
-            Cache::forget('heatmap:lian:risk-refresh-window');
-        };
-
-        foreach ([ClimateRecord::class, RiceProduction::class, FarmerProfile::class] as $model) {
-            $model::saved($markRiskRefreshDue);
-            $model::deleted($markRiskRefreshDue);
         }
     }
 

@@ -80,16 +80,12 @@ class LiveForecastingTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_weather_prediction_and_heatmap_areas_remain_fully_functional(): void
+    public function test_weather_prediction_remains_fully_functional(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)
             ->get(route('weather-predictions.index'))
-            ->assertOk();
-
-        $this->actingAs($mao)
-            ->get(route('heatmap-areas.index'))
             ->assertOk();
     }
 }

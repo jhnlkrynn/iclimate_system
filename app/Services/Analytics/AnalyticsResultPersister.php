@@ -3,7 +3,6 @@
 namespace App\Services\Analytics;
 
 use App\Models\AnalyticsRun;
-use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\User;
@@ -14,7 +13,6 @@ class AnalyticsResultPersister
     {
         return match ($run->type) {
             'report_analytics' => $this->persistReport($run, $result),
-            'heatmap_risk' => $this->persistHeatmap($result),
             'advisory_ai' => $this->persistAdvisories($run, $result),
             default => $result,
         };
@@ -46,22 +44,6 @@ class AnalyticsResultPersister
         ]);
 
         return $result + ['report_id' => $report->id, 'report' => $payload];
-    }
-
-    private function persistHeatmap(array $result): array
-    {
-        foreach ((array) data_get($result, 'areas', []) as $area) {
-            if (blank($area['barangay'] ?? null)) {
-                continue;
-            }
-
-            HeatmapArea::query()->updateOrCreate(
-                ['barangay' => $area['barangay']],
-                collect($area)->only((new HeatmapArea)->getFillable())->all(),
-            );
-        }
-
-        return $result;
     }
 
     private function persistAdvisories(AnalyticsRun $run, array $result): array

@@ -7,7 +7,6 @@ use App\Models\ClimateRecord;
 use App\Models\ExternalWeatherData;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
-use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 
@@ -18,7 +17,6 @@ class AnalyticsPayloadFactory
         return match ($run->type) {
             'weather_prediction' => $this->weather($run->input),
             'rice_yield_prediction' => $this->riceYield($run->input),
-            'heatmap_risk' => $this->heatmap($run->input),
             'advisory_ai' => $this->advisory($run->input),
             'report_analytics' => $this->report($run->input),
             'dataset_processing' => $this->dataset($run->input),
@@ -34,15 +32,6 @@ class AnalyticsPayloadFactory
     private function riceYield(array $input): array
     {
         return $input + [
-            'climate_records' => ClimateRecord::query()->orderBy('record_date')->get()->toArray(),
-            'rice_productions' => RiceProduction::query()->orderBy('year')->get()->toArray(),
-        ];
-    }
-
-    private function heatmap(array $input): array
-    {
-        return $input + [
-            'areas' => HeatmapArea::query()->get()->toArray(),
             'climate_records' => ClimateRecord::query()->orderBy('record_date')->get()->toArray(),
             'rice_productions' => RiceProduction::query()->orderBy('year')->get()->toArray(),
         ];

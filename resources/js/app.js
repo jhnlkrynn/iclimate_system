@@ -71,8 +71,7 @@ const chartSelector = [
     '#windSpeedChart',
 ].join(',');
 
-const leafletSelector = '#boundaryMap, #staffBoundaryMap, #dashboardRiskMap, #barangayRiskMap';
-const leafletHeatSelector = '#barangayRiskMap';
+const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap';
 
 // Inline dashboard scripts are parsed before this deferred module executes. Give
 // every consumer one stable promise instead of making it race dynamic imports.
@@ -124,10 +123,6 @@ window.iClimateVisualsReady = (async () => {
         try {
             const { default: Leaflet } = await import('leaflet');
             window.L = Leaflet;
-
-            if (document.querySelector(leafletHeatSelector)) {
-                await import('leaflet.heat');
-            }
         } catch (error) {
             console.error('iClimate could not load Leaflet.', error);
         }

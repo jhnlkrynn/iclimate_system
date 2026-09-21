@@ -486,7 +486,6 @@
             'Advisories' => 'planting-advisories.index',
             'Community Feed' => 'community-feed.index',
             'Notifications' => 'notifications.index',
-            'Heat Map Areas' => 'heatmap-areas.index',
             'Reports' => 'reports.index',
         ];
         $moduleTotal = max(array_sum($moduleCounts), 1);
@@ -503,7 +502,6 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="it-live-chip"><span class="it-pulse"></span> System Online</span>
-                    <a class="btn btn-light fw-bold" href="{{ route('heatmap-areas.index') }}">Heat Map</a>
                     <a class="btn btn-light fw-bold" href="{{ route('users.index') }}">Manage Users</a>
                     <a class="btn btn-outline-light fw-bold" href="{{ route('system-logs.index') }}">View Logs</a>
                 </div>
@@ -559,16 +557,6 @@
                         <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
                     </div>
                     <div class="it-note">Audit trail events recorded</div>
-                    <div class="it-tap-hint">View details &rarr;</div>
-                </div>
-            </button>
-            <button type="button" class="it-card text-decoration-none" data-drawer-open="#itStatHeatmap">
-                <div class="it-card-body">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div><div class="it-label">Heat Map Areas</div><div class="it-value">{{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }}</div></div>
-                        <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 18s6-6 6-10.5A6 6 0 0 0 4 7.5C4 12 10 18 10 18Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="10" cy="7.5" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg></div>
-                    </div>
-                    <div class="it-note">{{ number_format($highRiskHeatMapAreas) }} high or severe risk areas</div>
                     <div class="it-tap-hint">View details &rarr;</div>
                 </div>
             </button>
@@ -721,56 +709,6 @@
                     </div>
                     <div class="modal-footer">
                         <a class="btn btn-primary fw-bold" href="{{ route('system-logs.index') }}">Open Logs</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ic-drawer" id="itStatHeatmap" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatHeatmapLabel">
-                <div class="modal-content border-0 it-modal-content">
-                    <div class="modal-header it-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="itStatHeatmapLabel">Heat Map Areas</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="it-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
-                        <p class="it-modal-sub">Out of {{ number_format($moduleCounts['Heat Map Areas'] ?? 0) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
-                        @forelse($highRiskAreasList as $area)
-                            @php
-                                $riskScoreValue = (float) $area->risk_score;
-                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
-                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
-                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
-                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
-                                    default => 'Low risk: conditions are currently favorable for this barangay.',
-                                };
-                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'it-risk-badge-severe',
-                                    'high' => 'it-risk-badge-high',
-                                    'moderate' => 'it-risk-badge-moderate',
-                                    default => 'it-risk-badge-low',
-                                };
-                            @endphp
-                            <div class="log-row">
-                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">
-                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
-                                        <span class="it-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
-                                    </div>
-                                    <div class="row-sub it-risk-interpretation">{{ $riskInterpretation }}</div>
-                                    <div class="row-sub">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="row-sub it-risk-score-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4"><div class="fw-bold">No high risk barangays</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     </div>
                 </div>
             </div>
@@ -1007,7 +945,6 @@
                         <div class="quick-grid">
                             <a class="quick-action" href="{{ route('users.create') }}"><strong>Add New User</strong><span>Create Farmer, MAO Personnel, or IT Expert accounts.</span></a>
                             <a class="quick-action" href="{{ route('reports.index') }}"><strong>Reports Center</strong><span>Generate and review platform reports.</span></a>
-                            <a class="quick-action" href="{{ route('heatmap-areas.index') }}"><strong>Heat Map Manager</strong><span>Review barangay climate risk areas and severity records.</span></a>
                             <a class="quick-action" href="{{ route('system-logs.index') }}"><strong>Audit Trail</strong><span>Inspect recent system actions and changes.</span></a>
                         </div>
                     </div>

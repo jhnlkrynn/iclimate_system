@@ -17,7 +17,6 @@ class RunIClimateAutomation extends Command
     public function handle(AnalyticsDispatcher $analytics): int
     {
         $runs = [
-            $analytics->dispatch('heatmap_risk', ['source' => 'scheduled_automation']),
             $analytics->dispatch('dataset_processing', ['schema' => 'rice_yield_v1']),
         ];
 

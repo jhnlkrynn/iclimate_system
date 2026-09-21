@@ -5,19 +5,15 @@ namespace Tests\Feature;
 use App\Jobs\RunPythonAnalytics;
 use App\Models\AnalyticsRun;
 use App\Models\ClimateRecord;
-use App\Models\FarmBoundary;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
-use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsResultPersister;
-use App\Services\Risk\AgriculturalRiskScorer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -252,60 +248,6 @@ class ReportsHeatmapNotificationsTest extends TestCase
         ])->assertSessionHasErrors(['barangay', 'season', 'irrigation_type']);
     }
 
-    public function test_heatmap_index_displays_risk_cards(): void
-    {
-        Queue::fake();
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        // Migrations pre-seed default rows for every Lian barangay; clear them so the two
-        // records below are the only ones on page 1 of the (paginated) risk details list.
-        HeatmapArea::query()->delete();
-        HeatmapArea::factory()->create(['barangay' => 'Matabungkay', 'risk_level' => 'Severe', 'risk_type' => 'Flood']);
-        HeatmapArea::factory()->create(['barangay' => 'Binubusan', 'risk_level' => 'Low', 'risk_type' => 'Drought']);
-        Cache::put('heatmap:risk-breakdown:Matabungkay', app(AgriculturalRiskScorer::class)->explain([
-            'rainfall' => 115,
-            'temperature' => 33,
-            'predicted_yield' => 2.5,
-            'farm_type' => 'Rainfed',
-            'barangay' => 'Matabungkay',
-            'stress_factor_count' => 2,
-        ]), now()->addDay());
-        PlantingAdvisory::query()->create([
-            'title' => 'PAGASA Lian Heavy Rainfall Advisory',
-            'content' => 'Official PAGASA advisory detected for Lian, Batangas.',
-            'message' => 'Official PAGASA advisory detected for Lian, Batangas.',
-            'type' => 'Climate',
-            'advisory_type' => 'climate',
-            'summary' => 'Official PAGASA advisory detected for Lian, Batangas.',
-            'severity' => 'high',
-            'target_scope' => 'municipality',
-            'source' => 'PAGASA',
-            'source_url' => 'https://www.pagasa.dost.gov.ph/?vm=r',
-            'status' => 'published',
-            'valid_from' => now()->subMinute(),
-            'valid_until' => now()->addHours(6),
-            'posted_by' => $mao->id,
-        ]);
-
-        $this->actingAs($mao)
-            ->get(route('heatmap-areas.index'))
-            ->assertOk()
-            ->assertSee('Matabungkay')
-            ->assertSee('Severe')
-            ->assertSee('Flood')
-            ->assertSee('PAGASA Official Source')
-            ->assertSee('View PAGASA Map')
-            ->assertSee('Barangay Risk Level')
-            ->assertSee('Green &mdash; Low risk', false)
-            ->assertSee('Red &mdash; Severe risk', false)
-            ->assertSee("Colors always match each barangay's saved risk level.", false)
-            ->assertSee('PAGASA Lian Heavy Rainfall Advisory')
-            ->assertSee('How Is This Score Calculated?')
-            ->assertSee('Rainfall level (34% weight)')
-            ->assertSee('Matabungkay has a high baseline exposure rating.')
-            ->assertSee(AgriculturalRiskScorer::METHODOLOGY_CAVEAT)
-            ->assertSee('Score breakdown will be available after the next automatic refresh.');
-    }
-
     public function test_report_shows_purpose_summary_and_weather_basis(): void
     {
         Queue::fake();
@@ -356,26 +298,6 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('29.0&deg;C', false);
     }
 
-    public function test_heatmap_summary_table_shows_first_ten_rows_and_reveals_rest_on_demand(): void
-    {
-        Queue::fake();
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        HeatmapArea::query()->delete();
-        collect(range(1, 12))->each(fn (int $i) => HeatmapArea::factory()->create([
-            'barangay' => "Test Barangay {$i}",
-            'risk_level' => 'Moderate',
-        ]));
-
-        $response = $this->actingAs($mao)->get(route('heatmap-areas.index'))->assertOk();
-
-        $response->assertSee('id="barangayRiskTable"', false)
-            ->assertSee('Ask AI', false)
-            ->assertSee('Show 2 more');
-
-        // Rows beyond the first 10 are rendered (for a11y/SEO) but hidden until "Show more" is clicked.
-        $response->assertSee('ic-heatmap-extra d-none', false);
-    }
-
     public function test_mao_can_queue_live_advisory_generation_and_return_to_management(): void
     {
         Queue::fake();
@@ -389,20 +311,6 @@ class ReportsHeatmapNotificationsTest extends TestCase
         $response->assertRedirect(route('management.advisories.index', ['run' => $run->uuid]));
         $this->assertSame('advisory_ai', $run->type);
         Queue::assertPushed(RunPythonAnalytics::class);
-    }
-
-    public function test_farmer_heatmap_displays_only_their_saved_farm_boundary(): void
-    {
-        $farmer = User::factory()->farmer()->create();
-        $profile = FarmerProfile::factory()->create(['user_id' => $farmer->id]);
-        FarmBoundary::factory()->create(['farmer_profile_id' => $profile->id]);
-        HeatmapArea::factory()->create(['barangay' => 'Matabungkay']);
-
-        $this->actingAs($farmer)
-            ->get(route('heatmap-areas.index'))
-            ->assertOk()
-            ->assertSee('My Farm Boundary')
-            ->assertSee('myFarmBoundary', false);
     }
 
     public function test_mao_can_send_notifications_to_farmers_and_farmer_can_mark_read(): void

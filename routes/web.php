@@ -9,8 +9,6 @@ use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FarmBoundaryController;
 use App\Http\Controllers\FarmerPlantingScheduleController;
-use App\Http\Controllers\FarmerProfileController;
-use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\HeatmapAreaController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ModelEvaluationController;
@@ -213,8 +211,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('messages.destroy-message');
 
         Route::resource('heatmap-areas', HeatmapAreaController::class);
-
-        Route::resource('field-reports', FieldReportController::class);
 
         Route::post('typhoon-safety', [TyphoonSafetyController::class, 'store'])
             ->middleware('throttle:10,1')

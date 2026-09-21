@@ -10,12 +10,20 @@ use Illuminate\Support\Facades\Http;
 
 class LianBoundaryController extends Controller
 {
-    private const CACHE_KEY = 'heatmap:lian-boundaries-api';
+    private const CACHE_KEY = 'geo:lian-boundaries-api';
+
+    private const LEGACY_CACHE_KEY = 'heatmap:lian-boundaries-api';
 
     private const GEORISK_QUERY_URL = 'https://portal.georisk.gov.ph/arcgis/rest/services/PSA/Barangay/MapServer/4/query';
 
     public function __invoke(Request $request): JsonResponse
     {
+        // One-time cleanup: a stale value under the old pre-rename cache key
+        // must never be served again now that the key has changed.
+        if (Cache::has(self::LEGACY_CACHE_KEY)) {
+            Cache::forget(self::LEGACY_CACHE_KEY);
+        }
+
         if ($request->boolean('refresh')) {
             Cache::forget(self::CACHE_KEY);
         }

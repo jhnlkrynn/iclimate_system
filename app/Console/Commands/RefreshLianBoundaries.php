@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class RefreshLianBoundaries extends Command
 {
-    private const CACHE_KEY = 'heatmap:lian-boundaries-api';
+    private const CACHE_KEY = 'geo:lian-boundaries-api';
 
     private const GEORISK_QUERY_URL = 'https://portal.georisk.gov.ph/arcgis/rest/services/PSA/Barangay/MapServer/4/query';
 
@@ -34,7 +34,7 @@ class RefreshLianBoundaries extends Command
             $geojson = $response->json();
         } catch (\Throwable $exception) {
             $this->warn('GeoRisk boundary refresh failed: '.$exception->getMessage());
-            $this->warn('The heatmap API will continue using the bundled fallback GeoJSON.');
+            $this->warn('The boundary API will continue using the bundled fallback GeoJSON.');
 
             return self::FAILURE;
         }

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\Weather\FarmerDashboardWeatherService;
@@ -75,13 +74,7 @@ class FarmerDashboardWeatherTest extends TestCase
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
 
-        // Barangay explicitly outside the heatmap fixtures below, so the
-        // farmer's own-barangay risk card doesn't shadow the "High Risk
-        // Areas" summary card this test is asserting on.
-        $user = User::factory()->create(['barangay' => null]);
-        HeatmapArea::factory()->create(['risk_level' => 'High']);
-        HeatmapArea::factory()->create(['risk_level' => 'Severe']);
-        HeatmapArea::factory()->create(['risk_level' => 'Moderate']);
+        $user = User::factory()->create();
         Notification::factory()->create([
             'user_id' => $user->id,
             'type' => 'Warning',
@@ -106,7 +99,6 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertDontSee('Â°C', false);
         $response->assertSee('6.2 mm');
         $response->assertSee('1 active');
-        $response->assertSee('High Risk Areas');
         $response->assertSee('WEATHER_POLL_INTERVAL = 60000', false);
         $response->assertSee('getManilaDateKey', false);
         $response->assertSee('Live as of', false);
