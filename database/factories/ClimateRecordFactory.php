@@ -17,7 +17,12 @@ class ClimateRecordFactory extends Factory
             'humidity' => fake()->randomFloat(2, 55, 98),
             'wind_speed' => fake()->randomFloat(2, 0, 80),
             'season' => fake()->randomElement([ClimateRecord::SEASON_WET, ClimateRecord::SEASON_DRY]),
-            'source' => 'PAGASA Historical Climate Record',
+            // Honest provenance label for factory/seeder-generated rows: this
+            // is synthetic demo data, never a real PAGASA feed. (Previously
+            // 'PAGASA Historical Climate Record', which a 2026-09 audit found
+            // could be mistaken for a real agency source; existing DB rows
+            // written before this change keep their original stored value.)
+            'source' => 'iClimate Seed Data (synthetic)',
         ];
     }
 }

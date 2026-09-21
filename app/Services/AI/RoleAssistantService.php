@@ -7,6 +7,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\SystemLog;
 use App\Models\User;
+use App\Services\Risk\BarangayRiskMapService;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -14,6 +15,10 @@ use Throwable;
 
 class RoleAssistantService
 {
+    public function __construct(
+        private readonly BarangayRiskMapService $riskMapService,
+    ) {}
+
     public function roleRestrictedMessage(string $language, string $requiredRoleLabel, string $askerRole = User::ROLE_FARMER): string
     {
         $capabilities = match ($askerRole) {
@@ -164,10 +169,32 @@ class RoleAssistantService
                 : "No rice production records are available yet for Barangay {$barangay}.";
         }
 
-        if ($heatmap) {
+        // Staleness-aware climate risk line: never present an old
+        // HeatmapArea row as unqualified present-tense fact. See
+        // HeatmapArea::CURRENT_WINDOW_HOURS and
+        // AIOrchestratorService::climateRiskForBarangay() for the same
+        // CURRENT/STALE/NO-DATA classification used by Climora.
+        $liveDetail = null;
+        try {
+            $liveDetail = $this->riskMapService->detailFor($barangay);
+        } catch (Throwable) {
+            $liveDetail = null;
+        }
+        $liveReportsNoData = $liveDetail !== null && ($liveDetail['risk_level'] ?? null) === 'No Data';
+
+        if ($heatmap && ! $liveReportsNoData && $heatmap->isCurrentlyComputed()) {
             $lines[] = $tagalog
                 ? "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type})."
                 : "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type}).";
+        } elseif ($heatmap) {
+            $date = $heatmap->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
+            $lines[] = $tagalog
+                ? "Noong {$date}, ang climate risk ay {$heatmap->risk_level} ({$heatmap->risk_type}) — maaaring hindi na ito kasalukuyang kondisyon."
+                : "As of {$date}, climate risk was marked {$heatmap->risk_level} ({$heatmap->risk_type}); this may not reflect current conditions.";
+        } else {
+            $lines[] = $tagalog
+                ? 'Wala pang current na climate risk information para sa barangay na ito.'
+                : 'Current climate risk information is not available for this barangay yet.';
         }
 
         return [

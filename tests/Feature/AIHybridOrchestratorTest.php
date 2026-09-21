@@ -176,6 +176,16 @@ class AIHybridOrchestratorTest extends TestCase
 
     public function test_climate_risk_question_uses_heatmap_risk_records(): void
     {
+        // The chatbot now consults BarangayRiskMapService::detailFor() to
+        // decide CURRENT vs. STALE vs. NO DATA, which triggers a live
+        // Open-Meteo lookup for every barangay on a cache miss — fake it so
+        // the test never hits the network.
+        Http::fake(['api.open-meteo.com/*' => Http::response([
+            'current' => ['time' => now()->toIso8601String(), 'temperature_2m' => 28, 'relative_humidity_2m' => 70, 'wind_speed_10m' => 10],
+            'hourly' => ['precipitation' => array_fill(0, 24, 8.3), 'precipitation_probability' => array_fill(0, 24, 40)],
+            'daily' => ['precipitation_sum' => [200], 'precipitation_probability_max' => [40]],
+        ], 200)]);
+
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
 
         HeatmapArea::query()->create([
@@ -200,6 +210,102 @@ class AIHybridOrchestratorTest extends TestCase
             ->assertJsonPath('chat.source_type', 'iClimate Risk Records')
             ->assertJsonPath('chat.prediction_result.data.0.risk_level', 'High')
             ->assertJsonPath('chat.prediction_result.data.0.risk_type', 'Heat');
+    }
+
+    private function fakeFreshOpenMeteoWeather(): void
+    {
+        Http::fake(['api.open-meteo.com/*' => Http::response([
+            'current' => ['time' => now()->toIso8601String(), 'temperature_2m' => 28, 'relative_humidity_2m' => 70, 'wind_speed_10m' => 10],
+            'hourly' => ['precipitation' => array_fill(0, 24, 8.3), 'precipitation_probability' => array_fill(0, 24, 40)],
+            'daily' => ['precipitation_sum' => [200], 'precipitation_probability_max' => [40]],
+        ], 200)]);
+    }
+
+    public function test_climate_risk_reports_current_for_a_fresh_row_with_available_monthly_rainfall(): void
+    {
+        $this->fakeFreshOpenMeteoWeather();
+        // Seed enough monthly climate history so the live pipeline's monthly
+        // rainfall input is available (MonthlyWeatherRandomForest ready)
+        // and does not itself report No Data for Malaruhatan.
+        $this->seedClimateRecords();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        // A migration seeds a default row for every one of the 19 Lian
+        // barangays, so upsert by barangay (as the real pipeline's persist()
+        // does) rather than create() a second competing row.
+        $row = HeatmapArea::query()->updateOrCreate(['barangay' => 'Malaruhatan'], [
+            'latitude' => 14.0119,
+            'longitude' => 120.6669,
+            'risk_level' => 'High',
+            'risk_type' => 'Heat',
+            'risk_score' => 0.9,
+            'predicted_yield' => 2.8,
+            'rainfall_status' => 'Low rainfall',
+            'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
+            'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
+        ]);
+        $this->assertTrue($row->fresh()->isCurrentlyComputed());
+        $this->assertSame(1, HeatmapArea::query()->where('barangay', 'Malaruhatan')->count());
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'Is Malaruhatan high risk right now?',
+        ]);
+
+        $response->assertOk()->assertJsonPath('chat.prediction_result.status', 'current');
+        $this->assertStringNotContainsString('earlier date', (string) $response->json('chat.answer'));
+    }
+
+    public function test_climate_risk_reports_stale_for_an_old_row(): void
+    {
+        $this->fakeFreshOpenMeteoWeather();
+        $this->seedClimateRecords();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $row = HeatmapArea::query()->updateOrCreate(['barangay' => 'Malaruhatan'], [
+            'latitude' => 14.0119,
+            'longitude' => 120.6669,
+            'risk_level' => 'High',
+            'risk_type' => 'Heat',
+            'risk_score' => 0.9,
+            'predicted_yield' => 2.8,
+            'rainfall_status' => 'Low rainfall',
+            'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
+            'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
+        ]);
+        // Bypass the model's saving hook (which stamps risk_computed_at =
+        // now()) with a direct query update, simulating a row computed well
+        // outside HeatmapArea::CURRENT_WINDOW_HOURS.
+        HeatmapArea::query()->where('id', $row->id)->update(['risk_computed_at' => now()->subHours(30)]);
+        $this->assertFalse($row->fresh()->isCurrentlyComputed());
+        $this->assertSame(1, HeatmapArea::query()->where('barangay', 'Malaruhatan')->count());
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'Is Malaruhatan high risk right now?',
+        ]);
+
+        $response->assertOk()->assertJsonPath('chat.prediction_result.status', 'stale');
+        $this->assertStringContainsString('earlier', (string) $response->json('chat.answer'));
+    }
+
+    public function test_climate_risk_reports_no_current_data_when_no_row_exists(): void
+    {
+        $this->fakeFreshOpenMeteoWeather();
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        // Cumba has a default row from a migration seeder — remove it so
+        // this test genuinely covers the "no row at all" case.
+        HeatmapArea::query()->where('barangay', 'Cumba')->delete();
+        $this->assertNull(HeatmapArea::query()->where('barangay', 'Cumba')->first());
+
+        $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
+            'question' => 'Is Cumba high risk right now?',
+        ]);
+
+        $response->assertOk()->assertJsonPath('chat.prediction_result.status', 'no_data');
+        $this->assertStringContainsString('not available', (string) $response->json('chat.answer'));
     }
 
     private function seedClimateRecords(): void

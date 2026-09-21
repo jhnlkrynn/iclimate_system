@@ -18,7 +18,7 @@ class ClimateRecordController extends CrudController
 
     protected array $searchable = ['record_date', 'season', 'source'];
 
-    protected array $filterable = ['season' => ['Wet', 'Dry'], 'source' => ['PAGASA Historical Climate Record', 'PAGASA Lian Monthly Data', 'PAGASA']];
+    protected array $filterable = ['season' => ['Wet', 'Dry'], 'source' => ['PAGASA Historical Climate Record', 'PAGASA Lian Monthly Data', 'PAGASA', 'iClimate Seed Data (synthetic)']];
 
     public function __construct()
     {
@@ -33,14 +33,26 @@ class ClimateRecordController extends CrudController
         ];
     }
 
+    /**
+     * Numeric guardrails added by the 2026-09 data-quality fix, after an
+     * audit found a manually-entered ClimateRecord row (5000mm rainfall,
+     * 100C temperature, 500km/h wind, future-dated) had no upper bound to
+     * block it. These are PRAGMATIC DATA-ENTRY GUARDRAILS, not scientifically
+     * derived Lian-specific thresholds. The bound constants and their
+     * reasoning now live on ClimateRecord itself (single source of truth),
+     * so analytics consumers (ClimateRecord::scopePlausible()) can apply the
+     * exact same bounds without duplicating them here.
+     */
     protected function rules(Request $request, ?int $id = null): array
     {
         return [
-            'record_date' => ['required', 'date'],
-            'rainfall' => ['nullable', 'numeric', 'min:0'],
-            'temperature' => ['nullable', 'numeric'],
+            // before_or_equal:today blocks another future-dated bad row like
+            // the historical "sir mags" entry.
+            'record_date' => ['required', 'date', 'before_or_equal:today'],
+            'rainfall' => ['nullable', 'numeric', 'min:0', 'max:'.ClimateRecord::RAINFALL_MAX_MM],
+            'temperature' => ['nullable', 'numeric', 'min:'.ClimateRecord::TEMPERATURE_MIN_C, 'max:'.ClimateRecord::TEMPERATURE_MAX_C],
             'humidity' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'wind_speed' => ['nullable', 'numeric', 'min:0'],
+            'wind_speed' => ['nullable', 'numeric', 'min:0', 'max:'.ClimateRecord::WIND_SPEED_MAX],
             'season' => ['required', Rule::in(['Wet', 'Dry'])],
             'source' => ['required', 'string', 'max:255'],
         ];

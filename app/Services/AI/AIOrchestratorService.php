@@ -8,6 +8,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\PredictionService;
+use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
@@ -23,6 +24,7 @@ class AIOrchestratorService
         private readonly FarmerDashboardWeatherService $weatherService,
         private readonly MonthlyWeatherRandomForest $weatherForest,
         private readonly GroqChatService $groq,
+        private readonly BarangayRiskMapService $riskMapService,
     ) {}
 
     /**
@@ -206,10 +208,17 @@ class AIOrchestratorService
 
             $data = $tool['data'];
 
+            // Note: the wind-speed figure here comes from the historical
+            // Ambulong CSV (via MonthlyWeatherRandomForest), whose wind unit
+            // is not established by any repository evidence (see
+            // AmbulongHistoricalClimateDataset / capstone manuscript
+            // provenance gaps). We deliberately do not assert "km/h" (or any
+            // other unit) for this figure — doing so would present an
+            // unverified value as confirmed fact.
             return $this->translate(
                 $language,
-                'Based on the iClimate monthly Random Forest model, the estimate for '.$tool['target_month'].' is '.$data['rainfall'].' mm rainfall, '.$data['temperature'].' C temperature, '.$data['humidity'].'% humidity, and '.$data['wind_speed'].' km/h wind.',
-                'Batay sa iClimate monthly Random Forest model, ang estimate para sa '.$tool['target_month'].' ay '.$data['rainfall'].' mm ulan, '.$data['temperature'].' C temperatura, '.$data['humidity'].'% humidity, at '.$data['wind_speed'].' km/h hangin.'
+                'Based on the iClimate monthly Random Forest model, the estimate for '.$tool['target_month'].' is '.$data['rainfall'].' mm rainfall, '.$data['temperature'].' C temperature, '.$data['humidity'].'% humidity, and a wind speed reading of '.$data['wind_speed'].'.',
+                'Batay sa iClimate monthly Random Forest model, ang estimate para sa '.$tool['target_month'].' ay '.$data['rainfall'].' mm ulan, '.$data['temperature'].' C temperatura, '.$data['humidity'].'% humidity, at wind speed reading na '.$data['wind_speed'].'.'
             );
         });
 
@@ -258,20 +267,48 @@ class AIOrchestratorService
      * @param  array<string, mixed>  $entities
      * @return array<string, mixed>
      */
+    /**
+     * Staleness-aware climate risk lookup.
+     *
+     * HeatmapArea.risk_score/risk_level are only as fresh as the last
+     * successful `iclimate:refresh-barangay-risk` run (or cache-miss risk map
+     * compute) that could reach that specific barangay. Presenting an old row
+     * as unqualified present-tense fact would misrepresent it, so every row
+     * is classified before being turned into an answer:
+     *  - CURRENT: risk_computed_at is within HeatmapArea::CURRENT_WINDOW_HOURS
+     *    AND the live BarangayRiskMapService does not currently report this
+     *    barangay as No Data (a barangay that has gone No Data live — e.g.
+     *    because monthly rainfall recently became unavailable — must not be
+     *    presented as current just because an old row still exists).
+     *  - STALE: a row exists but fails either condition above.
+     *  - NO CURRENT DATA: no row exists at all for the barangay.
+     *
+     * @param  array<string, mixed>  $entities
+     * @return array<string, mixed>
+     */
     private function climateRisk(User $user, string $question, string $language, array $memory, array $entities): array
     {
         $barangay = (string) ($entities['barangay'] ?? $user->barangay ?? $user->farmerProfile?->barangay ?? '');
-        $query = HeatmapArea::query();
+
         if ($barangay !== '') {
-            $query->where('barangay', 'like', '%'.$barangay.'%');
+            return $this->climateRiskForBarangay($user, $question, $language, $memory, $barangay);
         }
 
-        $areas = $query->orderByDesc('risk_score')->take($barangay !== '' ? 1 : 5)->get();
+        // No specific barangay named: rank across whatever rows are CURRENT
+        // right now, never mixing in stale rows unqualified.
+        $current = HeatmapArea::query()
+            ->orderByDesc('risk_score')
+            ->take(20)
+            ->get()
+            ->filter(fn (HeatmapArea $area): bool => $area->isCurrentlyComputed())
+            ->take(5)
+            ->values();
+
         $tool = [
             'tool' => 'climate_risk',
-            'success' => $areas->isNotEmpty(),
+            'success' => $current->isNotEmpty(),
             'source' => 'iClimate Heat Map Risk Records',
-            'data' => $areas->map(fn (HeatmapArea $area): array => [
+            'data' => $current->map(fn (HeatmapArea $area): array => [
                 'barangay' => $area->barangay,
                 'risk_level' => $area->risk_level,
                 'risk_type' => $area->risk_type,
@@ -280,12 +317,13 @@ class AIOrchestratorService
                 'rainfall_status' => $area->rainfall_status,
                 'planting_advisory' => $area->planting_advisory,
                 'irrigation_recommendation' => $area->irrigation_recommendation,
+                'risk_computed_at' => $area->risk_computed_at?->toIso8601String(),
             ])->all(),
         ];
 
         $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
             if (! $tool['success']) {
-                return $this->translate($language, 'I could not find a current heat-map risk record for that barangay.', 'Wala akong makitang current heat-map risk record para sa barangay na iyon.');
+                return $this->translate($language, 'I could not find any current heat-map risk records right now.', 'Wala akong makitang current heat-map risk records ngayon.');
             }
 
             $first = $tool['data'][0];
@@ -294,6 +332,81 @@ class AIOrchestratorService
                 $language,
                 $first['barangay'].' is marked '.$first['risk_level'].' risk for '.$first['risk_type'].' in the iClimate heat map. Planting guidance: '.$first['planting_advisory'],
                 'Ang '.$first['barangay'].' ay naka-markang '.$first['risk_level'].' risk para sa '.$first['risk_type'].' sa iClimate heat map. Gabay sa pagtatanim: '.$first['planting_advisory']
+            );
+        });
+
+        return $this->textResult($answer, 'climate_risk', 'iClimate Risk Records', 'iClimate Heat Map', $language, $memory, [
+            'tool_result' => $tool,
+            'warnings' => $tool['data'],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function climateRiskForBarangay(User $user, string $question, string $language, array $memory, string $barangay): array
+    {
+        $row = HeatmapArea::query()->where('barangay', 'like', '%'.$barangay.'%')->orderByDesc('risk_score')->first();
+
+        $liveDetail = null;
+        try {
+            $liveDetail = $this->riskMapService->detailFor($barangay);
+        } catch (Throwable $exception) {
+            Log::warning('Climora climate_risk: live risk map lookup failed; falling back to stored HeatmapArea only.', [
+                'barangay' => $barangay,
+                'message' => $exception->getMessage(),
+            ]);
+        }
+        $liveReportsNoData = $liveDetail !== null && ($liveDetail['risk_level'] ?? null) === 'No Data';
+
+        $status = match (true) {
+            $row === null => 'no_data',
+            $liveReportsNoData => 'stale', // a row exists but the live pipeline currently disagrees / has no data
+            $row->isCurrentlyComputed() => 'current',
+            default => 'stale',
+        };
+
+        $tool = [
+            'tool' => 'climate_risk',
+            'success' => $status !== 'no_data',
+            'status' => $status,
+            'source' => 'iClimate Heat Map Risk Records',
+            'data' => $row ? [[
+                'barangay' => $row->barangay,
+                'risk_level' => $row->risk_level,
+                'risk_type' => $row->risk_type,
+                'risk_score' => $row->risk_score,
+                'predicted_yield' => $row->predicted_yield,
+                'rainfall_status' => $row->rainfall_status,
+                'planting_advisory' => $row->planting_advisory,
+                'irrigation_recommendation' => $row->irrigation_recommendation,
+                'risk_computed_at' => $row->risk_computed_at?->toIso8601String(),
+            ]] : [],
+        ];
+
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $status, $row) {
+            if ($status === 'no_data' || $row === null) {
+                return $this->translate(
+                    $language,
+                    'Current risk information is not available for that barangay right now.',
+                    'Wala pang current na risk information para sa barangay na iyon ngayon.'
+                );
+            }
+
+            if ($status === 'stale') {
+                $date = $row->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
+
+                return $this->translate(
+                    $language,
+                    'As of '.$date.', '.$row->barangay.' was marked '.$row->risk_level.' risk for '.$row->risk_type.'. This is from an earlier computation, and current conditions are unknown — this may not reflect current conditions.',
+                    'Noong '.$date.', ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.$row->risk_type.'. Mula ito sa nakaraang kalkulasyon, hindi alam ang kasalukuyang kondisyon — maaaring hindi na ito reflektibo sa kasalukuyan.'
+                );
+            }
+
+            return $this->translate(
+                $language,
+                $row->barangay.' is marked '.$row->risk_level.' risk for '.$row->risk_type.' in the iClimate heat map. Planting guidance: '.$row->planting_advisory,
+                'Ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.$row->risk_type.' sa iClimate heat map. Gabay sa pagtatanim: '.$row->planting_advisory
             );
         });
 

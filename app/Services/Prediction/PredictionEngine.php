@@ -69,7 +69,14 @@ class PredictionEngine
         array $manualOverrides,
     ): array {
         $predictions = $weatherResult['predictions'] ?? [];
+        // ->plausible() excludes physically-impossible rows (e.g. the
+        // historical "sir mags" row: 5000mm rainfall, 100C, 500km/h wind,
+        // future-dated) using ClimateRecord's shared bounds, without
+        // hardcoding any row ID. These derived features feed the rice-yield
+        // model's "recent real climate trend" inputs — a different concern
+        // from MonthlyWeatherRandomForest's own CSV-trained history.
         $recentClimateRecords = ClimateRecord::query()
+            ->plausible()
             ->latest('record_date')
             ->take(6)
             ->get();

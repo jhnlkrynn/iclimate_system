@@ -10,6 +10,14 @@ class RiceProduction extends Model
 {
     use HasFactory;
 
+    /**
+     * yield_per_hectare unit: tons/hectare (t/ha). This is the unit assumed
+     * everywhere this value flows — BarangayRiskMapService (as
+     * 'predicted_yield' fed to DecisionSupportService/AgriculturalRiskScorer,
+     * whose yield thresholds e.g. <2, <3, <4 are tons/hectare), and the
+     * farmer/MAO dashboards. Do not feed a different unit (e.g. total
+     * kilograms, or total production) into 'predicted_yield' downstream.
+     */
     protected $fillable = [
         'barangay',
         'season',

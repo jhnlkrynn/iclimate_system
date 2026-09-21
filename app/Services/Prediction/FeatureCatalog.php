@@ -175,11 +175,20 @@ final class FeatureCatalog
         ],
         'wind_speed' => [
             'label' => 'Wind Speed',
-            'unit' => 'km/h',
+            // UNRESOLVED: this was previously asserted as 'km/h' without a
+            // sourced basis. When this feature is populated from the
+            // Ambulong historical CSV (via MonthlyWeatherRandomForest), its
+            // unit is not established by any repository or manuscript
+            // evidence (values run ~1-3 across 131 months, implausibly low
+            // for km/h). When populated from live Open-Meteo wind readings
+            // elsewhere in the app, that source IS confirmed km/h (Open-Meteo's
+            // documented API default). Do not re-assert 'km/h' here without
+            // sourced provenance for the historical dataset.
+            'unit' => 'unresolved for the historical dataset (see AmbulongHistoricalClimateDataset provenance notes); confirmed km/h only for live Open-Meteo-sourced readings',
             'schemas' => [self::SCHEMA_TARGET],
             'model_keys' => ['target' => 'wind_speed'],
             'description' => 'Wind speed for the target period. Same status as humidity — computed on every request but only reaches the TARGET schema and the rule-based fallback today.',
-            'behavior' => 'Low impact under normal conditions. The app penalizes yield once wind speed passes ~20km/h (lodging risk — stalks bending/breaking) and more heavily past ~30km/h (storm-level, structural crop damage).',
+            'behavior' => 'Low impact under normal conditions. The app penalizes yield once wind speed passes ~20 (lodging risk — stalks bending/breaking) and more heavily past ~30 (storm-level, structural crop damage) on whatever scale the feeding source uses — see the unit note above; this threshold assumes km/h-scale input and may not fire meaningfully against the historical dataset\'s ~1-3 scale.',
         ],
         'irrigation_type' => [
             'label' => 'Irrigation Type',

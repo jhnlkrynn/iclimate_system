@@ -2,64 +2,81 @@
 
 namespace App\Services\MachineLearning;
 
-use App\Models\ClimateRecord;
+use App\Services\Climate\AmbulongHistoricalClimateDataset;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Trains a small Random Forest regression per target (rainfall, temperature,
+ * humidity, wind_speed) from the real Ambulong historical monthly climate
+ * dataset (see AmbulongHistoricalClimateDataset) and predicts a target
+ * month's monthly-scale weather.
+ *
+ * As of the 2026-09 data-source fix, this class no longer reads
+ * `ClimateRecord` at all — that table's 6 rows (5 synthetic demo rows plus
+ * one physically-impossible manually-entered row) can no longer influence
+ * this model's output, structurally, regardless of what is ever written to
+ * that table. See AmbulongHistoricalClimateDataset's docblock for the CSV
+ * format, sentinel-row exclusion, and the TMAX/TMIN -> temperature
+ * derivation.
+ *
+ * Known limitation (context gap): the historical dataset currently ends at
+ * 2025-12. When predicting a target month beyond that (e.g. the live
+ * "current month"), the "previous month" / rolling-window feature context
+ * used by featuresForTargetMonth() is the most recent REAL historical month
+ * available (Dec 2025), not a fabricated recent month. This is a deliberate
+ * choice to avoid inventing data, but it does mean the model is predicting
+ * "current" conditions using a context that may be many months stale until
+ * the CSV is refreshed with newer real observations.
+ */
 class MonthlyWeatherRandomForest
 {
     private const TARGETS = ['rainfall', 'temperature', 'humidity', 'wind_speed'];
 
+    public function __construct(
+        private readonly AmbulongHistoricalClimateDataset $dataset = new AmbulongHistoricalClimateDataset,
+    ) {}
+
     public function predict(CarbonImmutable $targetMonth): array
     {
         return Cache::remember(
-            'weather-random-forest:'.$targetMonth->format('Y-m').':'.$this->climateRecordVersion(),
+            'weather-random-forest:'.$targetMonth->format('Y-m').':'.$this->dataset->version(),
             now()->addMinutes(15),
             fn () => $this->buildPrediction($targetMonth)
         );
     }
 
-    private function climateRecordVersion(): string
-    {
-        return implode(':', [
-            ClimateRecord::query()->count(),
-            (string) (ClimateRecord::query()->max('updated_at') ?? 'none'),
-        ]);
-    }
-
     private function buildPrediction(CarbonImmutable $targetMonth): array
     {
-        $monthly = $this->monthlyClimateRecords();
+        $dataset = $this->dataset->load();
+
+        if (! $dataset['available']) {
+            return $this->notReady(
+                $targetMonth,
+                0,
+                $dataset['message'] ?? 'The Ambulong historical climate dataset is not currently available.'
+            );
+        }
+
+        $monthly = $this->monthlyClimateRecords($dataset['observations']);
 
         if ($monthly->count() < 4) {
-            return [
-                'ready' => false,
-                'message' => 'At least 4 months of climate records are required to train the monthly Random Forest model.',
-                'source_type' => 'Trained Model',
-                'source_name' => 'iClimate monthly Random Forest model',
-                'source_note' => 'Model trains from saved iClimate climate records.',
-                'months_available' => $monthly->count(),
-                'target_month' => $targetMonth,
-                'predictions' => [],
-                'training' => [],
-            ];
+            return $this->notReady(
+                $targetMonth,
+                $monthly->count(),
+                'At least 4 months of historical climate data are required to train the monthly Random Forest model.'
+            );
         }
 
         [$samples, $latestContext] = $this->buildTrainingSamples($monthly);
 
         if (count($samples) < 3) {
-            return [
-                'ready' => false,
-                'message' => 'The available records must span at least 4 usable monthly observations.',
-                'source_type' => 'Trained Model',
-                'source_name' => 'iClimate monthly Random Forest model',
-                'source_note' => 'Model trains from saved iClimate climate records.',
-                'months_available' => $monthly->count(),
-                'target_month' => $targetMonth,
-                'predictions' => [],
-                'training' => [],
-            ];
+            return $this->notReady(
+                $targetMonth,
+                $monthly->count(),
+                'The available historical dataset must span at least 4 usable monthly observations.'
+            );
         }
 
         $features = $this->featuresForTargetMonth($targetMonth, $latestContext, $monthly->count());
@@ -83,10 +100,10 @@ class MonthlyWeatherRandomForest
 
         return [
             'ready' => true,
-            'message' => 'Prediction generated using monthly climate history and Random Forest regression.',
+            'message' => 'Prediction generated using the Ambulong historical monthly climate dataset and Random Forest regression.',
             'source_type' => 'Trained Model',
             'source_name' => 'iClimate monthly Random Forest model',
-            'source_note' => 'Model output trained from saved monthly climate records.',
+            'source_note' => 'Model output trained from the Ambulong historical monthly climate dataset (database/data/Ambulong Monthly Data.csv).',
             'months_available' => $monthly->count(),
             'target_month' => $targetMonth,
             'predictions' => $predictions,
@@ -96,23 +113,38 @@ class MonthlyWeatherRandomForest
         ];
     }
 
-    private function monthlyClimateRecords(): Collection
+    private function notReady(CarbonImmutable $targetMonth, int $monthsAvailable, string $message): array
     {
-        return ClimateRecord::query()
-            ->orderBy('record_date')
-            ->get()
-            ->groupBy(fn (ClimateRecord $record) => $record->record_date->format('Y-m'))
-            ->map(function (Collection $records, string $key): array {
-                $month = CarbonImmutable::createFromFormat('Y-m-d', $key.'-01')->startOfMonth();
+        return [
+            'ready' => false,
+            'message' => $message,
+            'source_type' => 'Trained Model',
+            'source_name' => 'iClimate monthly Random Forest model',
+            'source_note' => 'Model trains from the Ambulong historical monthly climate dataset (database/data/Ambulong Monthly Data.csv).',
+            'months_available' => $monthsAvailable,
+            'target_month' => $targetMonth,
+            'predictions' => [],
+            'training' => [],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array{year: int, month: int, rainfall: float, temperature: float, humidity: ?float, wind_speed: ?float, season: string}>  $observations
+     */
+    private function monthlyClimateRecords(Collection $observations): Collection
+    {
+        return $observations
+            ->map(function (array $observation): array {
+                $month = CarbonImmutable::createFromDate($observation['year'], $observation['month'], 1)->startOfMonth();
 
                 return [
                     'month' => $month,
-                    'rainfall' => (float) $records->avg('rainfall'),
-                    'temperature' => (float) $records->avg('temperature'),
-                    'humidity' => (float) $records->avg('humidity'),
-                    'wind_speed' => (float) $records->avg('wind_speed'),
+                    'rainfall' => (float) $observation['rainfall'],
+                    'temperature' => (float) $observation['temperature'],
+                    'humidity' => (float) ($observation['humidity'] ?? 0.0),
+                    'wind_speed' => (float) ($observation['wind_speed'] ?? 0.0),
                     'season' => $this->seasonForMonth((int) $month->format('n')),
-                    'records' => $records->count(),
+                    'records' => 1,
                 ];
             })
             ->values();

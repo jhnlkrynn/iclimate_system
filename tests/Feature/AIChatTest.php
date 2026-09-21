@@ -44,9 +44,18 @@ class AIChatTest extends TestCase
             'question' => 'Should I plant rice this week?',
         ]);
 
+        // predicted_weather comes from PredictionEngine's own WeatherLabeler
+        // (fed by MonthlyWeatherRandomForest), NOT the faked Python /predict
+        // response above. Since the 2026-09 fix retrained the forest on the
+        // real Ambulong historical dataset instead of the old 6-row
+        // synthetic/invalid ClimateRecord table, its rainfall estimate for
+        // the wet-season current month is now a realistic ~area-average
+        // (real September rainfall across 2015-2025 averages ~226mm), which
+        // WeatherLabeler::fromRainfall() labels 'Rain' rather than the old
+        // contaminated model's 'Dry'.
         $response->assertOk()
             ->assertJsonPath('chat.intent', 'Planting Recommendation')
-            ->assertJsonPath('chat.weather_prediction.predicted_weather', 'Dry');
+            ->assertJsonPath('chat.weather_prediction.predicted_weather', 'Rain');
 
         $this->assertDatabaseHas('a_i_chats', [
             'user_id' => $user->id,

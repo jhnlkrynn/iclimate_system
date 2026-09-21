@@ -2121,7 +2121,10 @@
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 11.5h12.2a2.4 2.4 0 1 1-2.4 2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed).' km/h' : '--' }}</div><div class="hws-label">Wind Speed</div></div>
+            {{-- This wind figure is from a stored historical ClimateRecord, whose wind
+                 unit is not established by any repository evidence, so no unit is
+                 asserted here (unlike genuinely-km/h live Open-Meteo readings). --}}
+            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</div><div class="hws-label">Wind Speed</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="2.6" height="11" rx="1" fill="currentColor"/><rect x="8.7" y="6" width="2.6" height="8" rx="1" fill="currentColor" opacity=".7"/><rect x="13.4" y="8.5" width="2.6" height="5.5" rx="1" fill="currentColor" opacity=".5"/></svg>
