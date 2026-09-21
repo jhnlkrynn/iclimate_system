@@ -204,7 +204,6 @@ class PagasaAdvisoryService
     private function excerptAroundLocationOrWarning(string $text): string
     {
         $lowerText = Str::lower($text);
-        $keywords = ['lian', 'batangas', 'heavy rainfall warning', 'rainfall warning', 'thunderstorm warning', 'weather advisory'];
         $keywords = ['lian', 'batangas', 'heavy rainfall warning', 'orange warning', 'red warning', 'thunderstorm warning', 'rainfall advisory'];
         $positions = collect($keywords)
             ->map(fn (string $keyword) => strpos($lowerText, $keyword))
@@ -213,10 +212,8 @@ class PagasaAdvisoryService
 
         $position = (int) ($positions->min() ?: 0);
         $start = max(0, $position - 500);
-        $start = max(0, $position - 80);
 
         return trim(Str::limit(substr($text, $start, 1400), 1200));
-        return trim(Str::limit(substr($text, $start, 600), 500));
     }
 
     private function cleanExcerpt(string $text): string
