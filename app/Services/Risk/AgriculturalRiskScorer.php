@@ -9,6 +9,20 @@ namespace App\Services\Risk;
  * (Phase 3/4) for the plan to replace these with real MDRRMO/LGU hazard data
  * once available. Do not present this as empirically-derived risk analysis
  * without disclosing that caveat to whoever is viewing it.
+ *
+ * EXPECTED INPUT SEMANTICS (documentation only — no threshold/weight/formula
+ * below was changed to write this note; see BarangayRiskMapService for the
+ * caller-side fix that enforces these units):
+ *  - rainfall: float, mm accumulated over a calendar MONTH (not a 24h/7-day
+ *    forecast figure — the bands below, e.g. 180-280 "ideal", <80 "worst",
+ *    are monthly-scale and will misclassify short-range readings).
+ *  - temperature: float, °C, a current/instantaneous reading (this one IS
+ *    correct as a live/forecast-current figure, unlike rainfall above).
+ *  - predicted_yield: ?float, tons/hectare (see RiceProduction::$yield_per_hectare).
+ *  - farm_type: string, 'Rainfed' or 'Irrigated' (case-insensitive).
+ *  - humidity/wind are intentionally NOT direct scored inputs here — they
+ *    only ever reach the score indirectly via the caller-supplied
+ *    stress_factor_count.
  */
 final class AgriculturalRiskScorer
 {

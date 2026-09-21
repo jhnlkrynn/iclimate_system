@@ -488,8 +488,6 @@
         $riceProductionTotal = $riceProductionTotal ?? 0;
         $riceAreaTotal = $riceAreaTotal ?? 0;
         $avgYield = $avgYield ?? 0;
-        $heatMapCount = $heatMapCount ?? 0;
-        $highRiskHeatMapAreas = $highRiskHeatMapAreas ?? 0;
         $weatherDataSource = $weatherDataSource ?? 'Stored climate records';
         $liveWeather = $liveWeather ?? null;
         $farmerOrganizationSummary = array_replace([
@@ -505,18 +503,9 @@
             'humidity' => [],
             'windSpeed' => [],
         ], $weatherChartData ?? []);
-        $riskLevelCounts = array_replace([
-            'Low' => 0,
-            'Moderate' => 0,
-            'High' => 0,
-            'Severe' => 0,
-        ], $riskLevelCounts ?? []);
         $recentFarmerProfiles = collect($recentFarmerProfiles ?? []);
         $recentClimateRecords = collect($recentClimateRecords ?? []);
         $recentRiceProductions = collect($recentRiceProductions ?? []);
-        $highRiskAreasList = collect($highRiskAreasList ?? []);
-        $dashboardMapAreas = collect($dashboardMapAreas ?? [])->values();
-        $latestHeatmapAreas = collect($latestHeatmapAreas ?? []);
         $latestAdvisories = collect($latestAdvisories ?? []);
         $latestFeedPosts = collect($latestFeedPosts ?? []);
         $latestReports = collect($latestReports ?? []);
@@ -533,7 +522,6 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="mao-chip"><span class="mao-pulse"></span> Season: {{ $latestSeason }}</span>
-                    <a class="btn btn-light fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     <a class="btn btn-outline-light fw-bold" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
                     <a class="btn btn-outline-light fw-bold" href="{{ route('reports.index') }}">Open Reports</a>
                 </div>
@@ -599,7 +587,7 @@
             </section>
         @endif
 
-        @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0 || ($maoActionItems['highRiskAreaCount'] ?? 0) > 0)
+        @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0)
             <div class="dashboard-section-label">
                 <div>
                     <h2 class="section-title">Needs Your Attention</h2>
@@ -607,12 +595,7 @@
                 </div>
             </div>
             <section class="mao-stat-grid mb-4">
-                @if (($maoActionItems['feedbackAwaitingResponse'] ?? 0) > 0)
-                    <a class="mao-card text-decoration-none" href="{{ route('planting-advisories.index') }}"><div class="mao-card-body"><div class="mao-label">Farmer Feedback Awaiting Reply</div><div class="mao-value">{{ number_format($maoActionItems['feedbackAwaitingResponse']) }}</div><div class="mao-note">Farmers are waiting on a response</div><div class="mao-tap-hint">Open advisories &rarr;</div></div></a>
-                @endif
-                @if (($maoActionItems['highRiskAreaCount'] ?? 0) > 0)
-                    <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">High/Severe Risk Barangays</div><div class="mao-value">{{ number_format($maoActionItems['highRiskAreaCount']) }}</div><div class="mao-note">May need field follow-up</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-                @endif
+                <a class="mao-card text-decoration-none" href="{{ route('planting-advisories.index') }}"><div class="mao-card-body"><div class="mao-label">Farmer Feedback Awaiting Reply</div><div class="mao-value">{{ number_format($maoActionItems['feedbackAwaitingResponse']) }}</div><div class="mao-note">Farmers are waiting on a response</div><div class="mao-tap-hint">Open advisories &rarr;</div></div></a>
             </section>
         @endif
 
@@ -627,7 +610,6 @@
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRisk"><div class="mao-card-body"><div class="mao-label">Heat Map Risks</div><div class="mao-value">{{ number_format($heatMapCount) }}</div><div class="mao-note">{{ number_format($highRiskHeatMapAreas) }} high or severe areas</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <a href="{{ route('farmer-profiles.index') }}" class="mao-card text-decoration-none"><div class="mao-card-body"><div class="mao-label">Farmer Organizations</div><div class="mao-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div><div class="mao-note">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers registered</div><div class="mao-tap-hint">View breakdown &rarr;</div></div></a>
         </section>
 
@@ -721,71 +703,6 @@
             </div>
         </div>
 
-        <div class="ic-drawer" id="maoStatRisk" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="maoStatRiskLabel">
-                <div class="modal-content border-0 mao-modal-content">
-                    <div class="modal-header mao-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="maoStatRiskLabel">Heat Map Risks</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mao-modal-headline">{{ number_format($highRiskHeatMapAreas) }} high or severe</div>
-                        <p class="mao-modal-sub">Out of {{ number_format($heatMapCount) }} mapped barangay records. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
-                        @forelse($highRiskAreasList as $area)
-                            @php
-                                $riskScoreValue = (float) $area->risk_score;
-                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
-                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
-                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
-                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
-                                    default => 'Low risk: conditions are currently favorable for this barangay.',
-                                };
-                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'mao-risk-badge-severe',
-                                    'high' => 'mao-risk-badge-high',
-                                    'moderate' => 'mao-risk-badge-moderate',
-                                    default => 'mao-risk-badge-low',
-                                };
-                            @endphp
-                            <div class="mao-list-item">
-                                <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">
-                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
-                                        <span class="mao-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
-                                    </div>
-                                    <div class="row-text mao-risk-interpretation">{{ $riskInterpretation }}</div>
-                                    <div class="row-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="row-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
-                                    @if ($area->risk_breakdown)
-                                        <details class="ic-collapse mt-2">
-                                            <summary><span class="ic-collapse-title">How is this score calculated?</span></summary>
-                                            <ul class="mb-2 ps-3">
-                                                @foreach ($area->risk_breakdown['factors'] as $factor)
-                                                    <li class="row-text">
-                                                        <strong>{{ $factor['label'] }}{{ $factor['weight_percent'] !== null ? ' ('.$factor['weight_percent'].'% weight)' : '' }}:</strong>
-                                                        {{ $factor['risk_value'] !== null ? number_format($factor['risk_value'], 2) : '+'.number_format($factor['contribution'], 2) }}
-                                                        &mdash; {{ $factor['detail'] }}
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                            <div class="row-meta">{{ $area->risk_breakdown['caveat'] }}</div>
-                                        </details>
-                                    @endif
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-soft"><strong>No high risk barangays</strong></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
             <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
             <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Heat Map &amp; Weather</button>
@@ -837,13 +754,12 @@
         <section class="mao-panel" data-mao-weather-root data-mao-weather-url="{{ route('mao.dashboard.weather') }}">
             <div class="mao-panel-header">
                 <div>
-                    <h2 class="mao-panel-title">Barangay Heat Map Dashboard</h2>
-                    <p class="mao-panel-sub">Primary view for rainfall, yield, irrigation, and climate-impact risk by barangay.</p>
+                    <h2 class="mao-panel-title">Municipal Weather Dashboard</h2>
+                    <p class="mao-panel-sub">Primary view for rainfall, temperature, humidity, and wind conditions.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <span class="status-pill {{ $weatherWarning['level'] === 'Low' ? '' : 'muted' }}" title="Derived from current barangay risk levels">{{ $weatherWarning['label'] }}</span>
                     <span class="source-badge" data-mao-weather-source>{{ $weatherDataSource }}</span>
-                    <a class="btn btn-sm btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
                     <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Prediction</a>
                 </div>
             </div>
@@ -881,78 +797,30 @@
                         {{ $weatherAnomaly['anomaly_percent'] > 0 ? '+' : '' }}{{ number_format($weatherAnomaly['anomaly_percent'], 1) }}%).
                     </div>
                 @endif
+            </div>
+        </section>
 
-                <div class="row g-4">
-                    <div class="col-xl-8">
-                        <div class="chart-title">Municipal Heat Map</div>
-                        <div class="chart-note">Barangay markers colored by climate and production risk. Start here before reviewing weather trends. Click a barangay to see the reason and recommended action.</div>
-                        <div class="dashboard-map-legend" role="note" aria-label="Heat map color legend">
-                            <span class="legend-swatch"><span class="legend-dot" style="background:#22c55e"></span> Green = Low</span>
-                            <span class="legend-swatch"><span class="legend-dot" style="background:#facc15"></span> Yellow = Moderate</span>
-                            <span class="legend-swatch"><span class="legend-dot" style="background:#f97316"></span> Orange = High</span>
-                            <span class="legend-swatch"><span class="legend-dot" style="background:#ef4444"></span> Red = Severe</span>
-                        </div>
-                        @if($dashboardMapAreas->count())
-                            <div class="dashboard-map-shell">
-                                <div class="map-toolbar" aria-label="Dashboard heat map layer controls">
-                                    <button class="layer-btn active" type="button" data-dashboard-layer="impact" aria-pressed="true">Climate Impact</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="rainfall" aria-pressed="false">Rainfall Risk</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="yield" aria-pressed="false">Rice Yield</button>
-                                    <button class="layer-btn" type="button" data-dashboard-layer="irrigation" aria-pressed="false">Irrigation Priority</button>
-                                </div>
-                                <div id="dashboardRiskMap" class="dashboard-map"></div>
-                                <aside id="dashboardMapDetailPanel" class="map-detail-panel" aria-live="polite">
-                                    <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                                    <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
-                                </aside>
-                            </div>
-                        @else
-                            <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map layers and controls will appear here once barangay locations are recorded.</div></div>
-                        @endif
+        <section class="mao-panel">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title">Barangay Agricultural Risk Map</h2>
+                    <p class="mao-panel-sub">Choropleth of all 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-risk-map-refresh>Refresh</button>
+            </div>
+            <div class="mao-panel-body">
+                <div class="dashboard-map-shell">
+                    <div id="barangayRiskMap" class="dashboard-map" data-risk-map-url="{{ url('/api/lian/risk-map') }}" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}" role="img" aria-label="Barangay agricultural risk choropleth map of Lian, Batangas"></div>
+                    <div class="dashboard-map-legend" id="riskMapLegend">
+                        <span class="legend-swatch"><span class="legend-dot" style="background:#2e7d32"></span>Low</span>
+                        <span class="legend-swatch"><span class="legend-dot" style="background:#f9c74f"></span>Moderate</span>
+                        <span class="legend-swatch"><span class="legend-dot" style="background:#e05a2b"></span>High</span>
+                        <span class="legend-swatch"><span class="legend-dot" style="background:#8b0000"></span>Severe</span>
+                        <span class="legend-swatch"><span class="legend-dot" style="background:repeating-linear-gradient(45deg,#9e9e9e,#9e9e9e 3px,#cfcfcf 3px,#cfcfcf 6px);background-color:#9e9e9e"></span>No Data</span>
                     </div>
-                    <div class="col-xl-4">
-                        <div class="chart-title">Barangay Risk Levels</div>
-                        <div class="chart-note">Quick count of mapped barangays per risk level.</div>
-                        <div class="risk-level-grid mb-3">
-                            @foreach(['Low', 'Moderate', 'High', 'Severe'] as $level)
-                                <div class="risk-level-card {{ strtolower($level) }}">
-                                    <div class="mao-label">{{ $level }}</div>
-                                    <div class="risk-level-value">{{ number_format($riskLevelCounts[$level] ?? 0) }}</div>
-                                    <div class="mao-note">barangay(s)</div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="heat-grid">
-                            @forelse($dashboardMapAreas->take(6) as $area)
-                                @php
-                                    $cardLevel = data_get($area, 'risk_level', 'Moderate');
-                                    $cardReason = match (strtolower((string) data_get($area, 'risk_type'))) {
-                                        'flood' => 'High rainfall / flood risk',
-                                        'drought' => 'Low rainfall / drought risk',
-                                        'typhoon' => 'Storm or strong wind exposure',
-                                        'heat' => 'High temperature stress',
-                                        default => data_get($area, 'risk_type') ?: 'Climate exposure',
-                                    };
-                                    $cardAction = data_get($area, 'irrigation_recommendation') ?: data_get($area, 'planting_advisory') ?: 'Visit or contact farmers here before major field work.';
-                                    $cardUpdated = data_get($area, 'updated_at');
-                                @endphp
-                                <div class="risk-card {{ strtolower($cardLevel) }}">
-                                    <div class="d-flex justify-content-between gap-2 mb-2">
-                                        <strong>{{ data_get($area, 'barangay', 'Unspecified barangay') }}</strong>
-                                        <span class="status-pill risk-badge-lg {{ strtolower($cardLevel) }}">{{ $cardLevel }}</span>
-                                    </div>
-                                    <div class="row-text">Score {{ number_format(data_get($area, 'risk_score', 0), 2) }}</div>
-                                    <div class="risk-card-meta">
-                                        <div><strong>Main reason:</strong> {{ $cardReason }}</div>
-                                        <div><strong>Suggested action:</strong> {{ $cardAction }}</div>
-                                        <div><strong>Last updated:</strong> {{ $cardUpdated ? $cardUpdated->shortDateTime('M d, Y') : 'Not yet refreshed' }}</div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="empty-soft"><strong>No mapped barangays yet</strong><div class="small text-muted mt-1">Heat map risk records will appear here.</div></div>
-                            @endforelse
-                        </div>
-                    </div>
+                </div>
+                <div id="riskMapDetailPanel" class="mao-panel-body" style="display:none; border-top: 1px solid rgba(13,31,24,.1); margin-top: .75rem; padding-top: .75rem;">
+                    <div id="riskMapDetailContent"></div>
                 </div>
             </div>
         </section>
@@ -1182,7 +1050,7 @@
         </div>
 
         <div class="row g-4 mb-0">
-            <div class="col-xl-7">
+            <div class="col-xl-12">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
                         <div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div>
@@ -1214,18 +1082,6 @@
                             <div class="empty-soft"><strong>No production records yet</strong><div class="small text-muted mt-1">Rice production entries will appear here.</div></div>
                         @endforelse
                     </div>
-                </div>
-            </div>
-            <div class="col-xl-5">
-                <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Barangay Heat Map Overview</h2><p class="mao-panel-sub">Leaflet-based barangay risk records for rainfall, yield, irrigation, and climate impact.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('heatmap-areas.index') }}">Open Map</a></div>
-                    <div class="mao-panel-body list-compact"><div class="heat-grid">
-                        @forelse($latestHeatmapAreas as $area)
-                            <div class="risk-card {{ strtolower($area->risk_level) }}"><div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ $area->barangay }}</strong><span class="status-pill {{ in_array($area->risk_level, ['High','Severe']) ? 'muted' : '' }}">{{ $area->risk_level }}</span></div><div class="row-text">{{ $area->risk_type }} risk | {{ $area->predicted_yield !== null ? number_format($area->predicted_yield, 2).' t/ha' : 'No yield prediction' }}</div><div class="row-meta">{{ str($area->irrigation_recommendation ?: $area->description)->limit(70) }}</div></div>
-                        @empty
-                            <div class="empty-soft"><strong>No risk records</strong><div class="small text-muted mt-1">Barangay heat map records will appear here.</div></div>
-                        @endforelse
-                    </div></div>
                 </div>
             </div>
         </div>
@@ -1459,7 +1315,6 @@
         });
     </script>
     <script type="application/json" id="mao-weather-chart-data">{!! json_encode($weatherChartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
-    <script type="application/json" id="mao-map-areas">{!! json_encode($dashboardMapAreas, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script>
         const initializeMaoDashboard = async () => {
             await (window.iClimateVisualsReady || Promise.resolve());
@@ -1521,8 +1376,6 @@
                 humidity: [],
                 windSpeed: [],
             });
-            const maoMapAreas = parseMaoJson('mao-map-areas', []);
-            const maoValidMapAreas = maoMapAreas.filter((area) => Number.isFinite(Number(area.latitude)) && Number.isFinite(Number(area.longitude)));
             const labels = maoWeatherChartData.labels || [];
             const chartLabels = window.iClimateChartLabels || {};
             const readableLabels = labels.map((label) => chartLabels.wrap ? chartLabels.wrap(label, 12, 2) : label);
@@ -1538,7 +1391,7 @@
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.dataset.label}: ${context.parsed.y} ${unit}`,
+                            label: (context) => `${context.dataset.label}: ${context.parsed.y}${unit ? ' ' + unit : ''}`,
                         },
                     },
                 },
@@ -1618,7 +1471,10 @@
                 rainfall: { id: 'rainfallChart', label: 'Rainfall', color: '#1677b8', unit: 'mm' },
                 temperature: { id: 'temperatureChart', label: 'Temperature', color: '#d85b45', unit: 'C' },
                 humidity: { id: 'humidityChart', label: 'Humidity', color: '#52b788', unit: '%' },
-                windSpeed: { id: 'windSpeedChart', label: 'Wind Speed', color: '#f4b63f', unit: 'km/h' },
+                // unit intentionally omitted: this chart reads stored ClimateRecord.wind_speed,
+                // whose unit is not established by any repository evidence (see the
+                // "Climate Monitoring Summary" list below for the same disclosure).
+                windSpeed: { id: 'windSpeedChart', label: 'Wind Speed', color: '#f4b63f', unit: '' },
             };
 
             // --- Plain-language chart interpretation -----------------------------------
@@ -1718,7 +1574,8 @@
                     action = 'Suspend all outdoor field work. Advise farmers to secure structures and prepare for possible storm damage.';
                 }
 
-                return { text: `Wind speed reaches ${value} km/h on ${date}, which is ${category} wind.`, action, status };
+                // Unit intentionally omitted from this sentence — see the chart definition above.
+                return { text: `Wind speed reaches ${value} on ${date}, which is ${category} wind.`, action, status };
             };
 
             const INTERPRETERS = { rainfall: interpretRainfall, temperature: interpretTemperature, humidity: interpretHumidity, windSpeed: interpretWindSpeed };
@@ -1873,288 +1730,178 @@
                 }
             });
 
-            const mapEl = document.getElementById('dashboardRiskMap');
-            if (mapEl && maoValidMapAreas.length && window.L) {
-                mapEl.classList.add('thermo-map');
-                const RISK_COLORS = { Low: '#22c55e', Moderate: '#facc15', High: '#f97316', Severe: '#ef4444' };
-                const riskColorFor = (riskLevel) => RISK_COLORS[riskLevel] || '#9aa5b1';
-                const LABEL_ZOOM_THRESHOLD = 14;
-                const yieldScore = (area) => area.predicted_yield === null ? .5 : (area.predicted_yield < 3 ? .9 : (area.predicted_yield < 4 ? .6 : .25));
-                const rainfallScore = (area) => String(area.rainfall_status || '').toLowerCase().includes('low') ? .9 : (String(area.rainfall_status || '').toLowerCase().includes('high') ? .65 : .3);
-                const irrigationScore = (area) => String(area.irrigation_recommendation || '').toLowerCase().match(/increase|prioritize|urgent|support|reduce/) ? .9 : (area.risk_score || .3);
-                const impactScore = (area) => Number(area.risk_score || 0);
-                const scoreFor = (area, layer) => ({ rainfall: rainfallScore, yield: yieldScore, irrigation: irrigationScore, impact: impactScore }[layer] || impactScore)(area);
-                let markerLayer = null;
-                let markerTooltips = [];
-                let activeDashboardLayer = 'impact';
-                let selectedDashboardArea = null;
+            initBarangayRiskMap();
+        };
 
-                const plainRiskMessage = (area) => {
-                    if (['High', 'Severe'].includes(area.risk_level)) {
-                        return 'Please check this barangay first. Farms here may need help soon.';
+        const RISK_LEVEL_COLORS = {
+            'Low': '#2e7d32',
+            'Moderate': '#f9c74f',
+            'High': '#e05a2b',
+            'Severe': '#8b0000',
+            'No Data': '#9e9e9e',
+        };
+
+        function riskFillStyle(level) {
+            const color = RISK_LEVEL_COLORS[level] || RISK_LEVEL_COLORS['No Data'];
+            return {
+                fillColor: color,
+                color: level === 'No Data' ? '#616161' : '#2b2b2b',
+                weight: level === 'No Data' ? 1 : 1.2,
+                dashArray: level === 'No Data' ? '3,3' : null,
+                fillOpacity: level === 'No Data' ? 0.35 : 0.65,
+            };
+        }
+
+        function renderRiskDetailPanel(entry) {
+            const panel = document.getElementById('riskMapDetailPanel');
+            const content = document.getElementById('riskMapDetailContent');
+            if (!panel || !content) return;
+
+            const rows = [];
+            rows.push(`<h3 class="mao-panel-title" style="font-size:1.1rem;">${entry.barangay}</h3>`);
+            rows.push(`<p class="row-text"><strong>Risk level:</strong> ${entry.risk_level}${entry.risk_score !== null && entry.risk_score !== undefined ? ' (score ' + entry.risk_score + ')' : ''}</p>`);
+            if (entry.updated_at) rows.push(`<p class="row-meta">Computed: ${new Date(entry.updated_at).toLocaleString()}</p>`);
+            const w = entry.weather || {};
+            if (w.status === 'fresh') {
+                rows.push('<p class="row-meta">Current weather conditions (context only — humidity/wind are not scored risk factors):</p>');
+                if (w.rainfall_24h_mm !== null && w.rainfall_24h_mm !== undefined) rows.push(`<p class="row-text">Rainfall (24h, forecast — not the monthly figure used for scoring): ${w.rainfall_24h_mm} mm</p>`);
+                if (w.temperature_c !== null && w.temperature_c !== undefined) rows.push(`<p class="row-text">Temperature: ${w.temperature_c} &deg;C</p>`);
+                if (w.humidity_percent !== null && w.humidity_percent !== undefined) rows.push(`<p class="row-text">Humidity: ${w.humidity_percent}%</p>`);
+                if (w.wind_speed_kmh !== null && w.wind_speed_kmh !== undefined) rows.push(`<p class="row-text">Wind speed: ${w.wind_speed_kmh} km/h</p>`);
+            } else {
+                rows.push(`<p class="row-text">${w.message || 'No live weather data available for this barangay.'}</p>`);
+            }
+            if (entry.last_recorded_yield) {
+                rows.push(`<p class="row-text">Last recorded yield: ${entry.last_recorded_yield.value} t/ha (${entry.last_recorded_yield.season || ''} ${entry.last_recorded_yield.year || ''})</p>`);
+            }
+            if (entry.advisory && entry.advisory.overall_recommendation) {
+                rows.push(`<p class="row-text"><strong>Advisory:</strong> ${entry.advisory.planting || ''}</p>`);
+            }
+            content.innerHTML = rows.join('');
+            panel.style.display = '';
+        }
+
+        function initBarangayRiskMap() {
+            const mapEl = document.getElementById('barangayRiskMap');
+            if (!mapEl || !window.L) return;
+
+            const riskUrl = mapEl.dataset.riskMapUrl;
+            const boundaryUrl = mapEl.dataset.boundaryUrl;
+            // Fallback center/zoom, used only until the real municipal boundary loads
+            // (Leaflet requires some center/zoom to construct the map), and as a last
+            // resort if the boundary fetch fails entirely.
+            const FALLBACK_CENTER = [14.02, 120.66];
+            const FALLBACK_ZOOM = 12;
+            const map = window.L.map(mapEl, { scrollWheelZoom: false }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 18,
+            }).addTo(map);
+
+            let geoLayer = null;
+            let municipalBounds = null;
+
+            const fitToMunicipalBounds = () => {
+                if (municipalBounds && municipalBounds.isValid()) {
+                    try { map.fitBounds(municipalBounds, { padding: [12, 12] }); } catch (e) { /* ignore */ }
+                    return true;
+                }
+                return false;
+            };
+
+            // Load the real 8,595-point municipal polygon so the map's initial view is
+            // derived from the actual Lian, Batangas boundary instead of a hardcoded
+            // center/zoom. Falls back to FALLBACK_CENTER/FALLBACK_ZOOM if this fails.
+            const loadMunicipalBoundary = async () => {
+                try {
+                    const res = await fetch('/geojson/lian-boundary.geojson');
+                    if (!res.ok) throw new Error('municipal boundary fetch failed: ' + res.status);
+                    const municipalGeoJSON = await res.json();
+                    const outlineLayer = window.L.geoJSON(municipalGeoJSON, {
+                        style: { color: '#1b5e20', weight: 2, fill: false },
+                    }).addTo(map);
+                    municipalBounds = outlineLayer.getBounds();
+                    fitToMunicipalBounds();
+                } catch (error) {
+                    console.error('iClimate could not load the municipal boundary; using fallback view.', error);
+                    map.setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+                }
+            };
+
+            const load = async () => {
+                try {
+                    const [boundaryRes, riskRes] = await Promise.all([
+                        fetch(boundaryUrl),
+                        fetch(riskUrl),
+                    ]);
+                    const boundary = await boundaryRes.json();
+                    const risk = await riskRes.json();
+
+                    if (!boundary || !Array.isArray(boundary.features) || risk.status === 'unavailable') {
+                        mapEl.insertAdjacentHTML('afterend', '<p class="row-text text-muted">Risk map is temporarily unavailable.</p>');
+                        return;
                     }
 
-                    if (area.risk_level === 'Moderate') {
-                        return 'Keep watch. Conditions can still change, especially after rain or hot days.';
+                    const byName = {};
+                    (risk.barangays || []).forEach((entry) => { byName[entry.barangay] = entry; });
+
+                    if (geoLayer) geoLayer.remove();
+                    geoLayer = window.L.geoJSON(boundary, {
+                        style: (feature) => {
+                            const name = feature.properties && feature.properties.brgy_name;
+                            const entry = byName[name];
+                            return riskFillStyle(entry ? entry.risk_level : 'No Data');
+                        },
+                        onEachFeature: (feature, layer) => {
+                            const name = feature.properties && feature.properties.brgy_name;
+                            const entry = byName[name];
+                            const level = entry ? entry.risk_level : 'No Data';
+                            layer.bindTooltip(`Barangay: ${name} / Risk: ${level}`, { sticky: true });
+                            layer.on('click', () => {
+                                if (entry) renderRiskDetailPanel(entry);
+                            });
+                        },
+                    }).addTo(map);
+
+                    // Prefer the municipal polygon's bounds (the real boundary); only fall
+                    // back to the barangay layer's combined bounds if that failed to load.
+                    if (!fitToMunicipalBounds()) {
+                        try { map.fitBounds(geoLayer.getBounds(), { padding: [12, 12] }); } catch (e) { /* ignore */ }
                     }
+                } catch (error) {
+                    console.error('iClimate could not load the barangay risk map.', error);
+                }
+            };
 
-                    return 'Looks okay for now. Continue normal field checking.';
-                };
-                const escapeHtml = (value) => String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-                const plainConcern = (area) => {
-                    const concern = String(area.risk_type || '').toLowerCase();
-                    if (concern.includes('flood')) return 'Flooding or poor drainage';
-                    if (concern.includes('drought')) return 'Low water / drought';
-                    if (concern.includes('typhoon') || concern.includes('storm')) return 'Strong wind or storm';
-                    if (concern.includes('heat')) return 'Too much heat';
-                    return area.risk_type || 'Field condition';
-                };
-                const plainRain = (area) => {
-                    const rainfall = String(area.rainfall_status || '').toLowerCase();
-                    if (rainfall.includes('low')) return 'Rain may be too low. Water support may be needed.';
-                    if (rainfall.includes('high')) return 'Rain may be too much. Watch drainage and low areas.';
-                    return 'Rain looks manageable for now.';
-                };
-                const plainYield = (area) => {
-                    if (area.predicted_yield === null) return 'No harvest estimate yet';
-                    const yieldValue = Number(area.predicted_yield);
-                    if (yieldValue < 3) return 'Possible low harvest';
-                    if (yieldValue < 4) return 'Average harvest expected';
-                    return 'Good harvest outlook';
-                };
-                const harvestEstimate = (area) => area.predicted_yield === null
-                    ? 'No estimate yet'
-                    : `${Number(area.predicted_yield).toFixed(2)} t/ha`;
-                const harvestSource = (area) => area.predicted_yield === null
-                    ? 'The model needs enough weather and farm area inputs.'
-                    : `${area.predicted_yield_source || 'Trained rice yield model'} estimate.`;
-                const plainAction = (area) => {
-                    return area.irrigation_recommendation
-                        || area.planting_advisory
-                        || 'Visit or contact farmers in this barangay before major field work.';
-                };
-                const layerTitle = (layer) => ({
-                    impact: 'Climate impact',
-                    rainfall: 'Rainfall risk',
-                    yield: 'Rice yield',
-                    irrigation: 'Irrigation priority',
-                }[layer] || 'Climate impact');
-                const layerTakeaway = (area, layer) => {
-                    if (layer === 'rainfall') return plainRain(area);
-                    if (layer === 'yield') {
-                        if (area.predicted_yield === null) return 'No harvest estimate yet. Use field reports and recent weather for now.';
-                        return `${plainYield(area)}. Estimated harvest is ${harvestEstimate(area)}.`;
+            loadMunicipalBoundary();
+            load();
+
+            document.querySelector('[data-risk-map-refresh]')?.addEventListener('click', () => {
+                fetch(riskUrl + '?refresh=1').then(load);
+            });
+
+            // The risk map section is a collapsible <details>. If it's ever collapsed
+            // and reopened, Leaflet needs invalidateSize() (the container had zero size
+            // while hidden) before fitBounds is re-applied, or the view/zoom breaks.
+            const detailsSection = mapEl.closest('details');
+            if (detailsSection) {
+                detailsSection.addEventListener('toggle', () => {
+                    if (detailsSection.open) {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                            fitToMunicipalBounds();
+                        }, 0);
                     }
-                    if (layer === 'irrigation') return plainAction(area);
-                    return plainRiskMessage(area);
-                };
-                const layerMainDetail = (area, layer) => {
-                    if (layer === 'rainfall') return { label: 'Rain condition', value: area.rainfall_status || 'Not recorded', note: plainRain(area) };
-                    if (layer === 'yield') return {
-                        label: 'Estimated harvest',
-                        value: harvestEstimate(area),
-                        note: harvestSource(area),
-                    };
-                    if (layer === 'irrigation') return { label: 'Water support', value: area.irrigation_recommendation ? 'Action needed' : 'No urgent water note', note: plainAction(area) };
-                    return { label: 'Main thing to watch', value: plainConcern(area), note: plainRiskMessage(area) };
-                };
-                const layerSecondDetail = (area, layer) => {
-                    if (layer === 'rainfall') return { label: 'Field concern', value: plainConcern(area), note: 'Check low fields first after strong rain.' };
-                    if (layer === 'yield') return { label: 'Field concern', value: plainConcern(area), note: 'This may affect the expected harvest.' };
-                    if (layer === 'irrigation') return { label: 'Rain condition', value: area.rainfall_status || 'Not recorded', note: plainRain(area) };
-                    return { label: 'Risk level', value: `${area.risk_level} Risk`, note: 'Use this for follow-up priority.' };
-                };
-                const layerAction = (area, layer) => {
-                    if (layer === 'rainfall') return 'Check water level and drainage before advising farmers.';
-                    if (layer === 'yield') return area.planting_advisory || 'Check crop stage and field condition before harvest planning.';
-                    if (layer === 'irrigation') return plainAction(area);
-                    return plainAction(area);
-                };
-                const popupStyle = (area) => {
-                    const colors = {
-                        Severe: '--popup-bg:#fee2e2;--popup-color:#b91c1c;',
-                        High: '--popup-bg:#ffedd5;--popup-color:#c2410c;',
-                        Moderate: '--popup-bg:#fef9c3;--popup-color:#854d0e;',
-                        Low: '--popup-bg:#dcfce7;--popup-color:#15803d;',
-                    };
-
-                    return `--popup-accent:${riskColorFor(area.risk_level)};${colors[area.risk_level] || colors.Low}`;
-                };
-                const popup = (area, layer = activeDashboardLayer) => {
-                    const mainDetail = layerMainDetail(area, layer);
-                    const secondDetail = layerSecondDetail(area, layer);
-
-                    return `
-                        <div class="map-popup" style="${popupStyle(area)}">
-                            <div class="map-popup-title">
-                                <div>
-                                    <div class="map-popup-label">Barangay</div>
-                                    <div class="map-popup-name">${escapeHtml(area.barangay)}</div>
-                                    <div class="map-popup-note">Risk score ${Number(area.risk_score || 0).toFixed(2)} &middot; Showing: ${escapeHtml(layerTitle(layer))}</div>
-                                </div>
-                                <span class="map-popup-badge">${escapeHtml(area.risk_level)} Risk</span>
-                            </div>
-                            <div class="map-popup-takeaway">${escapeHtml(layerTakeaway(area, layer))}</div>
-                            <div class="map-popup-grid">
-                                <div class="map-popup-box">
-                                    <div class="map-popup-label">${escapeHtml(mainDetail.label)}</div>
-                                    <div class="map-popup-value">${escapeHtml(mainDetail.value)}</div>
-                                    <div class="map-popup-note">${escapeHtml(mainDetail.note)}</div>
-                                </div>
-                                <div class="map-popup-box">
-                                    <div class="map-popup-label">${escapeHtml(secondDetail.label)}</div>
-                                    <div class="map-popup-value">${escapeHtml(secondDetail.value)}</div>
-                                    <div class="map-popup-note">${escapeHtml(secondDetail.note)}</div>
-                                </div>
-                                <div class="map-popup-box">
-                                    <div class="map-popup-label">Rice harvest</div>
-                                    <div class="map-popup-value">${escapeHtml(harvestEstimate(area))}</div>
-                                    <div class="map-popup-note">${escapeHtml(plainYield(area))}</div>
-                                </div>
-                            </div>
-                            <div class="map-popup-advice">
-                                <div class="map-popup-label">What to do now</div>
-                                <div class="map-popup-value">${escapeHtml(layerAction(area, layer))}</div>
-                            </div>
-                            ${riskBreakdown(area)}
-                        </div>
-                    `;
-                };
-                const riskBreakdown = (area) => {
-                    if (!area.risk_components) return '';
-
-                    const rows = Object.values(area.risk_components).map((component) => {
-                        const percent = Math.round(Math.max(0, Math.min(1, Number(component.value) || 0)) * 100);
-
-                        return `
-                            <div class="mao-risk-breakdown-row">
-                                <span class="mao-risk-breakdown-label">${escapeHtml(component.label)}</span>
-                                <span class="mao-risk-breakdown-bar"><span class="mao-risk-breakdown-bar-fill" style="width:${percent}%;"></span></span>
-                                <span class="mao-risk-breakdown-value">+${escapeHtml(String(component.weighted))}</span>
-                            </div>
-                        `;
-                    }).join('');
-
-                    return `
-                        <div class="mao-risk-breakdown">
-                            <div class="map-popup-label mb-2">How this risk score was calculated</div>
-                            ${rows}
-                            <div class="map-popup-note mt-2">Barangay exposure is an engineering-judgment estimate, not measured hazard data &mdash; treat it as a starting point, not a certainty.</div>
-                        </div>
-                    `;
-                };
-                const detailPanel = document.getElementById('dashboardMapDetailPanel');
-                const showDetails = (area, layer = activeDashboardLayer) => {
-                    if (!detailPanel) return;
-
-                    selectedDashboardArea = area;
-                    detailPanel.innerHTML = `
-                        <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                        ${popup(area, layer)}
-                    `;
-                    detailPanel.classList.add('show');
-                    applyLabelVisibility();
-                    detailPanel.querySelector('.map-detail-close')?.addEventListener('click', () => {
-                        detailPanel.classList.remove('show');
-                        selectedDashboardArea = null;
-                        applyLabelVisibility();
-                        detailPanel.innerHTML = `
-                            <button class="map-detail-close" type="button" aria-label="Close details">&times;</button>
-                            <div class="map-detail-empty">Click a barangay on the heat map to view risk details here.</div>
-                        `;
-                    });
-                };
-                detailPanel?.querySelector('.map-detail-close')?.addEventListener('click', () => detailPanel.classList.remove('show'));
-
-                const map = L.map(mapEl, { scrollWheelZoom: false }).setView([14.015, 120.65], 12);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 18,
-                    attribution: '&copy; OpenStreetMap contributors',
-                }).addTo(map);
-
-                const applyLabelVisibility = () => {
-                    const showLabels = map.getZoom() >= LABEL_ZOOM_THRESHOLD;
-                    markerTooltips.forEach(({ marker, area }) => {
-                        const shouldShow = showLabels || (selectedDashboardArea && selectedDashboardArea.barangay === area.barangay);
-                        if (shouldShow && !marker.isTooltipOpen()) marker.openTooltip();
-                        if (!shouldShow && marker.isTooltipOpen()) marker.closeTooltip();
-                    });
-                };
-
-                const renderDashboardLayer = (layer = 'impact') => {
-                    activeDashboardLayer = layer;
-                    if (markerLayer) map.removeLayer(markerLayer);
-                    markerTooltips = [];
-
-                    markerLayer = L.featureGroup(maoValidMapAreas.flatMap((area) => {
-                        const color = riskColorFor(area.risk_level);
-                        const clickZone = L.circleMarker([area.latitude, area.longitude], {
-                            radius: 34,
-                            stroke: false,
-                            fillOpacity: 0,
-                            interactive: true,
-                        });
-                        const marker = L.marker([area.latitude, area.longitude], {
-                            icon: L.divIcon({
-                                className: '',
-                                html: `<span class="thermo-point" style="--risk-dot-color:${color}" title="${escapeHtml(area.risk_level)} risk"></span>`,
-                                iconSize: [20, 20],
-                                iconAnchor: [10, 10],
-                            }),
-                        });
-
-                        clickZone.on('click', () => showDetails(area, layer));
-                        marker.on('click', () => showDetails(area, layer));
-
-                        marker.bindTooltip(area.barangay, {
-                            permanent: false,
-                            direction: 'top',
-                            offset: [0, -10],
-                            className: 'barangay-tooltip',
-                        });
-                        markerTooltips.push({ marker, area });
-
-                        return [clickZone, marker];
-                    })).addTo(map);
-
-                    applyLabelVisibility();
-
-                    if (selectedDashboardArea && detailPanel?.classList.contains('show')) {
-                        showDetails(selectedDashboardArea, layer);
-                    }
-                };
-
-                renderDashboardLayer();
-                map.fitBounds(markerLayer.getBounds().pad(.2));
-                map.on('zoomend', applyLabelVisibility);
-                setTimeout(() => map.invalidateSize(), 150);
-
-                document.querySelectorAll('[data-dashboard-layer]').forEach((button) => {
-                    button.addEventListener('click', () => {
-                        document.querySelectorAll('[data-dashboard-layer]').forEach((item) => {
-                            item.classList.remove('active');
-                            item.setAttribute('aria-pressed', 'false');
-                        });
-                        button.classList.add('active');
-                        button.setAttribute('aria-pressed', 'true');
-                        renderDashboardLayer(button.dataset.dashboardLayer);
-                    });
-                });
-
-                // Leaflet sizes itself to its container at construction time; the map
-                // starts inside a hidden tab panel, so it needs a resize nudge once
-                // that panel actually becomes visible.
-                document.querySelector('.dashboard-tab[data-tab="heatmap"]')?.addEventListener('click', () => {
-                    setTimeout(() => map.invalidateSize(), 50);
                 });
             }
-        };
+
+            // Leaflet sizes itself to its container at construction time; the map
+            // starts inside a hidden tab panel, so it needs a resize nudge once
+            // that panel actually becomes visible.
+            document.querySelector('.dashboard-tab[data-tab="heatmap"]')?.addEventListener('click', () => {
+                setTimeout(() => map.invalidateSize(), 50);
+            });
+        }
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeMaoDashboard, { once: true });

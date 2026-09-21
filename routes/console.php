@@ -113,12 +113,12 @@ Schedule::command('iclimate:refresh-lian-boundaries')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
-Schedule::command('iclimate:process-datasets')
-    ->dailyAt('01:30')
+Schedule::command('iclimate:refresh-barangay-risk')
+    ->everyFourHours()
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
-Schedule::command('iclimate:refresh-heatmap-forecasts --months=6')
-    ->dailyAt('02:30')
+Schedule::command('iclimate:process-datasets')
+    ->dailyAt('01:30')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);

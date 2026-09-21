@@ -19,10 +19,10 @@ use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\FarmerOrganizationSummaryService;
-use App\Services\HeatmapRiskService;
 use App\Services\MachineLearning\ModelEvaluationService;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\PythonService;
+use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\WeatherApiService;
@@ -39,7 +39,7 @@ use Throwable;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, RiceYieldPredictionService $riceYield): View
+    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, RiceYieldPredictionService $riceYield, BarangayRiskMapService $riskMapService): View
     {
         $user = $request->user();
         $farmerProfile = $user->farmerProfile;
@@ -69,11 +69,20 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('planting_advisory_id');
 
-        $farmerBarangayRisk = $farmerBarangay
-            ? HeatmapArea::query()->where('barangay', $farmerBarangay)->first()
-            : null;
+        $farmerBarangayRisk = null;
+        if ($farmerBarangay) {
+            try {
+                $farmerBarangayRisk = $riskMapService->detailFor($farmerBarangay);
+            } catch (\Throwable) {
+                $farmerBarangayRisk = null;
+            }
+        }
+        $farmerFarmBoundary = $farmerProfile?->farmBoundary;
 
         return view('dashboards.farmer', $dashboardData + [
+            'farmerBarangay' => $farmerBarangay,
+            'farmerBarangayRisk' => $farmerBarangayRisk,
+            'farmerFarmBoundary' => $farmerFarmBoundary,
             'feedPosts' => $recent['farmerFeedPosts'],
             'advisories' => $advisories,
             'myAdvisoryFeedback' => $myAdvisoryFeedback,
@@ -86,7 +95,6 @@ class DashboardController extends Controller
             'dashboardWeather' => $dashboardWeather,
             'dashboardWeatherResponse' => $weather->responsePayload($dashboardWeather),
             'weatherGuidance' => $weather->guidance($dashboardWeather),
-            'highRiskAreasList' => $recent['highRiskAreas'],
             'farmerBarangay' => $farmerBarangay,
             'farmerBarangayRisk' => $farmerBarangayRisk,
             'farmerYieldPrediction' => $this->farmerYieldPrediction($user, $farmerProfile, $riceYield),
@@ -105,7 +113,7 @@ class DashboardController extends Controller
     /**
      * @return array{severity: string, title: string, message: string}[]
      */
-    private function farmerHighlights(array $weatherAlerts, ?PlantingAdvisory $latestAdvisory, ?HeatmapArea $farmerBarangayRisk): array
+    private function farmerHighlights(array $weatherAlerts, ?PlantingAdvisory $latestAdvisory, ?array $farmerBarangayRisk): array
     {
         $highlights = [];
 
@@ -129,12 +137,13 @@ class DashboardController extends Controller
             ];
         }
 
-        if ($farmerBarangayRisk && in_array($farmerBarangayRisk->risk_level, ['High', 'Severe'], true)) {
+        $riskLevel = $farmerBarangayRisk['risk_level'] ?? null;
+        if ($riskLevel && in_array($riskLevel, ['High', 'Severe'], true)) {
             $highlights[] = [
-                'severity' => $farmerBarangayRisk->risk_level === 'Severe' ? 'critical' : 'warning',
-                'weight' => $farmerBarangayRisk->risk_level === 'Severe' ? 3 : 2,
-                'title' => 'Your barangay is at '.$farmerBarangayRisk->risk_level.' risk',
-                'message' => $farmerBarangayRisk->planting_advisory ?: 'Review current conditions before planting or harvesting.',
+                'severity' => $riskLevel === 'Severe' ? 'critical' : 'warning',
+                'weight' => $riskLevel === 'Severe' ? 3 : 2,
+                'title' => 'Your barangay is at '.$riskLevel.' risk',
+                'message' => $farmerBarangayRisk['advisory']['planting'] ?? 'Review current conditions before planting or harvesting.',
             ];
         }
 
@@ -217,14 +226,6 @@ class DashboardController extends Controller
             ->sortBy('record_date')
             ->values();
 
-        $heatmapAreas = HeatmapArea::query()
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->orderBy('barangay')
-            ->get()
-            ->unique('barangay')
-            ->values();
-
         $liveWeather = $weatherApi->forecast();
         $storedWeatherChartData = [
             'labels' => $climateChartRecords->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
@@ -252,10 +253,10 @@ class DashboardController extends Controller
         $typhoonSafetyNeedsHelpCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count();
         $typhoonSafetyNoResponseCount = max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count());
         $riskLevelCounts = [
-            'Low' => (clone $heatmapAreas)->where('risk_level', 'Low')->count(),
-            'Moderate' => (clone $heatmapAreas)->where('risk_level', 'Moderate')->count(),
-            'High' => (clone $heatmapAreas)->where('risk_level', 'High')->count(),
-            'Severe' => (clone $heatmapAreas)->where('risk_level', 'Severe')->count(),
+            'Low' => HeatmapArea::query()->where('risk_level', 'Low')->count(),
+            'Moderate' => HeatmapArea::query()->where('risk_level', 'Moderate')->count(),
+            'High' => HeatmapArea::query()->where('risk_level', 'High')->count(),
+            'Severe' => HeatmapArea::query()->where('risk_level', 'Severe')->count(),
         ];
         $latestClimateRecord = $recent['recentClimateRecords']->first();
         $currentSeason = $latestClimateRecord?->season ?? data_get($liveWeather, 'season');
@@ -301,7 +302,6 @@ class DashboardController extends Controller
             'recentRiceProductions' => $recent['recentRiceProductions'],
             'latestAdvisories' => $recent['latestAdvisories'],
             'latestFeedPosts' => $recent['latestFeedPosts']->take(4),
-            'latestHeatmapAreas' => $recent['latestHeatmapAreas'],
             'latestReports' => $recent['latestReports']->take(4),
             'recentFarmerProfiles' => $recent['recentFarmerProfiles'],
             'highRiskAreasList' => $highRiskAreasList,
@@ -340,22 +340,6 @@ class DashboardController extends Controller
                 $typhoonSafetyNoResponseCount,
                 $fieldReportsPendingCount,
             ),
-            'dashboardMapAreas' => $heatmapAreas->map(fn (HeatmapArea $area) => [
-                'barangay' => $area->barangay,
-                'latitude' => (float) $area->latitude,
-                'longitude' => (float) $area->longitude,
-                'risk_level' => $area->risk_level,
-                'risk_score' => (float) $area->risk_score,
-                'risk_components' => $area->risk_components,
-                'risk_type' => $area->risk_type,
-                'predicted_yield' => $area->predicted_yield !== null ? (float) $area->predicted_yield : null,
-                'predicted_yield_source' => str_contains(strtolower((string) $area->description), 'trained rice yield model') ? 'Trained rice yield model' : 'Stored production record',
-                'rainfall_status' => $area->rainfall_status,
-                'planting_advisory' => $area->planting_advisory,
-                'irrigation_recommendation' => $area->irrigation_recommendation,
-                'description' => $area->description,
-                'updated_at' => $area->updated_at,
-            ])->values(),
             'farmerSchedules' => $farmerSchedules,
             'plantingScheduleFeatureReady' => $plantingScheduleFeatureReady,
             'scheduleFilters' => $scheduleFilters,
@@ -369,8 +353,8 @@ class DashboardController extends Controller
     public function admin(ModelEvaluationService $modelEvaluation): View
     {
         $recent = $this->recentOperationalData();
-        $heatmapLastRefresh = Cache::get('heatmap:last-refresh');
-        $heatmapRefreshFailuresToday = HeatmapRiskService::refreshFailuresToday();
+        $heatmapLastRefresh = Cache::get(BarangayRiskMapService::CACHE_KEY)['generated_at'] ?? null;
+        $heatmapRefreshFailuresToday = 0;
         $predictionAttemptsToday = PythonService::attemptsToday();
         $predictionFailuresToday = PythonService::failuresToday();
         $inactiveUsersToday = User::query()
@@ -432,7 +416,6 @@ class DashboardController extends Controller
             'recentRiceProductions' => RiceProduction::query()->latest()->take(5)->get(),
             'latestAdvisories' => PlantingAdvisory::query()->latest()->take(5)->get(),
             'latestFeedPosts' => FeedPost::query()->with('author:id,name')->whereNull('archived_at')->latest()->take(5)->get(),
-            'latestHeatmapAreas' => HeatmapArea::query()->latest()->take(5)->get(),
             'latestReports' => Report::query()->realGenerated()->with('generatedBy:id,name')->latest()->take(5)->get(),
             'recentFarmerProfiles' => FarmerProfile::query()->latest()->take(6)->get(),
             'highRiskAreas' => $this->highRiskAreas(),
@@ -443,6 +426,8 @@ class DashboardController extends Controller
      * Split out of recentOperationalData() with its own shorter TTL: safety
      * signal (which barangays are High/Severe right now) should refresh
      * faster than slower-moving lists like recent feed posts or reports.
+     * Sourced from HeatmapArea, which BarangayRiskMapService keeps as the
+     * last-known-good store for every barangay it successfully scores.
      */
     private function highRiskAreas(): Collection
     {
@@ -450,10 +435,7 @@ class DashboardController extends Controller
             ->whereIn('risk_level', ['High', 'Severe'])
             ->orderByDesc('risk_score')
             ->take(8)
-            ->get()
-            ->each(function (HeatmapArea $area): void {
-                $area->setAttribute('risk_breakdown', app(HeatmapRiskService::class)->riskBreakdownFor($area->barangay));
-            }));
+            ->get());
     }
 
     /**
@@ -467,7 +449,6 @@ class DashboardController extends Controller
             'feedbackAwaitingResponse' => Schema::hasTable('advisory_feedback')
                 ? AdvisoryFeedback::query()->whereNotNull('is_helpful')->whereNull('mao_response')->count()
                 : 0,
-            'highRiskAreaCount' => HeatmapArea::query()->whereIn('risk_level', ['High', 'Severe'])->count(),
         ]);
     }
 
@@ -588,7 +569,6 @@ class DashboardController extends Controller
                 'avgYield' => (float) $rice->yield_average,
                 'profileCount' => FarmerProfile::count(),
                 'reportCount' => Report::query()->realGenerated()->count(),
-                'heatMapCount' => HeatmapArea::count(),
                 'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', 'Published')->count(),
                 'communityPostCount' => FeedPost::query()->whereNull('archived_at')->count(),
             ];
@@ -624,7 +604,6 @@ class DashboardController extends Controller
                     'Advisories' => PlantingAdvisory::count(),
                     'Community Feed' => FeedPost::query()->whereNull('archived_at')->count(),
                     'Notifications' => UserNotification::count(),
-                    'Heat Map Areas' => HeatmapArea::count(),
                     'Reports' => Report::query()->realGenerated()->count(),
                 ],
             ];
@@ -888,11 +867,6 @@ class DashboardController extends Controller
     private function stats(): array
     {
         return Cache::remember('dashboard:shared-stats', now()->addSeconds(45), function (): array {
-            $heatmap = HeatmapArea::query()
-                ->selectRaw('COUNT(*) as total')
-                ->selectRaw("SUM(CASE WHEN risk_level IN ('High', 'Severe') THEN 1 ELSE 0 END) as high_risk_total")
-                ->first();
-
             return [
                 'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
                 'totalClimateRecords' => ClimateRecord::count(),
@@ -900,8 +874,6 @@ class DashboardController extends Controller
                 'totalAdvisories' => PlantingAdvisory::count(),
                 'totalCommunityPosts' => FeedPost::query()->whereNull('archived_at')->count(),
                 'totalNotifications' => UserNotification::count(),
-                'totalHeatMapAreas' => (int) $heatmap->total,
-                'highRiskHeatMapAreas' => (int) $heatmap->high_risk_total,
             ];
         });
     }

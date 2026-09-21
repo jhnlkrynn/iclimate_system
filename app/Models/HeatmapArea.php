@@ -9,6 +9,16 @@ class HeatmapArea extends Model
 {
     use HasFactory;
 
+    /**
+     * How recent risk_computed_at must be for a row to be treated as
+     * "current" (vs. "stale") by chatbot-style consumers (Climora /
+     * RoleAssistantService). The scheduled `iclimate:refresh-barangay-risk`
+     * command recomputes the whole risk map at least every 4 hours; 6 hours
+     * gives a buffer for one missed/delayed scheduler run without being so
+     * generous that genuinely outdated data gets presented as current.
+     */
+    public const CURRENT_WINDOW_HOURS = 6;
+
     protected $fillable = [
         'barangay',
         'latitude',
@@ -56,5 +66,15 @@ class HeatmapArea extends Model
                 $area->risk_computed_at = now();
             }
         });
+    }
+
+    /**
+     * True when risk_computed_at is within self::CURRENT_WINDOW_HOURS of now.
+     * A row with no risk_computed_at at all is never treated as current.
+     */
+    public function isCurrentlyComputed(): bool
+    {
+        return $this->risk_computed_at !== null
+            && $this->risk_computed_at->greaterThanOrEqualTo(now()->subHours(self::CURRENT_WINDOW_HOURS));
     }
 }

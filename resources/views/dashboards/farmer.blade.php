@@ -832,7 +832,6 @@
                         <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="460">
                             <span>Advisories</span>
                             <strong>{{ number_format($activeWeatherAlerts ?? 0) }} active</strong>
-                            <small>{{ number_format($highRiskHeatMapAreas) }} high-risk barangay areas tracked</small>
                         </div>
                     </div>
                 </div>
@@ -862,7 +861,6 @@
                 </div>
                 <div class="farmer-hero-actions" data-reveal="fade-left" data-reveal-delay="260">
                     <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F j, Y') }} {{ $weatherNow->format('g:i:s A') }}</span></span>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('heatmap-areas.index') }}">View Heat Map</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
                     <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
                 </div>
@@ -937,29 +935,54 @@
                 <div class="field-note">Unread weather warnings only</div>
                 <div class="field-tap-hint">View details &rarr;</div>
             </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalRisk" data-reveal="fade-up" data-reveal-delay="280">
-                <div class="field-card-top">
-                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                    @if($farmerBarangayRisk)
-                        <span class="field-status {{ in_array($farmerBarangayRisk->risk_level, ['High','Severe']) ? 'is-warn' : '' }}">{{ $farmerBarangayRisk->risk_level }}</span>
-                    @else
-                        <span class="field-status {{ $highRiskHeatMapAreas > 0 ? 'is-warn' : '' }}">{{ $highRiskHeatMapAreas > 0 ? 'Flagged' : 'Clear' }}</span>
-                    @endif
-                </div>
-                @if($farmerBarangayRisk)
-                    <div class="field-label">{{ $farmerBarangay }} Risk</div>
-                    <div class="field-value">{{ $farmerBarangayRisk->risk_level }}</div>
-                    <div class="field-note">{{ $farmerBarangayRisk->risk_type }} risk &middot; score {{ number_format((float) $farmerBarangayRisk->risk_score, 2) }}/1.00</div>
-                @else
-                    <div class="field-label">High Risk Areas</div>
-                    <div class="field-value">{{ number_format($highRiskHeatMapAreas) }}</div>
-                    <div class="field-note">High or severe barangay risk areas</div>
-                @endif
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
         </section>
 
+        @if($farmerBarangay)
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
+            <div class="fc-eyebrow on-light">Your barangay</div>
         </div>
+        <section class="climate-grid" id="risk-map" data-reveal-stagger>
+            <div class="field-card" style="grid-column: 1 / -1;">
+                <div class="field-card-top">
+                    <div class="field-label">YOUR BARANGAY: {{ $farmerBarangay }}</div>
+                    @if($farmerBarangayRisk)
+                        <span class="field-status {{ in_array($farmerBarangayRisk['risk_level'], ['High','Severe']) ? 'is-warn' : 'is-live' }}">{{ $farmerBarangayRisk['risk_level'] }}</span>
+                    @else
+                        <span class="field-status">No Data</span>
+                    @endif
+                </div>
+                @if($farmerFarmBoundary)
+                    <div class="field-note">YOUR FARM boundary is recorded ({{ number_format((float) $farmerFarmBoundary->calculated_area_hectares, 2) }} ha).</div>
+                @else
+                    <div class="field-note">No farm boundary recorded yet for your profile.</div>
+                @endif
+
+                @if($farmerBarangayRisk && $farmerBarangayRisk['risk_score'] !== null)
+                    <div class="field-value">Risk score: {{ $farmerBarangayRisk['risk_score'] }}</div>
+                @endif
+
+                @if($farmerBarangayRisk && ($farmerBarangayRisk['weather']['status'] ?? null) === 'fresh')
+                    <div class="field-note">
+                        Current weather conditions (context only — humidity/wind are not scored risk factors):
+                        @if($farmerBarangayRisk['weather']['rainfall_24h_mm'] !== null) Rainfall (24h forecast): {{ $farmerBarangayRisk['weather']['rainfall_24h_mm'] }} mm &middot; @endif
+                        @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}&deg;C &middot; @endif
+                        @if($farmerBarangayRisk['weather']['humidity_percent'] !== null) Humidity: {{ $farmerBarangayRisk['weather']['humidity_percent'] }}% &middot; @endif
+                        @if($farmerBarangayRisk['weather']['wind_speed_kmh'] !== null) Wind: {{ $farmerBarangayRisk['weather']['wind_speed_kmh'] }} km/h @endif
+                    </div>
+                @else
+                    <div class="field-note">Live weather is temporarily unavailable for your barangay.</div>
+                @endif
+
+                @if($farmerBarangayRisk && $farmerBarangayRisk['last_recorded_yield'])
+                    <div class="field-note">Last recorded yield: {{ $farmerBarangayRisk['last_recorded_yield']['value'] }} t/ha ({{ $farmerBarangayRisk['last_recorded_yield']['season'] }} {{ $farmerBarangayRisk['last_recorded_yield']['year'] }})</div>
+                @endif
+
+                @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['planting'] ?? null))
+                    <div class="field-note"><strong>Advisory:</strong> {{ $farmerBarangayRisk['advisory']['planting'] }}</div>
+                @endif
+            </div>
+        </section>
+        @endif
 
         @if($weatherForecastDays !== [])
             <div class="dashboard-tab-panel" data-panel="forecast">
@@ -1077,92 +1100,6 @@
             </div>
         </div>
 
-        <div class="ic-drawer fc-stat-modal" id="statModalRisk" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalRiskLabel">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalRiskLabel">{{ $farmerBarangayRisk ? $farmerBarangay.' Risk' : 'High Risk Barangays' }}</h2>
-                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        @if($farmerBarangayRisk)
-                            @php
-                                $myRiskLevel = $farmerBarangayRisk->risk_level ?: 'Moderate';
-                                $myRiskInterpretation = match (strtolower($myRiskLevel)) {
-                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
-                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
-                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
-                                    default => 'Low risk: conditions are currently favorable for this barangay.',
-                                };
-                            @endphp
-                            <div class="fc-modal-headline">{{ $myRiskLevel }} risk</div>
-                            <p class="fc-modal-sub">{{ $myRiskInterpretation }}</p>
-                            <div class="farmer-list-item pt-0">
-                                <div class="list-mark"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                                <div>
-                                    <div class="list-title">{{ $farmerBarangayRisk->barangay }} &middot; {{ $farmerBarangayRisk->risk_type }}</div>
-                                    <div class="list-text">{{ $farmerBarangayRisk->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="list-meta">Risk score {{ number_format((float) $farmerBarangayRisk->risk_score, 2) }} / 1.00</div>
-                                </div>
-                            </div>
-                            @if($farmerBarangayRisk->risk_components)
-                                <details class="fc-risk-explainer">
-                                    <summary>How this risk score was calculated</summary>
-                                    @foreach($farmerBarangayRisk->risk_components as $component)
-                                        @php $percent = (int) round(max(0, min(1, (float) ($component['value'] ?? 0))) * 100); @endphp
-                                        <div class="fc-risk-bar-row">
-                                            <span class="fc-risk-bar-label">{{ $component['label'] ?? '' }}</span>
-                                            <span class="fc-risk-bar"><span class="fc-risk-bar-fill" style="width:{{ $percent }}%;"></span></span>
-                                        </div>
-                                    @endforeach
-                                    <p class="list-text mt-2">Barangay exposure is an engineering-judgment estimate, not measured hazard data &mdash; treat it as a starting point, not a certainty.</p>
-                                </details>
-                            @endif
-                            <p class="fc-modal-sub mt-3 mb-0">Other barangays currently flagged:</p>
-                        @else
-                            <div class="fc-modal-headline">{{ number_format($highRiskHeatMapAreas) }} flagged</div>
-                            <p class="fc-modal-sub">Barangays currently marked High or Severe risk on the heat map. Risk score runs from 0.00 (lowest risk) to 1.00 (highest risk).</p>
-                        @endif
-                        @forelse($highRiskAreasList->where('barangay', '!=', $farmerBarangay) as $area)
-                            @php
-                                $riskScoreValue = (float) $area->risk_score;
-                                $riskLevelLabel = $area->risk_level ?: 'Moderate';
-                                $riskInterpretation = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'Severe risk: conditions strongly threaten this planting season. Act on the advisory right away.',
-                                    'high' => 'High risk: expect significant stress on crops. Follow the advisory closely before planting.',
-                                    'moderate' => 'Moderate risk: some caution is needed. Monitor conditions before proceeding.',
-                                    default => 'Low risk: conditions are currently favorable for this barangay.',
-                                };
-                                $riskBadgeClass = match (strtolower($riskLevelLabel)) {
-                                    'severe' => 'fc-risk-badge-severe',
-                                    'high' => 'fc-risk-badge-high',
-                                    'moderate' => 'fc-risk-badge-moderate',
-                                    default => 'fc-risk-badge-low',
-                                };
-                            @endphp
-                            <div class="farmer-list-item">
-                                <div class="list-mark"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 18 16.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 8v3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="14" r=".9" fill="currentColor"/></svg></div>
-                                <div>
-                                    <div class="list-title">
-                                        {{ $area->barangay }} &middot; {{ $area->risk_type }}
-                                        <span class="fc-risk-badge {{ $riskBadgeClass }}">{{ $riskLevelLabel }} risk</span>
-                                    </div>
-                                    <div class="list-text fc-risk-interpretation">{{ $riskInterpretation }}</div>
-                                    <div class="list-text">{{ $area->planting_advisory ?: 'Review latest climate and rice production data before planting.' }}</div>
-                                    <div class="list-meta">Risk score {{ number_format($riskScoreValue, 2) }} / 1.00</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-soft"><strong>No high risk barangays</strong><div class="small mt-1" style="color: var(--fc-ink-light);">All barangays are currently within normal risk levels.</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-primary" href="{{ route('heatmap-areas.index') }}">Open Heat Map</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="dashboard-tab-panel active" data-panel="overview">
         <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
             <div class="fc-eyebrow on-light">Your Farm</div>
@@ -1220,11 +1157,6 @@
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v6A2.5 2.5 0 0 1 14.5 14H9l-3.5 3v-3h-1A2.5 2.5 0 0 1 2 11.5v-6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7" cy="8.5" r=".9" fill="currentColor"/><circle cx="10.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="14" cy="8.5" r=".9" fill="currentColor"/></svg></div>
                 <div><strong>Climora AI</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
                 <span class="status-pill">Open Climora AI</span>
-            </a>
-            <a class="priority-card" href="{{ route('heatmap-areas.index') }}" data-reveal="fade-up" data-reveal-delay="70">
-                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5 7 4l6 2 4.5-1.5v10L13 16l-6-2-4.5 1.5v-10Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 4v10M13 6v10" stroke="currentColor" stroke-width="1.2"/></svg></div>
-                <div><strong>Barangay Heat Map</strong><span class="desc">Check risk areas before planning field work, irrigation, and harvest movement.</span></div>
-                <span class="status-pill">Open Heat Map</span>
             </a>
             <a class="priority-card" href="{{ route('community-feed.index') }}" data-reveal="fade-up" data-reveal-delay="140">
                 <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M6 17l2.2-2.5h3.6L14 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 7.5h9M5.5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
@@ -1424,7 +1356,6 @@
                 <div class="quick-grid" data-reveal-stagger>
                     <a class="quick-action" href="{{ route('climate-records.index') }}" data-reveal="fade-up"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
                     <a class="quick-action" href="{{ route('farmer.boundary.edit') }}" data-reveal="fade-up"><strong>My Farm Boundary</strong><span>Draw and save the complete perimeter of your planting area.</span></a>
-                    <a class="quick-action" href="{{ route('heatmap-areas.index') }}" data-reveal="fade-up"><strong>Barangay Heat Map</strong><span>Review climate and production risk by barangay.</span></a>
                     <a class="quick-action" href="{{ route('ai-chat.index') }}" data-reveal="fade-up"><strong>Climora AI</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
                     <a class="quick-action" href="{{ route('planting-advisories.index') }}" data-reveal="fade-up"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
                     <a class="quick-action" href="{{ route('community-feed.index') }}" data-reveal="fade-up"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>

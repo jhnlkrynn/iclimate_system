@@ -22,7 +22,6 @@
             'notifications' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.3 14.5a1.8 1.8 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'climate-records' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5 2.5h5.5L14 6v9.5H5V2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 8h4M7 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'weather' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            'heatmap' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.8 0 5 2.3 5 5.2C14 11 9 16 9 16S4 11 4 7.2C4 4.3 6.2 2 9 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7.2" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>',
             'rice-production' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2c1.4 2 2.5 3.6 2.5 5.3A2.5 2.5 0 1 1 6.5 7.3C6.5 5.6 7.6 4 9 2Z" stroke="currentColor" stroke-width="1.4"/><path d="M9 9.8V16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M9 12.5c-1.6 0-2.8.9-3.2 2.5M9 12.5c1.6 0 2.8.9 3.2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
             'farmer-profiles' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'reports' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="3.5" y="2.5" width="11" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 6.5h5M6.5 9.5h5M6.5 12.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
@@ -42,7 +41,6 @@
         'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
         'weather' => ['weather-predictions.index', ['weather-predictions.*']],
-        'heatmap' => ['heatmap-areas.index', ['heatmap-areas.*']],
         'rice-production' => ['rice-productions.index', ['rice-productions.*']],
         'farmer-profiles' => ['farmer-profiles.index', ['farmer-profiles.*']],
         'reports' => ['reports.index', ['reports.*']],
@@ -53,12 +51,17 @@
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
         [$route, $patterns] = $routeDefs[$routeKey];
 
-        return [$label, $route, $patterns, $iconKey, $badge];
+        return [$label, $route, $patterns, $iconKey, $badge, null];
+    };
+
+    $navLinkAnchor = function (string $label, string $anchor, string $iconKey) use ($dashboardRoute): array {
+        return [$label, $dashboardRoute, [$dashboardRoute], $iconKey, null, $anchor];
     };
 
     if ($isFarmer) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Advisories', 'advisories', 'advisories'),
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
@@ -68,13 +71,13 @@
         $moreGroup = [
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Weather & Yield', 'weather', 'weather'),
-            $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [];
     } elseif ($isMao) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Farm Calendar', 'calendar', 'calendar'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Planting Advisories', 'advisories', 'advisories'),
@@ -84,7 +87,6 @@
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Weather Prediction', 'weather', 'weather'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
-            $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
         ];
         $publishingGroup = [
             $navLink('Community Feed', 'community', 'community'),
@@ -102,7 +104,6 @@
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Weather Prediction', 'weather', 'weather'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
-            $navLink('Heat Map Areas', 'heatmap', 'heatmap'),
         ];
         $publishingGroup = [
             $navLink('Planting Advisories', 'advisories', 'advisories'),
@@ -124,9 +125,10 @@
             $html .= '<div class="sidebar-group">';
             $html .= '<div class="sidebar-section">'.e($sectionLabel).'</div>';
             $html .= '<div class="sidebar-stack d-grid gap-1">';
-            foreach ($links as [$label, $route, $patterns, $iconKey, $badge]) {
+            foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
-                $html .= '<a class="sidebar-link '.$active.'" href="'.e(route($route)).'">';
+                $href = $anchor ? route($route).'#'.$anchor : route($route);
+                $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'">';
                 $html .= '<span class="d-flex align-items-center gap-2"><span class="sidebar-icon">'.$sidebarIcon($iconKey).'</span><span>'.e($label).'</span></span>';
                 $html .= '<span class="d-flex align-items-center gap-2">';
                 if (! empty($badge)) {

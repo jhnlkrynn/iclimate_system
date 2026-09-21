@@ -133,4 +133,33 @@ class AgriculturalRiskScorerTest extends TestCase
         $yieldFactor = collect($explained['factors'])->firstWhere('key', 'predicted_yield');
         $this->assertStringContainsString('No yield prediction', $yieldFactor['detail']);
     }
+
+    /**
+     * Humidity/wind are intentionally NOT direct scored inputs — passing
+     * wildly different humidity/wind_speed values (which score()/components()
+     * do not even read) must never change the score. Only rainfall,
+     * temperature, predicted_yield, farm_type, barangay, and
+     * stress_factor_count (a caller-computed summary that MAY have been
+     * influenced by humidity/wind upstream) affect the result.
+     */
+    public function test_humidity_and_wind_are_not_direct_scored_factors(): void
+    {
+        $base = [
+            'rainfall' => 230,
+            'temperature' => 27,
+            'predicted_yield' => 4.5,
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Balibago',
+            'stress_factor_count' => 0,
+        ];
+
+        $withExtraKeys = $base + ['humidity' => 99, 'wind_speed' => 999];
+
+        $this->assertSame($this->scorer->score($base), $this->scorer->score($withExtraKeys));
+
+        $explainedKeys = array_column($this->scorer->explain($base)['factors'], 'key');
+        $this->assertNotContains('humidity', $explainedKeys);
+        $this->assertNotContains('wind_speed', $explainedKeys);
+        $this->assertNotContains('wind', $explainedKeys);
+    }
 }
