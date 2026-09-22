@@ -134,8 +134,6 @@
         .list-mark svg { width: 17px; height: 17px; }
         .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
-        #riskMapDetailContent ul.row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
-        #riskMapDetailContent ul.row-text li { margin-bottom: .15rem; }
         .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
         .mao-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
         .mao-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
@@ -185,35 +183,10 @@
         .chart-render-state[hidden] { display: none; }
         .chart-title { color: var(--mao-ink); font-weight: 700; margin-bottom: .25rem; }
         .chart-note { color: var(--mao-muted); font-size: .82rem; margin-bottom: .85rem; }
-        .dashboard-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
         .map-toolbar { position: absolute; z-index: 500; left: 1rem; right: 1rem; top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; pointer-events: none; }
         .map-toolbar > * { pointer-events: auto; }
         .layer-btn { min-height: 38px; border: 1px solid rgba(95,143,120,.35); border-radius: 8px; background: rgba(255,255,255,.8); backdrop-filter: blur(14px) saturate(170%); color: var(--mao-ink); padding: .48rem .64rem; font-size: .78rem; font-weight: 700; box-shadow: 0 .5rem 1.2rem rgba(13,31,24,.08); white-space: nowrap; }
         .layer-btn.active { background: #1F4D3A; border-color: #1F4D3A; color: #fff; }
-        .dashboard-map {
-            height: 540px;
-            min-height: 380px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #dbe8e0;
-        }
-        .dashboard-map-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .5rem .9rem;
-            align-items: center;
-            margin: .6rem 0 .85rem;
-            padding: .65rem .85rem;
-            border: 1px solid rgba(95,143,120,.35);
-            border-radius: 8px;
-            background: rgba(255,255,255,.7);
-            backdrop-filter: blur(12px) saturate(160%);
-            font-size: .82rem;
-            font-weight: 700;
-            color: var(--mao-ink);
-        }
-        .dashboard-map-legend .legend-swatch { display: inline-flex; align-items: center; gap: .4rem; }
-        .dashboard-map-legend .legend-dot { width: .85rem; height: .85rem; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.18); }
         .thermo-point {
             width: 20px;
             height: 20px;
@@ -803,27 +776,12 @@
         </section>
 
         <section class="mao-panel">
-            <div class="mao-panel-header">
-                <div>
-                    <h2 class="mao-panel-title">Barangay Agricultural Risk Map</h2>
-                    <p class="mao-panel-sub">Choropleth of all 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.</p>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-risk-map-refresh>Refresh</button>
-            </div>
             <div class="mao-panel-body">
-                <div class="dashboard-map-shell">
-                    <div id="barangayRiskMap" class="dashboard-map" data-risk-map-url="{{ url('/api/lian/risk-map') }}" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}" role="img" aria-label="Barangay agricultural risk choropleth map of Lian, Batangas"></div>
-                    <div class="dashboard-map-legend" id="riskMapLegend">
-                        <span class="legend-swatch"><span class="legend-dot" style="background:#2e7d32"></span>Low</span>
-                        <span class="legend-swatch"><span class="legend-dot" style="background:#f9c74f"></span>Moderate</span>
-                        <span class="legend-swatch"><span class="legend-dot" style="background:#e05a2b"></span>High</span>
-                        <span class="legend-swatch"><span class="legend-dot" style="background:#8b0000"></span>Severe</span>
-                        <span class="legend-swatch"><span class="legend-dot" style="background:repeating-linear-gradient(45deg,#9e9e9e,#9e9e9e 3px,#cfcfcf 3px,#cfcfcf 6px);background-color:#9e9e9e"></span>No Data</span>
-                    </div>
-                </div>
-                <div id="riskMapDetailPanel" class="mao-panel-body" style="display:none; border-top: 1px solid rgba(13,31,24,.1); margin-top: .75rem; padding-top: .75rem;">
-                    <div id="riskMapDetailContent"></div>
-                </div>
+                @include('partials.barangay-risk-map', [
+                    'heading' => 'Barangay Agricultural Risk Map',
+                    'subheading' => 'Choropleth of all 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.',
+                    'showRefresh' => true,
+                ])
             </div>
         </section>
 
@@ -1731,228 +1689,7 @@
                     maoWeatherPollTimer = null;
                 }
             });
-
-            initBarangayRiskMap();
         };
-
-        const RISK_LEVEL_COLORS = {
-            'Low': '#2e7d32',
-            'Moderate': '#f9c74f',
-            'High': '#e05a2b',
-            'Severe': '#8b0000',
-            'No Data': '#9e9e9e',
-        };
-
-        function riskFillStyle(level) {
-            const color = RISK_LEVEL_COLORS[level] || RISK_LEVEL_COLORS['No Data'];
-            return {
-                fillColor: color,
-                color: level === 'No Data' ? '#616161' : '#2b2b2b',
-                weight: level === 'No Data' ? 1 : 1.2,
-                dashArray: level === 'No Data' ? '3,3' : null,
-                fillOpacity: level === 'No Data' ? 0.35 : 0.65,
-            };
-        }
-
-        function renderRiskDetailPanel(entry, meta) {
-            const panel = document.getElementById('riskMapDetailPanel');
-            const content = document.getElementById('riskMapDetailContent');
-            if (!panel || !content) return;
-
-            const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-            const rows = [];
-            rows.push(`<h3 class="mao-panel-title" style="font-size:1.1rem;">${esc(entry.barangay)}</h3>`);
-
-            if (entry.risk_level === 'No Data') {
-                rows.push('<p class="row-text"><strong>Risk level:</strong> No Data</p>');
-                rows.push(`<p class="row-meta">${esc(entry.no_data_reason || 'This barangay currently has no computed risk score. Live weather or the monthly rainfall model may be temporarily unavailable.')}</p>`);
-            } else {
-                rows.push(`<p class="row-text"><strong>Risk level:</strong> ${esc(entry.risk_level)}${entry.risk_score !== null && entry.risk_score !== undefined ? ' (score ' + esc(entry.risk_score) + ')' : ''}</p>`);
-            }
-            if (entry.updated_at) rows.push(`<p class="row-meta">Computed: ${new Date(entry.updated_at).toLocaleString()}</p>`);
-            if (meta && meta.source_note) rows.push(`<p class="row-meta">Data source: ${esc(meta.source_note)}${meta.generated_at ? ' &middot; as of ' + new Date(meta.generated_at).toLocaleString() : ''}</p>`);
-
-            const w = entry.weather || {};
-            if (w.status === 'fresh') {
-                rows.push('<p class="row-meta">Current weather conditions (context only — humidity/wind are not scored risk factors):</p>');
-                if (w.rainfall_24h_mm !== null && w.rainfall_24h_mm !== undefined) rows.push(`<p class="row-text">Rainfall (24h, forecast — not the monthly figure used for scoring): ${esc(w.rainfall_24h_mm)} mm</p>`);
-                if (w.temperature_c !== null && w.temperature_c !== undefined) rows.push(`<p class="row-text">Temperature: ${esc(w.temperature_c)} &deg;C</p>`);
-                if (w.humidity_percent !== null && w.humidity_percent !== undefined) rows.push(`<p class="row-text">Humidity: ${esc(w.humidity_percent)}%</p>`);
-                if (w.wind_speed_kmh !== null && w.wind_speed_kmh !== undefined) rows.push(`<p class="row-text">Wind speed: ${esc(w.wind_speed_kmh)} km/h</p>`);
-            } else {
-                rows.push(`<p class="row-text">${esc(w.message || 'No live weather data available for this barangay.')}</p>`);
-            }
-
-            if (entry.monthly_rainfall && entry.monthly_rainfall.available !== false && entry.monthly_rainfall.value_mm !== null && entry.monthly_rainfall.value_mm !== undefined) {
-                rows.push(`<p class="row-text">Monthly rainfall (used for scoring): ${esc(entry.monthly_rainfall.value_mm)} ${esc(entry.monthly_rainfall.unit || 'mm')} (${esc(entry.monthly_rainfall.scope || 'municipal')})</p>`);
-            }
-
-            if (entry.last_recorded_yield) {
-                rows.push(`<p class="row-text">Last recorded yield: ${esc(entry.last_recorded_yield.value)} t/ha (${esc(entry.last_recorded_yield.season || '')} ${esc(entry.last_recorded_yield.year || '')})</p>`);
-            }
-            if (entry.farm_type_context) {
-                rows.push(`<p class="row-meta">${esc(entry.farm_type_context)}</p>`);
-            }
-
-            if (entry.advisory) {
-                if (entry.advisory.planting) rows.push(`<p class="row-text"><strong>Planting advisory:</strong> ${esc(entry.advisory.planting)}</p>`);
-                if (entry.advisory.irrigation) rows.push(`<p class="row-text"><strong>Irrigation:</strong> ${esc(entry.advisory.irrigation)}</p>`);
-                if (Array.isArray(entry.advisory.warnings) && entry.advisory.warnings.length) {
-                    rows.push('<p class="row-text"><strong>Warnings:</strong></p><ul class="row-text">' + entry.advisory.warnings.map((warn) => `<li>${esc(warn)}</li>`).join('') + '</ul>');
-                }
-                if (entry.advisory.overall_recommendation) rows.push(`<p class="row-text"><strong>Recommendation:</strong> ${esc(entry.advisory.overall_recommendation)}</p>`);
-            }
-
-            content.innerHTML = rows.join('');
-            panel.style.display = '';
-        }
-
-        function initBarangayRiskMap() {
-            const mapEl = document.getElementById('barangayRiskMap');
-            if (!mapEl || !window.L) return;
-
-            const riskUrl = mapEl.dataset.riskMapUrl;
-            const boundaryUrl = mapEl.dataset.boundaryUrl;
-            // Fallback center/zoom, used only until the real municipal boundary loads
-            // (Leaflet requires some center/zoom to construct the map), and as a last
-            // resort if the boundary fetch fails entirely.
-            const FALLBACK_CENTER = [14.02, 120.66];
-            const FALLBACK_ZOOM = 12;
-            const map = window.L.map(mapEl, { scrollWheelZoom: false }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
-            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 18,
-            }).addTo(map);
-
-            let geoLayer = null;
-            let municipalBounds = null;
-
-            const fitToMunicipalBounds = () => {
-                if (municipalBounds && municipalBounds.isValid()) {
-                    try { map.fitBounds(municipalBounds, { padding: [12, 12] }); } catch (e) { /* ignore */ }
-                    return true;
-                }
-                return false;
-            };
-
-            // Load the real 8,595-point municipal polygon so the map's initial view is
-            // derived from the actual Lian, Batangas boundary instead of a hardcoded
-            // center/zoom. Falls back to FALLBACK_CENTER/FALLBACK_ZOOM if this fails.
-            const loadMunicipalBoundary = async () => {
-                try {
-                    const res = await fetch('/geojson/lian-boundary.geojson');
-                    if (!res.ok) throw new Error('municipal boundary fetch failed: ' + res.status);
-                    const municipalGeoJSON = await res.json();
-                    const outlineLayer = window.L.geoJSON(municipalGeoJSON, {
-                        style: { color: '#1b5e20', weight: 2, fill: false },
-                    }).addTo(map);
-                    municipalBounds = outlineLayer.getBounds();
-                    fitToMunicipalBounds();
-                } catch (error) {
-                    console.error('iClimate could not load the municipal boundary; using fallback view.', error);
-                    map.setView(FALLBACK_CENTER, FALLBACK_ZOOM);
-                }
-            };
-
-            let riskMeta = {};
-
-            // Single fetch of the boundary + risk endpoints per load. `forceRefresh`
-            // appends ?refresh=1 to the *same* request instead of issuing a separate
-            // priming fetch first, so a manual refresh click never doubles the call
-            // to /api/lian/risk-map.
-            const load = async (forceRefresh = false) => {
-                try {
-                    const effectiveRiskUrl = forceRefresh
-                        ? riskUrl + (riskUrl.includes('?') ? '&' : '?') + 'refresh=1'
-                        : riskUrl;
-                    const [boundaryRes, riskRes] = await Promise.all([
-                        fetch(boundaryUrl),
-                        fetch(effectiveRiskUrl),
-                    ]);
-                    const boundary = await boundaryRes.json();
-                    const risk = await riskRes.json();
-
-                    if (!boundary || !Array.isArray(boundary.features) || risk.status === 'unavailable') {
-                        mapEl.insertAdjacentHTML('afterend', '<p class="row-text text-muted">Risk map is temporarily unavailable.</p>');
-                        return;
-                    }
-
-                    riskMeta = { source_note: risk.source_note, generated_at: risk.generated_at };
-
-                    const byName = {};
-                    (risk.barangays || []).forEach((entry) => { byName[entry.barangay] = entry; });
-
-                    if (geoLayer) geoLayer.remove();
-                    geoLayer = window.L.geoJSON(boundary, {
-                        style: (feature) => {
-                            const name = feature.properties && feature.properties.brgy_name;
-                            const entry = byName[name];
-                            return riskFillStyle(entry ? entry.risk_level : 'No Data');
-                        },
-                        onEachFeature: (feature, layer) => {
-                            const name = feature.properties && feature.properties.brgy_name;
-                            const entry = byName[name];
-                            const level = entry ? entry.risk_level : 'No Data';
-                            const scoreLabel = entry && entry.risk_score !== null && entry.risk_score !== undefined ? ` (score ${entry.risk_score})` : '';
-                            layer.bindTooltip(`${name} — Risk: ${level}${scoreLabel}`, { sticky: true });
-                            layer.on('click', () => {
-                                // Even a barangay with no matching entry (name mismatch or
-                                // no computed score) gets a clear "No Data" panel instead
-                                // of the click silently doing nothing.
-                                renderRiskDetailPanel(entry || {
-                                    barangay: name || 'Unknown barangay',
-                                    risk_level: 'No Data',
-                                    risk_score: null,
-                                    updated_at: null,
-                                    weather: { status: 'unavailable', message: 'No live weather data available for this barangay.' },
-                                    last_recorded_yield: null,
-                                    advisory: null,
-                                    no_data_reason: 'This barangay has no matching risk entry in the current dataset.',
-                                }, riskMeta);
-                            });
-                        },
-                    }).addTo(map);
-
-                    // Prefer the municipal polygon's bounds (the real boundary); only fall
-                    // back to the barangay layer's combined bounds if that failed to load.
-                    if (!fitToMunicipalBounds()) {
-                        try { map.fitBounds(geoLayer.getBounds(), { padding: [12, 12] }); } catch (e) { /* ignore */ }
-                    }
-                } catch (error) {
-                    console.error('iClimate could not load the barangay risk map.', error);
-                }
-            };
-
-            loadMunicipalBoundary();
-            load();
-
-            document.querySelector('[data-risk-map-refresh]')?.addEventListener('click', () => {
-                load(true);
-            });
-
-            // The risk map section is a collapsible <details>. If it's ever collapsed
-            // and reopened, Leaflet needs invalidateSize() (the container had zero size
-            // while hidden) before fitBounds is re-applied, or the view/zoom breaks.
-            const detailsSection = mapEl.closest('details');
-            if (detailsSection) {
-                detailsSection.addEventListener('toggle', () => {
-                    if (detailsSection.open) {
-                        setTimeout(() => {
-                            map.invalidateSize();
-                            fitToMunicipalBounds();
-                        }, 0);
-                    }
-                });
-            }
-
-            // Leaflet sizes itself to its container at construction time; the map
-            // starts inside a hidden tab panel, so it needs a resize nudge once
-            // that panel actually becomes visible.
-            document.querySelector('.dashboard-tab[data-tab="heatmap"]')?.addEventListener('click', () => {
-                setTimeout(() => map.invalidateSize(), 50);
-            });
-        }
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeMaoDashboard, { once: true });

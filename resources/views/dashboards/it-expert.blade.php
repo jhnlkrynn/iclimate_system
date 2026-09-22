@@ -748,6 +748,7 @@
             <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
             <button type="button" class="dashboard-tab" data-tab="activity" role="tab" aria-selected="false">Activity</button>
             <button type="button" class="dashboard-tab" data-tab="admin" role="tab" aria-selected="false">Administration</button>
+            <button type="button" class="dashboard-tab" data-tab="riskmap" role="tab" aria-selected="false">Risk Map</button>
         </div>
 
         <div class="dashboard-tab-panels">
@@ -1008,6 +1009,18 @@
                         @endforelse
                     </div>
                 </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="riskmap">
+        <div class="it-panel h-100">
+            <div class="it-panel-body">
+                @include('partials.barangay-risk-map', [
+                    'heading' => 'Lian Municipality Risk Map',
+                    'subheading' => 'Choropleth of all 19 Lian barangays, from live weather and recorded rice yield — the same data source used by the MAO and Farmer dashboards. Click a barangay for details.',
+                    'showRefresh' => true,
+                ])
             </div>
         </div>
         </div>

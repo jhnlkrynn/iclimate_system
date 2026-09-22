@@ -1175,3 +1175,45 @@ body .modal-body {
         padding: .75rem;
     }
 }
+
+/* Shared barangay risk map (#barangayRiskMap) — used by Farmer, MAO, and
+   IT Expert/Admin dashboards via resources/js/barangay-risk-map.js and
+   resources/views/partials/barangay-risk-map.blade.php. */
+.risk-map-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.risk-map-title { font-size: 1.05rem; margin: 0; color: var(--iclimate-text); font-weight: 700; }
+.risk-map-subtitle { margin: .15rem 0 0; color: var(--iclimate-text-muted); font-size: .82rem; }
+.risk-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
+.risk-map-canvas { height: 540px; min-height: 380px; border-radius: 8px; overflow: hidden; background: #dbe8e0; }
+.risk-map-legend { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: center; margin: .6rem 0 .85rem; padding: .65rem .85rem; border: 1px solid var(--iclimate-border); border-radius: 8px; background: rgba(255,255,255,.7); backdrop-filter: blur(12px) saturate(160%); font-size: .82rem; font-weight: 700; color: var(--iclimate-text); }
+.risk-map-legend .legend-swatch { display: inline-flex; align-items: center; gap: .4rem; }
+.risk-map-legend .legend-dot { width: .85rem; height: .85rem; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.18); }
+.risk-map-detail-panel { border-top: 1px solid var(--iclimate-border); margin-top: .75rem; padding-top: .75rem; }
+.risk-map-detail-title { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--iclimate-text); font-weight: 700; }
+.risk-map-row-text { color: var(--iclimate-text-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
+.risk-map-row-meta { color: var(--iclimate-text-muted); font-size: .7rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+ul.risk-map-row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
+ul.risk-map-row-text li { margin-bottom: .15rem; }
+@media (max-width: 767.98px) {
+    .risk-map-canvas { height: min(52vh, 320px); min-height: 260px; }
+    .risk-map-shell { overflow: visible; }
+    .risk-map-header { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 399.98px) {
+    .risk-map-canvas { height: 280px; }
+}
+.your-barangay-pill {
+    display: inline-block;
+    margin-left: .4rem;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--iclimate-primary-medium, #1F5A46);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+.leaflet-tooltip.your-barangay-tooltip {
+    font-weight: 700;
+}

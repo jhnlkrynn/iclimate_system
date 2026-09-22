@@ -2,6 +2,10 @@ import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { initScrollAnimations } from './scroll-animations';
 import Alpine from 'alpinejs';
+// Shared by the Farmer, MAO, and IT Expert/Admin dashboards so risk-map
+// rendering logic exists in exactly one place. initBarangayRiskMap() itself
+// no-ops on any page without a #barangayRiskMap element.
+import { initBarangayRiskMap } from './barangay-risk-map';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -126,6 +130,10 @@ window.iClimateVisualsReady = (async () => {
         } catch (error) {
             console.error('iClimate could not load Leaflet.', error);
         }
+    }
+
+    if (document.getElementById('barangayRiskMap') && window.L) {
+        initBarangayRiskMap();
     }
 })();
 

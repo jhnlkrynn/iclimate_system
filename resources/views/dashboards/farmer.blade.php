@@ -994,6 +994,20 @@
         </section>
         @endif
 
+        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
+            <div class="fc-eyebrow on-light">Lian municipality risk map</div>
+        </div>
+        <section class="climate-grid" data-reveal-stagger>
+            <div class="field-card" style="grid-column: 1 / -1; padding: 1rem;">
+                @include('partials.barangay-risk-map', [
+                    'heading' => 'Lian Municipality Risk Map',
+                    'subheading' => 'All 19 barangays at a glance, from the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
+                    'showRefresh' => false,
+                    'highlightBarangay' => $farmerBarangay ? \App\Support\LianBarangays::canonicalName($farmerBarangay) : null,
+                ])
+            </div>
+        </section>
+
         @if($weatherForecastDays !== [])
             <div class="dashboard-tab-panel" data-panel="forecast">
                 <section class="forecast-strip" data-weather-forecast>

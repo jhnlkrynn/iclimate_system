@@ -481,4 +481,174 @@ class BarangayRiskMapTest extends TestCase
         $this->assertSame(34.0, $matabungkay['weather']['temperature_c']);
         $this->assertSame(26.0, $binubusan['weather']['temperature_c']);
     }
+
+    /**
+     * Regression coverage for the 2026-09 "full map for every role" work:
+     * Farmer, MAO, and IT Expert/Admin must all render the same shared
+     * #barangayRiskMap component, pointed at the same public API URLs, so
+     * every role's map is backed by the exact same BarangayRiskMapService
+     * data — never a per-role filtered or separately-computed view.
+     */
+    public function test_farmer_dashboard_shows_the_full_19_barangay_map_not_just_own_barangay(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+
+        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('Lian Municipality Risk Map');
+        // Same read-only endpoints MAO/Admin use — proves there is no
+        // separate, farmer-only, single-barangay map data source.
+        $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
+        $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
+        // View-only: the farmer page must not expose the management-style
+        // manual refresh control.
+        $response->assertDontSee('data-risk-map-refresh', false);
+    }
+
+    public function test_admin_dashboard_shows_the_full_19_barangay_map(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+
+        $response = $this->actingAs($itExpert)->get(route('admin.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('Lian Municipality Risk Map');
+        $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
+        $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
+        // Admin is management-level, like MAO: the refresh control is present.
+        $response->assertSee('data-risk-map-refresh', false);
+    }
+
+    public function test_farmers_own_barangay_is_highlighted_on_the_full_map(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Cumba']);
+
+        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('data-highlight-barangay="Cumba"', false);
+        // Highlighting one barangay must not hide/remove any of the others —
+        // the map element and full legend are still the same shared markup.
+        $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('No Data');
+    }
+
+    public function test_farmers_barangay_highlight_normalizes_non_canonical_spelling(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        // A messy, non-canonical spelling that LianBarangays::canonicalName()
+        // is already responsible for resolving (same normalizer the risk
+        // scoring pipeline itself relies on for weather lookups).
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Brgy. 1']);
+
+        $this->assertSame('Barangay 1 (Pob.)', LianBarangays::canonicalName('Brgy. 1'));
+
+        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('data-highlight-barangay="Barangay 1 (Pob.)"', false);
+    }
+
+    public function test_farmer_with_unresolvable_legacy_barangay_still_sees_full_map_without_crashing(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        // A bare legacy "Poblacion" value cannot be resolved to one specific
+        // numbered barangay — LianBarangays::canonicalName() correctly
+        // returns null for it. The map must still render fully (no crash,
+        // no filtering), simply without a highlighted polygon.
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Poblacion']);
+
+        $this->assertNull(LianBarangays::canonicalName('Poblacion'));
+
+        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertDontSee('data-highlight-barangay', false);
+    }
+
+    public function test_all_three_roles_render_the_same_shared_risk_map_component(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+
+        $farmerResponse = $this->actingAs($farmer)->get(route('farmer.dashboard'));
+        $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
+        $adminResponse = $this->actingAs($itExpert)->get(route('admin.dashboard'));
+
+        foreach ([$farmerResponse, $maoResponse, $adminResponse] as $response) {
+            $response->assertOk();
+            $response->assertSee('id="barangayRiskMap"', false);
+            // Every role points the same element at the exact same public
+            // API URLs — one BarangayRiskMapService-backed data source, not
+            // a per-role calculation.
+            $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
+            $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
+            // Legend/risk bands are identical everywhere.
+            $response->assertSee('Low');
+            $response->assertSee('Moderate');
+            $response->assertSee('High');
+            $response->assertSee('Severe');
+            $response->assertSee('No Data');
+        }
+    }
+
+    /**
+     * The farmer dashboard's server-rendered "Your Barangay" summary card
+     * (BarangayRiskMapService::detailFor()) and the MAO/Admin client-fetched
+     * choropleth (BarangayRiskMapService::riskMap()) must never disagree —
+     * both read the exact same cached service call for the same barangay.
+     */
+    public function test_farmer_summary_card_matches_the_same_risk_map_api_data_mao_and_admin_use(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        RiceProduction::factory()->create([
+            'barangay' => 'Bagong Pook',
+            'yield_per_hectare' => 4.1,
+            'year' => 2026,
+            'season' => 'Wet',
+            'irrigation_type' => 'Irrigated',
+            'area_hectares' => 1,
+            'total_production' => 4.1,
+        ]);
+
+        $farmerResponse = $this->actingAs($user)->get(route('farmer.dashboard'));
+        $farmerResponse->assertOk();
+
+        $apiEntry = collect(app(BarangayRiskMapService::class)->riskMap()['barangays'])
+            ->firstWhere('barangay', 'Bagong Pook');
+
+        $this->assertNotNull($apiEntry);
+        $farmerResponse->assertSee('YOUR BARANGAY: Bagong Pook');
+        $farmerResponse->assertSee((string) $apiEntry['risk_level']);
+    }
 }
