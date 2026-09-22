@@ -1183,7 +1183,7 @@ body .modal-body {
 .risk-map-title { font-size: 1.05rem; margin: 0; color: var(--iclimate-text); font-weight: 700; }
 .risk-map-subtitle { margin: .15rem 0 0; color: var(--iclimate-text-muted); font-size: .82rem; }
 .risk-map-shell { position: relative; overflow: hidden; border-radius: 8px; }
-.risk-map-canvas { height: 540px; min-height: 380px; border-radius: 8px; overflow: hidden; background: #dbe8e0; }
+.risk-map-canvas { height: 560px; min-height: 420px; border-radius: 8px; overflow: hidden; background: #dbe8e0; }
 .risk-map-legend { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: center; margin: .6rem 0 .85rem; padding: .65rem .85rem; border: 1px solid var(--iclimate-border); border-radius: 8px; background: rgba(255,255,255,.7); backdrop-filter: blur(12px) saturate(160%); font-size: .82rem; font-weight: 700; color: var(--iclimate-text); }
 .risk-map-legend .legend-swatch { display: inline-flex; align-items: center; gap: .4rem; }
 .risk-map-legend .legend-dot { width: .85rem; height: .85rem; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.18); }
@@ -1194,12 +1194,12 @@ body .modal-body {
 ul.risk-map-row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
 ul.risk-map-row-text li { margin-bottom: .15rem; }
 @media (max-width: 767.98px) {
-    .risk-map-canvas { height: min(52vh, 320px); min-height: 260px; }
+    .risk-map-canvas { height: min(55vh, 420px); min-height: 340px; }
     .risk-map-shell { overflow: visible; }
     .risk-map-header { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 399.98px) {
-    .risk-map-canvas { height: 280px; }
+    .risk-map-canvas { height: 340px; min-height: 340px; }
 }
 .your-barangay-pill {
     display: inline-block;

@@ -89,44 +89,66 @@ export function initBarangayRiskMap() {
     // highlight one polygon; every role still sees and can click all 19.
     const highlightBarangay = mapEl.dataset.highlightBarangay || null;
 
-    // Fallback center/zoom, used only until the real municipal boundary loads
+    // Fallback center/zoom, used only until the real barangay GeoJSON loads
     // (Leaflet requires some center/zoom to construct the map), and as a last
-    // resort if the boundary fetch fails entirely.
+    // resort if that fetch fails entirely.
     const FALLBACK_CENTER = [14.02, 120.66];
     const FALLBACK_ZOOM = 12;
-    const map = window.L.map(mapEl, { scrollWheelZoom: false }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+    const map = window.L.map(mapEl, { scrollWheelZoom: false, maxBoundsViscosity: 1.0 }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 18,
     }).addTo(map);
 
     let geoLayer = null;
-    let municipalBounds = null;
 
-    const fitToMunicipalBounds = () => {
-        if (municipalBounds && municipalBounds.isValid()) {
-            try { map.fitBounds(municipalBounds, { padding: [12, 12] }); } catch (e) { /* ignore */ }
-            return true;
-        }
-        return false;
+    // Fits the map to, and locks panning/zoom-out to, the bounds of the
+    // already-rendered 19-barangay choropleth layer (geoLayer) — the exact
+    // same layer fetched once for the risk map itself, not a second/separate
+    // boundary request. This is deliberately NOT the outline-only municipal
+    // file: geoLayer is guaranteed to exist whenever this is called and is
+    // the authoritative "what Lian actually looks like on this map" source.
+    //
+    // Lian's shape is noticeably taller (north-south) than wide, while the
+    // map container is wide-and-short, so a naive fitBounds() alone is
+    // constrained by the *height* fit and leaves a lot of spare width on
+    // screen — which is exactly what was rendering as visible slices of
+    // Nasugbu, Balayan, Calaca, and open sea. Locking maxBounds/minZoom to
+    // the fitted view (instead of leaving the map free to zoom/pan further
+    // out) stops users from ever *seeing more* of that surrounding area,
+    // even though the fitted zoom itself is still bounded by Lian's own
+    // aspect ratio.
+    const fitAndLockToLianBounds = () => {
+        if (!geoLayer) return false;
+        const bounds = geoLayer.getBounds();
+        if (!bounds.isValid()) return false;
+        try {
+            map.fitBounds(bounds, { padding: [8, 8] });
+            // A small (~8%) pad around the fitted bounds so users can still
+            // nudge the view to a polygon's edge, without being able to pan
+            // far enough to bring a neighboring municipality into view.
+            map.setMaxBounds(bounds.pad(0.08));
+            // Never allow zooming out past the initial "all of Lian" fit —
+            // this is what actually prevents "zoom out to see the whole
+            // Batangas region," independent of container size.
+            map.setMinZoom(map.getZoom());
+        } catch (e) { /* ignore */ }
+        return true;
     };
 
-    // Load the real municipal polygon so the map's initial view is derived
-    // from the actual Lian, Batangas boundary instead of a hardcoded
-    // center/zoom. Falls back to FALLBACK_CENTER/FALLBACK_ZOOM if this fails.
-    const loadMunicipalBoundary = async () => {
+    // Purely a visual outline overlay (drawn on top of the choropleth) — not
+    // used for bounds/zoom calculations, so its own fetch failing never
+    // affects the map's viewport.
+    const loadMunicipalOutline = async () => {
         try {
             const res = await fetch('/geojson/lian-boundary.geojson');
             if (!res.ok) throw new Error('municipal boundary fetch failed: ' + res.status);
             const municipalGeoJSON = await res.json();
-            const outlineLayer = window.L.geoJSON(municipalGeoJSON, {
+            window.L.geoJSON(municipalGeoJSON, {
                 style: { color: '#1b5e20', weight: 2, fill: false },
             }).addTo(map);
-            municipalBounds = outlineLayer.getBounds();
-            fitToMunicipalBounds();
         } catch (error) {
-            console.error('iClimate could not load the municipal boundary; using fallback view.', error);
-            map.setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+            console.error('iClimate could not load the municipal outline overlay.', error);
         }
     };
 
@@ -195,17 +217,13 @@ export function initBarangayRiskMap() {
                 },
             }).addTo(map);
 
-            // Prefer the municipal polygon's bounds (the real boundary); only fall
-            // back to the barangay layer's combined bounds if that failed to load.
-            if (!fitToMunicipalBounds()) {
-                try { map.fitBounds(geoLayer.getBounds(), { padding: [12, 12] }); } catch (e) { /* ignore */ }
-            }
+            fitAndLockToLianBounds();
         } catch (error) {
             console.error('iClimate could not load the barangay risk map.', error);
         }
     };
 
-    loadMunicipalBoundary();
+    loadMunicipalOutline();
     load();
 
     document.querySelector('[data-risk-map-refresh]')?.addEventListener('click', () => {
@@ -222,21 +240,31 @@ export function initBarangayRiskMap() {
             if (detailsSection.open) {
                 setTimeout(() => {
                     map.invalidateSize();
-                    fitToMunicipalBounds();
+                    fitAndLockToLianBounds();
                 }, 0);
             }
         });
     }
 
-    // Leaflet sizes itself to its container at construction time. On pages
-    // where the map starts inside a hidden tab panel (MAO's "Heat Map &
-    // Weather" tab, Admin's "Risk Map" tab), it needs a resize nudge once
-    // that panel actually becomes visible. Listening on every dashboard tab
-    // button (rather than one hardcoded data-tab value) keeps this working
-    // regardless of which tab name each role uses for the map.
-    document.querySelectorAll('.dashboard-tab').forEach((tabButton) => {
+    // Leaflet sizes itself to its container at construction time, so a map
+    // that starts inside a hidden tab panel (MAO's "Heat Map & Weather" tab,
+    // Admin's "Risk Map" tab) computes its initial fit against a zero-size
+    // container and needs correcting once that panel actually becomes
+    // visible. Scope this to the one tab button that actually reveals this
+    // map (found dynamically from the panel's own data-panel value, so it
+    // works regardless of which tab name each role uses) rather than every
+    // tab button, so switching between *other*, unrelated tabs never resets
+    // a user's manual pan/zoom on the map.
+    const hostPanel = mapEl.closest('[data-panel]');
+    const hostTabButtons = hostPanel && hostPanel.dataset.panel
+        ? document.querySelectorAll(`.dashboard-tab[data-tab="${hostPanel.dataset.panel}"]`)
+        : document.querySelectorAll('.dashboard-tab');
+    hostTabButtons.forEach((tabButton) => {
         tabButton.addEventListener('click', () => {
-            setTimeout(() => map.invalidateSize(), 50);
+            setTimeout(() => {
+                map.invalidateSize();
+                fitAndLockToLianBounds();
+            }, 50);
         });
     });
 }
