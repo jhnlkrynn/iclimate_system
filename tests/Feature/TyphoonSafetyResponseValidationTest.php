@@ -16,7 +16,14 @@ class TyphoonSafetyResponseValidationTest extends TestCase
     public function test_farmer_cannot_respond_when_only_heatmap_has_typhoon_risk(): void
     {
         $farmer = User::factory()->farmer()->create();
+        // The seed migration pre-seeds one HeatmapArea row per canonical
+        // barangay, so a factory-created row must target a specific
+        // barangay and clear any existing row first, rather than letting
+        // the factory pick a random barangay that may already exist
+        // (which would violate the heatmap_areas.barangay unique index).
+        HeatmapArea::query()->where('barangay', 'Bagong Pook')->delete();
         HeatmapArea::factory()->create([
+            'barangay' => 'Bagong Pook',
             'risk_type' => 'Typhoon',
             'risk_level' => 'Severe',
             'risk_score' => 0.95,

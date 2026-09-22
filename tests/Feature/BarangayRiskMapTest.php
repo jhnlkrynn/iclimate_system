@@ -92,8 +92,9 @@ class BarangayRiskMapTest extends TestCase
                 $query = [];
                 parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
                 $lat = (float) ($query['latitude'] ?? 0);
-                // Matabungkay coordinates from LianBarangays.
-                if (abs($lat - 13.9593) < 0.01) {
+                // Matabungkay's centroid coordinate from LianBarangays (see
+                // LianBarangaysCoordinatesTest for how it's derived/verified).
+                if (abs($lat - 13.9467451) < 0.01) {
                     return $this->fakeFreshWeather(115, 33, 95, 25);
                 }
 
@@ -173,7 +174,7 @@ class BarangayRiskMapTest extends TestCase
                 $query = [];
                 parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
                 $lat = (float) ($query['latitude'] ?? 0);
-                if (abs($lat - 13.9593) < 0.01) {
+                if (abs($lat - 13.9467451) < 0.01) {
                     // Above the >20 threshold: should trigger the "Strong wind" stress factor.
                     return $this->fakeFreshWeather(200, 28, 70, 35);
                 }
@@ -407,5 +408,77 @@ class BarangayRiskMapTest extends TestCase
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
         $response->assertSee('Barangay Agricultural Risk Map');
+    }
+
+    /**
+     * Regression coverage for the 2026-09 coordinate audit: with correct
+     * per-barangay coordinates, two barangays given genuinely different
+     * live weather and recorded yield must end up with different
+     * risk_score/risk_level — never silently converging on the same value
+     * (the failure mode that would have gone unnoticed while most
+     * coordinates pointed at the wrong barangay or nowhere at all).
+     */
+    public function test_barangays_with_different_inputs_produce_different_risk_results(): void
+    {
+        $this->seedReadyMonthlyClimateHistory();
+
+        Http::fake([
+            'api.open-meteo.com/*' => function ($request) {
+                $query = [];
+                parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+                $lat = (float) ($query['latitude'] ?? 0);
+
+                // Matabungkay: harsh conditions (hot, humid, windy).
+                if (abs($lat - 13.9467451) < 0.01) {
+                    return $this->fakeFreshWeather(400, 34, 96, 30);
+                }
+
+                // Binubusan: favorable conditions.
+                if (abs($lat - 13.9694821) < 0.01) {
+                    return $this->fakeFreshWeather(220, 26, 60, 5);
+                }
+
+                return $this->fakeFreshWeather(200, 28);
+            },
+        ]);
+
+        RiceProduction::factory()->create([
+            'barangay' => 'Matabungkay',
+            'yield_per_hectare' => 2.1,
+            'year' => 2026,
+            'production_month' => '2026-06',
+            'season' => 'Wet',
+            'irrigation_type' => 'Rainfed',
+            'area_hectares' => 1,
+            'total_production' => 2.1,
+        ]);
+        RiceProduction::factory()->create([
+            'barangay' => 'Binubusan',
+            'yield_per_hectare' => 5.2,
+            'year' => 2026,
+            'production_month' => '2026-06',
+            'season' => 'Wet',
+            'irrigation_type' => 'Irrigated',
+            'area_hectares' => 1,
+            'total_production' => 5.2,
+        ]);
+
+        $service = app(BarangayRiskMapService::class);
+        $map = $service->riskMap(refresh: true);
+
+        $matabungkay = collect($map['barangays'])->firstWhere('barangay', 'Matabungkay');
+        $binubusan = collect($map['barangays'])->firstWhere('barangay', 'Binubusan');
+
+        $this->assertNotNull($matabungkay);
+        $this->assertNotNull($binubusan);
+
+        $this->assertNotEquals($matabungkay['risk_score'], $binubusan['risk_score']);
+        $this->assertNotEquals($matabungkay['risk_level'], $binubusan['risk_level']);
+        $this->assertGreaterThan($binubusan['risk_score'], $matabungkay['risk_score']);
+
+        // And each barangay's live weather in the response genuinely
+        // reflects its own coordinate's fake response, not a shared/leaked one.
+        $this->assertSame(34.0, $matabungkay['weather']['temperature_c']);
+        $this->assertSame(26.0, $binubusan['weather']['temperature_c']);
     }
 }

@@ -945,7 +945,7 @@
             <div class="field-card" style="grid-column: 1 / -1;">
                 <div class="field-card-top">
                     <div class="field-label">YOUR BARANGAY: {{ $farmerBarangay }}</div>
-                    @if($farmerBarangayRisk)
+                    @if($farmerBarangayRisk && $farmerBarangayRisk['risk_level'] !== 'No Data')
                         <span class="field-status {{ in_array($farmerBarangayRisk['risk_level'], ['High','Severe']) ? 'is-warn' : 'is-live' }}">{{ $farmerBarangayRisk['risk_level'] }}</span>
                     @else
                         <span class="field-status">No Data</span>
@@ -961,11 +961,15 @@
                     <div class="field-value">Risk score: {{ $farmerBarangayRisk['risk_score'] }}</div>
                 @endif
 
+                @if($farmerBarangayRisk && $farmerBarangayRisk['updated_at'])
+                    <div class="field-note">Last updated: {{ \Illuminate\Support\Carbon::parse($farmerBarangayRisk['updated_at'])->format('M j, Y g:i A') }}</div>
+                @endif
+
                 @if($farmerBarangayRisk && ($farmerBarangayRisk['weather']['status'] ?? null) === 'fresh')
                     <div class="field-note">
                         Current weather conditions (context only — humidity/wind are not scored risk factors):
                         @if($farmerBarangayRisk['weather']['rainfall_24h_mm'] !== null) Rainfall (24h forecast): {{ $farmerBarangayRisk['weather']['rainfall_24h_mm'] }} mm &middot; @endif
-                        @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}&deg;C &middot; @endif
+                        @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}°C &middot; @endif
                         @if($farmerBarangayRisk['weather']['humidity_percent'] !== null) Humidity: {{ $farmerBarangayRisk['weather']['humidity_percent'] }}% &middot; @endif
                         @if($farmerBarangayRisk['weather']['wind_speed_kmh'] !== null) Wind: {{ $farmerBarangayRisk['weather']['wind_speed_kmh'] }} km/h @endif
                     </div>
@@ -979,6 +983,12 @@
 
                 @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['planting'] ?? null))
                     <div class="field-note"><strong>Advisory:</strong> {{ $farmerBarangayRisk['advisory']['planting'] }}</div>
+                @endif
+                @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['irrigation'] ?? null))
+                    <div class="field-note"><strong>Irrigation:</strong> {{ $farmerBarangayRisk['advisory']['irrigation'] }}</div>
+                @endif
+                @if($farmerBarangayRisk && !empty($farmerBarangayRisk['advisory']['warnings']))
+                    <div class="field-note"><strong>Warnings:</strong> {{ implode(' · ', $farmerBarangayRisk['advisory']['warnings']) }}</div>
                 @endif
             </div>
         </section>

@@ -4,26 +4,42 @@ namespace App\Support;
 
 class LianBarangays
 {
+    /**
+     * Representative point per barangay, used as the query location for
+     * live per-barangay weather (LianBarangayWeatherService) and as the
+     * default map marker position. Each point is the polygon centroid of
+     * that barangay's own feature in public/geojson/lian-barangays.geojson
+     * (verified to fall inside that polygon — see
+     * tests/Unit/LianBarangaysCoordinatesTest.php), NOT hand-guessed.
+     *
+     * History: the coordinates here before the 2026-09 audit fix were
+     * hand-entered and wrong for 17 of 19 barangays — most landed inside a
+     * *different* barangay's polygon (e.g. the old "Balibago" point was
+     * actually inside Puting-Kahoy), and 5 landed outside every barangay
+     * boundary in the file. That silently corrupted the live-weather input
+     * to the risk score for those barangays. These values are recomputed
+     * directly from the shipped GeoJSON polygons, not re-guessed.
+     */
     private const COORDINATES = [
-        'Bagong Pook' => [14.0182000, 120.6408000],
-        'Balibago' => [13.9898000, 120.6524000],
-        'Barangay 1 (Pob.)' => [14.0361000, 120.6507000],
-        'Barangay 2 (Pob.)' => [14.0371000, 120.6530000],
-        'Barangay 3 (Pob.)' => [14.0349000, 120.6489000],
-        'Barangay 4 (Pob.)' => [14.0383000, 120.6484000],
-        'Barangay 5 (Pob.)' => [14.0339000, 120.6525000],
-        'Binubusan' => [14.0296000, 120.6364000],
-        'Bungahan' => [14.0480000, 120.6285000],
-        'Cumba' => [14.0205000, 120.7045000],
-        'Humayingan' => [14.0108000, 120.6888000],
-        'Kapito' => [14.0557000, 120.6765000],
-        'Lumaniag' => [14.0479000, 120.6613000],
-        'Luyahan' => [13.9926000, 120.6355000],
-        'Malaruhatan' => [14.0119000, 120.6669000],
-        'Matabungkay' => [13.9593000, 120.6227000],
-        'Prenza' => [14.0353000, 120.6822000],
-        'Puting-Kahoy' => [14.0290000, 120.7015000],
-        'San Diego' => [13.9793000, 120.6118000],
+        'Bagong Pook' => [14.0320331, 120.6807593],
+        'Balibago' => [13.9413816, 120.6489014],
+        'Barangay 1 (Pob.)' => [14.0354539, 120.6510264],
+        'Barangay 2 (Pob.)' => [14.0381382, 120.6513488],
+        'Barangay 3 (Pob.)' => [14.0405819, 120.6507332],
+        'Barangay 4 (Pob.)' => [14.0379401, 120.6536591],
+        'Barangay 5 (Pob.)' => [14.0413525, 120.6528515],
+        'Binubusan' => [13.9694821, 120.6384280],
+        'Bungahan' => [14.0470903, 120.6379867],
+        'Cumba' => [13.9718581, 120.6609465],
+        'Humayingan' => [13.9967494, 120.6724865],
+        'Kapito' => [14.0162390, 120.6689030],
+        'Lumaniag' => [13.9946196, 120.6343614],
+        'Luyahan' => [13.9641912, 120.6176801],
+        'Malaruhatan' => [14.0383984, 120.6654801],
+        'Matabungkay' => [13.9467451, 120.6249676],
+        'Prenza' => [14.0128685, 120.6398701],
+        'Puting-Kahoy' => [13.9894782, 120.6534129],
+        'San Diego' => [14.0336258, 120.6335108],
     ];
 
     public static function all(): array

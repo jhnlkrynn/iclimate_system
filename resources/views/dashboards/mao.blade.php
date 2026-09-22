@@ -134,6 +134,8 @@
         .list-mark svg { width: 17px; height: 17px; }
         .row-title { font-weight: 700; color: var(--mao-ink); line-height: 1.25; }
         .row-text { color: var(--mao-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
+        #riskMapDetailContent ul.row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
+        #riskMapDetailContent ul.row-text li { margin-bottom: .15rem; }
         .row-meta { color: var(--mao-muted); font-family: 'DM Mono', monospace; font-size: .68rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
         .mao-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
         .mao-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
@@ -1752,31 +1754,56 @@
             };
         }
 
-        function renderRiskDetailPanel(entry) {
+        function renderRiskDetailPanel(entry, meta) {
             const panel = document.getElementById('riskMapDetailPanel');
             const content = document.getElementById('riskMapDetailContent');
             if (!panel || !content) return;
 
+            const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
             const rows = [];
-            rows.push(`<h3 class="mao-panel-title" style="font-size:1.1rem;">${entry.barangay}</h3>`);
-            rows.push(`<p class="row-text"><strong>Risk level:</strong> ${entry.risk_level}${entry.risk_score !== null && entry.risk_score !== undefined ? ' (score ' + entry.risk_score + ')' : ''}</p>`);
+            rows.push(`<h3 class="mao-panel-title" style="font-size:1.1rem;">${esc(entry.barangay)}</h3>`);
+
+            if (entry.risk_level === 'No Data') {
+                rows.push('<p class="row-text"><strong>Risk level:</strong> No Data</p>');
+                rows.push(`<p class="row-meta">${esc(entry.no_data_reason || 'This barangay currently has no computed risk score. Live weather or the monthly rainfall model may be temporarily unavailable.')}</p>`);
+            } else {
+                rows.push(`<p class="row-text"><strong>Risk level:</strong> ${esc(entry.risk_level)}${entry.risk_score !== null && entry.risk_score !== undefined ? ' (score ' + esc(entry.risk_score) + ')' : ''}</p>`);
+            }
             if (entry.updated_at) rows.push(`<p class="row-meta">Computed: ${new Date(entry.updated_at).toLocaleString()}</p>`);
+            if (meta && meta.source_note) rows.push(`<p class="row-meta">Data source: ${esc(meta.source_note)}${meta.generated_at ? ' &middot; as of ' + new Date(meta.generated_at).toLocaleString() : ''}</p>`);
+
             const w = entry.weather || {};
             if (w.status === 'fresh') {
                 rows.push('<p class="row-meta">Current weather conditions (context only — humidity/wind are not scored risk factors):</p>');
-                if (w.rainfall_24h_mm !== null && w.rainfall_24h_mm !== undefined) rows.push(`<p class="row-text">Rainfall (24h, forecast — not the monthly figure used for scoring): ${w.rainfall_24h_mm} mm</p>`);
-                if (w.temperature_c !== null && w.temperature_c !== undefined) rows.push(`<p class="row-text">Temperature: ${w.temperature_c} &deg;C</p>`);
-                if (w.humidity_percent !== null && w.humidity_percent !== undefined) rows.push(`<p class="row-text">Humidity: ${w.humidity_percent}%</p>`);
-                if (w.wind_speed_kmh !== null && w.wind_speed_kmh !== undefined) rows.push(`<p class="row-text">Wind speed: ${w.wind_speed_kmh} km/h</p>`);
+                if (w.rainfall_24h_mm !== null && w.rainfall_24h_mm !== undefined) rows.push(`<p class="row-text">Rainfall (24h, forecast — not the monthly figure used for scoring): ${esc(w.rainfall_24h_mm)} mm</p>`);
+                if (w.temperature_c !== null && w.temperature_c !== undefined) rows.push(`<p class="row-text">Temperature: ${esc(w.temperature_c)} &deg;C</p>`);
+                if (w.humidity_percent !== null && w.humidity_percent !== undefined) rows.push(`<p class="row-text">Humidity: ${esc(w.humidity_percent)}%</p>`);
+                if (w.wind_speed_kmh !== null && w.wind_speed_kmh !== undefined) rows.push(`<p class="row-text">Wind speed: ${esc(w.wind_speed_kmh)} km/h</p>`);
             } else {
-                rows.push(`<p class="row-text">${w.message || 'No live weather data available for this barangay.'}</p>`);
+                rows.push(`<p class="row-text">${esc(w.message || 'No live weather data available for this barangay.')}</p>`);
             }
+
+            if (entry.monthly_rainfall && entry.monthly_rainfall.available !== false && entry.monthly_rainfall.value_mm !== null && entry.monthly_rainfall.value_mm !== undefined) {
+                rows.push(`<p class="row-text">Monthly rainfall (used for scoring): ${esc(entry.monthly_rainfall.value_mm)} ${esc(entry.monthly_rainfall.unit || 'mm')} (${esc(entry.monthly_rainfall.scope || 'municipal')})</p>`);
+            }
+
             if (entry.last_recorded_yield) {
-                rows.push(`<p class="row-text">Last recorded yield: ${entry.last_recorded_yield.value} t/ha (${entry.last_recorded_yield.season || ''} ${entry.last_recorded_yield.year || ''})</p>`);
+                rows.push(`<p class="row-text">Last recorded yield: ${esc(entry.last_recorded_yield.value)} t/ha (${esc(entry.last_recorded_yield.season || '')} ${esc(entry.last_recorded_yield.year || '')})</p>`);
             }
-            if (entry.advisory && entry.advisory.overall_recommendation) {
-                rows.push(`<p class="row-text"><strong>Advisory:</strong> ${entry.advisory.planting || ''}</p>`);
+            if (entry.farm_type_context) {
+                rows.push(`<p class="row-meta">${esc(entry.farm_type_context)}</p>`);
             }
+
+            if (entry.advisory) {
+                if (entry.advisory.planting) rows.push(`<p class="row-text"><strong>Planting advisory:</strong> ${esc(entry.advisory.planting)}</p>`);
+                if (entry.advisory.irrigation) rows.push(`<p class="row-text"><strong>Irrigation:</strong> ${esc(entry.advisory.irrigation)}</p>`);
+                if (Array.isArray(entry.advisory.warnings) && entry.advisory.warnings.length) {
+                    rows.push('<p class="row-text"><strong>Warnings:</strong></p><ul class="row-text">' + entry.advisory.warnings.map((warn) => `<li>${esc(warn)}</li>`).join('') + '</ul>');
+                }
+                if (entry.advisory.overall_recommendation) rows.push(`<p class="row-text"><strong>Recommendation:</strong> ${esc(entry.advisory.overall_recommendation)}</p>`);
+            }
+
             content.innerHTML = rows.join('');
             panel.style.display = '';
         }
@@ -1828,11 +1855,20 @@
                 }
             };
 
-            const load = async () => {
+            let riskMeta = {};
+
+            // Single fetch of the boundary + risk endpoints per load. `forceRefresh`
+            // appends ?refresh=1 to the *same* request instead of issuing a separate
+            // priming fetch first, so a manual refresh click never doubles the call
+            // to /api/lian/risk-map.
+            const load = async (forceRefresh = false) => {
                 try {
+                    const effectiveRiskUrl = forceRefresh
+                        ? riskUrl + (riskUrl.includes('?') ? '&' : '?') + 'refresh=1'
+                        : riskUrl;
                     const [boundaryRes, riskRes] = await Promise.all([
                         fetch(boundaryUrl),
-                        fetch(riskUrl),
+                        fetch(effectiveRiskUrl),
                     ]);
                     const boundary = await boundaryRes.json();
                     const risk = await riskRes.json();
@@ -1841,6 +1877,8 @@
                         mapEl.insertAdjacentHTML('afterend', '<p class="row-text text-muted">Risk map is temporarily unavailable.</p>');
                         return;
                     }
+
+                    riskMeta = { source_note: risk.source_note, generated_at: risk.generated_at };
 
                     const byName = {};
                     (risk.barangays || []).forEach((entry) => { byName[entry.barangay] = entry; });
@@ -1856,9 +1894,22 @@
                             const name = feature.properties && feature.properties.brgy_name;
                             const entry = byName[name];
                             const level = entry ? entry.risk_level : 'No Data';
-                            layer.bindTooltip(`Barangay: ${name} / Risk: ${level}`, { sticky: true });
+                            const scoreLabel = entry && entry.risk_score !== null && entry.risk_score !== undefined ? ` (score ${entry.risk_score})` : '';
+                            layer.bindTooltip(`${name} — Risk: ${level}${scoreLabel}`, { sticky: true });
                             layer.on('click', () => {
-                                if (entry) renderRiskDetailPanel(entry);
+                                // Even a barangay with no matching entry (name mismatch or
+                                // no computed score) gets a clear "No Data" panel instead
+                                // of the click silently doing nothing.
+                                renderRiskDetailPanel(entry || {
+                                    barangay: name || 'Unknown barangay',
+                                    risk_level: 'No Data',
+                                    risk_score: null,
+                                    updated_at: null,
+                                    weather: { status: 'unavailable', message: 'No live weather data available for this barangay.' },
+                                    last_recorded_yield: null,
+                                    advisory: null,
+                                    no_data_reason: 'This barangay has no matching risk entry in the current dataset.',
+                                }, riskMeta);
                             });
                         },
                     }).addTo(map);
@@ -1877,7 +1928,7 @@
             load();
 
             document.querySelector('[data-risk-map-refresh]')?.addEventListener('click', () => {
-                fetch(riskUrl + '?refresh=1').then(load);
+                load(true);
             });
 
             // The risk map section is a collapsible <details>. If it's ever collapsed

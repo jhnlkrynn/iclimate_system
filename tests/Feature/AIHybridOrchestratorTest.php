@@ -188,8 +188,7 @@ class AIHybridOrchestratorTest extends TestCase
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
 
-        HeatmapArea::query()->create([
-            'barangay' => 'Malaruhatan',
+        HeatmapArea::query()->updateOrCreate(['barangay' => 'Malaruhatan'], [
             'latitude' => 14.0119,
             'longitude' => 120.6669,
             'risk_level' => 'High',
