@@ -743,22 +743,22 @@
                     <div class="live-weather-grid">
                         <div class="live-weather-card">
                             <div class="mao-label">Current Rain</div>
-                            <div class="risk-level-value" data-mao-current-rain>{{ number_format(data_get($liveWeather, 'current_rainfall_mm', 0), 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-rain>{{ is_numeric(data_get($liveWeather, 'current_rainfall_mm')) ? number_format($liveWeather['current_rainfall_mm'], 1) : '—' }}</div>
                             <div class="mao-note">mm right now</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Temperature</div>
-                            <div class="risk-level-value" data-mao-current-temperature>{{ number_format(data_get($liveWeather, 'current_temperature_c', 0), 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-temperature>{{ is_numeric(data_get($liveWeather, 'current_temperature_c')) ? number_format($liveWeather['current_temperature_c'], 1) : '—' }}</div>
                             <div class="mao-note">&deg;C current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Humidity</div>
-                            <div class="risk-level-value" data-mao-current-humidity>{{ number_format(data_get($liveWeather, 'humidity_percent', 0), 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-humidity>{{ is_numeric(data_get($liveWeather, 'humidity_percent')) ? number_format($liveWeather['humidity_percent'], 1) : '—' }}</div>
                             <div class="mao-note">% current reading</div>
                         </div>
                         <div class="live-weather-card">
                             <div class="mao-label">Wind Speed</div>
-                            <div class="risk-level-value" data-mao-current-wind>{{ number_format(data_get($liveWeather, 'wind_speed_kmh', 0), 1) }}</div>
+                            <div class="risk-level-value" data-mao-current-wind>{{ is_numeric(data_get($liveWeather, 'wind_speed_kmh')) ? number_format($liveWeather['wind_speed_kmh'], 1) : '—' }}</div>
                             <div class="mao-note">km/h current reading</div>
                         </div>
                     </div>
@@ -817,8 +817,8 @@
                         @foreach(array_slice($weatherChartData['labels'], 0, 7) as $i => $label)
                             <div class="forecast-strip-day">
                                 <div class="mao-label">{{ $label }}</div>
-                                <div class="risk-level-value" style="font-size:1.1rem;">{{ number_format($weatherChartData['rainfall'][$i] ?? 0, 0) }}mm</div>
-                                <div class="mao-note">{{ number_format($weatherChartData['temperature'][$i] ?? 0, 0) }}&deg;C &middot; {{ number_format($weatherChartData['windSpeed'][$i] ?? 0, 0) }}km/h wind</div>
+                                <div class="risk-level-value" style="font-size:1.1rem;">{{ is_numeric($weatherChartData['rainfall'][$i] ?? null) ? number_format($weatherChartData['rainfall'][$i], 0).'mm' : '—' }}</div>
+                                <div class="mao-note">{{ is_numeric($weatherChartData['temperature'][$i] ?? null) ? number_format($weatherChartData['temperature'][$i], 0).'°C' : '—' }} &middot; {{ is_numeric($weatherChartData['windSpeed'][$i] ?? null) ? number_format($weatherChartData['windSpeed'][$i], 0).'km/h wind' : '—' }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -1617,7 +1617,11 @@
             const setMaoText = (selector, value) => {
                 document.querySelectorAll(selector).forEach((target) => { target.textContent = value; });
             };
-            const formatOne = (value) => Number.isFinite(Number(value)) ? Number(value).toFixed(1) : 'N/A';
+            // Strict Number.isFinite (no coercion): a genuinely missing
+            // reading arrives as null/undefined from the backend and must
+            // show "N/A", not be coerced to 0 first (Number(null) === 0,
+            // which Number.isFinite(Number(value)) would wrongly accept).
+            const formatOne = (value) => Number.isFinite(value) ? Number(value).toFixed(1) : 'N/A';
             const updateWeatherChart = (key, seriesLabels, values) => {
                 if (!Array.isArray(seriesLabels) || !Array.isArray(values)) return;
 

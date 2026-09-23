@@ -163,7 +163,8 @@
         .risk-low .wp-calendar-risk { background: #d8f3dc; color: #2d6a4f; }
         .risk-moderate .wp-calendar-risk { background: #fff4cf; color: #8a5a00; }
         .risk-high .wp-calendar-risk, .risk-severe .wp-calendar-risk { background: #fde8e2; color: #9f3728; }
-        .wp-calendar-condition { color: #0d1f18; font-size: 1rem; font-weight: 900; }
+        .wp-calendar-condition { display: flex; align-items: center; gap: .35rem; color: #0d1f18; font-size: 1rem; font-weight: 900; }
+        .wp-calendar-icon { width: 20px; height: 20px; flex: 0 0 auto; }
         .wp-calendar-values { display: grid; gap: .22rem; margin-top: .45rem; color: #33483d; font-size: .93rem; }
         .wp-calendar-unavailable { color: #6b7c72; font-size: .93rem; }
         .wp-risk-legend { display: flex; flex-wrap: wrap; gap: .55rem 1rem; margin-top: .85rem; }
@@ -171,6 +172,11 @@
         .wp-risk-swatch { width: 14px; height: 14px; border-radius: 4px; }
         .wp-calendar-loading { min-height: 220px; place-items: center; text-align: center; }
         .wp-calendar-loading:not([hidden]) { display: grid; }
+        .wp-monthly-prediction { background: #f4f9f5; border: 1px solid #cfe4d6; border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1.1rem; }
+        .wp-monthly-prediction-title { font-size: 1.1rem; font-weight: 900; color: #0d1f18; display: flex; align-items: center; gap: .5rem; }
+        .wp-monthly-prediction-badge { display: inline-block; padding: .18rem .6rem; border-radius: 999px; background: #2d6a4f; color: #fff; font-size: .72rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+        .wp-monthly-prediction-note { margin: .4rem 0 .7rem; color: #4f665b; font-size: .92rem; line-height: 1.5; }
+        .wp-monthly-prediction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .5rem .9rem; font-size: .95rem; color: #33483d; font-weight: 700; }
         @media (max-width: 1199.98px) { .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 991.98px) { .wp-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 767.98px) {
@@ -314,10 +320,10 @@
                         <div class="alert alert-warning py-2" role="status">The live request is unavailable. Showing the latest saved Open-Meteo update ({{ $liveWeather['freshness'] ?? 'cached' }}).</div>
                     @endif
                     <div class="row g-3">
-                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Rainfall</div><div class="wp-card-value">{{ number_format((float) ($liveWeather['current_rainfall_mm'] ?? 0), 2) }} mm</div></div></div>
-                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Temperature</div><div class="wp-card-value">{{ number_format((float) ($liveWeather['current_temperature_c'] ?? 0), 1) }}°C</div></div></div>
-                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Humidity</div><div class="wp-card-value">{{ number_format((float) ($liveWeather['humidity_percent'] ?? 0)) }}%</div></div></div>
-                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Wind Speed</div><div class="wp-card-value">{{ number_format((float) ($liveWeather['wind_speed_kmh'] ?? 0), 1) }} km/h</div></div></div>
+                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Rainfall</div><div class="wp-card-value">{{ is_numeric($liveWeather['current_rainfall_mm'] ?? null) ? number_format((float) $liveWeather['current_rainfall_mm'], 2).' mm' : '—' }}</div></div></div>
+                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Temperature</div><div class="wp-card-value">{{ is_numeric($liveWeather['current_temperature_c'] ?? null) ? number_format((float) $liveWeather['current_temperature_c'], 1).'°C' : '—' }}</div></div></div>
+                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Humidity</div><div class="wp-card-value">{{ is_numeric($liveWeather['humidity_percent'] ?? null) ? number_format((float) $liveWeather['humidity_percent']).'%' : '—' }}</div></div></div>
+                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Wind Speed</div><div class="wp-card-value">{{ is_numeric($liveWeather['wind_speed_kmh'] ?? null) ? number_format((float) $liveWeather['wind_speed_kmh'], 1).' km/h' : '—' }}</div></div></div>
                         <div class="col-12 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Weather Condition</div><div class="wp-card-value">{{ $liveWeatherCondition }}</div></div></div>
                     </div>
                     <div class="small text-muted mt-3">Open-Meteo responses are cached for {{ $liveWeatherCacheMinutes }} minutes to reduce external requests. This is forecast guidance, not an unlimited or official warning service.</div>
@@ -340,7 +346,7 @@
                         <a class="btn btn-outline-secondary fw-bold" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => $weatherCalendar['next_month'], 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav aria-label="Show next month">Next</a>
                     </div>
                 </div>
-                <div class="mt-3 text-muted"><strong>Daily forecast values:</strong> Open-Meteo Forecast API</div>
+                <div class="mt-3 text-muted"><strong>Daily forecast values:</strong> Open-Meteo Forecast API &mdash; <strong>API Forecast</strong>, actual short-range daily readings shown on the exact dates they cover.</div>
                 <div class="wp-risk-legend" aria-label="Daily planning risk colors">
                     <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#52b788"></span>Low</span>
                     <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#ffd166"></span>Moderate</span>
@@ -349,6 +355,22 @@
                 </div>
             </div>
             <div class="wp-panel-body">
+                @if($weatherCalendar['monthly_prediction'])
+                    @php
+                        $mp = $weatherCalendar['monthly_prediction'];
+                    @endphp
+                    <div class="wp-monthly-prediction" role="note" aria-label="Monthly model prediction for {{ $weatherCalendar['label'] }}">
+                        <div class="wp-monthly-prediction-title">Monthly Prediction <span class="wp-monthly-prediction-badge">Model Estimate</span></div>
+                        <p class="wp-monthly-prediction-note">A whole-month estimate for {{ $weatherCalendar['label'] }} from {{ $mp['source_name'] }} &mdash; not a daily forecast, and never shown inside a specific date cell below.</p>
+                        <div class="wp-monthly-prediction-grid">
+                            @if($mp['rainfall_mm'] !== null)<div><strong>Rainfall (month total):</strong> {{ number_format($mp['rainfall_mm'], 1) }} mm</div>@endif
+                            @if($mp['temperature_c'] !== null)<div><strong>Average Temperature:</strong> {{ number_format($mp['temperature_c'], 1) }}&deg;C</div>@endif
+                            @if($mp['humidity_percent'] !== null)<div><strong>Average Humidity:</strong> {{ number_format($mp['humidity_percent'], 1) }}%</div>@endif
+                            @if($mp['wind_speed_kmh'] !== null)<div><strong>Average Wind:</strong> {{ number_format($mp['wind_speed_kmh'], 1) }} km/h</div>@endif
+                            @if($mp['season'])<div><strong>Season:</strong> {{ $mp['season'] }}</div>@endif
+                        </div>
+                    </div>
+                @endif
                 <div class="wp-calendar-loading" data-calendar-loading hidden role="status" aria-live="polite">
                     <div>
                         <div class="spinner-border text-success mb-3" aria-hidden="true"></div>
@@ -374,12 +396,13 @@
                                             <span class="wp-calendar-risk">{{ $riskLevel ?: 'No forecast data' }}</span>
                                         </div>
                                         @if($forecast)
-                                            <div class="wp-calendar-condition">{{ $forecast['condition'] ?: 'Condition unavailable' }}</div>
+                                            <div class="wp-calendar-condition">
+                                                @if($forecast['icon'])<img class="wp-calendar-icon" src="{{ $forecast['icon'] }}" alt="" width="20" height="20" loading="lazy">@endif
+                                                {{ $forecast['condition'] ?: 'Condition unavailable' }}
+                                            </div>
                                             <div class="wp-calendar-values">
                                                 @if($forecast['rainfall'] !== null)
                                                     <div><strong>Rainfall:</strong> {{ number_format($forecast['rainfall'], 1) }} mm</div>
-                                                @elseif($forecast['rain_chance'] !== null)
-                                                    <div><strong>Rain chance:</strong> {{ number_format($forecast['rain_chance']) }}%</div>
                                                 @else
                                                     <div><strong>Rainfall:</strong> No forecast data</div>
                                                 @endif
@@ -390,7 +413,6 @@
                                                 @else
                                                     <div><strong>Temperature:</strong> No forecast data</div>
                                                 @endif
-                                                @if($forecast['rainfall'] !== null && $forecast['rain_chance'] !== null)<div><strong>Rain chance:</strong> {{ number_format($forecast['rain_chance']) }}%</div>@endif
                                             </div>
                                         @else
                                             <div class="wp-calendar-condition wp-calendar-unavailable">No forecast data</div>
@@ -404,7 +426,7 @@
                             </div>
                         @endforeach
                     </div>
-                    <div class="small text-muted mt-3">Only dates returned by Open-Meteo contain weather values. Other dates remain marked “No forecast data.” API responses are cached for {{ $liveWeatherCacheMinutes }} minutes.</div>
+                    <div class="small text-muted mt-3">Only dates returned by Open-Meteo (API Forecast) contain weather values in the calendar below. Other dates remain marked “No forecast data” &mdash; iClimate never fills them in with invented or repeated values. @if($weatherCalendar['monthly_prediction'])See the Monthly Prediction summary above for a whole-month model estimate. @endif API responses are cached for {{ $liveWeatherCacheMinutes }} minutes.</div>
                 </div>
             </div>
         </div>
@@ -800,36 +822,155 @@
             });
 
             yieldForm?.addEventListener('submit', (event) => {
+                /*
+                |--------------------------------------------------------------------------
+                | Already Confirmed
+                |--------------------------------------------------------------------------
+                |
+                | Once the user confirms, allow the normal browser POST request.
+                |
+                */
+
                 if (yieldConfirmed) {
                     if (yieldButton) {
                         yieldButton.disabled = true;
-                        yieldButton.textContent = yieldButton.dataset.loadingText || 'Generating rice-yield prediction...';
+                        yieldButton.textContent =
+                            yieldButton.dataset.loadingText
+                            || 'Generating rice-yield prediction...';
                     }
+
                     return;
                 }
 
-                const area = Number(areaInput?.value);
-                if (!areaInput?.checkValidity() || !Number.isFinite(area) || area <= 0) {
+                /*
+                |--------------------------------------------------------------------------
+                | Validate Farm Area
+                |--------------------------------------------------------------------------
+                */
+
+                const area =
+                    Number(
+                        areaInput?.value
+                    );
+
+                if (
+                    ! areaInput?.checkValidity()
+                    ||
+                    ! Number.isFinite(area)
+                    ||
+                    area <= 0
+                ) {
                     return;
                 }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Stop Initial Submission
+                |--------------------------------------------------------------------------
+                */
 
                 event.preventDefault();
-                if (confirmArea) confirmArea.textContent = areaInput.value;
+
+                if (confirmArea) {
+                    confirmArea.textContent =
+                        areaInput.value;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Show Confirmation Modal
+                |--------------------------------------------------------------------------
+                */
 
                 if (confirmModal) {
                     confirmModal.show();
                 } else {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | No Bootstrap Modal Available
+                    |--------------------------------------------------------------------------
+                    |
+                    | Use native HTML form submission directly.
+                    |
+                    */
+
                     yieldConfirmed = true;
-                    yieldForm.requestSubmit();
+
+                    if (yieldButton) {
+                        yieldButton.disabled = true;
+                        yieldButton.textContent =
+                            yieldButton.dataset.loadingText
+                            || 'Generating rice-yield prediction...';
+                    }
+
+                    yieldForm.submit();
                 }
             });
 
-            confirmSubmit?.addEventListener('click', () => {
-                yieldConfirmed = true;
-                confirmSubmit.disabled = true;
-                confirmSubmit.textContent = 'Generating rice-yield prediction...';
-                yieldForm?.requestSubmit();
-            });
+
+            confirmSubmit?.addEventListener(
+                'click',
+                () => {
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Confirm Prediction
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        ! yieldForm
+                    ) {
+                        return;
+                    }
+
+                    yieldConfirmed = true;
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Close Confirmation Modal
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (confirmModal) {
+                        confirmModal.hide();
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update Buttons
+                    |--------------------------------------------------------------------------
+                    */
+
+                    confirmSubmit.disabled =
+                        true;
+
+                    confirmSubmit.textContent =
+                        'Generating rice-yield prediction...';
+
+                    if (yieldButton) {
+                        yieldButton.disabled =
+                            true;
+
+                        yieldButton.textContent =
+                            yieldButton.dataset.loadingText
+                            || 'Generating rice-yield prediction...';
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | IMPORTANT
+                    |--------------------------------------------------------------------------
+                    |
+                    | Use native form.submit() here.
+                    |
+                    | This bypasses the JavaScript submit event and sends the POST directly
+                    | to Laravel.
+                    |
+                    */
+
+                    yieldForm.submit();
+                }
+            );
 
             const initialTab = tabsContainer?.dataset.initialWeatherTab || 'weather-forecast';
             showTab(initialTab);

@@ -1,0 +1,13 @@
+MONTH_NO,MONTH,RAINFALL,TMAX,TMIN,RH,WIND_SPEED,WIND_DIRECTION,DATA_TYPE,SOURCE,ACTUAL_YIELD,PREDICTED_YIELD,ABS_ERROR,STATUS
+1,Jan,54.4,31.8,20.4,73.6,11.64,56.8,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,4.111255644280764,,Prediction only
+2,Feb,23.9,34.6,19.8,66.39,15.53,77.9,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,4.017714713874395,,Prediction only
+3,Mar,42.4,35.0,20.7,63.56,12.15,89.05,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.938575478588333,,Prediction only
+4,Apr,26.5,36.5,20.7,63.05,8.96,96.91,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.9017189330972832,,Prediction only
+5,May,113.7,37.2,24.7,70.99,8.22,79.23,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.7054552942748167,,Prediction only
+6,Jun,255.0,33.5,23.7,84.4,7.56,273.46,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.6188160821785282,,Prediction only
+7,Jul,317.4,32.7,22.3,85.03,8.49,280.59,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.6590098304685417,,Prediction only
+8,Aug,952.3,31.0,23.7,89.49,16.56,238.3,Observed,"Open-Meteo Historical Weather API - Lian, Batangas",,3.6262125368641063,,Prediction only
+9,Sep,,,,,,,Not available,Month not yet complete,,,,Weather not available
+10,Oct,,,,,,,Not available,Month not yet complete,,,,Weather not available
+11,Nov,,,,,,,Not available,Month not yet complete,,,,Weather not available
+12,Dec,,,,,,,Not available,Month not yet complete,,,,Weather not available

@@ -62,6 +62,52 @@ class WeatherApiServiceTest extends TestCase
         $this->assertSame([4.0, 0.0], $forecast['daily_series']['rainfall']);
     }
 
+    /**
+     * Regression coverage for the "0.00 shown as if it were a real reading"
+     * bug: a field genuinely absent from Open-Meteo's current block must
+     * come back as null, never silently defaulted to 0.
+     */
+    public function test_missing_current_weather_fields_are_null_not_zero(): void
+    {
+        config([
+            'services.weather_api.enabled' => true,
+            'services.weather_api.forecast_days' => 2,
+            'services.weather.timezone' => 'Asia/Manila',
+        ]);
+
+        Http::fake([
+            'api.open-meteo.com/v1/forecast*' => Http::response([
+                'current' => [
+                    'time' => '2026-07-04T16:00',
+                    // temperature_2m, relative_humidity_2m, precipitation/
+                    // rain, wind_speed_10m are all deliberately omitted.
+                    'weather_code' => 61,
+                ],
+                'daily' => [
+                    'time' => ['2026-07-04', '2026-07-05'],
+                    'weather_code' => [61, 2],
+                    'temperature_2m_max' => [30, 31],
+                    'temperature_2m_min' => [28, 27],
+                    'precipitation_sum' => [4, 0],
+                    'rain_sum' => [4, 0],
+                    'precipitation_probability_max' => [60, 20],
+                    'wind_speed_10m_max' => [10, 8],
+                ],
+            ]),
+        ]);
+
+        $forecast = app(WeatherApiService::class)->forecast();
+
+        $this->assertNull($forecast['current_rainfall_mm']);
+        $this->assertNull($forecast['humidity_percent']);
+        // current_temperature_c/wind_speed_kmh still fall back to the
+        // daily series' first value when present, so they're only null if
+        // that's ALSO missing — here the daily series does have values, so
+        // confirm those are used rather than a fabricated 0.
+        $this->assertSame(29.0, $forecast['current_temperature_c']);
+        $this->assertSame(10.0, $forecast['wind_speed_kmh']);
+    }
+
     public function test_it_does_not_require_an_openweather_key(): void
     {
         config([

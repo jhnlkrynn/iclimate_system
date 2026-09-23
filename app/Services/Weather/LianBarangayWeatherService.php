@@ -17,6 +17,7 @@ class LianBarangayWeatherService
         'precipitation',
         'rain',
         'weather_code',
+        'is_day',
         'wind_speed_10m',
     ];
 
@@ -125,6 +126,8 @@ class LianBarangayWeatherService
                 'temperature_c' => null,
                 'humidity_percent' => null,
                 'wind_speed_kmh' => null,
+                'weather_code' => null,
+                'is_day' => null,
                 'fetched_at' => now()->toDateTimeString(),
             ];
         }
@@ -159,6 +162,12 @@ class LianBarangayWeatherService
             'temperature_c' => $this->number($current['temperature_2m'] ?? null),
             'humidity_percent' => $this->number($current['relative_humidity_2m'] ?? null),
             'wind_speed_kmh' => $this->number($current['wind_speed_10m'] ?? null),
+            // Raw Open-Meteo WMO weather code + day/night flag — already
+            // fetched above, exposed here so callers can derive a
+            // condition/icon (e.g. via WeatherIconMapper) without a second
+            // API call. Not used for risk scoring.
+            'weather_code' => isset($current['weather_code']) ? (int) $current['weather_code'] : null,
+            'is_day' => isset($current['is_day']) ? (bool) $current['is_day'] : null,
             'fetched_at' => now()->toDateTimeString(),
         ];
     }

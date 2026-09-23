@@ -1,0 +1,13 @@
+YEAR,MONTH,MONTH_NAME,RAINFALL,TMAX,TMIN,RH,WIND_SPEED,WIND_DIRECTION,TEMPERATURE,SEASON,TRAINING_PERIOD_FROM,TRAINING_PERIOD_TO,WEATHER_SOURCE,TYPE
+2026,1,January,76.45,29.83,23.28,78.73,2.9,40,26.56,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,2,February,69.4,30.55,23.08,78.88,2.84,40,26.82,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,3,March,73.18,31.75,23.5,77.79,2.18,40,27.63,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,4,April,103.37,33.08,23.79,77.38,2.02,37.92,28.44,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,5,May,169.44,33.08,24.09,77.63,1.84,30.04,28.59,Wet,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,6,June,220.78,32.35,24.02,81.65,1.67,15.22,28.19,Wet,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,7,July,266.46,31.53,23.97,82.1,1.9,2.4,27.75,Wet,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,8,August,244.6,31.81,23.91,81.94,1.86,17,27.86,Wet,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,9,September,234.08,31.39,23.9,82.17,2.18,10.66,27.65,Wet,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,10,October,229.25,31.6,23.9,81.67,2.07,33.91,27.75,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,11,November,152.3,31.41,23.81,80.56,2.12,38.66,27.61,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"
+2026,12,December,148.4,29.97,23.5,80.72,2.49,40,26.74,Dry,2015-01,2025-12,"iClimate Ambulong Monthly Random Forest v5","Model Prediction"

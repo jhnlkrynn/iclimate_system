@@ -188,10 +188,13 @@ class WeatherApiService
             'current_condition' => $currentCondition['condition'],
             'current_icon' => $currentCondition['icon'],
             'weather_code' => $currentCode,
-            'current_rainfall_mm' => round((float) (data_get($current, 'precipitation') ?? data_get($current, 'rain') ?? 0), 2),
-            'current_temperature_c' => round((float) (data_get($current, 'temperature_2m') ?? ($temperature[0] ?? 0)), 2),
-            'humidity_percent' => round((float) (data_get($current, 'relative_humidity_2m') ?? 0), 2),
-            'wind_speed_kmh' => round((float) (data_get($current, 'wind_speed_10m') ?? ($wind[0] ?? 0)), 2),
+            // null (never 0) when the source genuinely has no value for this
+            // field — 0 is only ever shown when Open-Meteo actually reports
+            // zero. See numericOrNull().
+            'current_rainfall_mm' => $this->numericOrNull(data_get($current, 'precipitation') ?? data_get($current, 'rain')),
+            'current_temperature_c' => $this->numericOrNull(data_get($current, 'temperature_2m') ?? ($temperature[0] ?? null)),
+            'humidity_percent' => $this->numericOrNull(data_get($current, 'relative_humidity_2m')),
+            'wind_speed_kmh' => $this->numericOrNull(data_get($current, 'wind_speed_10m') ?? ($wind[0] ?? null)),
             'forecast_days' => $days,
             'daily_rainfall_mm' => round(array_sum($rain) / $days, 2),
             'monthly_rainfall_estimate_mm' => round((array_sum($rain) / $days) * 30, 2),
@@ -211,6 +214,10 @@ class WeatherApiService
                 'precipitationProbability' => array_map(fn ($value) => round((float) $value, 2), $probability),
                 'conditions' => array_map(
                     fn ($code) => $this->icons->map(is_numeric($code) ? (int) $code : null, true)['condition'],
+                    array_slice($daily['weather_code'] ?? [], 0, $days),
+                ),
+                'icons' => array_map(
+                    fn ($code) => $this->icons->map(is_numeric($code) ? (int) $code : null, true)['icon'],
                     array_slice($daily['weather_code'] ?? [], 0, $days),
                 ),
             ],
@@ -253,10 +260,10 @@ class WeatherApiService
             'current_condition' => $mapped['condition'],
             'current_icon' => $mapped['icon'],
             'weather_code' => $current->weather_code,
-            'current_rainfall_mm' => round((float) ($current->rainfall_mm ?? 0), 2),
-            'current_temperature_c' => round((float) ($current->temperature ?? 0), 2),
-            'humidity_percent' => round((float) ($current->humidity ?? 0), 2),
-            'wind_speed_kmh' => round((float) ($current->wind_speed ?? 0), 2),
+            'current_rainfall_mm' => $this->numericOrNull($current->rainfall_mm),
+            'current_temperature_c' => $this->numericOrNull($current->temperature),
+            'humidity_percent' => $this->numericOrNull($current->humidity),
+            'wind_speed_kmh' => $this->numericOrNull($current->wind_speed),
             'forecast_days' => $days,
             'daily_rainfall_mm' => round((float) $records->avg('rainfall_mm'), 2),
             'monthly_rainfall_estimate_mm' => round((float) $records->avg('rainfall_mm') * 30, 2),
@@ -275,6 +282,7 @@ class WeatherApiService
                 'windSpeed' => $records->map(fn (ExternalWeatherData $record) => round((float) ($record->wind_speed ?? 0), 2))->all(),
                 'precipitationProbability' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->precipitation_probability) ? round((float) $record->precipitation_probability, 2) : null)->all(),
                 'conditions' => $records->map(fn (ExternalWeatherData $record) => $this->icons->map(is_numeric($record->weather_code) ? (int) $record->weather_code : null, true)['condition'])->all(),
+                'icons' => $records->map(fn (ExternalWeatherData $record) => $this->icons->map(is_numeric($record->weather_code) ? (int) $record->weather_code : null, true)['icon'])->all(),
             ],
         ];
     }
@@ -287,6 +295,17 @@ class WeatherApiService
             fn (int $index): float => (float) ($values[$index] ?? 0),
             array_keys($dates),
         );
+    }
+
+    /**
+     * Preserves "genuinely unavailable" as null instead of silently
+     * defaulting a missing reading to 0 — a missing rainfall/temperature/
+     * humidity/wind reading must never be displayed as if the model/API
+     * actually reported zero.
+     */
+    private function numericOrNull(mixed $value): ?float
+    {
+        return is_numeric($value) ? round((float) $value, 2) : null;
     }
 
     private function average(array $values): float

@@ -967,6 +967,9 @@
 
                 @if($farmerBarangayRisk && ($farmerBarangayRisk['weather']['status'] ?? null) === 'fresh')
                     <div class="field-note">
+                        @if($farmerBarangayRisk['weather']['icon'] ?? null)
+                            <img class="farmer-weather-icon" src="{{ $farmerBarangayRisk['weather']['icon'] }}" alt="{{ $farmerBarangayRisk['weather']['condition'] ?? 'Weather icon' }}" width="34" height="34" loading="lazy">{{ $farmerBarangayRisk['weather']['condition'] ?? '' }} &middot;
+                        @endif
                         Current weather conditions (context only — humidity/wind are not scored risk factors):
                         @if($farmerBarangayRisk['weather']['rainfall_24h_mm'] !== null) Rainfall (24h forecast): {{ $farmerBarangayRisk['weather']['rainfall_24h_mm'] }} mm &middot; @endif
                         @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}°C &middot; @endif
@@ -974,7 +977,7 @@
                         @if($farmerBarangayRisk['weather']['wind_speed_kmh'] !== null) Wind: {{ $farmerBarangayRisk['weather']['wind_speed_kmh'] }} km/h @endif
                     </div>
                 @else
-                    <div class="field-note">Live weather is temporarily unavailable for your barangay.</div>
+                    <div class="field-note">No weather data &mdash; live weather is temporarily unavailable for your barangay.</div>
                 @endif
 
                 @if($farmerBarangayRisk && $farmerBarangayRisk['last_recorded_yield'])

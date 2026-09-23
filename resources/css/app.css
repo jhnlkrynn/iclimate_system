@@ -1187,12 +1187,123 @@ body .modal-body {
 .risk-map-legend { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: center; margin: .6rem 0 .85rem; padding: .65rem .85rem; border: 1px solid var(--iclimate-border); border-radius: 8px; background: rgba(255,255,255,.7); backdrop-filter: blur(12px) saturate(160%); font-size: .82rem; font-weight: 700; color: var(--iclimate-text); }
 .risk-map-legend .legend-swatch { display: inline-flex; align-items: center; gap: .4rem; }
 .risk-map-legend .legend-dot { width: .85rem; height: .85rem; border-radius: 999px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(13,31,24,.18); }
-.risk-map-detail-panel { border-top: 1px solid var(--iclimate-border); margin-top: .75rem; padding-top: .75rem; }
+.risk-map-detail-panel { border-top: 1px solid var(--iclimate-border); margin-top: .9rem; padding-top: .9rem; }
+
+/* Elderly-friendly barangay detail panel — large text, high contrast,
+   clearly separated cards instead of one dense block of technical text.
+   Rendered once by renderRiskDetailPanel() in barangay-risk-map.js and
+   shared, unmodified, across Farmer, MAO, and IT Expert/Admin. */
+.risk-card {
+    background: #ffffff;
+    border: 1px solid var(--iclimate-border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: .9rem;
+    box-shadow: 0 2px 10px rgba(13, 31, 24, .06);
+}
+.risk-card:last-child { margin-bottom: 0; }
+.risk-card-heading {
+    margin: 0 0 .6rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--iclimate-text);
+}
+.risk-card-body-text { margin: 0; font-size: 1rem; line-height: 1.6; color: var(--iclimate-text); }
+
+.risk-card-head { text-align: left; }
+.risk-card-barangay { margin: 0 0 .6rem; font-size: 1.4rem; font-weight: 800; color: var(--iclimate-text); line-height: 1.3; }
+.risk-level-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .5rem 1.1rem;
+    border-radius: 999px;
+    margin-bottom: .7rem;
+}
+.risk-level-badge-text { font-size: 1.15rem; font-weight: 800; letter-spacing: .03em; color: #ffffff; }
+.risk-level-badge-low { background: #2e7d32; }
+.risk-level-badge-moderate { background: #b8860b; }
+.risk-level-badge-high { background: #c1440e; }
+.risk-level-badge-severe { background: #8b0000; }
+.risk-level-badge-no-data { background: #6b7280; }
+.risk-card-explain { margin: 0; font-size: 1.1rem; line-height: 1.6; color: var(--iclimate-text); font-weight: 600; }
+
+.risk-card-condition { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+.risk-card-condition-name { font-size: 1.15rem; font-weight: 700; color: var(--iclimate-text); }
+.risk-weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.risk-weather-tile {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    padding: .65rem .8rem;
+    background: var(--iclimate-surface);
+    border-radius: 10px;
+}
+.risk-weather-label { font-size: .85rem; font-weight: 600; color: var(--iclimate-text-muted); }
+.risk-weather-value { font-size: 1.25rem; font-weight: 800; color: var(--iclimate-text); }
+
+.risk-advice-list { margin: 0; padding-left: 1.3rem; }
+.risk-advice-list li { font-size: 1.05rem; line-height: 1.65; color: var(--iclimate-text); margin-bottom: .55rem; }
+.risk-advice-list li:last-child { margin-bottom: 0; }
+
+.risk-card-updated .risk-card-body-text { font-weight: 700; font-size: 1.1rem; }
+
+.risk-more-info summary {
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--iclimate-primary-medium, #1F5A46);
+    list-style: none;
+}
+.risk-more-info summary::-webkit-details-marker { display: none; }
+.risk-more-info summary::before { content: '+ '; font-weight: 800; }
+.risk-more-info[open] summary::before { content: '\2212 '; }
+.risk-more-info-body { margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed var(--iclimate-border); }
+.risk-more-line { margin: 0 0 .5rem; font-size: .88rem; line-height: 1.5; color: var(--iclimate-text-muted); }
+.risk-more-line:last-child { margin-bottom: 0; }
+
+@media (max-width: 767.98px) {
+    .risk-card { padding: .9rem 1rem; }
+    .risk-weather-grid { grid-template-columns: 1fr 1fr; }
+    .risk-card-barangay { font-size: 1.25rem; }
+}
+@media (max-width: 399.98px) {
+    .risk-weather-grid { grid-template-columns: 1fr; }
+}
+
 .risk-map-detail-title { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--iclimate-text); font-weight: 700; }
 .risk-map-row-text { color: var(--iclimate-text-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
 .risk-map-row-meta { color: var(--iclimate-text-muted); font-size: .7rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 ul.risk-map-row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
 ul.risk-map-row-text li { margin-bottom: .15rem; }
+.risk-map-weather-heading { display: flex; align-items: center; gap: .4rem; text-transform: none; letter-spacing: normal; font-weight: 700; font-size: .85rem; }
+.weather-icon { display: inline-block; width: 30px; height: 30px; vertical-align: middle; flex: 0 0 auto; }
+.weather-icon-tooltip { width: 22px; height: 22px; vertical-align: -6px; margin-right: .25rem; }
+.weather-icon-fallback { color: var(--iclimate-text-muted); font-weight: 600; font-style: italic; }
+.farmer-weather-icon { display: inline-block; width: 34px; height: 34px; margin-right: .4rem; vertical-align: -9px; }
+/* Per-barangay weather markers drawn on the choropleth itself
+   (resources/js/barangay-risk-map.js weatherMarkerIcon()). Sized and
+   contrasted for easy reading by elderly users at a glance: a large white
+   badge with a solid dark ring and strong drop shadow so the icon stands
+   out clearly against any risk-fill color or basemap tile underneath. Kept
+   non-interactive so it never blocks clicking the polygon beneath. */
+.weather-marker-icon { pointer-events: none; }
+.weather-marker-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 2.5px solid #123F32;
+    box-shadow: 0 2px 6px rgba(13, 31, 24, .55);
+    pointer-events: none;
+}
+.weather-marker-badge img { width: 22px; height: 22px; display: block; }
+@media (max-width: 767.98px) {
+    .weather-marker-badge { width: 28px; height: 28px; border-width: 2px; }
+    .weather-marker-badge img { width: 18px; height: 18px; }
+}
 @media (max-width: 767.98px) {
     .risk-map-canvas { height: min(55vh, 420px); min-height: 340px; }
     .risk-map-shell { overflow: visible; }

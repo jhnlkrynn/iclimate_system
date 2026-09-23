@@ -1,0 +1,13 @@
+YEAR,MONTH,MONTH_NAME,RAINFALL,TMAX,TMIN,RH,WIND_SPEED,WIND_DIRECTION,SEASON,PREDICTED_YIELD,UNIT,WEATHER_BASIS,WEATHER_MODEL,YIELD_MODEL,STATUS
+2026,1,January,76.45,29.83,23.28,78.73,2.9,40,Dry,4.1283,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,2,February,69.4,30.55,23.08,78.88,2.84,40,Dry,4.1257,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,3,March,73.18,31.75,23.5,77.79,2.18,40,Dry,4.0339,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,4,April,103.37,33.08,23.79,77.38,2.02,37.92,Dry,3.9609,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,5,May,169.44,33.08,24.09,77.63,1.84,30.04,Wet,3.7414,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,6,June,220.78,32.35,24.02,81.65,1.67,15.22,Wet,3.6344,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,7,July,266.46,31.53,23.97,82.1,1.9,2.4,Wet,3.6237,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,8,August,244.6,31.81,23.91,81.94,1.86,17,Wet,3.6149,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,9,September,234.08,31.39,23.9,82.17,2.18,10.66,Wet,3.6434,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,10,October,229.25,31.6,23.9,81.67,2.07,33.91,Dry,4.0029,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,11,November,152.3,31.41,23.81,80.56,2.12,38.66,Dry,4.1064,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"
+2026,12,December,148.4,29.97,23.5,80.72,2.49,40,Dry,4.1156,t/ha,Ambulong,"iClimate Ambulong Monthly Random Forest v5","iClimate Candidate Random Forest","Testing Only"

@@ -109,6 +109,15 @@ return [
         'queue' => env('FARMING_AI_QUEUE', 'analytics'),
     ],
 
+    // PredictionOrchestrator (App\Services\Prediction) — how long a
+    // persisted monthly weather prediction is served from cache before the
+    // next read falls back to the (fresh) database row. Independent of
+    // farming_ai.cache_minutes above, which is for rice-yield AnalyticsRun
+    // results, not monthly weather.
+    'prediction' => [
+        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 360),
+    ],
+
     'groq' => [
         'enabled' => env('GROQ_ENABLED', env('GROQ_API_KEY') !== null),
         'key' => env('GROQ_API_KEY'),
