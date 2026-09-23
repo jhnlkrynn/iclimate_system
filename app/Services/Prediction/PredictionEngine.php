@@ -7,7 +7,6 @@ use App\Models\ClimateRecord;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\DecisionSupportService;
-use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\PythonService;
 use Carbon\CarbonImmutable;
 use Throwable;
@@ -20,7 +19,7 @@ use Throwable;
 class PredictionEngine
 {
     public function __construct(
-        private readonly MonthlyWeatherRandomForest $forest,
+        private readonly PredictionOrchestrator $orchestrator,
         private readonly PythonService $python,
         private readonly DecisionSupportService $decisionSupport,
     ) {}
@@ -36,7 +35,13 @@ class PredictionEngine
         array $manualOverrides = [],
     ): array {
         $targetMonth = $targetDate->startOfMonth();
-        $weatherResult = $this->forest->predict($targetMonth);
+        // Reads through PredictionOrchestrator (persisted DB row / cache for
+        // the 12-month pre-generated horizon) instead of calling
+        // MonthlyWeatherRandomForest::predict() directly, so this shared
+        // engine — used by the Farmer Dashboard yield widget and by
+        // PlantingSchedulePredictionService on every schedule save — never
+        // retrains a model on a normal request.
+        $weatherResult = $this->orchestrator->monthlyWeatherForecast($targetMonth);
 
         $modelInput = $this->buildModelInput($weatherResult, $farmType, $targetDate, $areaOverride, $user, $manualOverrides);
         $weatherLabel = WeatherLabeler::fromRainfall($modelInput['rainfall']);

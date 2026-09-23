@@ -122,3 +122,12 @@ Schedule::command('iclimate:process-datasets')
     ->dailyAt('01:30')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
+
+// Keeps the 12-month operational horizon of persisted monthly weather
+// predictions warm (queues background generation only for months that are
+// missing/stale) so the weather-predictions page and barangay risk map
+// almost never have to fall back to computing a forecast inline.
+Schedule::command('iclimate:refresh-predictions')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);

@@ -6,8 +6,9 @@ use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
 use App\Services\DecisionSupportService;
-use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Weather\LianBarangayWeatherService;
+use App\Services\Weather\WeatherIconMapper;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -53,8 +54,27 @@ class BarangayRiskMapService
     public function __construct(
         private readonly LianBarangayWeatherService $weatherService,
         private readonly DecisionSupportService $decisionSupport,
-        private readonly MonthlyWeatherRandomForest $monthlyWeatherForest,
+        private readonly PredictionOrchestrator $predictionOrchestrator,
+        private readonly WeatherIconMapper $weatherIcons,
     ) {}
+
+    /**
+     * A small icon/condition label for a barangay's current weather, derived
+     * from Open-Meteo's own weather_code (already fetched by
+     * LianBarangayWeatherService, not a new data source) via the existing,
+     * already-used-elsewhere WeatherIconMapper. Presentation only — never
+     * consulted by evaluate()/AgriculturalRiskScorer.
+     *
+     * @param  array<string, mixed>  $weather
+     * @return array{icon: string, condition: string}
+     */
+    private function weatherIconFields(array $weather): array
+    {
+        $code = isset($weather['weather_code']) ? (int) $weather['weather_code'] : null;
+        $isDay = $weather['is_day'] ?? true;
+
+        return $this->weatherIcons->map($code, $isDay === null ? true : (bool) $isDay);
+    }
 
     /**
      * Full 19-barangay risk map, cached under self::CACHE_KEY.
@@ -178,7 +198,13 @@ class BarangayRiskMapService
     private function monthlyRainfall(): array
     {
         try {
-            $result = $this->monthlyWeatherForest->predict(now()->startOfMonth()->toImmutable());
+            // Reads through the same centralized, persisted/cached
+            // orchestrator the weather-predictions page uses — this no
+            // longer independently retrains MonthlyWeatherRandomForest on
+            // every riskMap() cache miss (still at most once per 20-minute
+            // riskMap() cache window either way, but now also benefits from
+            // the longer-lived persisted table across separate cache windows).
+            $result = $this->predictionOrchestrator->monthlyWeatherForecast(now()->startOfMonth()->toImmutable());
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: monthly rainfall forest failed, treating monthly rainfall as unavailable.', [
                 'message' => $exception->getMessage(),
@@ -259,6 +285,7 @@ class BarangayRiskMapService
                 'humidity_percent' => $weather['humidity_percent'] ?? null,
                 'wind_speed_kmh' => $weather['wind_speed_kmh'] ?? null,
                 'observed_at' => $weather['observed_at'] ?? null,
+                ...$this->weatherIconFields($weather),
             ]
             : [
                 'status' => $weather['status'] ?? 'unavailable',
@@ -319,6 +346,7 @@ class BarangayRiskMapService
                 'humidity_percent' => $weather['humidity_percent'] ?? null,
                 'wind_speed_kmh' => $weather['wind_speed_kmh'] ?? null,
                 'observed_at' => $weather['observed_at'] ?? null,
+                ...$this->weatherIconFields($weather),
             ],
             // The monthly-scale rainfall figure actually fed to the scorer
             // (mm/calendar month, municipality-wide — see monthlyRainfall()).

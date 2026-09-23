@@ -43,4 +43,15 @@ class RoleAuthorizationTest extends TestCase
         $this->actingAs($itExpert)->get(route('users.index'))->assertOk();
         $this->actingAs($itExpert)->get(route('climate-records.index'))->assertOk();
     }
+
+    public function test_only_it_expert_can_access_the_candidate_testing_page(): void
+    {
+        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+
+        $this->actingAs($farmer)->get(route('testing.candidate-rice-yield'))->assertForbidden();
+        $this->actingAs($mao)->get(route('testing.candidate-rice-yield'))->assertForbidden();
+        $this->actingAs($itExpert)->get(route('testing.candidate-rice-yield'))->assertOk();
+    }
 }

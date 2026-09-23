@@ -8,331 +8,1790 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Trains a small Random Forest regression per target (rainfall, temperature,
- * humidity, wind_speed) from the real Ambulong historical monthly climate
- * dataset (see AmbulongHistoricalClimateDataset) and predicts a target
- * month's monthly-scale weather.
+ * Improved Ambulong Monthly Weather Random Forest.
  *
- * As of the 2026-09 data-source fix, this class no longer reads
- * `ClimateRecord` at all — that table's 6 rows (5 synthetic demo rows plus
- * one physically-impossible manually-entered row) can no longer influence
- * this model's output, structurally, regardless of what is ever written to
- * that table. See AmbulongHistoricalClimateDataset's docblock for the CSV
- * format, sentinel-row exclusion, and the TMAX/TMIN -> temperature
- * derivation.
+ * Improvements:
+ * - Strict training cutoff / no target leakage
+ * - Previous-month context
+ * - 3-month rolling context
+ * - 6-month rolling context
+ * - Same month last year
+ * - Same month two years ago
+ * - Historical climatology for the same calendar month
+ * - Circular wind-direction encoding
  *
- * Known limitation (context gap): the historical dataset currently ends at
- * 2025-12. When predicting a target month beyond that (e.g. the live
- * "current month"), the "previous month" / rolling-window feature context
- * used by featuresForTargetMonth() is the most recent REAL historical month
- * available (Dec 2025), not a fabricated recent month. This is a deliberate
- * choice to avoid inventing data, but it does mean the model is predicting
- * "current" conditions using a context that may be many months stale until
- * the CSV is refreshed with newer real observations.
+ * Output:
+ * - rainfall
+ * - tmax
+ * - tmin
+ * - humidity
+ * - wind_speed
+ * - wind_direction
+ * - temperature
+ * - season
  */
 class MonthlyWeatherRandomForest
 {
-    private const TARGETS = ['rainfall', 'temperature', 'humidity', 'wind_speed'];
+    /**
+     * Formal version marker for this model's trained output — matches the
+     * "v5" already embedded in the cache key below and in source_name.
+     * Persisted alongside every stored prediction (PredictionOrchestrator /
+     * monthly_weather_predictions.weather_model) so a future retrain that
+     * changes this string automatically produces new rows/cache keys
+     * instead of silently being served as if it were the old model's output.
+     */
+    public const MODEL_VERSION = 'monthly_weather_rf_v5';
+
+    private const TARGETS = [
+        'rainfall',
+        'tmax',
+        'tmin',
+        'humidity',
+        'wind_speed',
+        'wind_direction_sin',
+        'wind_direction_cos',
+    ];
+
+    /**
+     * Must remain consistent with the candidate
+     * rice-yield Random Forest preprocessing.
+     */
+    private const WET_SEASON_MONTHS = [
+        5,
+        6,
+        7,
+        8,
+        9,
+    ];
 
     public function __construct(
-        private readonly AmbulongHistoricalClimateDataset $dataset = new AmbulongHistoricalClimateDataset,
-    ) {}
+        private readonly AmbulongHistoricalClimateDataset $dataset =
+            new AmbulongHistoricalClimateDataset,
+    ) {
+    }
 
-    public function predict(CarbonImmutable $targetMonth): array
+    /**
+     * Exposes the underlying historical dataset's cheap version signature
+     * (file mtime/size, not a re-parse) so callers that persist predictions
+     * outside this class's own 15-minute cache — e.g. PredictionOrchestrator
+     * — can detect "the source CSV changed since this row was generated"
+     * without needing their own copy of AmbulongHistoricalClimateDataset.
+     */
+    public function datasetVersion(): string
     {
+        return $this->dataset->version();
+    }
+
+    /**
+     * Predict monthly weather.
+     *
+     * If $trainingCutoff is not provided:
+     * use observations only BEFORE the target month.
+     *
+     * If explicitly provided:
+     * use observations up to that cutoff.
+     */
+    public function predict(
+        CarbonImmutable $targetMonth,
+        ?CarbonImmutable $trainingCutoff = null
+    ): array {
+        $targetMonth = $targetMonth->startOfMonth();
+
+        $effectiveCutoff = $trainingCutoff !== null
+            ? $trainingCutoff->endOfMonth()
+            : $targetMonth->subMonth()->endOfMonth();
+
+        $cacheKey = implode(':', [
+            'weather-random-forest-v5',
+            $targetMonth->format('Y-m'),
+            'cutoff',
+            $effectiveCutoff->format('Y-m-d'),
+            $this->dataset->version(),
+        ]);
+
         return Cache::remember(
-            'weather-random-forest:'.$targetMonth->format('Y-m').':'.$this->dataset->version(),
+            $cacheKey,
             now()->addMinutes(15),
-            fn () => $this->buildPrediction($targetMonth)
+            fn () => $this->buildPrediction(
+                $targetMonth,
+                $effectiveCutoff
+            )
         );
     }
 
-    private function buildPrediction(CarbonImmutable $targetMonth): array
-    {
+    private function buildPrediction(
+        CarbonImmutable $targetMonth,
+        CarbonImmutable $trainingCutoff
+    ): array {
         $dataset = $this->dataset->load();
 
         if (! $dataset['available']) {
             return $this->notReady(
                 $targetMonth,
+                $trainingCutoff,
                 0,
-                $dataset['message'] ?? 'The Ambulong historical climate dataset is not currently available.'
+                $dataset['message']
+                    ?? 'The Ambulong historical climate dataset is unavailable.'
             );
         }
 
-        $monthly = $this->monthlyClimateRecords($dataset['observations']);
+        /*
+        |--------------------------------------------------------------------------
+        | Strict Training Window
+        |--------------------------------------------------------------------------
+        */
 
-        if ($monthly->count() < 4) {
+        $trainingObservations = $dataset['observations']
+            ->filter(
+                function (array $observation) use ($trainingCutoff): bool {
+                    $observationDate =
+                        CarbonImmutable::createFromDate(
+                            (int) $observation['year'],
+                            (int) $observation['month'],
+                            1
+                        )->endOfMonth();
+
+                    return $observationDate->lessThanOrEqualTo(
+                        $trainingCutoff
+                    );
+                }
+            )
+            ->values();
+
+        $monthly = $this->monthlyClimateRecords(
+            $trainingObservations
+        );
+
+        if ($monthly->count() < 12) {
             return $this->notReady(
                 $targetMonth,
+                $trainingCutoff,
                 $monthly->count(),
-                'At least 4 months of historical climate data are required to train the monthly Random Forest model.'
+                'At least 12 usable historical monthly observations are required.'
             );
         }
 
-        [$samples, $latestContext] = $this->buildTrainingSamples($monthly);
+        [$samples, $context] =
+            $this->buildTrainingSamples(
+                $monthly
+            );
 
-        if (count($samples) < 3) {
+        if (count($samples) < 6) {
             return $this->notReady(
                 $targetMonth,
+                $trainingCutoff,
                 $monthly->count(),
-                'The available historical dataset must span at least 4 usable monthly observations.'
+                'Not enough usable training samples were generated.'
             );
         }
 
-        $features = $this->featuresForTargetMonth($targetMonth, $latestContext, $monthly->count());
-        $predictions = [];
+        $features = $this->featuresForTargetMonth(
+            $targetMonth,
+            $context
+        );
+
+        $rawPredictions = [];
+
         $training = [];
 
+        /*
+        |--------------------------------------------------------------------------
+        | Train Independent Forest for Every Weather Target
+        |--------------------------------------------------------------------------
+        */
+
         foreach (self::TARGETS as $target) {
-            $forest = new RandomForestRegressor(treeCount: 45, maxDepth: 7, minSamplesSplit: 2, seed: crc32($target));
-            $forest->train($samples, $target);
-            $predictions[$target] = round($forest->predict($features), 2);
+            $forest = new RandomForestRegressor(
+                treeCount: 100,
+                maxDepth: 8,
+                minSamplesSplit: 3,
+                seed: crc32(
+                    'iclimate-'.$target
+                )
+            );
+
+            $forest->train(
+                $samples,
+                $target
+            );
+
+            $rawPredictions[$target] =
+                $forest->predict(
+                    $features
+                );
+
             $training[$target] = [
-                'trees' => $forest->treeCount(),
-                'samples' => count($samples),
-                'features' => count($features),
-                'stability' => $this->targetStability($samples, $target),
+                'trees' =>
+                    $forest->treeCount(),
+
+                'samples' =>
+                    count($samples),
+
+                'features' =>
+                    count($features),
+
+                'stability' =>
+                    $this->targetStability(
+                        $samples,
+                        $target
+                    ),
             ];
         }
 
-        $predictions['season'] = $this->seasonForMonth((int) $targetMonth->format('n'));
-        $confidence = $this->confidence($monthly->count(), $training);
+        /*
+        |--------------------------------------------------------------------------
+        | Convert Circular Wind Components Back to Degrees
+        |--------------------------------------------------------------------------
+        */
+
+        $windDirection =
+            $this->windDirectionFromComponents(
+                (float) $rawPredictions[
+                    'wind_direction_sin'
+                ],
+                (float) $rawPredictions[
+                    'wind_direction_cos'
+                ]
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Final Predictions
+        |--------------------------------------------------------------------------
+        */
+
+        $predictions = [
+            'rainfall' =>
+                round(
+                    max(
+                        0,
+                        (float)
+                        $rawPredictions[
+                            'rainfall'
+                        ]
+                    ),
+                    2
+                ),
+
+            'tmax' =>
+                round(
+                    (float)
+                    $rawPredictions[
+                        'tmax'
+                    ],
+                    2
+                ),
+
+            'tmin' =>
+                round(
+                    (float)
+                    $rawPredictions[
+                        'tmin'
+                    ],
+                    2
+                ),
+
+            'humidity' =>
+                round(
+                    max(
+                        0,
+                        min(
+                            100,
+                            (float)
+                            $rawPredictions[
+                                'humidity'
+                            ]
+                        )
+                    ),
+                    2
+                ),
+
+            'wind_speed' =>
+                round(
+                    max(
+                        0,
+                        (float)
+                        $rawPredictions[
+                            'wind_speed'
+                        ]
+                    ),
+                    2
+                ),
+
+            'wind_direction' =>
+                round(
+                    $windDirection,
+                    2
+                ),
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Physical Temperature Check
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $predictions['tmax']
+            <
+            $predictions['tmin']
+        ) {
+            $high = max(
+                $predictions['tmax'],
+                $predictions['tmin']
+            );
+
+            $low = min(
+                $predictions['tmax'],
+                $predictions['tmin']
+            );
+
+            $predictions['tmax'] =
+                $high;
+
+            $predictions['tmin'] =
+                $low;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Derived Average Temperature
+        |--------------------------------------------------------------------------
+        */
+
+        $predictions['temperature'] =
+            round(
+                (
+                    $predictions['tmax']
+                    +
+                    $predictions['tmin']
+                ) / 2,
+                2
+            );
+
+        $predictions['season'] =
+            $this->seasonForMonth(
+                (int)
+                $targetMonth->format('n')
+            );
+
+        $confidence =
+            $this->confidence(
+                $monthly->count(),
+                $training
+            );
 
         return [
-            'ready' => true,
-            'message' => 'Prediction generated using the Ambulong historical monthly climate dataset and Random Forest regression.',
-            'source_type' => 'Trained Model',
-            'source_name' => 'iClimate monthly Random Forest model',
-            'source_note' => 'Model output trained from the Ambulong historical monthly climate dataset (database/data/Ambulong Monthly Data.csv).',
-            'months_available' => $monthly->count(),
-            'target_month' => $targetMonth,
-            'predictions' => $predictions,
-            'training' => $training,
-            'confidence' => $confidence,
-            'insights' => $this->insights($predictions, $confidence),
+            'ready' =>
+                true,
+
+            'message' =>
+                'Prediction generated using the improved Ambulong historical monthly Random Forest model.',
+
+            'source_type' =>
+                'Trained Model',
+
+            'source_name' =>
+                'iClimate Ambulong Monthly Random Forest v5',
+
+            'source_note' =>
+                'Uses only legitimate Ambulong historical monthly climate records and excludes target/future observations.',
+
+            'weather_basis' =>
+                'Ambulong',
+
+            'training_cutoff' =>
+                $trainingCutoff->format(
+                    'Y-m-d'
+                ),
+
+            'training_period' => [
+                'from' =>
+                    $monthly
+                        ->first()[
+                            'month'
+                        ]
+                        ->format(
+                            'Y-m'
+                        ),
+
+                'to' =>
+                    $monthly
+                        ->last()[
+                            'month'
+                        ]
+                        ->format(
+                            'Y-m'
+                        ),
+            ],
+
+            'months_available' =>
+                $monthly->count(),
+
+            'target_month' =>
+                $targetMonth,
+
+            'predictions' =>
+                $predictions,
+
+            'training' =>
+                $training,
+
+            'confidence' =>
+                $confidence,
+
+            'insights' =>
+                $this->insights(
+                    $predictions,
+                    $confidence
+                ),
         ];
     }
 
-    private function notReady(CarbonImmutable $targetMonth, int $monthsAvailable, string $message): array
-    {
+    private function notReady(
+        CarbonImmutable $targetMonth,
+        CarbonImmutable $trainingCutoff,
+        int $monthsAvailable,
+        string $message
+    ): array {
         return [
-            'ready' => false,
-            'message' => $message,
-            'source_type' => 'Trained Model',
-            'source_name' => 'iClimate monthly Random Forest model',
-            'source_note' => 'Model trains from the Ambulong historical monthly climate dataset (database/data/Ambulong Monthly Data.csv).',
-            'months_available' => $monthsAvailable,
-            'target_month' => $targetMonth,
-            'predictions' => [],
-            'training' => [],
+            'ready' =>
+                false,
+
+            'message' =>
+                $message,
+
+            'source_type' =>
+                'Trained Model',
+
+            'source_name' =>
+                'iClimate Ambulong Monthly Random Forest v5',
+
+            'source_note' =>
+                'Uses Ambulong historical monthly climate data.',
+
+            'weather_basis' =>
+                'Ambulong',
+
+            'training_cutoff' =>
+                $trainingCutoff->format(
+                    'Y-m-d'
+                ),
+
+            'training_period' =>
+                null,
+
+            'months_available' =>
+                $monthsAvailable,
+
+            'target_month' =>
+                $targetMonth,
+
+            'predictions' =>
+                [],
+
+            'training' =>
+                [],
+
+            'confidence' =>
+                null,
+
+            'insights' =>
+                [],
         ];
     }
 
-    /**
-     * @param  Collection<int, array{year: int, month: int, rainfall: float, temperature: float, humidity: ?float, wind_speed: ?float, season: string}>  $observations
-     */
-    private function monthlyClimateRecords(Collection $observations): Collection
-    {
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize Historical Dataset
+    |--------------------------------------------------------------------------
+    */
+
+    private function monthlyClimateRecords(
+        Collection $observations
+    ): Collection {
         return $observations
-            ->map(function (array $observation): array {
-                $month = CarbonImmutable::createFromDate($observation['year'], $observation['month'], 1)->startOfMonth();
+            ->map(
+                function (
+                    array $observation
+                ): array {
+                    $month =
+                        CarbonImmutable::createFromDate(
+                            (int)
+                            $observation[
+                                'year'
+                            ],
+                            (int)
+                            $observation[
+                                'month'
+                            ],
+                            1
+                        )->startOfMonth();
 
-                return [
-                    'month' => $month,
-                    'rainfall' => (float) $observation['rainfall'],
-                    'temperature' => (float) $observation['temperature'],
-                    'humidity' => (float) ($observation['humidity'] ?? 0.0),
-                    'wind_speed' => (float) ($observation['wind_speed'] ?? 0.0),
-                    'season' => $this->seasonForMonth((int) $month->format('n')),
-                    'records' => 1,
-                ];
-            })
+                    $windDirection =
+                        (float)
+                        $observation[
+                            'wind_direction'
+                        ];
+
+                    $windRadians =
+                        deg2rad(
+                            $windDirection
+                        );
+
+                    return [
+                        'month' =>
+                            $month,
+
+                        'year' =>
+                            (int)
+                            $observation[
+                                'year'
+                            ],
+
+                        'month_number' =>
+                            (int)
+                            $observation[
+                                'month'
+                            ],
+
+                        'rainfall' =>
+                            (float)
+                            $observation[
+                                'rainfall'
+                            ],
+
+                        'tmax' =>
+                            (float)
+                            $observation[
+                                'tmax'
+                            ],
+
+                        'tmin' =>
+                            (float)
+                            $observation[
+                                'tmin'
+                            ],
+
+                        'temperature' =>
+                            (float)
+                            $observation[
+                                'temperature'
+                            ],
+
+                        'humidity' =>
+                            (float)
+                            $observation[
+                                'humidity'
+                            ],
+
+                        'wind_speed' =>
+                            (float)
+                            $observation[
+                                'wind_speed'
+                            ],
+
+                        'wind_direction' =>
+                            $windDirection,
+
+                        'wind_direction_sin' =>
+                            sin(
+                                $windRadians
+                            ),
+
+                        'wind_direction_cos' =>
+                            cos(
+                                $windRadians
+                            ),
+
+                        'season' =>
+                            $this->seasonForMonth(
+                                (int)
+                                $observation[
+                                    'month'
+                                ]
+                            ),
+                    ];
+                }
+            )
             ->values();
     }
 
-    private function buildTrainingSamples(Collection $monthly): array
-    {
+    /*
+    |--------------------------------------------------------------------------
+    | Build Training Samples
+    |--------------------------------------------------------------------------
+    */
+
+    private function buildTrainingSamples(
+        Collection $monthly
+    ): array {
         $samples = [];
 
-        for ($i = 1; $i < $monthly->count(); $i++) {
-            $current = $monthly[$i];
-            $previous = $monthly[$i - 1];
-            $history = $monthly->slice(max(0, $i - 3), min(3, $i));
-            $features = $this->featureVector($current['month'], $previous, $history, $i);
+        /*
+         * We begin at index 6 because the improved model
+         * uses up to six months of historical context.
+         */
+        for (
+            $i = 6;
+            $i < $monthly->count();
+            $i++
+        ) {
+            $current =
+                $monthly[$i];
 
-            foreach (self::TARGETS as $target) {
-                $features[$target] = $current[$target];
+            /*
+             * Strictly historical data.
+             * Current month is NOT included.
+             */
+            $history = $monthly
+                ->slice(
+                    0,
+                    $i
+                )
+                ->values();
+
+            if ($history->isEmpty()) {
+                continue;
             }
 
-            $samples[] = $features;
+            $features =
+                $this->featureVector(
+                    $current['month'],
+                    $history,
+                    $i
+                );
+
+            foreach (
+                self::TARGETS
+                as $target
+            ) {
+                $features[$target] =
+                    $current[$target];
+            }
+
+            $samples[] =
+                $features;
         }
 
-        $latest = $monthly->last();
-        $history = $monthly->slice(max(0, $monthly->count() - 3), min(3, $monthly->count()));
-
-        return [$samples, ['previous' => $latest, 'history' => $history]];
-    }
-
-    private function featuresForTargetMonth(CarbonImmutable $targetMonth, array $context, int $index): array
-    {
-        return $this->featureVector($targetMonth->startOfMonth(), $context['previous'], $context['history'], $index);
-    }
-
-    private function featureVector(CarbonImmutable $month, array $previous, Collection $history, int $index): array
-    {
-        $monthNumber = (int) $month->format('n');
-        $angle = 2 * pi() * ($monthNumber / 12);
-
         return [
-            'month' => $monthNumber,
-            'month_sin' => sin($angle),
-            'month_cos' => cos($angle),
-            'year' => (int) $month->format('Y'),
-            'time_index' => $index,
-            'is_wet_season' => $this->seasonForMonth($monthNumber) === 'Wet' ? 1 : 0,
-            'prev_rainfall' => (float) $previous['rainfall'],
-            'prev_temperature' => (float) $previous['temperature'],
-            'prev_humidity' => (float) $previous['humidity'],
-            'prev_wind_speed' => (float) $previous['wind_speed'],
-            'avg3_rainfall' => (float) $history->avg('rainfall'),
-            'avg3_temperature' => (float) $history->avg('temperature'),
-            'avg3_humidity' => (float) $history->avg('humidity'),
-            'avg3_wind_speed' => (float) $history->avg('wind_speed'),
+            $samples,
+
+            [
+                'history' =>
+                    $monthly->values(),
+
+                'index' =>
+                    $monthly->count(),
+            ],
         ];
     }
 
-    private function seasonForMonth(int $month): string
-    {
-        return in_array($month, [5, 6, 7, 8, 9, 10], true) ? 'Wet' : 'Dry';
+    /*
+    |--------------------------------------------------------------------------
+    | Target Month Features
+    |--------------------------------------------------------------------------
+    */
+
+    private function featuresForTargetMonth(
+        CarbonImmutable $targetMonth,
+        array $context
+    ): array {
+        return $this->featureVector(
+            $targetMonth->startOfMonth(),
+            $context[
+                'history'
+            ],
+            $context[
+                'index'
+            ]
+        );
     }
 
-    private function targetStability(array $samples, string $target): array
-    {
-        $values = array_map(fn (array $sample): float => (float) $sample[$target], $samples);
-        $mean = array_sum($values) / max(count($values), 1);
-        $variance = array_sum(array_map(fn (float $value): float => ($value - $mean) ** 2, $values)) / max(count($values), 1);
-        $deviation = sqrt($variance);
-        $ratio = $mean > 0 ? $deviation / $mean : 1;
+    /*
+    |--------------------------------------------------------------------------
+    | Feature Engineering
+    |--------------------------------------------------------------------------
+    */
+
+    private function featureVector(
+        CarbonImmutable $targetMonth,
+        Collection $history,
+        int $index
+    ): array {
+        $monthNumber =
+            (int)
+            $targetMonth->format(
+                'n'
+            );
+
+        $year =
+            (int)
+            $targetMonth->format(
+                'Y'
+            );
+
+        $angle =
+            2
+            * pi()
+            * (
+                $monthNumber
+                / 12
+            );
+
+        $previous =
+            $history->last();
+
+        $last3 =
+            $history
+                ->slice(
+                    max(
+                        0,
+                        $history->count() - 3
+                    )
+                )
+                ->values();
+
+        $last6 =
+            $history
+                ->slice(
+                    max(
+                        0,
+                        $history->count() - 6
+                    )
+                )
+                ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Same Calendar Month History
+        |--------------------------------------------------------------------------
+        */
+
+        $sameMonthHistory =
+            $history
+                ->filter(
+                    fn (
+                        array $row
+                    ): bool =>
+                        (int)
+                        $row[
+                            'month_number'
+                        ]
+                        ===
+                        $monthNumber
+                )
+                ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Exact Same Month Last Year
+        |--------------------------------------------------------------------------
+        */
+
+        $sameMonthLastYear =
+            $history
+                ->first(
+                    fn (
+                        array $row
+                    ): bool =>
+                        (int)
+                        $row['year']
+                            ===
+                            ($year - 1)
+                        &&
+                        (int)
+                        $row[
+                            'month_number'
+                        ]
+                            ===
+                            $monthNumber
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Same Month Two Years Ago
+        |--------------------------------------------------------------------------
+        */
+
+        $sameMonthTwoYearsAgo =
+            $history
+                ->first(
+                    fn (
+                        array $row
+                    ): bool =>
+                        (int)
+                        $row['year']
+                            ===
+                            ($year - 2)
+                        &&
+                        (int)
+                        $row[
+                            'month_number'
+                        ]
+                            ===
+                            $monthNumber
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fallbacks
+        |--------------------------------------------------------------------------
+        */
+
+        $sameMonthLastYear =
+            $sameMonthLastYear
+            ??
+            $sameMonthHistory->last()
+            ??
+            $previous;
+
+        $sameMonthTwoYearsAgo =
+            $sameMonthTwoYearsAgo
+            ??
+            (
+                $sameMonthHistory->count()
+                    >= 2
+
+                    ? $sameMonthHistory[
+                        $sameMonthHistory->count()
+                        - 2
+                    ]
+
+                    : $sameMonthLastYear
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Same-Month Historical Climatology
+        |--------------------------------------------------------------------------
+        */
+
+        $sameMonthAverage =
+            $sameMonthHistory->isNotEmpty()
+                ? $sameMonthHistory
+                : collect([
+                    $previous,
+                ]);
 
         return [
-            'mean' => round($mean, 2),
-            'deviation' => round($deviation, 2),
-            'label' => $ratio <= .12 ? 'Stable' : ($ratio <= .24 ? 'Variable' : 'Highly variable'),
+            /*
+            |--------------------------------------------------------------------------
+            | Calendar
+            |--------------------------------------------------------------------------
+            */
+
+            'month' =>
+                $monthNumber,
+
+            'month_sin' =>
+                sin(
+                    $angle
+                ),
+
+            'month_cos' =>
+                cos(
+                    $angle
+                ),
+
+            'year' =>
+                $year,
+
+            'time_index' =>
+                $index,
+
+            'is_wet_season' =>
+                $this->seasonForMonth(
+                    $monthNumber
+                ) === 'Wet'
+                    ? 1
+                    : 0,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Previous Month
+            |--------------------------------------------------------------------------
+            */
+
+            'prev_rainfall' =>
+                (float)
+                $previous[
+                    'rainfall'
+                ],
+
+            'prev_tmax' =>
+                (float)
+                $previous[
+                    'tmax'
+                ],
+
+            'prev_tmin' =>
+                (float)
+                $previous[
+                    'tmin'
+                ],
+
+            'prev_temperature' =>
+                (float)
+                $previous[
+                    'temperature'
+                ],
+
+            'prev_humidity' =>
+                (float)
+                $previous[
+                    'humidity'
+                ],
+
+            'prev_wind_speed' =>
+                (float)
+                $previous[
+                    'wind_speed'
+                ],
+
+            'prev_wind_direction_sin' =>
+                (float)
+                $previous[
+                    'wind_direction_sin'
+                ],
+
+            'prev_wind_direction_cos' =>
+                (float)
+                $previous[
+                    'wind_direction_cos'
+                ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Rolling 3-Month Average
+            |--------------------------------------------------------------------------
+            */
+
+            'avg3_rainfall' =>
+                $this->average(
+                    $last3,
+                    'rainfall'
+                ),
+
+            'avg3_tmax' =>
+                $this->average(
+                    $last3,
+                    'tmax'
+                ),
+
+            'avg3_tmin' =>
+                $this->average(
+                    $last3,
+                    'tmin'
+                ),
+
+            'avg3_temperature' =>
+                $this->average(
+                    $last3,
+                    'temperature'
+                ),
+
+            'avg3_humidity' =>
+                $this->average(
+                    $last3,
+                    'humidity'
+                ),
+
+            'avg3_wind_speed' =>
+                $this->average(
+                    $last3,
+                    'wind_speed'
+                ),
+
+            'avg3_wind_direction_sin' =>
+                $this->average(
+                    $last3,
+                    'wind_direction_sin'
+                ),
+
+            'avg3_wind_direction_cos' =>
+                $this->average(
+                    $last3,
+                    'wind_direction_cos'
+                ),
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Rolling 6-Month Average
+            |--------------------------------------------------------------------------
+            */
+
+            'avg6_rainfall' =>
+                $this->average(
+                    $last6,
+                    'rainfall'
+                ),
+
+            'avg6_tmax' =>
+                $this->average(
+                    $last6,
+                    'tmax'
+                ),
+
+            'avg6_tmin' =>
+                $this->average(
+                    $last6,
+                    'tmin'
+                ),
+
+            'avg6_temperature' =>
+                $this->average(
+                    $last6,
+                    'temperature'
+                ),
+
+            'avg6_humidity' =>
+                $this->average(
+                    $last6,
+                    'humidity'
+                ),
+
+            'avg6_wind_speed' =>
+                $this->average(
+                    $last6,
+                    'wind_speed'
+                ),
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Same Month Last Year
+            |--------------------------------------------------------------------------
+            */
+
+            'lag12_rainfall' =>
+                (float)
+                $sameMonthLastYear[
+                    'rainfall'
+                ],
+
+            'lag12_tmax' =>
+                (float)
+                $sameMonthLastYear[
+                    'tmax'
+                ],
+
+            'lag12_tmin' =>
+                (float)
+                $sameMonthLastYear[
+                    'tmin'
+                ],
+
+            'lag12_temperature' =>
+                (float)
+                $sameMonthLastYear[
+                    'temperature'
+                ],
+
+            'lag12_humidity' =>
+                (float)
+                $sameMonthLastYear[
+                    'humidity'
+                ],
+
+            'lag12_wind_speed' =>
+                (float)
+                $sameMonthLastYear[
+                    'wind_speed'
+                ],
+
+            'lag12_wind_direction_sin' =>
+                (float)
+                $sameMonthLastYear[
+                    'wind_direction_sin'
+                ],
+
+            'lag12_wind_direction_cos' =>
+                (float)
+                $sameMonthLastYear[
+                    'wind_direction_cos'
+                ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Same Month Two Years Ago
+            |--------------------------------------------------------------------------
+            */
+
+            'lag24_rainfall' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'rainfall'
+                ],
+
+            'lag24_tmax' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'tmax'
+                ],
+
+            'lag24_tmin' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'tmin'
+                ],
+
+            'lag24_temperature' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'temperature'
+                ],
+
+            'lag24_humidity' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'humidity'
+                ],
+
+            'lag24_wind_speed' =>
+                (float)
+                $sameMonthTwoYearsAgo[
+                    'wind_speed'
+                ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Historical Same-Month Climatology
+            |--------------------------------------------------------------------------
+            */
+
+            'month_clim_rainfall' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'rainfall'
+                ),
+
+            'month_clim_tmax' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'tmax'
+                ),
+
+            'month_clim_tmin' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'tmin'
+                ),
+
+            'month_clim_temperature' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'temperature'
+                ),
+
+            'month_clim_humidity' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'humidity'
+                ),
+
+            'month_clim_wind_speed' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'wind_speed'
+                ),
+
+            'month_clim_wind_direction_sin' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'wind_direction_sin'
+                ),
+
+            'month_clim_wind_direction_cos' =>
+                $this->average(
+                    $sameMonthAverage,
+                    'wind_direction_cos'
+                ),
         ];
     }
 
-    private function confidence(int $monthsAvailable, array $training): array
-    {
-        $score = min(92, 48 + ($monthsAvailable * 4));
+    /*
+    |--------------------------------------------------------------------------
+    | Safe Numeric Average
+    |--------------------------------------------------------------------------
+    */
 
-        foreach ($training as $metric) {
-            $label = $metric['stability']['label'] ?? 'Variable';
-            if ($label === 'Highly variable') {
+    private function average(
+        Collection $rows,
+        string $field
+    ): float {
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        return (float)
+            $rows->avg(
+                $field
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Season
+    |--------------------------------------------------------------------------
+    */
+
+    private function seasonForMonth(
+        int $month
+    ): string {
+        return in_array(
+            $month,
+            self::WET_SEASON_MONTHS,
+            true
+        )
+            ? 'Wet'
+            : 'Dry';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Circular Wind Direction
+    |--------------------------------------------------------------------------
+    */
+
+    private function windDirectionFromComponents(
+        float $sinValue,
+        float $cosValue
+    ): float {
+        if (
+            abs($sinValue)
+                <
+                0.0000001
+            &&
+            abs($cosValue)
+                <
+                0.0000001
+        ) {
+            return 0.0;
+        }
+
+        $degrees =
+            rad2deg(
+                atan2(
+                    $sinValue,
+                    $cosValue
+                )
+            );
+
+        if ($degrees < 0) {
+            $degrees += 360;
+        }
+
+        return fmod(
+            $degrees,
+            360.0
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Target Stability
+    |--------------------------------------------------------------------------
+    */
+
+    private function targetStability(
+        array $samples,
+        string $target
+    ): array {
+        $values =
+            array_map(
+                fn (
+                    array $sample
+                ): float =>
+                    (float)
+                    $sample[
+                        $target
+                    ],
+
+                $samples
+            );
+
+        $mean =
+            array_sum(
+                $values
+            )
+            /
+            max(
+                count(
+                    $values
+                ),
+                1
+            );
+
+        $variance =
+            array_sum(
+                array_map(
+                    fn (
+                        float $value
+                    ): float =>
+                        (
+                            $value
+                            -
+                            $mean
+                        ) ** 2,
+
+                    $values
+                )
+            )
+            /
+            max(
+                count(
+                    $values
+                ),
+                1
+            );
+
+        $deviation =
+            sqrt(
+                $variance
+            );
+
+        if (
+            in_array(
+                $target,
+                [
+                    'wind_direction_sin',
+                    'wind_direction_cos',
+                ],
+                true
+            )
+        ) {
+            return [
+                'mean' =>
+                    round(
+                        $mean,
+                        4
+                    ),
+
+                'deviation' =>
+                    round(
+                        $deviation,
+                        4
+                    ),
+
+                'label' =>
+                    $deviation <= 0.25
+                        ? 'Stable'
+                        : (
+                            $deviation <= 0.50
+                                ? 'Variable'
+                                : 'Highly variable'
+                        ),
+            ];
+        }
+
+        $ratio =
+            abs($mean)
+                >
+                0.000001
+                    ? $deviation
+                        /
+                        abs(
+                            $mean
+                        )
+                    : 1;
+
+        return [
+            'mean' =>
+                round(
+                    $mean,
+                    2
+                ),
+
+            'deviation' =>
+                round(
+                    $deviation,
+                    2
+                ),
+
+            'label' =>
+                $ratio <= 0.12
+                    ? 'Stable'
+                    : (
+                        $ratio <= 0.24
+                            ? 'Variable'
+                            : 'Highly variable'
+                    ),
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Confidence
+    |--------------------------------------------------------------------------
+    */
+
+    private function confidence(
+        int $monthsAvailable,
+        array $training
+    ): array {
+        $score =
+            min(
+                92,
+                48
+                +
+                (
+                    $monthsAvailable
+                    * 4
+                )
+            );
+
+        foreach (
+            $training
+            as $metric
+        ) {
+            $label =
+                $metric[
+                    'stability'
+                ][
+                    'label'
+                ]
+                ??
+                'Variable';
+
+            if (
+                $label
+                ===
+                'Highly variable'
+            ) {
                 $score -= 6;
-            } elseif ($label === 'Variable') {
+            } elseif (
+                $label
+                ===
+                'Variable'
+            ) {
                 $score -= 3;
             }
         }
 
-        $score = max(45, min(95, $score));
+        $score =
+            max(
+                45,
+                min(
+                    95,
+                    $score
+                )
+            );
 
         return [
-            'value' => $score,
-            'label' => match (true) {
-                $score >= 80 => 'High confidence',
-                $score >= 65 => 'Moderate confidence',
-                default => 'Low confidence',
-            },
-            'note' => $monthsAvailable >= 12
-                ? 'The model has at least one full year of monthly climate history.'
-                : 'Add more monthly climate records to improve forecast confidence.',
+            'value' =>
+                $score,
+
+            'label' =>
+                match (true) {
+                    $score >= 80 =>
+                        'High confidence',
+
+                    $score >= 65 =>
+                        'Moderate confidence',
+
+                    default =>
+                        'Low confidence',
+                },
+
+            'note' =>
+                $monthsAvailable >= 24
+                    ? 'The model uses multiple years of Ambulong monthly climate history.'
+                    : 'Additional historical records may improve prediction reliability.',
         ];
     }
 
-    private function insights(array $predictions, array $confidence): array
-    {
+    /*
+    |--------------------------------------------------------------------------
+    | Agricultural Insights
+    |--------------------------------------------------------------------------
+    */
+
+    private function insights(
+        array $predictions,
+        array $confidence
+    ): array {
         $insights = [];
 
-        if (($predictions['rainfall'] ?? 0) > 300) {
-            $insights[] = 'Rainfall is elevated; prioritize drainage and flood monitoring.';
-        } elseif (($predictions['rainfall'] ?? 0) < 100) {
-            $insights[] = 'Rainfall is low; rainfed farms may need delayed planting or water support.';
+        if (
+            (
+                $predictions[
+                    'rainfall'
+                ]
+                ?? 0
+            ) > 300
+        ) {
+            $insights[] =
+                'Rainfall is elevated; prioritize drainage and flood monitoring.';
+        } elseif (
+            (
+                $predictions[
+                    'rainfall'
+                ]
+                ?? 0
+            ) < 100
+        ) {
+            $insights[] =
+                'Rainfall is low; rainfed farms may need additional water support.';
         } else {
-            $insights[] = 'Rainfall is within a workable planning range.';
+            $insights[] =
+                'Rainfall is within a moderate planning range.';
         }
 
-        if (($predictions['temperature'] ?? 0) >= 32) {
-            $insights[] = 'Temperature may create heat stress during sensitive rice growth stages.';
+        if (
+            (
+                $predictions[
+                    'tmax'
+                ]
+                ?? 0
+            ) >= 32
+        ) {
+            $insights[] =
+                'Maximum temperature may cause heat stress during sensitive rice growth stages.';
         }
 
-        if (($predictions['humidity'] ?? 0) >= 88) {
-            $insights[] = 'Humidity is high; monitor for pest and disease pressure.';
+        if (
+            (
+                $predictions[
+                    'humidity'
+                ]
+                ?? 0
+            ) >= 88
+        ) {
+            $insights[] =
+                'High humidity may increase pest and disease pressure.';
         }
 
-        if (($predictions['wind_speed'] ?? 0) >= 18) {
-            $insights[] = 'Wind speed is elevated; watch for storm or lodging risk.';
+        if (
+            (
+                $predictions[
+                    'wind_speed'
+                ]
+                ?? 0
+            ) >= 18
+        ) {
+            $insights[] =
+                'Elevated wind speed may increase lodging or storm-related risk.';
         }
 
-        $insights[] = $confidence['note'];
+        if (
+            isset(
+                $confidence[
+                    'note'
+                ]
+            )
+        ) {
+            $insights[] =
+                $confidence[
+                    'note'
+                ];
+        }
 
-        return array_values(array_unique($insights));
+        return array_values(
+            array_unique(
+                $insights
+            )
+        );
     }
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Random Forest Regressor
+|--------------------------------------------------------------------------
+*/
+
 class RandomForestRegressor
 {
-    /** @var DecisionTreeRegressor[] */
+    /**
+     * @var DecisionTreeRegressor[]
+     */
     private array $trees = [];
 
     public function __construct(
-        private readonly int $treeCount = 35,
-        private readonly int $maxDepth = 6,
-        private readonly int $minSamplesSplit = 2,
+        private readonly int $treeCount = 100,
+        private readonly int $maxDepth = 8,
+        private readonly int $minSamplesSplit = 3,
         private readonly int $seed = 1234,
-    ) {}
+    ) {
+    }
 
-    public function train(array $samples, string $target): void
-    {
+    public function train(
+        array $samples,
+        string $target
+    ): void {
         $this->trees = [];
-        $features = array_values(array_filter(array_keys($samples[0]), fn (string $key) => $key !== $target && ! in_array($key, ['rainfall', 'temperature', 'humidity', 'wind_speed'], true)));
 
-        for ($i = 0; $i < $this->treeCount; $i++) {
-            mt_srand($this->seed + $i);
-            $bootstrap = $this->bootstrap($samples);
-            $tree = new DecisionTreeRegressor($this->maxDepth, $this->minSamplesSplit, max(2, (int) floor(sqrt(count($features)))));
-            $tree->train($bootstrap, $features, $target);
-            $this->trees[] = $tree;
+        if ($samples === []) {
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Exclude ALL Target Variables from Features
+        |--------------------------------------------------------------------------
+        */
+
+        $allTargets = [
+            'rainfall',
+            'tmax',
+            'tmin',
+            'humidity',
+            'wind_speed',
+            'wind_direction_sin',
+            'wind_direction_cos',
+        ];
+
+        $features =
+            array_values(
+                array_filter(
+                    array_keys(
+                        $samples[
+                            0
+                        ]
+                    ),
+
+                    fn (
+                        string $key
+                    ): bool =>
+                        ! in_array(
+                            $key,
+                            $allTargets,
+                            true
+                        )
+                )
+            );
+
+        if ($features === []) {
+            return;
+        }
+
+        for (
+            $i = 0;
+            $i < $this->treeCount;
+            $i++
+        ) {
+            mt_srand(
+                $this->seed
+                +
+                $i
+            );
+
+            $bootstrap =
+                $this->bootstrap(
+                    $samples
+                );
+
+            $featureSubsetSize =
+                max(
+                    3,
+                    (int)
+                    floor(
+                        sqrt(
+                            count(
+                                $features
+                            )
+                        )
+                    )
+                );
+
+            $tree =
+                new DecisionTreeRegressor(
+                    $this->maxDepth,
+                    $this->minSamplesSplit,
+                    $featureSubsetSize
+                );
+
+            $tree->train(
+                $bootstrap,
+                $features,
+                $target
+            );
+
+            $this->trees[] =
+                $tree;
         }
     }
 
-    public function predict(array $features): float
-    {
+    public function predict(
+        array $features
+    ): float {
         if ($this->trees === []) {
             return 0.0;
         }
 
-        $sum = array_sum(array_map(fn (DecisionTreeRegressor $tree) => $tree->predict($features), $this->trees));
+        $values =
+            array_map(
+                fn (
+                    DecisionTreeRegressor $tree
+                ): float =>
+                    $tree->predict(
+                        $features
+                    ),
 
-        return $sum / count($this->trees);
+                $this->trees
+            );
+
+        return array_sum(
+            $values
+        )
+        /
+        count(
+            $values
+        );
     }
 
     public function treeCount(): int
     {
-        return count($this->trees);
+        return count(
+            $this->trees
+        );
     }
 
-    private function bootstrap(array $samples): array
-    {
+    private function bootstrap(
+        array $samples
+    ): array {
         $result = [];
-        $max = count($samples) - 1;
 
-        for ($i = 0; $i < count($samples); $i++) {
-            $result[] = $samples[mt_rand(0, $max)];
+        $max =
+            count(
+                $samples
+            )
+            -
+            1;
+
+        for (
+            $i = 0;
+            $i < count(
+                $samples
+            );
+            $i++
+        ) {
+            $result[] =
+                $samples[
+                    mt_rand(
+                        0,
+                        $max
+                    )
+                ];
         }
 
         return $result;
     }
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Decision Tree Regressor
+|--------------------------------------------------------------------------
+*/
 
 class DecisionTreeRegressor
 {
@@ -342,76 +1801,341 @@ class DecisionTreeRegressor
         private readonly int $maxDepth,
         private readonly int $minSamplesSplit,
         private readonly int $featureSubsetSize,
-    ) {}
-
-    public function train(array $samples, array $features, string $target): void
-    {
-        $this->root = $this->build($samples, $features, $target, 0);
+    ) {
     }
 
-    public function predict(array $features): float
-    {
-        $node = $this->root;
-
-        while (($node['type'] ?? 'leaf') === 'split') {
-            $node = (($features[$node['feature']] ?? 0) <= $node['threshold']) ? $node['left'] : $node['right'];
-        }
-
-        return (float) ($node['value'] ?? 0);
+    public function train(
+        array $samples,
+        array $features,
+        string $target
+    ): void {
+        $this->root =
+            $this->build(
+                $samples,
+                $features,
+                $target,
+                0
+            );
     }
 
-    private function build(array $samples, array $features, string $target, int $depth): array
-    {
-        if ($depth >= $this->maxDepth || count($samples) < $this->minSamplesSplit || $this->variance($samples, $target) <= 0.000001) {
-            return ['type' => 'leaf', 'value' => $this->mean($samples, $target)];
+    public function predict(
+        array $features
+    ): float {
+        $node =
+            $this->root;
+
+        while (
+            (
+                $node[
+                    'type'
+                ]
+                ??
+                'leaf'
+            )
+            ===
+            'split'
+        ) {
+            $feature =
+                $node[
+                    'feature'
+                ];
+
+            $threshold =
+                $node[
+                    'threshold'
+                ];
+
+            $value =
+                (float)
+                (
+                    $features[
+                        $feature
+                    ]
+                    ??
+                    0
+                );
+
+            $node =
+                $value
+                    <=
+                    $threshold
+                        ? $node[
+                            'left'
+                        ]
+                        : $node[
+                            'right'
+                        ];
         }
 
-        $split = $this->bestSplit($samples, $this->featureSubset($features), $target);
+        return (float)
+            (
+                $node[
+                    'value'
+                ]
+                ??
+                0
+            );
+    }
+
+    private function build(
+        array $samples,
+        array $features,
+        string $target,
+        int $depth
+    ): array {
+        if (
+            $samples === []
+            ||
+            $depth
+                >=
+                $this->maxDepth
+            ||
+            count(
+                $samples
+            )
+                <
+                $this->minSamplesSplit
+            ||
+            $this->variance(
+                $samples,
+                $target
+            )
+                <=
+                0.000001
+        ) {
+            return [
+                'type' =>
+                    'leaf',
+
+                'value' =>
+                    $this->mean(
+                        $samples,
+                        $target
+                    ),
+            ];
+        }
+
+        $featureSubset =
+            $this->featureSubset(
+                $features
+            );
+
+        $split =
+            $this->bestSplit(
+                $samples,
+                $featureSubset,
+                $target
+            );
 
         if ($split === null) {
-            return ['type' => 'leaf', 'value' => $this->mean($samples, $target)];
+            return [
+                'type' =>
+                    'leaf',
+
+                'value' =>
+                    $this->mean(
+                        $samples,
+                        $target
+                    ),
+            ];
         }
 
         return [
-            'type' => 'split',
-            'feature' => $split['feature'],
-            'threshold' => $split['threshold'],
-            'left' => $this->build($split['left'], $features, $target, $depth + 1),
-            'right' => $this->build($split['right'], $features, $target, $depth + 1),
+            'type' =>
+                'split',
+
+            'feature' =>
+                $split[
+                    'feature'
+                ],
+
+            'threshold' =>
+                $split[
+                    'threshold'
+                ],
+
+            'left' =>
+                $this->build(
+                    $split[
+                        'left'
+                    ],
+                    $features,
+                    $target,
+                    $depth + 1
+                ),
+
+            'right' =>
+                $this->build(
+                    $split[
+                        'right'
+                    ],
+                    $features,
+                    $target,
+                    $depth + 1
+                ),
         ];
     }
 
-    private function bestSplit(array $samples, array $features, string $target): ?array
-    {
-        $best = null;
-        $bestScore = INF;
+    private function bestSplit(
+        array $samples,
+        array $features,
+        string $target
+    ): ?array {
+        $best =
+            null;
 
-        foreach ($features as $feature) {
-            $values = array_values(array_unique(array_map(fn (array $sample) => (float) $sample[$feature], $samples)));
-            sort($values);
+        $bestScore =
+            INF;
 
-            if (count($values) < 2) {
+        foreach (
+            $features
+            as $feature
+        ) {
+            $values =
+                array_values(
+                    array_unique(
+                        array_map(
+                            fn (
+                                array $sample
+                            ): float =>
+                                (float)
+                                $sample[
+                                    $feature
+                                ],
+
+                            $samples
+                        )
+                    )
+                );
+
+            sort(
+                $values
+            );
+
+            if (
+                count(
+                    $values
+                )
+                <
+                2
+            ) {
                 continue;
             }
 
             $thresholds = [];
-            for ($i = 1; $i < count($values); $i++) {
-                $thresholds[] = ($values[$i - 1] + $values[$i]) / 2;
+
+            for (
+                $i = 1;
+                $i < count(
+                    $values
+                );
+                $i++
+            ) {
+                $thresholds[] =
+                    (
+                        $values[
+                            $i - 1
+                        ]
+                        +
+                        $values[
+                            $i
+                        ]
+                    )
+                    / 2;
             }
 
-            foreach ($thresholds as $threshold) {
-                $left = array_values(array_filter($samples, fn (array $sample) => (float) $sample[$feature] <= $threshold));
-                $right = array_values(array_filter($samples, fn (array $sample) => (float) $sample[$feature] > $threshold));
+            foreach (
+                $thresholds
+                as $threshold
+            ) {
+                $left =
+                    array_values(
+                        array_filter(
+                            $samples,
 
-                if ($left === [] || $right === []) {
+                            fn (
+                                array $sample
+                            ): bool =>
+                                (float)
+                                $sample[
+                                    $feature
+                                ]
+                                <=
+                                $threshold
+                        )
+                    );
+
+                $right =
+                    array_values(
+                        array_filter(
+                            $samples,
+
+                            fn (
+                                array $sample
+                            ): bool =>
+                                (float)
+                                $sample[
+                                    $feature
+                                ]
+                                >
+                                $threshold
+                        )
+                    );
+
+                if (
+                    $left === []
+                    ||
+                    $right === []
+                ) {
                     continue;
                 }
 
-                $score = (count($left) * $this->variance($left, $target) + count($right) * $this->variance($right, $target)) / count($samples);
+                $score =
+                    (
+                        count(
+                            $left
+                        )
+                        *
+                        $this->variance(
+                            $left,
+                            $target
+                        )
+                        +
+                        count(
+                            $right
+                        )
+                        *
+                        $this->variance(
+                            $right,
+                            $target
+                        )
+                    )
+                    /
+                    count(
+                        $samples
+                    );
 
-                if ($score < $bestScore) {
-                    $bestScore = $score;
-                    $best = compact('feature', 'threshold', 'left', 'right');
+                if (
+                    $score
+                    <
+                    $bestScore
+                ) {
+                    $bestScore =
+                        $score;
+
+                    $best = [
+                        'feature' =>
+                            $feature,
+
+                        'threshold' =>
+                            $threshold,
+
+                        'left' =>
+                            $left,
+
+                        'right' =>
+                            $right,
+                    ];
                 }
             }
         }
@@ -419,24 +2143,92 @@ class DecisionTreeRegressor
         return $best;
     }
 
-    private function featureSubset(array $features): array
-    {
-        $copy = $features;
-        shuffle($copy);
+    private function featureSubset(
+        array $features
+    ): array {
+        $copy =
+            $features;
 
-        return array_slice($copy, 0, min($this->featureSubsetSize, count($copy)));
+        shuffle(
+            $copy
+        );
+
+        return array_slice(
+            $copy,
+            0,
+            min(
+                $this->featureSubsetSize,
+                count(
+                    $copy
+                )
+            )
+        );
     }
 
-    private function mean(array $samples, string $target): float
-    {
-        return array_sum(array_map(fn (array $sample) => (float) $sample[$target], $samples)) / max(count($samples), 1);
+    private function mean(
+        array $samples,
+        string $target
+    ): float {
+        if ($samples === []) {
+            return 0.0;
+        }
+
+        return array_sum(
+            array_map(
+                fn (
+                    array $sample
+                ): float =>
+                    (float)
+                    $sample[
+                        $target
+                    ],
+
+                $samples
+            )
+        )
+        /
+        count(
+            $samples
+        );
     }
 
-    private function variance(array $samples, string $target): float
-    {
-        $mean = $this->mean($samples, $target);
-        $sum = array_sum(array_map(fn (array $sample) => ((float) $sample[$target] - $mean) ** 2, $samples));
+    private function variance(
+        array $samples,
+        string $target
+    ): float {
+        if ($samples === []) {
+            return 0.0;
+        }
 
-        return $sum / max(count($samples), 1);
+        $mean =
+            $this->mean(
+                $samples,
+                $target
+            );
+
+        $sum =
+            array_sum(
+                array_map(
+                    fn (
+                        array $sample
+                    ): float =>
+                        (
+                            (float)
+                            $sample[
+                                $target
+                            ]
+                            -
+                            $mean
+                        ) ** 2,
+
+                    $samples
+                )
+            );
+
+        return $sum
+        /
+        count(
+            $samples
+        );
     }
 }

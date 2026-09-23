@@ -1,0 +1,36 @@
+{
+  "model_name": "Random Forest Regressor",
+  "target": "AVERAGE_YIELD",
+  "features": [
+    "MONTH_SIN",
+    "MONTH_COS",
+    "SEASON_WET",
+    "RAINFALL",
+    "TMAX",
+    "TMIN",
+    "RH",
+    "WIND_SPEED",
+    "WIND_DIR_SIN",
+    "WIND_DIR_COS"
+  ],
+  "training_years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "test_year": 2025,
+  "hyperparameters": {
+    "n_estimators": 500,
+    "max_depth": 2,
+    "min_samples_leaf": 2,
+    "max_features": "sqrt",
+    "random_state": 42
+  },
+  "final_metrics": {
+    "MAE": 0.3944,
+    "RMSE": 0.469,
+    "R2": -1.1043
+  }
+}

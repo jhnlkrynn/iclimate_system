@@ -577,4 +577,28 @@ class WeatherPredictionTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors(['prediction_date']);
     }
+
+    /**
+     * Regression coverage for the 2026-09 pre-generation work: a genuine
+     * PredictionOrchestrator failure (not the model's own normal
+     * "not enough history yet" result) must never fatal the whole
+     * weather-predictions page — the calendar simply shows no Monthly
+     * Prediction summary for that month, same as any other not-ready case.
+     */
+    public function test_orchestrator_failure_does_not_fatal_the_weather_predictions_page(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+
+        $this->mock(\App\Services\Prediction\PredictionOrchestrator::class, function ($mock) {
+            $mock->shouldReceive('monthlyWeatherForecast')
+                ->andThrow(new \RuntimeException('Simulated orchestrator failure for test.'));
+        });
+
+        $this->actingAs($user)
+            ->get(route('weather-predictions.index'))
+            ->assertOk()
+            ->assertSee('Monthly Weather Calendar')
+            ->assertDontSee('Simulated orchestrator failure');
+    }
 }

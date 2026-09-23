@@ -22,7 +22,7 @@ class BarangayRiskMapTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function fakeFreshWeather(float $rainfall24h, float $temperature, float $humidity = 70, float $wind = 10)
+    private function fakeFreshWeather(float $rainfall24h, float $temperature, float $humidity = 70, float $wind = 10, ?int $weatherCode = 0, bool $isDay = true)
     {
         return Http::response([
             'current' => [
@@ -31,6 +31,8 @@ class BarangayRiskMapTest extends TestCase
                 'relative_humidity_2m' => $humidity,
                 'precipitation' => $rainfall24h / 24,
                 'wind_speed_10m' => $wind,
+                'weather_code' => $weatherCode,
+                'is_day' => $isDay ? 1 : 0,
             ],
             'hourly' => [
                 'precipitation' => array_fill(0, 24, $rainfall24h / 24),
@@ -650,5 +652,63 @@ class BarangayRiskMapTest extends TestCase
         $this->assertNotNull($apiEntry);
         $farmerResponse->assertSee('YOUR BARANGAY: Bagong Pook');
         $farmerResponse->assertSee((string) $apiEntry['risk_level']);
+    }
+
+    /**
+     * Regression coverage for the 2026-09 weather-icon addition: the icon is
+     * derived server-side from Open-Meteo's own weather_code (already
+     * fetched by LianBarangayWeatherService, just not previously exposed)
+     * via the existing, already-tested WeatherIconMapper — not a new
+     * heuristic, and never fed back into risk scoring.
+     */
+    public function test_weather_block_carries_an_icon_and_condition_derived_from_the_existing_weather_code(): void
+    {
+        Cache::flush();
+        // WMO code 65 = Heavy Rain.
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(150, 28, weatherCode: 65)]);
+
+        $service = app(BarangayRiskMapService::class);
+        $map = $service->riskMap(refresh: true);
+
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
+
+        $this->assertNotNull($entry);
+        $this->assertSame('fresh', $entry['weather']['status']);
+        $this->assertSame('Heavy Rain', $entry['weather']['condition']);
+        $this->assertSame('/images/weather/heavy-rain.svg', $entry['weather']['icon']);
+    }
+
+    public function test_no_data_barangay_gets_a_neutral_fallback_not_a_misleading_icon(): void
+    {
+        Cache::flush();
+        // No fake for api.open-meteo.com at all => every weather lookup fails.
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+
+        $service = app(BarangayRiskMapService::class);
+        $map = $service->riskMap(refresh: true);
+
+        foreach ($map['barangays'] as $entry) {
+            $this->assertSame('No Data', $entry['risk_level']);
+            // No fresh weather => no icon/condition fields fabricated at all,
+            // never a default/fallback icon presented as if it were real.
+            $this->assertArrayNotHasKey('icon', $entry['weather']);
+            $this->assertArrayNotHasKey('condition', $entry['weather']);
+        }
+    }
+
+    public function test_farmer_summary_card_shows_the_weather_icon_when_fresh_weather_is_available(): void
+    {
+        Cache::flush();
+        // WMO code 95 = Thunderstorm.
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(150, 28, weatherCode: 95)]);
+
+        $user = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+
+        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('/images/weather/thunderstorm.svg', false);
+        $response->assertSee('Thunderstorm');
     }
 }
