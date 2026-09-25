@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\AnalyticsRun;
 use App\Models\ExternalWeatherData;
+use App\Models\MlModel;
 use App\Models\MonthlyWeatherPrediction;
+use App\Services\MachineLearning\RuntimeModelClient;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -69,6 +71,7 @@ class SystemHealthService
             $this->guard('python', 'Python executable', fn () => $this->python()),
             $this->guard('weather-model', 'Weather model', fn () => $this->modelFile('weather')),
             $this->guard('rice-yield-model', 'Rice-yield model', fn () => $this->modelFile('rice_yield')),
+            $this->guard('model-sync', 'Model sync', fn () => $this->modelSync()),
             $this->guard('scheduler', 'Scheduler freshness', fn () => $this->scheduler()),
         ];
     }
@@ -312,6 +315,50 @@ class SystemHealthService
         $details['Size'] = number_format($size / 1048576, 2).' MB';
 
         return $this->result(self::HEALTHY, 'The model file is in place.', $details);
+    }
+
+    /**
+     * Compares the registry's active rice-yield model with what the Python
+     * service reports it has loaded (a read-only model-info request; nothing
+     * is predicted, switched or reloaded). Only file names and versions are
+     * shown, never paths.
+     */
+    private function modelSync(): array
+    {
+        $active = MlModel::query()
+            ->where('purpose', MlModel::PURPOSE_RICE_YIELD)
+            ->where('is_active', true)
+            ->first();
+
+        if ($active === null) {
+            return $this->result(self::UNAVAILABLE, 'No active model is registered yet.', ['Sync state' => 'Unavailable']);
+        }
+
+        $details = [
+            'Registry active model' => 'v'.$active->version.' ('.$active->fileName().')',
+        ];
+
+        $client = app(RuntimeModelClient::class);
+
+        try {
+            $info = $client->info();
+        } catch (Throwable) {
+            return $this->result(self::UNAVAILABLE, 'The prediction service did not report which model it is using.', $details + [
+                'Python loaded model' => 'Unknown',
+                'Sync state' => 'Unavailable',
+            ]);
+        }
+
+        $details['Python loaded model'] = (string) ($info['filename'] ?? 'Unknown')
+            .(! empty($info['version']) ? ' (v'.$info['version'].')' : '');
+        $details['scikit-learn'] = (string) ($info['sklearn_version'] ?? 'Unknown');
+        $details['Loaded at'] = $this->when($info['loaded_at'] ?? null);
+
+        if ($client->matches($active, $info)) {
+            return $this->result(self::HEALTHY, 'The prediction service is running the active registry model.', $details + ['Sync state' => 'Sync']);
+        }
+
+        return $this->result(self::NEEDS_ATTENTION, 'The prediction service is running a different model than the registry says is active.', $details + ['Sync state' => 'Mismatch']);
     }
 
     /**

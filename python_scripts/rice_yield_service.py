@@ -16,8 +16,11 @@ reconciliation note at the top of FeatureCatalog.php for the migration plan
 away from this schema.
 """
 
+import hashlib
 import os
+import threading
 import warnings
+from datetime import datetime, timezone
 
 import joblib
 import pandas as pd
@@ -25,9 +28,18 @@ import pandas as pd
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "storage", "models")
 WEATHER_MODEL_PATH = os.path.join(MODEL_DIR, "weather_model.pkl")
-RICE_MODEL_PATH = os.path.join(MODEL_DIR, "rice_yield_model_final.pkl")
+# Same override as Laravel's RICE_YIELD_MODEL_PATH; read once at process start.
+RICE_MODEL_PATH = os.path.join(
+    BASE_DIR,
+    os.environ.get("RICE_YIELD_MODEL_PATH") or os.path.join("storage", "models", "rice_yield_model_final.pkl"),
+)
 
 _models: dict = {}
+_swap_lock = threading.Lock()
+
+# What the rice model currently in memory is. Filled by load_models() and
+# switch_rice_model(); reported by model_info().
+_rice_state: dict = {}
 
 
 def install_sklearn_compatibility_shims() -> None:
@@ -44,6 +56,28 @@ def install_sklearn_compatibility_shims() -> None:
         column_transformer._RemainderColsList = _RemainderColsList
 
 
+def _sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _record_rice_state(path: str, sha256: str, version) -> None:
+    import sklearn
+
+    _rice_state.clear()
+    _rice_state.update({
+        "filename": os.path.basename(path),
+        "path": path,
+        "sha256": sha256,
+        "version": version,
+        "sklearn_version": sklearn.__version__,
+        "loaded_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+
 def load_models(force: bool = False) -> dict:
     if _models and not force:
         return _models
@@ -52,8 +86,70 @@ def load_models(force: bool = False) -> dict:
     install_sklearn_compatibility_shims()
     _models["weather"] = joblib.load(WEATHER_MODEL_PATH)
     _models["rice"] = joblib.load(RICE_MODEL_PATH)
+    _record_rice_state(RICE_MODEL_PATH, _sha256(RICE_MODEL_PATH), os.environ.get("RICE_YIELD_MODEL_VERSION") or None)
 
     return _models
+
+
+def model_info() -> dict:
+    """Public, path-free description of the rice model in memory."""
+    if not _rice_state:
+        return {"loaded": False}
+
+    return {
+        "loaded": True,
+        **{k: _rice_state[k] for k in ("filename", "sha256", "version", "sklearn_version", "loaded_at")},
+    }
+
+
+def resolve_model_path(requested: str) -> str:
+    """Map a requested model file to an absolute path, only inside storage/models.
+
+    Loading a pickle executes code, so this service never loads a file from
+    anywhere else, and only .pkl files.
+    """
+    candidate = requested if os.path.isabs(requested) else os.path.join(BASE_DIR, requested)
+    resolved = os.path.realpath(candidate)
+    allowed = os.path.realpath(MODEL_DIR)
+
+    if os.path.commonpath([resolved, allowed]) != allowed or not resolved.lower().endswith(".pkl"):
+        raise ValueError("Model file must be a .pkl inside storage/models.")
+
+    if not os.path.isfile(resolved):
+        raise FileNotFoundError("Model file was not found.")
+
+    return resolved
+
+
+def switch_rice_model(requested_path: str, version=None, expected_sha256=None) -> dict:
+    """Load the requested rice model and, only if that succeeds, swap it in.
+
+    The new model is fully loaded and checked before the swap, so any failure
+    leaves the previous model serving untouched.
+    """
+    global RICE_MODEL_PATH
+
+    resolved = resolve_model_path(requested_path)
+    actual_sha = _sha256(resolved)
+
+    if expected_sha256 and actual_sha.lower() != expected_sha256.lower():
+        raise ValueError("Model file does not match the expected checksum.")
+
+    warnings.filterwarnings("ignore")
+    install_sklearn_compatibility_shims()
+    new_model = joblib.load(resolved)
+
+    if not hasattr(new_model, "predict"):
+        raise ValueError("Loaded object is not a usable model.")
+
+    with _swap_lock:
+        if not _models:
+            _models["weather"] = joblib.load(WEATHER_MODEL_PATH)
+        _models["rice"] = new_model
+        RICE_MODEL_PATH = resolved
+        _record_rice_state(resolved, actual_sha, version)
+
+    return model_info()
 
 
 _REQUIRED_WEATHER_FEATURES = {"previous_rainfall", "previous_temp", "previous_humidity", "previous_wind_speed", "month_num", "season"}

@@ -43,7 +43,10 @@
                     <h1 class="h4 fw-bold mb-1">System Health</h1>
                     <p>{{ $summary['headline'] }} Checked {{ $checkedAt->format('M j, Y g:i A') }}.</p>
                 </div>
-                <a class="btn btn-outline-success btn-sm" href="{{ route('system-health.index') }}">Refresh</a>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-success btn-sm" href="{{ route('model-registry.index') }}">ML Model Registry</a>
+                    <a class="btn btn-outline-success btn-sm" href="{{ route('system-health.index') }}">Refresh</a>
+                </div>
             </div>
             <div class="sh-chips" aria-label="Summary">
                 <span class="sh-chip">{{ $summary['healthy'] }} Healthy</span>

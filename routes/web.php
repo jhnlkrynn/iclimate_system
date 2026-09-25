@@ -14,6 +14,7 @@ use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ModelEvaluationController;
+use App\Http\Controllers\ModelRegistryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
@@ -714,6 +715,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/system-health', [SystemHealthController::class, 'index'])
             ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('system-health.index');
+
+        Route::prefix('system-health/model-registry')
+            ->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->name('model-registry.')
+            ->group(function () {
+                Route::get('/', [ModelRegistryController::class, 'index'])->name('index');
+                Route::post('{model}/validate', [ModelRegistryController::class, 'validateModel'])->middleware('throttle:20,1')->name('validate');
+                Route::post('{model}/activate', [ModelRegistryController::class, 'activate'])->middleware('throttle:20,1')->name('activate');
+                Route::post('{model}/fail', [ModelRegistryController::class, 'fail'])->middleware('throttle:20,1')->name('fail');
+            });
 
 
         Route::post(

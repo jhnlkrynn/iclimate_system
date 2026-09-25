@@ -5,10 +5,13 @@ namespace App\Services\Prediction;
 use App\Enums\PredictionType;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
+use App\Models\MlModel;
 use App\Models\User;
+use App\Services\MachineLearning\ModelRegistryService;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 class RiceYieldPredictionService
 {
@@ -146,14 +149,31 @@ class RiceYieldPredictionService
         };
     }
 
+    /**
+     * Path of the model to report: the registry's active model when it has one
+     * whose file is present, otherwise the configured default. The registry
+     * never blocks prediction; any problem resolves to the configured default.
+     */
     public function modelSource(): string
+    {
+        return $this->activeRegistryModel()?->file_path ?? $this->configuredPath();
+    }
+
+    private function configuredPath(): string
     {
         return (string) config('prediction.rice_yield.model_path', 'storage/models/rice_yield_model_final.pkl');
     }
 
     public function modelVersion(): string
     {
+        $active = $this->activeRegistryModel();
         $name = (string) config('prediction.rice_yield.model_name', 'rice_yield_model_final');
+
+        // Keep the historical name while the registry points at the configured
+        // file, so existing version strings are unchanged.
+        if ($active !== null && $active->file_path !== $this->configuredPath()) {
+            $name = 'rice_yield_model_v'.$active->version;
+        }
         $path = base_path($this->modelSource());
 
         if (! is_file($path)) {
@@ -161,6 +181,15 @@ class RiceYieldPredictionService
         }
 
         return $name.':'.substr((string) sha1_file($path), 0, 12);
+    }
+
+    private function activeRegistryModel(): ?MlModel
+    {
+        try {
+            return app(ModelRegistryService::class)->resolveActive();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

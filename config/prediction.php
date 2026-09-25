@@ -9,6 +9,9 @@ return [
     'rice_yield' => [
         'model_path' => env('RICE_YIELD_MODEL_PATH', 'storage/models/rice_yield_model_final.pkl'),
         'model_name' => env('RICE_YIELD_MODEL_NAME', 'rice_yield_model_final'),
+        // When true, activating a registry model also switches the live Python
+        // service and verifies it. Turn off only if no Python service is used.
+        'sync_runtime' => env('RICE_YIELD_SYNC_RUNTIME', true),
         'display_decimals' => env('RICE_YIELD_DISPLAY_DECIMALS', 2),
     ],
 ];
