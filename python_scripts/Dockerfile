@@ -9,7 +9,7 @@
 #   docker build -f python_scripts/Dockerfile -t iclimate-ml-service .
 #   docker run -p 8010:8010 iclimate-ml-service
 
-FROM python:3.11-slim AS base
+FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

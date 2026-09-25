@@ -19,6 +19,12 @@ services:
     image: iclimate-ml-service:latest
     container_name: iclimate-ml-service
     restart: unless-stopped
+    environment:
+      # Only what this service needs, passed through from the shell / the
+      # project .env (compose reads it automatically). Deliberately not
+      # `env_file: .env`, which would inject every Laravel secret here.
+      # Empty (the default) keeps POST /model/switch disabled.
+      ML_ADMIN_TOKEN: ${ML_ADMIN_TOKEN:-}
     ports:
       - "${ML_SERVICE_PORT:-8010}:8010"
     volumes:
