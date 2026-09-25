@@ -25,6 +25,9 @@ class AIOrchestratorService
         private readonly PredictionOrchestrator $predictionOrchestrator,
         private readonly GroqChatService $groq,
         private readonly BarangayRiskMapService $riskMapService,
+        private readonly ModerationService $moderation,
+        private readonly LexiconService $lexicon,
+        private readonly KnowledgeAnswerService $knowledge,
     ) {}
 
     /**
@@ -33,15 +36,36 @@ class AIOrchestratorService
     public function answer(User $user, string $question): array
     {
         $startedAt = microtime(true);
+
+        // Language filter first: a blocked message goes no further (no
+        // classifier, no LLM, no history lookup, no storage of its text).
+        $moderation = $this->moderation->inspect($question);
+
+        if ($moderation['blocked']) {
+            return $this->moderated($user, $question, $moderation, $startedAt);
+        }
+
         $memory = $this->conversationMemory($user);
         $language = $this->languageDetector->detectLanguage($question, $memory);
         $classification = $this->classifier->classify($user, $question, $language, $memory);
         $intent = $classification['intent'];
         $entities = $classification['entities'];
+        $awaitingFollowUp = false;
 
         if (($pending = (string) data_get($memory, 'pending_intent')) !== '' && $this->hasArea($entities)) {
             $intent = $pending;
+            $awaitingFollowUp = true;
         }
+
+        // Approved farming/weather vocabulary: definitions and how-to answers
+        // come from the knowledge base, live-data questions keep their tools.
+        $analysis = $this->lexicon->analyze($question);
+
+        if (! $awaitingFollowUp && ($knowledgeResult = $this->farmingKnowledge($analysis, $intent, $language, $memory, $startedAt)) !== null) {
+            return $knowledgeResult;
+        }
+
+        $intent = $this->refineIntentWithConcepts($intent, $analysis);
 
         if (($classification['requires_clarification'] ?? false) && $intent === IntentClassifierService::UNKNOWN) {
             return $this->clarification(
@@ -100,6 +124,133 @@ class AIOrchestratorService
         $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
 
         return $result;
+    }
+
+    /**
+     * The reply to a message the language filter blocked. It says nothing
+     * about what was matched and does not repeat the message; the controller
+     * replaces the stored question because of `question_redacted`.
+     *
+     * @param  array{category: ?string, reason_code: ?string}  $moderation
+     * @return array<string, mixed>
+     */
+    private function moderated(User $user, string $question, array $moderation, float $startedAt): array
+    {
+        $language = $this->languageDetector->detectLanguage($question);
+
+        // Profanity with no other Filipino cue words ("putangina mo") reads as
+        // English to the language detector; the matched entry knows better.
+        if (! str_contains($language, 'Tagalog') && ($moderation['language'] ?? null) === 'fil') {
+            $language = 'Tagalog';
+        }
+
+        $this->moderation->record($user, $language, $moderation);
+
+        $result = $this->textResult($this->moderation->message($language), 'moderation_blocked', 'Language filter', 'Climora AI', $language, [], [
+            'confidence_score' => 100,
+            'prediction_result' => ['moderated' => true],
+        ]);
+        $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
+        $result['question_redacted'] = true;
+
+        return $result;
+    }
+
+    /**
+     * Answers from approved knowledge when the message is a definition or
+     * how-to question (or a short, unclassified mention of a known term), and
+     * never for live weather, forecasts, yield estimates or account topics.
+     *
+     * @param  array<string, mixed>  $analysis
+     * @return array<string, mixed>|null
+     */
+    private function farmingKnowledge(array $analysis, string $intent, string $language, array $memory, float $startedAt): ?array
+    {
+        if ($analysis['concepts'] === []) {
+            return null;
+        }
+
+        $mode = $this->knowledge->informationalMode($analysis);
+        $unclassified = in_array($intent, [IntentClassifierService::GENERAL_CHAT, IntentClassifierService::UNKNOWN], true);
+        $recommendation = in_array($intent, [IntentClassifierService::PLANTING_RECOMMENDATION, IntentClassifierService::IRRIGATION_RECOMMENDATION], true);
+        $toolIntent = $recommendation || in_array($intent, [
+            IntentClassifierService::CURRENT_WEATHER,
+            IntentClassifierService::WEATHER_FORECAST,
+            IntentClassifierService::WEATHER_PREDICTION,
+            IntentClassifierService::RICE_YIELD_PREDICTION,
+            IntentClassifierService::CLIMATE_RISK,
+            IntentClassifierService::WEATHER_ADVISORY,
+        ], true);
+
+        $eligible = match ($mode) {
+            KnowledgeAnswerService::MODE_DEFINITION => $unclassified || $toolIntent,
+            // "When should I harvest?" reads as a yield request to the classifier, but with no
+            // numbers or "my" it is asking how, not for an estimate.
+            KnowledgeAnswerService::MODE_HOWTO => $unclassified || $recommendation || $intent === IntentClassifierService::RICE_YIELD_PREDICTION,
+            default => $unclassified,
+        };
+
+        if (! $eligible) {
+            return null;
+        }
+
+        // A bare mention that also carries a time or "my" cue ("maulap ba ngayon")
+        // is a live-data question: leave it to the weather and prediction tools.
+        if ($mode === null && ($analysis['has_now'] || $analysis['has_future'] || $analysis['has_personal'] || $analysis['has_number'])) {
+            return null;
+        }
+
+        // A short message naming several different things: ask, do not guess.
+        if ($unclassified && $mode === null && ($question = $this->knowledge->clarification($analysis, $language)) !== null) {
+            $result = $this->textResult($question, 'clarification', 'Clarification', 'Climora AI', $language, $memory, ['confidence_score' => 70]);
+            $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
+
+            return $result;
+        }
+
+        $hit = $this->knowledge->find($analysis, $language, $mode);
+
+        if ($hit !== null) {
+            $result = $this->textResult($hit['answer'], 'farming_knowledge', 'Approved Knowledge Base', $hit['source'], $language, $memory, ['confidence_score' => 90]);
+            $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
+
+            return $result;
+        }
+
+        if ($unclassified && ($question = $this->knowledge->clarification($analysis, $language)) !== null) {
+            $result = $this->textResult($question, 'clarification', 'Clarification', 'Climora AI', $language, $memory, ['confidence_score' => 70]);
+            $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
+
+            return $result;
+        }
+
+        return null;
+    }
+
+    /**
+     * Filipino and Taglish weather words the classifier does not recognise
+     * (e.g. "uulan ba bukas") still reach the live-weather tools. Only
+     * unclassified messages are re-routed.
+     *
+     * @param  array<string, mixed>  $analysis
+     */
+    private function refineIntentWithConcepts(string $intent, array $analysis): string
+    {
+        if (! in_array($intent, [IntentClassifierService::GENERAL_CHAT, IntentClassifierService::UNKNOWN], true)) {
+            return $intent;
+        }
+
+        $weather = array_filter($analysis['concepts'], fn (array $concept): bool => $concept['category'] === 'weather' && ! $concept['fuzzy']);
+
+        if ($weather === []) {
+            return $intent;
+        }
+
+        return match (true) {
+            $analysis['has_future'] => IntentClassifierService::WEATHER_FORECAST,
+            $analysis['has_now'] => IntentClassifierService::CURRENT_WEATHER,
+            default => $intent,
+        };
     }
 
     /**

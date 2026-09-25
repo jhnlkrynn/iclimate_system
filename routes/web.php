@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
+use App\Http\Controllers\AiAdminController;
 use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
@@ -715,6 +716,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/system-health', [SystemHealthController::class, 'index'])
             ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('system-health.index');
+
+        // Chatbot vocabulary and language filter: IT Experts and MAO only.
+        Route::prefix('ai-admin')
+            ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
+            ->name('ai-admin.')
+            ->group(function () {
+                Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');
+                Route::get('{resource}', [AiAdminController::class, 'index'])->name('index');
+                Route::post('{resource}', [AiAdminController::class, 'store'])->middleware('throttle:60,1')->name('store');
+                Route::put('{resource}/{id}', [AiAdminController::class, 'update'])->whereNumber('id')->middleware('throttle:60,1')->name('update');
+                Route::post('{resource}/{id}/toggle', [AiAdminController::class, 'toggle'])->whereNumber('id')->middleware('throttle:60,1')->name('toggle');
+            });
 
         Route::prefix('system-health/model-registry')
             ->middleware('role:'.User::ROLE_IT_EXPERT)

@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class AIChatController extends Controller
 {
+    public const REDACTED_QUESTION = '[Message not shown: inappropriate language]';
+
     public function index(Request $request): RedirectResponse
     {
         return redirect()->route($request->user()->dashboardRoute());
@@ -24,18 +26,25 @@ class AIChatController extends Controller
 
         $result = $orchestrator->answer($request->user(), $validated['question']);
 
+        // A message the language filter blocked is never stored or sent back;
+        // a neutral placeholder takes its place in the history.
+        $question = ($result['question_redacted'] ?? false)
+            ? self::REDACTED_QUESTION
+            : $validated['question'];
+        unset($result['question_redacted']);
+
         $shouldSave = (bool) ($validated['save_conversation'] ?? true);
 
         $chat = $shouldSave
             ? AIChat::query()->create([
                 'user_id' => $request->user()->id,
-                'question' => $validated['question'],
+                'question' => $question,
                 ...$result,
             ])
             : [
                 'id' => null,
                 'user_id' => $request->user()->id,
-                'question' => $validated['question'],
+                'question' => $question,
                 'created_at' => now()->toISOString(),
                 'saved' => false,
                 ...$result,
