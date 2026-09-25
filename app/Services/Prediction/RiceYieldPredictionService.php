@@ -104,7 +104,7 @@ class RiceYieldPredictionService
             'inputs_used' => $modelInput,
             'model_input' => $modelInput,
             'input_sources' => $this->inputSources($modelInput, $areaOverride, $user, $manualOverrides),
-            'source' => $yield['source_name'] ?? 'iClimate Rice Yield Prediction Model',
+            'source' => $yield['source_name'] ?? 'iClimate Rice Harvest Estimate',
             'planting_advisory' => data_get($decision, 'planting.recommendation'),
             'irrigation_recommendation' => data_get($decision, 'irrigation.recommendation'),
             'weather_assessment' => $weatherAssessment,

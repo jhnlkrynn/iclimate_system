@@ -2,21 +2,35 @@ html {
     scroll-behavior: smooth;
 }
 
+/*
+ * Scroll reveal: hidden -> fade in + rise slightly (+ tiny scale) -> visible.
+ * Opacity/transform only, so it never shifts layout. Each element reveals
+ * once (see scroll-animations.js), then stays put. Delays only stagger
+ * siblings that enter together; hover transitions have their own 0ms delay.
+ */
 body.js-enabled [data-reveal] {
-    --ic-reveal-distance: 30px;
-    --ic-reveal-duration: 650ms;
+    --ic-reveal-distance: 20px;
+    --ic-reveal-duration: 560ms;
     --ic-reveal-delay: 0ms;
     opacity: 0;
     transition:
-        opacity var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1),
-        transform var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1),
-        filter var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1);
-    transition-delay: var(--ic-reveal-delay);
+        opacity var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1) var(--ic-reveal-delay),
+        transform var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1) var(--ic-reveal-delay),
+        translate 220ms ease 0ms,
+        box-shadow 220ms ease 0ms,
+        border-color 220ms ease 0ms,
+        background-color 220ms ease 0ms;
     will-change: opacity, transform;
 }
 
 body.js-enabled [data-reveal="fade-up"] {
-    transform: translateY(var(--ic-reveal-distance));
+    transform: translateY(var(--ic-reveal-distance)) scale(.985);
+}
+
+/* Opacity only: used for blocks that contain maps, so map sizing and
+   pointer positions are never measured inside a moving parent. */
+body.js-enabled [data-reveal="fade"] {
+    transform: none;
 }
 
 body.js-enabled [data-reveal="fade-left"] {
@@ -28,19 +42,44 @@ body.js-enabled [data-reveal="fade-right"] {
 }
 
 body.js-enabled [data-reveal="scale"] {
-    transform: scale(.96);
+    transform: scale(.97);
 }
 
 body.js-enabled [data-reveal="blur"] {
     --ic-reveal-distance: 15px;
     transform: translateY(var(--ic-reveal-distance));
     filter: blur(6px);
+    transition:
+        opacity var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1) var(--ic-reveal-delay),
+        transform var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1) var(--ic-reveal-delay),
+        filter var(--ic-reveal-duration) cubic-bezier(.22, 1, .36, 1) var(--ic-reveal-delay);
 }
 
+/* Resting state is plain: no transform/filter, so a revealed element does not
+   keep its own graphics layer (costly on large panels with blurred backgrounds). */
 body.js-enabled [data-reveal].is-visible {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
+    will-change: auto;
+}
+
+body.js-enabled [data-reveal="blur"].is-visible {
     filter: blur(0);
+}
+
+/* Clickable cards: gentle lift. Uses the separate `translate` property so it
+   never fights the reveal `transform`. */
+a.card:hover,
+button.card:hover,
+button.field-card:hover,
+button.it-card:hover,
+a.it-card:hover,
+.mao-card[data-drawer-open]:hover,
+.module-tile:hover,
+.feed-card:hover,
+.farmer-org-card:hover {
+    translate: 0 -3px;
+    box-shadow: 0 12px 26px rgba(13, 31, 24, .16);
 }
 
 [data-reveal-line]::before,
@@ -90,8 +129,8 @@ body.js-enabled .eyebrow[data-reveal].is-visible::before {
 
 @media (max-width: 767.98px) {
     body.js-enabled [data-reveal] {
-        --ic-reveal-distance: 15px;
-        --ic-reveal-duration: 520ms;
+        --ic-reveal-distance: 12px;
+        --ic-reveal-duration: 480ms;
     }
 
     [data-parallax] {
@@ -117,5 +156,17 @@ body.js-enabled .eyebrow[data-reveal].is-visible::before {
 
     .ic-value-changing {
         animation: none !important;
+    }
+
+    a.card:hover,
+    button.card:hover,
+    button.field-card:hover,
+    button.it-card:hover,
+    a.it-card:hover,
+    .mao-card[data-drawer-open]:hover,
+    .module-tile:hover,
+    .feed-card:hover,
+    .farmer-org-card:hover {
+        translate: none;
     }
 }

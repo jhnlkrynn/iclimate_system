@@ -15,7 +15,7 @@ class RiceProductionController extends CrudController
 
     protected string $title = 'Rice Production Record';
 
-    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield/Ha', 'area_hectares' => 'Area', 'total_production' => 'Total', 'year' => 'Year'];
+    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield per Hectare', 'area_hectares' => 'Area (ha)', 'total_production' => 'Total Harvest', 'year' => 'Year'];
 
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];
 

@@ -386,16 +386,16 @@ class MonthlyWeatherRandomForest
                 true,
 
             'message' =>
-                'Prediction generated using the improved Ambulong historical monthly Random Forest model.',
+                'This forecast was made using years of past weather records for this area.',
 
             'source_type' =>
                 'Trained Model',
 
             'source_name' =>
-                'iClimate Ambulong Monthly Random Forest v5',
+                'iClimate Weather System',
 
             'source_note' =>
-                'Uses only legitimate Ambulong historical monthly climate records and excludes target/future observations.',
+                'Uses only real, recorded weather history from the Ambulong weather station and never guesses using future data.',
 
             'weather_basis' =>
                 'Ambulong',
@@ -465,10 +465,10 @@ class MonthlyWeatherRandomForest
                 'Trained Model',
 
             'source_name' =>
-                'iClimate Ambulong Monthly Random Forest v5',
+                'iClimate Weather System',
 
             'source_note' =>
-                'Uses Ambulong historical monthly climate data.',
+                'Uses recorded weather history from the Ambulong weather station.',
 
             'weather_basis' =>
                 'Ambulong',

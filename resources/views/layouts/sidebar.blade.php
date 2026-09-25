@@ -70,7 +70,7 @@
         ];
         $moreGroup = [
             $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Weather & Yield', 'weather', 'weather'),
+            $navLink('Predictions', 'weather', 'weather'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [];
@@ -85,7 +85,7 @@
         ];
         $moreGroup = [
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
-            $navLink('Weather Prediction', 'weather', 'weather'),
+            $navLink('Predictions', 'weather', 'weather'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [
@@ -102,7 +102,7 @@
         $moreGroup = [
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Weather Prediction', 'weather', 'weather'),
+            $navLink('Predictions', 'weather', 'weather'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [
@@ -113,9 +113,9 @@
     }
 
     $sidebarSections = array_values(array_filter([
-        ['Primary', $primaryGroup],
-        ['More', $moreGroup],
-        ['Publishing', $publishingGroup],
+        ['Main Menu', $primaryGroup],
+        ['More Tools', $moreGroup],
+        ['Community & Updates', $publishingGroup],
     ], fn ($section) => ! empty($section[1])));
 
     $renderSidebarNav = function () use ($sidebarSections, $sidebarIcon): string {

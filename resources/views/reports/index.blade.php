@@ -70,18 +70,18 @@
         <div>
             <div class="eyebrow mb-2">iClimate Reports</div>
             <h1 class="h2 fw-bold mb-2">Reports</h1>
-            <p class="mb-0" style="color: var(--ic-ink-mid);">Generate filtered reports directly from current iClimate records.</p>
+            <p class="mb-0" style="color: var(--ic-ink-mid);">Choose a report and dates, then press Generate Report.</p>
         </div>
     </section>
 
     @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
         <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
-            <strong>Python analytics is processing this report.</strong>
-            This page will refresh automatically when the saved result is ready.
+            <strong>Preparing your report&hellip;</strong>
+            This page will refresh by itself when the report is ready.
         </div>
     @elseif ($analyticsRun?->status === 'failed')
         <div class="alert alert-danger border">
-            <strong>Report processing failed.</strong> {{ $analyticsRun->error }}
+            <strong>Report could not be prepared.</strong> Please try again later.
         </div>
     @endif
 
@@ -90,11 +90,11 @@
         <div class="card-body p-3">
             <div class="report-live-strip">
                 <div class="report-live-item">
-                    <strong>Live app data</strong>
+                    <strong>Latest records</strong>
                     <span>Refreshed {{ $sourceStats['last_refreshed']->shortDateTime('M d, Y') }}</span>
                 </div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['climate_records']) }}</strong><span>Climate</span></div>
-                <div class="report-live-item"><strong>{{ number_format($sourceStats['rice_production']) }}</strong><span>Rice rows</span></div>
+                <div class="report-live-item"><strong>{{ number_format($sourceStats['rice_production']) }}</strong><span>Rice harvests</span></div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['farmers']) }}</strong><span>Farmers</span></div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['advisories']) }}</strong><span>Advisories</span></div>
                 <div class="report-live-item"><strong>{{ number_format($sourceStats['community_posts']) }}</strong><span>Posts</span></div>
@@ -132,7 +132,7 @@
                     @if ($selected)
                         @if ($selectedReport)
                             <a class="btn report-white-action" href="{{ route('reports.print', ['report' => $selectedReport->id]) }}" target="_blank">Print Report</a>
-                            <a class="btn report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Export CSV</a>
+                            <a class="btn report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Download as Spreadsheet</a>
                         @endif
                     @endif
                 </div>
@@ -154,7 +154,7 @@
 
         <div class="report-summary-grid">
             <div class="report-stat"><div class="report-stat-label">Report Type</div><div class="h5 fw-bold mb-0 mt-2">{{ $selected }}</div></div>
-            <div class="report-stat"><div class="report-stat-label">Rows Found</div><div class="report-stat-value">{{ number_format($rows->total()) }}</div></div>
+            <div class="report-stat"><div class="report-stat-label">Records Found</div><div class="report-stat-value">{{ number_format($rows->total()) }}</div></div>
             <div class="report-stat"><div class="report-stat-label">Generated</div><div class="h5 fw-bold mb-0 mt-2">{{ $generatedAt?->format('M d, Y, g:i A') }}</div></div>
         </div>
 
@@ -174,7 +174,7 @@
         @if ($weatherBasis)
             <div class="card no-lift">
                 <div class="card-body p-3">
-                    <div class="fw-bold mb-1">Weather Basis</div>
+                    <div class="fw-bold mb-1">Weather During This Period</div>
                     @if ($weatherBasis['has_data'])
                         <p class="mb-0">During {{ $weatherBasis['range_label'] }}, recorded conditions averaged {{ number_format($weatherBasis['avg_rainfall'], 1) }} mm rainfall and {{ number_format($weatherBasis['avg_temperature'], 1) }}&deg;C, based on {{ number_format($weatherBasis['record_count']) }} climate record(s) for that period.</p>
                     @else
@@ -187,12 +187,12 @@
         <div class="card no-lift">
             <div class="card-header border-0 py-3">
                 <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
-                    <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the generated rows below, then download the shown report as CSV.</div></div>
+                    <div><h2 class="h5 mb-1">{{ $selected }} Results</h2><div class="small text-muted">Review the results below. You can print or download them.</div></div>
                     <div class="report-result-actions d-flex flex-wrap gap-2 align-items-start">
-                        <span class="badge text-bg-light border align-self-start">{{ number_format($rows->total()) }} row(s){{ $rows->lastPage() > 1 ? ' - page '.$rows->currentPage().' of '.$rows->lastPage() : '' }}</span>
+                        <span class="badge text-bg-light border align-self-start">{{ number_format($rows->total()) }} record(s){{ $rows->lastPage() > 1 ? ' - page '.$rows->currentPage().' of '.$rows->lastPage() : '' }}</span>
                         @if ($selectedReport)
                             <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.print', ['report' => $selectedReport->id]) }}" target="_blank">Print Report</a>
-                            <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Download CSV</a>
+                            <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Download as Spreadsheet</a>
                         @endif
                     </div>
                 </div>

@@ -353,6 +353,124 @@ button:active,
     }
 }
 
+/*
+ * Shared micro-interaction toolkit — reusable, opt-in classes for markup
+ * that isn't already covered by the bare-selector rules above (.card,
+ * .btn, .table-hover, .page-shell). Apply these directly in Blade views
+ * instead of writing bespoke per-page animation CSS. Transform/opacity
+ * only, kept subtle on purpose, and neutralized by the
+ * prefers-reduced-motion rule further down (animation-iteration-count: 1,
+ * near-zero duration).
+ */
+
+.ic-fade-in {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: ic-fade-in-move var(--iclimate-motion-med) both;
+    animation-delay: var(--ic-fade-delay, 0ms);
+}
+
+@keyframes ic-fade-in-move {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ic-card-interactive {
+    transition: transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast);
+}
+
+.ic-card-interactive:hover,
+.ic-card-interactive:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: var(--iclimate-shadow-md);
+}
+
+.ic-card-interactive:active {
+    transform: translateY(0) scale(.99);
+}
+
+.ic-button-interactive {
+    transition: transform var(--iclimate-motion-fast), box-shadow var(--iclimate-motion-fast), background-color var(--iclimate-motion-fast);
+    touch-action: manipulation;
+}
+
+.ic-button-interactive:hover {
+    transform: translateY(-1px);
+}
+
+.ic-button-interactive:active {
+    transform: translateY(0) scale(.97);
+}
+
+/*
+ * Fades in a tab/step panel when it stops being [hidden] or gains
+ * .show/.active — no JS required, the animation restarts automatically
+ * whenever the browser (re)generates the element's box (display: none ->
+ * block, or the reverse). Matches the existing .dashboard-tab-panel.active
+ * pattern already used ad hoc on some dashboards.
+ */
+.ic-tab-panel {
+    animation: ic-tab-fade var(--iclimate-motion-med) both;
+}
+
+.ic-tab-panel[hidden] {
+    animation: none;
+}
+
+@keyframes ic-tab-fade {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Apply to a <table> (or a custom row-list container) to highlight the
+   row under the pointer, mirroring Bootstrap's .table-hover for markup
+   that doesn't use it — including the .ic-table-card mobile row layout
+   defined below. */
+table.ic-row-hover tbody tr,
+.ic-row-hover .ic-table-card-row {
+    transition: background-color var(--iclimate-motion-fast);
+}
+
+table.ic-row-hover tbody tr:hover,
+.ic-row-hover .ic-table-card-row:hover {
+    background-color: rgba(82, 183, 136, .08);
+}
+
+/* Lightweight loading placeholder. Give it an explicit width/height
+   (inline style or a utility class) and drop it in where real content
+   will appear once a prediction/report finishes generating. */
+.ic-skeleton {
+    display: block;
+    border-radius: var(--iclimate-radius-sm);
+    background-color: var(--iclimate-green-100, #e6eee8);
+    animation: ic-skeleton-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes ic-skeleton-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .55;
+    }
+}
+
 img,
 svg,
 video,

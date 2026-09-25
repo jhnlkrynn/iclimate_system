@@ -12,7 +12,7 @@
 
         <section class="page-hero">
             <div class="eyebrow mb-2">Farmer Calendar</div>
-            <h1 class="h2 fw-bold mb-2">{{ $schedule->exists ? 'Edit planting and harvest schedule' : 'Add planting and harvest schedule' }}</h1>
+            <h1 class="h2 fw-bold mb-2">{{ $schedule->exists ? 'Edit My Planting Plan' : 'Add My Planting Plan' }}</h1>
             <p class="mb-0" style="color:var(--ic-ink-mid)">Record your field plan. Unusual dates show a warning, but you can still save them.</p>
         </section>
 
@@ -39,7 +39,7 @@
                             <input class="form-control @error('planting_date') is-invalid @enderror" id="planting_date" name="planting_date" type="date" required value="{{ old('planting_date', $schedule->planting_date?->format('Y-m-d')) }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="scheduled_harvest_date">Scheduled harvest date</label>
+                            <label class="form-label" for="scheduled_harvest_date">Expected harvest date</label>
                             <input class="form-control @error('scheduled_harvest_date') is-invalid @enderror" id="scheduled_harvest_date" name="scheduled_harvest_date" type="date" value="{{ old('scheduled_harvest_date', $schedule->scheduled_harvest_date?->format('Y-m-d')) }}">
                             <div class="schedule-help mt-1">Use an exact date, or choose only a harvest month below.</div>
                         </div>
@@ -57,9 +57,9 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="farm_type">Farm type</label>
+                            <label class="form-label" for="farm_type">Type of farm</label>
                             <select class="form-select" id="farm_type" name="farm_type" required>
-                                <option value="">Choose farm type</option>
+                                <option value="">Choose type of farm</option>
                                 @foreach(\App\Models\FarmerPlantingSchedule::FARM_TYPES as $farmType)
                                     <option value="{{ $farmType }}" @selected(old('farm_type', $schedule->farm_type) === $farmType)>{{ $farmType }}</option>
                                 @endforeach
@@ -73,12 +73,12 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="farm_area_hectares">Farm area (hectares)</label>
+                            <label class="form-label" for="farm_area_hectares">Farm size (hectares)</label>
                             <input class="form-control" id="farm_area_hectares" name="farm_area_hectares" type="number" min="0.01" max="10000" step="0.01" value="{{ old('farm_area_hectares', $schedule->farm_area_hectares) }}">
-                            <div class="schedule-help mt-1">Needed for yield prediction. Leave blank if unknown.</div>
+                            <div class="schedule-help mt-1">Needed to estimate your harvest. Leave blank if unknown.</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label" for="progress_status">Field progress</label>
+                            <label class="form-label" for="progress_status">Planting stage</label>
                             <select class="form-select" id="progress_status" name="progress_status">
                                 <option value="">Automatic from dates</option>
                                 @foreach(\App\Models\FarmerPlantingSchedule::MANUAL_STATUSES as $status)<option value="{{ $status }}" @selected(old('progress_status', $schedule->progress_status) === $status)>{{ $status }}</option>@endforeach

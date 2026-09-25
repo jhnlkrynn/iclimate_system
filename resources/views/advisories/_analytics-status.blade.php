@@ -1,6 +1,6 @@
 @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
     <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
-        <strong>Python is generating agricultural advisories.</strong> Stored advisories remain available while processing finishes.
+        <strong>Preparing your advisories&hellip;</strong> Your saved advisories are still available below.
     </div>
     <script>
         (() => {
@@ -16,5 +16,5 @@
         })();
     </script>
 @elseif (($analyticsRun ?? null)?->status === 'failed')
-    <div class="alert alert-danger border"><strong>Advisory processing failed.</strong> {{ $analyticsRun->error }}</div>
+    <div class="alert alert-danger border"><strong>Advisories could not be prepared.</strong> Please try again later.</div>
 @endif

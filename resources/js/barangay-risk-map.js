@@ -224,9 +224,7 @@ function renderRiskDetailPanel(entry, meta) {
     // (risk score %, data source, monthly rainfall figure, farm type,
     // recorded yield, no-data reason) lives here instead of the main view.
     const moreInfo = [];
-    if (entry.risk_score !== null && entry.risk_score !== undefined) {
-        moreInfo.push(`<p class="risk-more-line">Risk Score: ${esc(Math.round(entry.risk_score * 100))}%</p>`);
-    }
+    moreInfo.push(`<p class="risk-more-line">Farm Risk: ${esc(entry.risk_level || 'No Data')}</p>`);
     if (entry.monthly_rainfall && entry.monthly_rainfall.available !== false && entry.monthly_rainfall.value_mm !== null && entry.monthly_rainfall.value_mm !== undefined) {
         moreInfo.push(`<p class="risk-more-line">Monthly Rainfall: ${esc(entry.monthly_rainfall.value_mm)} ${esc(entry.monthly_rainfall.unit || 'mm')} (${esc(entry.monthly_rainfall.scope || 'municipal')})</p>`);
     }
@@ -372,13 +370,12 @@ export function initBarangayRiskMap() {
                     const name = feature.properties && feature.properties.brgy_name;
                     const entry = byName[name];
                     const level = entry ? entry.risk_level : 'No Data';
-                    const scoreLabel = entry && entry.risk_score !== null && entry.risk_score !== undefined ? ` (score ${entry.risk_score})` : '';
                     const isHighlighted = highlightBarangay !== null && name === highlightBarangay;
                     const tooltipWeather = entry ? entry.weather : null;
                     const tooltipIcon = tooltipWeather && tooltipWeather.status === 'fresh' && tooltipWeather.icon
                         ? `<img class="weather-icon weather-icon-tooltip" src="${tooltipWeather.icon}" alt="" width="22" height="22"> `
                         : '';
-                    layer.bindTooltip(`${tooltipIcon}${name}${isHighlighted ? ' (Your Barangay)' : ''} — Risk: ${level}${scoreLabel}`, {
+                    layer.bindTooltip(`${tooltipIcon}${name}${isHighlighted ? ' (Your Barangay)' : ''} — Farm Risk: ${level}`, {
                         sticky: true,
                         className: isHighlighted ? 'your-barangay-tooltip' : undefined,
                     });

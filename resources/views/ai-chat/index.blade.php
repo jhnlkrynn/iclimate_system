@@ -1,6 +1,6 @@
 @php
     $assistantName = 'Climora AI';
-    $assistantSubtitle = 'iClimate rice guidance powered by Groq llama-3.3 and Predict.py';
+    $assistantSubtitle = 'iClimate rice farming guidance';
     $predictionCards = function ($chat): array {
         $intent = (string) ($chat->intent ?? '');
 
@@ -126,7 +126,7 @@
                 <div class="ai-panel-header">
                     <div>
                         <h2 class="ai-panel-title">Conversation</h2>
-                        <p class="ai-panel-sub">Guidance combines Groq responses, Predict.py yield estimation, weather inputs, and iClimate decision rules.</p>
+                        <p class="ai-panel-sub">Answers use your local weather, expected rice yield, and iClimate farming guidance.</p>
                     </div>
                 </div>
                 <div id="chatWindow" class="ai-chat-window">
@@ -231,8 +231,8 @@
                         </div>
                         <div class="ai-chip-grid">
                             @foreach([
-                                'Weather Prediction' => 'Will it rain and what should I prepare for my rice field?',
-                                'Predict Rice Yield' => 'Predict my rice yield using the latest climate record.',
+                                'Weather Forecast' => 'Will it rain and what should I prepare for my rice field?',
+                                'Expected Rice Yield' => 'What is my expected rice yield?',
                                 'Planting Advice' => 'Should I plant rice this week?',
                                 'Irrigation Advice' => 'Is today a good day to irrigate my farm?',
                                 'Climate Warnings' => 'Do I have drought, flood, heat, wind, or water shortage risk?',
@@ -365,7 +365,7 @@
                     addAssistant(data.chat);
                 } catch (error) {
                     const message = error.name === 'AbortError'
-                        ? 'The assistant took too long to answer. Please try a shorter question, or make sure the local farming model API is running.'
+                        ? 'The assistant took too long to answer. Please try a shorter question, or try again in a moment.'
                         : error.message;
                     addAssistant({ answer: message, source_type: 'Error', weather_prediction: null, rice_yield_prediction: null, planting_recommendation: null, irrigation_recommendation: null, response_time_ms: 0, confidence_score: 0 });
                 } finally {

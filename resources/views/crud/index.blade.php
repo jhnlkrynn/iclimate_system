@@ -20,9 +20,9 @@
     <section class="page-hero">
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
-                <div class="eyebrow mb-2">Record Studio</div>
+                <div class="eyebrow mb-2">Records</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }}s</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">Search, filter, and manage records from one responsive workspace.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Find, view, and update records here.</p>
             </div>
             <div class="d-flex flex-column flex-sm-row gap-2 align-self-start align-self-xl-end action-cluster">
                 @if ($routeName === 'notifications')
@@ -48,15 +48,15 @@
             </summary>
             <div class="card no-lift">
                 <div class="card-body p-3">
-                    <p class="text-muted small mb-3">Registered farmer profiles grouped by Farmer's Association, from the live database.</p>
+                    <p class="text-muted small mb-3">Registered farmers grouped by their Farmer's Association.</p>
                     <div class="farmer-org-chart-shell">
                         <div class="farmer-org-chart-inner">
-                            <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading real farmer organization data...</div>
+                            <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading farmer groups...</div>
                             <canvas id="farmersByOrganizationChartCompact" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." aria-busy="true" role="img" tabindex="0"></canvas>
                         </div>
                     </div>
                     <div id="farmersByOrganizationLegendCompact" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                    <div id="farmersByOrganizationStatusCompact" class="farmer-org-chart-status" aria-live="polite">Loading real farmer organization data...</div>
+                    <div id="farmersByOrganizationStatusCompact" class="farmer-org-chart-status" aria-live="polite">Loading farmer groups...</div>
                 </div>
             </div>
         </details>
@@ -208,7 +208,7 @@
             <div class="card-body">
                 <div class="empty-state text-center p-5">
                     <div class="h5 mb-2">No records found</div>
-                    <p class="text-muted mb-3">Try changing your search or filter settings.</p>
+                    <p class="text-muted mb-3">Try a different search or filter.</p>
                     <a class="btn btn-outline-primary" href="{{ route($routeName.'.index') }}">Clear Filters</a>
                 </div>
             </div>

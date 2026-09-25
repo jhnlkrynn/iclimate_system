@@ -293,7 +293,7 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('Result Summary')
             ->assertSee('15.00 tons')
             ->assertSee('3.00 t/ha')
-            ->assertSee('Weather Basis')
+            ->assertSee('Weather During This Period')
             ->assertSee('150.0 mm rainfall', false)
             ->assertSee('29.0&deg;C', false);
     }

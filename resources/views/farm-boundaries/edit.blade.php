@@ -12,8 +12,8 @@
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
                 <div class="eyebrow mb-2">Farm Mapping</div>
-                <h1 class="h2 fw-bold mb-2">My Farm Boundary</h1>
-                <p class="mb-0">Mark the complete perimeter of your planting area on the map.</p>
+                <h1 class="h2 fw-bold mb-2">My Farm Map</h1>
+                <p class="mb-0">Mark the outline of your farm on the map.</p>
             </div>
             <a class="btn btn-light align-self-start align-self-lg-end" href="{{ route('farmer.dashboard') }}">Back to Dashboard</a>
         </div>
@@ -22,13 +22,13 @@
     <div class="card no-lift">
         <div class="card-body p-3 p-md-4">
             <div class="alert alert-info mb-4">
-                Click around the edge of your field to create the boundary. Drag any marker to adjust it. Your exact farm location is private and visible only to you, MAO Personnel, and IT Expert users.
+                Click around the edge of your field to mark it on the map. Drag any point to adjust it. Your exact farm location is private and visible only to you, MAO Personnel, and IT Expert users.
             </div>
 
             <div class="soft-section p-3 mb-4">
                 <label class="form-label fw-semibold" for="farmArea">Your Land Size (hectares)</label>
                 <input class="form-control @error('farm_area') is-invalid @enderror" id="farmArea" name="farm_area" type="number" min="0.01" max="100000" step="0.01" value="{{ old('farm_area', $profile->farm_area) }}" form="boundaryForm" placeholder="Example: 2.50">
-                <div class="form-text">Enter the official or estimated size of your land. The system will also calculate an area from the boundary you draw.</div>
+                <div class="form-text">Enter your land size. We also measure the area from the map you draw.</div>
                 @error('farm_area')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -49,17 +49,17 @@
                 @endif
 
                 <div class="row g-3 mb-4">
-                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="pointCount">0</strong><span>Boundary points</span></div></div>
-                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong>{{ $profile->farm_area ? number_format((float) $profile->farm_area, 2).' ha' : 'Not set' }}</strong><span>Declared land size</span></div></div>
-                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="calculatedArea">{{ $boundary ? number_format((float) $boundary->calculated_area_hectares, 4).' ha' : 'Not calculated' }}</strong><span>Calculated area</span></div></div>
-                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="calculatedPerimeter">{{ $boundary ? number_format((float) $boundary->calculated_perimeter_meters, 2).' m' : 'Not calculated' }}</strong><span>Calculated perimeter</span></div></div>
+                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="pointCount">0</strong><span>Points marked</span></div></div>
+                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong>{{ $profile->farm_area ? number_format((float) $profile->farm_area, 2).' ha' : 'Not set' }}</strong><span>Land size you entered</span></div></div>
+                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="calculatedArea">{{ $boundary ? number_format((float) $boundary->calculated_area_hectares, 4).' ha' : 'Not calculated' }}</strong><span>Area from your map</span></div></div>
+                    <div class="col-sm-6 col-lg-3"><div class="boundary-stat"><strong id="calculatedPerimeter">{{ $boundary ? number_format((float) $boundary->calculated_perimeter_meters, 2).' m' : 'Not calculated' }}</strong><span>Distance around your farm</span></div></div>
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row gap-2">
-                    <button type="submit" class="btn btn-primary" id="saveBoundary" disabled>Save Boundary</button>
+                    <button type="submit" class="btn btn-primary" id="saveBoundary" disabled>Save Farm Map</button>
                     <button type="button" class="btn btn-outline-secondary" id="clearBoundary">Clear Map</button>
                     @if ($boundary)
-                        <button type="submit" form="deleteBoundaryForm" class="btn btn-outline-danger">Delete Saved Boundary</button>
+                        <button type="submit" form="deleteBoundaryForm" class="btn btn-outline-danger">Delete My Saved Farm Map</button>
                     @endif
                 </div>
             </form>
@@ -77,7 +77,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const Leaflet = window.L;
             if (!Leaflet) {
-                document.getElementById('boundaryMap').innerHTML = '<div class="alert alert-warning m-3">The map could not load. Refresh the page or restart the frontend with <code>npm run dev</code>.</div>';
+                document.getElementById('boundaryMap').innerHTML = '<div class="alert alert-warning m-3">The map could not load. Please refresh the page or try again later.</div>';
                 return;
             }
 
@@ -183,7 +183,7 @@
             });
 
             document.getElementById('deleteBoundaryForm')?.addEventListener('submit', (event) => {
-                if (!window.confirm('Delete the saved farm boundary?')) event.preventDefault();
+                if (!window.confirm('Delete your saved farm map?')) event.preventDefault();
             });
         });
     </script>

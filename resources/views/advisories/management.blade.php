@@ -5,16 +5,16 @@
             <div>
                 <div class="eyebrow mb-2">MAO/Admin Workspace</div>
                 <h1 class="h2 fw-bold mb-2">Advisory Management</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">Review generated advisories, refresh online weather data, and publish guidance for farmers.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Review advisories, update the weather, and publish guidance for farmers.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 action-cluster">
-                <form method="POST" action="{{ route('management.advisories.refresh-weather') }}" data-loading="true" onsubmit="return confirm('Fetch the latest Open-Meteo forecast now?');">
+                <form method="POST" action="{{ route('management.advisories.refresh-weather') }}" data-loading="true" onsubmit="return confirm('Get the latest weather forecast now?');">
                     @csrf
-                    <button class="btn btn-light" data-loading-text="Refreshing..." type="submit">Refresh Weather Data</button>
+                    <button class="btn btn-light" data-loading-text="Refreshing..." type="submit">Update Weather</button>
                 </form>
-                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" onsubmit="return confirm('Fetch live Lian, Batangas weather and generate hourly, daily, weekly, and monthly advisories now?');">
+                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" onsubmit="return confirm('Get the latest Lian, Batangas weather and create new advisories now?');">
                     @csrf
-                    <button class="btn btn-outline-light" data-loading-text="Generating..." type="submit">Generate Live Advisories</button>
+                    <button class="btn btn-outline-light" data-loading-text="Generating..." type="submit">Create New Advisories</button>
                 </form>
             </div>
         </div>
@@ -24,7 +24,7 @@
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Active Advisories</div><div class="stat-value">{{ $activeCount }}</div></div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Pending Review</div><div class="stat-value">{{ $pendingCount }}</div></div></div></div>
         <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">High/Critical</div><div class="stat-value">{{ $highRiskCount }}</div></div></div></div>
-        <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Last API Update</div><div class="h6 fw-bold mt-2">{{ $lastWeather?->fetched_at?->shortDateTime() ?? 'None' }}</div>@if($lastWeather)<span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }}">{{ str($lastWeather->freshnessLabel())->headline() }}</span>@endif</div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card no-lift h-100"><div class="card-body"><div class="stat-label">Weather Last Updated</div><div class="h6 fw-bold mt-2">{{ $lastWeather?->fetched_at?->shortDateTime() ?? 'None' }}</div>@if($lastWeather)<span class="badge text-bg-{{ $lastWeather->freshnessLabel() === 'fresh' ? 'success' : ($lastWeather->freshnessLabel() === 'delayed' ? 'warning' : 'danger') }}">{{ str($lastWeather->freshnessLabel())->headline() }}</span>@endif</div></div></div>
     </div>
 
     @php
@@ -58,11 +58,10 @@
         @if($advisories->count())
             <div class="table-responsive ic-table-hide-mobile">
                 <table class="table table-hover align-middle mb-0">
-                    <thead><tr><th>Title</th><th>Type</th><th>Window</th><th>Severity</th><th>Target</th><th>Status</th><th>Valid Until</th><th class="text-end">Actions</th></tr></thead>
+                    <thead><tr><th>Title</th><th>Type</th><th>Period</th><th>Severity</th><th>Applies To</th><th>Status</th><th>Valid Until</th><th class="text-end">Actions</th></tr></thead>
                     <tbody>
                         @foreach($advisories as $advisory)
                             <tr>
-                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->summary }}</div></td>
                                 <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->displaySummary() }}</div></td>
                                 <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
                                 <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
@@ -89,7 +88,6 @@
             <div class="card-body ic-table-cards">
                 @foreach($advisories as $advisory)
                     <div class="ic-table-card">
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->summary }}</div></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->displaySummary() }}</div></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Type</div><div class="ic-table-card-value"><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Window</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
@@ -113,7 +111,7 @@
             </div>
             <div class="card-body border-top d-flex justify-content-end">{{ $advisories->links() }}</div>
         @else
-            <div class="card-body"><div class="empty-state text-center p-5"><div class="h5">No advisories match the filters.</div><p class="text-muted mb-0">Refresh weather data or regenerate advisories when forecast conditions change.</p></div></div>
+            <div class="card-body"><div class="empty-state text-center p-5"><div class="h5">No advisories match the filters.</div><p class="text-muted mb-0">Update the weather or create new advisories when the forecast changes.</p></div></div>
         @endif
     </div>
 </x-app-layout>

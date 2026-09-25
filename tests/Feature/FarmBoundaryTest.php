@@ -21,7 +21,7 @@ class FarmBoundaryTest extends TestCase
         $this->actingAs($farmer)
             ->get(route('farmer.boundary.edit'))
             ->assertOk()
-            ->assertSee('My Farm Boundary');
+            ->assertSee('My Farm Map');
 
         $this->actingAs($farmer)
             ->put(route('farmer.boundary.update'), [
@@ -46,7 +46,7 @@ class FarmBoundaryTest extends TestCase
         $this->actingAs($farmer)
             ->get(route('farmer.boundary.edit'))
             ->assertOk()
-            ->assertSee('My Farm Boundary');
+            ->assertSee('My Farm Map');
 
         $this->assertDatabaseHas('farmer_profiles', [
             'user_id' => $farmer->id,

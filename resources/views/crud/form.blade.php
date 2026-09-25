@@ -2,9 +2,9 @@
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
-                <div class="eyebrow mb-2">Record Editor</div>
+                <div class="eyebrow mb-2">Edit Record</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }}</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">Complete the form and save changes.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Fill in the details, then save.</p>
             </div>
             <a class="btn btn-light align-self-start align-self-lg-end" href="{{ route($routeName.'.index') }}">Back to List</a>
         </div>

@@ -497,7 +497,7 @@
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
                 <div>
                     <div class="it-eyebrow mb-2">IT Expert Console</div>
-                    <h1 class="h2 fw-bold mb-2">System command center</h1>
+                    <h1 class="h2 fw-bold mb-2">IT Dashboard</h1>
                     <p class="mb-0">Monitor user access, heat map risk records, reports, and system activity for the iClimate platform in one operational dashboard.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
@@ -582,7 +582,7 @@
         <section class="it-panel mb-4">
             <div class="it-panel-header">
                 <div>
-                    <h2 class="it-panel-title">FARMERS BY ORGANIZATION</h2>
+                    <h2 class="it-panel-title">Farmers by Organization</h2>
                     <p class="it-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
                 </div>
                 <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
@@ -758,7 +758,7 @@
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
-                            <h2 class="it-panel-title">Module Statistics</h2>
+                            <h2 class="it-panel-title">System Usage</h2>
                             <p class="it-panel-sub">Live counts from each managed iClimate module.</p>
                         </div>
                         <span class="status-pill">{{ number_format($moduleTotal) }} total records</span>
@@ -787,7 +787,7 @@
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
-                            <h2 class="it-panel-title">Access Health</h2>
+                            <h2 class="it-panel-title">Login &amp; Access Status</h2>
                             <p class="it-panel-sub">Role distribution and account status.</p>
                         </div>
                         <span class="status-pill {{ $healthScore < 80 ? 'muted' : '' }}">{{ $healthScore }}% active</span>
@@ -811,13 +811,13 @@
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
-                            <h2 class="it-panel-title">Pipeline Health</h2>
+                            <h2 class="it-panel-title">Data Processing Status</h2>
                             <p class="it-panel-sub">Background jobs the app depends on.</p>
                         </div>
                     </div>
                     <div class="it-panel-body">
                         <div class="it-pipeline-row">
-                            <span class="it-pipeline-label">Last heatmap refresh</span>
+                            <span class="it-pipeline-label">Last risk map refresh</span>
                             <span class="it-pipeline-value">{{ $heatmapLastRefresh ? \Illuminate\Support\Carbon::parse($heatmapLastRefresh)->diffForHumans() : 'Never' }}</span>
                         </div>
                         <div class="it-pipeline-row">
@@ -874,7 +874,7 @@
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
-                            <h2 class="it-panel-title">Recent System Activity Log</h2>
+                            <h2 class="it-panel-title">Recent Activity</h2>
                             <p class="it-panel-sub">Latest recorded events across the system.</p>
                         </div>
                         <a class="btn btn-sm btn-outline-primary" href="{{ route('system-logs.index') }}">Open Logs</a>
@@ -987,7 +987,7 @@
                 <div class="it-panel h-100">
                     <div class="it-panel-header">
                         <div>
-                            <h2 class="it-panel-title">Report &amp; Export Usage Audit</h2>
+                            <h2 class="it-panel-title">Report &amp; Download History</h2>
                             <p class="it-panel-sub">Who is generating reports, and how often.</p>
                         </div>
                     </div>

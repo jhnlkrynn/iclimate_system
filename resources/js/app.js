@@ -180,6 +180,8 @@ function bindNavbarState() {
 }
 
 function bindRevealMotion() {
+    // Major content blocks that fade/rise into view once. Rows are never
+    // listed: tables animate as one container (.table-responsive).
     const selectors = [
         '.page-hero',
         '.alert',
@@ -192,14 +194,35 @@ function bindRevealMotion() {
         '.soft-section:not(.no-reveal)',
         '.filter-panel:not(.no-reveal)',
         '.table-responsive:not(.no-reveal)',
+        // Dashboards
+        '.mao-hero', '.mao-panel', '.mao-card', '.live-weather-card', '.schedule-monitor-card', '.chart-box',
+        '.it-hero', '.it-panel', '.it-card',
+        '.farmer-org-card', '.farmer-org-chart-shell', '.dashboard-group',
+        // Predictions, forms, tables, calendar, feeds, messages
+        '.wp-panel', '.wp-metric', '.wp-result-card', '.wp-input-card',
+        '.ic-table-card', '.form-card', '.calendar-card', '.upcoming-card', '.manage-panel',
+        '.me-panel', '.ai-result-card', '.feed-card', '.feed-post-card', '.msg-panel', '.side-panel',
+        '.advisory-card', '.advisory-safety-card', '.notice-card', '.perk-card',
     ].join(',');
 
-    [...document.querySelectorAll(selectors)]
-        .filter((element) => !element.closest('.modal, .offcanvas, .ic-ai-panel, .farmer-console'))
-        .forEach((element, index) => {
-            if (!element.dataset.reveal) element.dataset.reveal = 'fade-up';
-            if (!element.dataset.revealDelay) element.dataset.revealDelay = String(Math.min(index * 45, 260));
-        });
+    const skip = '.modal, .offcanvas, .ic-ai-panel, .ic-drawer, .ic-drawer-panel, .farmer-console, .leaflet-container, .table-responsive .card';
+    const mapSelector = '.leaflet-container, #barangayRiskMap, #boundaryMap, #staffBoundaryMap';
+
+    const elements = [...document.querySelectorAll(selectors)]
+        .filter((element) => !element.closest(skip));
+
+    // Stagger only siblings that appear together: delay follows the position
+    // among matched siblings of the same parent, capped so long lists never wait.
+    const perParent = new Map();
+    elements.forEach((element) => {
+        const index = perParent.get(element.parentElement) ?? 0;
+        perParent.set(element.parentElement, index + 1);
+
+        if (!element.dataset.reveal) {
+            element.dataset.reveal = element.querySelector(mapSelector) ? 'fade' : 'fade-up';
+        }
+        if (!element.dataset.revealDelay) element.dataset.revealDelay = String(Math.min(index * 70, 350));
+    });
 
     initScrollAnimations(document);
 }

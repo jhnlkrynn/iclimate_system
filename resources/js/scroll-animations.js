@@ -17,6 +17,18 @@ function applyRevealOptions(element) {
     }
 }
 
+// One debounced resize for the whole batch of reveals, so charts inside newly
+// shown blocks re-measure once instead of once per element.
+let chartResizeTimer = null;
+function queueChartResize() {
+    if (!window.Chart || chartResizeTimer) return;
+
+    chartResizeTimer = window.setTimeout(() => {
+        chartResizeTimer = null;
+        window.dispatchEvent(new Event('resize'));
+    }, 160);
+}
+
 export function initRevealAnimations(container = document) {
     const elements = [...container.querySelectorAll('[data-reveal]')]
         .filter((element) => element.dataset.revealBound !== 'true');
@@ -42,9 +54,7 @@ export function initRevealAnimations(container = document) {
             entry.target.classList.add('is-visible');
             revealObserver.unobserve(entry.target);
 
-            if (window.Chart) {
-                window.dispatchEvent(new Event('resize'));
-            }
+            queueChartResize();
         });
     }, { threshold: 0.12, rootMargin: '0px 0px -36px 0px' });
 

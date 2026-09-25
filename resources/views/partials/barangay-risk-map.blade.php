@@ -21,7 +21,7 @@
 --}}
 @php
     $heading = $heading ?? 'Lian Municipality Risk Map';
-    $subheading = $subheading ?? 'Choropleth of all 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.';
+    $subheading = $subheading ?? 'Farm risk for all 19 Lian barangays, from live weather and recorded rice harvest. Click a barangay for details.';
     $showRefresh = $showRefresh ?? true;
     $highlightBarangay = $highlightBarangay ?? null;
 @endphp
@@ -54,6 +54,7 @@
             <span class="legend-swatch"><span class="legend-dot" style="background:#0d47a1"></span>Your Barangay (bold outline)</span>
         @endif
     </div>
+    <p class="risk-map-note small text-muted mb-0 mt-2">Ratings are a planning guide, not a certified hazard assessment. Grey means No Data, not Low risk.</p>
 </div>
 <div id="riskMapDetailPanel" class="risk-map-detail-panel" style="display:none;">
     <div id="riskMapDetailContent"></div>

@@ -139,6 +139,7 @@
         .mao-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
         .mao-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
         .mao-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
+        .mao-risk-badge-nodata { background: rgba(100,116,139,.16); color: #475569; }
         .mao-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
         .mao-risk-interpretation { font-weight: 500; color: var(--mao-ink); }
         .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .62rem; font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; background: rgba(95,143,120,.14); color: var(--mao-green); }
@@ -438,6 +439,8 @@
         .map-popup-note,
         .map-popup-source,
         .map-detail-empty { font-size: var(--text-sm); line-height: 1.5; color: var(--mao-muted); }
+        /* Section notes sit on the dark page background, not on a light card. */
+        .dashboard-section-label .section-note { color: var(--mao-mint); }
         .mao-panel-title,
         .chart-title,
         .row-title,
@@ -492,8 +495,8 @@
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
                 <div>
                     <div class="mao-eyebrow mb-2">Municipal Agriculture Office</div>
-                    <h1 class="h2 fw-bold mb-2">Climate-informed <em>agricultural monitoring</em></h1>
-                    <p class="mb-0">Monitor farmer records, climate observations, rice production performance, barangay risk records, advisories, community posts, and reports for Lian, Batangas.</p>
+                    <h1 class="h2 fw-bold mb-2">Weather &amp; Farm <em>Monitoring</em></h1>
+                    <p class="mb-0">Weather, farm risk, planting, and yield for Lian, Batangas.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="mao-chip"><span class="mao-pulse"></span> Season: {{ $latestSeason }}</span>
@@ -509,8 +512,12 @@
                     <div class="mao-highlight mao-highlight-{{ $highlight['severity'] }}">
                         <span class="mao-highlight-dot"></span>
                         <div>
-                            <div class="mao-highlight-title">{{ $highlight['title'] }}</div>
-                            <div class="mao-highlight-message">{{ $highlight['message'] }}</div>
+                            @php
+                                $hlTitle = preg_replace('/^(.+) is at (Low|Moderate|High|Severe) risk$/u', '$1: $2 Farm Risk', $highlight['title']);
+                                $hlMessage = preg_replace('/^Risk score [\d.]+\/1\.00 \x{2014} (.*?) risk\.$/u', 'Main concern: $1. Farm risk ratings are a planning guide.', $highlight['message']);
+                            @endphp
+                            <div class="mao-highlight-title">{{ $hlTitle }}</div>
+                            <div class="mao-highlight-message">{{ $hlMessage }}</div>
                         </div>
                     </div>
                 @endforeach
@@ -680,7 +687,7 @@
 
         <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
             <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
-            <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Heat Map &amp; Weather</button>
+            <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Risk Map &amp; Forecast</button>
             <button type="button" class="dashboard-tab" data-tab="production" role="tab" aria-selected="false">Monitoring &amp; Production</button>
             <button type="button" class="dashboard-tab" data-tab="fieldreports" role="tab" aria-selected="false">Field Reports</button>
             <button type="button" class="dashboard-tab" data-tab="publishing" role="tab" aria-selected="false">Publishing &amp; Activity</button>
@@ -689,53 +696,16 @@
 
         <div class="dashboard-tab-panels">
         <div class="dashboard-tab-panel active" data-panel="overview">
-        <section class="mao-panel">
-            <div class="mao-panel-header">
-                <div>
-                    <h2 class="mao-panel-title">Current Cropping Season</h2>
-                    <p class="mao-panel-sub">Based on the latest recorded climate season and current production records.</p>
-                </div>
-                <span class="status-pill">{{ $cropStatus['season'] ?? 'Not recorded' }}</span>
-            </div>
-            <div class="mao-panel-body">
-                <div class="risk-level-grid mb-3" style="grid-template-columns:repeat(4,minmax(0,1fr));">
-                    <div class="risk-level-card low">
-                        <div class="mao-label">Hectares Planted</div>
-                        <div class="risk-level-value">{{ number_format($cropStatus['total_hectares'], 1) }}</div>
-                        <div class="mao-note">total, latest records per barangay</div>
-                    </div>
-                    <div class="risk-level-card low">
-                        <div class="mao-label">Irrigated</div>
-                        <div class="risk-level-value">{{ number_format($cropStatus['irrigated_hectares'], 1) }}</div>
-                        <div class="mao-note">{{ $cropStatus['irrigated_barangays'] }} barangay(s)</div>
-                    </div>
-                    <div class="risk-level-card moderate">
-                        <div class="mao-label">Rainfed</div>
-                        <div class="risk-level-value">{{ number_format($cropStatus['rainfed_hectares'], 1) }}</div>
-                        <div class="mao-note">{{ $cropStatus['rainfed_barangays'] }} barangay(s)</div>
-                    </div>
-                    <div class="risk-level-card {{ $cropStatus['estimated_yield'] !== null && $cropStatus['actual_yield'] !== null && $cropStatus['estimated_yield'] > $cropStatus['actual_yield'] ? 'moderate' : 'low' }}">
-                        <div class="mao-label">Est. vs Actual Yield</div>
-                        <div class="risk-level-value" style="font-size:1.4rem;">{{ $cropStatus['estimated_yield'] !== null ? number_format($cropStatus['estimated_yield'], 2) : 'N/A' }} / {{ $cropStatus['actual_yield'] !== null ? number_format($cropStatus['actual_yield'], 2) : 'N/A' }}</div>
-                        <div class="mao-note">t/ha &middot; model estimate / recorded actual</div>
-                    </div>
-                </div>
-                <p class="mao-note mb-0">Planting and harvesting progress are not yet tracked in iClimate — figures above reflect the latest production and yield records on file.</p>
-            </div>
-        </section>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="heatmap">
         <section class="mao-panel" data-mao-weather-root data-mao-weather-url="{{ route('mao.dashboard.weather') }}">
             <div class="mao-panel-header">
                 <div>
-                    <h2 class="mao-panel-title">Municipal Weather Dashboard</h2>
-                    <p class="mao-panel-sub">Primary view for rainfall, temperature, humidity, and wind conditions.</p>
+                    <h2 class="mao-panel-title">Current Farm Conditions</h2>
+                    <p class="mao-panel-sub">Weather right now in Lian, Batangas.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="status-pill {{ $weatherWarning['level'] === 'Low' ? '' : 'muted' }}" title="Derived from current barangay risk levels">{{ $weatherWarning['label'] }}</span>
-                    <span class="source-badge" data-mao-weather-source>{{ $weatherDataSource }}</span>
-                    <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Prediction</a>
+                    <span class="status-pill {{ $weatherWarning['level'] === 'Low' ? '' : 'muted' }}" title="Based on current barangay farm risk levels">{{ $weatherWarning['label'] }}</span>
+                    <span class="source-badge" data-mao-weather-source>{{ $liveWeather ? 'Live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas') : 'Saved weather records' }}</span>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('weather-predictions.index') }}">Open Weather Forecast</a>
                 </div>
             </div>
             <div class="mao-panel-body">
@@ -766,20 +736,128 @@
 
                 @if($weatherAnomaly['anomaly_percent'] !== null)
                     <div class="mao-note mb-3">
-                        <strong style="color: var(--mao-ink);">Rainfall anomaly:</strong>
+                        <strong style="color: var(--mao-ink);">Rainfall compared with normal:</strong>
                         {{ $weatherAnomaly['anomaly_label'] }}
-                        ({{ number_format($weatherAnomaly['current_daily_rainfall'], 1) }} mm/day forecast vs {{ number_format($weatherAnomaly['seasonal_avg_daily_rainfall'], 1) }} mm/day {{ $weatherAnomaly['season'] }}-season average &mdash;
+                        ({{ number_format($weatherAnomaly['current_daily_rainfall'], 1) }} mm/day expected vs {{ number_format($weatherAnomaly['seasonal_avg_daily_rainfall'], 1) }} mm/day {{ $weatherAnomaly['season'] }}-season average &mdash;
                         {{ $weatherAnomaly['anomaly_percent'] > 0 ? '+' : '' }}{{ number_format($weatherAnomaly['anomaly_percent'], 1) }}%).
                     </div>
                 @endif
             </div>
         </section>
 
+
+        <section class="mao-panel">
+            <div class="mao-panel-body">
+                @if(! empty($weatherChartData['labels']))
+                    <div class="chart-title">Weather Outlook: Next 7 Days</div>
+                    <div class="chart-note">{{ $liveWeather ? 'Daily forecast for Lian, Batangas.' : 'Recent saved readings (live forecast unavailable).' }}</div>
+                    <div class="forecast-strip mb-3">
+                        @foreach(array_slice($weatherChartData['labels'], 0, 7) as $i => $label)
+                            <div class="forecast-strip-day">
+                                <div class="mao-label">{{ $label }}</div>
+                                <div class="risk-level-value" style="font-size:1.1rem;">{{ is_numeric($weatherChartData['rainfall'][$i] ?? null) ? number_format($weatherChartData['rainfall'][$i], 0).'mm' : '—' }}</div>
+                                <div class="mao-note">{{ is_numeric($weatherChartData['temperature'][$i] ?? null) ? number_format($weatherChartData['temperature'][$i], 0).'°C' : '—' }} &middot; {{ is_numeric($weatherChartData['windSpeed'][$i] ?? null) ? number_format($weatherChartData['windSpeed'][$i], 0).($liveWeather ? 'km/h' : '').' wind' : '—' }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+            </div>
+        </section>
+
+        <section class="mao-panel">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title">Barangays to Watch</h2>
+                    <p class="mao-panel-sub">Barangays with a High or Severe farm risk. The Risk Map tab shows all 19.</p>
+                </div>
+                <a class="btn btn-sm btn-outline-primary" href="#" onclick="document.querySelector('[data-tab=heatmap]')?.click(); return false;">View Details</a>
+            </div>
+            <div class="mao-panel-body list-compact">
+                @php $watchRows = collect($barangayMonitoring)->filter(fn ($row) => in_array($row['risk_level'] ?? null, ['High', 'Severe'], true))->values(); @endphp
+                @forelse($watchRows as $row)
+                    <div class="mao-list-item">
+                        <div class="flex-grow-1">
+                            <div class="row-title">{{ $row['barangay'] }} <span class="mao-risk-badge {{ $row['risk_level'] === 'Severe' ? 'mao-risk-badge-severe' : 'mao-risk-badge-high' }}">{{ $row['risk_level'] }} Farm Risk</span></div>
+                            <div class="row-text">{{ $row['risk_type'] ? 'Main concern: '.strtolower($row['risk_type']).'.' : 'Check local conditions.' }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-soft"><strong>No High or Severe farm risk right now</strong></div>
+                @endforelse
+                <p class="mao-note mb-0">Farm risk ratings are a planning guide, not a certified hazard assessment.</p>
+            </div>
+        </section>
+
+        <section class="mao-panel">
+            <div class="mao-panel-header">
+                <div>
+                    <h2 class="mao-panel-title">Planting &amp; Expected Yield</h2>
+                    <p class="mao-panel-sub">Latest season and production records.</p>
+                </div>
+                <span class="status-pill">{{ $cropStatus['season'] ?? 'Not recorded' }}</span>
+            </div>
+            <div class="mao-panel-body">
+                <div class="risk-level-grid mb-3" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+                    <div class="risk-level-card low">
+                        <div class="mao-label">Hectares Planted</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['total_hectares'], 1) }}</div>
+                        <div class="mao-note">total, latest records per barangay</div>
+                    </div>
+                    <div class="risk-level-card low">
+                        <div class="mao-label">Irrigated</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['irrigated_hectares'], 1) }}</div>
+                        <div class="mao-note">{{ $cropStatus['irrigated_barangays'] }} barangay(s)</div>
+                    </div>
+                    <div class="risk-level-card moderate">
+                        <div class="mao-label">Rainfed</div>
+                        <div class="risk-level-value">{{ number_format($cropStatus['rainfed_hectares'], 1) }}</div>
+                        <div class="mao-note">{{ $cropStatus['rainfed_barangays'] }} barangay(s)</div>
+                    </div>
+                    <div class="risk-level-card {{ $cropStatus['estimated_yield'] !== null && $cropStatus['actual_yield'] !== null && $cropStatus['estimated_yield'] > $cropStatus['actual_yield'] ? 'moderate' : 'low' }}">
+                        <div class="mao-label">Expected vs Recorded Yield</div>
+                        <div class="risk-level-value" style="font-size:1.4rem;">{{ $cropStatus['estimated_yield'] !== null ? number_format($cropStatus['estimated_yield'], 2) : 'N/A' }} / {{ $cropStatus['actual_yield'] !== null ? number_format($cropStatus['actual_yield'], 2) : 'N/A' }}</div>
+                        <div class="mao-note">t/ha &middot; expected / recorded</div>
+                    </div>
+                </div>
+                <p class="mao-note mb-0">Planting and harvest progress are not tracked yet. Figures come from the latest production records.</p>
+            </div>
+        </section>
+
+        @php $lowerYieldSchedules = collect($farmerSchedules ?? [])->filter(fn ($schedule) => $schedule->comparison_interpretation === 'lower' && $schedule->predicted_yield !== null && $schedule->historical_same_month_average !== null)->values(); @endphp
+        @if($lowerYieldSchedules->isNotEmpty())
+            <section class="mao-panel">
+                <div class="mao-panel-header">
+                    <div>
+                        <h2 class="mao-panel-title">Lower Than Previous Yield</h2>
+                        <p class="mao-panel-sub">Farm schedules expected to yield less than the previous same-month average.</p>
+                    </div>
+                    <span class="status-pill muted">{{ $lowerYieldSchedules->count() }} {{ \Illuminate\Support\Str::plural('case', $lowerYieldSchedules->count()) }}</span>
+                </div>
+                <div class="mao-panel-body list-compact">
+                    @foreach($lowerYieldSchedules->take(4) as $schedule)
+                        <div class="mao-list-item">
+                            <div class="flex-grow-1">
+                                <div class="row-title">{{ $schedule->farmer?->farmerProfile?->full_name ?: $schedule->farmer?->name ?: 'Unknown farmer' }} &middot; {{ $schedule->barangay ?: 'Location not available' }}</div>
+                                <div class="row-text">Expected {{ number_format((float) $schedule->predicted_yield, 2) }} t/ha vs {{ number_format((float) $schedule->historical_same_month_average, 2) }} t/ha before.@if($schedule->recommended_actions) Action: {{ $schedule->recommended_actions }}@endif</div>
+                            </div>
+                        </div>
+                    @endforeach
+                    <p class="mao-note mb-0">All schedules are under View Details in the Monitoring &amp; Production tab.</p>
+                </div>
+            </section>
+        @endif
+
+        @include('dashboards.partials.farmer-weather-feedback')
+
+        </div>
+
+        <div class="dashboard-tab-panel" data-panel="heatmap">
         <section class="mao-panel">
             <div class="mao-panel-body">
                 @include('partials.barangay-risk-map', [
                     'heading' => 'Barangay Agricultural Risk Map',
-                    'subheading' => 'Choropleth of all 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.',
+                    'subheading' => 'All 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.',
                     'showRefresh' => true,
                 ])
             </div>
@@ -788,8 +866,8 @@
         <section class="mao-panel">
             <div class="mao-panel-header">
                 <div>
-                    <h2 class="mao-panel-title">Weather Trends &amp; Model Inputs</h2>
-                    <p class="mao-panel-sub">Forecast detail and the variables behind the yield model and the live readings above.</p>
+                    <h2 class="mao-panel-title">Weather Charts</h2>
+                    <p class="mao-panel-sub">Detailed charts for rainfall, temperature, humidity, and wind.</p>
                 </div>
             </div>
             <div class="mao-panel-body">
@@ -797,32 +875,18 @@
                     <div class="variable-info-card">
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <div class="row-title mb-0">Rainfall &amp; Temperature</div>
-                            <span class="status-pill">Used in yield model</span>
+                            <span class="status-pill">Used for expected yield</span>
                         </div>
-                        <p class="row-text mb-0">Water and heat directly drive how rice grows. The trained yield model uses rainfall and temperature &mdash; including recent, 3-month, 6-month, and seasonal averages &mdash; together with farm area and season as its main predictors.</p>
+                        <p class="row-text mb-0">Water and heat drive how rice grows. Expected yield is based mainly on rainfall, temperature, farm area, and season.</p>
                     </div>
                     <div class="variable-info-card">
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <div class="row-title mb-0">Humidity &amp; Wind Speed</div>
-                            <span class="status-pill muted">Shown live, not yet in yield model</span>
+                            <span class="status-pill muted">For warnings only</span>
                         </div>
-                        <p class="row-text mb-0">Tracked live above for weather forecasting and risk warnings (e.g. high wind before harvest, high humidity disease risk). Not yet part of the trained yield model &mdash; validating whether they should be added requires more historical climate and production records than are currently on file.</p>
+                        <p class="row-text mb-0">Used for weather warnings, such as strong wind before harvest or disease risk in humid weather. Not yet used in expected yield.</p>
                     </div>
                 </div>
-
-                @if(! empty($weatherChartData['labels']))
-                    <div class="chart-title">7-Day Forecast</div>
-                    <div class="chart-note">{{ $liveWeather ? 'Live daily forecast for Lian, Batangas.' : 'Recent recorded readings (live forecast unavailable).' }}</div>
-                    <div class="forecast-strip mb-3">
-                        @foreach(array_slice($weatherChartData['labels'], 0, 7) as $i => $label)
-                            <div class="forecast-strip-day">
-                                <div class="mao-label">{{ $label }}</div>
-                                <div class="risk-level-value" style="font-size:1.1rem;">{{ is_numeric($weatherChartData['rainfall'][$i] ?? null) ? number_format($weatherChartData['rainfall'][$i], 0).'mm' : '—' }}</div>
-                                <div class="mao-note">{{ is_numeric($weatherChartData['temperature'][$i] ?? null) ? number_format($weatherChartData['temperature'][$i], 0).'°C' : '—' }} &middot; {{ is_numeric($weatherChartData['windSpeed'][$i] ?? null) ? number_format($weatherChartData['windSpeed'][$i], 0).'km/h wind' : '—' }}</div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
 
                 @if(! empty($weatherChartData['labels']))
                     <div class="mb-4" data-chart-tabs>
@@ -835,7 +899,7 @@
                         <div class="visual-grid">
                             <div class="chart-box" data-chart-pane="rainfall">
                                 <div class="chart-title">Rainfall Chart</div>
-                                <div class="chart-note">{{ $liveWeather ? 'Live forecast rainfall in millimeters.' : 'Recent recorded rainfall in millimeters.' }}</div>
+                                <div class="chart-note">{{ $liveWeather ? 'Forecast rainfall in millimeters.' : 'Recent saved rainfall in millimeters.' }}</div>
                                 <div class="chart-canvas-scroll">
                                     <div class="chart-render-state" data-chart-state="rainfall" role="status">Loading real weather data...</div>
                                     <canvas id="rainfallChart" aria-busy="true"></canvas>
@@ -872,7 +936,7 @@
                         </div>
                     </div>
                 @else
-                    <div class="empty-soft"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Open-Meteo is unavailable and there are no saved climate records to show.</div></div>
+                    <div class="empty-soft"><strong>No weather chart data yet</strong><div class="small text-muted mt-1">Live weather is unavailable and there are no saved weather records to show.</div></div>
                 @endif
             </div>
         </section>
@@ -883,7 +947,7 @@
             <summary>
                 <div>
                     <h2 class="dashboard-group-title">Farmer Planting and Harvest Calendar</h2>
-                    <p class="dashboard-group-note">Monitor farmer schedules, yield predictions, history comparisons, and follow-up needs.</p>
+                    <p class="dashboard-group-note">Farmer schedules, expected yield, and follow-up needs.</p>
                 </div>
                 <span class="dashboard-group-toggle"></span>
             </summary>
@@ -915,19 +979,19 @@
                             <div class="schedule-monitor-meta mt-2"><strong>Planting:</strong> {{ $schedule->planting_date?->format('M d, Y') }}<br><strong>Scheduled harvest:</strong> {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</div>
 
                             <div class="schedule-yield-grid">
-                                <div class="schedule-yield-box"><span>Current predicted yield</span><strong>{{ $schedule->predicted_yield !== null ? number_format((float)$schedule->predicted_yield, 2).' t/ha' : 'Prediction unavailable' }}</strong></div>
-                                <div class="schedule-yield-box"><span>Previous same-month average</span><strong>{{ $schedule->historical_same_month_average !== null ? number_format((float)$schedule->historical_same_month_average, 2).' t/ha' : 'No history' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Expected yield</span><strong>{{ $schedule->predicted_yield !== null ? number_format((float)$schedule->predicted_yield, 2).' t/ha' : 'Not Enough Data' }}</strong></div>
+                                <div class="schedule-yield-box"><span>Previous yield (same month)</span><strong>{{ $schedule->historical_same_month_average !== null ? number_format((float)$schedule->historical_same_month_average, 2).' t/ha' : 'No history' }}</strong></div>
                                 <div class="schedule-yield-box"><span>Difference</span><strong>{{ $schedule->yield_difference !== null ? (($schedule->yield_difference > 0 ? '+' : '').number_format((float)$schedule->yield_difference, 2).' t/ha') : 'Not available' }}</strong></div>
                             </div>
 
                             @if($schedule->predicted_yield === null)
-                                <div class="schedule-guidance"><strong>Prediction unavailable</strong><br>{{ $schedule->prediction_unavailable_reason ?: 'Required prediction data is incomplete.' }}<br><span class="text-muted">This result needs MAO review before using it for decisions.</span></div>
+                                <div class="schedule-guidance"><strong>Not Enough Data</strong><br>Expected yield cannot be shown yet. Check the farm details and review this schedule.</div>
                             @elseif($schedule->historical_same_month_average === null)
-                                <div class="schedule-guidance"><strong>No previous yield history available for comparison.</strong><br>No claim is made that this prediction is better or worse. Continue observing weather and verify the field condition.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                                <div class="schedule-guidance"><strong>No previous yield to compare.</strong><br>Keep watching the weather and check the field.@if($confidenceNeedsReview)<br><span class="text-muted">Limited data. Please review this schedule.</span>@endif</div>
                             @elseif($schedule->comparison_interpretation === 'lower')
-                                <div class="schedule-guidance urgent"><strong>Recommended Actions</strong><br>{{ $schedule->recommended_actions }}@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or required data is incomplete. Review before making decisions.</span>@endif</div>
+                                <div class="schedule-guidance urgent"><strong>Recommended Actions</strong><br>{{ $schedule->recommended_actions }}@if($confidenceNeedsReview)<br><span class="text-muted">Limited data. Please review before deciding.</span>@endif</div>
                             @else
-                                <div class="schedule-guidance"><strong>Warnings / Notes</strong><br>Yield is {{ $schedule->comparison_interpretation ?: 'stable' }} compared with the previous same-month average. Continue observing weather changes, verify field condition, and keep the farmer advisory updated.@if($confidenceNeedsReview)<br><span class="text-muted">Prediction confidence is low or unavailable; MAO review is required.</span>@endif</div>
+                                <div class="schedule-guidance"><strong>Notes</strong><br>Expected yield is {{ $schedule->comparison_interpretation ?: 'stable' }} compared with before. Keep watching the weather and keep the advisory updated.@if($confidenceNeedsReview)<br><span class="text-muted">Limited data. Please review this schedule.</span>@endif</div>
                             @endif
                         </article>
                     @empty
@@ -940,21 +1004,21 @@
         <section class="mao-panel">
             <div class="mao-panel-header">
                 <div>
-                    <h2 class="mao-panel-title">Barangay Monitoring Table</h2>
+                    <h2 class="mao-panel-title">Barangay Overview</h2>
                     <p class="mao-panel-sub">{{ count($barangayMonitoring) }} barangay(s) tracked.</p>
                 </div>
             </div>
             <div class="mao-panel-body p-0">
                 <div class="table-responsive">
-                    <table class="table mao-monitoring-table mb-0">
+                    <table class="table mao-monitoring-table ic-row-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Barangay</th>
                                 <th>Rice Area (ha)</th>
                                 <th>Production (tons)</th>
                                 <th>Avg Yield (t/ha)</th>
-                                <th>Risk Level</th>
-                                <th>Active Issue</th>
+                                <th>Farm Risk</th>
+                                <th>Main Concern</th>
                                 <th>Last Monitored</th>
                             </tr>
                         </thead>
@@ -965,7 +1029,7 @@
                                     <td>{{ $row['area_hectares'] !== null ? number_format($row['area_hectares'], 1) : '—' }}</td>
                                     <td>{{ $row['production_volume'] !== null ? number_format($row['production_volume'], 1) : '—' }}</td>
                                     <td>{{ $row['avg_yield'] !== null ? number_format($row['avg_yield'], 2) : '—' }}</td>
-                                    <td><span class="mao-risk-badge {{ in_array($row['risk_level'], ['High','Severe']) ? 'mao-risk-badge-severe' : ($row['risk_level'] === 'Moderate' ? 'mao-risk-badge-moderate' : 'mao-risk-badge-low') }}">{{ $row['risk_level'] ?: 'Unknown' }}</span></td>
+                                    <td><span class="mao-risk-badge {{ in_array($row['risk_level'], ['High','Severe']) ? 'mao-risk-badge-severe' : ($row['risk_level'] === 'Moderate' ? 'mao-risk-badge-moderate' : ($row['risk_level'] === 'Low' ? 'mao-risk-badge-low' : 'mao-risk-badge-nodata')) }}">{{ $row['risk_level'] ?: 'No Data' }}</span></td>
                                     <td>{{ $row['risk_type'] ?: '—' }}</td>
                                     <td>{{ $row['last_monitored']?->diffForHumans() ?? 'Never' }}</td>
                                 </tr>
@@ -981,12 +1045,12 @@
         <div class="row g-4 mb-0">
             <div class="col-xl-8">
                 <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Climate Monitoring Summary</h2><p class="mao-panel-sub">Recent rainfall, temperature, humidity, and wind entries.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('climate-records.index') }}">Manage Climate</a></div>
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Recent Weather Records</h2><p class="mao-panel-sub">Saved rainfall, temperature, humidity, and wind entries.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('climate-records.index') }}">Manage Climate</a></div>
                     <div class="mao-panel-body list-compact">
                         @forelse($recentClimateRecords as $record)
                             <div class="mao-list-item">
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-                                <div class="flex-grow-1"><div class="row-title">{{ $record->record_date?->format('M d, Y') }} | {{ $record->season }} Season</div><div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }} C, humidity {{ number_format($record->humidity, 1) }}%, wind {{ number_format($record->wind_speed, 1) }} km/h.</div><div class="row-meta">Source: {{ $record->source }}</div></div>
+                                <div class="flex-grow-1"><div class="row-title">{{ $record->record_date?->format('M d, Y') }} | {{ $record->season }} Season</div><div class="row-text">Rainfall {{ number_format($record->rainfall, 1) }} mm, temperature {{ number_format($record->temperature, 1) }}&deg;C, humidity {{ number_format($record->humidity, 1) }}%, wind {{ number_format($record->wind_speed, 1) }}.</div><div class="row-meta">Source: {{ $record->source }}</div></div>
                             </div>
                         @empty
                             <div class="empty-soft"><strong>No climate records yet</strong><div class="small text-muted mt-1">Add climate records to populate this monitoring list.</div></div>
@@ -996,7 +1060,7 @@
             </div>
             <div class="col-xl-4">
                 <div class="mao-panel h-100">
-                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Operational Tasks</h2><p class="mao-panel-sub">Common MAO actions for daily work.</p></div></div>
+                    <div class="mao-panel-header"><div><h2 class="mao-panel-title">Common Tasks</h2><p class="mao-panel-sub">Common MAO actions for daily work.</p></div></div>
                     <div class="mao-panel-body">
                         <div class="quick-grid" style="grid-template-columns:1fr;">
                             <a class="quick-action" href="{{ route('rice-productions.create') }}"><strong>Validate Production Records</strong><span>Add or update barangay rice production data.</span></a>
@@ -1013,7 +1077,7 @@
             <div class="col-xl-12">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
-                        <div><h2 class="mao-panel-title">Rice Production Monitoring</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div>
+                        <div><h2 class="mao-panel-title">Rice Harvest Records</h2><p class="mao-panel-sub">Recent barangay production records and yield per hectare.</p></div>
                         <div class="d-flex align-items-center gap-2">
                             @if($riceYoyDelta)
                                 <span class="mao-yoy-badge mao-yoy-{{ $riceYoyDelta['direction'] }}" title="Average yield/ha: {{ $riceYoyDelta['previous_year'] }} = {{ number_format($riceYoyDelta['previous_avg_yield'], 2) }}, {{ $riceYoyDelta['latest_year'] }} = {{ number_format($riceYoyDelta['latest_avg_yield'], 2) }}">
@@ -1050,7 +1114,7 @@
             <div class="col-12">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
-                        <div><h2 class="mao-panel-title">Rice Yield Trend</h2><p class="mao-panel-sub">Average yield per hectare by year, and this year's highest/lowest producing barangays.</p></div>
+                        <div><h2 class="mao-panel-title">Rice Harvest Trend</h2><p class="mao-panel-sub">Average yield per hectare by year, and this year's highest/lowest producing barangays.</p></div>
                     </div>
                     <div class="mao-panel-body">
                         @if(count($riceYieldTrend['chart']['labels']) >= 2)
@@ -1091,7 +1155,7 @@
             <div class="col-xl-4">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
-                        <div><h2 class="mao-panel-title">Open Issues by Type</h2><p class="mao-panel-sub">Not yet resolved.</p></div>
+                        <div><h2 class="mao-panel-title">Unresolved Field Issues</h2><p class="mao-panel-sub">Not yet resolved.</p></div>
                         <span class="status-pill {{ $fieldReportsPendingCount > 0 ? 'muted' : '' }}">{{ $fieldReportsPendingCount }} open</span>
                     </div>
                     <div class="mao-panel-body">
@@ -1118,7 +1182,7 @@
                         <div><h2 class="mao-panel-title">Recent Field Reports</h2><p class="mao-panel-sub">Latest issues reported from the field.</p></div>
                         <div class="d-flex flex-wrap gap-2">
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('field-reports.index') }}">View All</a>
-                            <a class="btn btn-sm btn-primary" href="{{ route('field-reports.create') }}">Log Report</a>
+                            <a class="btn btn-sm btn-primary" href="{{ route('field-reports.create') }}">Report a Field Issue</a>
                         </div>
                     </div>
                     <div class="mao-panel-body list-compact">
@@ -1185,7 +1249,7 @@
 
         <section class="mao-panel">
             <div class="mao-panel-header">
-                <div><h2 class="mao-panel-title">System Activity</h2><p class="mao-panel-sub">Most recent recorded events.</p></div>
+                <div><h2 class="mao-panel-title">Activity Log</h2><p class="mao-panel-sub">Most recent recorded events.</p></div>
             </div>
             <div class="mao-panel-body list-compact">
                 @forelse($recentActivity as $log)
@@ -1206,7 +1270,7 @@
             <div class="col-xl-6">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
-                        <div><h2 class="mao-panel-title">Agricultural Resources</h2><p class="mao-panel-sub">Seeds, fertilizer, equipment, and irrigation support.</p></div>
+                        <div><h2 class="mao-panel-title">Farm Supplies &amp; Support</h2><p class="mao-panel-sub">Seeds, fertilizer, equipment, and irrigation support.</p></div>
                     </div>
                     <div class="mao-panel-body">
                         <div class="empty-soft"><strong>Not yet tracked</strong><div class="small text-muted mt-1">Resource inventory and distribution (seeds, fertilizer, equipment, irrigation support) is not yet a feature in iClimate. This card is a placeholder for that future module.</div></div>
@@ -1216,7 +1280,7 @@
             <div class="col-xl-6">
                 <div class="mao-panel h-100">
                     <div class="mao-panel-header">
-                        <div><h2 class="mao-panel-title">Farmer Assistance Monitoring</h2><p class="mao-panel-sub">Requests and assistance provided, by barangay.</p></div>
+                        <div><h2 class="mao-panel-title">Farmer Assistance Records</h2><p class="mao-panel-sub">Requests and assistance provided, by barangay.</p></div>
                     </div>
                     <div class="mao-panel-body">
                         <div class="empty-soft"><strong>Not yet tracked</strong><div class="small text-muted mt-1">Assistance requests and fulfillment tracking is not yet a feature in iClimate. This card is a placeholder for that future module.</div></div>
@@ -1229,7 +1293,7 @@
         <div class="dashboard-tab-panel" data-panel="reportscenter">
         <div class="mao-panel">
             <div class="mao-panel-header">
-                <div><h2 class="mao-panel-title">Reports & Analytics</h2><p class="mao-panel-sub">Generate summaries for climate records, rice production, farmer registration, and advisories.</p></div>
+                <div><h2 class="mao-panel-title">Reports</h2><p class="mao-panel-sub">Generate summaries for climate records, rice production, farmer registration, and advisories.</p></div>
                 <div class="d-flex align-items-center gap-2">
                     @if($latestExternalWeather)
                         <span class="status-pill {{ $latestExternalWeather->freshnessLabel() === 'outdated' ? 'muted' : '' }}" title="Fetched {{ $latestExternalWeather->fetched_at?->diffForHumans() }}">
@@ -1643,7 +1707,7 @@
                 const weather = payload?.weather;
                 if (!weather) return;
 
-                setMaoText('[data-mao-weather-source]', payload.source_label || `${weather.source || 'Open-Meteo'} live weather for ${weather.location || 'Lian, Batangas'}`);
+                setMaoText('[data-mao-weather-source]', `Live weather for ${weather.location || 'Lian, Batangas'}`);
                 setMaoText('[data-mao-current-rain]', formatOne(weather.current_rainfall_mm));
                 setMaoText('[data-mao-current-temperature]', formatOne(weather.current_temperature_c));
                 setMaoText('[data-mao-current-humidity]', formatOne(weather.humidity_percent));

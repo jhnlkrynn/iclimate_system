@@ -227,7 +227,7 @@ class PredictionOrchestrator
         if ($row->status !== MonthlyWeatherPrediction::STATUS_READY) {
             return [
                 'ready' => false,
-                'message' => data_get($row->metadata, 'message') ?? 'Not enough monthly climate history is available yet to compute this forecast.',
+                'message' => data_get($row->metadata, 'message') ?? 'We don\'t have enough weather history yet to make this forecast.',
                 'source_name' => data_get($row->metadata, 'source_name'),
                 'predictions' => [],
                 'confidence' => null,
@@ -238,9 +238,9 @@ class PredictionOrchestrator
 
         return [
             'ready' => true,
-            'message' => data_get($row->metadata, 'message') ?? 'Prediction generated using the improved Ambulong historical monthly Random Forest model.',
+            'message' => data_get($row->metadata, 'message') ?? 'This forecast was made using years of past weather records for this area.',
             'source_type' => 'Trained Model',
-            'source_name' => data_get($row->metadata, 'source_name') ?? 'iClimate Ambulong Monthly Random Forest',
+            'source_name' => data_get($row->metadata, 'source_name') ?? 'iClimate Weather System',
             'source_note' => data_get($row->metadata, 'source_note'),
             'training_period' => [
                 'from' => $row->training_from?->format('Y-m'),

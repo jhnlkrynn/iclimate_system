@@ -994,11 +994,11 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
                 <div>
                     <div class="feed-eyebrow">Community Feed</div>
-                    <h1 class="h3 mb-1">MAO updates, programs, activities, and farmer discussions</h1>
-                    <p class="mb-0 text-muted">Farmers can react and comment on official MAO posts with photos, videos, and files.</p>
+                    <h1 class="h3 mb-1">MAO news and farmer discussions</h1>
+                    <p class="mb-0 text-muted">Read MAO posts, react, and leave comments.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="feed-chip"><span class="feed-pulse"></span> Live MAO Board</span>
+                    <span class="feed-chip"><span class="feed-pulse"></span> MAO Updates</span>
                     <a href="{{ route('messages.index') }}" class="btn btn-light fw-bold">Open Messages</a>
                 </div>
             </div>
@@ -1027,7 +1027,7 @@
                                 </div>
                                 <div class="composer-head-tags" aria-hidden="true">
                                     <span class="composer-head-tag">MAO Post</span>
-                                    <span class="composer-head-tag">Calendar Ready</span>
+                                    <span class="composer-head-tag">Will Show on Calendar</span>
                                 </div>
                             </div>
                             <form method="POST" action="{{ route('community-feed.store') }}" enctype="multipart/form-data" data-loading="true">
@@ -1065,7 +1065,7 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="field-box">
-                                                    <label class="field-box-label" for="composerVisibility">Visibility</label>
+                                                    <label class="field-box-label" for="composerVisibility">Who Can See This</label>
                                                     <select id="composerVisibility" name="visibility" class="form-select" required>
                                                         <option value="All Farmers">All Farmers</option>
                                                         <option value="All Users">All Users</option>
@@ -1074,7 +1074,7 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="field-box">
-                                                    <label class="field-box-label" for="composerAttachments">Attachments</label>
+                                                    <label class="field-box-label" for="composerAttachments">Photos, Videos, or Files</label>
                                                     <input id="composerAttachments" name="attachments[]" type="file" class="form-control" multiple accept="image/*,video/*,.pdf,.doc,.docx">
                                                 </div>
                                             </div>
@@ -1255,7 +1255,7 @@
                                                     <input name="event_date" type="datetime-local" class="form-control" value="{{ old('event_date', $post->event_date?->format('Y-m-d\TH:i')) }}">
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label fw-semibold">Visibility</label>
+                                                    <label class="form-label fw-semibold">Who Can See This</label>
                                                     <select name="visibility" class="form-select" required>
                                                         <option value="All Farmers" @selected(old('visibility', $post->visibility) === 'All Farmers')>All Farmers</option>
                                                         <option value="All Users" @selected(old('visibility', $post->visibility) === 'All Users')>All Users</option>
@@ -1339,7 +1339,7 @@
                 <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
                 <details class="ic-collapse">
-                    <summary><span class="ic-collapse-title">Toolkit Guide <span class="ic-collapse-count">4</span></span></summary>
+                    <summary><span class="ic-collapse-title">Farmer Guide <span class="ic-collapse-count">4</span></span></summary>
                     <div class="toolkit-list">
                         <div class="toolkit-item">
                             <strong>Check Official Updates</strong>
@@ -1365,7 +1365,7 @@
                 </details>
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary fw-bold" href="{{ route('messages.index') }}">Start Conversation</a>
-                    <a class="btn btn-outline-primary fw-bold" href="{{ route('planting-advisories.index') }}">Planting Advisories</a>
+                    <a class="btn btn-outline-primary fw-bold" href="{{ route('planting-advisories.index') }}">Planting Advice</a>
                 </div>
             </aside>
         </div>

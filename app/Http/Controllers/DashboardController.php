@@ -295,7 +295,16 @@ class DashboardController extends Controller
                 ->values();
         }
 
+        $weatherFeedbackFilters = [
+            'barangay' => $request->query('fb_barangay') ?: null,
+            'from' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('fb_from')) ? $request->query('fb_from') : null,
+            'to' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('fb_to')) ? $request->query('fb_to') : null,
+            'condition' => in_array($request->query('fb_condition'), \App\Models\WeatherForecastFeedback::OBSERVED_CONDITIONS, true) ? $request->query('fb_condition') : null,
+        ];
+
         return view('dashboards.mao', $this->stats() + [
+            'weatherFeedbackFilters' => $weatherFeedbackFilters,
+            'weatherFeedbackSummary' => app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters),
             'farmerOrganizationSummary' => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'],
             'latestClimate' => $latestClimateRecord,
             'recentClimateRecords' => $recent['recentClimateRecords'],

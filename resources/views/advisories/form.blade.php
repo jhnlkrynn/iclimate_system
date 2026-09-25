@@ -4,7 +4,7 @@
             <div>
                 <div class="eyebrow mb-2">Advisory Editor</div>
                 <h1 class="h2 fw-bold mb-2">{{ $advisory->exists ? 'Edit Advisory' : 'Create Advisory' }}</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">Manual MAO-reviewed advisories can be used alongside generated guidance.</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Write a short advisory for farmers.</p>
             </div>
             <a class="btn btn-outline-light" href="{{ route('planting-advisories.index') }}">Back</a>
         </div>
@@ -29,11 +29,11 @@
                         </select>
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Message</label>
+                        <label class="form-label">What Is Happening</label>
                         <textarea class="form-control" name="message" rows="5" required>{{ old('message', $advisory->message ?: $advisory->content) }}</textarea>
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Recommended Action</label>
+                        <label class="form-label">What Farmers Should Do</label>
                         <textarea class="form-control" name="recommended_action" rows="3">{{ old('recommended_action', $advisory->recommended_action) }}</textarea>
                     </div>
                     <div class="col-md-4">

@@ -439,7 +439,7 @@
   <div class="scene-tagline">
     <div class="scene-tagline-row">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1c2.4 3.4 4.4 6.2 4.4 8.9A4.4 4.4 0 1 1 3.6 9.9C3.6 7.2 5.6 4.4 8 1z" stroke="#7FD6B5" stroke-width="1.4"/></svg>
-      iClimate Decision Support System
+      Weather and Farming Guide for Lian, Batangas
     </div>
     <div class="scene-copyright">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
   </div>

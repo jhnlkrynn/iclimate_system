@@ -60,7 +60,7 @@
                     <p class="mb-0" style="color: var(--ic-ink-mid);">See when advisories start and expire, laid out by day, so you can plan planting and harvesting activities ahead of time.</p>
                 </div>
                 @if(($plantingScheduleFeatureReady ?? true) && auth()->user()->role === \App\Models\User::ROLE_FARMER)
-                    <a class="btn btn-primary btn-lg" href="{{ route('farmer.planting-schedules.create') }}">+ Add schedule</a>
+                    <a class="btn btn-primary btn-lg" href="{{ route('farmer.planting-schedules.create') }}">+ Add My Planting Plan</a>
                 @endif
             </div>
         </section>
@@ -92,10 +92,10 @@
                     </div>
 
                     <div class="calendar-legend">
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-primary"></span> Climate</span>
+                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-primary"></span> Weather</span>
                         <span class="calendar-legend-item"><span class="calendar-legend-dot bg-success"></span> Planting</span>
                         <span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:#8FAF9A;"></span> Harvesting</span>
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-info"></span> Irrigation</span>
+                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-info"></span> Watering</span>
                         <span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:#b7e4c7;"></span> Events</span>
                     </div>
 
@@ -175,7 +175,7 @@
             <section class="card no-lift mt-3">
                 <div class="card-header border-0 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div><div class="fw-bold fs-5">My planting and harvest records</div><div class="text-muted">Edit progress or remove an incorrect record.</div></div>
-                    <a class="btn btn-primary" href="{{ route('farmer.planting-schedules.create') }}">Add schedule</a>
+                    <a class="btn btn-primary" href="{{ route('farmer.planting-schedules.create') }}">Add My Planting Plan</a>
                 </div>
                 <div class="card-body pt-0 d-grid gap-3">
                     @forelse($schedules as $schedule)
@@ -187,9 +187,9 @@
                                     <div class="text-muted mt-1">Status: {{ $schedule->monitoringStatusLabel() }}</div>
                                     <div class="mt-2">
                                         @if($schedule->predicted_yield !== null)
-                                            <span class="badge text-bg-success fs-6">Predicted: {{ number_format((float)$schedule->predicted_yield, 2) }} t/ha</span>
+                                            <span class="badge text-bg-success fs-6">Estimated harvest: {{ number_format((float)$schedule->predicted_yield, 2) }} tons/hectare</span>
                                         @else
-                                            <span class="badge text-bg-secondary fs-6">Prediction unavailable</span>
+                                            <span class="badge text-bg-secondary fs-6">Estimate not available yet</span>
                                             <div class="text-muted mt-1">{{ $schedule->prediction_unavailable_reason }}</div>
                                         @endif
                                     </div>

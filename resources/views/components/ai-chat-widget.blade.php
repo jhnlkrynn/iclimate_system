@@ -1,6 +1,10 @@
 @php
     $widgetChats = collect();
 
+    // Greeting uses only the account's first name; nothing else about the account is shown.
+    $icAiFirstName = \Illuminate\Support\Str::of((string) auth()->user()?->name)->squish()->before(' ')->toString();
+    $icAiGreeting = $icAiFirstName !== '' ? 'Hi, '.$icAiFirstName.'! How can I help you today?' : 'Hi! How can I help you today?';
+
     $icAiChips = match (auth()->user()->role) {
         \App\Models\User::ROLE_MAO => [
             'Which barangay has the highest yield?',
@@ -16,7 +20,7 @@
         ],
         default => [
             'Will it rain this week?',
-            'What is my predicted rice yield?',
+            'What is my expected rice yield?',
             'When should I plant?',
             'My rice leaves are turning yellow',
         ],
@@ -92,6 +96,44 @@
 
     .ic-ai-widget.open .ic-ai-panel {
         display: grid;
+        transform-origin: bottom right;
+        animation: ic-ai-panel-in 320ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    @keyframes ic-ai-panel-in {
+        from { opacity: 0; transform: translateY(14px) scale(.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .ic-ai-toggle {
+        transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+
+    .ic-ai-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 22px 38px rgba(13, 31, 24, .32);
+    }
+
+    .ic-ai-msg {
+        animation: ic-ai-msg-in 260ms ease-out both;
+    }
+
+    @keyframes ic-ai-msg-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ic-ai-widget.open .ic-ai-panel,
+        .ic-ai-msg {
+            animation: none;
+        }
+
+        .ic-ai-toggle,
+        .ic-ai-toggle:hover {
+            transition: none;
+            transform: none;
+        }
     }
 
     .ic-ai-header {
@@ -515,7 +557,7 @@
             @empty
                 <div class="ic-ai-msg assistant">
                     <div class="ic-ai-msg-col">
-                        <div class="ic-ai-bubble">Hello! Ask me about iClimate features, weather prediction, rice yield, planting, irrigation, climate risk, announcements, notifications, reports, or your profile.</div>
+                        <div class="ic-ai-bubble">{{ $icAiGreeting }}</div>
                         <div class="ic-ai-msg-time" data-now-time>{{ now()->shortTime() }}</div>
                     </div>
                 </div>

@@ -79,18 +79,19 @@ class WeatherPredictionTest extends TestCase
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['target_month' => $futureMonth]))
             ->assertOk()
-            ->assertSee('Weather Prediction')
-            ->assertSee('Live Weather API Data')
+            ->assertSee('Predictions')
+            ->assertSee('Weather Now')
             ->assertSee('Monthly Weather Calendar')
             ->assertSee('Daily forecast values:')
-            ->assertSee('Open-Meteo Forecast API')
+            // Source/cache details are IT-only now (MAO is a non-technical role).
+            ->assertDontSee('Open-Meteo Forecast API')
+            ->assertDontSee('Open-Meteo responses are cached')
             ->assertSee('Light Rain')
-            ->assertSee('Open-Meteo responses are cached for 45 minutes')
             ->assertDontSee('PAGASA Official Weather Context')
             ->assertDontSee('Machine Learning Prediction')
             ->assertDontSee('Ready to forecast weather')
             ->assertDontSee('Predict Weather Result')
-            ->assertSee('Rice Yield Prediction')
+            ->assertSee('Rice Yield')
             ->assertSee('data-initial-weather-tab="weather-forecast"', false)
             ->assertSee('id="weather-forecast-panel"', false)
             ->assertSee('id="rice-yield-panel"', false);
@@ -107,7 +108,6 @@ class WeatherPredictionTest extends TestCase
 
         $first->assertOk()
             ->assertSee('Lian, Batangas municipal preview')
-            ->assertSee('No barangay is saved, so this uses the Lian municipal center at 14.0389, 120.6503.')
             ->assertSee('29.4')
             ->assertSee('Light Rain')
             ->assertDontSee('Add a Lian barangay to your profile');
@@ -238,11 +238,12 @@ class WeatherPredictionTest extends TestCase
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['run' => $run->uuid]))
             ->assertOk()
-            ->assertSee('Forecast Summary')
-            ->assertSee('Predict Weather Result')
+            ->assertSee('Expected Weather')
             ->assertSee('Prediction saved')
-            ->assertSee('142.50')
-            ->assertSee('Python weather result is ready.');
+            ->assertSee('142.5 mm')
+            ->assertSee('Moderate Rain')
+            // The model's own status message is technical and no longer shown to MAO.
+            ->assertDontSee('Python weather result is ready.');
     }
 
     public function test_pending_and_failed_runs_render_visible_states_on_the_correct_tab(): void
@@ -260,7 +261,7 @@ class WeatherPredictionTest extends TestCase
             ->get(route('weather-predictions.index', ['run' => $pending->uuid]))
             ->assertOk()
             ->assertSee('data-initial-weather-tab="rice-yield"', false)
-            ->assertSee('Generating rice-yield prediction');
+            ->assertSee('Estimating your harvest');
 
         $pending->update([
             'status' => AnalyticsRun::STATUS_FAILED,
@@ -271,8 +272,8 @@ class WeatherPredictionTest extends TestCase
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['run' => $pending->uuid]))
             ->assertOk()
-            ->assertSee('Rice-yield prediction failed.')
-            ->assertSee('The Python analytics service could not be reached.');
+            ->assertSee('Forecast Temporarily Unavailable')
+            ->assertDontSee('The Python analytics service could not be reached.');
     }
 
     public function test_completed_python_rice_yield_run_renders_without_missing_state_keys(): void
@@ -314,7 +315,7 @@ class WeatherPredictionTest extends TestCase
             ->get(route('weather-predictions.index', ['run' => $run->uuid]))
             ->assertOk()
             ->assertSee('data-initial-weather-tab="rice-yield"', false)
-            ->assertSee('Rice Yield Prediction Result')
+            ->assertSee('Expected Rice Yield')
             ->assertSee('4.20')
             ->assertSee('10.50');
     }
@@ -370,11 +371,11 @@ class WeatherPredictionTest extends TestCase
             ->get(route('weather-predictions.index', ['run' => $run->uuid]))
             ->assertOk()
             ->assertSee('Short-Term Planning Outlook')
-            ->assertSee('Rainfall Trend This Month')
-            ->assertSee('Compared to Last Year')
+            ->assertSee('Previous Yield')
             ->assertSee((string) $lastYear)
-            ->assertSee('5.00 t/ha')
-            ->assertSee('-20.0%');
+            ->assertSee('5.00 tons/ha')
+            ->assertSee('1.0 tons/ha lower')
+            ->assertSee('Lower');
     }
 
     public function test_rice_yield_form_shows_visible_farm_type_selector(): void

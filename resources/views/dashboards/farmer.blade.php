@@ -697,6 +697,25 @@
         .dashboard-tab-panel { display: none; }
         .dashboard-tab-panel.active { display: block; animation: icPageEnter var(--ic-motion-slow, 420ms) both; }
         .dashboard-tab-panel > .row:last-child, .dashboard-tab-panel > .farmer-panel:last-child { margin-bottom: 0 !important; }
+        /* -- SIMPLIFIED FARMER DASHBOARD ------------------- */
+        .fc-simple-panel { margin-bottom: 1.25rem; }
+        .fc-simple-row { margin-bottom: 1.25rem; }
+        .farmer-hero-grid { grid-template-areas: "copy weather" "actions weather"; }
+        .forecast-strip { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); margin-top: 0; }
+        .fc-forecast-empty { grid-column: 1 / -1; }
+        .fc-risk-block { margin-top: .5rem; }
+        .fc-risk-caveat { margin: .35rem 0 0; color: var(--fc-ink-mid); font-size: var(--text-sm); line-height: 1.5; }
+        .fc-details { margin-top: .75rem; border-top: 1px solid var(--fc-border); padding-top: .6rem; }
+        .fc-details-first { margin-top: 0; border-top: 0; padding-top: 0; }
+        .fc-details > summary { cursor: pointer; color: var(--fc-green-700); font-weight: 600; font-size: var(--text-base); padding: .35rem 0; }
+        .fc-details-body { padding-top: .6rem; }
+        .fc-details-body .field-note { margin-bottom: .35rem; }
+        .fc-details .climate-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+        .fc-map-wrap { margin-top: .85rem; min-width: 0; overflow-x: auto; }
+        @media (max-width: 767.98px) {
+            .farmer-hero-grid { grid-template-areas: "copy" "weather" "actions"; }
+            .fc-simple-panel, .fc-simple-row { margin-bottom: .9rem; }
+        }
         .list-compact .farmer-list-item:nth-of-type(n+4), .list-compact .row > [class*="col-"]:nth-child(n+5) { display: none; }
 
         @media (max-width: 1399.98px) {
@@ -768,11 +787,10 @@
         $weatherPayload = $dashboardWeather ?? [];
         $currentWeather = $weatherPayload['current'] ?? [];
         $todayWeather = $weatherPayload['today'] ?? [];
-        $weatherSource = $weatherPayload['provider'] ?? 'Open-Meteo';
-        $weatherSourceDisplay = $weatherSource;
-        if (($weatherPayload['stale'] ?? false) && $weatherSource !== 'Unavailable') {
-            $weatherSourceDisplay .= ' stored data';
-        }
+        $weatherSource = $weatherPayload['provider'] ?? null;
+        $weatherSourceDisplay = ($weatherSource === null || $weatherSource === 'Unavailable')
+            ? 'Weather temporarily unavailable'
+            : (($weatherPayload['stale'] ?? false) ? 'Saved weather' : 'Live weather');
         $weatherFetchedAt = $weatherPayload['fetched_at'] ?? null;
         $weatherFetchedLabel = $weatherFetchedAt instanceof \Illuminate\Support\Carbon
             ? $weatherFetchedAt->timezone($weatherTimezone)->format('M j, Y').' • '.$weatherFetchedAt->timezone($weatherTimezone)->format('g:i A')
@@ -810,34 +828,49 @@
             .'. What should I do for my farm today?';
     @endphp
 
+    @php
+        $riskLevelRaw = $farmerBarangayRisk['risk_level'] ?? null;
+        $riskHasData = $farmerBarangayRisk && $riskLevelRaw && $riskLevelRaw !== 'No Data';
+        $riskBadgeClass = ! $riskHasData ? 'muted' : (in_array($riskLevelRaw, ['High', 'Severe'], true) ? 'warn' : ($riskLevelRaw === 'Moderate' ? 'info' : 'neutral'));
+        $riskBadgeText = $riskHasData ? $riskLevelRaw.' Farm Risk' : 'No Data';
+        $riskMeaning = ! $riskHasData
+            ? 'Not enough information is available yet to rate the farm risk for your barangay.'
+            : (in_array($riskLevelRaw, ['High', 'Severe'], true)
+                ? 'Weather and past harvests suggest a higher chance of crop trouble in your barangay.'
+                : ($riskLevelRaw === 'Moderate'
+                    ? 'Some conditions in your barangay need watching.'
+                    : 'Conditions in your barangay look manageable for now.'));
+        $riskAction = $farmerBarangayRisk['advisory']['planting'] ?? null;
+        $topHighlights = collect($farmerHighlights ?? [])->take(2);
+        $warningCount = (int) ($activeWeatherAlerts ?? 0);
+        $hasWarning = $warningCount > 0 || $topHighlights->contains(fn ($h) => in_array($h['severity'] ?? '', ['critical', 'warning'], true));
+        $yieldPrediction = $farmerYieldPrediction;
+        $yieldReliability = $yieldPrediction ? \App\Support\PredictionWording::reliability($yieldPrediction['api_confidence'] ?? $yieldPrediction['confidence'] ?? null) : null;
+    @endphp
+
     <div class="farmer-console">
-        <section class="farmer-hero" data-reveal="blur" data-reveal-duration="720" data-parallax data-parallax-speed="0.035" data-parallax-limit="16">
-            <div class="farmer-hero-leaf" aria-hidden="true" data-parallax data-parallax-speed="0.08" data-parallax-limit="28"></div>
+        {{-- 1. Today's Weather --}}
+        <section class="farmer-hero" data-reveal="fade-up" data-reveal-duration="600">
             <div class="farmer-hero-grid">
                 <div class="farmer-hero-copy">
-                    <div class="fc-eyebrow on-light" data-reveal="fade-up" data-reveal-delay="60" data-reveal-duration="560">Farmer Dashboard</div>
-                    <h1 data-reveal="blur" data-reveal-delay="150" data-reveal-duration="680">Lian field conditions</h1>
-                    <p data-reveal="fade-up" data-reveal-delay="240" data-reveal-duration="620">Weather, rainfall, advisories, community updates, and messages for {{ auth()->user()->name }} in Lian, Batangas.</p>
-                    <div class="farmer-hero-summary" aria-label="Farmer dashboard summary" data-reveal-stagger>
-                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="320">
-                            <span>Current Weather</span>
-                            <strong>{{ $weatherCondition }}</strong>
-                            <small>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'No temperature data' }} in Lian, Batangas</small>
-                        </div>
-                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="390">
-                            <span>Today&apos;s Rain</span>
-                            <strong>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'No rainfall data' }}</strong>
-                            <small>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</small>
-                        </div>
-                        <div class="farmer-hero-summary-item" data-reveal="fade-up" data-reveal-delay="460">
-                            <span>Advisories</span>
-                            <strong>{{ number_format($activeWeatherAlerts ?? 0) }} active</strong>
-                        </div>
-                    </div>
+                    <div class="fc-eyebrow on-light">Farmer Dashboard</div>
+                    <h1>Today in Lian, Batangas</h1>
+                    <p>
+                        {{ $weatherCondition }}@if($temperatureValue !== null), {{ number_format((float) $temperatureValue, 1) }}°C @endif.
+                        @if($todayRainfallValue !== null && (float) $todayRainfallValue >= 10)
+                            Heavy rain is expected today. Check your fields and drainage.
+                        @elseif($todayRainfallValue !== null && (float) $todayRainfallValue > 0)
+                            Some rain is expected today.
+                        @elseif($todayRainfallValue !== null)
+                            No rain is expected today.
+                        @else
+                            Rain information is not available yet.
+                        @endif
+                    </p>
                 </div>
-                <div class="weather-live-card" data-weather-root data-weather-url="{{ route('farmer.dashboard.weather') }}" data-reveal="fade-right" data-reveal-delay="360" data-reveal-duration="740">
+                <div class="weather-live-card" data-weather-root data-weather-url="{{ route('farmer.dashboard.weather') }}" data-reveal="fade-right" data-reveal-delay="200" data-reveal-duration="600">
                     <div class="weather-live-head">
-                        <span class="weather-live-status"><span class="weather-live-dot"></span>Current Weather</span>
+                        <span class="weather-live-status"><span class="weather-live-dot"></span>Today&apos;s Weather</span>
                         <button type="button" class="weather-refresh-btn" data-weather-refresh>Refresh</button>
                     </div>
                     <div class="weather-live-main">
@@ -848,7 +881,7 @@
                             <div class="weather-live-meta">
                                 <strong>Lian, Batangas</strong><br>
                                 Feels like <span data-weather-feels-like>{{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</span><br>
-                                Source: <span data-weather-provider>{{ strtoupper($weatherSourceDisplay) }}</span><br>
+                                <span data-weather-provider>{{ $weatherSourceDisplay }}</span> &middot;
                                 <span data-weather-freshness>{{ $weatherFetchedIso ? 'Near-real-time weather data' : 'Weather timestamp unavailable' }}</span>
                             </div>
                         </div>
@@ -859,162 +892,23 @@
                         <div class="weather-mini"><span>Wind</span><strong data-weather-wind-mini>{{ $windSpeedValue !== null ? number_format((float) $windSpeedValue, 1).' km/h' : 'N/A' }}</strong></div>
                     </div>
                 </div>
-                <div class="farmer-hero-actions" data-reveal="fade-left" data-reveal-delay="260">
+                <div class="farmer-hero-actions">
                     <span class="field-chip"><span class="field-pulse"></span> <span data-current-date>{{ $weatherNow->format('l, F j, Y') }} {{ $weatherNow->format('g:i:s A') }}</span></span>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('community-feed.index') }}">Community Feed</a>
-                    <a class="fc-btn fc-btn-outline-light" href="{{ route('profile.edit') }}">My Profile</a>
                 </div>
             </div>
         </section>
 
-        @if(! empty($farmerHighlights))
-            <section class="fc-highlights" aria-label="Highlights since your last visit" data-reveal="fade-up">
-                @foreach($farmerHighlights as $highlight)
-                    <div class="fc-highlight fc-highlight-{{ $highlight['severity'] }}">
-                        <span class="fc-highlight-dot"></span>
-                        <div>
-                            <div class="fc-highlight-title">{{ $highlight['title'] }}</div>
-                            <div class="fc-highlight-message">{{ $highlight['message'] }}</div>
-                        </div>
-                    </div>
-                @endforeach
-            </section>
-        @endif
-
-        <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
-            <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
-            <button type="button" class="dashboard-tab" data-tab="forecast" role="tab" aria-selected="false">Forecast</button>
-            <button type="button" class="dashboard-tab" data-tab="community" role="tab" aria-selected="false">Community &amp; Profile</button>
-            <button type="button" class="dashboard-tab" data-tab="mobile" role="tab" aria-selected="false">Mobile Access</button>
-        </div>
-
-        <div class="dashboard-tab-panels">
-        <div class="dashboard-tab-panel active" data-panel="overview">
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div class="fc-eyebrow on-light">At a glance</div>
-        </div>
-
-        <section class="climate-grid" data-reveal-stagger>
-            <button type="button" class="field-card" data-drawer-open="#statModalTemperature" data-reveal="fade-up" data-reveal-delay="0">
-                <div class="field-card-top">
-                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M9 11.3V4.5a1.5 1.5 0 0 1 3 0v6.8a3 3 0 1 1-3 0Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+        {{-- 2. Upcoming Weather --}}
+        <div class="farmer-panel fc-simple-panel" data-reveal="fade-up">
+            <div class="farmer-panel-header">
+                <div>
+                    <h2 class="farmer-panel-title">Upcoming Weather</h2>
+                    <p class="farmer-panel-sub">Expected weather for the next few days.</p>
                 </div>
-                <div class="field-label">Temperature</div>
-                <div class="field-value" data-weather-temperature-card>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
-                <div class="field-note" data-weather-temperature-note>Feels like {{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalRainfall" data-reveal="fade-up" data-reveal-delay="70">
-                <div class="field-card-top">
-                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.6 3.6 5 6.8 5 9.5A5 5 0 1 1 5 11.5C5 8.8 7.4 5.6 10 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
-                </div>
-                <div class="field-label">Today&apos;s Rainfall</div>
-                <div class="field-value" data-weather-rain-card>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</div>
-                <div class="field-note" data-weather-precip-note>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalHumidity" data-reveal="fade-up" data-reveal-delay="140">
-                <div class="field-card-top">
-                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 10.5a3.6 3.6 0 0 0 .7 7.1 4.8 4.8 0 0 0 9.2.8 3.2 3.2 0 0 0-.5-6.3H6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.2 12.6A3.6 3.6 0 0 1 12 7.1a4.7 4.7 0 0 1 1.6 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
-                </div>
-                <div class="field-label">Humidity</div>
-                <div class="field-value" data-weather-humidity-card>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</div>
-                <div class="field-note">Current relative humidity</div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-            <button type="button" class="field-card" data-drawer-open="#statModalAlerts" data-reveal="fade-up" data-reveal-delay="210">
-                <div class="field-card-top">
-                    <div class="field-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 15.5V9a4 4 0 1 1 8 0v6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 15.5h11M8.3 17.8a1.9 1.9 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-                    <span class="field-status {{ $unreadNotifications > 0 ? 'is-warn' : '' }}">{{ $unreadNotifications > 0 ? 'Unread' : 'Clear' }}</span>
-                </div>
-                <div class="field-label">Weather Alerts</div>
-                <div class="field-value">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
-                <div class="field-note">Unread weather warnings only</div>
-                <div class="field-tap-hint">View details &rarr;</div>
-            </button>
-        </section>
-
-        @if($farmerBarangay)
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div class="fc-eyebrow on-light">Your barangay</div>
-        </div>
-        <section class="climate-grid" id="risk-map" data-reveal-stagger>
-            <div class="field-card" style="grid-column: 1 / -1;">
-                <div class="field-card-top">
-                    <div class="field-label">YOUR BARANGAY: {{ $farmerBarangay }}</div>
-                    @if($farmerBarangayRisk && $farmerBarangayRisk['risk_level'] !== 'No Data')
-                        <span class="field-status {{ in_array($farmerBarangayRisk['risk_level'], ['High','Severe']) ? 'is-warn' : 'is-live' }}">{{ $farmerBarangayRisk['risk_level'] }}</span>
-                    @else
-                        <span class="field-status">No Data</span>
-                    @endif
-                </div>
-                @if($farmerFarmBoundary)
-                    <div class="field-note">YOUR FARM boundary is recorded ({{ number_format((float) $farmerFarmBoundary->calculated_area_hectares, 2) }} ha).</div>
-                @else
-                    <div class="field-note">No farm boundary recorded yet for your profile.</div>
-                @endif
-
-                @if($farmerBarangayRisk && $farmerBarangayRisk['risk_score'] !== null)
-                    <div class="field-value">Risk score: {{ $farmerBarangayRisk['risk_score'] }}</div>
-                @endif
-
-                @if($farmerBarangayRisk && $farmerBarangayRisk['updated_at'])
-                    <div class="field-note">Last updated: {{ \Illuminate\Support\Carbon::parse($farmerBarangayRisk['updated_at'])->format('M j, Y g:i A') }}</div>
-                @endif
-
-                @if($farmerBarangayRisk && ($farmerBarangayRisk['weather']['status'] ?? null) === 'fresh')
-                    <div class="field-note">
-                        @if($farmerBarangayRisk['weather']['icon'] ?? null)
-                            <img class="farmer-weather-icon" src="{{ $farmerBarangayRisk['weather']['icon'] }}" alt="{{ $farmerBarangayRisk['weather']['condition'] ?? 'Weather icon' }}" width="34" height="34" loading="lazy">{{ $farmerBarangayRisk['weather']['condition'] ?? '' }} &middot;
-                        @endif
-                        Current weather conditions (context only — humidity/wind are not scored risk factors):
-                        @if($farmerBarangayRisk['weather']['rainfall_24h_mm'] !== null) Rainfall (24h forecast): {{ $farmerBarangayRisk['weather']['rainfall_24h_mm'] }} mm &middot; @endif
-                        @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}°C &middot; @endif
-                        @if($farmerBarangayRisk['weather']['humidity_percent'] !== null) Humidity: {{ $farmerBarangayRisk['weather']['humidity_percent'] }}% &middot; @endif
-                        @if($farmerBarangayRisk['weather']['wind_speed_kmh'] !== null) Wind: {{ $farmerBarangayRisk['weather']['wind_speed_kmh'] }} km/h @endif
-                    </div>
-                @else
-                    <div class="field-note">No weather data &mdash; live weather is temporarily unavailable for your barangay.</div>
-                @endif
-
-                @if($farmerBarangayRisk && $farmerBarangayRisk['last_recorded_yield'])
-                    <div class="field-note">Last recorded yield: {{ $farmerBarangayRisk['last_recorded_yield']['value'] }} t/ha ({{ $farmerBarangayRisk['last_recorded_yield']['season'] }} {{ $farmerBarangayRisk['last_recorded_yield']['year'] }})</div>
-                @endif
-
-                @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['planting'] ?? null))
-                    <div class="field-note"><strong>Advisory:</strong> {{ $farmerBarangayRisk['advisory']['planting'] }}</div>
-                @endif
-                @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['irrigation'] ?? null))
-                    <div class="field-note"><strong>Irrigation:</strong> {{ $farmerBarangayRisk['advisory']['irrigation'] }}</div>
-                @endif
-                @if($farmerBarangayRisk && !empty($farmerBarangayRisk['advisory']['warnings']))
-                    <div class="field-note"><strong>Warnings:</strong> {{ implode(' · ', $farmerBarangayRisk['advisory']['warnings']) }}</div>
-                @endif
             </div>
-        </section>
-        @endif
-
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div class="fc-eyebrow on-light">Lian municipality risk map</div>
-        </div>
-        <section class="climate-grid" data-reveal-stagger>
-            <div class="field-card" style="grid-column: 1 / -1; padding: 1rem;">
-                @include('partials.barangay-risk-map', [
-                    'heading' => 'Lian Municipality Risk Map',
-                    'subheading' => 'All 19 barangays at a glance, from the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
-                    'showRefresh' => false,
-                    'highlightBarangay' => $farmerBarangay ? \App\Support\LianBarangays::canonicalName($farmerBarangay) : null,
-                ])
-            </div>
-        </section>
-
-        @if($weatherForecastDays !== [])
-            <div class="dashboard-tab-panel" data-panel="forecast">
+            <div class="farmer-panel-body">
                 <section class="forecast-strip" data-weather-forecast>
-                    @foreach($weatherForecastDays as $forecastDay)
+                    @forelse($weatherForecastDays as $forecastDay)
                         <div class="forecast-day">
                             <strong>{{ $forecastDay['day'] ?? '' }}</strong>
                             <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
@@ -1022,74 +916,395 @@
                             <span>{{ isset($forecastDay['temperature_max'], $forecastDay['temperature_min']) ? number_format((float) $forecastDay['temperature_max'], 0).' / '.number_format((float) $forecastDay['temperature_min'], 0).'°C' : 'N/A' }}</span>
                             <span>{{ isset($forecastDay['precipitation_probability']) ? number_format((float) $forecastDay['precipitation_probability'], 0).'%' : 'N/A' }} rain chance</span>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="empty-soft fc-forecast-empty"><strong>Forecast Not Available Yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Please check again later.</div></div>
+                    @endforelse
                 </section>
             </div>
-        @endif
+        </div>
+
+        {{-- 3. Important Farm Warning --}}
+        <div class="farmer-panel fc-simple-panel" id="risk-map" data-reveal="fade-up">
+            <div class="farmer-panel-header">
+                <div>
+                    <h2 class="farmer-panel-title">Important Farm Warning</h2>
+                    <p class="farmer-panel-sub">{{ $hasWarning ? 'Please read this first.' : 'Nothing urgent right now.' }}</p>
+                </div>
+                <span class="status-pill {{ $hasWarning ? 'warn' : 'neutral' }}">{{ $hasWarning ? 'Needs Attention' : 'No Warning' }}</span>
+            </div>
+            <div class="farmer-panel-body">
+                @if($topHighlights->isNotEmpty() || $warningCount > 0)
+                    <section class="fc-highlights" aria-label="Warnings">
+                        @foreach($topHighlights as $highlight)
+                            <div class="fc-highlight fc-highlight-{{ $highlight['severity'] }}">
+                                <span class="fc-highlight-dot"></span>
+                                <div>
+                                    <div class="fc-highlight-title">{{ $highlight['title'] }}</div>
+                                    <div class="fc-highlight-message">{{ $highlight['message'] }}</div>
+                                </div>
+                            </div>
+                        @endforeach
+                        @if($warningCount > 0)
+                            <div class="fc-highlight fc-highlight-warning">
+                                <span class="fc-highlight-dot"></span>
+                                <div>
+                                    <div class="fc-highlight-title">{{ number_format($warningCount) }} weather {{ \Illuminate\Support\Str::plural('warning', $warningCount) }} active</div>
+                                    <div class="fc-highlight-message"><a href="{{ route('notifications.index') }}">Read your notifications</a></div>
+                                </div>
+                            </div>
+                        @endif
+                    </section>
+                @endif
+
+                @if($farmerBarangay)
+                    <div class="fc-risk-block">
+                        <div class="field-card-top">
+                            <div class="list-title">Your Barangay: {{ $farmerBarangay }}</div>
+                            <span class="status-pill {{ $riskBadgeClass }}">{{ $riskBadgeText }}</span>
+                        </div>
+                        <p class="fc-prediction-note">{{ $riskMeaning }}@if($riskHasData && $riskAction) <strong>What to do:</strong> {{ $riskAction }}@endif</p>
+                        <p class="fc-risk-caveat">Farm Risk is a planning guide only. It is not yet checked against official hazard data.</p>
+
+                        <details class="fc-details">
+                            <summary>View Details</summary>
+                            <div class="fc-details-body">
+                                @if($farmerFarmBoundary)
+                                    <div class="field-note">Your farm outline is saved ({{ number_format((float) $farmerFarmBoundary->calculated_area_hectares, 2) }} ha).</div>
+                                @else
+                                    <div class="field-note">No farm boundary recorded yet for your profile.</div>
+                                @endif
+                                @if($farmerBarangayRisk)
+                                    <div class="field-note">Farm Risk: {{ $farmerBarangayRisk['risk_level'] ?? 'No Data' }}</div>
+                                    @if($riskMainConcern = data_get($farmerBarangayRisk, 'advisory.warnings.0'))
+                                        <div class="field-note">Main concern: {{ $riskMainConcern }}</div>
+                                    @endif
+                                @endif
+                                @if($farmerBarangayRisk && $farmerBarangayRisk['updated_at'])
+                                    <div class="field-note">Last updated: {{ \Illuminate\Support\Carbon::parse($farmerBarangayRisk['updated_at'])->format('M j, Y g:i A') }}</div>
+                                @endif
+                                @if($farmerBarangayRisk && ($farmerBarangayRisk['weather']['status'] ?? null) === 'fresh')
+                                    <div class="field-note">
+                                        @if($farmerBarangayRisk['weather']['icon'] ?? null)
+                                            <img class="farmer-weather-icon" src="{{ $farmerBarangayRisk['weather']['icon'] }}" alt="{{ $farmerBarangayRisk['weather']['condition'] ?? 'Weather icon' }}" width="34" height="34" loading="lazy">{{ $farmerBarangayRisk['weather']['condition'] ?? '' }} &middot;
+                                        @endif
+                                        Weather now (for information only; humidity and wind do not change the Farm Risk rating):
+                                        @if($farmerBarangayRisk['weather']['rainfall_24h_mm'] !== null) Rain expected in the next 24 hours: {{ $farmerBarangayRisk['weather']['rainfall_24h_mm'] }} mm &middot; @endif
+                                        @if($farmerBarangayRisk['weather']['temperature_c'] !== null) Temp: {{ $farmerBarangayRisk['weather']['temperature_c'] }}°C &middot; @endif
+                                        @if($farmerBarangayRisk['weather']['humidity_percent'] !== null) Humidity: {{ $farmerBarangayRisk['weather']['humidity_percent'] }}% &middot; @endif
+                                        @if($farmerBarangayRisk['weather']['wind_speed_kmh'] !== null) Wind: {{ $farmerBarangayRisk['weather']['wind_speed_kmh'] }} km/h @endif
+                                    </div>
+                                @else
+                                    <div class="field-note">Weather information is temporarily unavailable for your barangay.</div>
+                                @endif
+                                @if($farmerBarangayRisk && $farmerBarangayRisk['last_recorded_yield'])
+                                    <div class="field-note">Last recorded yield: {{ $farmerBarangayRisk['last_recorded_yield']['value'] }} t/ha ({{ $farmerBarangayRisk['last_recorded_yield']['season'] }} {{ $farmerBarangayRisk['last_recorded_yield']['year'] }})</div>
+                                @endif
+                                @if($farmerBarangayRisk && ($farmerBarangayRisk['advisory']['irrigation'] ?? null))
+                                    <div class="field-note"><strong>Irrigation:</strong> {{ $farmerBarangayRisk['advisory']['irrigation'] }}</div>
+                                @endif
+                                @if($farmerBarangayRisk && !empty($farmerBarangayRisk['advisory']['warnings']))
+                                    <div class="field-note"><strong>Warnings:</strong> {{ implode(' · ', $farmerBarangayRisk['advisory']['warnings']) }}</div>
+                                @endif
+                                <div class="fc-map-wrap">
+                                    @include('partials.barangay-risk-map', [
+                                        'heading' => 'Lian Municipality Risk Map',
+                                        'subheading' => 'All 19 barangays at a glance, using live weather and recorded rice harvests. Tap a barangay for details.',
+                                        'showRefresh' => false,
+                                        'highlightBarangay' => \App\Support\LianBarangays::canonicalName($farmerBarangay),
+                                    ])
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                @else
+                    <details class="fc-details">
+                        <summary>View Details</summary>
+                        <div class="fc-details-body fc-map-wrap">
+                            <p class="fc-risk-caveat">Farm Risk is a planning guide only. It is not yet checked against official hazard data.</p>
+                            @include('partials.barangay-risk-map', [
+                                'heading' => 'Lian Municipality Risk Map',
+                                'subheading' => 'All 19 barangays at a glance, using live weather and recorded rice harvests. Tap a barangay for details.',
+                                'showRefresh' => false,
+                                'highlightBarangay' => null,
+                            ])
+                        </div>
+                    </details>
+                @endif
+            </div>
+        </div>
+
+        {{-- 4 + 5. Schedule and Expected Rice Yield --}}
+        <div class="row g-4 fc-simple-row">
+            <div class="col-lg-6">
+                <div class="farmer-panel h-100" data-reveal="fade-up">
+                    <div class="farmer-panel-header">
+                        <div>
+                            <h2 class="farmer-panel-title">Planting and Harvest Schedule</h2>
+                            <p class="farmer-panel-sub">Plan your planting and harvest dates.</p>
+                        </div>
+                        <span class="status-pill info">Calendar</span>
+                    </div>
+                    <div class="farmer-panel-body">
+                        <p class="fc-prediction-note" style="margin-top:0;">Open the calendar to see your dates and the best time to plant.</p>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <a class="fc-btn fc-btn-primary" href="{{ route('calendar.index') }}">Open Calendar</a>
+                            <a class="fc-btn fc-btn-outline" href="{{ route('farmer.planting-schedules.create') }}">Add My Schedule</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="farmer-panel h-100" data-reveal="fade-up" data-reveal-delay="80">
+                    <div class="farmer-panel-header">
+                        <div>
+                            <h2 class="farmer-panel-title">Expected Rice Yield</h2>
+                            <p class="farmer-panel-sub">Expected harvest for your farm this season.</p>
+                        </div>
+                        @if($yieldPrediction && $farmerYoyDelta)
+                            <span class="status-pill {{ $farmerYoyDelta['direction'] === 'down' ? 'warn' : ($farmerYoyDelta['direction'] === 'up' ? 'neutral' : 'muted') }}">{{ $farmerYoyDelta['direction'] === 'down' ? 'Lower than '.$farmerYoyDelta['previous_year'] : ($farmerYoyDelta['direction'] === 'up' ? 'Higher than '.$farmerYoyDelta['previous_year'] : 'About the same') }}</span>
+                        @endif
+                    </div>
+                    <div class="farmer-panel-body">
+                        @if($yieldPrediction)
+                            <div class="fc-prediction-value">{{ number_format((float) $yieldPrediction['yield_tons_per_hectare'], 2) }} <span style="font-size:var(--text-base);color:var(--fc-ink-mid);">tons/hectare</span></div>
+                            @if($farmerYoyDelta && $farmerYoyDelta['direction'] === 'down')
+                                <p class="fc-prediction-note">This is lower than last year in {{ $farmerBarangay }}. {{ $yieldPrediction['planting_advisory'] ?: 'Review irrigation and planting timing before this season.' }}</p>
+                            @elseif($farmerYoyDelta)
+                                <p class="fc-prediction-note">This is similar to or better than last year in {{ $farmerBarangay }}. Keep checking your field conditions.</p>
+                            @else
+                                <p class="fc-prediction-note">{{ $yieldPrediction['planting_advisory'] ?? 'Not enough information is available yet to compare with last year.' }}</p>
+                            @endif
+                            <details class="fc-details">
+                                <summary>View Details</summary>
+                                <div class="fc-details-body">
+                                    <div class="field-note">Farm type: {{ $yieldPrediction['farm_type'] }} &middot; Farm size: {{ $yieldPrediction['farm_area_hectares'] ?? 'not set' }} ha</div>
+                                    <div class="field-note">Expected total harvest: {{ $yieldPrediction['estimated_total_production_tons'] !== null ? number_format((float) $yieldPrediction['estimated_total_production_tons'], 2).' tons' : 'not available yet' }}</div>
+                                    @if($farmerYoyDelta)
+                                        <div class="field-note">Previous Yield Comparison: {{ $farmerYoyDelta['direction'] === 'down' ? 'lower' : ($farmerYoyDelta['direction'] === 'up' ? 'higher' : 'about the same') }} ({{ number_format(abs($farmerYoyDelta['delta_percent']), 1) }}% compared with {{ $farmerYoyDelta['previous_year'] }})</div>
+                                    @endif
+                                    @if($yieldReliability)
+                                        <div class="field-note">Prediction Reliability: {{ $yieldReliability }}</div>
+                                    @endif
+                                    <div class="fc-prediction-limitation">
+                                        <span>&#9432;</span>
+                                        <span>This is an expected yield, not a guarantee ({{ $yieldPrediction['condition_score_label'] ?? 'Not enough information yet' }}). It uses recent weather and your farm details. Keep your farm profile up to date.</span>
+                                    </div>
+                                    <a class="fc-btn fc-btn-outline mt-2" href="{{ route('weather-predictions.index', ['tab' => 'rice-yield']) }}">See Full Details</a>
+                                </div>
+                            </details>
+                        @else
+                            <div class="empty-soft"><strong>Forecast Temporarily Unavailable</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Please check again later, or open <a href="{{ route('weather-predictions.index', ['tab' => 'rice-yield']) }}">Predictions</a>.</div></div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 6. Recommended Action --}}
+        <div class="farmer-panel fc-simple-panel" data-reveal="fade-up">
+            <div class="farmer-panel-header">
+                <div>
+                    <h2 class="farmer-panel-title">Recommended Action</h2>
+                    <p class="farmer-panel-sub">What to do today, based on today&apos;s weather.</p>
+                </div>
+                <button type="button" class="fc-btn fc-btn-outline" data-ai-prefill="{{ $aiPrefillQuestion }}">Ask Climora AI</button>
+            </div>
+            <div class="farmer-panel-body">
+                @if($weatherGuidance)
+                    <div class="list-title" data-weather-guidance-title>{{ $weatherGuidance['title'] }}</div>
+                    <div class="list-text" data-weather-guidance-message>{{ $weatherGuidance['message'] }}</div>
+                @elseif($latestAdvisory)
+                    <div class="list-title">{{ $latestAdvisory->title }}</div>
+                    <div class="list-text">{{ str($latestAdvisory->content)->limit(180) }}</div>
+                    <div class="list-text">{{ str($latestAdvisory->displaySummary())->limit(180) }}</div>
+                @elseif($climateSummary)
+                    <div class="list-title">Check the latest climate records</div>
+                    <div class="list-text">Season is {{ $climateSummary->season }} with {{ $climateSummary->rainfall }} mm rainfall recorded.</div>
+                @else
+                    <div class="empty-soft"><strong>No action needed right now</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Advice will appear here once it is available.</div></div>
+                @endif
+            </div>
+        </div>
+
+        {{-- 7. Weather Check (short link only) --}}
+        <div class="farmer-panel fc-simple-panel" data-reveal="fade-up">
+            <div class="farmer-panel-header">
+                <div>
+                    <h2 class="farmer-panel-title">Weather Check</h2>
+                    <p class="farmer-panel-sub">See if today&apos;s weather matched what was expected, and tell us what you saw.</p>
+                </div>
+                <a class="fc-btn fc-btn-outline" href="{{ route('weather-predictions.index', ['tab' => 'weather-forecast']) }}">Open Weather Check</a>
+            </div>
+        </div>
+
+        {{-- Everything else --}}
+        <div class="farmer-panel fc-simple-panel" data-reveal="fade-up">
+            <div class="farmer-panel-header">
+                <div>
+                    <h2 class="farmer-panel-title">More for Your Farm</h2>
+                    <p class="farmer-panel-sub">Extra details, advisories, and shortcuts.</p>
+                </div>
+            </div>
+            <div class="farmer-panel-body">
+                <details class="fc-details fc-details-first">
+                    <summary>Weather details</summary>
+                    <div class="fc-details-body">
+                        <section class="climate-grid">
+                            <button type="button" class="field-card" data-drawer-open="#statModalTemperature">
+                                <div class="field-card-top">
+                                    <div class="field-label">Temperature</div>
+                                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                                </div>
+                                <div class="field-value" data-weather-temperature-card>{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).'°C' : 'N/A' }}</div>
+                                <div class="field-note" data-weather-temperature-note>Feels like {{ $feelsLikeValue !== null ? number_format((float) $feelsLikeValue, 1).'°C' : 'N/A' }}</div>
+                                <div class="field-tap-hint">View details &rarr;</div>
+                            </button>
+                            <button type="button" class="field-card" data-drawer-open="#statModalRainfall">
+                                <div class="field-card-top">
+                                    <div class="field-label">Today&apos;s Rainfall</div>
+                                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                                </div>
+                                <div class="field-value" data-weather-rain-card>{{ $todayRainfallValue !== null ? number_format((float) $todayRainfallValue, 1).' mm' : 'N/A' }}</div>
+                                <div class="field-note" data-weather-precip-note>Current precipitation: {{ $currentPrecipitationValue !== null ? number_format((float) $currentPrecipitationValue, 1).' mm' : 'N/A' }}</div>
+                                <div class="field-tap-hint">View details &rarr;</div>
+                            </button>
+                            <button type="button" class="field-card" data-drawer-open="#statModalHumidity">
+                                <div class="field-card-top">
+                                    <div class="field-label">Humidity</div>
+                                    <span class="field-status {{ ($weatherPayload['success'] ?? false) && ! ($weatherPayload['stale'] ?? false) ? 'is-live' : '' }}">{{ $weatherStatusShort }}</span>
+                                </div>
+                                <div class="field-value" data-weather-humidity-card>{{ $humidityValue !== null ? number_format((float) $humidityValue, 0).'%' : 'N/A' }}</div>
+                                <div class="field-note">Current relative humidity</div>
+                                <div class="field-tap-hint">View details &rarr;</div>
+                            </button>
+                            <button type="button" class="field-card" data-drawer-open="#statModalAlerts">
+                                <div class="field-card-top">
+                                    <div class="field-label">Weather Alerts</div>
+                                    <span class="field-status {{ $unreadNotifications > 0 ? 'is-warn' : '' }}">{{ $unreadNotifications > 0 ? 'Unread' : 'Clear' }}</span>
+                                </div>
+                                <div class="field-value">{{ number_format($activeWeatherAlerts ?? 0) }} active</div>
+                                <div class="field-note">Unread weather warnings only</div>
+                                <div class="field-tap-hint">View details &rarr;</div>
+                            </button>
+                        </section>
+                    </div>
+                </details>
+
+                <details class="fc-details">
+                    <summary>Latest planting advisories</summary>
+                    <div class="fc-details-body">
+                        <div class="row g-3">
+                            @forelse($advisories as $advisory)
+                                @php $myFeedback = $myAdvisoryFeedback->get($advisory->id); @endphp
+                                <div class="col-md-6">
+                                    <div class="advisory-card">
+                                        <div class="d-flex justify-content-between gap-2">
+                                            <span class="status-pill {{ match(strtolower((string) $advisory->type)) {
+                                                'warning' => 'warn',
+                                                'irrigation' => 'info',
+                                                'climate' => 'neutral',
+                                                default => '',
+                                            } }}">{{ $advisory->typeLabel() }}</span>
+                                            <span class="small mono" style="color: var(--fc-ink-mid);">{{ $advisory->created_at?->format('M d') }}</span>
+                                        </div>
+                                        <strong>{{ $advisory->title }}</strong>
+                                        <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
+                                        <div class="list-text">{{ str($advisory->displaySummary())->limit(120) }}</div>
+                                        <div class="list-meta">{{ $advisory->target_barangay ?: 'All barangays' }}</div>
+                                        <div class="advisory-feedback" data-advisory-feedback data-advisory-id="{{ $advisory->id }}">
+                                            <span class="advisory-feedback-label">Was this helpful?</span>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === true ? 'active-yes' : '' }}" data-feedback-value="1">Yes</button>
+                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === false ? 'active-no' : '' }}" data-feedback-value="0">No</button>
+                                            <span class="advisory-feedback-status"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-12"><div class="empty-soft"><strong>No advisories yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Published planting advisories will appear here.</div></div></div>
+                            @endforelse
+                        </div>
+                        <a class="fc-btn fc-btn-outline mt-3" href="{{ route('planting-advisories.index') }}">View All Advisories</a>
+                    </div>
+                </details>
+
+                <details class="fc-details">
+                    <summary>Community posts</summary>
+                    <div class="fc-details-body list-compact">
+                        @forelse($feedPosts as $post)
+                            <div class="farmer-list-item">
+                                <div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div>
+                                <div>
+                                    <div class="list-title">{{ $post->title }}</div>
+                                    <div class="list-text">{{ str($post->body)->limit(90) }}</div>
+                                    <div class="list-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-soft"><strong>No community posts</strong><div class="small mt-1" style="color: var(--fc-ink-light);">MAO updates will appear here.</div></div>
+                        @endforelse
+                    </div>
+                </details>
+
+                <details class="fc-details">
+                    <summary>My farm information</summary>
+                    <div class="fc-details-body">
+                        <div class="field-note">Barangay: <strong>{{ $profile?->barangay ?? auth()->user()->barangay ?? 'Not set' }}</strong></div>
+                        <div class="field-note">Farm area: <strong>{{ $profile?->farm_area ? number_format($profile->farm_area, 2).' ha' : 'Not set' }}</strong></div>
+                        <div class="field-note">Irrigation type: <strong>{{ $profile?->farm_type ?? 'Not set' }}</strong></div>
+                        <div class="field-note">Farmer group: <strong>{{ $profile?->farmerOrganization?->name ?? 'Not part of a farmer group yet' }}</strong></div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <a class="fc-btn fc-btn-outline" href="{{ route('profile.edit') }}">Edit Profile</a>
+                            <a class="fc-btn fc-btn-outline" href="{{ route('farmer.boundary.edit') }}">Set Location &amp; Size</a>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="fc-details">
+                    <summary>Quick links</summary>
+                    <div class="fc-details-body">
+                        <div class="quick-grid">
+                            <a class="quick-action" href="{{ route('climate-records.index') }}"><strong>Climate Records</strong><span>Past rainfall, temperature, humidity, and wind.</span></a>
+                            <a class="quick-action" href="{{ route('farmer.boundary.edit') }}"><strong>My Farm Map</strong><span>Draw and save the outline of your farm.</span></a>
+                            <a class="quick-action" href="{{ route('ai-chat.index') }}"><strong>Climora AI</strong><span>Ask questions about weather, harvest, and planting.</span></a>
+                            <a class="quick-action" href="{{ route('planting-advisories.index') }}"><strong>Planting Advisories</strong><span>Guidance from MAO Personnel.</span></a>
+                            <a class="quick-action" href="{{ route('community-feed.index') }}"><strong>Community Feed</strong><span>MAO updates, programs, and activities.</span></a>
+                            <a class="quick-action" href="{{ route('messages.index') }}"><strong>Messages</strong><span>Send a private question to MAO personnel.</span></a>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
 
         @php
             $fcModalTrend = fn () => $recentClimateRecords->reverse()->values();
+            $fcStatModals = [
+                ['id' => 'Temperature', 'title' => 'Temperature Detail', 'headline' => $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet', 'note' => 'High temperatures make crops need more water and can stress them. Compare with the recent records below before watering or applying fertilizer.', 'highlight' => 'temperature'],
+                ['id' => 'Rainfall', 'title' => 'Rainfall Detail', 'headline' => $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet', 'note' => 'Heavy rain can wash away fertilizer and flood fields. Check advisories before applying fertilizer or watering.', 'highlight' => 'rainfall'],
+                ['id' => 'Humidity', 'title' => 'Humidity Detail', 'headline' => $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet', 'note' => 'High humidity for several days after rain can cause fungal disease in rice. Watch your fields closely.', 'highlight' => 'humidity'],
+            ];
         @endphp
 
-        <div class="ic-drawer fc-stat-modal" id="statModalTemperature" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalTemperatureLabel">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalTemperatureLabel">Temperature Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $temperatureValue !== null ? number_format((float) $temperatureValue, 1).' °C' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">High field temperatures increase crop water demand and heat stress risk. The headline uses the latest available forecast; compare with recent recorded readings below before scheduling irrigation or fertilizer application.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'temperature'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ic-drawer fc-stat-modal" id="statModalRainfall" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalRainfallLabel">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalRainfallLabel">Rainfall Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $rainfallValue !== null ? number_format((float) $rainfallValue, 1).' mm' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Heavy rainfall can wash away fertilizer and raise flooding or waterlogging risk. The headline uses the latest available forecast; check advisories before applying inputs or irrigating.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'rainfall'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+        @foreach($fcStatModals as $fcModal)
+            <div class="ic-drawer fc-stat-modal" id="statModal{{ $fcModal['id'] }}" aria-hidden="true">
+                <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModal{{ $fcModal['id'] }}Label">
+                    <div class="modal-content fc-modal-content">
+                        <div class="modal-header fc-modal-header">
+                            <h2 class="modal-title h5" id="statModal{{ $fcModal['id'] }}Label">{{ $fcModal['title'] }}</h2>
+                            <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body fc-modal-body">
+                            <div class="fc-modal-headline">{{ $fcModal['headline'] }}</div>
+                            <p class="fc-modal-sub">{{ $weatherSourceDisplay }} &middot; {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }}</p>
+                            <p class="fc-modal-note">{{ $fcModal['note'] }}</p>
+                            @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => $fcModal['highlight']])
+                        </div>
+                        <div class="modal-footer fc-modal-footer">
+                            <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="ic-drawer fc-stat-modal" id="statModalHumidity" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalHumidityLabel">
-                <div class="modal-content fc-modal-content">
-                    <div class="modal-header fc-modal-header">
-                        <h2 class="modal-title h5" id="statModalHumidityLabel">Humidity Detail</h2>
-                        <button type="button" class="btn-close btn-close-white" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body fc-modal-body">
-                        <div class="fc-modal-headline">{{ $humidityValue !== null ? number_format((float) $humidityValue, 1).'%' : 'No weather data yet' }}</div>
-                        <p class="fc-modal-sub">{{ $weatherSourceLine }} &middot; Weather reading: {{ $weatherTimingLabel }}{{ $weatherDisplayDate ? ' - '.$weatherDisplayDate : '' }} &middot; {{ $weatherUpdateLine }} &middot; Historical record source: {{ $climateSummary?->source ?? 'N/A' }}</p>
-                        <p class="fc-modal-note">Sustained high humidity after rainfall raises the risk of fungal disease in rice. The headline uses the latest available forecast; monitor fields closely when humidity stays elevated for several days.</p>
-                        @include('dashboards.partials.climate-trend-table', ['records' => $fcModalTrend(), 'highlight' => 'humidity'])
-                    </div>
-                    <div class="modal-footer fc-modal-footer">
-                        <a class="fc-btn fc-btn-primary" href="{{ route('climate-records.index') }}">Open Climate Records</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @endforeach
 
         <div class="ic-drawer fc-stat-modal" id="statModalAlerts" aria-hidden="true">
             <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="statModalAlertsLabel">
@@ -1125,272 +1340,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="dashboard-tab-panel active" data-panel="overview">
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div class="fc-eyebrow on-light">Your Farm</div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="farmer-panel h-100" data-reveal="fade-up">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Predicted Rice Yield</h2>
-                            <p class="farmer-panel-sub">Estimate for your farm this season.</p>
-                        </div>
-                        <a class="fc-btn fc-btn-outline" href="{{ route('weather-predictions.index') }}">Full Prediction Tool</a>
-                    </div>
-                    <div class="farmer-panel-body">
-                        @if($farmerYieldPrediction)
-                            <div class="d-flex align-items-baseline gap-2 flex-wrap">
-                                <div class="fc-prediction-value">{{ number_format((float) $farmerYieldPrediction['yield_tons_per_hectare'], 2) }} <span style="font-size:var(--text-base);color:var(--fc-ink-mid);">t/ha</span></div>
-                                @if($farmerYoyDelta)
-                                    <span class="fc-yoy-badge fc-yoy-{{ $farmerYoyDelta['direction'] }}">
-                                        {{ $farmerYoyDelta['direction'] === 'up' ? '▲' : ($farmerYoyDelta['direction'] === 'down' ? '▼' : '—') }}
-                                        {{ number_format(abs($farmerYoyDelta['delta_percent']), 1) }}% vs {{ $farmerYoyDelta['previous_year'] }}
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="list-meta mt-2">Farm type: {{ $farmerYieldPrediction['farm_type'] }} &middot; Area: {{ $farmerYieldPrediction['farm_area_hectares'] ?? 'N/A' }} ha &middot; Est. total: {{ $farmerYieldPrediction['estimated_total_production_tons'] !== null ? number_format((float) $farmerYieldPrediction['estimated_total_production_tons'], 2).' tons' : 'N/A' }}</div>
-
-                            @if($farmerYoyDelta && $farmerYoyDelta['direction'] === 'down')
-                                <p class="fc-prediction-note">Yield is trending down for {{ $farmerBarangay }} versus last year. {{ $farmerYieldPrediction['planting_advisory'] ?: 'Review irrigation and planting timing before this season.' }}</p>
-                            @elseif($farmerYoyDelta)
-                                <p class="fc-prediction-note">Stable compared to last year for {{ $farmerBarangay }} &mdash; continue monitoring conditions.</p>
-                            @else
-                                <p class="fc-prediction-note">{{ $farmerYieldPrediction['planting_advisory'] ?? 'Not enough historical data yet for a year-over-year comparison in your barangay.' }}</p>
-                            @endif
-
-                            <div class="fc-prediction-limitation">
-                                <span>&#9432;</span>
-                                <span>Model estimate ({{ $farmerYieldPrediction['condition_score_label'] ?? 'confidence not available' }}), not a guarantee. Uses recent weather and your farm profile &mdash; keep your profile updated for a more accurate figure.</span>
-                            </div>
-                        @else
-                            <div class="empty-soft"><strong>Prediction unavailable right now</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Try the full <a href="{{ route('weather-predictions.index') }}">Prediction tool</a> or check back later.</div></div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div class="fc-eyebrow on-light">Daily tools</div>
-        </div>
-
-        <section class="priority-grid" data-reveal-stagger>
-            <a class="priority-card priority-highlight" href="{{ route('ai-chat.index') }}" data-reveal="fade-up" data-reveal-delay="0">
-                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3h9A2.5 2.5 0 0 1 17 5.5v6A2.5 2.5 0 0 1 14.5 14H9l-3.5 3v-3h-1A2.5 2.5 0 0 1 2 11.5v-6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="7" cy="8.5" r=".9" fill="currentColor"/><circle cx="10.5" cy="8.5" r=".9" fill="currentColor"/><circle cx="14" cy="8.5" r=".9" fill="currentColor"/></svg></div>
-                <div><strong>Climora AI</strong><span class="desc">Ask questions, predict weather, estimate yield, and get planting or irrigation guidance.</span></div>
-                <span class="status-pill">Open Climora AI</span>
-            </a>
-            <a class="priority-card" href="{{ route('community-feed.index') }}" data-reveal="fade-up" data-reveal-delay="140">
-                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4" width="15" height="10.5" rx="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M6 17l2.2-2.5h3.6L14 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 7.5h9M5.5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                <div><strong>Community Feed</strong><span class="desc">View MAO updates, programs, activities, photos, videos, comments, and reactions.</span></div>
-                <span class="status-pill">Open Feed</span>
-            </a>
-            <a class="priority-card" href="{{ route('messages.index') }}" data-reveal="fade-up" data-reveal-delay="210">
-                <div class="priority-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 5.5l7 5.5 7-5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                <div><strong>Messages</strong><span class="desc">Start private conversations with MAO personnel for specific farm concerns.</span></div>
-                <span class="status-pill">Open Messages</span>
-            </a>
-        </section>
-
-        <div class="dashboard-section-label" data-reveal="fade-up" data-reveal-line>
-            <div>
-                <div class="fc-eyebrow on-light">Guidance</div>
-                <p class="section-note">Published advisories and the most relevant field note.</p>
-            </div>
-            <a class="fc-section-link" href="{{ route('planting-advisories.index') }}">
-                View All
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
-        </div>
-
-        <div class="row g-4 mb-0">
-            <div class="col-xl-8">
-                <div class="farmer-panel h-100" data-reveal="fade-right">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Latest Planting Advisories</h2>
-                            <p class="farmer-panel-sub">Published guidance from MAO Personnel.</p>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="button" class="fc-btn fc-btn-outline" data-ai-prefill="{{ $aiPrefillQuestion }}">Ask AI</button>
-                            <a class="fc-btn fc-btn-outline" href="{{ route('planting-advisories.index') }}">View All</a>
-                        </div>
-                    </div>
-                    <div class="farmer-panel-body">
-                        <div class="row g-3">
-                            @forelse($advisories as $advisory)
-                                @php $myFeedback = $myAdvisoryFeedback->get($advisory->id); @endphp
-                                <div class="col-md-6">
-                                    <div class="advisory-card">
-                                        <div class="d-flex justify-content-between gap-2">
-                                            <span class="status-pill {{ match(strtolower((string) $advisory->type)) {
-                                                'warning' => 'warn',
-                                                'irrigation' => 'info',
-                                                'climate' => 'neutral',
-                                                default => '',
-                                            } }}">{{ $advisory->type }}</span>
-                                            <span class="small mono" style="color: var(--fc-ink-mid);">{{ $advisory->created_at?->format('M d') }}</span>
-                                        </div>
-                                        <strong>{{ $advisory->title }}</strong>
-                                        <div class="list-text">{{ str($advisory->content)->limit(120) }}</div>
-                                        <div class="list-text">{{ str($advisory->displaySummary())->limit(120) }}</div>
-                                        <div class="list-meta">{{ $advisory->target_barangay ?: 'All barangays' }}</div>
-                                        <div class="advisory-feedback" data-advisory-feedback data-advisory-id="{{ $advisory->id }}">
-                                            <span class="advisory-feedback-label">Was this helpful?</span>
-                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === true ? 'active-yes' : '' }}" data-feedback-value="1">Yes</button>
-                                            <button type="button" class="advisory-feedback-btn {{ $myFeedback?->is_helpful === false ? 'active-no' : '' }}" data-feedback-value="0">No</button>
-                                            <span class="advisory-feedback-status"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="col-12"><div class="empty-soft"><strong>No advisories yet</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Published planting advisories will appear here.</div></div></div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4">
-                <div class="farmer-panel h-100" data-reveal="fade-left" data-reveal-delay="120">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Today&apos;s Field Guide</h2>
-                            <p class="farmer-panel-sub">Quick action based on latest records.</p>
-                        </div>
-                    </div>
-                    <div class="farmer-panel-body">
-                        @if($weatherGuidance)
-                            <div class="list-mark mb-3">WX</div>
-                            <div class="list-title" data-weather-guidance-title>{{ $weatherGuidance['title'] }}</div>
-                            <div class="list-text" data-weather-guidance-message>{{ $weatherGuidance['message'] }}</div>
-                            <div class="list-meta">Deterministic guidance from current weather values</div>
-                        @elseif($latestAdvisory)
-                            <div class="list-mark mb-3">ADV</div>
-                            <div class="list-title">{{ $latestAdvisory->title }}</div>
-                            <div class="list-text">{{ str($latestAdvisory->content)->limit(180) }}</div>
-                            <div class="list-text">{{ str($latestAdvisory->displaySummary())->limit(180) }}</div>
-                            <div class="list-meta">{{ $latestAdvisory->type }} advisory</div>
-                        @elseif($climateSummary)
-                            <div class="list-mark mb-3"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
-                            <div class="list-title">Review latest climate conditions</div>
-                            <div class="list-text">Season is {{ $climateSummary->season }} with {{ $climateSummary->rainfall }} mm rainfall recorded.</div>
-                            <div class="list-meta">Source: {{ $climateSummary->source }}</div>
-                        @else
-                            <div class="empty-soft"><strong>No guide available</strong><div class="small mt-1" style="color: var(--fc-ink-light);">Advisories and climate records will appear here once published.</div></div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="community">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-4">
-                <div class="farmer-panel h-100" data-reveal="fade-up">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Community Posts</h2>
-                            <p class="farmer-panel-sub">MAO updates, programs, activities, and announcements.</p>
-                        </div>
-                        <a class="fc-btn fc-btn-outline" href="{{ route('community-feed.index') }}">Open Feed</a>
-                    </div>
-                    <div class="farmer-panel-body list-compact">
-                        @forelse($feedPosts as $post)
-                            <div class="farmer-list-item">
-                                <div class="list-mark">{{ str($post->category)->substr(0, 3)->upper() }}</div>
-                                <div>
-                                    <div class="list-title">{{ $post->title }}</div>
-                                    <div class="list-text">{{ str($post->body)->limit(90) }}</div>
-                                    <div class="list-meta">{{ $post->category }} | {{ $post->author?->name ?? 'MAO' }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-soft"><strong>No community posts</strong><div class="small mt-1" style="color: var(--fc-ink-light);">MAO feed updates will appear here.</div></div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4">
-                <div class="farmer-panel h-100" data-reveal="fade-up" data-reveal-delay="80">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Community and Messages</h2>
-                            <p class="farmer-panel-sub">MAO posts and private conversations.</p>
-                        </div>
-                        <a class="fc-btn fc-btn-outline" href="{{ route('community-feed.index') }}">Open Feed</a>
-                    </div>
-                    <div class="farmer-panel-body">
-                        <div class="quick-grid" style="grid-template-columns:1fr;">
-                            <a class="quick-action" href="{{ route('community-feed.index') }}" data-reveal="fade-up"><strong>Community Feed</strong><span>View MAO updates, activities, programs, photos, videos, comments, and reactions.</span></a>
-                            <a class="quick-action" href="{{ route('messages.index') }}" data-reveal="fade-up" data-reveal-delay="70"><strong>Messages</strong><span>Start a private conversation with MAO personnel.</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4">
-                <div class="farmer-panel h-100" data-reveal="fade-up" data-reveal-delay="160">
-                    <div class="farmer-panel-header">
-                        <div>
-                            <h2 class="farmer-panel-title">Farm Profile Snapshot</h2>
-                            <p class="farmer-panel-sub">Your registered farmer details.</p>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a class="fc-btn fc-btn-outline" href="{{ route('profile.edit') }}">Edit Profile</a>
-                            <a class="fc-btn fc-btn-outline" href="{{ route('farmer.boundary.edit') }}">Set Location &amp; Size</a>
-                        </div>
-                    </div>
-                    <div class="farmer-panel-body">
-                        <div class="farmer-list-item pt-0">
-                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/></svg></div>
-                            <div><div class="list-title">{{ $profile?->barangay ?? auth()->user()->barangay ?? 'Barangay not set' }}</div><div class="list-text">Registered barangay</div></div>
-                        </div>
-                        <div class="farmer-list-item">
-                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2.5 15.5V8l6.5-5.5L15.5 8v7.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 15.5v-5h6v5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
-                            <div><div class="list-title">{{ $profile?->farm_area ? number_format($profile->farm_area, 2).' ha' : 'Farm area not set' }}</div><div class="list-text">Farm area</div></div>
-                        </div>
-                        <div class="farmer-list-item">
-                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 9a6 6 0 0 1 10.5-4M3 5v4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9a6 6 0 0 1-10.5 4M15 13v-4h-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                            <div><div class="list-title">{{ $profile?->farm_type ?? 'Farm type not set' }}</div><div class="list-text">Farm irrigation type</div></div>
-                        </div>
-                        <div class="farmer-list-item">
-                            <div class="list-mark"><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="6" cy="6" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="6" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 15c.4-2.8 1.8-4.3 3.5-4.3s3.1 1.5 3.5 4.3M8.5 15c.4-2.8 1.8-4.3 3.5-4.3s3.1 1.5 3.5 4.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                            <div><div class="list-title">{{ $profile?->farmerOrganization?->name ?? 'No organization on file' }}</div><div class="list-text">Farmer's association</div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="mobile">
-        <div class="farmer-panel" data-reveal="fade-up">
-            <div class="farmer-panel-header">
-                <div>
-                    <h2 class="farmer-panel-title">Farmer Quick Access</h2>
-                    <p class="farmer-panel-sub">Open the modules available to your role.</p>
-                </div>
-            </div>
-            <div class="farmer-panel-body">
-                <div class="quick-grid" data-reveal-stagger>
-                    <a class="quick-action" href="{{ route('climate-records.index') }}" data-reveal="fade-up"><strong>Climate Records</strong><span>Review rainfall, temperature, humidity, wind, and season records.</span></a>
-                    <a class="quick-action" href="{{ route('farmer.boundary.edit') }}" data-reveal="fade-up"><strong>My Farm Boundary</strong><span>Draw and save the complete perimeter of your planting area.</span></a>
-                    <a class="quick-action" href="{{ route('ai-chat.index') }}" data-reveal="fade-up"><strong>Climora AI</strong><span>Ask questions and get weather, yield, planting, irrigation, and warning guidance.</span></a>
-                    <a class="quick-action" href="{{ route('planting-advisories.index') }}" data-reveal="fade-up"><strong>Planting Advisories</strong><span>Read MAO guidance for planting, irrigation, harvesting, and climate risks.</span></a>
-                    <a class="quick-action" href="{{ route('community-feed.index') }}" data-reveal="fade-up"><strong>Community Feed</strong><span>React and comment on MAO posts about updates, programs, and activities.</span></a>
-                    <a class="quick-action" href="{{ route('messages.index') }}" data-reveal="fade-up"><strong>Messages</strong><span>Send private questions and attachments to MAO personnel.</span></a>
-                </div>
-            </div>
-        </div>
-        </div>
         </div>
     </div>
 
@@ -1553,21 +1502,18 @@
                 });
             };
             const weatherSourceLabel = (payload = {}) => {
-                const provider = payload.provider || payload.source || weatherProvider || 'Weather provider unavailable';
-                if (provider === 'Unavailable') return 'Weather unavailable';
+                const provider = payload.provider || payload.source || weatherProvider;
+                if (!provider || provider === 'Unavailable') return 'Weather temporarily unavailable';
 
-                const parts = [provider];
-                if (payload.stale) parts.push('stored data');
-
-                return parts.join(' ');
+                return payload.stale ? 'Saved weather' : 'Live weather';
             };
             const setWeatherStatus = (label) => text('[data-weather-status]', label);
             const updateLiveWeatherTimestamp = () => {
-                const providerLabel = weatherProvider || 'Weather provider unavailable';
+                const providerLabel = weatherProvider || 'Weather temporarily unavailable';
                 text('[data-weather-provider]', providerLabel);
                 return;
                 const now = new Date();
-                const provider = weatherProvider || 'Open-Meteo';
+                const provider = weatherProvider || 'Live weather';
 
                 text('[data-weather-live-line]', `Live as of ${weatherDateFormatter.format(now)} • ${weatherTimeFormatter.format(now)} · ${provider}`);
             };
@@ -1626,7 +1572,7 @@
                 const freshness = weatherFreshnessLabel(seconds);
 
                 text('[data-weather-updated]', exact);
-                text('[data-weather-provider]', weatherProvider || 'Weather provider unavailable');
+                text('[data-weather-provider]', weatherProvider || 'Weather temporarily unavailable');
                 text('[data-weather-freshness]', freshness);
                 setWeatherStatus(weatherStatusLabel(seconds));
             };
@@ -1650,8 +1596,7 @@
             const renderWeather = (payload) => {
                 const current = payload.current ?? {};
                 const today = payload.today ?? {};
-                const provider = payload.provider ?? 'Open-Meteo';
-                const sourceLabel = weatherSourceLabel(payload);
+                                const sourceLabel = weatherSourceLabel(payload);
                 weatherFetchedAt = payload.fetched_at ?? weatherFetchedAt;
                 weatherCheckedAt = payload.checked_at ?? weatherCheckedAt;
                 weatherProvider = sourceLabel;

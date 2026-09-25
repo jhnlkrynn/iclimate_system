@@ -166,8 +166,8 @@
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
                 <div>
                     <div class="msg-eyebrow">Messages</div>
-                    <h1 class="h3 mb-1">Farmer and MAO conversations</h1>
-                    <p class="mb-0 text-muted">Private messages for follow-ups, concerns, activity questions, and document sharing.</p>
+                    <h1 class="h3 mb-1">Your Messages</h1>
+                    <p class="mb-0 text-muted">Send private messages to MAO and farmers.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <span class="msg-chip"><span class="msg-pulse"></span> Private Channel</span>

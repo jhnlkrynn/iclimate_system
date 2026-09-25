@@ -440,7 +440,7 @@ class AIOrchestratorService
                 'target' => $advisory->targetLabel(),
                 'summary' => $advisory->summary ?: $advisory->message ?: $advisory->content,
                 'recommended_action' => $advisory->recommended_action,
-                'source' => $advisory->sourceLabel(),
+                'source' => $advisory->plainSourceLabel(),
                 'valid_until' => $advisory->valid_until?->toDateString(),
             ])->all(),
         ];

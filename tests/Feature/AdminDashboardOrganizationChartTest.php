@@ -45,7 +45,7 @@ class AdminDashboardOrganizationChartTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
         $response->assertOk()
-            ->assertSee('FARMERS BY ORGANIZATION')
+            ->assertSee('Farmers by Organization')
             ->assertSee('Total Farmers')
             ->assertSee('Total Organizations')
             ->assertSee('Farmers Without Organization')

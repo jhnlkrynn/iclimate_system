@@ -6,16 +6,20 @@ use App\Enums\PredictionType;
 use App\Http\Requests\WeatherPredictionRequest;
 use App\Models\AnalyticsRun;
 use App\Models\RiceProduction;
+use App\Models\User;
 use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\Prediction\PredictionDateValidator;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Prediction\ShortTermOutlookService;
 use App\Services\Weather\MonthlyWeatherCalendarService;
+use App\Services\Weather\WeatherFeedbackService;
 use App\Services\WeatherApiService;
 use App\Support\LianBarangays;
+use App\Support\PredictionWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class WeatherPredictionController extends Controller
@@ -31,6 +35,7 @@ class WeatherPredictionController extends Controller
         MonthlyWeatherCalendarService $calendarService,
         ShortTermOutlookService $shortTermOutlookService,
         PredictionOrchestrator $predictionOrchestrator,
+        WeatherFeedbackService $feedbackService,
     ): View {
         $validated = $request->validate([
             'target_month' => ['nullable', 'date_format:Y-m'],
@@ -49,10 +54,25 @@ class WeatherPredictionController extends Controller
                     : PredictionDateValidator::defaultTargetDate()));
         $targetMonth = $targetDate->startOfMonth();
 
-        $error = $dateValidator->validate($targetDate);
-        if (! $error && $analyticsRun?->status === AnalyticsRun::STATUS_FAILED) {
-            $error = $analyticsRun->error;
+        // Technical model/analytics details are for IT Expert accounts only.
+        $isTechnical = $request->user()->role === User::ROLE_IT_EXPERT;
+
+        // $errorInfo is always farmer-safe. The raw failure text stays in the
+        // server log (and analytics_runs.error), and is exposed under
+        // 'technical' to IT Expert accounts only.
+        $errorInfo = null;
+        if ($dateMessage = $dateValidator->validate($targetDate)) {
+            $errorInfo = ['title' => 'Please Choose Another Date', 'detail' => $dateMessage, 'technical' => null];
+        } elseif ($analyticsRun?->status === AnalyticsRun::STATUS_FAILED) {
+            Log::warning('Prediction run failed.', [
+                'analytics_run_id' => $analyticsRun->id,
+                'type' => $analyticsRun->type,
+                'error' => $analyticsRun->error,
+            ]);
+            $errorInfo = PredictionWording::friendlyFailure($analyticsRun->error)
+                + ['technical' => $isTechnical ? $analyticsRun->error : null];
         }
+        $error = $errorInfo['detail'] ?? null;
 
         $stored = $analyticsRun?->status === AnalyticsRun::STATUS_COMPLETED
             ? (array) $analyticsRun->result
@@ -102,7 +122,8 @@ class WeatherPredictionController extends Controller
         $weatherCalendar = $calendarService->build($calendarMonth, $calendarWeather, $monthlyPrediction);
         $liveWeatherError = match (true) {
             ! $location['coordinates'] => 'Your saved barangay is not recognized as one of Lian’s 19 barangays. Update your profile location.',
-            ! $liveWeather => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
+            ! $liveWeather && $isTechnical => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
+            ! $liveWeather => 'Forecast Temporarily Unavailable. Please try again later.',
             default => null,
         };
 
@@ -122,6 +143,16 @@ class WeatherPredictionController extends Controller
                 : null,
             'analyticsRun' => $analyticsRun,
             'error' => $error,
+            'errorInfo' => $errorInfo,
+            'isTechnical' => $isTechnical,
+            'isFarmer' => $request->user()->role === User::ROLE_FARMER,
+            'yieldSummary' => $mlResult
+                ? $this->yieldSummary($mlResult, $location['barangay'], $targetDate, $targetMonth)
+                : null,
+            'weatherCheck' => $feedbackService->pendingPrompt($request->user()),
+            'weatherCheckBarangayIssue' => $request->user()->role === User::ROLE_FARMER
+                ? $feedbackService->barangayFor($request->user())[1]
+                : null,
             'liveWeather' => $liveWeather,
             'liveWeatherError' => $liveWeatherError,
             'liveWeatherCacheMinutes' => max(30, min(60, (int) config('services.weather_api.refresh_minutes', 45))),
@@ -168,6 +199,34 @@ class WeatherPredictionController extends Controller
         ], $request->user());
 
         return redirect()->route('weather-predictions.index', ['run' => $run->uuid]);
+    }
+
+    /**
+     * Farmer-facing yield summary: expected yield, previous yield, plain
+     * difference/status and one short recommendation. Built only from values
+     * the backend already produced; no new prediction logic.
+     *
+     * @param  array<string, mixed>  $mlResult
+     * @return array<string, mixed>
+     */
+    private function yieldSummary(array $mlResult, ?string $barangay, CarbonImmutable $targetDate, CarbonImmutable $targetMonth): array
+    {
+        $expected = (float) ($mlResult['predicted_yield'] ?? 0);
+        $comparison = $barangay ? $this->yieldComparison($expected, $barangay, $targetDate) : null;
+        $previous = ($comparison['has_data'] ?? false) ? (float) $comparison['prior_yield'] : null;
+        $status = PredictionWording::yieldStatus($expected, $previous);
+
+        return [
+            'expected' => $expected,
+            'period' => $targetMonth->format('F Y'),
+            'previous' => $previous,
+            'previous_year' => $comparison['year'] ?? ($targetDate->year - 1),
+            'barangay' => $barangay,
+            'status' => $status,
+            'recommendation' => $mlResult['planting_advisory'] ?? data_get($mlResult, 'decision_support.overall_recommendation.planting'),
+            'irrigation' => $mlResult['irrigation_recommendation'] ?? null,
+            'risk' => PredictionWording::riskLabel($mlResult['risk_level'] ?? null),
+        ];
     }
 
     /**

@@ -52,7 +52,7 @@ class PlantingSchedulePredictionService
             $schedule->forceFill([
                 'predicted_yield' => round((float) $prediction, 2),
                 'prediction_confidence' => is_numeric(data_get($result, 'confidence')) ? round((float) data_get($result, 'confidence'), 2) : null,
-                'prediction_source' => (string) data_get($result, 'source', 'iClimate Rice Yield Prediction Model'),
+                'prediction_source' => (string) data_get($result, 'source', 'iClimate Rice Harvest Estimate'),
                 'prediction_unavailable_reason' => null,
                 'prediction_details' => [
                     'model' => data_get($result, 'model'),

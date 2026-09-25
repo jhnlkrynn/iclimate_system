@@ -199,6 +199,25 @@ class PlantingAdvisory extends Model
         return $this->source ?: 'Open-Meteo Forecast API + iClimate Decision Rules';
     }
 
+    /**
+     * Plain-language source for Farmer/MAO screens. The raw provider name from
+     * sourceLabel() stays available for IT (advisory detail page).
+     */
+    public function plainSourceLabel(): string
+    {
+        $label = $this->sourceLabel();
+
+        if (stripos($label, 'pagasa') !== false) {
+            return 'PAGASA';
+        }
+
+        if (stripos($label, 'open-meteo') !== false) {
+            return 'Live weather and iClimate guidance';
+        }
+
+        return $label;
+    }
+
     public function horizonLabel(): string
     {
         return (string) data_get($this->metadata, 'advisory_horizon_label', 'Forecast');

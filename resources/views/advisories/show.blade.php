@@ -29,7 +29,6 @@
             <div>
                 <div class="eyebrow mb-2">Advisory Details</div>
                 <h1 class="h2 fw-bold mb-2">{{ $advisory->title }}</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">{{ $advisory->summary }}</p>
                 <p class="mb-0" style="color: var(--ic-ink-mid);">{{ $advisory->displaySummary() }}</p>
             </div>
             <div class="d-flex flex-wrap gap-2 advisory-hero-actions">
@@ -56,17 +55,15 @@
                         <span class="badge text-bg-{{ $verification['tone'] }}" title="{{ $verification['detail'] }}">{{ $verification['badge'] }}</span>
                     </div>
                     <div class="small text-muted mb-3">{{ $verification['detail'] }}</div>
-                    <h2 class="h5">Full Advisory</h2>
-                    <p style="white-space: pre-line;">{{ $advisory->message ?: $advisory->content }}</p>
+                    <h2 class="h5">What Is Happening</h2>
                     <div class="advisory-full-text mb-4" style="white-space: pre-line; line-height: 1.65; font-size: .95rem; color: var(--ic-ink);">{{ $advisory->displayMessage() }}</div>
-                    <h2 class="h5 mt-4">Recommended Action</h2>
-                    <p style="white-space: pre-line;">{{ $advisory->recommended_action ?: 'Inspect actual field conditions and consult the Municipal Agriculture Office before acting.' }}</p>
+                    <h2 class="h5 mt-4">What To Do</h2>
                     <p style="white-space: pre-line; line-height: 1.6; font-size: .95rem; color: var(--ic-ink);">{{ $advisory->recommended_action ?: 'Inspect actual field conditions and consult the Municipal Agriculture Office before acting.' }}</p>
                 </div>
             </div>
 
             <details class="ic-collapse">
-                <summary><span class="ic-collapse-title">Weather Basis</span></summary>
+                <summary><span class="ic-collapse-title">Weather Behind This Advice</span></summary>
             <div class="card no-lift">
                 <div class="card-body">
                     @php($basis = $advisory->metadata['weather_basis'] ?? [])
@@ -74,7 +71,7 @@
                         <dt class="col-sm-4">Expected rainfall</dt><dd class="col-sm-8">{{ data_get($basis, 'expected_rainfall_mm', 'N/A') }} mm</dd>
                         <dt class="col-sm-4">Rain probability</dt><dd class="col-sm-8">{{ data_get($basis, 'rain_probability_percent', 'N/A') }}%</dd>
                         <dt class="col-sm-4">Maximum temperature</dt><dd class="col-sm-8">{{ data_get($basis, 'maximum_temperature_c', 'N/A') }}°C</dd>
-                        <dt class="col-sm-4">Maximum wind speed</dt><dd class="col-sm-8">{{ data_get($basis, 'maximum_wind_speed_kmh', 'N/A') }} km/h</dd>
+                        <dt class="col-sm-4">Strongest wind</dt><dd class="col-sm-8">{{ data_get($basis, 'maximum_wind_speed_kmh', 'N/A') }} km/h</dd>
                         <dt class="col-sm-4">Forecast period</dt><dd class="col-sm-8">{{ data_get($basis, 'forecast_period', 'N/A') }}</dd>
                     </dl>
                 </div>
@@ -151,15 +148,15 @@
 
         <div class="col-lg-4">
             <details class="ic-collapse">
-                <summary><span class="ic-collapse-title">Location and Source</span></summary>
+                <summary><span class="ic-collapse-title">View Details</span></summary>
             <div class="card no-lift mb-4">
                 <div class="card-body">
                     <div class="details-list">
-                        <dt>Target location</dt><dd>{{ $advisory->targetLabel() }}</dd>
-                        <dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>
-                        <dt>Advisory window</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
-                        <dt>Generated date</dt><dd>{{ $advisory->created_at?->shortDateTime('F d, Y') }}</dd>
-                        <dt>Validity period</dt><dd>{{ $advisory->valid_from?->shortDateTime('M d, Y') }} to {{ $advisory->valid_until?->shortDateTime('M d, Y') }}</dd>
+                        <dt>Applies to</dt><dd>{{ $advisory->targetLabel() }}</dd>
+                        @if(auth()->user()->role === \App\Models\User::ROLE_IT_EXPERT)<dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>@else<dt>Source</dt><dd>{{ $advisory->source && stripos($advisory->source, 'pagasa') !== false ? 'PAGASA' : 'Live weather and iClimate guidance' }}</dd>@endif
+                        <dt>Period</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
+                        <dt>Issued on</dt><dd>{{ $advisory->created_at?->shortDateTime('F d, Y') }}</dd>
+                        <dt>Valid</dt><dd>{{ $advisory->valid_from?->shortDateTime('M d, Y') }} to {{ $advisory->valid_until?->shortDateTime('M d, Y') }}</dd>
                         <dt>Review status</dt><dd>{{ $advisory->approved_at ? 'Approved by '.$advisory->approvedBy?->name : $advisory->statusLabel() }}</dd>
                     </div>
                 </div>
@@ -167,7 +164,7 @@
             </details>
             <div class="alert alert-warning shadow-sm">
                 <strong>Disclaimer.</strong>
-                {{ $advisory->metadata['disclaimer'] ?? 'This advisory is generated from forecast data and iClimate decision-support rules. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA or local government warnings during severe weather.' }}
+                {{ $advisory->metadata['disclaimer'] ?? 'This advisory is based on the weather forecast and iClimate guidance. Actual farm conditions may differ. Consult the Municipal Agriculture Office and follow official PAGASA or local government warnings during severe weather.' }}
             </div>
             <div class="card no-lift">
                 <div class="card-body">

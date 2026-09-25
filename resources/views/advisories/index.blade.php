@@ -90,12 +90,12 @@
         <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
             <div>
                 <div class="eyebrow mb-2">Forecast-Based Guidance</div>
-                <h1 class="h2 fw-bold mb-2">Agricultural Advisories</h1>
+                <h1 class="h2 fw-bold mb-2">Farming Advisories</h1>
                 <p class="mb-0" style="color: var(--ic-ink-mid);">View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
             </div>
             @if($canManage)
                 <div class="d-flex flex-wrap gap-2 action-cluster">
-                    <a class="btn btn-light" href="{{ route('management.advisories.index') }}">Review Workspace</a>
+                    <a class="btn btn-light" href="{{ route('management.advisories.index') }}">Review Advisories</a>
                     <a class="btn btn-outline-light" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
                     <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true">
                         @csrf
@@ -115,21 +115,22 @@
         <div class="col-lg-4">
             <div class="card no-lift h-100">
                 <div class="card-body">
-                    <div class="stat-label">Latest PAGASA Online Source</div>
-                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->shortDateTime('F d, Y,') ?? 'No PAGASA match yet' }}</div>
-                    <div class="text-muted small">Official source: {{ $latestPagasaAdvisory?->sourceLabel() ?: 'PAGASA online advisory pages' }}, filtered for Lian/Batangas</div>
+                    <div class="stat-label">Latest Weather Bureau Update</div>
+                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->shortDateTime('F d, Y,') ?? 'No PAGASA update for Lian yet' }}</div>
+                    <div class="text-muted small">Source: {{ $latestPagasaAdvisory?->plainSourceLabel() ?: 'PAGASA' }}, for Lian, Batangas</div>
                     @isset($pagasaSummary)
-                        <div class="text-muted small mt-2">
-                            PAGASA online pages checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
-                            new matches: {{ number_format($pagasaSummary['advisories_created'] ?? 0) }};
-                            no Lian/Batangas match: {{ number_format($pagasaSummary['sources_without_lian_batangas_match'] ?? 0) }}
-                        </div>
+                        <details class="text-muted small mt-2">
+                            <summary>View Details</summary>
+                            PAGASA pages checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
+                            new updates: {{ number_format($pagasaSummary['advisories_created'] ?? 0) }};
+                            none for Lian: {{ number_format($pagasaSummary['sources_without_lian_batangas_match'] ?? 0) }}
+                        </details>
                     @endisset
                     @if($lastWeather)
-                        <div class="text-muted small mt-2">Forecast guidance updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</div>
+                        <div class="text-muted small mt-2">Weather last updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</div>
                     @endif
                     @if($latestPagasaAdvisory)
-                        <span class="badge text-bg-success mt-2">{{ $latestPagasaAdvisory->sourceLabel() }} Active</span>
+                        <span class="badge text-bg-success mt-2">{{ $latestPagasaAdvisory->plainSourceLabel() }} Active</span>
                     @endif
                 </div>
             </div>
@@ -137,9 +138,9 @@
         <div class="col-lg-4">
             <div class="card no-lift h-100">
                 <div class="card-body">
-                    <div class="stat-label">Advisories Generated</div>
+                    <div class="stat-label">Active Advisories</div>
                     <div class="h3 fw-bold mt-2 mb-1">{{ number_format($activeCount) }}</div>
-                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} active advisory records are from PAGASA online advisory sources.</div>
+                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} of these come from PAGASA.</div>
                 </div>
             </div>
         </div>
@@ -251,10 +252,8 @@
                         <tr>
                             <th>Title</th>
                             <th>Type</th>
-                            <th>Window</th>
-                            <th>Target Barangay</th>
+                            <th>Applies To</th>
                             <th>Severity</th>
-                            <th>Source</th>
                             <th>Valid Until</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
@@ -263,13 +262,10 @@
                     <tbody>
                         @foreach($advisories as $advisory)
                             <tr>
-                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->summary }}</div></td>
-                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->displaySummary() }}</div></td>
+                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->displaySummary() }}</div><div class="small text-muted">{{ $advisory->horizonLabel() }} &middot; {{ $advisory->plainSourceLabel() }}</div></td>
                                 <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
-                                <td><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></td>
                                 <td>{{ $advisory->targetLabel() }}</td>
                                 <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
-                                <td>{{ $advisory->sourceLabel() }}</td>
                                 <td>{{ $advisory->valid_until?->shortDateTime() ?? 'Open' }}</td>
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
                                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a></td>
@@ -281,10 +277,9 @@
             <div class="card-body ic-table-cards">
                 @foreach($advisories as $advisory)
                     <div class="ic-table-card">
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->summary }}</div></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->displaySummary() }}</div></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Type</div><div class="ic-table-card-value"><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Window</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
+                        <div class="ic-table-card-row"><div class="ic-table-card-label">Period</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Target</div><div class="ic-table-card-value">{{ $advisory->targetLabel() }}</div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Severity</div><div class="ic-table-card-value"><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Valid Until</div><div class="ic-table-card-value">{{ $advisory->valid_until?->format('M d, Y g:i A') ?? 'Open' }}</div></div>
@@ -300,7 +295,7 @@
     @else
         <div class="empty-state text-center p-5">
             <div class="h5 mb-2">No active advisories are available for your location.</div>
-            <p class="text-muted mb-0">The system will display new guidance when relevant weather conditions are detected.</p>
+            <p class="text-muted mb-0">New advice will appear here when the weather calls for it.</p>
         </div>
     @endif
 </x-app-layout>

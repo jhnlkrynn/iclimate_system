@@ -316,7 +316,7 @@
                                             <div>{{ $row['details']['interpretation'] ?? 'No interpretation available.' }}</div>
                                         </div>
                                         <div class="me-detail-block">
-                                            <div class="me-label mb-2">Defense Note</div>
+                                            <div class="me-label mb-2">Why We Chose This</div>
                                             <div>{{ $row['details']['reason'] ?? 'No defense note available.' }}</div>
                                         </div>
                                     </div>
@@ -347,7 +347,7 @@
                                 <div>{{ $row['details']['interpretation'] ?? 'No interpretation available.' }}</div>
                             </div>
                             <div class="me-detail-block">
-                                <div class="me-label mb-2">Defense Note</div>
+                                <div class="me-label mb-2">Why We Chose This</div>
                                 <div>{{ $row['details']['reason'] ?? 'No defense note available.' }}</div>
                             </div>
                         </div>

@@ -106,6 +106,6 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('FARMERS BY ORGANIZATION');
+            ->assertSee('Farmers by Organization');
     }
 }

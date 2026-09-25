@@ -2,9 +2,9 @@
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
-                <div class="eyebrow mb-2">Record Details</div>
+                <div class="eyebrow mb-2">Details</div>
                 <h1 class="h2 fw-bold mb-2">{{ $title }} Details</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">Record #{{ $record->id }}</p>
+                <p class="mb-0" style="color: var(--ic-ink-mid);">Record no. {{ $record->id }}</p>
             </div>
             <div class="d-flex gap-2 align-self-start align-self-lg-end action-cluster">
                 <a class="btn btn-outline-secondary" href="{{ route($routeName.'.index') }}">Back</a>

@@ -81,7 +81,7 @@ final class MonthlyWeatherCalendarService
         }
 
         return [
-            'source_name' => (string) ($monthlyPrediction['source_name'] ?? 'iClimate monthly Random Forest model'),
+            'source_name' => (string) ($monthlyPrediction['source_name'] ?? 'iClimate Weather System'),
             'rainfall_mm' => is_numeric($predictions['rainfall'] ?? null) ? round((float) $predictions['rainfall'], 1) : null,
             'temperature_c' => is_numeric($predictions['temperature'] ?? null) ? round((float) $predictions['temperature'], 1) : null,
             'humidity_percent' => is_numeric($predictions['humidity'] ?? null) ? round((float) $predictions['humidity'], 1) : null,

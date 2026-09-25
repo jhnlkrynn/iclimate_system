@@ -374,8 +374,8 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('YOUR BARANGAY: Bagong Pook');
-        $response->assertDontSee('YOUR FARM boundary is recorded');
+        $response->assertSee('Your Barangay: Bagong Pook');
+        $response->assertDontSee('Your farm outline is saved');
     }
 
     public function test_farmer_with_farm_boundary_sees_your_farm(): void
@@ -394,8 +394,8 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('YOUR BARANGAY: Bagong Pook');
-        $response->assertSee('YOUR FARM boundary is recorded');
+        $response->assertSee('Your Barangay: Bagong Pook');
+        $response->assertSee('Your farm outline is saved');
     }
 
     public function test_mao_dashboard_loads_with_risk_map_section(): void
@@ -650,7 +650,7 @@ class BarangayRiskMapTest extends TestCase
             ->firstWhere('barangay', 'Bagong Pook');
 
         $this->assertNotNull($apiEntry);
-        $farmerResponse->assertSee('YOUR BARANGAY: Bagong Pook');
+        $farmerResponse->assertSee('Your Barangay: Bagong Pook');
         $farmerResponse->assertSee((string) $apiEntry['risk_level']);
     }
 

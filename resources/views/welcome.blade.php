@@ -438,8 +438,8 @@
       display: flex; align-items: center; gap: 12px;
       flex: 1;
       min-width: 150px;
-      background: rgba(255,255,255,.78);
-      border: 1.5px solid rgba(255,255,255,.6);
+      background: rgba(244,249,245,.94);
+      border: 1.5px solid rgba(255,255,255,.7);
       border-radius: var(--radius-lg);
       padding: 14px 16px;
       box-shadow: var(--shadow-sm);
@@ -452,24 +452,27 @@
       width: 40px; height: 40px;
       flex-shrink: 0;
       border-radius: 50%;
-      background: rgba(143,175,154,0.12);
-      border: 1px solid rgba(143,175,154,0.3);
+      background: rgba(31,90,70,0.12);
+      border: 1px solid rgba(31,90,70,0.4);
       display: flex; align-items: center; justify-content: center;
     }
+    .trust-icon svg path { stroke: #1F5A46; }
     .trust-num {
       font-family: 'DM Serif Display', serif;
-      font-size: 1.25rem;
-      color: var(--ink);
+      font-size: 1.4rem;
+      color: #12291f;
       line-height: 1;
       letter-spacing: -0.02em;
     }
     .trust-label {
       font-family: 'DM Mono', monospace;
-      font-size: 0.6rem;
-      color: var(--ink-light);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #34493d;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-top: 4px;
+      letter-spacing: 0.05em;
+      line-height: 1.3;
+      margin-top: 5px;
     }
     @media (max-width: 480px) {
       .trust-grid { flex-direction: column; }
@@ -1508,6 +1511,62 @@
       .fade-up { animation: none; }
     }
 
+    /* Card entrance: unlike .fade-up (hero, plays immediately on load),
+       these are below the fold, so they wait for an IntersectionObserver
+       (see the script at the bottom of this page) to add
+       .ic-card-enter-visible the first time each card scrolls into view,
+       then stop observing it — no repeat/looping, no constant flipping.
+       perspective(900px) is embedded directly in the card's own transform
+       (rather than set on the grid container) so this stays a self-contained,
+       drop-in class that doesn't require touching every grid's CSS. */
+    .ic-card-enter {
+      opacity: 0;
+      transform: translateY(20px) scale(.98);
+      transition: opacity 560ms var(--ease) var(--ic-card-delay, 0ms), transform 560ms var(--ease) var(--ic-card-delay, 0ms);
+    }
+    .ic-card-enter-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    @media (max-width: 767.98px) {
+      .ic-card-enter { transform: translateY(12px) scale(.985); transition-duration: 480ms; }
+    }
+    /* Reusable hover-lift + shadow transition for any landing-page card
+       that doesn't already define its own :hover (feature-card,
+       pillar-card, and role-card already have a tailored one). */
+    .ic-card-hover {
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+    .ic-card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
+    }
+    /* Subtle icon emphasis on card hover — a small scale + brighter border
+       on the icon badge, not the whole card. */
+    .fc-icon-wrap,
+    .pillar-icon,
+    .role-icon-wrap--img,
+    .contact-method-icon,
+    .wwa-icon {
+      transition: transform 220ms var(--ease), border-color 220ms var(--ease), background-color 220ms var(--ease);
+    }
+    .feature-card:hover .fc-icon-wrap,
+    .pillar-card:hover .pillar-icon,
+    .role-card:hover .role-icon-wrap--img,
+    .contact-method:hover .contact-method-icon,
+    .wwa-stat:hover .wwa-icon {
+      transform: scale(1.08);
+      border-color: rgba(143,175,154,.7);
+      background-color: rgba(143,175,154,0.22);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ic-card-enter {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
     /* ===============================================
        USER ROLES
     =============================================== */
@@ -2060,7 +2119,7 @@
         Climate-smart<br>
         <span class="hero-title-italic">rice farming.</span>
       </h1>
-      <p class="hero-subtitle fade-up fade-up-2">iClimate Decision Support System</p>
+      <p class="hero-subtitle fade-up fade-up-2">Weather and Farming Guide for Lian, Batangas</p>
       <p class="hero-desc fade-up fade-up-3">A web-based weather impact analysis and rice yield prediction platform for Lian, Batangas &mdash; built for rice farmers, MAO staff with technicians, and IT personnel.</p>
       <div class="hero-actions fade-up fade-up-3">
         <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
@@ -2170,28 +2229,28 @@
     </div>
 
     <div class="pillars-row">
-      <div class="pillar-card">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:0ms">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#6F8978"/></svg></div>
         <strong>Climate-Informed</strong>
         <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
-        <p>Combining stored climate records, Open-Meteo live forecasts, and official PAGASA advisory references for localized guidance.</p>
+        <p>Combining stored climate records, live weather forecasts, and official PAGASA advisory references for localized guidance.</p>
       </div>
-      <div class="pillar-card">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:100ms">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#6F8978" stroke-width="1.5"/></svg></div>
         <strong>Rice-Focused</strong>
         <p>Specialized in rice production analysis, yield prediction, and planting recommendations.</p>
       </div>
-      <div class="pillar-card">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:200ms">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#6F8978"/><rect x="8.5" y="6" width="3" height="11" fill="#6F8978" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#6F8978" opacity="0.6"/></svg></div>
         <strong>Data-Driven</strong>
         <p>Using historical records and analytics to generate accurate insights and reports.</p>
       </div>
-      <div class="pillar-card">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:300ms">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#6F8978" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/></svg></div>
         <strong>Community-Centered</strong>
         <p>Built for farmers, supported by MAO staff and technicians, and optimized by IT personnel.</p>
       </div>
-      <div class="pillar-card">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:400ms">
         <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#6F8978" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
         <strong>Secure &amp; Reliable</strong>
         <p>Ensuring data security, system reliability, and continuous improvement.</p>
@@ -2205,25 +2264,25 @@
         <p>iClimate is developed to address the unique agricultural challenges of Lian, Batangas. By combining local knowledge with modern technology, we help our community adapt to climate variability and build a more resilient future.</p>
       </div>
       <div class="wwa-grid">
-        <div class="wwa-stat">
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:0ms">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.2" stroke="#8FAF9A" stroke-width="1.3"/><circle cx="12" cy="7" r="1.8" stroke="#8FAF9A" stroke-width="1.3"/><path d="M2 15c.4-2.7 1.8-4 4.5-4s4 1.3 4.5 4" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 15c.3-2 1.5-3.2 3-3.2s2.7.9 3 2.9" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/></svg></div>
           <div class="wwa-num">3</div>
           <div class="wwa-label">User Roles</div>
           <p class="wwa-desc">Rice Farmers, MAO Staff with Technician, and IT Personnel</p>
         </div>
-        <div class="wwa-stat">
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:100ms">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="10" width="2.6" height="5" fill="#8FAF9A"/><rect x="7.7" y="6" width="2.6" height="9" fill="#8FAF9A" opacity="0.85"/><rect x="12.4" y="3" width="2.6" height="12" fill="#8FAF9A" opacity="0.6"/></svg></div>
           <div class="wwa-num">24/7</div>
           <div class="wwa-label">Real-Time Monitoring</div>
           <p class="wwa-desc">Continuous weather and climate updates</p>
         </div>
-        <div class="wwa-stat">
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:200ms">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#8FAF9A" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
           <div class="wwa-num">PAGASA</div>
           <div class="wwa-label">Verified Data Source</div>
           <p class="wwa-desc">Trusted climate data from PAGASA</p>
         </div>
-        <div class="wwa-stat">
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:300ms">
           <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#8FAF9A" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#8FAF9A" stroke-width="1.2"/></svg></div>
           <div class="wwa-num">1 Goal</div>
           <div class="wwa-label">Stronger Farming Community</div>
@@ -2244,7 +2303,7 @@
     </div>
 
     <div class="features-grid">
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:0ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#8FAF9A" stroke-width="1.8" stroke-linecap="round"/>
@@ -2256,7 +2315,7 @@
         <p>Access real-time and historical climate data including rainfall, temperature, humidity, wind, and more from PAGASA.</p>
         <span class="fc-badge">Climate Records</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:100ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <rect x="2" y="14" width="4" height="6" rx="1" fill="#5F8F78"/>
@@ -2269,7 +2328,7 @@
         <p>View and analyze local rice production records and forecasts to support planning and food security.</p>
         <span class="fc-badge">Records</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:200ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <circle cx="11" cy="11" r="8" stroke="#8FAF9A" stroke-width="1.8"/>
@@ -2280,7 +2339,7 @@
         <p>Get data-driven planting recommendations based on season, rainfall outlook, and soil conditions.</p>
         <span class="fc-badge">Advisory</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:300ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M2 11C5 5,8 3,11 3C14 3,17 5,20 11C17 17,14 19,11 19C8 19,5 17,2 11Z" stroke="#8FAF9A" stroke-width="1.8"/>
@@ -2291,7 +2350,7 @@
         <p>Monitor long-term climate trends and detect anomalies that affect farming and productivity.</p>
         <span class="fc-badge">Monitoring</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:400ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#8FAF9A" stroke-width="1.8"/>
@@ -2301,7 +2360,7 @@
         <p>Visualize risk levels of flood, drought, typhoon, and heat across barangays using interactive maps.</p>
         <span class="fc-badge">Risk Records</span>
       </div>
-      <div class="feature-card">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:500ms">
         <div class="fc-icon-wrap">
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             <path d="M4 3h10l4 4v12H4V3z" stroke="#8FAF9A" stroke-width="1.8"/>
@@ -2377,7 +2436,7 @@
     <div class="roles-grid">
 
       <!-- Rice Farmer -->
-      <div class="role-card">
+      <div class="role-card ic-card-enter" style="--ic-card-delay:0ms">
         <div class="role-icon-wrap--img" aria-hidden="true">
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
@@ -2415,7 +2474,7 @@
       </div>
 
       <!-- MAO Personnel -->
-      <div class="role-card role-card--highlight">
+      <div class="role-card role-card--highlight ic-card-enter" style="--ic-card-delay:100ms">
         <div class="role-icon-wrap--img" aria-hidden="true">
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
@@ -2453,7 +2512,7 @@
       </div>
 
       <!-- IT Expert -->
-      <div class="role-card">
+      <div class="role-card ic-card-enter" style="--ic-card-delay:200ms">
         <div class="role-icon-wrap--img" aria-hidden="true">
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
         </div>
@@ -2639,7 +2698,7 @@
       </div>
 
       <div class="contact-methods">
-        <div class="contact-method">
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:0ms">
           <div class="contact-method-icon">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
@@ -2650,7 +2709,7 @@
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
-        <div class="contact-method">
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:100ms">
           <div class="contact-method-icon">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
@@ -2661,7 +2720,7 @@
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
-        <div class="contact-method">
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:200ms">
           <div class="contact-method-icon">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
           </div>
@@ -2804,6 +2863,40 @@
       });
     }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
     sections.forEach(section => spyObserver.observe(section));
+
+    // Staggered card entrance (pillar/feature/role cards): reveal each
+    // .ic-card-enter once it scrolls into view, then stop watching it —
+    // no looping. Reduced-motion users (or browsers without
+    // IntersectionObserver) get the cards shown immediately, unanimated.
+    // Section headings and text blocks reveal the same way as the cards;
+    // grouped siblings get a small stagger.
+    [['.section-header', 0], ['.about-text', 0], ['.about-visual', 120], ['.contact-info', 0], ['.contact-form-card, .contact-form', 120]]
+      .forEach(([selector, delay]) => {
+        document.querySelectorAll(selector).forEach((block) => {
+          if (block.classList.contains('ic-card-enter')) return;
+          block.classList.add('ic-card-enter');
+          block.style.setProperty('--ic-card-delay', delay + 'ms');
+        });
+      });
+
+    const enterCards = document.querySelectorAll('.ic-card-enter');
+    if (enterCards.length) {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        enterCards.forEach(card => card.classList.add('ic-card-enter-visible'));
+      } else {
+        const cardObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('ic-card-enter-visible');
+            cardObserver.unobserve(entry.target);
+            // Once revealed, drop the delay so later hover transitions are instant.
+            setTimeout(() => entry.target.style.setProperty('--ic-card-delay', '0ms'), 1200);
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        enterCards.forEach(card => cardObserver.observe(card));
+      }
+    }
   });
 
 </script>

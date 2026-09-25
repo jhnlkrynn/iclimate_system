@@ -100,7 +100,7 @@ class AmbulongHistoricalClimateDatasetTest extends TestCase
         $path = $this->tempCsv(
             "YEAR,MONTH,RAINFALL,TMAX,TMIN,RH,WIND_SPEED,WIND_DIRECTION\n".
             "2021,1,10,30,20,80,2,40\n".
-            "2021,1,999,999,999,999,999,999\n". // duplicate month, later occurrence — must be ignored
+            "2021,1,999,31,21,79,2,40\n". // duplicate month with plausible values (loader now rejects impossible ones as invalid before dedup) — must be ignored
             "2021,2,20,31,21,78,2,40\n"
         );
 

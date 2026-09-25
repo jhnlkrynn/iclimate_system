@@ -722,6 +722,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
         Route::post(
+            'weather-predictions/feedback',
+            [\App\Http\Controllers\WeatherFeedbackController::class, 'store']
+        )
+            ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1'])
+            ->name(
+                'weather-feedback.store'
+            );
+
+
+        Route::post(
             'rice-yield-predictions/predict',
             [RiceYieldPredictionController::class, 'predict']
         )

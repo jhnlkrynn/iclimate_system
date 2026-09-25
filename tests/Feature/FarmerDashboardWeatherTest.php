@@ -273,7 +273,7 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertSee('data-mao-weather-root', false)
             ->assertSee('MAO_WEATHER_POLL_INTERVAL = 60000', false)
             ->assertSee('refreshMaoWeather', false)
-            ->assertSee('Open-Meteo live weather for Lian, Batangas');
+            ->assertSee('Live weather for Lian, Batangas');
 
         $this->actingAs($user)
             ->getJson(route('mao.dashboard.weather'))
