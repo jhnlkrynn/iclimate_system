@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AnalyticsRun;
 use App\Models\ExternalWeatherData;
+use App\Models\BackupVerification;
 use App\Models\MlModel;
 use App\Models\MonthlyWeatherPrediction;
 use App\Services\MachineLearning\RuntimeModelClient;
@@ -63,6 +64,7 @@ class SystemHealthService
         return [
             $this->guard('database', $this->databaseTitle(), fn () => $this->database()),
             $this->guard('backup', 'Database Backup', fn () => $this->databaseBackup()),
+            $this->guard('backup-verification', 'Backup Verification', fn () => $this->backupVerification()),
             $this->guard('queue', 'Pending queue jobs', fn () => $this->pendingJobs()),
             $this->guard('failed-jobs', 'Failed jobs', fn () => $this->failedJobs()),
             $this->guard('weather', 'Latest weather update', fn () => $this->latestWeather()),
@@ -144,6 +146,54 @@ class SystemHealthService
         return $status['state'] === 'stale'
             ? $this->result(self::NEEDS_ATTENTION, 'The latest backup is older than expected. Check that the daily backup is running.', $details)
             : $this->result(self::HEALTHY, 'A recent backup is available.', $details);
+    }
+
+    /**
+     * Reads the recorded outcome of iclimate:verify-backup and compares it with
+     * the newest backup on disk (by name and size only, so opening the page
+     * never hashes a large file, runs pg_restore or writes anything).
+     */
+    private function backupVerification(): array
+    {
+        if (! Schema::hasTable('backup_verifications')) {
+            return $this->result(self::UNAVAILABLE, 'Backup verification has not been set up yet. Run the database migrations.');
+        }
+
+        $latest = BackupVerification::query()->latest('verified_at')->latest('id')->first();
+
+        if ($latest === null) {
+            return $this->result(self::UNAVAILABLE, 'No backup has been verified yet.');
+        }
+
+        $details = ['Last checked' => $this->when($latest->verified_at)];
+
+        if ($latest->backup_filename !== null) {
+            $details['Backup file'] = $latest->backup_filename;
+        }
+
+        if ($latest->status !== BackupVerification::PASSED) {
+            $details['Result'] = 'Failed';
+            $details['Reason'] = (string) ($latest->failure_reason ?? 'Unknown');
+
+            return $this->result(self::NEEDS_ATTENTION, 'The latest backup check failed.', $details);
+        }
+
+        $details['Result'] = 'Passed';
+        $details['Archive entries'] = number_format((int) $latest->archive_entry_count);
+        $details['Size'] = number_format((int) $latest->backup_size_bytes / 1048576, 2).' MB';
+        $details['SHA-256'] = substr((string) $latest->backup_sha256, 0, 12).'…';
+
+        if ($latest->verified_at->lt(now()->subHours(app(BackupVerificationService::class)->maxAgeHours()))) {
+            return $this->result(self::NEEDS_ATTENTION, 'The last successful check is older than expected. Check that the daily verification is running.', $details);
+        }
+
+        $newest = $this->backups->latestValidBackup();
+
+        if ($newest === null || $newest['name'] !== $latest->backup_filename || $newest['size'] !== (int) $latest->backup_size_bytes) {
+            return $this->result(self::NEEDS_ATTENTION, 'The newest backup has not been verified, or the verified file has changed.', $details);
+        }
+
+        return $this->result(self::HEALTHY, 'The latest backup was checked and is readable.', $details);
     }
 
     private function pendingJobs(): array

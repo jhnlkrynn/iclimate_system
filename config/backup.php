@@ -20,6 +20,18 @@ return [
     'pg_dump_binary' => env('PG_DUMP_BINARY', 'pg_dump'),
 
     /*
+    | The pg_restore program, used only by iclimate:verify-backup to LIST an
+    | archive's contents (--list). Nothing is ever restored.
+    */
+    'pg_restore_binary' => env('PG_RESTORE_BINARY', 'pg_restore'),
+
+    /* Stop the archive check after this many seconds. */
+    'verify_timeout_seconds' => (int) env('BACKUP_VERIFY_TIMEOUT_SECONDS', 120),
+
+    /* A successful verification older than this is reported as stale. */
+    'verification_max_age_hours' => (int) env('BACKUP_VERIFICATION_MAX_AGE_HOURS', 36),
+
+    /*
     | How many days of backups to keep. Kept between 7 and 14. The newest
     | backup is always kept, however old it is.
     */

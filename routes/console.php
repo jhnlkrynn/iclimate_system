@@ -138,3 +138,10 @@ Schedule::command('iclimate:backup-database')
     ->dailyAt('03:15')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
+
+// Ten minutes after the backup: prove the newest archive is readable
+// (pg_restore --list only; nothing is restored).
+Schedule::command('iclimate:verify-backup')
+    ->dailyAt('03:25')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);

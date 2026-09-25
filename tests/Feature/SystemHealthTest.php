@@ -100,13 +100,13 @@ class SystemHealthTest extends TestCase
         $response = $this->actingAs($this->it())->get(route('system-health.index'))->assertOk();
 
         foreach ([
-            'Database Backup', 'Pending queue jobs', 'Failed jobs', 'Latest weather update', 'Latest monthly prediction',
+            'Database Backup', 'Backup Verification', 'Pending queue jobs', 'Failed jobs', 'Latest weather update', 'Latest monthly prediction',
             'Latest dataset processing', 'Python executable', 'Weather model', 'Rice-yield model', 'Model sync', 'Scheduler freshness',
         ] as $title) {
             $response->assertSee($title);
         }
         $response->assertSee('Database Connection');
-        $this->assertSame(12, substr_count($response->getContent(), 'data-health-check="'));
+        $this->assertSame(13, substr_count($response->getContent(), 'data-health-check="'));
     }
 
     public function test_only_the_three_allowed_status_words_are_used(): void
