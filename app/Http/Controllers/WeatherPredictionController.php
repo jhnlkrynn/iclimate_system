@@ -11,6 +11,7 @@ use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\Prediction\PredictionDateValidator;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Prediction\ShortTermOutlookService;
+use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\MonthlyWeatherCalendarService;
 use App\Services\Weather\WeatherFeedbackService;
 use App\Services\WeatherApiService;
@@ -19,6 +20,7 @@ use App\Support\PredictionWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -36,6 +38,7 @@ class WeatherPredictionController extends Controller
         ShortTermOutlookService $shortTermOutlookService,
         PredictionOrchestrator $predictionOrchestrator,
         WeatherFeedbackService $feedbackService,
+        FarmerDashboardWeatherService $sharedWeather,
     ): View {
         $validated = $request->validate([
             'target_month' => ['nullable', 'date_format:Y-m'],
@@ -84,21 +87,40 @@ class WeatherPredictionController extends Controller
             ? data_get($stored, 'ml_result')
             : null;
         $location = $this->savedLocation($request);
-        $liveWeather = $location['coordinates']
-            ? ($weatherApi->forecast(
+        // The Lian-wide reading is the same one the dashboards show; the
+        // barangay reading is shown beside it (not instead of it).
+        $lianWeather = $sharedWeather->current();
+        $liveWeather = match (true) {
+            // No usable barangay: show the Lian-wide reading instead of nothing.
+            ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($weatherApi->forecast(
+                location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
+            )) ?? data_get($weatherResult, 'live_weather'),
+            default => $weatherApi->forecast(
                 latitude: $location['coordinates'][0],
                 longitude: $location['coordinates'][1],
                 location: $location['label'],
-            ) ?? data_get($weatherResult, 'live_weather'))
-            : null;
+            ) ?? data_get($weatherResult, 'live_weather'),
+        };
+
+        // Keep both readings on the same update time: if they were fetched
+        // more than two minutes apart, refresh both together.
+        if (! $location['is_municipal_preview'] && $location['coordinates'] && $this->readingsOutOfSync($liveWeather, $lianWeather)) {
+            $liveWeather = $weatherApi->forecast(
+                refresh: true,
+                latitude: $location['coordinates'][0],
+                longitude: $location['coordinates'][1],
+                location: $location['label'],
+            ) ?? $liveWeather;
+            $lianWeather = $sharedWeather->current(force: true);
+        }
         $calendarMonth = isset($validated['calendar_month'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $validated['calendar_month'].'-01')
             : CarbonImmutable::now('Asia/Manila')->startOfMonth();
-        $calendarWeather = $weatherApi->forecast(
-            latitude: self::LIAN_MUNICIPAL_COORDINATES[0],
-            longitude: self::LIAN_MUNICIPAL_COORDINATES[1],
+        // Municipal calendar uses the shared Lian reading so its daily values
+        // match the Farmer/MAO dashboards, login page and chatbot exactly.
+        $calendarWeather = $sharedWeather->alignForecast($weatherApi->forecast(
             location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-        );
+        ));
         // A single whole-month estimate (not per-day) from the same monthly
         // Random Forest model already used by the barangay risk map — shown
         // in the calendar as its own clearly-labeled "Monthly Prediction"
@@ -154,6 +176,7 @@ class WeatherPredictionController extends Controller
                 ? $feedbackService->barangayFor($request->user())[1]
                 : null,
             'liveWeather' => $liveWeather,
+            'lianWeather' => ($lianWeather['success'] ?? false) === true && $location['coordinates'] && ! $location['is_municipal_preview'] ? $lianWeather : null,
             'liveWeatherError' => $liveWeatherError,
             'liveWeatherCacheMinutes' => max(30, min(60, (int) config('services.weather_api.refresh_minutes', 45))),
             'savedWeatherLocation' => $location,
@@ -294,6 +317,18 @@ class WeatherPredictionController extends Controller
             ->whereIn('type', ['weather_prediction', 'rice_yield_prediction']);
 
         return $query->where('uuid', $request->query('run'))->firstOrFail();
+    }
+
+    private function readingsOutOfSync(?array $barangayWeather, array $lianWeather): bool
+    {
+        $barangayFetchedAt = $barangayWeather['fetched_at'] ?? null;
+        $lianFetchedAt = $lianWeather['server_fetched_at'] ?? null;
+
+        if (! $barangayFetchedAt || ! $lianFetchedAt || ! empty($barangayWeather['is_cached_fallback']) || ($lianWeather['stale'] ?? false)) {
+            return false;
+        }
+
+        return abs(Carbon::parse($barangayFetchedAt)->diffInSeconds(Carbon::parse($lianFetchedAt))) > 120;
     }
 
     /**
