@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 .venv-ml/
+.venv/
+.venv-old/
 python_scripts/.venv/
 /storage/models/SMOKETEST_*
 .DS_Store

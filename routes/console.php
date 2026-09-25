@@ -131,3 +131,10 @@ Schedule::command('iclimate:refresh-predictions')
     ->dailyAt('02:00')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
+
+// Daily PostgreSQL backup during low activity (after the 01:30 dataset and
+// 02:00 prediction jobs), followed by cleanup of backups past the retention window.
+Schedule::command('iclimate:backup-database')
+    ->dailyAt('03:15')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
