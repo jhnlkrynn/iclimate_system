@@ -322,7 +322,7 @@
     .ic-ai-typing {
         display: none;
         align-items: center;
-        gap: .35rem;
+        gap: .55rem;
         color: var(--ai-muted);
         font-family: 'DM Mono', monospace;
         font-size: .78rem;
@@ -336,25 +336,44 @@
         display: flex;
     }
 
+    /* Three dots that hop in turn; the delays stagger the same keyframes. */
+    .ic-ai-dots {
+        display: inline-flex;
+        align-items: flex-end;
+        gap: .28rem;
+        height: .9rem;
+    }
+
     .ic-ai-dot {
-        width: .42rem;
-        height: .42rem;
+        width: .5rem;
+        height: .5rem;
         border-radius: 999px;
         background: #52b788;
-        animation: ic-ai-pulse 850ms ease-in-out infinite alternate;
+        animation: ic-ai-bounce 1s ease-in-out infinite;
     }
 
     .ic-ai-dot:nth-child(2) {
-        animation-delay: 120ms;
+        animation-delay: .15s;
     }
 
     .ic-ai-dot:nth-child(3) {
-        animation-delay: 240ms;
+        animation-delay: .3s;
     }
 
-    @keyframes ic-ai-pulse {
-        from { opacity: .35; transform: translateY(0); }
-        to { opacity: 1; transform: translateY(-3px); }
+    @keyframes ic-ai-bounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: .55; }
+        30% { transform: translateY(-.4rem); opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ic-ai-dot {
+            animation: ic-ai-fade 1.4s ease-in-out infinite;
+        }
+
+        @keyframes ic-ai-fade {
+            0%, 100% { opacity: .35; }
+            50% { opacity: 1; }
+        }
     }
 
     .ic-ai-chips {
@@ -564,11 +583,13 @@
             @endforelse
         </div>
 
-        <div id="icAiTyping" class="ic-ai-typing">
-            <span>Climora AI is checking iClimate</span>
-            <span class="ic-ai-dot"></span>
-            <span class="ic-ai-dot"></span>
-            <span class="ic-ai-dot"></span>
+        <div id="icAiTyping" class="ic-ai-typing" role="status" aria-live="polite">
+            <span class="ic-ai-dots" aria-hidden="true">
+                <span class="ic-ai-dot"></span>
+                <span class="ic-ai-dot"></span>
+                <span class="ic-ai-dot"></span>
+            </span>
+            <span class="ic-ai-typing-text">Climora AI is checking iClimate...</span>
         </div>
 
         <div class="ic-ai-chips" aria-label="Suggested questions">
