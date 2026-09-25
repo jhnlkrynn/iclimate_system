@@ -3,12 +3,15 @@
 namespace App\Services\AI;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class GroqChatService
 {
+    private const COOLDOWN_KEY = 'ai:groq:cooldown';
+
     public function available(): bool
     {
         return (bool) config('services.groq.enabled')
@@ -67,9 +70,49 @@ class GroqChatService
         ];
     }
 
+    /**
+     * Whether Groq may be called for this chat message: configured, not in a
+     * cool-down after a recent failure, and enough of the response budget left.
+     * Every chat method checks this first, so a slow or broken Groq costs at
+     * most one short wait and then gets out of the way.
+     */
+    public function usable(): bool
+    {
+        return $this->available()
+            && ! Cache::get(self::COOLDOWN_KEY)
+            && app(AiTimings::class)->remainingSeconds() >= 1.5;
+    }
+
+    private function connectTimeout(): float
+    {
+        return (float) config('ai.groq.connect_timeout', 2);
+    }
+
+    /** The configured limit, but never more than the budget still left (minus a margin to answer in). */
+    private function requestTimeout(): float
+    {
+        $left = app(AiTimings::class)->remainingSeconds() - 0.5;
+
+        return max(1.0, min((float) config('ai.groq.timeout', 4), $left));
+    }
+
+    /** Runs one Groq request and adds its duration to the "groq" stage. */
+    private function timed(callable $request): mixed
+    {
+        return app(AiTimings::class)->time('groq', $request);
+    }
+
+    /** A timeout, rate limit or server error pauses Groq briefly; ordinary 4xx errors do not. */
+    private function recordFailure(?int $status = null): void
+    {
+        if ($status === null || $status === 429 || $status >= 500) {
+            Cache::put(self::COOLDOWN_KEY, true, max(1, (int) config('ai.groq.cooldown_seconds', 30)));
+        }
+    }
+
     public function answer(User $user, string $question, string $intent, string $language, array $memory = [], array $systemContext = []): ?array
     {
-        if (! $this->available()) {
+        if (! $this->usable()) {
             return null;
         }
 
@@ -77,11 +120,10 @@ class GroqChatService
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
 
         try {
-            $response = Http::withToken((string) config('services.groq.key'))
+            $response = $this->timed(fn () => Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
-                ->connectTimeout(5)
-                ->timeout((int) config('services.groq.timeout', 12))
-                ->retry(2, 300)
+                ->connectTimeout($this->connectTimeout())
+                ->timeout($this->requestTimeout())
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.35,
@@ -96,8 +138,10 @@ class GroqChatService
                             'content' => $this->userPrompt($user, $question, $intent, $language, $memory, $systemContext),
                         ],
                     ],
-                ]);
+                ]));
         } catch (Throwable $exception) {
+            $this->recordFailure();
+
             Log::warning('Groq assistant request failed.', [
                 'intent' => $intent,
                 'message' => $exception->getMessage(),
@@ -107,6 +151,8 @@ class GroqChatService
         }
 
         if (! $response->successful()) {
+            $this->recordFailure($response->status());
+
             Log::warning('Groq assistant returned an unsuccessful response.', [
                 'intent' => $intent,
                 'status' => $response->status(),
@@ -133,7 +179,7 @@ class GroqChatService
 
     public function predictionFallback(User $user, string $question, string $intent, string $language, array $memory, array $predictionContext): ?array
     {
-        if (! $this->available()) {
+        if (! $this->usable()) {
             return null;
         }
 
@@ -141,11 +187,10 @@ class GroqChatService
         $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
 
         try {
-            $response = Http::withToken((string) config('services.groq.key'))
+            $response = $this->timed(fn () => Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
-                ->connectTimeout(5)
-                ->timeout((int) config('services.groq.timeout', 12))
-                ->retry(2, 300)
+                ->connectTimeout($this->connectTimeout())
+                ->timeout($this->requestTimeout())
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.25,
@@ -160,8 +205,10 @@ class GroqChatService
                             'content' => $this->predictionFallbackUserPrompt($user, $question, $intent, $language, $memory, $predictionContext),
                         ],
                     ],
-                ]);
+                ]));
         } catch (Throwable $exception) {
+            $this->recordFailure();
+
             Log::warning('Groq prediction fallback request failed.', [
                 'intent' => $intent,
                 'message' => $exception->getMessage(),
@@ -171,6 +218,8 @@ class GroqChatService
         }
 
         if (! $response->successful()) {
+            $this->recordFailure($response->status());
+
             Log::warning('Groq prediction fallback returned an unsuccessful response.', [
                 'intent' => $intent,
                 'status' => $response->status(),
@@ -200,7 +249,7 @@ class GroqChatService
      */
     public function classifyIntent(User $user, string $question, string $language, array $memory = []): ?array
     {
-        if (! $this->available()) {
+        if (! $this->usable()) {
             return null;
         }
 
@@ -210,11 +259,10 @@ class GroqChatService
         $pendingIntent = (string) data_get($memory, 'pending_intent', '');
 
         try {
-            $response = Http::withToken((string) config('services.groq.key'))
+            $response = $this->timed(fn () => Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
-                ->connectTimeout(5)
-                ->timeout((int) config('services.groq.timeout', 12))
-                ->retry(1, 250)
+                ->connectTimeout($this->connectTimeout())
+                ->timeout($this->requestTimeout())
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0,
@@ -250,14 +298,18 @@ Return JSON shape:
 PROMPT,
                         ],
                     ],
-                ]);
+                ]));
         } catch (Throwable $exception) {
+            $this->recordFailure();
+
             Log::warning('Groq intent classification failed.', ['message' => $exception->getMessage()]);
 
             return null;
         }
 
         if (! $response->successful()) {
+            $this->recordFailure($response->status());
+
             Log::warning('Groq intent classification returned unsuccessful response.', [
                 'status' => $response->status(),
                 'body' => str($response->body())->limit(300)->toString(),
@@ -290,7 +342,7 @@ PROMPT,
      */
     public function groundedResponse(User $user, string $question, string $language, array $toolResult, array $memory = []): ?string
     {
-        if (! $this->available()) {
+        if (! $this->usable()) {
             return null;
         }
 
@@ -301,11 +353,10 @@ PROMPT,
         $recentQuestions = implode(' | ', array_slice((array) ($memory['recent_questions'] ?? []), 0, 3));
 
         try {
-            $response = Http::withToken((string) config('services.groq.key'))
+            $response = $this->timed(fn () => Http::withToken((string) config('services.groq.key'))
                 ->acceptJson()
-                ->connectTimeout(5)
-                ->timeout((int) config('services.groq.timeout', 12))
-                ->retry(1, 250)
+                ->connectTimeout($this->connectTimeout())
+                ->timeout($this->requestTimeout())
                 ->post($baseUrl.'/chat/completions', [
                     'model' => $model,
                     'temperature' => 0.15,
@@ -338,14 +389,18 @@ Write the final answer.
 PROMPT,
                         ],
                     ],
-                ]);
+                ]));
         } catch (Throwable $exception) {
+            $this->recordFailure();
+
             Log::warning('Groq grounded response failed.', ['message' => $exception->getMessage()]);
 
             return null;
         }
 
         if (! $response->successful()) {
+            $this->recordFailure($response->status());
+
             Log::warning('Groq grounded response returned unsuccessful response.', [
                 'status' => $response->status(),
                 'body' => str($response->body())->limit(300)->toString(),

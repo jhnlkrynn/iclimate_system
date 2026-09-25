@@ -56,17 +56,40 @@ class FarmerDashboardWeatherService
 
     public function __construct(private readonly WeatherIconMapper $icons) {}
 
-    public function current(bool $force = false): array
+    /** Per-provider limit (seconds) for the current call; null means the normal, patient settings. */
+    private ?float $budget = null;
+
+    /**
+     * @param  float|null  $budgetSeconds  interactive callers (the chatbot) pass a short limit: each
+     *                                     provider then gets at most that long and no retries. With a
+     *                                     warm cache the budget is never used.
+     */
+    public function current(bool $force = false, ?float $budgetSeconds = null): array
     {
+        $this->budget = $budgetSeconds;
         $cacheKey = $this->cacheKey();
         $lastSuccessfulKey = $cacheKey.'.last_successful';
         $ttl = now($this->timezone())->addMinutes(max(1, (int) config('services.weather.cache_minutes', 5)));
 
-        if (! $force && Cache::has($cacheKey)) {
-            $cached = Cache::get($cacheKey);
+        // One cache read (not has() then get()): on a database cache that is one query instead of two.
+        $cached = $force ? null : Cache::get($cacheKey);
+
+        if (is_array($cached)) {
             $cached['cached'] = true;
 
             return $cached;
+        }
+
+        // An interactive caller (the chatbot) is happy with a snapshot a few minutes old: the
+        // dashboard's 1-minute cache would otherwise send most chat questions out to the provider.
+        if (! $force && $budgetSeconds !== null) {
+            $recent = Cache::get($lastSuccessfulKey);
+
+            if (is_array($recent) && $this->youngerThan($recent, (int) config('ai.weather_max_age_minutes', 10))) {
+                $recent['cached'] = true;
+
+                return $recent;
+            }
         }
 
         try {
@@ -95,6 +118,22 @@ class FarmerDashboardWeatherService
             }
 
             return $this->unavailable();
+        }
+    }
+
+    /** Whether a stored snapshot was fetched by this server within the last $minutes minutes. */
+    private function youngerThan(array $snapshot, int $minutes): bool
+    {
+        $fetched = data_get($snapshot, 'timestamps.server_fetched_at') ?? data_get($snapshot, 'server_fetched_at');
+
+        if ($fetched === null || ($snapshot['success'] ?? true) === false) {
+            return false;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($fetched)->gt(now()->subMinutes(max(1, $minutes)));
+        } catch (Throwable) {
+            return false;
         }
     }
 
@@ -259,6 +298,20 @@ class FarmerDashboardWeatherService
         }
     }
 
+    /**
+     * The HTTP client for a provider call. Normally patient (configured timeout,
+     * a couple of retries). With a budget it is strict: at most that many seconds
+     * and no retries, because a retry would double the wait the person sees.
+     */
+    private function http(float $timeout, int $retries, int $delayMs): \Illuminate\Http\Client\PendingRequest
+    {
+        if ($this->budget !== null) {
+            return Http::timeout(max(1.0, min($timeout, $this->budget)))->acceptJson();
+        }
+
+        return Http::timeout($timeout)->retry($retries, $delayMs)->acceptJson();
+    }
+
     private function requestWeatherApi(): array
     {
         $key = (string) config('services.weatherapi.key');
@@ -267,9 +320,7 @@ class FarmerDashboardWeatherService
             throw new RuntimeException('WeatherAPI key is not configured.');
         }
 
-        $response = Http::timeout((int) config('services.weatherapi.timeout', 8))
-            ->retry(2, 300)
-            ->acceptJson()
+        $response = $this->http((float) config('services.weatherapi.timeout', 8), 2, 300)
             ->get(rtrim((string) config('services.weatherapi.base_url'), '/').'/forecast.json', [
                 'key' => $key,
                 'q' => $this->coordinates(),
@@ -293,9 +344,7 @@ class FarmerDashboardWeatherService
 
     private function requestOpenMeteo(): array
     {
-        $response = Http::timeout((int) config('services.open_meteo.timeout', 10))
-            ->retry(2, 250)
-            ->acceptJson()
+        $response = $this->http((float) config('services.open_meteo.timeout', 10), 2, 250)
             ->get(rtrim((string) config('services.open_meteo.base_url'), '/').'/forecast', [
                 'latitude' => config('services.weather.latitude'),
                 'longitude' => config('services.weather.longitude'),

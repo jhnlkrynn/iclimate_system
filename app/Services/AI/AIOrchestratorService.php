@@ -28,18 +28,54 @@ class AIOrchestratorService
         private readonly ModerationService $moderation,
         private readonly LexiconService $lexicon,
         private readonly KnowledgeAnswerService $knowledge,
+        private readonly AiTimings $timings,
+        private readonly ConversationContext $context,
     ) {}
+
+    /** The weather read once for the current message, so two tools never fetch it twice. */
+    private ?array $weatherMemo = null;
 
     /**
      * @return array<string, mixed>
      */
     public function answer(User $user, string $question): array
     {
+        $this->timings->begin();
+        $this->context->reset();
+        $this->weatherMemo = null;
+
+        $result = $this->respond($user, $question);
+
+        $result['response_time_ms'] = $this->timings->elapsedMs();
+
+        $intent = (string) ($result['intent'] ?? 'unknown');
+
+        // Which route produced the answer: filter, approved knowledge, iClimate's own
+        // data, or (only when a Groq call actually happened) Groq.
+        $this->timings->report($intent, match (true) {
+            $intent === 'moderation_blocked' => 'moderation',
+            $intent === 'farming_knowledge' => 'knowledge',
+            $this->timings->groqCalls() > 0 => 'groq',
+            default => 'system',
+        });
+
+        return $result;
+    }
+
+    /**
+     * Cheapest answer first: language filter, then approved knowledge and
+     * iClimate's own weather and prediction data, and Groq only when none of
+     * those can answer.
+     *
+     * @return array<string, mixed>
+     */
+    private function respond(User $user, string $question): array
+    {
         $startedAt = microtime(true);
 
         // Language filter first: a blocked message goes no further (no
         // classifier, no LLM, no history lookup, no storage of its text).
-        $moderation = $this->moderation->inspect($question);
+        $moderation = $this->timings->time('moderation', fn () => $this->moderation->inspect($question));
 
         if ($moderation['blocked']) {
             return $this->moderated($user, $question, $moderation, $startedAt);
@@ -47,7 +83,9 @@ class AIOrchestratorService
 
         $memory = $this->conversationMemory($user);
         $language = $this->languageDetector->detectLanguage($question, $memory);
-        $classification = $this->classifier->classify($user, $question, $language, $memory);
+
+        // Rule-based classification: instant. Groq is asked below, and only if the rules cannot place the message.
+        $classification = $this->timings->time('intent', fn () => $this->classifier->classifyLocal($question, $memory));
         $intent = $classification['intent'];
         $entities = $classification['entities'];
         $awaitingFollowUp = false;
@@ -59,13 +97,28 @@ class AIOrchestratorService
 
         // Approved farming/weather vocabulary: definitions and how-to answers
         // come from the knowledge base, live-data questions keep their tools.
-        $analysis = $this->lexicon->analyze($question);
+        [$analysis, $knowledgeResult] = $this->timings->time('knowledge', function () use ($question, $awaitingFollowUp, $intent, $language, $memory, $startedAt): array {
+            $analysis = $this->lexicon->analyze($question);
 
-        if (! $awaitingFollowUp && ($knowledgeResult = $this->farmingKnowledge($analysis, $intent, $language, $memory, $startedAt)) !== null) {
+            return [$analysis, $awaitingFollowUp ? null : $this->farmingKnowledge($analysis, $intent, $language, $memory, $startedAt)];
+        });
+
+        if ($knowledgeResult !== null) {
             return $knowledgeResult;
         }
 
         $intent = $this->refineIntentWithConcepts($intent, $analysis);
+
+        // Only now, for a message that is still unplaced, is Groq worth its wait.
+        if (! $awaitingFollowUp && $this->classifier->needsLlm(['intent' => $intent, 'requires_clarification' => (bool) ($classification['requires_clarification'] ?? false)])) {
+            $llm = $this->timings->time('intent', fn () => $this->classifier->classifyWithLlm($user, $question, $language, $memory));
+
+            if ($llm !== null) {
+                $classification = $llm;
+                $intent = $llm['intent'];
+                $entities = $llm['entities'];
+            }
+        }
 
         if (($classification['requires_clarification'] ?? false) && $intent === IntentClassifierService::UNKNOWN) {
             return $this->clarification(
@@ -88,10 +141,10 @@ class AIOrchestratorService
             $result = match ($intent) {
                 IntentClassifierService::CURRENT_WEATHER => $this->currentWeather($user, $question, $language, $memory),
                 IntentClassifierService::WEATHER_FORECAST => $this->weatherForecast($user, $question, $language, $memory, $entities),
-                IntentClassifierService::WEATHER_PREDICTION => $this->weatherPrediction($user, $question, $language, $memory, $entities),
+                IntentClassifierService::WEATHER_PREDICTION => $this->timings->time('prediction', fn () => $this->weatherPrediction($user, $question, $language, $memory, $entities)),
                 IntentClassifierService::RICE_YIELD_PREDICTION,
                 IntentClassifierService::PLANTING_RECOMMENDATION,
-                IntentClassifierService::IRRIGATION_RECOMMENDATION => $this->modelBackedPrediction($user, $question, $language, $memory, $intent, $entities),
+                IntentClassifierService::IRRIGATION_RECOMMENDATION => $this->timings->time('prediction', fn () => $this->modelBackedPrediction($user, $question, $language, $memory, $intent, $entities)),
                 IntentClassifierService::CLIMATE_RISK => $this->climateRisk($user, $question, $language, $memory, $entities),
                 IntentClassifierService::WEATHER_ADVISORY => $this->advisories($user, $question, $language, $memory),
                 IntentClassifierService::SYSTEM_HELP,
@@ -99,8 +152,8 @@ class AIOrchestratorService
                 IntentClassifierService::COMMUNITY,
                 IntentClassifierService::REPORTS,
                 IntentClassifierService::GENERAL_CHAT,
-                IntentClassifierService::UNKNOWN => $this->predictionService->answer($user, $question),
-                default => $this->predictionService->answer($user, $question),
+                IntentClassifierService::UNKNOWN => $this->timings->time('assistant', fn () => $this->predictionService->answer($user, $question)),
+                default => $this->timings->time('assistant', fn () => $this->predictionService->answer($user, $question)),
             };
         } catch (Throwable $exception) {
             Log::warning('AI orchestrator route failed.', [
@@ -121,7 +174,6 @@ class AIOrchestratorService
                 'entities' => $entities,
             ],
         ];
-        $result['response_time_ms'] = (int) round((microtime(true) - $startedAt) * 1000);
 
         return $result;
     }
@@ -254,11 +306,26 @@ class AIOrchestratorService
     }
 
     /**
+     * Live weather, fetched at most once per message. With a warm cache this is
+     * instant; on a cold cache each provider gets a short limit, and if both
+     * fail the service returns the last data it had.
+     *
+     * @return array<string, mixed>
+     */
+    private function weather(): array
+    {
+        return $this->weatherMemo ??= $this->timings->time('weather', fn (): array => $this->weatherService->current(
+            false,
+            max(1.0, min((float) config('ai.weather_timeout', 3), $this->timings->remainingSeconds() - 1)),
+        ));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function currentWeather(User $user, string $question, string $language, array $memory): array
     {
-        $weather = $this->weatherService->current();
+        $weather = $this->weather();
         $tool = [
             'tool' => 'current_weather',
             'success' => (bool) ($weather['success'] ?? false),
@@ -301,7 +368,7 @@ class AIOrchestratorService
      */
     private function weatherForecast(User $user, string $question, string $language, array $memory, array $entities): array
     {
-        $weather = $this->weatherService->current();
+        $weather = $this->weather();
         $forecast = (array) ($weather['forecast'] ?? []);
         $target = $entities['target_period'] ?? null;
         $selected = $target === 'tomorrow' && isset($forecast[1]) ? [$forecast[1]] : $forecast;
@@ -656,7 +723,16 @@ class AIOrchestratorService
      */
     private function groundedOrFallback(User $user, string $question, string $language, array $tool, array $memory, callable $fallback): string
     {
-        return $this->groq->groundedResponse($user, $question, $language, $tool, $memory) ?: $fallback();
+        // iClimate can already write this answer from its own data. Sending it to
+        // Groq to re-word it only adds seconds, so it is returned directly unless
+        // re-wording is explicitly switched on (AI_GROQ_PHRASING).
+        $direct = (string) $fallback();
+
+        if ($direct !== '' && ! config('ai.groq.phrase_system_answers', false)) {
+            return $direct;
+        }
+
+        return $this->groq->groundedResponse($user, $question, $language, $tool, $memory) ?: $direct;
     }
 
     /**
@@ -688,23 +764,7 @@ class AIOrchestratorService
 
     private function conversationMemory(User $user): array
     {
-        $latest = AIChat::query()
-            ->where('user_id', $user->id)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $lastPending = $latest
-            ->pluck('memory')
-            ->filter(fn ($memory) => is_array($memory) && filled(data_get($memory, 'pending_intent')))
-            ->first();
-
-        return [
-            'last_intent' => $latest->first()?->intent,
-            'pending_intent' => data_get($lastPending, 'pending_intent'),
-            'recent_questions' => $latest->pluck('question')->all(),
-            'recent_facts' => $latest->pluck('intent')->filter()->take(5)->values()->all(),
-        ];
+        return $this->context->recent($user);
     }
 
     /**

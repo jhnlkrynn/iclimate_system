@@ -25,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One stopwatch and one history read per chat message, shared by every AI service.
+        $this->app->singleton(\App\Services\AI\AiTimings::class);
+        $this->app->singleton(\App\Services\AI\ConversationContext::class);
     }
 
     /**

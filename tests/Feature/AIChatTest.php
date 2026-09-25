@@ -270,6 +270,10 @@ class AIChatTest extends TestCase
     public function test_ai_assistant_uses_groq_to_explain_prediction_when_trained_model_is_unavailable(): void
     {
         config([
+            // The cold weather forest takes ~20 s in this test's empty cache. Once the
+            // response budget is spent Groq is skipped by design; this test is about
+            // Groq explaining the result, so give it room.
+            'ai.response_budget_seconds' => 300,
             'services.groq.enabled' => true,
             'services.groq.key' => 'test-groq-key',
             'services.groq.model' => 'llama-3.3-70b-versatile',

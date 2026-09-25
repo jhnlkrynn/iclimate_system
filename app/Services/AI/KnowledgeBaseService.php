@@ -4,12 +4,39 @@ namespace App\Services\AI;
 
 use App\Models\KnowledgeBase;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class KnowledgeBaseService
 {
     public function search(string $question, string $intent): ?KnowledgeBase
     {
         $keywords = $this->keywords($question);
+
+        // The same question is asked again and again: remember which record matched, or that none did.
+        $key = 'ai:kb-search:'.md5($intent.'|'.implode(' ', $keywords));
+        $remembered = Cache::get($key);
+
+        if (is_int($remembered)) {
+            $record = $remembered > 0 ? KnowledgeBase::query()->find($remembered) : null;
+
+            if ($record) {
+                $record->increment('times_used');
+            }
+
+            return $record;
+        }
+
+        $found = $this->lookup($keywords, $intent);
+        Cache::put($key, $found?->id ?? 0, max(1, (int) config('ai.knowledge_cache_seconds', 600)));
+
+        return $found;
+    }
+
+    /**
+     * @param  list<string>  $keywords
+     */
+    private function lookup(array $keywords, string $intent): ?KnowledgeBase
+    {
         $firstKeyword = $keywords[0] ?? '';
 
         /** @var Collection<int, KnowledgeBase> $records */
