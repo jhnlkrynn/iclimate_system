@@ -178,7 +178,7 @@
         }
         .farmer-hero-summary-item small {
             display: block;
-            color: rgba(255,255,255,.64);
+            color: rgba(255,255,255,.8);
             font-size: var(--text-sm);
             line-height: 1.5;
             margin-top: .18rem;
@@ -559,7 +559,7 @@
         .status-pill.muted { background: var(--fc-green-50); color: var(--fc-ink-light); }
         .status-pill.warn { background: rgba(216,91,69,.14); color: var(--fc-coral); }
         .status-pill.info { background: rgba(47,111,143,.14); color: var(--fc-blue); }
-        .status-pill.neutral { background: rgba(143,175,154,.18); color: var(--fc-green-700); }
+        .status-pill.neutral { background: rgba(255,255,255,.7); color: #173f31; }
         .advisory-card {
             padding: 1.1rem 1.2rem;
             border-radius: var(--radius-md);
@@ -681,7 +681,7 @@
             flex: 0 0 auto;
             border: 0;
             background: transparent;
-            color: rgba(255,255,255,.62);
+            color: rgba(255,255,255,.8);
             font-family: 'Inter', sans-serif;
             font-size: var(--text-sm);
             font-weight: 600;
@@ -909,7 +909,10 @@
             <div class="farmer-panel-body">
                 <section class="forecast-strip" data-weather-forecast>
                     @forelse($weatherForecastDays as $forecastDay)
-                        <div class="forecast-day">
+                        <div class="forecast-day"
+                             data-tmax="{{ $forecastDay['temperature_max'] ?? '' }}"
+                             data-tmin="{{ $forecastDay['temperature_min'] ?? '' }}"
+                             data-pop="{{ $forecastDay['precipitation_probability'] ?? '' }}">
                             <strong>{{ $forecastDay['day'] ?? '' }}</strong>
                             <img src="{{ $forecastDay['icon'] ?? '/images/weather/unavailable.svg' }}" alt="{{ $forecastDay['condition'] ?? 'Forecast' }}">
                             <span>{{ $forecastDay['condition'] ?? 'N/A' }}</span>
@@ -1582,7 +1585,10 @@
                 if (!target || !Array.isArray(days)) return;
 
                 target.innerHTML = days.map((day) => `
-                    <div class="forecast-day" data-reveal="fade-up">
+                    <div class="forecast-day" data-reveal="fade-up"
+                         data-tmax="${day.temperature_max ?? ''}"
+                         data-tmin="${day.temperature_min ?? ''}"
+                         data-pop="${day.precipitation_probability ?? ''}">
                         <strong>${day.day ?? ''}</strong>
                         <img src="${day.icon ?? '/images/weather/unavailable.svg'}" alt="${day.condition ?? 'Forecast'}">
                         <span>${day.condition ?? 'N/A'}</span>

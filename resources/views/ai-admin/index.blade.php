@@ -1,11 +1,12 @@
 <x-app-layout>
     <div class="container-fluid py-3">
-        <div class="mb-3">
-            <h1 class="h4 mb-1">Chatbot knowledge and language filter</h1>
-            <p class="text-muted mb-0">Manage what Climora understands about rice farming and weather, and which language it refuses. Changes apply to the next chat message. Farmers cannot see or change any of this.</p>
-        </div>
+        <section class="page-hero">
+            <div class="eyebrow mb-2">Climora AI</div>
+            <h1 class="h3 mb-1">Chatbot knowledge and language filter</h1>
+            <p class="mb-0">Manage what Climora understands about rice farming and weather, and which language it refuses. Changes apply to the next chat message. Farmers cannot see or change any of this.</p>
+        </section>
 
-        <ul class="nav nav-pills mb-3 flex-wrap gap-1">
+        <ul class="nav nav-pills ic-pill-tabs mb-3 flex-wrap gap-1">
             @foreach ($resources as $key => $item)
                 <li class="nav-item">
                     <a class="nav-link {{ $key === $resource ? 'active' : '' }}" href="{{ route('ai-admin.index', $key) }}">{{ $item['label'] }}</a>
@@ -26,7 +27,7 @@
             </div>
         @endif
 
-        <p class="text-muted">{{ $config['help'] }}</p>
+        <div class="alert alert-info">{{ $config['help'] }}</div>
 
         @if (! empty($config['sensitive']))
             <div class="alert alert-warning py-2">This page lists offensive words so they can be managed. It is visible only to IT Experts and MAO personnel.</div>
@@ -57,7 +58,7 @@
             </div>
         </details>
 
-        <form method="GET" class="mb-2 d-flex gap-2">
+        <form method="GET" class="filter-panel rounded-3 p-2 mb-3 d-flex gap-2">
             <input type="search" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Search" style="max-width: 20rem">
             <button class="btn btn-outline-secondary btn-sm">Search</button>
         </form>

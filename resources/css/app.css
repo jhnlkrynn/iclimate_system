@@ -1087,7 +1087,7 @@ textarea {
 
 .dark-workspace .ic-table-card-label,
 .report-page .ic-table-card-label {
-    color: rgba(255, 255, 255, .5);
+    color: rgba(255, 255, 255, .8);
 }
 
 .dark-workspace .ic-table-card-value,

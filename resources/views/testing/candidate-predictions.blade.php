@@ -20,7 +20,7 @@
 
         .candidate-subtitle {
             margin-top: 7px;
-            color: #94a3b8;
+            color: #d5dee8;
             font-size: 14px;
             line-height: 1.5;
         }
@@ -97,7 +97,7 @@
             min-height: 44px;
             font-weight: 800;
             cursor: pointer;
-            background: #16a34a;
+            background: #15803d;
             color: white;
         }
 

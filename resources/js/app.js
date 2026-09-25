@@ -6,6 +6,7 @@ import Alpine from 'alpinejs';
 // rendering logic exists in exactly one place. initBarangayRiskMap() itself
 // no-ops on any page without a #barangayRiskMap element.
 import { initBarangayRiskMap } from './barangay-risk-map';
+import { initUiEnhancements } from './ui-enhancements';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -161,6 +162,7 @@ function initApp() {
     bindResponsiveCollapse();
     bindChartTabs();
     bindStatDrawers();
+    initUiEnhancements(document);
 }
 
 // Support cached/back-forward pages where DOMContentLoaded has already fired.

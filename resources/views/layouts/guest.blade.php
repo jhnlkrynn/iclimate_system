@@ -31,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/js/app.js'])
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -58,12 +58,12 @@
     .lpl-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
     .lpl-headline em { font-style: italic; color: #2D6A4F; }
     .lpl-sub { font-size: 1.04rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
-    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.92rem; color: #6b7c72; }
+    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.92rem; color: #55645b; }
 
     /* -- RIGHT PANEL ----------------------------------- */
     .login-panel-right { background: #f5f9f6; display: flex; align-items: center; justify-content: center; padding: 40px 48px; }
     .login-form-wrap { width: 100%; max-width: 460px; }
-    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: #5A7A64; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
+    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: #44604E; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
     .back-link-top:hover { color: #2D6A4F; }
     .login-form-header { margin-bottom: 28px; }
     .login-form-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.7rem; font-weight: 400; color: #1B2B23; margin-bottom: 6px; letter-spacing: -0.02em; }

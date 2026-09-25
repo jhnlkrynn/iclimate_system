@@ -45,7 +45,7 @@
             margin: .75rem 0 .35rem;
         }
         .advisory-safety-card p {
-            color: rgba(255,255,255,.68);
+            color: rgba(255,255,255,.8);
             line-height: 1.55;
             margin: 0;
         }

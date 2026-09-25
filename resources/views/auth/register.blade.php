@@ -64,9 +64,9 @@
     .reg-logo-word { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: #fff; letter-spacing: -0.01em; }
 
     .reg-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.55rem, 2.45vw, 2rem); font-weight: 400; color: #fff; line-height: 1.12; margin-bottom: 10px; }
-    .reg-headline em { font-style: normal; color: #1F5A46; }
+    .reg-headline em { font-style: normal; color: #7FD6B5; }
     .reg-sub { font-size: .88rem; color: rgba(255,255,255,.78); line-height: 1.45; margin-bottom: 14px; max-width: 420px; }
-    .reg-sub a { color: #1F5A46; font-weight: 600; text-decoration: none; }
+    .reg-sub a { color: #B9E8D3; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(185,232,211,.4); text-underline-offset: 3px; }
 
     .perk-card {
       background: rgba(31,77,58,.4); border: 1px solid rgba(95,143,120,.5); border-radius: 14px;
@@ -80,7 +80,7 @@
       color: #7FD6B5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .perk-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: .93rem; color: #fff; }
-    .perk-sub { font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .05em; text-transform: uppercase; color: rgba(127,214,181,.75); margin-top: 2px; }
+    .perk-sub { font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .05em; text-transform: uppercase; color: rgba(185,232,211,.95); margin-top: 2px; }
     .perk-list { display: flex; flex-direction: column; gap: 6px; }
     .perk-item { display: flex; align-items: center; gap: 10px; font-size: .84rem; color: rgba(127,214,181,.92); }
     .perk-check { width: 17px; height: 17px; background: rgba(127,214,181,.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #7FD6B5; }
@@ -109,7 +109,7 @@
       color: #1F4D3A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .form-card-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.35rem; font-weight: 400; color: #163B2D; letter-spacing: -0.01em; }
-    .form-card-sub { font-size: .82rem; color: #64748B; margin: 0 0 8px; }
+    .form-card-sub { font-size: .82rem; color: #4B5563; margin: 0 0 8px; }
 
     .role-pill {
       display: inline-flex; align-items: center; gap: 8px; background: rgba(127,214,181,.18);
@@ -153,12 +153,12 @@
     .pwd-strength-bar.filled-ok { background: #C9D8CE; }
     .pwd-strength-bar.filled-strong { background: #1F4D3A; }
     .pwd-strength-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
-    .pwd-strength-label { font-size: .72rem; font-weight: 800; color: #64748B; }
+    .pwd-strength-label { font-size: .72rem; font-weight: 800; color: #4B5563; }
     .pwd-strength-label.is-weak { color: #c0392b; }
     .pwd-strength-label.is-ok { color: #7c6a22; }
     .pwd-strength-label.is-strong { color: #1F4D3A; }
     .pwd-guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 9px; margin-top: 7px; padding: 8px 10px; background: rgba(95,143,120,.08); border: 1.5px solid rgba(95,143,120,.28); border-radius: 11px; }
-    .pwd-guide-item { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: .72rem; font-weight: 600; color: #64748B; line-height: 1.25; }
+    .pwd-guide-item { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: .72rem; font-weight: 600; color: #4B5563; line-height: 1.25; }
     .pwd-guide-dot { width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; border: 1.5px solid rgba(100,116,139,.35); color: transparent; background: #fff; font-size: .62rem; font-weight: 900; line-height: 1; }
     .pwd-guide-item.is-met { color: #1F4D3A; }
     .pwd-guide-item.is-met .pwd-guide-dot { background: #1F4D3A; border-color: #1F4D3A; color: #fff; }
@@ -174,7 +174,7 @@
     }
     .custom-checkbox:checked + .checkbox-custom { background: #1F4D3A; border-color: #1F4D3A; }
     .custom-checkbox:checked + .checkbox-custom::after { content: ''; width: 9px; height: 5px; border: 2px solid white; border-top: none; border-right: none; transform: rotate(-45deg) translateY(-1px); display: block; }
-    .terms-text { font-size: .78rem; color: #64748B; line-height: 1.35; }
+    .terms-text { font-size: .78rem; color: #4B5563; line-height: 1.35; }
     .terms-text a { color: #1F4D3A; font-weight: 600; text-decoration: none; }
     .terms-text a:hover { color: #163B2D; }
 
@@ -189,7 +189,7 @@
     .btn-login:hover { background: #123F32; color: #fff; transform: translateY(-1px); box-shadow: none; }
     .btn-login:active { transform: translateY(0) scale(.985); }
 
-    .login-register { text-align: center; font-size: .8rem; color: #64748B; margin: 0; }
+    .login-register { text-align: center; font-size: .8rem; color: #4B5563; margin: 0; }
     .login-register a { color: #1F5A46; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #123F32; }
 
@@ -204,7 +204,7 @@
     .rf-brand { display: flex; align-items: center; gap: 10px; }
     .rf-brand img { width: 22px; height: 22px; object-fit: contain; }
     .rf-brand-text { display: flex; flex-direction: column; line-height: 1.18; }
-    .rf-brand-text strong { font-family: 'Inter', sans-serif; font-weight: 800; font-size: .9rem; color: #1F5A46; }
+    .rf-brand-text strong { font-family: 'Inter', sans-serif; font-weight: 800; font-size: .9rem; color: #fff; }
     .rf-brand-text span { font-size: .68rem; color: rgba(127,214,181,.75); }
     .rf-badges { display: flex; gap: 18px; flex-wrap: wrap; }
     .rf-badge { display: flex; align-items: center; gap: 8px; }
@@ -271,6 +271,9 @@
     /* -- RESPONSIVE ---------------------------------------- */
     @media (max-width: 980px) {
       body.register-page { overflow-y: auto; }
+      /* Let the form set the page height so the footer follows it instead
+         of sitting on top of the lower fields. */
+      .register-main { flex: 0 0 auto; min-height: auto; }
       .register-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 540px) {
