@@ -155,8 +155,8 @@
     .login-register { text-align: center; font-size: .86rem; color: #64748B; margin: 0; }
     .login-register a { color: #1F5A46; font-weight: 700; text-decoration: none; transition: color .2s; }
     .login-register a:hover { color: #123F32; }
-    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: rgba(255,255,255,.35); font-size: .8rem; }
-    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: rgba(149,213,178,.2); }
+    .form-divider { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: #64748B; font-size: .8rem; }
+    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
 
     .demo-accounts {
       display: grid;
@@ -212,7 +212,7 @@
       line-height: 1.15;
     }
     .demo-email {
-      color: rgba(255,255,255,.54);
+      color: rgba(255,255,255,.8);
       font-family: 'DM Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: .64rem;
       overflow: hidden;
@@ -257,7 +257,7 @@
     /* -- BELOW-CARD TAGLINE ------------------------------ */
     .scene-tagline { position: relative; z-index: 1; text-align: center; margin-top: 12px; width: 100%; }
     .scene-tagline-row { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.92); font-size: .88rem; font-weight: 600; }
-    .scene-copyright { margin-top: 5px; font-size: .76rem; color: rgba(127,214,181,.65); }
+    .scene-copyright { margin-top: 5px; font-size: .76rem; color: rgba(185,232,211,.9); }
 
     .login-page .login-form-header p,
     .login-page .auth-status,
@@ -284,6 +284,11 @@
     .login-page .scene-tagline-row {
       font-size: .96rem;
     }
+    /* Mint on the dark weather card read ~4.3:1; lighter mint clears AA. */
+    .login-page .weather-updated,
+    .login-page .weather-updated span:not(.weather-updated-dot) {
+      color: #b9e8d3;
+    }
     .login-page .weather-row-label,
     .login-page .scene-copyright {
       font-size: .86rem;
@@ -299,7 +304,8 @@
     }
     @media (max-width: 540px) {
       .login-card { padding: 24px 20px 20px; }
-      .back-link-top { position: absolute; top: 14px; left: 14px; }
+      /* In flow on phones so the login card can't cover it. */
+      .back-link-top { position: relative; top: auto; left: auto; align-self: flex-start; margin: 14px 0 10px 16px; padding: 6px 12px; border-radius: 999px; background: rgba(13,38,30,.55); backdrop-filter: blur(8px); }
       .captcha-card { grid-template-columns: 1fr; }
       .captcha-icon { display: none; }
       .form-row-split { align-items: flex-start; flex-direction: column; gap: 10px; }

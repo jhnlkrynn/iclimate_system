@@ -349,7 +349,7 @@
             flex: 0 0 auto;
             border: 0;
             background: transparent;
-            color: rgba(255,255,255,.62);
+            color: rgba(255,255,255,.8);
             font-family: 'Inter', sans-serif;
             font-size: var(--text-sm);
             font-weight: 600;

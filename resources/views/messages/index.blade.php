@@ -13,7 +13,7 @@
             ->values();
     @endphp
     <style>
-        .msg-wrap { --msg-ink:#1f2a24; --msg-muted:#6b7c72; --msg-line:#e3ece6; --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; color: var(--msg-ink); }
+        .msg-wrap { --msg-ink:#1f2a24; --msg-muted:#55645b; --msg-line:#e3ece6; --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; color: var(--msg-ink); }
         .msg-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:var(--msg-ink); background:linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .msg-hero::before {
             content:"";
@@ -75,7 +75,7 @@
         .mine .bubble { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
         .msg-meta { color:var(--msg-muted); font-family:'DM Mono', monospace; font-size:.8rem; letter-spacing:.02em; margin-top:.3rem; display:flex; align-items:center; gap:.35rem; line-height:1.35; }
         .mine .msg-meta { color:rgba(255,255,255,.72); }
-        .msg-check { font-size:.78rem; color:rgba(255,255,255,.5); }
+        .msg-check { font-size:.78rem; color:rgba(255,255,255,.8); }
         .msg-check.seen { color:#74c69d; }
         .msg-actions { display:flex; justify-content:flex-end; margin-top:.5rem; }
         .msg-unsend { border:1px solid rgba(255,255,255,.52); border-radius:999px; background:rgba(255,255,255,.14); color:#fff; font-family:'DM Mono', monospace; font-size:.8rem; font-weight:700; padding:.25rem .6rem; line-height:1.2; }
@@ -100,7 +100,7 @@
         .emoji-option { border:0; background:transparent; font-size:1.15rem; border-radius:8px; padding:.25rem; line-height:1; }
         .emoji-option:hover { background:rgba(45,106,79,.08); }
 
-        .msg-empty { flex:1 1 auto; min-height:420px; display:grid; place-items:center; padding:2rem; }
+        .msg-empty { flex:1 1 auto; min-height:420px; display:grid; place-items:center; align-content:center; gap:.5rem; padding:2rem; }
         .unsend-confirm { position:fixed; inset:0; z-index:2300; display:none; place-items:center; padding:1rem; background:rgba(13,31,24,.48); backdrop-filter:blur(5px); }
         .unsend-confirm.show { display:grid; }
         .unsend-card { width:min(420px,100%); overflow:hidden; border:1px solid rgba(212,237,218,.9); border-radius:20px; background:linear-gradient(145deg,#fff,#f7fbf8); box-shadow:0 1.4rem 3.4rem rgba(13,31,24,.34); }

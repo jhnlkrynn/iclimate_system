@@ -11,13 +11,14 @@
 
 <x-app-layout>
     <div class="container-fluid py-3">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-                <h1 class="h4 mb-1">ML Model Registry</h1>
-                <p class="text-muted mb-0">Rice yield models and their recorded results. Nothing becomes active until an IT Expert validates and activates it.</p>
+                <div class="eyebrow mb-2">System Health</div>
+                <h1 class="h3 mb-1">ML Model Registry</h1>
+                <p class="mb-0">Rice yield models and their recorded results. Nothing becomes active until an IT Expert validates and activates it.</p>
             </div>
-            <a class="btn btn-outline-success btn-sm" href="{{ route('system-health.index') }}">Back to System Health</a>
-        </div>
+            <a class="btn btn-outline-light btn-sm" href="{{ route('system-health.index') }}">Back to System Health</a>
+        </section>
 
         @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>

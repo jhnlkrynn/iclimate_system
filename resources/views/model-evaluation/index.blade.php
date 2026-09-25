@@ -569,7 +569,11 @@
                 if (!comparisonCount || !comparisonOutput) return;
                 const count = Number(comparisonCount.value);
                 wraps.forEach((wrap, index) => wrap.style.display = index < count ? '' : 'none');
-                const selected = selects.slice(0, count).map((select) => findModel(select.value));
+                const selected = selects.slice(0, count).map((select) => findModel(select.value)).filter(Boolean);
+                if (!selected.length) {
+                    comparisonOutput.innerHTML = '<div class="small text-muted">No model metrics yet. Comparison appears once the ML service returns evaluation results.</div>';
+                    return;
+                }
 
                 if (comparisonSelectors) comparisonSelectors.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
                 comparisonOutput.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;

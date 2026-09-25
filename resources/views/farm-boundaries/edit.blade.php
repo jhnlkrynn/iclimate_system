@@ -74,7 +74,9 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // app.js loads Leaflet lazily; wait for it instead of racing it.
+            try { await window.iClimateVisualsReady; } catch (e) { /* handled below */ }
             const Leaflet = window.L;
             if (!Leaflet) {
                 document.getElementById('boundaryMap').innerHTML = '<div class="alert alert-warning m-3">The map could not load. Please refresh the page or try again later.</div>';

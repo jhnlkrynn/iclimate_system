@@ -1,6 +1,6 @@
 <x-app-layout>
     <style>
-        .feed-wrap { --feed-ink:#1E2B25; --feed-muted:#68756D; --feed-line:#D8E0DA; --feed-green:#1F5A46; --feed-mint:#8FAF9A; --feed-blue:#4B7185; --feed-accent:#8FAF9A; }
+        .feed-wrap { --feed-ink:#1E2B25; --feed-muted:#55645b; --feed-line:#D8E0DA; --feed-green:#1F5A46; --feed-mint:#8FAF9A; --feed-blue:#4B7185; --feed-accent:#8FAF9A; }
         .feed-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.75rem 1.85rem; color:var(--feed-ink); background:linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .feed-hero::before {
             content:"";

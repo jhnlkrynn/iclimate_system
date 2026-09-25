@@ -320,7 +320,7 @@
             flex: 0 0 auto;
             border: 0;
             background: transparent;
-            color: rgba(255,255,255,.62);
+            color: rgba(255,255,255,.86);
             font-family: 'Inter', sans-serif;
             font-size: var(--text-sm);
             font-weight: 600;
@@ -751,9 +751,9 @@
                 @if(! empty($weatherChartData['labels']))
                     <div class="chart-title">Weather Outlook: Next 7 Days</div>
                     <div class="chart-note">{{ $liveWeather ? 'Daily forecast for Lian, Batangas.' : 'Recent saved readings (live forecast unavailable).' }}</div>
-                    <div class="forecast-strip mb-3">
+                    <div class="forecast-strip mb-3" data-forecast-strip>
                         @foreach(array_slice($weatherChartData['labels'], 0, 7) as $i => $label)
-                            <div class="forecast-strip-day">
+                            <div class="forecast-strip-day" data-rain-mm="{{ is_numeric($weatherChartData['rainfall'][$i] ?? null) ? (float) $weatherChartData['rainfall'][$i] : '' }}">
                                 <div class="mao-label">{{ $label }}</div>
                                 <div class="risk-level-value" style="font-size:1.1rem;">{{ is_numeric($weatherChartData['rainfall'][$i] ?? null) ? number_format($weatherChartData['rainfall'][$i], 0).'mm' : '—' }}</div>
                                 <div class="mao-note">{{ is_numeric($weatherChartData['temperature'][$i] ?? null) ? number_format($weatherChartData['temperature'][$i], 0).'°C' : '—' }} &middot; {{ is_numeric($weatherChartData['windSpeed'][$i] ?? null) ? number_format($weatherChartData['windSpeed'][$i], 0).($liveWeather ? 'km/h' : '').' wind' : '—' }}</div>

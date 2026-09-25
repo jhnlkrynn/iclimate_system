@@ -500,7 +500,7 @@
                         <div class="alert alert-warning py-2" role="status">Showing the most recent saved weather update.</div>
                     @endif
                     <div class="row g-3">
-                        <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Condition</div><div class="wp-card-value">{{ $liveWeatherCondition }}</div></div></div>
+                        <div class="col-6 col-xl"><div class="wp-result-card h-100" data-weather-mood-root><div class="wp-label">Condition</div><div class="wp-card-value" data-weather-mood-source>{{ $liveWeatherCondition }}</div></div></div>
                         <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Rainfall</div><div class="wp-card-value">{{ is_numeric($liveWeather['current_rainfall_mm'] ?? null) ? number_format((float) $liveWeather['current_rainfall_mm'], 2).' mm' : '—' }}</div></div></div>
                         <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Temperature</div><div class="wp-card-value">{{ is_numeric($liveWeather['current_temperature_c'] ?? null) ? number_format((float) $liveWeather['current_temperature_c'], 1).'°C' : '—' }}</div></div></div>
                         <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Humidity</div><div class="wp-card-value">{{ is_numeric($liveWeather['humidity_percent'] ?? null) ? number_format((float) $liveWeather['humidity_percent']).'%' : '—' }}</div></div></div>
@@ -513,7 +513,7 @@
                         <div class="mt-3 pt-3 border-top">
                             <div class="wp-label mb-2">Lian-wide (town center) &middot; same reading as your Dashboard</div>
                             <div class="row g-3">
-                                <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Condition</div><div class="wp-card-value">{{ $lianNow['condition'] ?? '—' }}</div></div></div>
+                                <div class="col-6 col-xl"><div class="wp-result-card h-100" data-weather-mood-root><div class="wp-label">Condition</div><div class="wp-card-value" data-weather-mood-source>{{ $lianNow['condition'] ?? '—' }}</div></div></div>
                                 <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Rainfall</div><div class="wp-card-value">{{ is_numeric($lianNow['precipitation'] ?? null) ? number_format((float) $lianNow['precipitation'], 2).' mm' : '—' }}</div></div></div>
                                 <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Temperature</div><div class="wp-card-value">{{ is_numeric($lianNow['temperature'] ?? null) ? number_format((float) $lianNow['temperature'], 1).'°C' : '—' }}</div></div></div>
                                 <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Humidity</div><div class="wp-card-value">{{ is_numeric($lianNow['humidity'] ?? null) ? number_format((float) $lianNow['humidity']).'%' : '—' }}</div></div></div>

@@ -45,7 +45,9 @@
             </div>
         </div>
         <script>
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', async () => {
+                // app.js loads Leaflet lazily; wait for it instead of racing it.
+                try { await window.iClimateVisualsReady; } catch (e) { /* no map */ }
                 const Leaflet = window.L;
                 if (!Leaflet) return;
                 const points = @js($record->farmBoundary->boundary_coordinates);

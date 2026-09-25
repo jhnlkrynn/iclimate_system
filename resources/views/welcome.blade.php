@@ -425,7 +425,17 @@
     }
     .hws-icon { color: var(--green-400); flex-shrink: 0; }
     .hws-val { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--white); line-height: 1; }
-    .hws-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+    .hws-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,.74); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+    .hws-item { transition: transform .3s cubic-bezier(.34,1.4,.64,1), border-color .25s ease, background .25s ease; }
+    .hws-item:hover { transform: translateY(-3px); border-color: rgba(127,214,181,.55); background: rgba(22,59,45,.78); }
+    .hws-item:hover .hws-icon { transform: scale(1.15) rotate(-6deg); }
+    .hws-icon { transition: transform .35s cubic-bezier(.34,1.4,.64,1); }
+    .hws-val.is-updating { animation: heroValIn .5s ease both; }
+    @keyframes heroValIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .hmc-live { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: .8rem; font-weight: 600; color: #b9e8d3; }
+    .hmc-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7fd6b5; box-shadow: 0 0 0 0 rgba(127,214,181,.6); animation: heroLive 2.2s ease-out infinite; flex-shrink: 0; }
+    @keyframes heroLive { 70% { box-shadow: 0 0 0 7px rgba(127,214,181,0); } 100% { box-shadow: 0 0 0 0 rgba(127,214,181,0); } }
+    @media (prefers-reduced-motion: reduce) { .hmc-live::before, .hws-val.is-updating { animation: none; } .hws-item:hover { transform: none; } }
 
     /* Trust / stats band */
     .trust-grid {
@@ -595,7 +605,7 @@
       display: flex; align-items: center; justify-content: center;
     }
     .mission-card strong { display: block; font-size: 0.95rem; color: var(--white); margin-bottom: 4px; }
-    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: rgba(255,255,255,0.65); }
+    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: rgba(255,255,255,.8); }
 
     /* ===============================================
        PILLARS ROW (5 cards)
@@ -631,7 +641,7 @@
       margin: 0 auto 14px;
     }
     .pillar-card strong { display: block; font-size: 0.88rem; color: var(--white); margin-bottom: 6px; }
-    .pillar-card p { font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,.66); }
+    .pillar-card p { font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,.8); }
     @media (max-width: 900px) {
       .pillars-row { grid-template-columns: repeat(2, 1fr); }
     }
@@ -699,7 +709,7 @@
     }
     .wwa-desc {
       font-size: 0.76rem;
-      color: rgba(255,255,255,.62);
+      color: rgba(255,255,255,.8);
       line-height: 1.5;
     }
     @media (max-width: 900px) {
@@ -810,7 +820,7 @@
       letter-spacing: -0.01em;
       position: relative; z-index: 1;
     }
-    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: rgba(255,255,255,.68); position: relative; z-index: 1; }
+    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: rgba(255,255,255,.8); position: relative; z-index: 1; }
     .fc-badge {
       display: inline-block; margin-top: auto;
       font-family: 'DM Mono', monospace;
@@ -895,7 +905,7 @@
     .how-step p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: rgba(255,255,255,.68);
+      color: rgba(255,255,255,.8);
     }
     @media (max-width: 1024px) {
       .how-block { padding: 36px 28px; }
@@ -1123,7 +1133,7 @@
     .contact-method p {
       font-size: 0.85rem;
       line-height: 1.6;
-      color: rgba(255,255,255,.66);
+      color: rgba(255,255,255,.8);
     }
     .contact-method-link {
       margin-top: 10px;
@@ -1206,7 +1216,7 @@
     }
     .contact-form-sub {
       font-size: 0.85rem;
-      color: rgba(255,255,255,.62);
+      color: rgba(255,255,255,.8);
     }
     .form-row {
       display: grid;
@@ -1254,7 +1264,7 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(143,175,154,0.16);
     }
-    .form-input::placeholder { color: rgba(255,255,255,.45); }
+    .form-input::placeholder { color: rgba(255,255,255,.62); }
     .btn-dark { background: var(--green-800); color: var(--white); border: 1px solid rgba(143,175,154,.3); }
     .btn-dark:hover {
       background: var(--green-950);
@@ -1332,6 +1342,40 @@
       color: var(--accent);
       transition: background 0.2s, border-color 0.2s, transform 0.2s;
     }
+    .footer-email { position: relative; display: inline-flex; }
+    .footer-email-menu {
+      position: fixed; left: 0; top: 0; z-index: 3000;
+      min-width: 210px; padding: 6px;
+      display: flex; flex-direction: column; gap: 2px;
+      border-radius: 12px;
+      background: rgba(13,38,30,.97);
+      border: 1px solid rgba(127,214,181,.3);
+      box-shadow: 0 16px 34px rgba(0,0,0,.4);
+      backdrop-filter: blur(12px);
+      animation: emailMenuIn .18s ease-out;
+    }
+    .footer-email-menu[hidden] { display: none; }
+    .footer-email-menu::after {
+      content: ""; position: absolute; left: var(--arrow-x, 50%); bottom: 100%; transform: translateX(-50%);
+      border: 7px solid transparent; border-bottom-color: rgba(13,38,30,.97);
+    }
+    .footer-email-menu.opens-up::after { bottom: auto; top: 100%; border-bottom-color: transparent; border-top-color: rgba(13,38,30,.97); }
+    .footer-email-addr { padding: 6px 10px 8px; font-size: .78rem; color: #b9e8d3; border-bottom: 1px solid rgba(127,214,181,.18); margin-bottom: 4px; }
+    .footer-email-menu a,
+    .footer-email-menu button {
+      display: block; width: 100%; text-align: left;
+      padding: 8px 10px; border: 0; border-radius: 8px;
+      background: transparent; color: #fff;
+      font: inherit; font-size: .86rem; font-weight: 600;
+      text-decoration: none; cursor: pointer;
+      transition: background .15s ease;
+    }
+    .footer-email-menu a:hover, .footer-email-menu a:focus-visible,
+    .footer-email-menu button:hover, .footer-email-menu button:focus-visible {
+      background: rgba(127,214,181,.16); outline: none;
+    }
+    .footer-email-menu button.is-copied { color: #7fd6b5; }
+    @keyframes emailMenuIn { from { opacity: 0; } to { opacity: 1; } }
     .footer-social-icon:hover { background: rgba(143,175,154,.18); border-color: var(--accent); color: var(--accent-light); transform: translateY(-1px); }
     .footer-message-card {
       position: relative;
@@ -1716,7 +1760,7 @@
     .connect-item p {
       font-size: 0.78rem;
       line-height: 1.5;
-      color: rgba(255,255,255,.62);
+      color: rgba(255,255,255,.8);
     }
     @media (max-width: 900px) {
       .roles-connect { padding: 28px 24px; }
@@ -1751,7 +1795,7 @@
     .role-card > p {
       font-size: 0.875rem;
       line-height: 1.75;
-      color: rgba(255,255,255,.66);
+      color: rgba(255,255,255,.8);
       margin-bottom: 24px;
     }
     .role-divider {
@@ -1765,7 +1809,7 @@
       font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(255,255,255,.42);
+      color: rgba(255,255,255,.8);
       margin-bottom: 14px;
     }
     .role-features {
@@ -1834,7 +1878,7 @@
       letter-spacing: 0;
     }
     .brand-copy small {
-      color: rgba(255,255,255,0.48);
+      color: rgba(255,255,255,.8);
       font-family: 'DM Mono', monospace;
       font-size: 0.58rem;
       letter-spacing: 0.08em;
@@ -2078,6 +2122,9 @@
       line-height: 1.45;
     }
   </style>
+  {{-- Shared iClimate design language (tokens, motion, card interactions),
+       loaded after the page's own styles so it refines them. --}}
+  @vite(['resources/css/landing.css', 'resources/js/landing.js'])
 </head>
 <body>
 <x-flash-toast />
@@ -2168,26 +2215,27 @@
         <div class="hero-map-card">
           <div class="hmc-location">Lian, Batangas</div>
           <div class="hmc-office">Municipal Agricultural Office</div>
+          <div class="hmc-live" data-hero-live>{{ $heroClimate ? 'Latest saved climate record' : 'Checking live weather…' }}</div>
         </div>
         <div class="hero-weather-strip">
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</div><div class="hws-label">Temperature</div></div>
+            <div><div class="hws-val" data-hero-temp>{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</div><div class="hws-label">Temperature</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c1.6 2.2 3 4.3 3 6.1A3 3 0 1 1 7 8.1C7 6.3 8.4 4.2 10 2Z" stroke="currentColor" stroke-width="1.4"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</div><div class="hws-label">Humidity</div></div>
+            <div><div class="hws-val" data-hero-humidity>{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</div><div class="hws-label">Humidity</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 11.5h12.2a2.4 2.4 0 1 1-2.4 2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
             {{-- This wind figure is from a stored historical ClimateRecord, whose wind
                  unit is not established by any repository evidence, so no unit is
                  asserted here (unlike genuinely-km/h live Open-Meteo readings). --}}
-            <div><div class="hws-val">{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</div><div class="hws-label">Wind Speed</div></div>
+            <div><div class="hws-val" data-hero-wind>{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</div><div class="hws-label">Wind Speed</div></div>
           </div>
           <div class="hws-item">
             <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="2.6" height="11" rx="1" fill="currentColor"/><rect x="8.7" y="6" width="2.6" height="8" rx="1" fill="currentColor" opacity=".7"/><rect x="13.4" y="8.5" width="2.6" height="5.5" rx="1" fill="currentColor" opacity=".5"/></svg>
-            <div><div class="hws-val">{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</div><div class="hws-label">Rainfall Today</div></div>
+            <div><div class="hws-val" data-hero-rain>{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</div><div class="hws-label" data-hero-rain-label>{{ $heroClimate ? 'Rainfall (record)' : 'Rainfall Today' }}</div></div>
           </div>
         </div>
       </div>
@@ -2812,15 +2860,24 @@
           <h4>Follow Us</h4>
         </div>
         <div class="footer-social-icons">
-          <a href="#" class="footer-social-icon" aria-label="Facebook">
+          <a href="https://www.facebook.com/profile.php?id=61551743430540" class="footer-social-icon" target="_blank" rel="noopener noreferrer" aria-label="Follow iClimate on Facebook (opens in a new tab)" title="Follow us on Facebook">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg>
           </a>
           <a href="#" class="footer-social-icon" aria-label="Twitter">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 5.9c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1-.7-.8-1.8-1.3-3-1.3-2.3 0-4.1 1.9-4.1 4.1 0 .3 0 .6.1.9-3.4-.2-6.4-1.8-8.4-4.3-.4.6-.6 1.3-.6 2.1 0 1.4.7 2.7 1.8 3.4-.7 0-1.3-.2-1.9-.5v.1c0 2 1.4 3.7 3.3 4-.3.1-.7.2-1.1.2-.3 0-.5 0-.8-.1.5 1.7 2.1 2.9 3.9 2.9-1.4 1.1-3.2 1.8-5.2 1.8-.3 0-.7 0-1-.1 1.8 1.2 4 1.9 6.3 1.9 7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2.1-2.1z"/></svg>
           </a>
-          <a href="mailto:mao@lianbatangas.gov.ph" class="footer-social-icon" aria-label="Email">
+          <div class="footer-email" data-email-menu data-email="mao_lian@yahoo.com">
+            <a href="mailto:mao_lian@yahoo.com" class="footer-social-icon" aria-label="Email iClimate at mao_lian@yahoo.com" title="Email us: mao_lian@yahoo.com" aria-haspopup="true" aria-expanded="false" data-email-trigger>
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
+            </a>
+            <div class="footer-email-menu" role="menu" hidden data-email-panel>
+              <div class="footer-email-addr">mao_lian@yahoo.com</div>
+              <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=mao_lian@yahoo.com">Write in Gmail</a>
+              <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://compose.mail.yahoo.com/?to=mao_lian@yahoo.com">Write in Yahoo Mail</a>
+              <a role="menuitem" href="mailto:mao_lian@yahoo.com">Use my email app</a>
+              <button type="button" role="menuitem" data-email-copy>Copy address</button>
+            </div>
+          </div>
         </div>
         <div class="footer-message-card">
           <p>Together, we build a climate-resilient future for <em>agriculture</em>.</p>
@@ -2844,6 +2901,87 @@
 </footer>
 
 <script>
+  // Email icon: a mailto: link does nothing when the visitor has no desktop
+  // mail app configured, so offer webmail, the mail app, or copying instead.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-email-menu]').forEach((wrap) => {
+      const trigger = wrap.querySelector('[data-email-trigger]');
+      const panel = wrap.querySelector('[data-email-panel]');
+      const copyBtn = wrap.querySelector('[data-email-copy]');
+      const email = wrap.dataset.email;
+      // The footer clips overflow, so the panel lives on <body> and is
+      // positioned beside the icon, opening wherever there is room.
+      document.body.appendChild(panel);
+      const place = () => {
+        const r = trigger.getBoundingClientRect();
+        const w = panel.offsetWidth;
+        const h = panel.offsetHeight;
+        const gap = 10;
+        const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+        const up = window.innerHeight - r.bottom < h + gap + 8 && r.top > h + gap + 8;
+        panel.style.left = `${left}px`;
+        panel.style.top = `${up ? r.top - h - gap : r.bottom + gap}px`;
+        panel.style.setProperty('--arrow-x', `${r.left + r.width / 2 - left}px`);
+        panel.classList.toggle('opens-up', up);
+      };
+      const setOpen = (open) => {
+        panel.hidden = !open;
+        trigger.setAttribute('aria-expanded', String(open));
+        if (open) { place(); panel.querySelector('a, button')?.focus({ preventScroll: true }); }
+      };
+      window.addEventListener('scroll', () => { if (!panel.hidden) place(); }, { passive: true });
+      window.addEventListener('resize', () => { if (!panel.hidden) place(); });
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        setOpen(panel.hidden);
+      });
+      panel.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+      copyBtn?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(email);
+        } catch (e) {
+          const tmp = document.createElement('textarea');
+          tmp.value = email; document.body.appendChild(tmp); tmp.select();
+          document.execCommand('copy'); tmp.remove();
+        }
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('is-copied');
+        setTimeout(() => { copyBtn.textContent = 'Copy address'; copyBtn.classList.remove('is-copied'); setOpen(false); }, 1200);
+      });
+      document.addEventListener('click', (event) => {
+        if (!wrap.contains(event.target) && !panel.contains(event.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !panel.hidden) { setOpen(false); trigger.focus(); }
+      });
+    });
+  });
+
+  // Live Lian weather for the hero card, from the same public endpoint the
+  // login page uses. The stored record rendered server-side stays as the
+  // fallback when the live service is unavailable.
+  document.addEventListener('DOMContentLoaded', async () => {
+    const set = (selector, value) => {
+      const el = document.querySelector(selector);
+      if (!el || value === null || value === undefined) return;
+      el.textContent = value;
+      el.classList.remove('is-updating'); void el.offsetWidth; el.classList.add('is-updating');
+    };
+    try {
+      const res = await fetch('{{ route('login.weather') }}', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const w = await res.json();
+      if (!w || !w.has_real_weather) return;
+      const n = (v, d = 0) => (v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v).toFixed(d));
+      if (n(w.temperature) !== null) set('[data-hero-temp]', `${n(w.temperature)}°C`);
+      if (n(w.humidity) !== null) set('[data-hero-humidity]', `${n(w.humidity)}%`);
+      if (n(w.wind_speed) !== null) set('[data-hero-wind]', `${n(w.wind_speed)} km/h`);
+      if (n(w.rainfall, 1) !== null) set('[data-hero-rain]', `${n(w.rainfall, 1)} mm`);
+      set('[data-hero-rain-label]', 'Rainfall Today');
+      set('[data-hero-live]', `Live now · ${w.condition_label || 'Current weather'}${w.updated_label ? ' · ' + w.updated_label : ''}`);
+    } catch (e) { /* keep the saved record */ }
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.getElementById('navLinks');
     const hamburger = document.getElementById('hamburger');
