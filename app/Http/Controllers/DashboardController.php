@@ -202,9 +202,12 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function maoWeather(Request $request, WeatherApiService $weatherApi): JsonResponse
+    public function maoWeather(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather): JsonResponse
     {
-        $liveWeather = $weatherApi->forecast(refresh: $request->boolean('refresh'));
+        $liveWeather = $sharedWeather->alignForecast(
+            $weatherApi->forecast(refresh: $request->boolean('refresh')),
+            $request->boolean('refresh'),
+        );
 
         return response()->json([
             'ok' => $liveWeather !== null,
@@ -216,7 +219,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function mao(Request $request, WeatherApiService $weatherApi, TyphoonSafetyService $typhoonSafety): View
+    public function mao(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety): View
     {
         $recent = $this->recentOperationalData();
         $climateChartRecords = ClimateRecord::query()
@@ -226,7 +229,7 @@ class DashboardController extends Controller
             ->sortBy('record_date')
             ->values();
 
-        $liveWeather = $weatherApi->forecast();
+        $liveWeather = $sharedWeather->alignForecast($weatherApi->forecast());
         $storedWeatherChartData = [
             'labels' => $climateChartRecords->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
             'rainfall' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->rainfall)->all(),

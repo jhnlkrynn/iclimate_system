@@ -151,6 +151,91 @@ class FarmerDashboardWeatherService
         ];
     }
 
+    /**
+     * Aligns a municipal Lian forecast payload (the WeatherApiService::forecast()
+     * shape used by the MAO dashboard and the weather calendar) with the one
+     * shared Lian reading from current(), so every role and page shows the
+     * same current temperature, condition and daily forecast values instead of
+     * separately fetched and separately cached copies. Barangay-specific
+     * forecasts must not be passed through here.
+     */
+    public function alignForecast(?array $forecast, bool $force = false): ?array
+    {
+        $shared = $this->current($force);
+
+        if ($forecast === null || ($shared['success'] ?? false) !== true) {
+            return $forecast;
+        }
+
+        $current = $shared['current'] ?? [];
+        $fetchedAt = $shared['fetched_at'] ?? null;
+
+        $forecast = [
+            ...$forecast,
+            'source' => $shared['provider'] ?? $forecast['source'] ?? 'Open-Meteo',
+            'source_name' => ($shared['provider'] ?? 'Weather').' (shared iClimate Lian reading)',
+            'current_time' => $fetchedAt instanceof Carbon ? $fetchedAt->toDateTimeString() : ($forecast['current_time'] ?? null),
+            'current_condition' => $current['condition'] ?? $forecast['current_condition'] ?? null,
+            'current_icon' => $current['icon'] ?? $forecast['current_icon'] ?? null,
+            'weather_code' => $current['weather_code'] ?? $forecast['weather_code'] ?? null,
+            'current_rainfall_mm' => $current['precipitation'] ?? null,
+            'current_temperature_c' => $current['temperature'] ?? null,
+            'humidity_percent' => $current['humidity'] ?? null,
+            'wind_speed_kmh' => $current['wind_speed'] ?? null,
+            'fetched_at' => $this->serializeTime($fetchedAt) ?? ($forecast['fetched_at'] ?? null),
+            'freshness' => ($shared['stale'] ?? false) ? 'latest cached update' : 'fresh',
+            'is_cached_fallback' => (bool) ($shared['stale'] ?? false),
+        ];
+
+        $series = $forecast['daily_series'] ?? null;
+        $sharedDays = collect($shared['forecast'] ?? [])->keyBy('date');
+
+        if (! is_array($series) || $sharedDays->isEmpty()) {
+            return $forecast;
+        }
+
+        foreach (($series['labels'] ?? []) as $index => $date) {
+            $day = $sharedDays->get((string) $date);
+
+            if (! is_array($day)) {
+                continue;
+            }
+
+            $max = $day['temperature_max'] ?? null;
+            $min = $day['temperature_min'] ?? null;
+
+            if (is_numeric($max) && is_numeric($min)) {
+                $series['temperatureMax'][$index] = (float) $max;
+                $series['temperatureMin'][$index] = (float) $min;
+                $series['temperature'][$index] = round(((float) $max + (float) $min) / 2, 2);
+            }
+
+            if (is_numeric($day['rainfall'] ?? null)) {
+                $series['rainfall'][$index] = (float) $day['rainfall'];
+            }
+
+            if (is_numeric($day['precipitation_probability'] ?? null)) {
+                $series['precipitationProbability'][$index] = (float) $day['precipitation_probability'];
+            }
+
+            if (($day['condition'] ?? null) !== null) {
+                $series['conditions'][$index] = $day['condition'];
+                $series['icons'][$index] = $day['icon'] ?? ($series['icons'][$index] ?? null);
+            }
+        }
+
+        $days = max(count($series['labels'] ?? []), 1);
+        $rainfall = array_map('floatval', $series['rainfall'] ?? []);
+
+        $forecast['daily_series'] = $series;
+        $forecast['daily_rainfall_mm'] = round(array_sum($rainfall) / $days, 2);
+        $forecast['monthly_rainfall_estimate_mm'] = round((array_sum($rainfall) / $days) * 30, 2);
+        $forecast['temperature_c'] = round(array_sum(array_map('floatval', $series['temperature'] ?? [])) / $days, 2);
+        $forecast['precip_probability_percent'] = round(array_sum(array_map('floatval', $series['precipitationProbability'] ?? [])) / $days, 2);
+
+        return $forecast;
+    }
+
     private function fetchNormalizedWeather(): array
     {
         $errors = [];

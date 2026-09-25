@@ -6,7 +6,7 @@ use App\Models\AIChat;
 use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
-use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\PredictionService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Weather\FarmerDashboardWeatherService;
@@ -22,7 +22,7 @@ class AIOrchestratorService
         private readonly IntentClassifierService $classifier,
         private readonly PredictionService $predictionService,
         private readonly FarmerDashboardWeatherService $weatherService,
-        private readonly MonthlyWeatherRandomForest $weatherForest,
+        private readonly PredictionOrchestrator $predictionOrchestrator,
         private readonly GroqChatService $groq,
         private readonly BarangayRiskMapService $riskMapService,
     ) {}
@@ -189,7 +189,9 @@ class AIOrchestratorService
     private function weatherPrediction(User $user, string $question, string $language, array $memory, array $entities): array
     {
         $targetMonth = $this->targetMonth($entities);
-        $prediction = $this->weatherForest->predict($targetMonth);
+        // Same persisted forecast the dashboards, calendar and risk map read,
+        // so the chatbot never quotes a different monthly figure.
+        $prediction = $this->predictionOrchestrator->monthlyWeatherForecast($targetMonth);
         $tool = [
             'tool' => 'weather_prediction',
             'success' => (bool) ($prediction['ready'] ?? false),
