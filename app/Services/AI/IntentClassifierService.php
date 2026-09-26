@@ -59,14 +59,52 @@ class IntentClassifierService
     ) {}
 
     /**
+     * Local rules first, Groq only for what the rules cannot place.
+     *
      * @return array{intent:string,confidence:float,entities:array<string,mixed>,source:string,missing:array<int,string>,requires_clarification:bool}
      */
     public function classify(User $user, string $question, string $language, array $memory = []): array
     {
-        if ($preflight = $this->preflight($question)) {
-            return $preflight;
+        $local = $this->classifyLocal($question, $memory);
+
+        if (! $this->needsLlm($local)) {
+            return $local;
         }
 
+        return $this->classifyWithLlm($user, $question, $language, $memory) ?? $local;
+    }
+
+    /**
+     * Rule-based classification: instant, no network.
+     *
+     * @return array{intent:string,confidence:float,entities:array<string,mixed>,source:string,missing:array<int,string>,requires_clarification:bool}
+     */
+    public function classifyLocal(string $question, array $memory = []): array
+    {
+        return $this->preflight($question) ?? $this->fallbackClassification($question, $memory);
+    }
+
+    /**
+     * Whether the rules left the message unplaced, so asking Groq is worth
+     * its wait. A message the rules already know is ambiguous is answered with
+     * a clarifying question instead.
+     *
+     * @param  array{intent:string,requires_clarification:bool}  $local
+     */
+    public function needsLlm(array $local): bool
+    {
+        return $local['intent'] === self::GENERAL_CHAT
+            || ($local['intent'] === self::UNKNOWN && ! $local['requires_clarification']);
+    }
+
+    /**
+     * Groq's structured classification, or null when Groq is unavailable,
+     * slow, or not confident enough.
+     *
+     * @return array{intent:string,confidence:float,entities:array<string,mixed>,source:string,missing:array<int,string>,requires_clarification:bool}|null
+     */
+    public function classifyWithLlm(User $user, string $question, string $language, array $memory = []): ?array
+    {
         $llm = $this->groq->classifyIntent($user, $question, $language, $memory);
 
         if ($llm && $this->validIntent((string) $llm['intent']) && (float) $llm['confidence'] >= 0.75) {
@@ -80,7 +118,7 @@ class IntentClassifierService
             ];
         }
 
-        return $this->fallbackClassification($question, $memory);
+        return null;
     }
 
     /**

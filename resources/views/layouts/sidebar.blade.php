@@ -48,6 +48,7 @@
         'user-management' => ['users.index', ['users.*']],
         'system-logs' => ['system-logs.index', ['system-logs.*']],
         'system-health' => ['system-health.index', ['system-health.*']],
+        'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
     ];
 
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
@@ -88,6 +89,7 @@
         $moreGroup = [
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Predictions', 'weather', 'weather'),
+            $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [
@@ -106,6 +108,7 @@
             $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Predictions', 'weather', 'weather'),
+            $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             $navLink('Rice Production', 'rice-production', 'rice-production'),
         ];
         $publishingGroup = [

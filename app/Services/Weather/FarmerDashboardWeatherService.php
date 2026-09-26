@@ -56,17 +56,40 @@ class FarmerDashboardWeatherService
 
     public function __construct(private readonly WeatherIconMapper $icons) {}
 
-    public function current(bool $force = false): array
+    /** Per-provider limit (seconds) for the current call; null means the normal, patient settings. */
+    private ?float $budget = null;
+
+    /**
+     * @param  float|null  $budgetSeconds  interactive callers (the chatbot) pass a short limit: each
+     *                                     provider then gets at most that long and no retries. With a
+     *                                     warm cache the budget is never used.
+     */
+    public function current(bool $force = false, ?float $budgetSeconds = null): array
     {
+        $this->budget = $budgetSeconds;
         $cacheKey = $this->cacheKey();
         $lastSuccessfulKey = $cacheKey.'.last_successful';
         $ttl = now($this->timezone())->addMinutes(max(1, (int) config('services.weather.cache_minutes', 5)));
 
-        if (! $force && Cache::has($cacheKey)) {
-            $cached = Cache::get($cacheKey);
+        // One cache read (not has() then get()): on a database cache that is one query instead of two.
+        $cached = $force ? null : Cache::get($cacheKey);
+
+        if (is_array($cached)) {
             $cached['cached'] = true;
 
             return $cached;
+        }
+
+        // An interactive caller (the chatbot) is happy with a snapshot a few minutes old: the
+        // dashboard's 1-minute cache would otherwise send most chat questions out to the provider.
+        if (! $force && $budgetSeconds !== null) {
+            $recent = Cache::get($lastSuccessfulKey);
+
+            if (is_array($recent) && $this->youngerThan($recent, (int) config('ai.weather_max_age_minutes', 10))) {
+                $recent['cached'] = true;
+
+                return $recent;
+            }
         }
 
         try {
@@ -95,6 +118,22 @@ class FarmerDashboardWeatherService
             }
 
             return $this->unavailable();
+        }
+    }
+
+    /** Whether a stored snapshot was fetched by this server within the last $minutes minutes. */
+    private function youngerThan(array $snapshot, int $minutes): bool
+    {
+        $fetched = data_get($snapshot, 'timestamps.server_fetched_at') ?? data_get($snapshot, 'server_fetched_at');
+
+        if ($fetched === null || ($snapshot['success'] ?? true) === false) {
+            return false;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($fetched)->gt(now()->subMinutes(max(1, $minutes)));
+        } catch (Throwable) {
+            return false;
         }
     }
 
@@ -151,6 +190,91 @@ class FarmerDashboardWeatherService
         ];
     }
 
+    /**
+     * Aligns a municipal Lian forecast payload (the WeatherApiService::forecast()
+     * shape used by the MAO dashboard and the weather calendar) with the one
+     * shared Lian reading from current(), so every role and page shows the
+     * same current temperature, condition and daily forecast values instead of
+     * separately fetched and separately cached copies. Barangay-specific
+     * forecasts must not be passed through here.
+     */
+    public function alignForecast(?array $forecast, bool $force = false): ?array
+    {
+        $shared = $this->current($force);
+
+        if ($forecast === null || ($shared['success'] ?? false) !== true) {
+            return $forecast;
+        }
+
+        $current = $shared['current'] ?? [];
+        $fetchedAt = $shared['fetched_at'] ?? null;
+
+        $forecast = [
+            ...$forecast,
+            'source' => $shared['provider'] ?? $forecast['source'] ?? 'Open-Meteo',
+            'source_name' => ($shared['provider'] ?? 'Weather').' (shared iClimate Lian reading)',
+            'current_time' => $fetchedAt instanceof Carbon ? $fetchedAt->toDateTimeString() : ($forecast['current_time'] ?? null),
+            'current_condition' => $current['condition'] ?? $forecast['current_condition'] ?? null,
+            'current_icon' => $current['icon'] ?? $forecast['current_icon'] ?? null,
+            'weather_code' => $current['weather_code'] ?? $forecast['weather_code'] ?? null,
+            'current_rainfall_mm' => $current['precipitation'] ?? null,
+            'current_temperature_c' => $current['temperature'] ?? null,
+            'humidity_percent' => $current['humidity'] ?? null,
+            'wind_speed_kmh' => $current['wind_speed'] ?? null,
+            'fetched_at' => $this->serializeTime($fetchedAt) ?? ($forecast['fetched_at'] ?? null),
+            'freshness' => ($shared['stale'] ?? false) ? 'latest cached update' : 'fresh',
+            'is_cached_fallback' => (bool) ($shared['stale'] ?? false),
+        ];
+
+        $series = $forecast['daily_series'] ?? null;
+        $sharedDays = collect($shared['forecast'] ?? [])->keyBy('date');
+
+        if (! is_array($series) || $sharedDays->isEmpty()) {
+            return $forecast;
+        }
+
+        foreach (($series['labels'] ?? []) as $index => $date) {
+            $day = $sharedDays->get((string) $date);
+
+            if (! is_array($day)) {
+                continue;
+            }
+
+            $max = $day['temperature_max'] ?? null;
+            $min = $day['temperature_min'] ?? null;
+
+            if (is_numeric($max) && is_numeric($min)) {
+                $series['temperatureMax'][$index] = (float) $max;
+                $series['temperatureMin'][$index] = (float) $min;
+                $series['temperature'][$index] = round(((float) $max + (float) $min) / 2, 2);
+            }
+
+            if (is_numeric($day['rainfall'] ?? null)) {
+                $series['rainfall'][$index] = (float) $day['rainfall'];
+            }
+
+            if (is_numeric($day['precipitation_probability'] ?? null)) {
+                $series['precipitationProbability'][$index] = (float) $day['precipitation_probability'];
+            }
+
+            if (($day['condition'] ?? null) !== null) {
+                $series['conditions'][$index] = $day['condition'];
+                $series['icons'][$index] = $day['icon'] ?? ($series['icons'][$index] ?? null);
+            }
+        }
+
+        $days = max(count($series['labels'] ?? []), 1);
+        $rainfall = array_map('floatval', $series['rainfall'] ?? []);
+
+        $forecast['daily_series'] = $series;
+        $forecast['daily_rainfall_mm'] = round(array_sum($rainfall) / $days, 2);
+        $forecast['monthly_rainfall_estimate_mm'] = round((array_sum($rainfall) / $days) * 30, 2);
+        $forecast['temperature_c'] = round(array_sum(array_map('floatval', $series['temperature'] ?? [])) / $days, 2);
+        $forecast['precip_probability_percent'] = round(array_sum(array_map('floatval', $series['precipitationProbability'] ?? [])) / $days, 2);
+
+        return $forecast;
+    }
+
     private function fetchNormalizedWeather(): array
     {
         $errors = [];
@@ -174,6 +298,20 @@ class FarmerDashboardWeatherService
         }
     }
 
+    /**
+     * The HTTP client for a provider call. Normally patient (configured timeout,
+     * a couple of retries). With a budget it is strict: at most that many seconds
+     * and no retries, because a retry would double the wait the person sees.
+     */
+    private function http(float $timeout, int $retries, int $delayMs): \Illuminate\Http\Client\PendingRequest
+    {
+        if ($this->budget !== null) {
+            return Http::timeout(max(1.0, min($timeout, $this->budget)))->acceptJson();
+        }
+
+        return Http::timeout($timeout)->retry($retries, $delayMs)->acceptJson();
+    }
+
     private function requestWeatherApi(): array
     {
         $key = (string) config('services.weatherapi.key');
@@ -182,9 +320,7 @@ class FarmerDashboardWeatherService
             throw new RuntimeException('WeatherAPI key is not configured.');
         }
 
-        $response = Http::timeout((int) config('services.weatherapi.timeout', 8))
-            ->retry(2, 300)
-            ->acceptJson()
+        $response = $this->http((float) config('services.weatherapi.timeout', 8), 2, 300)
             ->get(rtrim((string) config('services.weatherapi.base_url'), '/').'/forecast.json', [
                 'key' => $key,
                 'q' => $this->coordinates(),
@@ -208,9 +344,7 @@ class FarmerDashboardWeatherService
 
     private function requestOpenMeteo(): array
     {
-        $response = Http::timeout((int) config('services.open_meteo.timeout', 10))
-            ->retry(2, 250)
-            ->acceptJson()
+        $response = $this->http((float) config('services.open_meteo.timeout', 10), 2, 250)
             ->get(rtrim((string) config('services.open_meteo.base_url'), '/').'/forecast', [
                 'latitude' => config('services.weather.latitude'),
                 'longitude' => config('services.weather.longitude'),

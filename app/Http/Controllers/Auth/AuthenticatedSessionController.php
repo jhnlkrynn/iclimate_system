@@ -7,8 +7,9 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
-use App\Services\Weather\OpenMeteoService;
+use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Support\ClimateSnapshot;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(Request $request, CaptchaService $captcha, OpenMeteoService $weather): View
+    public function create(Request $request, CaptchaService $captcha, FarmerDashboardWeatherService $weather): View
     {
         $requiresCaptcha = $captcha->requiresCaptcha($request, 'login');
 
@@ -37,13 +38,11 @@ class AuthenticatedSessionController extends Controller
     /**
      * Return the current login-page weather snapshot as JSON, for live polling.
      *
-     * Unlike the initial page render, this pulls a fresh reading from Open-Meteo
-     * (subject to the service's own short-lived cache) so the widget reflects
-     * live conditions instead of whatever was last stored.
+     * Reads the same shared (cached) Lian reading as the dashboards.
      */
-    public function weather(OpenMeteoService $weather): JsonResponse
+    public function weather(FarmerDashboardWeatherService $weather): JsonResponse
     {
-        return response()->json($this->weatherSnapshot($weather, live: true));
+        return response()->json($this->weatherSnapshot($weather));
     }
 
     /**
@@ -51,37 +50,51 @@ class AuthenticatedSessionController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function weatherSnapshot(OpenMeteoService $weather, bool $live = false): array
+    private function weatherSnapshot(FarmerDashboardWeatherService $weather): array
     {
-        $weatherTimezone = (string) config('services.open_meteo.timezone', 'Asia/Manila');
+        $weatherTimezone = (string) config('services.weather.timezone', 'Asia/Manila');
 
+        // Same shared Lian reading the Farmer/MAO dashboards and chatbot use,
+        // so the login widget never shows a different temperature.
         try {
-            $forecastRecords = $live
-                ? collect($weather->fetchForecast()['records'] ?? [])
-                : $weather->latestStoredForecast();
+            $shared = $weather->current();
         } catch (Throwable) {
-            $forecastRecords = collect();
+            $shared = [];
         }
 
-        $today = now($weatherTimezone)->toDateString();
-        $forecastRecords = $forecastRecords->sortBy('forecast_date')->values();
-        $forecast = $forecastRecords->first(fn ($record) => $record->forecast_date?->toDateString() >= $today)
-            ?? $forecastRecords->first();
-
+        $hasShared = ($shared['success'] ?? false) === true;
         $latestClimate = ClimateSnapshot::latest();
 
-        $currentWeather = $forecast?->raw_response['current'] ?? [];
-        $weatherCode = data_get($currentWeather, 'weather_code') ?? $forecast?->weather_code;
-        $hasRealWeather = $forecast !== null || $latestClimate !== null;
+        $weatherCode = $hasShared ? data_get($shared, 'current.weather_code') : null;
+        $hasRealWeather = $hasShared || $latestClimate !== null;
 
-        $temperature = data_get($currentWeather, 'temperature_2m') ?? $forecast?->temperature ?? $latestClimate?->temperature;
-        $humidity = data_get($currentWeather, 'relative_humidity_2m') ?? $forecast?->humidity ?? $latestClimate?->humidity;
-        $windSpeed = data_get($currentWeather, 'wind_speed_10m') ?? $forecast?->wind_speed ?? $latestClimate?->wind_speed;
-        $rainfall = $forecast?->rainfall_mm ?? $latestClimate?->rainfall;
-        $updatedAt = $forecast?->fetched_at?->timezone($weatherTimezone) ?? $latestClimate?->updated_at;
+        $temperature = ($hasShared ? data_get($shared, 'current.temperature') : null) ?? $latestClimate?->temperature;
+        $humidity = ($hasShared ? data_get($shared, 'current.humidity') : null) ?? $latestClimate?->humidity;
+        $windSpeed = ($hasShared ? data_get($shared, 'current.wind_speed') : null) ?? $latestClimate?->wind_speed;
+        $rainfall = ($hasShared ? data_get($shared, 'today.rainfall') : null) ?? $latestClimate?->rainfall;
+        $fetchedAt = $hasShared ? ($shared['fetched_at'] ?? null) : null;
+        $updatedAt = $fetchedAt
+            ? Carbon::parse($fetchedAt)->timezone($weatherTimezone)
+            : $latestClimate?->updated_at;
+
+        $sharedCondition = $hasShared ? strtolower((string) data_get($shared, 'current.condition', '')) : '';
 
         $condition = match (true) {
             ! $hasRealWeather || $temperature === null => ['Weather data unavailable', '🌦️'],
+            // Shared reading: reuse its own condition label so the wording
+            // matches the dashboards (WeatherAPI codes are not WMO codes).
+            $sharedCondition !== '' => [
+                data_get($shared, 'current.condition'),
+                match (true) {
+                    str_contains($sharedCondition, 'thunder') => '⛈️',
+                    str_contains($sharedCondition, 'rain') || str_contains($sharedCondition, 'drizzle') || str_contains($sharedCondition, 'shower') => '🌧️',
+                    str_contains($sharedCondition, 'fog') => '🌫️',
+                    str_contains($sharedCondition, 'partly') => '🌤️',
+                    str_contains($sharedCondition, 'cloud') || str_contains($sharedCondition, 'overcast') => '⛅️',
+                    str_contains($sharedCondition, 'night') => '🌙',
+                    default => '☀️',
+                },
+            ],
             in_array((int) $weatherCode, [95, 96, 99], true) => ['Thunderstorm', '⛈️'],
             in_array((int) $weatherCode, [80, 81, 82, 61, 63, 65, 66, 67], true) => ['Rain', '🌧️'],
             in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Drizzle', '🌧️'],
@@ -98,9 +111,9 @@ class AuthenticatedSessionController extends Controller
 
         return [
             'has_real_weather' => $hasUsableReading,
-            'temperature' => $hasUsableReading ? round((float) $temperature) : null,
+            'temperature' => $hasUsableReading ? round((float) $temperature, 1) : null,
             'humidity' => $humidity !== null ? round((float) $humidity) : null,
-            'wind_speed' => $windSpeed !== null ? round((float) $windSpeed) : null,
+            'wind_speed' => $windSpeed !== null ? round((float) $windSpeed, 1) : null,
             'rainfall' => $rainfall !== null ? round((float) $rainfall, 1) : null,
             'condition_label' => $condition[0],
             'condition_emoji' => $condition[1],

@@ -8,11 +8,12 @@ import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# RICE_YIELD_MODEL_PATH (relative to the project root or absolute) mirrors the
+# Laravel setting of the same name; unset, the original production file is used.
 RICE_MODEL = os.path.join(
     BASE_DIR,
-    "storage",
-    "models",
-    "rice_yield_model_final.pkl",
+    os.environ.get("RICE_YIELD_MODEL_PATH")
+    or os.path.join("storage", "models", "rice_yield_model_final.pkl"),
 )
 
 FEATURE_MAP = {

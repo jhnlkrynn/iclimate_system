@@ -112,14 +112,17 @@ class WeatherPredictionTest extends TestCase
             ->assertSee('Light Rain')
             ->assertDontSee('Add a Lian barangay to your profile');
 
+        // Uses the one shared Lian location the dashboards use.
         Http::assertSent(function ($request): bool {
             return str_contains($request->url(), 'api.open-meteo.com/v1/forecast')
-                && (float) $request['latitude'] === 14.0389
-                && (float) $request['longitude'] === 120.6503;
+                && (float) $request['latitude'] === (float) config('services.weather.latitude')
+                && (float) $request['longitude'] === (float) config('services.weather.longitude');
         });
 
+        // Forecast + shared current reading on the first load; fully cached after.
+        Http::assertSentCount(2);
         $this->actingAs($user)->get(route('weather-predictions.index'))->assertOk();
-        Http::assertSentCount(1);
+        Http::assertSentCount(2);
     }
 
     public function test_user_without_barangay_can_still_queue_weather_ml_prediction(): void
@@ -172,9 +175,22 @@ class WeatherPredictionTest extends TestCase
 
         Http::assertSent(function ($request): bool {
             return str_contains($request->url(), 'api.open-meteo.com/v1/forecast')
-                && (float) $request['latitude'] === 14.0389
-                && (float) $request['longitude'] === 120.6503;
+                && (float) $request['latitude'] === (float) config('services.weather.latitude')
+                && (float) $request['longitude'] === (float) config('services.weather.longitude');
         });
+    }
+
+    public function test_barangay_reading_is_shown_beside_the_lian_wide_dashboard_reading(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Matabungkay']);
+
+        $this->actingAs($user)
+            ->get(route('weather-predictions.index'))
+            ->assertOk()
+            ->assertSee('Weather Now in Matabungkay')
+            ->assertSee('(your barangay)')
+            ->assertSee('Lian-wide (town center)')
+            ->assertSee('same reading as your Dashboard');
     }
 
     public function test_initial_weather_tab_resolves_safely_for_missing_invalid_and_valid_tab_values(): void

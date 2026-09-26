@@ -395,22 +395,8 @@ class PredictionService
 
     private function conversationMemory(User $user): array
     {
-        $latest = AIChat::query()
-            ->where('user_id', $user->id)
-            ->latest()
-            ->take(3)
-            ->get();
-
-        return [
-            'last_intent' => $latest->first()?->intent,
-            'recent_questions' => $latest->pluck('question')->all(),
-            'recent_facts' => $latest
-                ->pluck('intent')
-                ->filter()
-                ->take(3)
-                ->values()
-                ->all(),
-        ];
+        // Shared with the orchestrator, so the history is read once per message.
+        return app(\App\Services\AI\ConversationContext::class)->recent($user);
     }
 
     private function domainRecordAnswer(User $user, string $question, string $intent, string $language): ?array

@@ -1,0 +1,45 @@
+/*
+ * iClimate shared design tokens + motion primitives.
+ * Imported by ui-refresh.css (app, auth, error pages) and landing.css
+ * (public landing page) so both speak the same visual language.
+ */
+:root {
+    /* Supporting accents: kept in the same muted, natural family as the
+       iClimate greens so pages feel livelier without looking loud. */
+    --ic-leaf: #3fa66b;
+    --ic-mint: #7fd6b5;
+    --ic-sky: #4f9fc4;
+    --ic-sun: #e9a23b;
+    --ic-rain: #5b86c9;
+    --ic-storm: #7a6cc9;
+    --ic-heat: #e0714f;
+    --ic-fog: #8e9ba3;
+
+    --ic-grad-brand: linear-gradient(135deg, #1f5a46 0%, #2f7d5b 55%, #3fa66b 100%);
+    --ic-grad-brand-hover: linear-gradient(135deg, #184a3a 0%, #276d4f 55%, #36945e 100%);
+    --ic-grad-sheen: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, .28) 45%, transparent 70%);
+
+    --ic-ring: 0 0 0 3px rgba(63, 166, 107, .28);
+    --ic-lift-shadow: 0 16px 34px rgba(8, 25, 19, .2), 0 2px 6px rgba(8, 25, 19, .08);
+    --ic-ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+}
+
+@keyframes ic-underline {
+    from { transform: scaleX(0); opacity: 0; }
+    to { transform: scaleX(1); opacity: 1; }
+}
+
+@keyframes ic-badge-pop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+@keyframes ic-live-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(63, 166, 107, .55); }
+    70% { box-shadow: 0 0 0 8px rgba(63, 166, 107, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(63, 166, 107, 0); }
+}
+
+@keyframes ic-spin {
+    to { transform: rotate(360deg); }
+}

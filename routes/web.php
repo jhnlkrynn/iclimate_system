@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
+use App\Http\Controllers\AiAdminController;
 use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\ModelEvaluationController;
+use App\Http\Controllers\ModelRegistryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
@@ -714,6 +716,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/system-health', [SystemHealthController::class, 'index'])
             ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('system-health.index');
+
+        // Chatbot vocabulary and language filter: IT Experts and MAO only.
+        Route::prefix('ai-admin')
+            ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
+            ->name('ai-admin.')
+            ->group(function () {
+                Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');
+                Route::get('{resource}', [AiAdminController::class, 'index'])->name('index');
+                Route::post('{resource}', [AiAdminController::class, 'store'])->middleware('throttle:60,1')->name('store');
+                Route::put('{resource}/{id}', [AiAdminController::class, 'update'])->whereNumber('id')->middleware('throttle:60,1')->name('update');
+                Route::post('{resource}/{id}/toggle', [AiAdminController::class, 'toggle'])->whereNumber('id')->middleware('throttle:60,1')->name('toggle');
+            });
+
+        Route::prefix('system-health/model-registry')
+            ->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->name('model-registry.')
+            ->group(function () {
+                Route::get('/', [ModelRegistryController::class, 'index'])->name('index');
+                Route::post('{model}/validate', [ModelRegistryController::class, 'validateModel'])->middleware('throttle:20,1')->name('validate');
+                Route::post('{model}/activate', [ModelRegistryController::class, 'activate'])->middleware('throttle:20,1')->name('activate');
+                Route::post('{model}/fail', [ModelRegistryController::class, 'fail'])->middleware('throttle:20,1')->name('fail');
+            });
 
 
         Route::post(

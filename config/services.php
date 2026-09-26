@@ -103,6 +103,10 @@ return [
         'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:8010'),
         'timeout' => env('FARMING_AI_API_TIMEOUT', 5),
         'connect_timeout' => env('FARMING_AI_CONNECT_TIMEOUT', 3),
+        // Shared secret for POST /model/switch; must equal ML_ADMIN_TOKEN in the
+        // Python service's environment. Empty disables model switching.
+        'admin_token' => env('ML_ADMIN_TOKEN'),
+        'model_switch_timeout' => env('FARMING_AI_MODEL_SWITCH_TIMEOUT', 30),
         'analytics_timeout' => env('FARMING_AI_ANALYTICS_TIMEOUT', 60),
         'cache_minutes' => env('FARMING_AI_CACHE_MINUTES', 30),
         'queue_connection' => env('FARMING_AI_QUEUE_CONNECTION', 'database'),

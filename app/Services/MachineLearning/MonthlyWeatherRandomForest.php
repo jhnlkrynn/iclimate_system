@@ -111,7 +111,9 @@ class MonthlyWeatherRandomForest
 
         return Cache::remember(
             $cacheKey,
-            now()->addMinutes(15),
+            // The key holds everything training depends on (target month, cutoff, dataset version),
+            // so the result cannot go stale; retraining the forest takes ~20 seconds, so keep it a day.
+            now()->addHours(max(1, (int) config('ai.forest_cache_hours', 24))),
             fn () => $this->buildPrediction(
                 $targetMonth,
                 $effectiveCutoff

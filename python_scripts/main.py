@@ -9,6 +9,9 @@ Routes:
   POST /forecast/monthly-weather  monthly rainfall/temperature/humidity/wind
                                    forecast (Python port of
                                    MonthlyWeatherRandomForest.php)
+  GET  /model-info                rice model currently in memory (filename,
+                                   version, sha256, sklearn, load time)
+  POST /model/switch              swap the rice model (needs ML_ADMIN_TOKEN)
   GET  /metrics                   real, computed model-evaluation metrics —
                                    replaces ModelEvaluationService.php's
                                    hardcoded TRAINED_MODEL_RESULTS constant
@@ -20,11 +23,13 @@ This is the live ML backend — app/Services/PythonService.php posts to this
 service's /predict route. The legacy Flask app has been removed.
 """
 
+import hmac
+import os
 from contextlib import asynccontextmanager
 from datetime import date
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 import evaluation_service
@@ -59,6 +64,40 @@ def health():
         return {"status": "degraded", "models_loaded": [], "error": str(exc)}
 
     return {"status": "ok", "models_loaded": loaded}
+
+
+@app.get("/model-info")
+def model_info():
+    """Which rice-yield model is in memory right now (no filesystem paths)."""
+    try:
+        rice_yield_service.load_models()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Models unavailable: {exc}") from exc
+
+    return rice_yield_service.model_info()
+
+
+class SwitchModelRequest(BaseModel):
+    path: str
+    version: Optional[str] = None
+    sha256: Optional[str] = None
+
+
+@app.post("/model/switch")
+def switch_model(payload: SwitchModelRequest, x_model_admin_token: Optional[str] = Header(default=None)):
+    """Swap the rice-yield model. Disabled unless ML_ADMIN_TOKEN is set."""
+    expected = os.environ.get("ML_ADMIN_TOKEN") or ""
+
+    if not expected or not x_model_admin_token or not hmac.compare_digest(expected, x_model_admin_token):
+        raise HTTPException(status_code=403, detail="Model switching is not permitted.")
+
+    try:
+        return rice_yield_service.switch_rice_model(payload.path, payload.version, payload.sha256)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        # The previous model keeps serving; nothing was swapped.
+        raise HTTPException(status_code=500, detail="Model could not be loaded.") from exc
 
 
 class PredictRequest(BaseModel):

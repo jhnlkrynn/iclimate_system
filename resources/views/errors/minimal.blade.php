@@ -39,11 +39,11 @@
     .err-message { font-size: 0.95rem; color: #4a5c52; line-height: 1.65; margin-bottom: 32px; }
     .err-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
     .err-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 26px; border-radius: 100px; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.2s; white-space: nowrap; }
-    .err-btn-primary { background: #1F5A46; color: #0D1F18; }
+    .err-btn-primary { background: #1F5A46; color: #fff; }
     .err-btn-primary:hover { background: #123F32; transform: translateY(-1px); }
     .err-btn-outline { border: 1.5px solid rgba(31,42,36,0.18); color: #1f2a24; }
     .err-btn-outline:hover { border-color: rgba(31,42,36,0.45); color: #122b20; }
-    .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e3ece6; font-size: 0.78rem; color: #6b7c72; }
+    .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e3ece6; font-size: 0.78rem; color: #56655c; }
   </style>
 </head>
 <body>

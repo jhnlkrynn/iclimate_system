@@ -3,14 +3,13 @@
 namespace App\Services\Prediction;
 
 use App\Enums\PredictionType;
-use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 class WeatherPredictionService
 {
     public function __construct(
-        private readonly MonthlyWeatherRandomForest $forest,
+        private readonly PredictionOrchestrator $orchestrator,
     ) {}
 
     /**
@@ -23,7 +22,7 @@ class WeatherPredictionService
         }
 
         $targetMonth = $targetDate->startOfMonth();
-        $result = $this->forest->predict($targetMonth);
+        $result = $this->orchestrator->monthlyWeatherForecast($targetMonth);
         $predictions = $result['predictions'] ?? [];
 
         return [

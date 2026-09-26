@@ -218,6 +218,39 @@ class DatabaseBackupService
         ];
     }
 
+    /**
+     * The newest complete backup: a non-empty file with a real archive header
+     * whose name matches FILE_PATTERN. Partial and temporary files never match.
+     * Read-only. Ties on modification time go to the later file name.
+     *
+     * @return array{name: string, path: string, size: int, mtime: int}|null
+     */
+    public function latestValidBackup(): ?array
+    {
+        $real = realpath($this->directory());
+
+        if ($real === false || ! is_dir($real) || ! is_readable($real)) {
+            return null;
+        }
+
+        try {
+            $valid = array_values(array_filter(
+                $this->backupFiles($real),
+                fn (array $file): bool => $file['size'] > 0 && $this->hasBackupHeader($file['path']),
+            ));
+        } catch (Throwable) {
+            return null;
+        }
+
+        if ($valid === []) {
+            return null;
+        }
+
+        usort($valid, fn (array $a, array $b): int => [$b['mtime'], basename($b['path'])] <=> [$a['mtime'], basename($a['path'])]);
+
+        return ['name' => basename($valid[0]['path'])] + $valid[0];
+    }
+
     // --------------------------------------------------------------- helpers
 
     /**

@@ -1,0 +1,240 @@
+@import './ui-tokens.css';
+/*
+ * Landing page layer: applies the shared iClimate design language
+ * (tokens, motion, card spotlight, live pulse, gradient CTAs, focus rings)
+ * to the public landing page's own components. Loaded after the page's
+ * inline <style>, so equal-specificity rules here refine it. The landing
+ * keeps its distinct hero, imagery, and section layouts.
+ */
+
+/* ------------------------------------------------------------ typography */
+.hero-title,
+.section-title {
+    text-wrap: balance;
+}
+
+.hero-desc,
+.feature-card p,
+.pillar-card p,
+.mission-card p {
+    text-wrap: pretty;
+}
+
+.trust-num,
+.hws-val {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Same brand underline the app draws under page titles. */
+.section-header .section-title::after,
+.about-text .section-title::after {
+    content: "";
+    display: block;
+    width: 56px;
+    height: 3px;
+    margin-top: .6rem;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--ic-mint), var(--ic-sky));
+    transform-origin: left center;
+}
+
+.section-header .section-title::after {
+    margin-inline: auto;
+}
+
+/* ---------------------------------------------------------- live signals */
+.hero-location svg,
+.eyebrow::before {
+    flex-shrink: 0;
+}
+
+.hero-location {
+    position: relative;
+    width: fit-content;
+    align-self: flex-start;
+    padding: .38rem .8rem .38rem .7rem;
+    border: 1px solid rgba(127, 214, 181, .28);
+    border-radius: 999px;
+    background: rgba(13, 38, 30, .45);
+    backdrop-filter: blur(8px);
+    color: #b9e8d3;
+}
+
+.hero-map-dot {
+    animation: ic-live-pulse 2.2s ease-out infinite;
+}
+
+/* ---------------------------------------------------------------- buttons */
+.btn-primary,
+.nav-cta {
+    position: relative;
+    overflow: hidden;
+    background-image: var(--ic-grad-brand);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(31, 90, 70, .35);
+}
+
+.btn-primary:hover,
+.nav-cta:hover {
+    background-image: var(--ic-grad-brand-hover);
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(31, 90, 70, .42);
+}
+
+.btn-primary::after,
+.nav-cta::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ic-grad-sheen);
+    transform: translateX(-120%);
+    pointer-events: none;
+}
+
+.btn-primary:hover::after,
+.nav-cta:hover::after {
+    transform: translateX(120%);
+    transition: transform .7s ease;
+}
+
+.btn:active,
+.nav-cta:active,
+.nav-login:active {
+    transform: translateY(0) scale(.97);
+}
+
+.btn:focus-visible,
+.nav-cta:focus-visible,
+.nav-login:focus-visible,
+.nav-link:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: none;
+    box-shadow: var(--ic-ring);
+}
+
+/* ------------------------------------------------------------------- nav */
+.nav-link {
+    color: #d6efe3;
+    transition: color .2s ease, background .2s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
+.nav-link.active {
+    color: #fff;
+    background: rgba(127, 214, 181, .16);
+}
+
+.nav-link.active::after {
+    background: var(--ic-mint);
+    box-shadow: 0 0 8px rgba(127, 214, 181, .8);
+}
+
+/* ------------------------------------------------------ interactive cards */
+.feature-card,
+.pillar-card,
+.role-card,
+.mission-card,
+.contact-method,
+.trust-item,
+.hws-item,
+.footer-message-card,
+.contact-form-card {
+    transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Pointer spotlight (landing.js sets --ic-mx / --ic-my, like the app). */
+.feature-card.ic-spot:hover,
+.pillar-card.ic-spot:hover,
+.role-card.ic-spot:hover,
+.mission-card.ic-spot:hover,
+.contact-method.ic-spot:hover {
+    background-image: radial-gradient(340px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .2), transparent 60%);
+}
+
+.trust-item.ic-spot:hover {
+    background-image: radial-gradient(240px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .28), transparent 65%);
+}
+
+.trust-item {
+    transition: transform .3s var(--ic-ease-spring), background .2s ease, border-color .2s ease, box-shadow .25s ease;
+}
+
+.trust-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ic-lift-shadow);
+}
+
+.trust-icon,
+.fc-icon-wrap,
+.pillar-icon,
+.contact-method-icon,
+.footer-social-icon {
+    transition: transform .35s var(--ic-ease-spring) !important;
+}
+
+.trust-item:hover .trust-icon,
+.feature-card:hover .fc-icon-wrap,
+.pillar-card:hover .pillar-icon,
+.contact-method:hover .contact-method-icon,
+.footer-social-icon:hover {
+    transform: translateY(-2px) rotate(-6deg) scale(1.08) !important;
+}
+
+.role-card--highlight {
+    box-shadow: 0 0 0 1px rgba(127, 214, 181, .45), 0 18px 40px rgba(0, 0, 0, .28);
+}
+
+/* ------------------------------------------------------------ misc polish */
+::selection {
+    background: rgba(127, 214, 181, .35);
+    color: #0e2f25;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(127, 214, 181, .45) transparent;
+}
+
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: rgba(127, 214, 181, .38); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-map-dot { animation: none; }
+    .trust-item:hover,
+    .trust-item:hover .trust-icon,
+    .feature-card:hover .fc-icon-wrap,
+    .pillar-card:hover .pillar-icon,
+    .contact-method:hover .contact-method-icon {
+        transform: none !important;
+    }
+}
+
+/* ------------------------------------------------------------ spacing pass */
+/* Six feature cards in one row squeezed copy into ~120px columns and broke
+   words mid-way; two rows of three keep the same cards readable. */
+@media (min-width: 1025px) {
+    .features-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+    }
+    .feature-card {
+        padding: 28px 26px;
+    }
+}
+
+/* Location pill sat directly on the About heading. */
+.about-text .hero-location {
+    margin-bottom: 14px;
+}
+
+.feature-card p,
+.pillar-card p {
+    hyphens: auto;
+    overflow-wrap: break-word;
+}
