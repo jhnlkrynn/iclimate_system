@@ -20,6 +20,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\RiceYieldPredictionController;
+use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
 use App\Http\Controllers\UserManagementController;
@@ -709,6 +710,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name(
                 'model-evaluation.index'
             );
+
+        Route::get('/system-health', [SystemHealthController::class, 'index'])
+            ->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->name('system-health.index');
 
 
         Route::post(
