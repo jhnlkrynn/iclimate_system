@@ -581,6 +581,8 @@
             </section>
         @endif
 
+        <x-kpi-strip :kpis="$maoKpis ?? []" title="Key Performance Indicators" note="Municipality-wide figures from stored records. Yield is weighted by farm area." />
+
         <div class="dashboard-section-label">
             <div>
                 <h2 class="section-title">Office Overview</h2>
@@ -591,7 +593,7 @@
         <section class="mao-stat-grid">
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatFarmers"><div class="mao-card-body"><div class="mao-label">Farmer Profiles</div><div class="mao-value">{{ number_format($profileCount) }}</div><div class="mao-note">Registered farm records</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatClimate"><div class="mao-card-body"><div class="mao-label">Climate Records</div><div class="mao-value">{{ number_format($totalClimateRecords) }}</div><div class="mao-note">Latest: {{ $latestClimate?->record_date?->format('M d, Y') ?? 'N/A' }}</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
-            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares recorded</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
+            <button type="button" class="mao-card text-decoration-none" data-drawer-open="#maoStatRice"><div class="mao-card-body"><div class="mao-label">Rice Production{{ ! empty($riceLatestYear) ? ' ('.$riceLatestYear.')' : '' }}</div><div class="mao-value">{{ number_format($riceProductionTotal, 1) }} <span class="mao-value-unit">tons</span></div><div class="mao-note">{{ number_format($riceAreaTotal, 1) }} hectares harvested</div><div class="mao-tap-hint">View details &rarr;</div></div></button>
             <a href="{{ route('farmer-profiles.index') }}" class="mao-card text-decoration-none"><div class="mao-card-body"><div class="mao-label">Farmer Organizations</div><div class="mao-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div><div class="mao-note">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers registered</div><div class="mao-tap-hint">View breakdown &rarr;</div></div></a>
         </section>
 
@@ -663,8 +665,8 @@
                         <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} tons total production</div>
-                        <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares recorded &middot; Average yield {{ number_format($avgYield, 2) }} per hectare.</p>
+                        <div class="mao-modal-headline">{{ number_format($riceProductionTotal, 1) }} tons produced{{ ! empty($riceLatestYear) ? ' in '.$riceLatestYear : '' }}</div>
+                        <p class="mao-modal-sub">{{ number_format($riceAreaTotal, 1) }} hectares harvested &middot; Average yield {{ number_format($avgYield, 2) }} t/ha (weighted by area).</p>
                         @forelse($recentRiceProductions as $production)
                             <div class="mao-list-item">
                                 <div class="list-mark"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="7.5" width="4" height="10.5" rx="1" fill="currentColor" opacity="0.75"/><rect x="14" y="3" width="4" height="15" rx="1" fill="currentColor" opacity="0.5"/></svg></div>

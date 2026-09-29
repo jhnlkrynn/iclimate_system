@@ -77,6 +77,26 @@ class BarangayRiskMapService
     }
 
     /**
+     * Barangays whose risk refresh failed today (weather lookup threw).
+     * Read by the IT-expert dashboard.
+     */
+    public static function failuresToday(): int
+    {
+        return (int) Cache::get('metrics:risk-map:failures:'.today()->toDateString(), 0);
+    }
+
+    private static function recordFailure(): void
+    {
+        $key = 'metrics:risk-map:failures:'.today()->toDateString();
+
+        if (! Cache::has($key)) {
+            Cache::put($key, 0, now()->addDay());
+        }
+
+        Cache::increment($key);
+    }
+
+    /**
      * Full 19-barangay risk map, cached under self::CACHE_KEY.
      */
     public function riskMap(bool $refresh = false): array
@@ -135,6 +155,7 @@ class BarangayRiskMapService
                     'message' => $exception->getMessage(),
                 ]);
                 $weather = ['status' => 'unavailable', 'stale' => true];
+                self::recordFailure();
             }
 
             $lastYield = $this->lastRecordedYield($barangay);
