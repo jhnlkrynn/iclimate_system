@@ -1,13 +1,13 @@
 @if ($isFarmer)
     <div class="sidebar-brand sidebar-brand--large p-3 pb-2">
-        <img src="{{ asset('images/iclimate-icon.png') }}" alt="iClimate" class="sidebar-logo-large">
+        <img src="{{ asset('images/iclimate-icon-light.png') }}" alt="iClimate" class="sidebar-logo-large">
         <div class="sidebar-wordmark-lg">iClimate</div>
         <div class="sidebar-brand-underline"></div>
     </div>
 @else
     <div class="sidebar-brand p-3 pb-1">
         <div class="sidebar-brand-row">
-            <img src="{{ asset('images/iclimate-icon.png') }}" alt="" class="sidebar-logo-icon">
+            <img src="{{ asset('images/iclimate-icon-light.png') }}" alt="" class="sidebar-logo-icon">
             <span class="sidebar-wordmark">iClimate</span>
         </div>
         <div class="sidebar-brand-underline"></div>

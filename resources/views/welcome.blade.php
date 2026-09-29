@@ -2133,7 +2133,7 @@
 <nav class="navbar" id="navbar">
   <div class="nav-container">
     <a href="{{ url('/') }}" class="nav-logo">
-      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
+      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" class="nav-link active">Home</a></li>
@@ -2791,7 +2791,7 @@
       <!-- Column 1: Brand -->
       <div class="footer-brand">
         <a href="{{ url('/') }}" class="nav-logo footer-logo">
-          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
+          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
         <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
         <div class="footer-tagline-chip">
