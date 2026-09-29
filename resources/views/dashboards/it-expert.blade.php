@@ -522,6 +522,8 @@
             </section>
         @endif
 
+        <x-kpi-strip :kpis="$itKpis ?? []" title="Platform KPIs" note="Adoption, service reliability, and data freshness." />
+
         <div class="dashboard-section-label">
             <div>
                 <h2 class="section-title">System Overview</h2>

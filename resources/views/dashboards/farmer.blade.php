@@ -898,6 +898,8 @@
             </div>
         </section>
 
+        <x-kpi-strip :kpis="$farmerKpis ?? []" title="My Farm at a Glance" :note="$farmerBarangay ? 'Figures for you and Barangay '.$farmerBarangay.'.' : 'Add your barangay to your profile to see local figures.'" />
+
         {{-- 2. Upcoming Weather --}}
         <div class="farmer-panel fc-simple-panel" data-reveal="fade-up">
             <div class="farmer-panel-header">
