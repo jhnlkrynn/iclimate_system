@@ -141,7 +141,7 @@ class FarmerPlantingScheduleController extends Controller
 
     private function featureReady(): bool
     {
-        return Schema::hasTable('farmer_planting_schedules');
+        return \App\Support\SchemaCache::hasTable('farmer_planting_schedules');
     }
 
     private function featureUnavailable(): RedirectResponse

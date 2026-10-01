@@ -29,9 +29,11 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
             'demoAccounts' => $this->demoAccounts(),
-            'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
+            'demoPassword' => (string) config('iclimate.default_account_password'),
             'requiresCaptcha' => $requiresCaptcha,
-            'loginWeather' => $this->weatherSnapshot($weather),
+            // The login page itself never calls a weather provider: it shows whatever is already stored, and
+            // the page's own script asks login/weather (below) for the live reading after it has loaded.
+            'loginWeather' => $this->weatherSnapshot($weather, storedOnly: true),
         ]);
     }
 
@@ -50,14 +52,14 @@ class AuthenticatedSessionController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function weatherSnapshot(FarmerDashboardWeatherService $weather): array
+    private function weatherSnapshot(FarmerDashboardWeatherService $weather, bool $storedOnly = false): array
     {
         $weatherTimezone = (string) config('services.weather.timezone', 'Asia/Manila');
 
         // Same shared Lian reading the Farmer/MAO dashboards and chatbot use,
         // so the login widget never shows a different temperature.
         try {
-            $shared = $weather->current();
+            $shared = $storedOnly ? ($weather->stored() ?? []) : $weather->current();
         } catch (Throwable) {
             $shared = [];
         }

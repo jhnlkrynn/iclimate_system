@@ -61,9 +61,17 @@ return [
     |
     */
 
+    /*
+    | Seconds the signed-in user is remembered between requests. 0 turns the cache off.
+    | A change to the user through the app is visible at once regardless.
+    */
+    'user_cache_seconds' => (int) env('AUTH_USER_CACHE_SECONDS', 30),
+
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            // Same as 'eloquent', but the signed-in user is read from a short-lived, encrypted,
+            // per-user cache instead of the database on every request (see CachedEloquentUserProvider).
+            'driver' => 'cached-eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 

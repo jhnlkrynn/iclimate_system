@@ -80,7 +80,15 @@ class WeatherApiService
             return $cached;
         }
 
-        $fresh = $this->fetchForecast($latitude, $longitude, $location);
+        // A page a person is waiting on uses the last good forecast (up to an hour old) instead of
+        // calling the provider; the scheduled weather refresh keeps it current.
+        $mode = \App\Support\InteractiveRequest::weatherMode();
+
+        if ($mode['stale_ok'] && ($recent = $this->recentSnapshot(Cache::get($latestCacheKey))) !== null) {
+            return $recent;
+        }
+
+        $fresh = $this->fetchForecast($latitude, $longitude, $location, $mode['budget']);
 
         if ($fresh !== null) {
             Cache::put($cacheKey, $fresh, $ttl);
@@ -91,6 +99,22 @@ class WeatherApiService
 
         return $this->cachedFallback(Cache::get($latestCacheKey))
             ?? $this->storedFallback($latitude, $longitude);
+    }
+
+    /** The stored forecast if it was fetched within the last hour, marked as served from the store. */
+    private function recentSnapshot(mixed $weather): ?array
+    {
+        if (! is_array($weather) || empty($weather['fetched_at'])) {
+            return null;
+        }
+
+        try {
+            $fresh = \Illuminate\Support\Carbon::parse($weather['fetched_at'])->gt(now()->subMinutes(60));
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $fresh ? $weather : null;
     }
 
     private function cachedFallback(mixed $weather): ?array
@@ -106,7 +130,7 @@ class WeatherApiService
         return $weather;
     }
 
-    private function fetchForecast(float $latitude, float $longitude, string $location): ?array
+    private function fetchForecast(float $latitude, float $longitude, string $location, ?float $budget = null): ?array
     {
         if (! config('services.weather_api.enabled', true)) {
             return null;
@@ -117,9 +141,12 @@ class WeatherApiService
         $forecastDays = min(10, max(1, (int) config('services.weather_api.forecast_days', config('services.weather.forecast_days', 7))));
 
         try {
-            $response = Http::timeout($timeout)
-                ->retry(2, 250)
-                ->acceptJson()
+            // With a budget (a person is waiting): that long at most, and no retries.
+            $client = $budget !== null
+                ? Http::timeout(max(1.0, min((float) $timeout, $budget)))->acceptJson()
+                : Http::timeout($timeout)->retry(2, 250)->acceptJson();
+
+            $response = $client
                 ->get(rtrim((string) config('services.open_meteo.base_url', 'https://api.open-meteo.com/v1'), '/').'/forecast', [
                     'latitude' => $latitude,
                     'longitude' => $longitude,

@@ -70,6 +70,9 @@ class PlantingSchedulePredictionService
             ])->save();
 
             return $this->compareWithHistory($schedule->fresh());
+        } catch (\App\Exceptions\PredictionNotReady) {
+            // Nothing is prepared for that month yet and a page request may not build it (a refresh is queued).
+            return $this->unavailable($schedule, 'The prediction data for that month is still being prepared. Please save the schedule again in a few minutes.');
         } catch (Throwable $exception) {
             report($exception);
 

@@ -209,9 +209,9 @@ abstract class CrudController extends Controller
 
     protected function userOptions(array $roles = []): array
     {
-        $key = 'crud:user-options:'.($roles === [] ? 'all' : implode('-', $roles));
-
-        return Cache::remember($key, now()->addSeconds(30), function () use ($roles): array {
+        // Built in three controllers' constructors, i.e. on EVERY request to those routes, and it lists
+        // every user. Kept for ten minutes, and dropped at once when any user is added or changed.
+        return \App\Support\PageCache::shared('crud-user-options', 600, function () use ($roles): array {
             $query = User::query()->orderBy('name');
 
             if ($roles !== []) {
@@ -219,7 +219,7 @@ abstract class CrudController extends Controller
             }
 
             return $query->pluck('name', 'id')->toArray();
-        });
+        }, ['roles' => $roles]);
     }
 
     protected function userRules(?int $id = null): array

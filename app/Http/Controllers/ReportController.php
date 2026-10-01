@@ -204,7 +204,7 @@ class ReportController extends CrudController
 
     private function barangays(): array
     {
-        return Cache::remember('reports:filter-barangays', now()->addMinutes(2), fn (): array => collect()
+        return Cache::remember('reports:filter-barangays', now()->addMinutes(10), fn (): array => collect()
             ->merge(FarmerProfile::query()->pluck('barangay'))
             ->merge(RiceProduction::query()->pluck('barangay'))
             ->merge(PlantingAdvisory::query()->pluck('target_barangay'))
@@ -356,7 +356,7 @@ class ReportController extends CrudController
 
     private function sourceStats(): array
     {
-        return Cache::remember('reports:source-stats', now()->addSeconds(30), fn (): array => [
+        return Cache::remember('reports:source-stats', now()->addMinutes(5), fn (): array => [
             'climate_records' => ClimateRecord::query()->count(),
             'rice_production' => RiceProduction::query()->count(),
             'farmers' => FarmerProfile::query()->count(),

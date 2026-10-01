@@ -391,7 +391,7 @@ class AiResponseSpeedTest extends TestCase
         $this->assertArrayHasKey('groq', $groqLine['stages_ms']);
         $this->assertArrayHasKey('assistant', $groqLine['stages_ms']);
         $this->assertGreaterThanOrEqual(0, $weatherLine['total_ms']);
-        $this->assertSame(['intent', 'path', 'groq_calls', 'stages_ms', 'total_ms'], array_keys($weatherLine));
+        $this->assertSame(['intent', 'path', 'groq_calls', 'stages_ms', 'db_ms', 'db_queries', 'total_ms'], array_keys($weatherLine));
 
         $everything = json_encode($this->logs);
         foreach (['Zebra Acres', 'interesting about the moon', self::SECRET, 'Bearer'] as $forbidden) {
@@ -402,7 +402,6 @@ class AiResponseSpeedTest extends TestCase
     public function test_the_prediction_stage_is_timed(): void
     {
         Http::fake(['api.groq.com/*' => Http::response([], 500), '*' => Http::response([], 500)]);
-        config(['ai.response_budget_seconds' => 300]);
 
         $this->ask('What is the predicted rice yield for my 2 hectare farm next month?');
 
@@ -417,6 +416,7 @@ class AiResponseSpeedTest extends TestCase
             ->postJson(route('ai-chat.message'), ['question' => 'Will it rain this week?', 'save_conversation' => false])
             ->json('chat');
 
-        $this->assertSame($this->timing()['total_ms'], $chat['response_time_ms']);
+        // The logged total also covers saving the chat, so it is at least the time the answer took.
+        $this->assertGreaterThanOrEqual($chat['response_time_ms'], $this->timing()['total_ms']);
     }
 }

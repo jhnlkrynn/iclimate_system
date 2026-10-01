@@ -130,7 +130,7 @@ class RegisterExistingMlModels extends Command
 
     private function pythonBinary(): string
     {
-        $configured = trim((string) env('PYTHON_BINARY', ''), " \t\n\r\0\x0B\"'");
+        $configured = trim((string) config('iclimate.python_binary', ''), " \t\n\r\0\x0B\"'");
 
         if ($configured !== '') {
             return $configured;

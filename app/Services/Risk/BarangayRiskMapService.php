@@ -8,6 +8,7 @@ use App\Models\RiceProduction;
 use App\Services\DecisionSupportService;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Weather\LianBarangayWeatherService;
+use App\Support\InteractiveRequest;
 use App\Services\Weather\WeatherIconMapper;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\Cache;
@@ -44,6 +45,15 @@ class BarangayRiskMapService
      * Cache::forget() needs to be remembered/run at deploy time.
      */
     public const CACHE_KEY = 'geo:lian-risk-map:v2';
+
+    /** The last map that was fully computed, kept without expiry as what pages fall back to. */
+    public const LATEST_KEY = 'geo:lian-risk-map:v2:latest';
+
+    /** Set while a background refresh is queued, so a burst of page loads queues only one. */
+    public const REFRESH_LOCK_KEY = 'geo:lian-risk-map:v2:refresh-lock';
+
+    /** A stored map older than this also triggers a background refresh. */
+    private const REFRESH_AFTER_MINUTES = 60;
 
     public const CACHE_TTL_MINUTES = 20;
 
@@ -85,11 +95,49 @@ class BarangayRiskMapService
             Cache::forget(self::CACHE_KEY);
         }
 
-        return Cache::remember(
-            self::CACHE_KEY,
-            now()->addMinutes(self::CACHE_TTL_MINUTES),
-            fn (): array => $this->compute($refresh)
-        );
+        $cached = Cache::get(self::CACHE_KEY);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        // A page a person is waiting on never computes the map (about 19 weather lookups and 19
+        // database writes). It shows the last complete map and a background job refreshes it; the
+        // scheduled refresh normally keeps it current before anyone notices.
+        if (! $refresh && InteractiveRequest::isPageRequest()) {
+            return $this->lastKnownMap();
+        }
+
+        $map = $this->compute($refresh);
+
+        Cache::put(self::CACHE_KEY, $map, now()->addMinutes(self::CACHE_TTL_MINUTES));
+        Cache::forever(self::LATEST_KEY, $map);
+
+        return $map;
+    }
+
+    /**
+     * @return array{generated_at: ?string, source_note: string, barangays: array<int, array<string, mixed>>, stale?: bool}
+     */
+    private function lastKnownMap(): array
+    {
+        $latest = Cache::get(self::LATEST_KEY);
+        $generatedAt = is_array($latest) ? ($latest['generated_at'] ?? null) : null;
+        $old = $generatedAt === null || \Illuminate\Support\Carbon::parse($generatedAt)->lt(now()->subMinutes(self::REFRESH_AFTER_MINUTES));
+
+        if ($old && Cache::add(self::REFRESH_LOCK_KEY, true, now()->addMinutes(10))) {
+            \App\Jobs\RefreshBarangayRiskMap::dispatch()
+                ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
+                ->onQueue((string) config('services.farming_ai.queue', 'analytics'))
+                ->afterCommit();
+        }
+
+        if (is_array($latest)) {
+            return $latest + ['stale' => true];
+        }
+
+        // Nothing has ever been computed: an empty map (every barangay reads as "no data yet").
+        return ['generated_at' => null, 'source_note' => AgriculturalRiskScorer::METHODOLOGY_CAVEAT, 'barangays' => [], 'stale' => true];
     }
 
     /**

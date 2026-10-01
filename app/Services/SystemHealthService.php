@@ -155,7 +155,7 @@ class SystemHealthService
      */
     private function backupVerification(): array
     {
-        if (! Schema::hasTable('backup_verifications')) {
+        if (! \App\Support\SchemaCache::hasTable('backup_verifications')) {
             return $this->result(self::UNAVAILABLE, 'Backup verification has not been set up yet. Run the database migrations.');
         }
 
@@ -204,13 +204,19 @@ class SystemHealthService
 
         $table = (string) config('queue.connections.database.table', 'jobs');
 
-        if (! Schema::hasTable($table)) {
+        if (! \App\Support\SchemaCache::hasTable($table)) {
             return $this->result(self::UNAVAILABLE, 'The queue table was not found. Run the database migrations.');
         }
 
-        $waiting = DB::table($table)->whereNull('reserved_at')->count();
-        $running = DB::table($table)->whereNotNull('reserved_at')->count();
-        $oldest = DB::table($table)->whereNull('reserved_at')->min('available_at');
+        // One query for all three figures (each used to be its own database round trip).
+        $queue = DB::table($table)->selectRaw(
+            'COALESCE(SUM(CASE WHEN reserved_at IS NULL THEN 1 ELSE 0 END), 0) AS waiting, '
+            .'COALESCE(SUM(CASE WHEN reserved_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS running, '
+            .'MIN(CASE WHEN reserved_at IS NULL THEN available_at END) AS oldest'
+        )->first();
+        $waiting = (int) $queue->waiting;
+        $running = (int) $queue->running;
+        $oldest = $queue->oldest;
         $oldestMinutes = $oldest === null ? 0 : max(0, (int) floor((now()->timestamp - (int) $oldest) / 60));
 
         $details = ['Waiting' => (string) $waiting, 'Running now' => (string) $running];
@@ -229,13 +235,14 @@ class SystemHealthService
     {
         $table = (string) config('queue.failed.table', 'failed_jobs');
 
-        if (! Schema::hasTable($table)) {
+        if (! \App\Support\SchemaCache::hasTable($table)) {
             return $this->result(self::UNAVAILABLE, 'The failed-jobs table was not found. Run the database migrations.');
         }
 
-        $total = DB::table($table)->count();
-        $recent = DB::table($table)->where('failed_at', '>=', now()->subDay())->count();
-        $latest = DB::table($table)->max('failed_at');
+        $failed = DB::table($table)->selectRaw('COUNT(*) AS total, COALESCE(SUM(CASE WHEN failed_at >= ? THEN 1 ELSE 0 END), 0) AS recent, MAX(failed_at) AS latest', [now()->subDay()])->first();
+        $total = (int) $failed->total;
+        $recent = (int) $failed->recent;
+        $latest = $failed->latest;
 
         if ($total === 0) {
             return $this->result(self::HEALTHY, 'No failed jobs.', ['Failed jobs' => '0']);
@@ -521,7 +528,7 @@ class SystemHealthService
      */
     private function pythonBinaryExists(): bool
     {
-        $configured = trim((string) env('PYTHON_BINARY', ''), " \t\n\r\0\x0B\"'");
+        $configured = trim((string) config('iclimate.python_binary', ''), " \t\n\r\0\x0B\"'");
 
         $candidates = $configured !== ''
             ? [$configured]

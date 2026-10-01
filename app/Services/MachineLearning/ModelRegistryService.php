@@ -28,10 +28,14 @@ class ModelRegistryService
     public function resolveActive(string $purpose = MlModel::PURPOSE_RICE_YIELD): ?MlModel
     {
         try {
-            $model = MlModel::query()
-                ->where('purpose', $purpose)
-                ->where('is_active', true)
-                ->first();
+            // Asked several times per page (source, version, health), so it is remembered; any change
+            // to a registry row (activation, retirement) drops it at once via the cache invalidation hooks.
+            $model = \App\Support\PageCache::shared(
+                'ml-active-model',
+                300,
+                fn () => MlModel::query()->where('purpose', $purpose)->where('is_active', true)->first(),
+                ['purpose' => $purpose],
+            );
         } catch (Throwable) {
             // Table missing (not migrated yet) or database unavailable.
             return null;

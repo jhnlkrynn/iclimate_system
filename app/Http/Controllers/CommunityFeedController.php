@@ -17,8 +17,13 @@ class CommunityFeedController extends Controller
     {
         $canPost = $this->canPost($request->user());
 
-        return view('community-feed.index', [
-            'posts' => FeedPost::query()
+        // The same for everyone who can (or can not) post, so one prepared page serves all of them for
+        // half a minute. It needs about ten database round trips. Any change to a post, comment,
+        // reaction or attachment rebuilds it (see AppServiceProvider).
+        $posts = \App\Support\PageCache::shared(
+            'community-feed',
+            30,
+            fn () => FeedPost::query()
                 ->with([
                     'author',
                     'media',
@@ -35,6 +40,11 @@ class CommunityFeedController extends Controller
                 ->when(! $canPost, fn ($query) => $query->whereNull('archived_at'))
                 ->latest()
                 ->paginate(10),
+            \App\Support\PageCache::queryVary($request, ['page']) + ['can_post' => $canPost ? '1' : '0'],
+        );
+
+        return view('community-feed.index', [
+            'posts' => $posts,
             'canPost' => $canPost,
             'reactionTypes' => ['Like', 'Love', 'Care', 'Wow', 'Helpful'],
         ]);

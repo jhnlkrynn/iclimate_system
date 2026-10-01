@@ -21,7 +21,7 @@ class TyphoonSafetyController extends Controller
             return back()->with('error', 'No active typhoon safety check is available right now.');
         }
 
-        if (! Schema::hasTable('typhoon_safety_responses')) {
+        if (! \App\Support\SchemaCache::hasTable('typhoon_safety_responses')) {
             return back()->with('error', 'Safety check responses are temporarily unavailable. Please try again later.');
         }
 

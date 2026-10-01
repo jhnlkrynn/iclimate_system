@@ -34,12 +34,48 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use App\Support\PageCache;
 use Illuminate\View\View;
 use Throwable;
 
 class DashboardController extends Controller
 {
+    /** How long the prepared MAO / IT Expert dashboards are reused. The scheduled warm-up rebuilds them every 2 minutes. */
+    public const MAO_TTL_SECONDS = 300;
+
+    public const ADMIN_TTL_SECONDS = 180;
+
+    /**
+     * Site-wide counts and recent lists shared by every dashboard. Long is safe: any change to the data behind
+     * them drops them at once (AppServiceProvider), so the time limit is only a backstop.
+     */
+    public const SHARED_TTL_SECONDS = 300;
+
+    /**
+     * The whole page is prepared once and reused for a minute (per person, so private data never
+     * crosses users). Each database round trip to Supabase costs hundreds of milliseconds, and this
+     * page needs about twenty of them. Any change to the person's notifications, feedback or profile,
+     * and any change to the shared data behind it, rebuilds it on the next visit.
+     */
     public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, RiceYieldPredictionService $riceYield, BarangayRiskMapService $riskMapService): View
+    {
+        // An explicit "refresh weather" always rebuilds.
+        if ($request->boolean('refresh_weather')) {
+            return view('dashboards.farmer', $this->farmerData($request, $weather, $typhoonSafety, $riceYield, $riskMapService));
+        }
+
+        return view('dashboards.farmer', PageCache::forUser(
+            (int) $request->user()->id,
+            'dashboard:farmer',
+            60,
+            fn (): array => $this->farmerData($request, $weather, $typhoonSafety, $riceYield, $riskMapService),
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function farmerData(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, RiceYieldPredictionService $riceYield, BarangayRiskMapService $riskMapService): array
     {
         $user = $request->user();
         $farmerProfile = $user->farmerProfile;
@@ -63,11 +99,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $myAdvisoryFeedback = AdvisoryFeedback::query()
-            ->where('user_id', $user->id)
-            ->whereIn('planting_advisory_id', $advisories->pluck('id'))
-            ->get()
-            ->keyBy('planting_advisory_id');
+        // No advisories, nothing to look up (this used to send an empty "where 0 = 1" query).
+        $myAdvisoryFeedback = $advisories->isEmpty()
+            ? collect()
+            : AdvisoryFeedback::query()
+                ->where('user_id', $user->id)
+                ->whereIn('planting_advisory_id', $advisories->pluck('id'))
+                ->get()
+                ->keyBy('planting_advisory_id');
 
         $farmerBarangayRisk = null;
         if ($farmerBarangay) {
@@ -79,7 +118,7 @@ class DashboardController extends Controller
         }
         $farmerFarmBoundary = $farmerProfile?->farmBoundary;
 
-        return view('dashboards.farmer', $dashboardData + [
+        return $dashboardData + [
             'farmerBarangay' => $farmerBarangay,
             'farmerBarangayRisk' => $farmerBarangayRisk,
             'farmerFarmBoundary' => $farmerFarmBoundary,
@@ -107,7 +146,7 @@ class DashboardController extends Controller
                     ->where('event_key', $activeTyphoonSafetyEvent['key'])
                     ->first()
                 : null,
-        ]);
+        ];
     }
 
     /**
@@ -219,7 +258,47 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Rebuilds the two shared dashboards (default view, no filters) ahead of time, from the scheduler, so a
+     * person opening one after a data change reads a prepared copy instead of waiting for about forty
+     * database round trips. Builds exactly what index requests would build and stores it under the same key.
+     */
+    public function warmSharedDashboards(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, ModelEvaluationService $modelEvaluation): void
+    {
+        $plain = Request::create('/mao/dashboard');
+
+        // The site-wide parts every dashboard (farmers' included) is built from, so a farmer's first visit
+        // only has to read their own data.
+        $this->stats();
+        $this->recentOperationalData();
+        $this->maoAggregates();
+        $this->adminAggregates();
+
+        PageCache::refreshShared('dashboard:mao', self::MAO_TTL_SECONDS, fn (): array => $this->maoData($plain, $weatherApi, $sharedWeather, $typhoonSafety), []);
+        PageCache::refreshShared('dashboard:admin', self::ADMIN_TTL_SECONDS, fn (): array => $this->adminData($modelEvaluation));
+    }
+
+    /**
+     * Nothing on this page belongs to one person (the MAO officer's own name never selects data), only
+     * the optional filters do, so the whole page is prepared once for everyone per filter set and
+     * reused for two minutes. It needs about thirty database round trips to build.
+     */
     public function mao(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety): View
+    {
+        $filters = $request->only(['schedule_month', 'schedule_season', 'schedule_barangay', 'schedule_farm_type', 'schedule_farmer', 'schedule_status', 'fb_barangay', 'fb_from', 'fb_to', 'fb_condition']);
+
+        return view('dashboards.mao', PageCache::shared(
+            'dashboard:mao',
+            self::MAO_TTL_SECONDS,
+            fn (): array => $this->maoData($request, $weatherApi, $sharedWeather, $typhoonSafety),
+            $filters,
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function maoData(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety): array
     {
         $recent = $this->recentOperationalData();
         $climateChartRecords = ClimateRecord::query()
@@ -255,11 +334,13 @@ class DashboardController extends Controller
         $typhoonSafetySafeCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count();
         $typhoonSafetyNeedsHelpCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count();
         $typhoonSafetyNoResponseCount = max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count());
+        // One grouped query instead of four counts (each was a separate database round trip).
+        $riskCounts = HeatmapArea::query()->selectRaw('risk_level, COUNT(*) as total')->groupBy('risk_level')->pluck('total', 'risk_level');
         $riskLevelCounts = [
-            'Low' => HeatmapArea::query()->where('risk_level', 'Low')->count(),
-            'Moderate' => HeatmapArea::query()->where('risk_level', 'Moderate')->count(),
-            'High' => HeatmapArea::query()->where('risk_level', 'High')->count(),
-            'Severe' => HeatmapArea::query()->where('risk_level', 'Severe')->count(),
+            'Low' => (int) ($riskCounts['Low'] ?? 0),
+            'Moderate' => (int) ($riskCounts['Moderate'] ?? 0),
+            'High' => (int) ($riskCounts['High'] ?? 0),
+            'Severe' => (int) ($riskCounts['Severe'] ?? 0),
         ];
         $latestClimateRecord = $recent['recentClimateRecords']->first();
         $currentSeason = $latestClimateRecord?->season ?? data_get($liveWeather, 'season');
@@ -273,7 +354,7 @@ class DashboardController extends Controller
             'farmer' => $request->integer('schedule_farmer'),
             'status' => $request->string('schedule_status')->toString(),
         ];
-        $plantingScheduleFeatureReady = Schema::hasTable('farmer_planting_schedules');
+        $plantingScheduleFeatureReady = \App\Support\SchemaCache::hasTable('farmer_planting_schedules');
         $farmerSchedules = $plantingScheduleFeatureReady
             ? FarmerPlantingSchedule::query()
                 ->with(['farmer:id,name,barangay', 'farmer.farmerProfile:id,user_id,full_name,barangay'])
@@ -305,7 +386,7 @@ class DashboardController extends Controller
             'condition' => in_array($request->query('fb_condition'), \App\Models\WeatherForecastFeedback::OBSERVED_CONDITIONS, true) ? $request->query('fb_condition') : null,
         ];
 
-        return view('dashboards.mao', $this->stats() + [
+        return $this->stats() + [
             'weatherFeedbackFilters' => $weatherFeedbackFilters,
             'weatherFeedbackSummary' => app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters),
             'farmerOrganizationSummary' => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'],
@@ -359,10 +440,19 @@ class DashboardController extends Controller
             'scheduleBarangays' => $plantingScheduleFeatureReady
                 ? FarmerPlantingSchedule::query()->whereNotNull('barangay')->distinct()->orderBy('barangay')->pluck('barangay')
                 : collect(),
-        ]);
+        ];
     }
 
+    /** Same for every IT Expert, so it is prepared once and reused for a minute (about ten database round trips). */
     public function admin(ModelEvaluationService $modelEvaluation): View
+    {
+        return view('dashboards.it-expert', PageCache::shared('dashboard:admin', self::ADMIN_TTL_SECONDS, fn (): array => $this->adminData($modelEvaluation)));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function adminData(ModelEvaluationService $modelEvaluation): array
     {
         $recent = $this->recentOperationalData();
         $heatmapLastRefresh = Cache::get(BarangayRiskMapService::CACHE_KEY)['generated_at'] ?? null;
@@ -378,7 +468,7 @@ class DashboardController extends Controller
         $evaluation = $modelEvaluation->evaluate();
         $evaluationBestRow = collect($evaluation['rows'] ?? [])->firstWhere('status', 'Selected Model');
 
-        return view('dashboards.it-expert', $this->stats() + [
+        return $this->stats() + [
             ...$this->adminAggregates(),
             ...$this->farmerOrganizationDashboardData(),
             'latestLogs' => SystemLog::query()->with('user')->latest()->take(10)->get(),
@@ -411,12 +501,12 @@ class DashboardController extends Controller
                 $inactiveUsersToday,
                 $reportAnomaly,
             ),
-        ]);
+        ];
     }
 
     private function recentOperationalData(): array
     {
-        return Cache::remember('dashboard:recent-operational-data', now()->addSeconds(30), fn (): array => [
+        return Cache::remember('dashboard:recent-operational-data', now()->addSeconds(self::SHARED_TTL_SECONDS), fn (): array => [
             'farmerFeedPosts' => FeedPost::query()
                 ->with('author:id,name')
                 ->whereIn('visibility', ['All Farmers', 'All Users'])
@@ -443,7 +533,7 @@ class DashboardController extends Controller
      */
     private function highRiskAreas(): Collection
     {
-        return Cache::remember('dashboard:high-risk-areas', now()->addSeconds(15), fn (): Collection => HeatmapArea::query()
+        return Cache::remember('dashboard:high-risk-areas', now()->addSeconds(120), fn (): Collection => HeatmapArea::query()
             ->whereIn('risk_level', ['High', 'Severe'])
             ->orderByDesc('risk_score')
             ->take(8)
@@ -457,8 +547,8 @@ class DashboardController extends Controller
      */
     private function maoActionItems(): array
     {
-        return Cache::remember('dashboard:mao-action-items', now()->addSeconds(20), fn (): array => [
-            'feedbackAwaitingResponse' => Schema::hasTable('advisory_feedback')
+        return Cache::remember('dashboard:mao-action-items', now()->addSeconds(120), fn (): array => [
+            'feedbackAwaitingResponse' => \App\Support\SchemaCache::hasTable('advisory_feedback')
                 ? AdvisoryFeedback::query()->whereNotNull('is_helpful')->whereNull('mao_response')->count()
                 : 0,
         ]);
@@ -568,7 +658,7 @@ class DashboardController extends Controller
 
     private function maoAggregates(): array
     {
-        return Cache::remember('dashboard:mao-aggregates', now()->addSeconds(45), function (): array {
+        return Cache::remember('dashboard:mao-aggregates', now()->addSeconds(self::SHARED_TTL_SECONDS), function (): array {
             $rice = RiceProduction::query()
                 ->selectRaw('COALESCE(SUM(total_production), 0) as production_total')
                 ->selectRaw('COALESCE(SUM(area_hectares), 0) as area_total')
@@ -589,7 +679,7 @@ class DashboardController extends Controller
 
     private function adminAggregates(): array
     {
-        return Cache::remember('dashboard:admin-aggregates', now()->addSeconds(45), function (): array {
+        return Cache::remember('dashboard:admin-aggregates', now()->addSeconds(self::SHARED_TTL_SECONDS), function (): array {
             $users = User::query()
                 ->selectRaw('COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active_total', [User::STATUS_ACTIVE])
@@ -878,7 +968,7 @@ class DashboardController extends Controller
 
     private function stats(): array
     {
-        return Cache::remember('dashboard:shared-stats', now()->addSeconds(45), function (): array {
+        return Cache::remember('dashboard:shared-stats', now()->addSeconds(self::SHARED_TTL_SECONDS), function (): array {
             return [
                 'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
                 'totalClimateRecords' => ClimateRecord::count(),
@@ -892,7 +982,7 @@ class DashboardController extends Controller
 
     private function hasTyphoonSafetyTable(): bool
     {
-        return Schema::hasTable('typhoon_safety_responses');
+        return \App\Support\SchemaCache::hasTable('typhoon_safety_responses');
     }
 
     /**

@@ -97,6 +97,18 @@ return [
 
             // Supabase requires SSL.
             'sslmode' => env('DB_SSLMODE', 'require'),
+
+            // Send the schema as a connection startup option instead of a separate SET statement
+            // (one round trip less per request). See StartupSearchPathPostgresConnector.
+            'startup_search_path' => filter_var(env('DB_STARTUP_SEARCH_PATH', true), FILTER_VALIDATE_BOOLEAN),
+
+            // Reuse the connection between requests handled by the same PHP worker. Opening a new
+            // TLS connection to Supabase costs over a second on every page; a reused one costs nothing.
+            // Set DB_PERSISTENT=false to turn off. AppServiceProvider rolls back any transaction a
+            // crashed request may have left open on a reused connection.
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                PDO::ATTR_PERSISTENT => filter_var(env('DB_PERSISTENT', true), FILTER_VALIDATE_BOOLEAN) ?: null,
+            ]) : [],
         ],
 
         'sqlsrv' => [

@@ -15,6 +15,16 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        // The signed-in user is cached between requests; any change to a user (role, status,
+        // password, profile) must be seen by their very next request.
+        $forget = fn (self $user) => \App\Auth\CachedEloquentUserProvider::forget($user->getKey());
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     public const ROLE_FARMER = 'Farmer';
 
     public const ROLE_MAO = 'MAO Personnel';

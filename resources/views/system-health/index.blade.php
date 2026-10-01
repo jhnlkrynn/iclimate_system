@@ -45,7 +45,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-success btn-sm" href="{{ route('model-registry.index') }}">ML Model Registry</a>
-                    <a class="btn btn-outline-success btn-sm" href="{{ route('system-health.index') }}">Refresh</a>
+                    <a class="btn btn-outline-success btn-sm" href="{{ route('system-health.index', ['refresh' => 1]) }}">Refresh</a>
                 </div>
             </div>
             <div class="sh-chips" aria-label="Summary">

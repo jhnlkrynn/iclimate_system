@@ -7,6 +7,7 @@ use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparesPredictions;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -14,11 +15,15 @@ use Tests\TestCase;
 
 class AIHybridOrchestratorTest extends TestCase
 {
+    use PreparesPredictions;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Chat only reads prepared predictions; stand in for the scheduled refresh.
+        $this->preparePredictions();
 
         Cache::flush();
         Config::set('services.groq.enabled', false);

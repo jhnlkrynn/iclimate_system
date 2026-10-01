@@ -19,6 +19,8 @@ class ConversationContext
     /** @var array<int, array<string, mixed>> per user id, for the current message */
     private array $cache = [];
 
+    public function __construct(private readonly AiTimings $timings) {}
+
     /** Forget what was read; called at the start of each message. */
     public function reset(): void
     {
@@ -30,7 +32,7 @@ class ConversationContext
      */
     public function recent(User $user): array
     {
-        return $this->cache[$user->id] ??= $this->load($user);
+        return $this->cache[$user->id] ??= $this->timings->time('history', fn (): array => $this->load($user));
     }
 
     private function load(User $user): array

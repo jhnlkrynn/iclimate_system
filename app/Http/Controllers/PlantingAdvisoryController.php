@@ -31,6 +31,27 @@ class PlantingAdvisoryController extends Controller
 
     public function index(Request $request, TyphoonSafetyService $typhoonSafety): View
     {
+        // A watched analytics run changes by the second, so that view is never reused.
+        if ($request->query('run') !== null) {
+            return view('advisories.index', $this->indexData($request, $typhoonSafety));
+        }
+
+        // Private to the person (their barangay, their own typhoon reply) and reused for a minute; any
+        // advisory, feedback or profile change rebuilds it. About eight database round trips to build.
+        return view('advisories.index', \App\Support\PageCache::forUser(
+            (int) $request->user()->id,
+            'advisories-index',
+            60,
+            fn (): array => $this->indexData($request, $typhoonSafety),
+            \App\Support\PageCache::queryVary($request, ['page', 'type', 'severity', 'status', 'barangay', 'search', 'q']),
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function indexData(Request $request, TyphoonSafetyService $typhoonSafety): array
+    {
         $pagasaSummary = ['advisories_created' => 0, 'errors' => []];
         $query = $this->filteredQuery($request)
             ->when($request->user()->role === User::ROLE_FARMER, function ($query) use ($request) {
@@ -40,12 +61,12 @@ class PlantingAdvisoryController extends Controller
             ? $typhoonSafety->activeEvent()
             : null;
 
-        return view('advisories.index', [
+        return [
             'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
             'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('created_at')->first(),
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
-            'typhoonSafetyResponse' => Schema::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
+            'typhoonSafetyResponse' => \App\Support\SchemaCache::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
                 ? TyphoonSafetyResponse::query()
                     ->where('user_id', $request->user()->id)
                     ->where('event_key', $activeTyphoonSafetyEvent['key'])
@@ -60,7 +81,7 @@ class PlantingAdvisoryController extends Controller
             'canManage' => $this->canManage($request),
             'pagasaSummary' => $pagasaSummary,
             'analyticsRun' => $this->requestedAnalyticsRun($request),
-        ]);
+        ];
     }
 
     public function adminIndex(Request $request): View
@@ -124,7 +145,7 @@ class PlantingAdvisoryController extends Controller
             abort(403);
         }
 
-        $feedbackFeatureReady = Schema::hasTable('advisory_feedback');
+        $feedbackFeatureReady = \App\Support\SchemaCache::hasTable('advisory_feedback');
         $relations = ['weatherData', 'rule', 'approvedBy', 'postedBy'];
 
         if ($feedbackFeatureReady) {
@@ -161,7 +182,7 @@ class PlantingAdvisoryController extends Controller
     {
         abort_unless($request->user()->role === User::ROLE_FARMER, 403);
 
-        if (! Schema::hasTable('advisory_feedback')) {
+        if (! \App\Support\SchemaCache::hasTable('advisory_feedback')) {
             if ($request->wantsJson()) {
                 return response()->json(['ok' => false, 'message' => 'Advisory feedback is temporarily unavailable while the database update is completed.'], 503);
             }
@@ -190,7 +211,7 @@ class PlantingAdvisoryController extends Controller
     {
         $this->authorizeManage($request);
 
-        if (! Schema::hasTable('advisory_feedback')) {
+        if (! \App\Support\SchemaCache::hasTable('advisory_feedback')) {
             return back()->with('error', 'Advisory feedback is temporarily unavailable while the database update is completed.');
         }
 

@@ -66,6 +66,12 @@ class FarmerDashboardWeatherService
      */
     public function current(bool $force = false, ?float $budgetSeconds = null): array
     {
+        // Who is waiting decides how patient this call may be (see InteractiveRequest). An explicit
+        // budget (the chatbot) is always strict and may use a recent stored reading.
+        $mode = $budgetSeconds !== null
+            ? ['budget' => $budgetSeconds, 'stale_ok' => true]
+            : \App\Support\InteractiveRequest::weatherMode();
+        $budgetSeconds = $mode['budget'];
         $this->budget = $budgetSeconds;
         $cacheKey = $this->cacheKey();
         $lastSuccessfulKey = $cacheKey.'.last_successful';
@@ -82,7 +88,7 @@ class FarmerDashboardWeatherService
 
         // An interactive caller (the chatbot) is happy with a snapshot a few minutes old: the
         // dashboard's 1-minute cache would otherwise send most chat questions out to the provider.
-        if (! $force && $budgetSeconds !== null) {
+        if (! $force && $mode['stale_ok']) {
             $recent = Cache::get($lastSuccessfulKey);
 
             if (is_array($recent) && $this->youngerThan($recent, (int) config('ai.weather_max_age_minutes', 10))) {
@@ -119,6 +125,20 @@ class FarmerDashboardWeatherService
 
             return $this->unavailable();
         }
+    }
+
+    /**
+     * The last stored reading (fresh or not), or null if none exists. Never calls a provider; used where a
+     * page must render without any outside call, such as the login screen.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function stored(): ?array
+    {
+        $key = $this->cacheKey();
+        $snapshot = Cache::get($key) ?? Cache::get($key.'.last_successful');
+
+        return is_array($snapshot) ? $snapshot : null;
     }
 
     /** Whether a stored snapshot was fetched by this server within the last $minutes minutes. */

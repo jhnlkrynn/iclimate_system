@@ -80,7 +80,8 @@ class FarmerProfileController extends CrudController
     protected function baseQuery(Request $request): Builder
     {
         return FarmerProfile::query()
-            ->with(['user', 'farmBoundary'])
+            // farmerOrganization is shown per row; loading it here is one query for the page, not one per row.
+            ->with(['user', 'farmBoundary', 'farmerOrganization'])
             ->when(
                 $request->user()->role === User::ROLE_FARMER,
                 fn (Builder $query) => $query->where('user_id', $request->user()->id),
@@ -89,9 +90,10 @@ class FarmerProfileController extends CrudController
 
     private function farmerOrganizationOptions(): array
     {
-        return FarmerOrganization::query()
+        // The same dropdown is asked for twice per page and changes rarely.
+        return \App\Support\PageCache::shared('farmer-organization-options', 600, fn (): array => FarmerOrganization::query()
             ->orderBy('id')
             ->pluck('name', 'id')
-            ->toArray();
+            ->toArray());
     }
 }

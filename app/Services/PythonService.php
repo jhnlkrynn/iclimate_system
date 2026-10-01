@@ -24,6 +24,12 @@ class PythonService
         $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
         $timeout = (int) config('services.farming_ai.timeout', 5);
 
+        // Inside a chat request the wait is capped by what is left of the response budget.
+        $timings = app(\App\Services\AI\AiTimings::class);
+        if ($timings->isActive()) {
+            $timeout = max(1, min($timeout, (int) floor($timings->remainingSeconds() - 1)));
+        }
+
         self::recordAttempt();
 
         try {

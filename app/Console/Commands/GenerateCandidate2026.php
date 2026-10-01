@@ -1245,9 +1245,7 @@ class GenerateCandidate2026 extends Command
         */
 
         $configured =
-            env(
-                'PYTHON_BINARY'
-            );
+            config('iclimate.python_binary');
 
         if (
             is_string(

@@ -64,7 +64,6 @@
     if ($isFarmer) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Advisories', 'advisories', 'advisories'),
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
@@ -80,7 +79,6 @@
     } elseif ($isMao) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Farm Calendar', 'calendar', 'calendar'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Planting Advisories', 'advisories', 'advisories'),

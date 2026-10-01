@@ -113,8 +113,10 @@ Schedule::command('iclimate:refresh-lian-boundaries')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
+// Every 20 minutes: the map is cached for 20, and pages never compute it themselves (they show the last
+// complete map and queue a refresh), so this is what keeps the risk map current.
 Schedule::command('iclimate:refresh-barangay-risk')
-    ->everyFourHours()
+    ->cron('*/20 * * * *')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
@@ -127,9 +129,30 @@ Schedule::command('iclimate:process-datasets')
 // predictions warm (queues background generation only for months that are
 // missing/stale) so the weather-predictions page and barangay risk map
 // almost never have to fall back to computing a forecast inline.
+// Prepare the pages that are the same for everyone (MAO / IT dashboards, System Health) so opening one is
+// instant instead of waiting for dozens of database round trips after every data change.
+Schedule::command('iclimate:warm-dashboard-cache')
+    ->everyTwoMinutes()
+    ->withoutOverlapping(10)
+    ->appendOutputTo($automationLog);
+
+// Keep the stored weather fresh so pages and the chatbot read it instantly instead of waiting on a provider.
+Schedule::command('iclimate:refresh-weather-cache')
+    ->everyThreeMinutes()
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog);
+
 Schedule::command('iclimate:refresh-predictions')
     ->dailyAt('02:00')
     ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
+
+// Right after the refresh has queued the monthly forecasts: wait for them, build anything still
+// missing here in the CLI, warm the yield engine and mark the cache ready. Chat requests only
+// ever READ what this prepared (see PredictionReadMode), so none of them trains a model.
+Schedule::command('iclimate:warm-prediction-cache')
+    ->dailyAt('02:15')
+    ->withoutOverlapping(60)
     ->appendOutputTo($automationLog);
 
 // Daily PostgreSQL backup during low activity (after the 01:30 dataset and

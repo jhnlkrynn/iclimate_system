@@ -399,14 +399,10 @@ class SystemHealthTest extends TestCase
     {
         // A file that is not a program: if the check tried to run it, it would fail or error.
         $fake = $this->modelFile('not an executable');
+        // The app reads PYTHON_BINARY through config('iclimate.python_binary') (env() does not work once the
+        // config is cached), so the setting is simulated there.
         $setBinary = function (?string $value): void {
-            foreach (['_SERVER', '_ENV'] as $bag) {
-                if ($value === null) {
-                    unset($GLOBALS[$bag]['PYTHON_BINARY']);
-                } else {
-                    $GLOBALS[$bag]['PYTHON_BINARY'] = $value;
-                }
-            }
+            config(['iclimate.python_binary' => $value]);
         };
 
         try {

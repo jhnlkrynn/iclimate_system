@@ -757,12 +757,9 @@ class CandidatePredictionController extends Controller
         */
 
         $pythonBinary =
-            env(
-                'PYTHON_BINARY',
-                base_path(
+            (config('iclimate.python_binary') ?: base_path(
                     '.venv/Scripts/python.exe'
-                )
-            );
+                ));
 
         $pythonBinary =
             trim(

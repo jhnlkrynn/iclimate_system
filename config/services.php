@@ -119,7 +119,9 @@ return [
     // farming_ai.cache_minutes above, which is for rice-yield AnalyticsRun
     // results, not monthly weather.
     'prediction' => [
-        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 360),
+        // Prepared monthly forecasts are refreshed daily (02:00), so they stay valid for a day plus a
+        // margin. Anything older is still served to chat as "latest available" while a refresh runs.
+        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 1560),
     ],
 
     'groq' => [

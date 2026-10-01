@@ -322,6 +322,9 @@ class BarangayRiskMapTest extends TestCase
     {
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
+        // A request only reads the risk map; the scheduled refresh (iclimate:refresh-barangay-risk) computes it.
+        app(BarangayRiskMapService::class)->riskMap(refresh: true);
+
         $response = $this->getJson('/api/lian/risk-map');
 
         $response->assertStatus(200)->assertJson(['status' => 'ok']);
@@ -642,6 +645,9 @@ class BarangayRiskMapTest extends TestCase
             'area_hectares' => 1,
             'total_production' => 4.1,
         ]);
+
+        // The dashboard only reads the risk map; prepare it the way the scheduled refresh does.
+        app(BarangayRiskMapService::class)->riskMap(refresh: true);
 
         $farmerResponse = $this->actingAs($user)->get(route('farmer.dashboard'));
         $farmerResponse->assertOk();
