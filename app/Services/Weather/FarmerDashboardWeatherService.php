@@ -638,7 +638,8 @@ class FarmerDashboardWeatherService
                 'precipitation_probability' => $weather['today']['precipitation_probability'] ?? null,
                 'wind_speed' => $weather['current']['wind_speed'] ?? null,
                 'raw_response' => $payload,
-                'fetched_at' => $weather['fetched_at'] ?? now($this->timezone()),
+                // Stored timestamps are UTC; a Manila-zoned value would be saved 8 hours ahead and look "in the future".
+                'fetched_at' => Carbon::parse($weather['fetched_at'] ?? now())->utc(),
             ],
         );
     }

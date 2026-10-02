@@ -65,6 +65,14 @@ return [
     |
     */
 
+    /*
+    | Shown on the IT dashboard (Resources). Set APP_VERSION and APP_DEPLOYED_AT (an ISO date) in your deploy step.
+    */
+
+    'version' => env('APP_VERSION'),
+
+    'deployed_at' => env('APP_DEPLOYED_AT'),
+
     'timezone' => 'UTC',
 
     /*

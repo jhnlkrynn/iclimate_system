@@ -101,7 +101,7 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertSee('horizontalCategoryTicks', false);
     }
 
-    public function test_admin_dashboard_links_to_farmer_analytics_instead_of_embedding_the_chart(): void
+    public function test_admin_dashboard_has_neither_the_chart_nor_a_farmer_database_section(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
         $admin = User::factory()->itExpert()->create();
@@ -109,8 +109,8 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Farmer Database')
-            ->assertSee('View Farmer Analytics')
+            ->assertDontSee('Farmer Database')
+            ->assertDontSee('View Farmer Analytics')
             ->assertDontSee('Farmers by Organization');
     }
 }

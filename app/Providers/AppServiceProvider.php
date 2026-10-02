@@ -53,6 +53,9 @@ class AppServiceProvider extends ServiceProvider
         // How much of a chat request is spent waiting on the database (records nothing outside a chat request).
         \Illuminate\Support\Facades\DB::listen(fn ($query) => app(\App\Services\AI\AiTimings::class)->recordQuery((float) $query->time));
 
+        // Every scheduled run is recorded in scheduled_task_runs (shown on the IT dashboard).
+        \App\Models\ScheduledTaskRun::listen();
+
         Paginator::useBootstrapFive();
 
         Carbon::macro('shortTime', function () {

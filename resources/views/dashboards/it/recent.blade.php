@@ -1,31 +1,17 @@
-@php
-    $r = $it['recent'];
-    $when = fn ($t) => $t->timezone('Asia/Manila')->isToday() ? $t->timezone('Asia/Manila')->format('g:i A') : $t->timezone('Asia/Manila')->format('M j, g:i A');
-@endphp
 <section class="itd-card" aria-labelledby="itdRecentTitle" data-it-recent>
     <div class="itd-card-head">
-        <h2 id="itdRecentTitle">Recent System Activity</h2>
+        <div><h2 id="itdRecentTitle">Recent System Activity</h2><p class="itd-sub">Latest 10 audit entries; failed logins and privileged actions are highlighted</p>@include('dashboards.it._updated', ['at' => $it['stamps']['now'] ?? $it['stamps']['now']])</div>
         <a class="itd-btn is-quiet" href="{{ route('system-logs.index') }}">View All Logs</a>
     </div>
-    @if ($r['state'] === 'error')
-        <p class="itd-error" role="alert">{{ $r['message'] }}</p>
-    @elseif ($r['state'] === 'empty')
-        <p class="itd-empty">No system activity has been recorded yet.</p>
-    @else
-        <div class="itd-table-wrap">
-            <table class="itd-table itd-table-cards">
-                <thead><tr><th scope="col">Time</th><th scope="col">User</th><th scope="col">Role</th><th scope="col">Action</th></tr></thead>
-                <tbody>
-                    @foreach ($r['rows'] as $row)
-                        <tr>
-                            <td data-label="Time" class="itd-nowrap">{{ $when($row['at']) }}</td>
-                            <td data-label="User">{{ $row['user'] }}</td>
-                            <td data-label="Role">{{ $row['role'] }}</td>
-                            <td data-label="Action"><strong>{{ $row['action'] }}</strong></td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
+    <form class="itd-filters" data-recent-filters aria-label="Filter recent activity">
+        <label>Role
+            <select name="role"><option value="">All roles</option>@foreach ($it['filters']['roles'] as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach</select>
+        </label>
+        <label>Action type
+            <select name="action"><option value="">All actions</option>@foreach ($it['filters']['actions'] as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach</select>
+        </label>
+        <label>From <input type="date" name="from"></label>
+        <label>To <input type="date" name="to"></label>
+    </form>
+    <div data-recent-body>@include('dashboards.it.recent-rows')</div>
 </section>

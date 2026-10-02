@@ -58,7 +58,10 @@ class DashboardController extends Controller
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'risk', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'];
 
     /** Sections the IT refresh button re-renders (partials under dashboards/it). */
-    private const IT_LIVE_SLOTS = ['kpis', 'alerts', 'health', 'distribution', 'data', 'farmers', 'recent'];
+    private const IT_LIVE_SLOTS = ['summary', 'kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
+
+    /** Tabs of the IT dashboard (?tab=...). */
+    private const IT_TABS = ['overview', 'security', 'users', 'resources', 'activity'];
 
     /** Sections the Farmer refresh button re-renders (partials under dashboards/farmer). */
     private const FARMER_LIVE_SLOTS = ['hero', 'notice', 'alerts', 'action', 'plan', 'kpis', 'forecast', 'status', 'setup', 'advisories'];
@@ -398,17 +401,19 @@ class DashboardController extends Controller
     }
 
     /** IT overview: everything comes from ItDashboardService and is cached for a short time (the warm-up job refreshes it). */
-    public function admin(ItDashboardService $it): View
+    public function admin(Request $request, ItDashboardService $it): View
     {
         $payload = Cache::remember($this->adminCacheKey(), now()->addSeconds(self::IT_PAGE_CACHE_SECONDS), fn (): array => $it->payload());
 
-        return view('dashboards.it-expert', ['it' => $payload]);
+        $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
+
+        return view('dashboards.it-expert', ['it' => $payload, 'tab' => $tab]);
     }
 
     /** Refresh button: rebuilds the live sections and returns each section's HTML. */
     public function adminLive(ItDashboardService $it): JsonResponse
     {
-        $payload = $it->payload();
+        $payload = $it->payload(fresh: true);
         Cache::put($this->adminCacheKey(), $payload, now()->addSeconds(self::IT_PAGE_CACHE_SECONDS));
 
         $slots = [];
@@ -418,9 +423,33 @@ class DashboardController extends Controller
 
         return response()->json([
             'slots' => $slots,
-            'refreshed_at' => $payload['checked_at']->format('g:i A'),
+            'refreshed_at' => $payload['checked_at']->format('g:i:s A'),
+            'weather_synced_at' => $payload['weather_synced_at']?->format('M j, g:i A'),
             'level' => $payload['overall']['level'],
+            'status' => $payload['overall']['label'],
         ]);
+    }
+
+    /** The Retry button on "Failed jobs by class": puts that class's failed jobs back on the queue. */
+    public function adminRetryFailed(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $class = (string) $request->input('class');
+        $ids = \App\Services\Analytics\ItDashboardInsights::failedJobIds($class);
+        if ($ids !== []) {
+            \App\Services\SystemAuditLogger::record('Retry Failed Jobs', $request, ['job_class' => $class, 'jobs' => count($ids), 'retried_by' => $request->user()->name]);
+            \Illuminate\Support\Facades\Artisan::call('queue:retry', ['id' => $ids]);
+            Cache::forget($this->adminCacheKey());
+        }
+
+        return redirect()->route('admin.dashboard')->with('status', count($ids).' failed '.(count($ids) === 1 ? 'job was' : 'jobs were').' put back on the queue.');
+    }
+
+    /** Recent System Activity with its filters (role, action type, date range); returns the table's HTML. */
+    public function adminRecent(Request $request, ItDashboardService $it): JsonResponse
+    {
+        $payload = ['recent' => $it->recentActivity($request->only(['role', 'action', 'from', 'to']))];
+
+        return response()->json(['html' => view('dashboards.it.recent-rows', ['it' => $payload])->render()]);
     }
 
     /** Daily counts per kind of event for the System Activity chart (range 7, 30 or 90 days; anything else is 30). */

@@ -85,7 +85,14 @@ class FarmerProfileController extends CrudController
             ->when(
                 $request->user()->role === User::ROLE_FARMER,
                 fn (Builder $query) => $query->where('user_id', $request->user()->id),
-            );
+            )
+            // Links from the IT dashboard's Data Integrity panel.
+            ->when($request->query('integrity') === 'no_organization', fn (Builder $q) => $q->whereNull('farmer_organization_id'))
+            ->when($request->query('integrity') === 'missing_fields', fn (Builder $q) => $q->where(function (Builder $w) {
+                $w->whereNull('barangay')->orWhere('barangay', '')->orWhereNull('full_name')->orWhere('full_name', '')
+                    ->orWhereNull('farm_area')->orWhere('farm_area', '<=', 0)->orWhereNull('contact_number')->orWhere('contact_number', '');
+            }))
+            ->when($request->query('integrity') === 'orphaned', fn (Builder $q) => $q->whereHas('user', fn (Builder $u) => $u->where('role', '!=', User::ROLE_FARMER)));
     }
 
     private function farmerOrganizationOptions(): array

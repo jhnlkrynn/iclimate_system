@@ -54,8 +54,12 @@ class OpenMeteoService
             return Cache::get('open-meteo:last-fetch-result');
         }
 
+        $startedAt = now();
+        $clock = hrtime(true);
+
         try {
             $payload = $this->requestForecast();
+            \App\Models\WeatherFetchLog::record($startedAt, (int) round((hrtime(true) - $clock) / 1_000_000), true);
             $records = $this->storeForecast($payload);
 
             $result = [
@@ -79,6 +83,10 @@ class OpenMeteoService
 
             return $result;
         } catch (Throwable $exception) {
+            // A failed request is logged here; a failure while saving (after a logged success) is not a provider failure.
+            if (! \App\Models\WeatherFetchLog::query()->where('started_at', $startedAt)->exists()) {
+                \App\Models\WeatherFetchLog::record($startedAt, (int) round((hrtime(true) - $clock) / 1_000_000), false, $exception->getMessage());
+            }
             Log::warning('Open-Meteo forecast fetch failed.', [
                 'message' => $exception->getMessage(),
             ]);

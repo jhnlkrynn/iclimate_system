@@ -419,8 +419,8 @@ class DashboardOverviewTest extends TestCase
         $this->actingAs($it)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('data-it-dashboard', false)
-            ->assertSee('No system issues requiring attention.')
-            ->assertSee('User Distribution')
+            ->assertSee('All clear')
+            ->assertSee('Users by Role')
             ->assertDontSee('id="dashYear"', false);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);

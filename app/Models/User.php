@@ -98,6 +98,13 @@ class User extends Authenticatable
         return $this->hasMany(SystemLog::class);
     }
 
+    /** Accounts older than a day that have never logged in nor been used (no login entry, no recorded activity). */
+    public function scopeNeverLoggedIn(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereNull('users.last_active_at')->where('users.created_at', '<', now()->subDay())
+            ->whereRaw("NOT EXISTS (SELECT 1 FROM system_logs sl WHERE sl.user_id = users.id AND LOWER(sl.action) IN ('user login', 'login'))");
+    }
+
     public function roleLabel(): string
     {
         return $this->role;

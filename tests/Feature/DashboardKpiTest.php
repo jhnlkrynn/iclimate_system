@@ -175,7 +175,7 @@ class DashboardKpiTest extends TestCase
             ->assertOk()
             ->assertSee('IT Dashboard')
             ->assertSee('data-kpi="users"', false)
-            ->assertSee('data-kpi="health"', false)
+            ->assertSee('data-kpi="status"', false)
             ->assertDontSee('data-kpi="prediction"', false)          // prediction diagnostics live on System Health, not the overview
             ->assertDontSee('data-kpi="historical-yield"', false);
 

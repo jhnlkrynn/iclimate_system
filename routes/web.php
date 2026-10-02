@@ -232,6 +232,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:'.User::ROLE_IT_EXPERT)->group(function () {
         Route::get('/admin/dashboard/live', [DashboardController::class, 'adminLive'])->name('admin.dashboard.live');
         Route::get('/admin/dashboard/activity', [DashboardController::class, 'adminActivity'])->name('admin.dashboard.activity');
+        Route::get('/admin/dashboard/recent', [DashboardController::class, 'adminRecent'])->name('admin.dashboard.recent');
+        Route::post('/admin/dashboard/retry-failed', [DashboardController::class, 'adminRetryFailed'])->name('admin.dashboard.retry-failed');
     });
 
 

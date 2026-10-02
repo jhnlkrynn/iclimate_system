@@ -13,6 +13,10 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // IT dashboard type roles (also exposed there as CSS variables)
+                display: ['Sora', ...defaultTheme.fontFamily.sans],
+                body: ['DM Sans', ...defaultTheme.fontFamily.sans],
+                mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
             },
         },
     },
