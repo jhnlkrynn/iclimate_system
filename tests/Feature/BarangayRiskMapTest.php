@@ -397,9 +397,8 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Bagong Pook');                      // the barangay is on the farm information card (the risk card needs a stored rating)
-        $response->assertSee('Farm Map');
-        $response->assertSee('Saved (1.50 ha mapped)');
+        $response->assertSee('Bagong Pook');                      // the barangay is in the header (the risk card needs a stored rating)
+        $response->assertDontSee('Draw your farm on the map');    // a saved outline completes that setup step
     }
 
     public function test_mao_dashboard_loads_with_risk_map_section(): void
@@ -659,7 +658,7 @@ class BarangayRiskMapTest extends TestCase
             ->firstWhere('barangay', 'Bagong Pook');
 
         $this->assertNotNull($apiEntry);
-        $farmerResponse->assertSee('Your Barangay: Bagong Pook');
+        $farmerResponse->assertSee('Bagong Pook, Lian, Batangas');
         $farmerResponse->assertSee((string) $apiEntry['risk_level']);
     }
 
@@ -717,7 +716,7 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('/images/weather/thunderstorm.svg', false);
+        $response->assertDontSee('/images/weather/', false);      // the dashboard uses one line-icon style, not coloured tiles
         $response->assertSee('Thunderstorm');
     }
 }

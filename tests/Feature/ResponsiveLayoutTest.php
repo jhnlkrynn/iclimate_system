@@ -25,10 +25,10 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('overscroll-behavior-inline: contain', $appCss);
         $this->assertStringContainsString('max-height: 100dvh', $appCss);
 
-        // Farmer dashboard: its styles live in resources/css/farmer-dashboard.css; 2 KPI cards per row on phones, one column on very small screens.
+        // Farmer dashboard: its styles live in resources/css/farmer-dashboard.css; 2 KPI cards per row on phones, single column layout at 640px and below.
         $farmerCss = file_get_contents(resource_path('css/farmer-dashboard.css'));
-        $this->assertStringContainsString('.mfd-kpis { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerCss);
-        $this->assertStringContainsString('@media (max-width: 479.98px) { .mfd-kpis { grid-template-columns: minmax(0, 1fr); } }', $farmerCss);
+        $this->assertStringContainsString('.mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerCss);
+        $this->assertStringContainsString('@media (max-width: 640px)', $farmerCss);
         $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);

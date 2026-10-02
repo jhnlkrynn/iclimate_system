@@ -75,9 +75,10 @@ final class FarmerCropPlanService
         if (! $s->planting_date) {
             return null;
         }
-        $planting = CarbonImmutable::instance($s->planting_date)->startOfDay();
+        // Date columns are stored as UTC midnight: read them as calendar dates in the same timezone as "today".
+        $planting = CarbonImmutable::parse($s->planting_date->toDateString(), $today->getTimezone());
         $harvestDate = $s->harvestDateForPlanning();
-        $harvest = $harvestDate ? CarbonImmutable::instance($harvestDate)->startOfDay() : null;
+        $harvest = $harvestDate ? CarbonImmutable::parse($harvestDate->toDateString(), $today->getTimezone()) : null;
 
         $milestones = $this->milestones($planting, $harvest, $today);
         $current = collect($milestones)->firstWhere('state', 'current');

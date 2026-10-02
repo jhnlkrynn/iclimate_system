@@ -156,11 +156,11 @@ class DashboardKpiTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
         $this->actingAs($farmer)->get(route('farmer.dashboard'))
             ->assertOk()
-            ->assertSee('My Farm Today')
+            ->assertSee('My Farm at a Glance')
             ->assertSee('data-kpi="alerts"', false)
-            ->assertSee('data-kpi="activity"', false)
+            ->assertSee('data-kpi="rain_past"', false)
             ->assertDontSee('data-kpi="historical-yield"', false)        // municipal history is not a farmer KPI
-            ->assertDontSee('My Farm at a Glance')
+            ->assertDontSee('My Farm Today')
             ->assertDontSee('data-kpi="users"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);

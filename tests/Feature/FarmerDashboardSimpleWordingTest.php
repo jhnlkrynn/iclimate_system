@@ -66,11 +66,11 @@ class FarmerDashboardSimpleWordingTest extends TestCase
             $this->assertStringNotContainsStringIgnoringCase($term, $text, "Farmer dashboard should not show \"{$term}\".");
         }
 
-        foreach (["Today's Weather", 'My Farm Today', 'What You Should Do Today', 'My Farm Status', 'Quick Actions'] as $heading) {
+        foreach (['Weather Now', 'My Farm at a Glance', 'What to Do Today', 'My Crop Season', 'Quick Actions'] as $heading) {
             $this->assertStringContainsString($heading, $text);
         }
         $response->assertSee(route('weather-predictions.index', ['tab' => 'weather-forecast']), false);
-        foreach (['Upcoming Weather', 'Farm Status Summary', 'Recommended Action', 'More for Your Farm'] as $old) {
+        foreach (['Upcoming Weather', 'Farm Status Summary', 'Recommended Action', 'More for Your Farm', 'My Farm Status', 'My Farm Today'] as $old) {
             $this->assertStringNotContainsString($old, $text);              // the retired section names
         }
     }
@@ -98,8 +98,8 @@ class FarmerDashboardSimpleWordingTest extends TestCase
         $response->assertOk();
         $text = $this->visibleText($response->getContent());
 
-        // With no rating there is no risk card at all: an unrated barangay is never presented as Low.
-        $this->assertStringNotContainsString('Farm Risk in Your Barangay', $text);
+        // With no rating the risk card says so (and offers a retry): an unrated barangay is never presented as Low.
+        $this->assertStringContainsString('We do not have a risk rating for your barangay yet.', $text);
         $this->assertStringNotContainsString('Low Farm Risk', $text);
         $this->assertDoesNotMatchRegularExpression('/(?<!not )Low risk/', $text);   // the map legend's "not Low risk" note is fine
     }

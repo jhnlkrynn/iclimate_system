@@ -75,7 +75,8 @@ class FarmerDashboardWeatherService
         $this->budget = $budgetSeconds;
         $cacheKey = $this->cacheKey();
         $lastSuccessfulKey = $cacheKey.'.last_successful';
-        $ttl = now($this->timezone())->addMinutes(max(1, (int) config('services.weather.cache_minutes', 5)));
+        // Never cached longer than the dashboard's own limit, whatever WEATHER_CACHE_MINUTES says.
+        $ttl = now($this->timezone())->addMinutes(max(1, min((int) config('services.weather.cache_minutes', 5), (int) config('farmer_dashboard.weather.cache_max_minutes', 30))));
 
         // One cache read (not has() then get()): on a database cache that is one query instead of two.
         $cached = $force ? null : Cache::get($cacheKey);
@@ -452,6 +453,8 @@ class FarmerDashboardWeatherService
                 'rainfall_mm' => $this->number($today['totalprecip_mm'] ?? null),
                 'precipitation_probability' => $this->number($today['daily_chance_of_rain'] ?? null),
                 'chance_of_rain_percent' => $this->number($today['daily_chance_of_rain'] ?? null),
+                'wind_speed_max' => $this->number($today['maxwind_kph'] ?? null),
+                'humidity_avg' => $this->number($today['avghumidity'] ?? null),
             ],
             'forecast' => $this->weatherApiForecast($forecastDays),
             'icon' => $mapped['icon'],
@@ -581,6 +584,8 @@ class FarmerDashboardWeatherService
                 'temperature_min' => $this->number($dayPayload['mintemp_c'] ?? null),
                 'rainfall' => $this->number($dayPayload['totalprecip_mm'] ?? null),
                 'precipitation_probability' => $this->number($dayPayload['daily_chance_of_rain'] ?? null),
+                'wind_speed_max' => $this->number($dayPayload['maxwind_kph'] ?? null),
+                'humidity_avg' => $this->number($dayPayload['avghumidity'] ?? null),
             ];
         }
 
@@ -606,6 +611,8 @@ class FarmerDashboardWeatherService
                 'temperature_min' => $this->number($daily['temperature_2m_min'][$index] ?? null),
                 'rainfall' => $this->number($daily['precipitation_sum'][$index] ?? $daily['rain_sum'][$index] ?? null),
                 'precipitation_probability' => $this->number($daily['precipitation_probability_max'][$index] ?? null),
+                'wind_speed_max' => $this->number($daily['wind_speed_10m_max'][$index] ?? null),
+                'feels_like_max' => $this->number($daily['apparent_temperature_max'][$index] ?? null),
             ];
         }
 

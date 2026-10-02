@@ -2,10 +2,10 @@
 @if ($setup)
     <section class="mfd-card" aria-labelledby="mfdSetupTitle" data-mfd-setup>
         <div class="mfd-card-head">
-            <h2 id="mfdSetupTitle">Finish Setting Up Your Farm</h2>
-            <span class="mfd-muted">{{ $setup['done'] }} of {{ $setup['total'] }} done</span>
+            <h2 id="mfdSetupTitle">{{ __('farmer.setup.title') }}</h2>
+            <span class="mfd-muted">{{ __('farmer.setup.progress', ['done' => $setup['done'], 'total' => $setup['total']]) }}</span>
         </div>
-        <div class="mfd-progress" role="progressbar" aria-label="Farm setup" aria-valuemin="0" aria-valuemax="{{ $setup['total'] }}" aria-valuenow="{{ $setup['done'] }}"><i @style(['width: ' . round($setup['done'] / $setup['total'] * 100) . '%'])></i></div>
+        <div class="mfd-progress" role="progressbar" aria-label="{{ __('farmer.setup.title') }}" aria-valuemin="0" aria-valuemax="{{ $setup['total'] }}" aria-valuenow="{{ $setup['done'] }}"><i @style(['width: '.round($setup['done'] / $setup['total'] * 100).'%'])></i></div>
         <ul class="mfd-setup">
             @foreach ($setup['items'] as $item)
                 <li>
