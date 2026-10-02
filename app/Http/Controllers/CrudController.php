@@ -209,9 +209,9 @@ abstract class CrudController extends Controller
 
     protected function userOptions(array $roles = []): array
     {
-        $key = 'crud:user-options:'.($roles === [] ? 'all' : implode('-', $roles));
-
-        return Cache::remember($key, now()->addSeconds(30), function () use ($roles): array {
+        // Built in three controllers' constructors, i.e. on EVERY request to those routes, and it lists
+        // every user. Kept for ten minutes, and dropped at once when any user is added or changed.
+        return \App\Support\PageCache::shared('crud-user-options', 600, function () use ($roles): array {
             $query = User::query()->orderBy('name');
 
             if ($roles !== []) {
@@ -219,7 +219,7 @@ abstract class CrudController extends Controller
             }
 
             return $query->pluck('name', 'id')->toArray();
-        });
+        }, ['roles' => $roles]);
     }
 
     protected function userRules(?int $id = null): array
@@ -231,7 +231,7 @@ abstract class CrudController extends Controller
             'role' => ['required', Rule::in([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
-            'barangay' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255', Rule::in(\App\Support\LianBarangays::all())],
             'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
         ];
     }

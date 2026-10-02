@@ -40,8 +40,7 @@ class MaoDashboardActionItemsTest extends TestCase
         $this->actingAs($mao)
             ->get(route('mao.dashboard'))
             ->assertOk()
-            ->assertSee('Needs Your Attention')
-            ->assertSee('Farmer Feedback Awaiting Reply')
+            ->assertDontSee('Needs Your Attention')
             ->assertDontSee('Pending Advisory Reviews');
     }
 

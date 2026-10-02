@@ -10,11 +10,15 @@ class Notification extends Model
 {
     use HasFactory;
 
+    /** Set on a warning about weather so the farmer dashboard can show it as a weather alert. */
+    public const CATEGORY_WEATHER = 'weather';
+
     protected $fillable = [
         'user_id',
         'title',
         'message',
         'type',
+        'category',
         'is_read',
     ];
 

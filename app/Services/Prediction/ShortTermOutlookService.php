@@ -36,18 +36,26 @@ final class ShortTermOutlookService
 
     /**
      * @param  array<string, mixed>  $modelInput  the same model_input PredictionEngine::predict() already computed
-     * @return array{weeks: array<int, array<string, mixed>>, rainfall_trend: array<string, mixed>, temperature_trend: array<string, mixed>, planning_tip: string, disclaimer: string}
+     * @return array{weeks: array<int, array<string, mixed>>, rainfall_trend: array<string, mixed>, temperature_trend: array<string, mixed>, planning_tip: string, disclaimer: string}|null  null when a real start or end value is missing
      */
-    public function build(array $modelInput, CarbonImmutable $targetMonth): array
+    public function build(array $modelInput, CarbonImmutable $targetMonth): ?array
     {
-        $rainfallStart = (float) ($modelInput['previous_rainfall'] ?? $modelInput['rainfall'] ?? 0);
-        $rainfallEnd = (float) ($modelInput['rainfall'] ?? 0);
-        $temperatureStart = (float) ($modelInput['previous_temp'] ?? $modelInput['temp_avg'] ?? 0);
-        $temperatureEnd = (float) ($modelInput['temp_avg'] ?? 0);
-        $humidityStart = (float) ($modelInput['previous_humidity'] ?? $modelInput['humidity'] ?? 0);
-        $humidityEnd = (float) ($modelInput['humidity'] ?? 0);
-        $windStart = (float) ($modelInput['previous_wind_speed'] ?? $modelInput['wind_speed'] ?? 0);
-        $windEnd = (float) ($modelInput['wind_speed'] ?? 0);
+        // The trend needs a real "last month" and a real "this month" value for each variable.
+        // A missing one is never replaced by the other value or by 0: no outlook is produced.
+        $keys = ['previous_rainfall', 'rainfall', 'previous_temp', 'temp_avg'];
+        foreach ($keys as $key) {
+            if (! is_numeric($modelInput[$key] ?? null)) {
+                return null;
+            }
+        }
+
+        $rainfallStart = (float) $modelInput['previous_rainfall'];
+        $rainfallEnd = (float) $modelInput['rainfall'];
+        $temperatureStart = (float) $modelInput['previous_temp'];
+        $temperatureEnd = (float) $modelInput['temp_avg'];
+        // Humidity and wind are shown only when both ends are real values.
+        $hasHumidity = is_numeric($modelInput['previous_humidity'] ?? null) && is_numeric($modelInput['humidity'] ?? null);
+        $hasWind = is_numeric($modelInput['previous_wind_speed'] ?? null) && is_numeric($modelInput['wind_speed'] ?? null);
 
         $dateRanges = $this->weekDateRanges($targetMonth);
         $weeks = [];
@@ -57,8 +65,8 @@ final class ShortTermOutlookService
 
             $rainfall = $this->interpolate($rainfallStart, $rainfallEnd, $midpointFraction);
             $temperature = $this->interpolate($temperatureStart, $temperatureEnd, $midpointFraction);
-            $humidity = $this->interpolate($humidityStart, $humidityEnd, $midpointFraction);
-            $wind = $this->interpolate($windStart, $windEnd, $midpointFraction);
+            $humidity = $hasHumidity ? $this->interpolate((float) $modelInput['previous_humidity'], (float) $modelInput['humidity'], $midpointFraction) : null;
+            $wind = $hasWind ? $this->interpolate((float) $modelInput['previous_wind_speed'], (float) $modelInput['wind_speed'], $midpointFraction) : null;
 
             $rainfallLabel = WeatherLabeler::fromRainfall($rainfall);
             $temperatureLabel = WeatherLabeler::fromTemperature($temperature);
@@ -71,8 +79,8 @@ final class ShortTermOutlookService
                     : $start->format('M j').' - '.$end->format('j'),
                 'rainfall' => round($rainfall, 1),
                 'temperature' => round($temperature, 1),
-                'humidity' => round($humidity, 1),
-                'wind_speed' => round($wind, 1),
+                'humidity' => $humidity !== null ? round($humidity, 1) : null,
+                'wind_speed' => $wind !== null ? round($wind, 1) : null,
                 'rainfall_label' => $rainfallLabel,
                 'temperature_label' => $temperatureLabel,
                 'advisory' => $this->advisoryFor($rainfallLabel, $temperatureLabel),

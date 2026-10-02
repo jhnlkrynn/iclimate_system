@@ -7,6 +7,9 @@ import Alpine from 'alpinejs';
 // no-ops on any page without a #barangayRiskMap element.
 import { initBarangayRiskMap } from './barangay-risk-map';
 import { initUiEnhancements } from './ui-enhancements';
+import { registerChartExplainer } from './chart-explainer';
+import '../css/chart-explainer.css';
+import { initFarmerDashboard } from './farmer-dashboard';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -67,6 +70,8 @@ window.iClimateChartLabels = {
 };
 
 const chartSelector = [
+    'canvas[id*="Chart"]',
+    'canvas[data-dash-chart]',        // charts drawn by the shared dashboard-overview component (no id)
     '#farmersByOrganizationChart',
     '#farmersByOrganizationChartCompact',
     '#adminFarmersByOrganizationChart',
@@ -74,6 +79,11 @@ const chartSelector = [
     '#temperatureChart',
     '#humidityChart',
     '#windSpeedChart',
+    '#riceYieldTrendChart',
+    '#itUsersByRoleChart',
+    '#itRecordsByTypeChart',
+    '#itSystemActivityTrendChart',
+    '#farmerWeatherTrendChart',
 ].join(',');
 
 const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap';
@@ -118,6 +128,8 @@ window.iClimateVisualsReady = (async () => {
             Chart.defaults.font.size = 14;
             Chart.defaults.plugins.tooltip.titleFont = { size: 15, weight: '700' };
             Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
+            // "ⓘ Learn More" + click-for-explanation on every chart, present and future.
+            registerChartExplainer(Chart);
             window.Chart = Chart;
         } catch (error) {
             console.error('iClimate could not load Chart.js.', error);
@@ -163,6 +175,7 @@ function initApp() {
     bindChartTabs();
     bindStatDrawers();
     initUiEnhancements(document);
+    initFarmerDashboard();
 }
 
 // Support cached/back-forward pages where DOMContentLoaded has already fired.

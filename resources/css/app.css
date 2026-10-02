@@ -1,6 +1,7 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'leaflet/dist/leaflet.css';
 @import './animations.css';
+@import './farmer-dashboard.css';
 
 @tailwind base;
 @tailwind components;
@@ -447,7 +448,7 @@ table.ic-row-hover tbody tr,
 
 table.ic-row-hover tbody tr:hover,
 .ic-row-hover .ic-table-card-row:hover {
-    background-color: rgba(82, 183, 136, .08);
+    background-color: rgba(240, 247, 244, .95);
 }
 
 /* Lightweight loading placeholder. Give it an explicit width/height
@@ -1445,4 +1446,10 @@ ul.risk-map-row-text li { margin-bottom: .15rem; }
 }
 .leaflet-tooltip.your-barangay-tooltip {
     font-weight: 700;
+}
+
+/* Farmers see ONE font family everywhere: sidebar, header, titles, labels, badges and tables. */
+body[data-user-role="Farmer"],
+body[data-user-role="Farmer"] * {
+    font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif;
 }

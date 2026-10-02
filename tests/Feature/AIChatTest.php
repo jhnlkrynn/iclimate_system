@@ -10,13 +10,24 @@ use App\Models\User;
 use App\Services\AI\IntentDetectionService;
 use App\Services\Prediction\PredictionDateValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PreparesPredictions;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AIChatTest extends TestCase
 {
+    use PreparesPredictions;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Chat only reads prepared predictions; stand in for the scheduled refresh.
+        $this->preparePredictions();
+        $this->recordRecentClimate();
+    }
 
     public function test_authenticated_user_can_get_ai_farming_assistant_response(): void
     {
@@ -227,7 +238,7 @@ class AIChatTest extends TestCase
         );
     }
 
-    public function test_ai_assistant_always_returns_fallback_yield_when_model_api_is_unreachable(): void
+    public function test_ai_assistant_invents_no_yield_when_model_api_is_unreachable(): void
     {
         Http::fake(function (): never {
             throw new ConnectionException('Connection refused');
@@ -254,26 +265,18 @@ class AIChatTest extends TestCase
             'question' => 'What is my predicted rice yield for 2 hectares? Dry season, irrigated farm, rainfall is 121mm, temperature is 31.1c, humidity is 87.9%, wind is 39.8',
         ]);
 
+        // No rule-based or hardcoded fallback yield exists: when the model cannot run, no number is made up.
         $response->assertOk()
-            ->assertJsonPath('chat.intent', 'Rice Yield Prediction')
-            ->assertJsonPath('chat.rice_yield_prediction.fallback', true)
-            ->assertJsonPath('chat.rice_yield_prediction.unit', 'tons/hectare');
+            ->assertJsonPath('chat.intent', 'Rice Yield Prediction');
 
-        $predictedYield = $response->json('chat.rice_yield_prediction.predicted_yield');
-
-        $this->assertIsNumeric($predictedYield);
-        $this->assertGreaterThan(0, $predictedYield);
-        $this->assertStringNotContainsString('not available', $response->json('chat.answer'));
-        $this->assertStringContainsString('tons/hectare', $response->json('chat.answer'));
+        $this->assertNull($response->json('chat.rice_yield_prediction.predicted_yield'));
+        $this->assertStringContainsString('No estimate was made', $response->json('chat.answer'));
+        $this->assertStringNotContainsString('tons/hectare', $response->json('chat.answer'));
     }
 
-    public function test_ai_assistant_uses_groq_to_explain_prediction_when_trained_model_is_unavailable(): void
+    public function test_ai_assistant_uses_groq_to_explain_weather_advice_when_trained_model_is_unavailable(): void
     {
         config([
-            // The cold weather forest takes ~20 s in this test's empty cache. Once the
-            // response budget is spent Groq is skipped by design; this test is about
-            // Groq explaining the result, so give it room.
-            'ai.response_budget_seconds' => 300,
             'services.groq.enabled' => true,
             'services.groq.key' => 'test-groq-key',
             'services.groq.model' => 'llama-3.3-70b-versatile',
@@ -311,12 +314,11 @@ class AIChatTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('chat.source_type', 'Machine Learning + Generative AI')
-            ->assertJsonPath('chat.prediction_result.generative_ai.provider', 'Groq')
-            ->assertJsonPath('chat.rice_yield_prediction.fallback', true);
+            ->assertJsonPath('chat.prediction_result.generative_ai.provider', 'Groq');
 
         $this->assertStringContainsString('trained Python model is unavailable', $response->json('chat.answer'));
         $this->assertStringContainsString('delay planting', $response->json('chat.answer'));
-        $this->assertIsNumeric($response->json('chat.rice_yield_prediction.predicted_yield'));
+        $this->assertNull($response->json('chat.rice_yield_prediction.predicted_yield'));     // advice from the weather rules; no invented yield
 
         Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Bearer test-groq-key')
             && $request->url() === 'https://api.groq.com/openai/v1/chat/completions');

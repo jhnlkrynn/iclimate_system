@@ -25,9 +25,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // The risk calculation is replaceable: bind a validated methodology here when one is approved.
+        $this->app->bind(\App\Contracts\RiskMethodology::class, \App\Services\Risk\AgriculturalRiskScorer::class);
+
+        // The dashboards share one request-scoped copy of the tables they read (see the class).
+        $this->app->singleton(\App\Support\DashboardData::class);
+
         // One stopwatch and one history read per chat message, shared by every AI service.
         $this->app->singleton(\App\Services\AI\AiTimings::class);
         $this->app->singleton(\App\Services\AI\ConversationContext::class);
+        $this->app->singleton(\App\Services\Prediction\PredictionReadMode::class);
+
+        // Postgres connector that passes the schema at connect time (saves a round trip per request).
+        $this->app->bind('db.connector.pgsql', fn () => new \App\Database\StartupSearchPathPostgresConnector);
     }
 
     /**
@@ -35,6 +45,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Same as the built-in "eloquent" user provider, minus the per-request user query.
+        \Illuminate\Support\Facades\Auth::provider('cached-eloquent', fn ($app, array $config) => new \App\Auth\CachedEloquentUserProvider($app['hash'], $config['model']));
+
+        $this->guardReusedConnection();
+
+        // How much of a chat request is spent waiting on the database (records nothing outside a chat request).
+        \Illuminate\Support\Facades\DB::listen(fn ($query) => app(\App\Services\AI\AiTimings::class)->recordQuery((float) $query->time));
+
+        // Every scheduled run is recorded in scheduled_task_runs (shown on the IT dashboard).
+        \App\Models\ScheduledTaskRun::listen();
+
         Paginator::useBootstrapFive();
 
         Carbon::macro('shortTime', function () {
@@ -52,15 +73,51 @@ class AppServiceProvider extends ServiceProvider
         $this->createMysqlDatabaseForMigrations();
     }
 
+    /**
+     * A reused (persistent) connection can carry an open transaction over from a request that
+     * died mid-way (for example a fatal timeout). Before the first query of a request, roll such
+     * a leftover back so it can not swallow this request's writes.
+     */
+    private function guardReusedConnection(): void
+    {
+        if (config('database.default') !== 'pgsql' || ! config('database.connections.pgsql.options.'.PDO::ATTR_PERSISTENT)) {
+            return;
+        }
+
+        $checked = false;
+
+        \Illuminate\Support\Facades\DB::beforeExecuting(function ($query, $bindings, $connection) use (&$checked): void {
+            if ($checked) {
+                return;
+            }
+
+            $checked = true;
+            $pdo = $connection->getPdo();
+
+            if ($connection->transactionLevel() === 0 && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+        });
+    }
+
     private function registerDataCacheInvalidation(): void
     {
         $flush = static function (): void {
+            // Everything cached with PageCache::shared() (dashboards, lists, reference data).
+            \App\Support\PageCache::flushShared();
+
+            // The MAO / IT dashboards key their cached payload on this version, so a data change retires them at once.
+            app(\App\Support\DashboardData::class)->forget();
+            \App\Support\DashboardData::bump();
+
             foreach ([
                 'dashboard:shared-stats',
                 'dashboard:mao-aggregates',
                 'dashboard:admin-aggregates',
                 'dashboard:farmer-organizations',
                 'dashboard:recent-operational-data',
+                'dashboard:high-risk-areas',
+                'dashboard:mao-action-items',
                 'reports:filter-barangays',
                 'reports:source-stats',
             ] as $key) {
@@ -78,9 +135,56 @@ class AppServiceProvider extends ServiceProvider
             FeedPost::class,
             Notification::class,
             Report::class,
+            \App\Models\HeatmapArea::class,
+            \App\Models\FieldReport::class,
+            \App\Models\FarmerPlantingSchedule::class,
+            \App\Models\WeatherForecastFeedback::class,
+            \App\Models\AdvisoryFeedback::class,
+            \App\Models\MonthlyWeatherPrediction::class,
+            \App\Models\ExternalWeatherData::class,
+            \App\Models\MlModel::class,
+            \App\Models\FeedComment::class,
+            \App\Models\FeedReaction::class,
+            \App\Models\FeedMedia::class,
+            \App\Models\TyphoonSafetyResponse::class,
+            \App\Models\AnalyticsRun::class,
         ] as $model) {
-            $model::saved($flush);
+            // Eloquent fires "saved" even when nothing changed (e.g. the risk-map refresh re-saves 19 identical rows);
+            // only a real change should throw the cached pages away.
+            $model::saved(static function ($record) use ($flush): void {
+                if ($record->wasRecentlyCreated || $record->wasChanged()) {
+                    $flush();
+                }
+            });
             $model::deleted($flush);
+        }
+
+        // A farmer's expected yield depends on their farm area, farm type and planting schedule, so it must not outlive an edit
+        // to any of them. Both the payload cache and the 6-hour prediction cache are dropped for that one farmer.
+        foreach ([FarmerProfile::class, \App\Models\FarmerPlantingSchedule::class] as $model) {
+            $forgetFarmer = static function ($record): void {
+                if ($record->user_id) {
+                    Cache::forget(\App\Services\Analytics\FarmerDashboardService::predictionCacheKey((int) $record->user_id));
+                }
+            };
+            $model::saved(static function ($record) use ($forgetFarmer): void {
+                if ($record->wasRecentlyCreated || $record->wasChanged()) {
+                    $forgetFarmer($record);
+                }
+            });
+            $model::deleted($forgetFarmer);
+        }
+
+        // Private per-person data (notifications, their advisory feedback, their profile): only that person's cache is cleared.
+        $flushOwner = static function ($model): void {
+            if ($model->user_id ?? null) {
+                \App\Support\PageCache::flushUser((int) $model->user_id);
+            }
+        };
+
+        foreach ([Notification::class, \App\Models\AdvisoryFeedback::class, FarmerProfile::class, \App\Models\FarmBoundary::class] as $model) {
+            $model::saved($flushOwner);
+            $model::deleted($flushOwner);
         }
     }
 

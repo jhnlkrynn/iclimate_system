@@ -67,6 +67,7 @@ class LoginRequest extends FormRequest
         if ($requiresCaptcha && ! $captcha->validate($this, 'login', $this->input('captcha_answer'))) {
             RateLimiter::hit($this->throttleKey());
             $captcha->recordFailedAttempt($this, 'login');
+            $this->auditFailure('captcha');
 
             throw ValidationException::withMessages([
                 'captcha_answer' => 'The security check answer is incorrect. Please try again.',
@@ -82,6 +83,7 @@ class LoginRequest extends FormRequest
         if (! $authenticated) {
             RateLimiter::hit($this->throttleKey());
             $captcha->recordFailedAttempt($this, 'login');
+            $this->auditFailure('credentials');
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
@@ -92,6 +94,7 @@ class LoginRequest extends FormRequest
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
             $captcha->recordFailedAttempt($this, 'login');
+            $this->auditFailure('inactive account');
 
             throw ValidationException::withMessages([
                 'email' => 'This account is inactive. Please contact the administrator.',
@@ -100,6 +103,12 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
         $captcha->resetAttempts($this, 'login');
+    }
+
+    /** Recorded for the IT dashboard's security panel. The attempted email is never stored, only the IP (via the logger). */
+    private function auditFailure(string $reason): void
+    {
+        \App\Services\SystemAuditLogger::record('Failed Login', $this, ['reason' => $reason]);
     }
 
     /**
@@ -114,6 +123,7 @@ class LoginRequest extends FormRequest
         }
 
         event(new Lockout($this));
+        \App\Services\SystemAuditLogger::record('Login Lockout', $this, ['reason' => 'too many attempts']);
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 

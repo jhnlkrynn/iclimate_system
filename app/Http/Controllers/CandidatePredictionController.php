@@ -25,7 +25,7 @@ class CandidatePredictionController extends Controller
 
         $month = (int) $request->query(
             'month',
-            now()->month
+            \App\Support\BusinessClock::month()
         );
 
         $year = $this->normalizeYear(
@@ -757,12 +757,9 @@ class CandidatePredictionController extends Controller
         */
 
         $pythonBinary =
-            env(
-                'PYTHON_BINARY',
-                base_path(
+            (config('iclimate.python_binary') ?: base_path(
                     '.venv/Scripts/python.exe'
-                )
-            );
+                ));
 
         $pythonBinary =
             trim(
@@ -1680,6 +1677,6 @@ class CandidatePredictionController extends Controller
             $month <= 12
         )
             ? $month
-            : now()->month;
+            : \App\Support\BusinessClock::month();
     }
 }

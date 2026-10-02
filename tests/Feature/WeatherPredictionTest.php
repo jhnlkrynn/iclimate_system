@@ -150,7 +150,7 @@ class WeatherPredictionTest extends TestCase
         Queue::assertPushed(RunPythonAnalytics::class, fn ($job) => $job->analyticsRunId === $run->id);
     }
 
-    public function test_calendar_uses_municipal_location_real_dates_and_explicit_missing_data_cells(): void
+    public function test_calendar_uses_municipal_location_real_dates_and_leaves_missing_data_cells_blank(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_MAO, 'barangay' => 'Malaruhatan']);
 
@@ -167,7 +167,11 @@ class WeatherPredictionTest extends TestCase
             ->assertSee('4.0 mm')
             ->assertSee('28.0° / 30.0°C')
             ->assertSee('Moderate')
-            ->assertSee('No forecast data')
+            ->assertDontSee('No forecast data')
+            ->assertDontSee('Condition unavailable')
+            ->assertSee('class="wp-calendar-month', false)
+            ->assertSee('no-forecast', false)
+            ->assertSee('has-forecast', false)
             ->assertSee('calendar_month=2026-08', false)
             ->assertSee('calendar_month=2026-10', false)
             ->assertDontSee('Official context:')
@@ -178,6 +182,23 @@ class WeatherPredictionTest extends TestCase
                 && (float) $request['latitude'] === (float) config('services.weather.latitude')
                 && (float) $request['longitude'] === (float) config('services.weather.longitude');
         });
+    }
+
+    public function test_calendar_month_label_follows_the_displayed_month_and_stays_open(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_MAO, 'barangay' => 'Malaruhatan']);
+
+        foreach ([['2026-10', 'October 2026'], ['2027-01', 'January 2027'], ['2026-02', 'February 2026']] as [$month, $label]) {
+            $html = $this->actingAs($user)
+                ->get(route('weather-predictions.index', ['calendar_month' => $month]))
+                ->assertOk()
+                ->getContent();
+
+            $this->assertMatchesRegularExpression('/<h3 class="wp-calendar-month[^>]*>\s*'.preg_quote($label, '/').'\s*<\/h3>/', $html);
+            $this->assertStringContainsString('aria-label="Weather forecast calendar for '.$label.'"', $html);
+            $this->assertMatchesRegularExpression('/<details class="wp-panel mb-4"\s+open/', $html);
+            $this->assertStringNotContainsString('No forecast data', $html);
+        }
     }
 
     public function test_barangay_reading_is_shown_beside_the_lian_wide_dashboard_reading(): void
@@ -575,7 +596,7 @@ class WeatherPredictionTest extends TestCase
         $this->actingAs($user)
             ->post(route('weather-predictions.predict'), [
                 'prediction_type' => 'weather',
-                'prediction_date' => Carbon::today()->format('Y-m-d'),
+                'prediction_date' => \App\Support\BusinessClock::today()->format('Y-m-d'),
             ])
             ->assertRedirect()
             ->assertSessionHasErrors(['prediction_date']);

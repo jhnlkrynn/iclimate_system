@@ -51,4 +51,19 @@ class UserManagementController extends CrudController
     {
         return $this->hashPasswordWhenPresent($data);
     }
+
+    protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::baseQuery($request);
+
+        // Links from the IT dashboard (Data Integrity and Usage Patterns).
+        if ($request->query('integrity') === 'never_logged_in') {
+            $query->neverLoggedIn();
+        }
+        if ($request->query('integrity') === 'farmers_without_profile') {
+            $query->where('role', User::ROLE_FARMER)->whereDoesntHave('farmerProfile');
+        }
+
+        return $query;
+    }
 }

@@ -29,9 +29,11 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
             'demoAccounts' => $this->demoAccounts(),
-            'demoPassword' => (string) env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
+            'demoPassword' => (string) config('iclimate.default_account_password'),
             'requiresCaptcha' => $requiresCaptcha,
-            'loginWeather' => $this->weatherSnapshot($weather),
+            // The login page itself never calls a weather provider: it shows whatever is already stored, and
+            // the page's own script asks login/weather (below) for the live reading after it has loaded.
+            'loginWeather' => $this->weatherSnapshot($weather, storedOnly: true),
         ]);
     }
 
@@ -50,14 +52,14 @@ class AuthenticatedSessionController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function weatherSnapshot(FarmerDashboardWeatherService $weather): array
+    private function weatherSnapshot(FarmerDashboardWeatherService $weather, bool $storedOnly = false): array
     {
         $weatherTimezone = (string) config('services.weather.timezone', 'Asia/Manila');
 
         // Same shared Lian reading the Farmer/MAO dashboards and chatbot use,
         // so the login widget never shows a different temperature.
         try {
-            $shared = $weather->current();
+            $shared = $storedOnly ? ($weather->stored() ?? []) : $weather->current();
         } catch (Throwable) {
             $shared = [];
         }
@@ -97,7 +99,7 @@ class AuthenticatedSessionController extends Controller
             ],
             in_array((int) $weatherCode, [95, 96, 99], true) => ['Thunderstorm', '⛈️'],
             in_array((int) $weatherCode, [80, 81, 82, 61, 63, 65, 66, 67], true) => ['Rain', '🌧️'],
-            in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Drizzle', '🌧️'],
+            in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Light Rain', '🌧️'],
             in_array((int) $weatherCode, [45, 48], true) => ['Foggy', '🌫️'],
             in_array((int) $weatherCode, [1, 2, 3], true) => ['Cloudy', '⛅️'],
             $weatherCode !== null && (int) $weatherCode === 0 => ['Clear', '☀️'],

@@ -22,29 +22,9 @@ const SPOTLIGHT_SELECTOR = [
 ].join(',');
 
 // ---------------------------------------------------------------- spotlight
-export function bindSpotlight(selector = SPOTLIGHT_SELECTOR) {
-    if (!finePointer.matches || bindSpotlight.bound) return;
-    bindSpotlight.bound = true;
-
-    let frame = null;
-    let pending = null;
-
-    document.addEventListener('pointermove', (event) => {
-        const card = event.target instanceof Element ? event.target.closest(selector) : null;
-        if (!card || card.closest('.leaflet-container, .modal, .ic-drawer')) return;
-
-        pending = { card, x: event.clientX, y: event.clientY };
-        if (frame) return;
-
-        frame = requestAnimationFrame(() => {
-            frame = null;
-            if (!pending) return;
-            const rect = pending.card.getBoundingClientRect();
-            pending.card.classList.add('ic-spot');
-            pending.card.style.setProperty('--ic-mx', `${pending.x - rect.left}px`);
-            pending.card.style.setProperty('--ic-my', `${pending.y - rect.top}px`);
-        });
-    }, { passive: true });
+export function bindSpotlight() {
+    // Disabled across iClimate: hovering elements must not display green radial overlays or spotlights
+    return;
 }
 
 // ----------------------------------------------------------------- count-up

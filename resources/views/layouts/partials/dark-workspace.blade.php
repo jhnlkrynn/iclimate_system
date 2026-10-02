@@ -44,9 +44,9 @@
     .dark-workspace .details-list dd { background: rgba(240,247,244,.75); border-color: var(--ic-sand-dark) !important; color: var(--ic-ink-mid); }
     .dark-workspace .details-list dt { color: var(--ic-muted); }
     .dark-workspace .btn-outline-secondary { color: var(--ic-ink-mid) !important; border-color: var(--ic-sand-dark); }
-    .dark-workspace .btn-outline-secondary:hover { background: var(--ic-green-50); border-color: var(--ic-green-300); color: var(--ic-ink) !important; }
+    .dark-workspace .btn-outline-secondary:hover { background: #fff; border-color: var(--ic-sand-dark); color: var(--ic-ink) !important; box-shadow: var(--ic-shadow-sm); }
     .dark-workspace .btn-outline-primary { color: var(--ic-green-700); border-color: var(--ic-green-500); }
-    .dark-workspace .btn-outline-primary:hover { background: var(--ic-green-700); border-color: var(--ic-green-700); color: #fff; }
+    .dark-workspace .btn-outline-primary:hover { background: #fff; border-color: var(--ic-green-700); color: var(--ic-green-700); box-shadow: var(--ic-shadow-sm); }
     .dark-workspace .badge.text-bg-light { background: var(--ic-green-50) !important; color: var(--ic-ink) !important; }
     .dark-workspace .border-top, .dark-workspace .border-bottom, .dark-workspace .border-start, .dark-workspace .border-end, .dark-workspace .border {
         border-color: var(--ic-border) !important;

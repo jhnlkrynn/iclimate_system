@@ -95,8 +95,31 @@ return [
             // the "iclimate_laravel" PostgreSQL schema.
             'search_path' => env('DB_SEARCH_PATH', 'public'),
 
+            // Send the search path as a start-up option instead of a follow-up
+            // SET statement: one network round trip less on every connection.
+            // Supabase's pooler supports this; defaults on for Supabase hosts only.
+            'search_path_in_dsn' => (bool) env('DB_SEARCH_PATH_IN_DSN', str_contains((string) env('DB_HOST'), 'supabase')),
+
+            // Reuse the database connection between requests in the same PHP
+            // process (saves ~0.6 s of TLS/auth per request against Supabase).
+            // Opt-in: with a session-mode pooler each PHP worker keeps one
+            // connection open, so only enable it where the worker count is small.
+            'options' => env('DB_PERSISTENT', false) ? [PDO::ATTR_PERSISTENT => true] : [],
+
             // Supabase requires SSL.
             'sslmode' => env('DB_SSLMODE', 'require'),
+
+            // Send the schema as a connection startup option instead of a separate SET statement
+            // (one round trip less per request). See StartupSearchPathPostgresConnector.
+            'startup_search_path' => filter_var(env('DB_STARTUP_SEARCH_PATH', true), FILTER_VALIDATE_BOOLEAN),
+
+            // Reuse the connection between requests handled by the same PHP worker. Opening a new
+            // TLS connection to Supabase costs over a second on every page; a reused one costs nothing.
+            // Set DB_PERSISTENT=false to turn off. AppServiceProvider rolls back any transaction a
+            // crashed request may have left open on a reused connection.
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                PDO::ATTR_PERSISTENT => filter_var(env('DB_PERSISTENT', true), FILTER_VALIDATE_BOOLEAN) ?: null,
+            ]) : [],
         ],
 
         'sqlsrv' => [

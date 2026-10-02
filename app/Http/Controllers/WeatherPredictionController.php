@@ -26,8 +26,6 @@ use Illuminate\View\View;
 
 class WeatherPredictionController extends Controller
 {
-    private const LIAN_MUNICIPAL_COORDINATES = [14.0389, 120.6503];
-
     private const LIAN_MUNICIPAL_PREVIEW_LABEL = 'Lian, Batangas municipal preview';
 
     public function index(
@@ -35,6 +33,7 @@ class WeatherPredictionController extends Controller
         PredictionDateValidator $dateValidator,
         WeatherApiService $weatherApi,
         MonthlyWeatherCalendarService $calendarService,
+        \App\Services\Weather\MonthlyWeatherOutlookService $outlookService,
         ShortTermOutlookService $shortTermOutlookService,
         PredictionOrchestrator $predictionOrchestrator,
         WeatherFeedbackService $feedbackService,
@@ -115,7 +114,7 @@ class WeatherPredictionController extends Controller
         }
         $calendarMonth = isset($validated['calendar_month'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $validated['calendar_month'].'-01')
-            : CarbonImmutable::now('Asia/Manila')->startOfMonth();
+            : \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         // Municipal calendar uses the shared Lian reading so its daily values
         // match the Farmer/MAO dashboards, login page and chatbot exactly.
         $calendarWeather = $sharedWeather->alignForecast($weatherApi->forecast(
@@ -142,6 +141,7 @@ class WeatherPredictionController extends Controller
             $monthlyPrediction = null;
         }
         $weatherCalendar = $calendarService->build($calendarMonth, $calendarWeather, $monthlyPrediction);
+        $monthlyOutlook = $outlookService->build($weatherCalendar);
         $liveWeatherError = match (true) {
             ! $location['coordinates'] => 'Your saved barangay is not recognized as one of Lian’s 19 barangays. Update your profile location.',
             ! $liveWeather && $isTechnical => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
@@ -181,6 +181,7 @@ class WeatherPredictionController extends Controller
             'liveWeatherCacheMinutes' => max(30, min(60, (int) config('services.weather_api.refresh_minutes', 45))),
             'savedWeatherLocation' => $location,
             'weatherCalendar' => $weatherCalendar,
+            'monthlyOutlook' => $monthlyOutlook,
             'latestPredictionSavedAt' => $analyticsRun?->status === AnalyticsRun::STATUS_COMPLETED
                 ? $analyticsRun->completed_at
                 : null,
@@ -234,7 +235,11 @@ class WeatherPredictionController extends Controller
      */
     private function yieldSummary(array $mlResult, ?string $barangay, CarbonImmutable $targetDate, CarbonImmutable $targetMonth): array
     {
-        $expected = (float) ($mlResult['predicted_yield'] ?? 0);
+        // A missing yield is not 0 t/ha; without one there is no summary.
+        if (! is_numeric($mlResult['predicted_yield'] ?? null)) {
+            return [];
+        }
+        $expected = (float) $mlResult['predicted_yield'];
         $comparison = $barangay ? $this->yieldComparison($expected, $barangay, $targetDate) : null;
         $previous = ($comparison['has_data'] ?? false) ? (float) $comparison['prior_yield'] : null;
         $status = PredictionWording::yieldStatus($expected, $previous);
@@ -345,7 +350,7 @@ class WeatherPredictionController extends Controller
             return [
                 'barangay' => null,
                 'label' => self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-                'coordinates' => self::LIAN_MUNICIPAL_COORDINATES,
+                'coordinates' => \App\Support\LianLocation::point(),
                 'is_municipal_preview' => true,
             ];
         }

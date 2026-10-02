@@ -36,25 +36,34 @@ REPORT_COLUMNS = {
     },
 }
 
-DEFAULT_AREAS = {
-    "Bagong Pook": (14.0182, 120.6408), "Balibago": (13.9898, 120.6524),
-    "Barangay 1 (Pob.)": (14.0361, 120.6507), "Barangay 2 (Pob.)": (14.0371, 120.6530),
-    "Barangay 3 (Pob.)": (14.0349, 120.6489), "Barangay 4 (Pob.)": (14.0383, 120.6484),
-    "Barangay 5 (Pob.)": (14.0339, 120.6525), "Binubusan": (14.0296, 120.6364),
-    "Bungahan": (14.0480, 120.6285), "Cumba": (14.0205, 120.7045),
-    "Humayingan": (14.0108, 120.6888), "Kapito": (14.0557, 120.6765),
-    "Lumaniag": (14.0479, 120.6613), "Luyahan": (13.9926, 120.6355),
-    "Malaruhatan": (14.0119, 120.6669), "Matabungkay": (13.9593, 120.6227),
-    "Prenza": (14.0353, 120.6822), "Puting-Kahoy": (14.0290, 120.7015),
-    "San Diego": (13.9793, 120.6118),
-}
-
 
 def _number(value, default=0.0):
     try:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _optional_number(value):
+    """float(value), or None when the value is missing or not numeric.
+
+    A missing reading is NOT zero: 0 mm of rain is a real observation, a missing
+    temperature or humidity is not 0 degrees / 0 %. Use this wherever the
+    difference matters; _number() above is only for places where a missing value
+    is genuinely harmless.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if number != number else number
+
+
+def _mean(values):
+    present = [v for v in values if v is not None]
+    return sum(present) / len(present) if present else None
 
 
 def _day(value):
@@ -69,8 +78,11 @@ def weather_prediction(payload: dict) -> dict:
     target = date.fromisoformat(str(payload["target_date"])[:10])
     result = monthly_weather_random_forest.predict(target.replace(day=1), payload.get("climate_records", []))
     predictions = result.get("predictions", {})
-    predicted_rainfall = _number(predictions.get("rainfall"))
-    if predicted_rainfall > 300:
+    predicted_rainfall = _optional_number(predictions.get("rainfall"))
+    if predicted_rainfall is None:
+        risk_guidance = None
+        recommendation = None
+    elif predicted_rainfall > 300:
         risk_guidance = "High rainfall risk"
         recommendation = "Prioritize drainage, delay field work during heavy rain, and monitor PAGASA or LGU warnings."
     elif predicted_rainfall < 100:
@@ -89,7 +101,7 @@ def weather_prediction(payload: dict) -> dict:
         "model_runtime": "Python scikit-learn RandomForestRegressor",
         "processor": "python",
         "live_weather": payload.get("live_weather"),
-        "predicted_rainfall": round(predicted_rainfall, 2),
+        "predicted_rainfall": round(predicted_rainfall, 2) if predicted_rainfall is not None else None,
         "season": predictions.get("season", _season(target.month)),
         "reliability": result.get("confidence", {}),
         "risk_guidance": risk_guidance,
@@ -106,42 +118,65 @@ def weather_prediction(payload: dict) -> dict:
     return result
 
 
+REQUIRED_RICE_INPUTS = (
+    "rainfall", "temp_avg", "temp_range", "area", "previous_rainfall", "previous_temp",
+    "previous_humidity", "previous_wind_speed", "rainfall_6m", "temp_3m", "temp_6m",
+    "seasonal_rainfall", "seasonal_temp", "season", "month_num",
+)
+
+
 def _model_input(payload: dict, weather: dict) -> dict:
+    """Model inputs from real data only. Anything that cannot be derived is None
+    (never 0, never a made-up default such as 75 % humidity or a 1 ha farm), and
+    rice_yield_prediction() refuses to run the model while any required one is None."""
     records = sorted(payload.get("climate_records", []), key=lambda row: _day(row.get("record_date")))
     recent = records[-6:]
     latest = recent[-1] if recent else {}
     predictions = weather.get("predictions", {})
-    temperatures = [_number(row.get("temperature")) for row in recent]
-    rainfall = _number(predictions.get("rainfall"), sum(_number(row.get("rainfall")) for row in recent) / max(1, len(recent)))
-    temperature = _number(predictions.get("temperature"), sum(temperatures) / max(1, len(temperatures)))
-    season = str(predictions.get("season") or latest.get("season") or _season(date.fromisoformat(payload["target_date"]).month))
+    temperatures = [t for t in (_optional_number(row.get("temperature")) for row in recent) if t is not None]
+    rainfalls = [r for r in (_optional_number(row.get("rainfall")) for row in recent) if r is not None]
+    target_month = date.fromisoformat(payload["target_date"]).month
+    season = predictions.get("season") or _season(target_month)
     seasonal = [row for row in recent if row.get("season") == season]
+    seasonal_rain = [r for r in (_optional_number(row.get("rainfall")) for row in seasonal) if r is not None]
+    seasonal_temp = [t for t in (_optional_number(row.get("temperature")) for row in seasonal) if t is not None]
+
+    def rounded(value):
+        return round(value, 2) if value is not None else None
+
+    has6 = len(recent) >= 6
+    has3 = len(recent) >= 3
+    area = _optional_number(payload.get("area"))
 
     return {
-        "rainfall": round(rainfall, 2),
-        "temp_avg": round(temperature, 2),
-        "temp_range": round(max(temperatures) - min(temperatures), 2) if temperatures else 0,
-        "area": round(_number(payload.get("area"), 1), 2),
-        "previous_rainfall": round(_number(latest.get("rainfall"), rainfall), 2),
-        "previous_temp": round(_number(latest.get("temperature"), temperature), 2),
-        "previous_humidity": round(_number(latest.get("humidity"), 75), 2),
-        "previous_wind_speed": round(_number(latest.get("wind_speed"), 8), 2),
-        "rainfall_6m": round(sum(_number(row.get("rainfall")) for row in recent) or rainfall, 2),
-        "temp_3m": round(sum(temperatures[-3:]) / max(1, len(temperatures[-3:])), 2),
-        "temp_6m": round(sum(temperatures) / max(1, len(temperatures)), 2),
-        "seasonal_rainfall": round(sum(_number(row.get("rainfall")) for row in seasonal) or rainfall, 2),
-        "seasonal_temp": round(sum(_number(row.get("temperature")) for row in seasonal) / max(1, len(seasonal)) if seasonal else temperature, 2),
-        "humidity": round(_number(predictions.get("humidity"), _number(latest.get("humidity"), 75)), 2),
-        "wind_speed": round(_number(predictions.get("wind_speed"), _number(latest.get("wind_speed"), 8)), 2),
+        "rainfall": rounded(_optional_number(predictions.get("rainfall"))),
+        "temp_avg": rounded(_optional_number(predictions.get("temperature"))),
+        "temp_range": rounded(max(temperatures) - min(temperatures)) if temperatures else None,
+        "area": rounded(area) if area is not None and area > 0 else None,
+        "previous_rainfall": rounded(_optional_number(latest.get("rainfall"))),
+        "previous_temp": rounded(_optional_number(latest.get("temperature"))),
+        "previous_humidity": rounded(_optional_number(latest.get("humidity"))),
+        "previous_wind_speed": rounded(_optional_number(latest.get("wind_speed"))),
+        "rainfall_6m": rounded(sum(rainfalls)) if has6 and len(rainfalls) == len(recent) else None,
+        "temp_3m": rounded(_mean(temperatures[-3:])) if has3 else None,
+        "temp_6m": rounded(_mean(temperatures)) if has6 else None,
+        "seasonal_rainfall": rounded(sum(seasonal_rain)) if seasonal_rain else None,
+        "seasonal_temp": rounded(_mean(seasonal_temp)),
+        "humidity": rounded(_optional_number(predictions.get("humidity"))),
+        "wind_speed": rounded(_optional_number(predictions.get("wind_speed"))),
         "season": season,
         "farm_type": payload.get("farm_type", "Rainfed"),
-        "month_num": date.fromisoformat(payload["target_date"]).month,
+        "month_num": target_month,
     }
 
 
 def rice_yield_prediction(payload: dict) -> dict:
     weather = weather_prediction(payload)
     features = _model_input(payload, weather)
+    missing = [key for key in REQUIRED_RICE_INPUTS if features.get(key) is None]
+    if missing:
+        # No model run, no number: the caller records this run as failed.
+        raise ValueError("Not enough verified input data for a rice-yield prediction (missing: " + ", ".join(missing) + ").")
     prediction = rice_yield_service.predict(features)
     yield_data = prediction["rice_yield_prediction"]
     predicted = _number(yield_data.get("predicted_yield"))
@@ -189,15 +224,21 @@ def heatmap_risk(payload: dict) -> dict:
     for row in payload.get("rice_productions", []):
         production_by_barangay[str(row.get("barangay", ""))].append(row)
 
-    areas = payload.get("areas", []) or [
-        {"barangay": barangay, "latitude": coordinates[0], "longitude": coordinates[1]}
-        for barangay, coordinates in DEFAULT_AREAS.items()
-    ]
+    # Barangay coordinates come from the caller (LianBarangays.php, centroids of the real
+    # boundary polygons). There is no built-in coordinate table here any more.
+    areas = payload.get("areas", [])
+    rainfall = _optional_number(latest_weather.get("rainfall"))
+    temperature = _optional_number(latest_weather.get("temperature"))
+    wind = _optional_number(latest_weather.get("wind_speed"))
+    if rainfall is None or temperature is None or wind is None:
+        return {
+            "areas": [],
+            "row_count": 0,
+            "processor": "python",
+            "unavailable_reason": "No complete weather reading is available, so no barangay risk was scored.",
+        }
     results = []
     for area in areas:
-        rainfall = _number(latest_weather.get("rainfall"))
-        temperature = _number(latest_weather.get("temperature"))
-        wind = _number(latest_weather.get("wind_speed"))
         scores = {"Flood": rainfall / 400, "Drought": (100 - rainfall) / 100, "Heat": (temperature - 28) / 10, "Typhoon": wind / 40}
         risk_type, raw_score = max(scores.items(), key=lambda item: item[1])
         score = round(max(0, min(1, raw_score)), 2)
@@ -286,20 +327,26 @@ def dataset_processing(payload: dict) -> dict:
         climate_groups[(year, row.get("season"))].append(row)
 
     dataset = []
+    skipped_rows = 0
     for production in rice:
         weather = climate_groups.get((int(production.get("year") or 0), production.get("season")), [])
         if not weather:
             continue
-        dataset.append({
-            "rainfall": sum(_number(row.get("rainfall")) for row in weather) / len(weather),
-            "temperature": sum(_number(row.get("temperature")) for row in weather) / len(weather),
-            "area_hectares": _number(production.get("area_hectares")),
-            "humidity": sum(_number(row.get("humidity")) for row in weather) / len(weather),
-            "wind_speed": sum(_number(row.get("wind_speed")) for row in weather) / len(weather),
+        row_values = {
+            "rainfall": _mean([_optional_number(row.get("rainfall")) for row in weather]),
+            "temperature": _mean([_optional_number(row.get("temperature")) for row in weather]),
+            "area_hectares": _optional_number(production.get("area_hectares")),
+            "humidity": _mean([_optional_number(row.get("humidity")) for row in weather]),
+            "wind_speed": _mean([_optional_number(row.get("wind_speed")) for row in weather]),
             "season": production.get("season"),
             "irrigation_type": production.get("irrigation_type"),
-            "yield_per_hectare": _number(production.get("yield_per_hectare")),
-        })
+            "yield_per_hectare": _optional_number(production.get("yield_per_hectare")),
+        }
+        # A row with a missing number is left out of the training set; it is not filled with 0.
+        if any(value is None for value in row_values.values()):
+            skipped_rows += 1
+            continue
+        dataset.append(row_values)
 
     evaluation = None
     temporary_path = None
@@ -331,6 +378,7 @@ def dataset_processing(payload: dict) -> dict:
         "climate_rows": len(climate),
         "rice_rows": len(rice),
         "dataset_rows": len(dataset),
+        "rows_skipped_missing_values": skipped_rows,
         "climate_missing_values": sum(value is None for row in climate for value in row.values()),
         "rice_missing_values": sum(value is None for row in rice for value in row.values()),
         "evaluation": evaluation,

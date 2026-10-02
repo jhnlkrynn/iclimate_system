@@ -7,20 +7,23 @@ use PHPUnit\Framework\TestCase;
 
 class WeatherIconMapperTest extends TestCase
 {
-    public function test_maps_clear_day_and_night_icons(): void
+    public function test_drizzle_codes_are_shown_with_rain_wording_and_keep_intensity(): void
     {
-        $mapper = new WeatherIconMapper;
+        $expected = [51 => 'Light Rain', 56 => 'Light Rain', 53 => 'Moderate Rain', 55 => 'Heavy Rain', 57 => 'Heavy Rain'];
 
-        $this->assertSame('/images/weather/clear-day.svg', $mapper->map(0, true)['icon']);
-        $this->assertSame('/images/weather/clear-night.svg', $mapper->map(0, false)['icon']);
+        foreach ($expected as $code => $label) {
+            $result = (new WeatherIconMapper)->map($code);
+
+            $this->assertSame($label, $result['condition']);
+            $this->assertStringNotContainsStringIgnoringCase('drizzle', $result['condition']);
+            $this->assertSame('/images/weather/light-rain.svg', $result['icon']);
+        }
     }
 
-    public function test_maps_rain_and_thunderstorm_conditions(): void
+    public function test_regular_rain_codes_keep_their_intensity_wording(): void
     {
-        $mapper = new WeatherIconMapper;
-
-        $this->assertSame('Light Rain', $mapper->map(61, true)['condition']);
-        $this->assertSame('/images/weather/heavy-rain.svg', $mapper->map(82, true)['icon']);
-        $this->assertSame('Thunderstorm', $mapper->map(95, true)['condition']);
+        $this->assertSame('Light Rain', (new WeatherIconMapper)->map(61)['condition']);
+        $this->assertSame('Moderate Rain', (new WeatherIconMapper)->map(63)['condition']);
+        $this->assertSame('Heavy Rain', (new WeatherIconMapper)->map(65)['condition']);
     }
 }

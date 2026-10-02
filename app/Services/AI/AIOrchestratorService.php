@@ -7,11 +7,15 @@ use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Prediction\PredictionOrchestrator;
+use App\Exceptions\PredictionNotReady;
+use App\Services\Prediction\PredictionReadMode;
 use App\Services\PredictionService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -30,6 +34,7 @@ class AIOrchestratorService
         private readonly KnowledgeAnswerService $knowledge,
         private readonly AiTimings $timings,
         private readonly ConversationContext $context,
+        private readonly PredictionReadMode $readMode,
     ) {}
 
     /** The weather read once for the current message, so two tools never fetch it twice. */
@@ -40,11 +45,25 @@ class AIOrchestratorService
      */
     public function answer(User $user, string $question): array
     {
-        $this->timings->begin();
+        // The controller normally starts the stopwatch (so it also covers the chat insert); if this is
+        // called on its own, start and finish it here.
+        $ownsTimings = ! $this->timings->isActive();
+
+        if ($ownsTimings) {
+            $this->timings->begin();
+        }
+
         $this->context->reset();
         $this->weatherMemo = null;
 
-        $result = $this->respond($user, $question);
+        // A chat request only READS prepared predictions: it may never train a model or process a dataset.
+        $this->readMode->enter();
+
+        try {
+            $result = $this->respond($user, $question);
+        } finally {
+            $this->readMode->leave();
+        }
 
         $result['response_time_ms'] = $this->timings->elapsedMs();
 
@@ -52,12 +71,17 @@ class AIOrchestratorService
 
         // Which route produced the answer: filter, approved knowledge, iClimate's own
         // data, or (only when a Groq call actually happened) Groq.
-        $this->timings->report($intent, match (true) {
+        $this->timings->route($intent, match (true) {
             $intent === 'moderation_blocked' => 'moderation',
             $intent === 'farming_knowledge' => 'knowledge',
+            $intent === 'prediction_refreshing' => 'refreshing',
             $this->timings->groqCalls() > 0 => 'groq',
             default => 'system',
         });
+
+        if ($ownsTimings) {
+            $this->timings->report();
+        }
 
         return $result;
     }
@@ -144,7 +168,7 @@ class AIOrchestratorService
                 IntentClassifierService::WEATHER_PREDICTION => $this->timings->time('prediction', fn () => $this->weatherPrediction($user, $question, $language, $memory, $entities)),
                 IntentClassifierService::RICE_YIELD_PREDICTION,
                 IntentClassifierService::PLANTING_RECOMMENDATION,
-                IntentClassifierService::IRRIGATION_RECOMMENDATION => $this->timings->time('prediction', fn () => $this->modelBackedPrediction($user, $question, $language, $memory, $intent, $entities)),
+                IntentClassifierService::IRRIGATION_RECOMMENDATION => $this->timings->time('prediction', fn () => $this->cachedPrediction($user, $question, $language, $intent, $entities, $memory, fn () => $this->modelBackedPrediction($user, $question, $language, $memory, $intent, $entities))),
                 IntentClassifierService::CLIMATE_RISK => $this->climateRisk($user, $question, $language, $memory, $entities),
                 IntentClassifierService::WEATHER_ADVISORY => $this->advisories($user, $question, $language, $memory),
                 IntentClassifierService::SYSTEM_HELP,
@@ -155,6 +179,9 @@ class AIOrchestratorService
                 IntentClassifierService::UNKNOWN => $this->timings->time('assistant', fn () => $this->predictionService->answer($user, $question)),
                 default => $this->timings->time('assistant', fn () => $this->predictionService->answer($user, $question)),
             };
+        } catch (PredictionNotReady) {
+            // Nothing prepared yet and this request may not build it: say so, and a refresh is already queued.
+            $result = $this->predictionRefreshing($language, $memory);
         } catch (Throwable $exception) {
             Log::warning('AI orchestrator route failed.', [
                 'intent' => $intent,
@@ -306,6 +333,100 @@ class AIOrchestratorService
     }
 
     /**
+     * The same person asking the same prediction question again within a few
+     * minutes gets the answer already produced, and two identical requests in
+     * flight at once do the work once (the second waits for the first).
+     *
+     * @param  array<string, mixed>  $entities
+     * @param  array<string, mixed>  $memory
+     * @param  callable(): array<string, mixed>  $compute
+     * @return array<string, mixed>
+     */
+    private function cachedPrediction(User $user, string $question, string $language, string $intent, array $entities, array $memory, callable $compute): array
+    {
+        $ttl = (int) config('ai.prediction_result_cache_seconds', 600);
+
+        if ($ttl <= 0) {
+            return $compute();
+        }
+
+        $key = 'ai:prediction:'.md5(json_encode([$user->id, $intent, $language, $entities, mb_strtolower(preg_replace('/\s+/', ' ', trim($question)) ?? '')]));
+
+        $fromCache = fn (): ?array => $this->timings->time('cache', function () use ($key, $memory): ?array {
+            $hit = Cache::get($key);
+
+            if (! is_array($hit)) {
+                return null;
+            }
+
+            // The answer is reused, the conversation state is this request's.
+            $hit['memory'] = [...$memory, 'pending_intent' => null];
+
+            return $hit;
+        });
+
+        if (($hit = $fromCache()) !== null) {
+            return $hit;
+        }
+
+        $lock = Cache::lock($key.':lock', 30);
+        $owned = false;
+
+        try {
+            $lock->block(max(1, min(4, (int) floor($this->timings->remainingSeconds() - 2))));
+            $owned = true;
+        } catch (LockTimeoutException) {
+            // Another request is still computing it; do not hold this one up any longer.
+        }
+
+        try {
+            // Whoever held the lock may have just finished it.
+            if ($owned && ($hit = $fromCache()) !== null) {
+                return $hit;
+            }
+
+            $result = $compute();
+
+            if (($result['prediction_result']['error'] ?? null) === null && ! ($result['prediction_result']['requires_clarification'] ?? false)) {
+                Cache::put($key, $result, $ttl);
+            }
+
+            return $result;
+        } finally {
+            if ($owned) {
+                $lock->release();
+            }
+        }
+    }
+
+    /**
+     * The short answer when a prediction has not been prepared yet. A refresh
+     * is already queued; nothing is guessed and nothing is trained in this request.
+     *
+     * @param  array<string, mixed>  $memory
+     * @return array<string, mixed>
+     */
+    private function predictionRefreshing(string $language, array $memory): array
+    {
+        $result = $this->textResult(
+            $this->translate(
+                $language,
+                'The prediction data is being refreshed right now, so I cannot give you a number yet. Please ask again in a few minutes. I will not guess it.',
+                'Ini-refresh pa ang prediction data ngayon kaya wala pa akong maibibigay na numero. Subukan ulit sa loob ng ilang minuto. Hindi ako manghuhula.'
+            ),
+            'prediction_refreshing',
+            'Prediction Status',
+            'iClimate prediction system',
+            $language,
+            $memory,
+            ['confidence_score' => 0, 'prediction_result' => ['refreshing' => true]],
+        );
+        $result['refreshing'] = true;
+
+        return $result;
+    }
+
+    /**
      * Live weather, fetched at most once per message. With a warm cache this is
      * instant; on a cold cache each provider gets a short limit, and if both
      * fail the service returns the last data it had.
@@ -332,7 +453,7 @@ class AIOrchestratorService
             'source' => $weather['source'] ?? $weather['provider'] ?? 'Weather service',
             'location' => $weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas'],
             'data' => [
-                'condition' => data_get($weather, 'current.condition'),
+                'condition' => \App\Support\WeatherConditionLabel::display(data_get($weather, 'current.condition')),
                 'temperature_c' => data_get($weather, 'current.temperature'),
                 'feels_like_c' => data_get($weather, 'current.feels_like'),
                 'humidity_percent' => data_get($weather, 'current.humidity'),
@@ -369,7 +490,10 @@ class AIOrchestratorService
     private function weatherForecast(User $user, string $question, string $language, array $memory, array $entities): array
     {
         $weather = $this->weather();
-        $forecast = (array) ($weather['forecast'] ?? []);
+        $forecast = array_map(
+            fn ($day) => is_array($day) && isset($day['condition']) ? ['condition' => \App\Support\WeatherConditionLabel::display($day['condition'])] + $day : $day,
+            (array) ($weather['forecast'] ?? [])
+        );
         $target = $entities['target_period'] ?? null;
         $selected = $target === 'tomorrow' && isset($forecast[1]) ? [$forecast[1]] : $forecast;
         $tool = [
@@ -781,18 +905,18 @@ class AIOrchestratorService
     private function targetMonth(array $entities): CarbonImmutable
     {
         if (($entities['target_period'] ?? null) === 'next_month') {
-            return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+            return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
         }
 
         if (isset($entities['target_date']) && is_string($entities['target_date'])) {
             try {
                 return CarbonImmutable::parse($entities['target_date'])->startOfMonth();
             } catch (Throwable) {
-                return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+                return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
             }
         }
 
-        return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+        return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
     }
 
     private function translate(string $language, string $english, string $tagalog): string

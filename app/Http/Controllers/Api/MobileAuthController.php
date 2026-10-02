@@ -65,7 +65,7 @@ class MobileAuthController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::min(8)->mixedCase()->numbers()->symbols()],
             'contact_number' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
-            'barangay' => ['required', 'string', 'max:255'],
+            'barangay' => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::in(\App\Support\LianBarangays::all())],
             'farm_area' => ['nullable', 'numeric', 'min:0'],
             'farm_type' => ['required', 'string', 'in:Rainfed,Irrigated'],
         ]);

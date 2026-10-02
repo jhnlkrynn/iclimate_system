@@ -42,6 +42,9 @@ return [
     */
     'forest_cache_hours' => (int) env('AI_FOREST_CACHE_HOURS', 24),
 
+    /* Same person + same prediction question inside this window gets the answer already produced (seconds). */
+    'prediction_result_cache_seconds' => (int) env('AI_PREDICTION_RESULT_CACHE', 600),
+
     /* How long a knowledge-base match (or "no match") is remembered. */
     'knowledge_cache_seconds' => (int) env('AI_KNOWLEDGE_CACHE', 600),
 

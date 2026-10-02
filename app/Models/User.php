@@ -15,6 +15,16 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        // The signed-in user is cached between requests; any change to a user (role, status,
+        // password, profile) must be seen by their very next request.
+        $forget = fn (self $user) => \App\Auth\CachedEloquentUserProvider::forget($user->getKey());
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     public const ROLE_FARMER = 'Farmer';
 
     public const ROLE_MAO = 'MAO Personnel';
@@ -86,6 +96,13 @@ class User extends Authenticatable
     public function systemLogs(): HasMany
     {
         return $this->hasMany(SystemLog::class);
+    }
+
+    /** Accounts older than a day that have never logged in nor been used (no login entry, no recorded activity). */
+    public function scopeNeverLoggedIn(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereNull('users.last_active_at')->where('users.created_at', '<', now()->subDay())
+            ->whereRaw("NOT EXISTS (SELECT 1 FROM system_logs sl WHERE sl.user_id = users.id AND LOWER(sl.action) IN ('user login', 'login'))");
     }
 
     public function roleLabel(): string

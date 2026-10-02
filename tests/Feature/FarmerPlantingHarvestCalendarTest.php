@@ -115,7 +115,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
 
         $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
 
-        $response = $this->actingAs($mao)->get(route('mao.dashboard', [
+        $response = $this->actingAs($mao)->get(route('mao.operations', [
             'schedule_month' => 10,
             'schedule_season' => 'Wet',
             'schedule_barangay' => 'Binubusan',
@@ -212,7 +212,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
         $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
 
         $this->actingAs($mao)
-            ->get(route('mao.dashboard'))
+            ->get(route('mao.operations'))
             ->assertOk()
             ->assertSee('Farm calendar is temporarily unavailable');
 

@@ -54,8 +54,12 @@ class OpenMeteoService
             return Cache::get('open-meteo:last-fetch-result');
         }
 
+        $startedAt = now();
+        $clock = hrtime(true);
+
         try {
             $payload = $this->requestForecast();
+            \App\Models\WeatherFetchLog::record($startedAt, (int) round((hrtime(true) - $clock) / 1_000_000), true);
             $records = $this->storeForecast($payload);
 
             $result = [
@@ -79,6 +83,10 @@ class OpenMeteoService
 
             return $result;
         } catch (Throwable $exception) {
+            // A failed request is logged here; a failure while saving (after a logged success) is not a provider failure.
+            if (! \App\Models\WeatherFetchLog::query()->where('started_at', $startedAt)->exists()) {
+                \App\Models\WeatherFetchLog::record($startedAt, (int) round((hrtime(true) - $clock) / 1_000_000), false, $exception->getMessage());
+            }
             Log::warning('Open-Meteo forecast fetch failed.', [
                 'message' => $exception->getMessage(),
             ]);
@@ -166,8 +174,8 @@ class OpenMeteoService
                 ],
                 [
                     'location_name' => config('services.open_meteo.location_name', 'Lian, Batangas'),
-                    'latitude' => (float) config('services.open_meteo.latitude', 14.033),
-                    'longitude' => (float) config('services.open_meteo.longitude', 120.650),
+                    'latitude' => (float) config('services.open_meteo.latitude', \App\Support\LianLocation::LATITUDE),
+                    'longitude' => (float) config('services.open_meteo.longitude', \App\Support\LianLocation::LONGITUDE),
                     'weather_code' => $daily['weather_code'][$index] ?? null,
                     'temperature' => $this->average($hourlyForDate['temperature_2m'] ?? []),
                     'temperature_max' => $daily['temperature_2m_max'][$index] ?? null,

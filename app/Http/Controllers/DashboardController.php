@@ -11,6 +11,7 @@ use App\Models\FarmerProfile;
 use App\Models\FeedPost;
 use App\Models\FieldReport;
 use App\Models\HeatmapArea;
+use App\Models\MonthlyWeatherPrediction;
 use App\Models\Notification as UserNotification;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
@@ -19,6 +20,11 @@ use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\Analytics\DashboardKpiService;
+use App\Services\Analytics\DashboardOverviewService;
+use App\Services\Analytics\FarmerDashboardService;
+use App\Services\Analytics\ItDashboardService;
+use App\Services\Analytics\MaoDashboardService;
+use App\Support\DashboardData;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\MachineLearning\ModelEvaluationService;
 use App\Services\Prediction\RiceYieldPredictionService;
@@ -40,74 +46,143 @@ use Throwable;
 
 class DashboardController extends Controller
 {
-    public function farmer(Request $request, FarmerDashboardWeatherService $weather, TyphoonSafetyService $typhoonSafety, RiceYieldPredictionService $riceYield, BarangayRiskMapService $riskMapService, DashboardKpiService $kpis): View
+    /** Per-farmer overview: short, because it carries live weather. */
+    private const FARMER_OVERVIEW_CACHE_SECONDS = 60;
+
+    /** Shared MAO / IT overviews: short, because they carry live weather and health checks. The warm-up job refreshes them every minute. */
+    private const MAO_OVERVIEW_CACHE_SECONDS = 90;
+
+    private const IT_PAGE_CACHE_SECONDS = 60;
+
+    /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
+    private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'risk', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'];
+
+    /** Sections the IT refresh button re-renders (partials under dashboards/it). */
+    private const IT_LIVE_SLOTS = ['summary', 'kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
+
+    /** Tabs of the IT dashboard (?tab=...). */
+    private const IT_TABS = ['overview', 'security', 'users', 'resources', 'activity'];
+
+    /** Sections the Farmer refresh button re-renders (partials under dashboards/farmer). */
+    private const FARMER_LIVE_SLOTS = ['header', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'advisories'];
+
+    /**
+     * A card's own "Try again" button: what to rebuild from its source, and which sections that changes.
+     * Weather feeds the header, the weather card, the numbers and the week; the other cards stand alone.
+     */
+    private const FARMER_RETRY = [
+        'today' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'kpis', 'week', 'season']],
+        'week' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'kpis', 'week', 'season']],
+        'harvest' => ['refresh' => ['harvest'], 'slots' => ['harvest']],
+        'risk' => ['refresh' => ['risk'], 'slots' => ['risk', 'today']],
+        'rain' => ['refresh' => ['rain'], 'slots' => ['rain', 'kpis']],
+        'all' => ['refresh' => ['weather', 'rain'], 'slots' => self::FARMER_LIVE_SLOTS],
+    ];
+
+    /** MAO overview: shared payload (cached briefly) plus what depends on who is signed in. */
+    public function mao(Request $request, MaoDashboardService $mao): View
+    {
+        $payload = Cache::remember($this->maoOverviewCacheKey(), now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS), fn (): array => $mao->payload());
+
+        return view('dashboards.mao', ['mao' => $mao->forUser($payload, $request->user())]);
+    }
+
+    /** Refresh button: rebuilds the live sections (weather is re-fetched) and returns each section's HTML. */
+    public function maoLive(Request $request, MaoDashboardService $mao): JsonResponse
+    {
+        $payload = $mao->payload(forceWeather: $request->boolean('refresh'));
+        Cache::put($this->maoOverviewCacheKey(), $payload, now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS));
+        $data = $mao->forUser($payload, $request->user());
+
+        $slots = [];
+        foreach (self::MAO_LIVE_SLOTS as $slot) {
+            $slots[$slot] = view('dashboards.mao.'.$slot, ['mao' => $data])->render();
+        }
+
+        return response()->json(['slots' => $slots, 'refreshed_at' => $data['generated_at']->format('g:i A')]);
+    }
+
+    /**
+     * Rebuilds the shared MAO and IT dashboard caches (run every minute by iclimate:warm-dashboards) so the next person
+     * to open a dashboard does not wait for it.
+     *
+     * @return array<string, float> dashboard name => seconds it took
+     */
+    public function warmSharedDashboards(): array
+    {
+        $timings = [];
+
+        $started = microtime(true);
+        Cache::put($this->maoOverviewCacheKey(), app(MaoDashboardService::class)->payload(), now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS));
+        $timings['MAO'] = round(microtime(true) - $started, 1);
+
+        $started = microtime(true);
+        Cache::put($this->adminCacheKey(), app(ItDashboardService::class)->payload(), now()->addSeconds(self::IT_PAGE_CACHE_SECONDS));
+        $timings['IT'] = round(microtime(true) - $started, 1);
+
+        return $timings;
+    }
+
+    private function maoOverviewCacheKey(): string
+    {
+        return 'dashboard:mao:overview:v'.DashboardData::version();
+    }
+
+    private function adminCacheKey(): string
+    {
+        return 'dashboard:it:overview:v'.DashboardData::version();
+    }
+
+    /**
+     * Simple, farmer-friendly overview. Everything comes from FarmerDashboardService; each card handles its own failure.
+     * The slow harvest model is not waited for: with no stored estimate the card is a placeholder the page fills in next.
+     */
+    public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $user = $request->user();
-        $farmerProfile = $user->farmerProfile;
-        $farmerBarangay = $farmerProfile?->barangay ?? $user->barangay;
-
-        $dashboardWeather = $weather->current($request->boolean('refresh_weather'));
-        $dashboardData = $this->stats();
-        $recent = $this->recentOperationalData();
-        $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
-        $weatherAlerts = $this->weatherAlertsFor($request);
-
-        // Bug fix: this previously filtered on the literal string 'Published'
-        // while the column stores lowercase status values (see
-        // PlantingAdvisory::STATUS_PUBLISHED), so it always returned zero
-        // rows. Now scoped to the farmer's own barangay, matching
-        // PlantingAdvisoryController::index()'s farmer view.
-        $advisories = PlantingAdvisory::query()
-            ->active()
-            ->forBarangay($farmerBarangay)
-            ->latest('valid_from')
-            ->take(5)
-            ->get();
-
-        $myAdvisoryFeedback = AdvisoryFeedback::query()
-            ->where('user_id', $user->id)
-            ->whereIn('planting_advisory_id', $advisories->pluck('id'))
-            ->get()
-            ->keyBy('planting_advisory_id');
-
-        $farmerBarangayRisk = null;
-        if ($farmerBarangay) {
-            try {
-                $farmerBarangayRisk = $riskMapService->detailFor($farmerBarangay);
-            } catch (\Throwable) {
-                $farmerBarangayRisk = null;
-            }
+        $key = FarmerDashboardService::cacheKey($user);
+        $payload = Cache::get($key);
+        if (! is_array($payload)) {
+            $payload = $farmer->payload($user, deferHarvest: true);
+            // Kept even with a harvest placeholder: the page's follow-up request replaces it with the finished card (and this copy).
+            Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
-        $farmerFarmBoundary = $farmerProfile?->farmBoundary;
 
-        return view('dashboards.farmer', $dashboardData + [
-            'farmerKpis' => $kpis->farmer($user, $farmerBarangay, $farmerBarangayRisk),
-            'farmerFarmBoundary' => $farmerFarmBoundary,
-            'feedPosts' => $recent['farmerFeedPosts'],
-            'advisories' => $advisories,
-            'myAdvisoryFeedback' => $myAdvisoryFeedback,
-            'notifications' => UserNotification::query()->where('user_id', $user->id)->latest()->take(5)->get(),
-            'unreadNotificationCount' => UserNotification::query()->where('user_id', $user->id)->where('is_read', false)->count(),
-            'activeWeatherAlerts' => $weatherAlerts['count'],
-            'weatherAlertNotifications' => $weatherAlerts['items'],
-            'climateSummary' => $recent['recentClimateRecords']->first(),
-            'recentClimateRecords' => $recent['recentClimateRecords'],
-            'dashboardWeather' => $dashboardWeather,
-            'dashboardWeatherResponse' => $weather->responsePayload($dashboardWeather),
-            'weatherGuidance' => $weather->guidance($dashboardWeather),
-            'farmerBarangay' => $farmerBarangay,
-            'farmerBarangayRisk' => $farmerBarangayRisk,
-            'farmerYieldPrediction' => $this->farmerYieldPrediction($user, $farmerProfile, $riceYield),
-            'farmerYoyDelta' => $kpis->yieldYoy($farmerBarangay),
-            'farmerHighlights' => $this->farmerHighlights($weatherAlerts, $advisories->first(), $farmerBarangayRisk),
-            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
-            'typhoonSafetyResponse' => $this->hasTyphoonSafetyTable() && $activeTyphoonSafetyEvent
-                ? TyphoonSafetyResponse::query()
-                    ->where('user_id', $user->id)
-                    ->where('event_key', $activeTyphoonSafetyEvent['key'])
-                    ->first()
-                : null,
-        ]);
+        return view('dashboards.farmer', ['f' => $payload]);
+    }
+
+    /**
+     * Refresh button and each card's "Try again": rebuilds the live sections (weather is re-fetched) and returns each
+     * section's HTML. ?retry=<card> rebuilds only that card's source and the sections that depend on it.
+     */
+    public function farmerLive(Request $request, FarmerDashboardService $farmer): JsonResponse
+    {
+        $user = $request->user();
+        $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
+        $forceAll = $request->boolean('refresh');
+
+        $payload = $farmer->payload(
+            $user,
+            forceWeather: $forceAll,
+            refresh: $retry['refresh'] ?? [],
+            // The page's own timed refresh must not stall on the harvest model; an explicit refresh or retry may.
+            deferHarvest: ! $forceAll && $retry === null,
+        );
+        // A timed refresh that deferred the harvest must not overwrite a finished card in the stored copy with a placeholder.
+        if (($payload['harvest']['state'] ?? null) !== 'loading') {
+            Cache::put(FarmerDashboardService::cacheKey($user), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
+        }
+
+        $slots = [];
+        foreach ($retry['slots'] ?? self::FARMER_LIVE_SLOTS as $slot) {
+            // A timed refresh leaves a finished harvest card alone, and a placeholder is never pushed over it.
+            if ($slot === 'harvest' && ($payload['harvest']['state'] ?? null) === 'loading') {
+                continue;
+            }
+            $slots[$slot] = view('dashboards.farmer.'.$slot, ['f' => $payload])->render();
+        }
+
+        return response()->json(['slots' => $slots, 'updated' => $payload['generated_at']->format('g:i A')]);
     }
 
     /**
@@ -167,14 +242,17 @@ class DashboardController extends Controller
             now()->addHours(6),
             function () use ($riceYield, $farmType, $user) {
                 try {
-                    return $riceYield->predictForUser(
-                        CarbonImmutable::now(),
+                    $prediction = $riceYield->predictForUser(
+                        \App\Support\BusinessClock::now()->toImmutable(),
                         $farmType,
                         null,
                         $user,
                         [],
                         PredictionType::RICE_YIELD->value,
                     );
+
+                    // A failed run is not cached (null is never stored), so the next load retries the model.
+                    return ($prediction['success'] ?? false) ? $prediction : null;
                 } catch (Throwable $exception) {
                     Log::warning('Farmer dashboard yield prediction widget failed.', [
                         'user_id' => $user->id,
@@ -219,7 +297,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function mao(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, DashboardKpiService $kpis): View
+    public function maoOperations(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, DashboardKpiService $kpis): View
     {
         $recent = $this->recentOperationalData();
         $climateChartRecords = ClimateRecord::query()
@@ -256,7 +334,7 @@ class DashboardController extends Controller
         $typhoonSafetyNeedsHelpCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count();
         $typhoonSafetyNoResponseCount = max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count());
         // One rating per barangay, so the counts add up to the barangays on the map.
-        $currentRiskLevels = HeatmapArea::query()->get(['barangay', 'risk_level'])->unique('barangay');
+        $currentRiskLevels = app(DashboardData::class)->currentRiskRatings();
         $riskLevelCounts = collect(['Low', 'Moderate', 'High', 'Severe'])
             ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
             ->all();
@@ -304,7 +382,7 @@ class DashboardController extends Controller
             'condition' => in_array($request->query('fb_condition'), \App\Models\WeatherForecastFeedback::OBSERVED_CONDITIONS, true) ? $request->query('fb_condition') : null,
         ];
 
-        return view('dashboards.mao', $this->stats() + [
+        return view('dashboards.mao-operations', $this->stats() + [
             'maoKpis' => $kpis->mao(),
             'weatherFeedbackFilters' => $weatherFeedbackFilters,
             'weatherFeedbackSummary' => app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters),
@@ -326,7 +404,8 @@ class DashboardController extends Controller
             'weatherDataSource' => $weatherDataSource,
             'liveWeather' => $liveWeather,
             'riskLevelCounts' => $riskLevelCounts,
-            'weatherWarning' => $this->weatherWarningLevel($riskLevelCounts),
+            'weatherWarning' => $weatherWarning = $this->weatherWarningLevel($riskLevelCounts),
+            'overview' => app(DashboardOverviewService::class)->mao($request->integer('year') ?: null, $weatherWarning['label'] ?? null),
             'weatherAnomaly' => $this->weatherAnomalySummary($liveWeather, $currentSeason),
             'cropStatus' => $this->cropStatusSummary($currentSeason),
             'barangayMonitoring' => $this->barangayMonitoringTable(),
@@ -362,57 +441,62 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function admin(ModelEvaluationService $modelEvaluation, DashboardKpiService $kpis): View
+    /** IT overview: everything comes from ItDashboardService and is cached for a short time (the warm-up job refreshes it). */
+    public function admin(Request $request, ItDashboardService $it): View
     {
-        $recent = $this->recentOperationalData();
-        $heatmapLastRefresh = Cache::get(BarangayRiskMapService::CACHE_KEY)['generated_at'] ?? null;
-        $heatmapRefreshFailuresToday = BarangayRiskMapService::failuresToday();
-        $predictionAttemptsToday = PythonService::attemptsToday();
-        $predictionFailuresToday = PythonService::failuresToday();
-        $inactiveUsersToday = User::query()
-            ->where('status', User::STATUS_INACTIVE)
-            ->whereDate('updated_at', today())
-            ->count();
-        $reportAnomaly = $this->reportExportAnomaly();
+        $payload = Cache::remember($this->adminCacheKey(), now()->addSeconds(self::IT_PAGE_CACHE_SECONDS), fn (): array => $it->payload());
 
-        $evaluation = $modelEvaluation->evaluate();
-        $evaluationBestRow = collect($evaluation['rows'] ?? [])->firstWhere('status', 'Selected Model');
+        $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
 
-        return view('dashboards.it-expert', $this->stats() + [
-            'itKpis' => $kpis->itExpert(),
-            ...$this->adminAggregates(),
-            ...$this->farmerOrganizationDashboardData(),
-            'latestLogs' => SystemLog::query()->with('user')->latest()->take(10)->get(),
-            'latestUsers' => User::query()->latest()->take(10)->get(),
-            'recentFarmers' => User::query()->where('role', User::ROLE_FARMER)->latest()->take(6)->get(),
-            'latestReports' => Report::query()->with('generatedBy')->latest()->take(5)->get(),
-            'reportUsageAudit' => Report::query()
-                ->selectRaw('generated_by, COUNT(*) as total, MAX(created_at) as last_generated_at')
-                ->whereNotNull('generated_by')
-                ->groupBy('generated_by')
-                ->with('generatedBy')
-                ->orderByDesc('total')
-                ->take(5)
-                ->get(),
-            'highRiskAreasList' => $recent['highRiskAreas'],
-            'heatmapLastRefresh' => $heatmapLastRefresh,
-            'heatmapRefreshFailuresToday' => $heatmapRefreshFailuresToday,
-            'predictionAttemptsToday' => $predictionAttemptsToday,
-            'predictionFailuresToday' => $predictionFailuresToday,
-            'predictionSuccessRate' => $predictionAttemptsToday > 0
-                ? round((($predictionAttemptsToday - $predictionFailuresToday) / $predictionAttemptsToday) * 100, 1)
-                : null,
-            'modelEvaluation' => $evaluation,
-            'modelEvaluationBestRow' => $evaluationBestRow,
-            'itHighlights' => $this->itHighlights(
-                $heatmapRefreshFailuresToday,
-                $heatmapLastRefresh,
-                $predictionAttemptsToday,
-                $predictionFailuresToday,
-                $inactiveUsersToday,
-                $reportAnomaly,
-            ),
+        return view('dashboards.it-expert', ['it' => $payload, 'tab' => $tab]);
+    }
+
+    /** Refresh button: rebuilds the live sections and returns each section's HTML. */
+    public function adminLive(ItDashboardService $it): JsonResponse
+    {
+        $payload = $it->payload(fresh: true);
+        Cache::put($this->adminCacheKey(), $payload, now()->addSeconds(self::IT_PAGE_CACHE_SECONDS));
+
+        $slots = [];
+        foreach (self::IT_LIVE_SLOTS as $slot) {
+            $slots[$slot] = view('dashboards.it.'.$slot, ['it' => $payload])->render();
+        }
+
+        return response()->json([
+            'slots' => $slots,
+            'refreshed_at' => $payload['checked_at']->format('g:i:s A'),
+            'weather_synced_at' => $payload['weather_synced_at']?->format('M j, g:i A'),
+            'level' => $payload['overall']['level'],
+            'status' => $payload['overall']['label'],
         ]);
+    }
+
+    /** The Retry button on "Failed jobs by class": puts that class's failed jobs back on the queue. */
+    public function adminRetryFailed(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $class = (string) $request->input('class');
+        $ids = \App\Services\Analytics\ItDashboardInsights::failedJobIds($class);
+        if ($ids !== []) {
+            \App\Services\SystemAuditLogger::record('Retry Failed Jobs', $request, ['job_class' => $class, 'jobs' => count($ids), 'retried_by' => $request->user()->name]);
+            \Illuminate\Support\Facades\Artisan::call('queue:retry', ['id' => $ids]);
+            Cache::forget($this->adminCacheKey());
+        }
+
+        return redirect()->route('admin.dashboard')->with('status', count($ids).' failed '.(count($ids) === 1 ? 'job was' : 'jobs were').' put back on the queue.');
+    }
+
+    /** Recent System Activity with its filters (role, action type, date range); returns the table's HTML. */
+    public function adminRecent(Request $request, ItDashboardService $it): JsonResponse
+    {
+        $payload = ['recent' => $it->recentActivity($request->only(['role', 'action', 'from', 'to']))];
+
+        return response()->json(['html' => view('dashboards.it.recent-rows', ['it' => $payload])->render()]);
+    }
+
+    /** Daily counts per kind of event for the System Activity chart (range 7, 30 or 90 days; anything else is 30). */
+    public function adminActivity(Request $request, ItDashboardService $it): JsonResponse
+    {
+        return response()->json($it->activity((int) $request->query('range', 30)));
     }
 
     private function recentOperationalData(): array
@@ -546,12 +630,12 @@ class DashboardController extends Controller
     private function reportExportAnomaly(): ?array
     {
         $countsByDay = Report::query()
-            ->where('created_at', '>=', now()->subDays(7)->startOfDay())
-            ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
+            ->where('created_at', '>=', \App\Support\BusinessClock::startOfDayUtc(7))
+            ->selectRaw('' . \App\Support\BusinessClock::sqlDate('created_at') . ' as d, COUNT(*) as c')
             ->groupBy('d')
             ->pluck('c', 'd');
 
-        $todayKey = today()->toDateString();
+        $todayKey = \App\Support\BusinessClock::today()->toDateString();
         $todayCount = (int) ($countsByDay[$todayKey] ?? 0);
         $priorDays = $countsByDay->except($todayKey);
         $priorAverage = $priorDays->isNotEmpty() ? $priorDays->avg() : 0;
@@ -579,9 +663,10 @@ class DashboardController extends Controller
 
             return [
                 'riceLatestYear' => $latest['year'] ?? null,
-                'riceProductionTotal' => (float) ($latest['production'] ?? 0),
-                'riceAreaTotal' => (float) ($latest['area'] ?? 0),
-                'avgYield' => (float) ($latest['yield'] ?? 0),
+                // null = no verified harvest data (never shown as 0 tons)
+                'riceProductionTotal' => isset($latest['production']) ? (float) $latest['production'] : null,
+                'riceAreaTotal' => isset($latest['area']) ? (float) $latest['area'] : null,
+                'avgYield' => isset($latest['yield']) ? (float) $latest['yield'] : null,
                 'profileCount' => FarmerProfile::count(),
                 'reportCount' => Report::query()->realGenerated()->count(),
                 'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PUBLISHED)->count(),
@@ -616,6 +701,7 @@ class DashboardController extends Controller
                     'Farmer Profiles' => FarmerProfile::count(),
                     'Climate Records' => ClimateRecord::count(),
                     'Rice Productions' => RiceProduction::count(),
+                    'Predictions' => MonthlyWeatherPrediction::count(),
                     'Advisories' => PlantingAdvisory::count(),
                     'Community Feed' => FeedPost::query()->whereNull('archived_at')->count(),
                     'Notifications' => UserNotification::count(),

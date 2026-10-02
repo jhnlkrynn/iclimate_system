@@ -8,7 +8,7 @@
         ? \Illuminate\Support\Facades\Cache::remember(
             'sidebar:unread-notifications:'.$user->id,
             now()->addSeconds(20),
-            fn () => \App\Models\Notification::query()->where('user_id', $user->id)->where('is_read', false)->count()
+            fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count()
         )
         : 0;
 
@@ -64,7 +64,6 @@
     if ($isFarmer) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Advisories', 'advisories', 'advisories'),
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
@@ -80,7 +79,6 @@
     } elseif ($isMao) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLinkAnchor('Risk Map', 'risk-map', 'weather'),
             $navLink('Farm Calendar', 'calendar', 'calendar'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Planting Advisories', 'advisories', 'advisories'),
@@ -97,32 +95,46 @@
             $navLink('Reports', 'reports', 'reports'),
         ];
     } else {
+        // IT Personnel: grouped by purpose; each page appears once.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('Reports', 'reports', 'reports'),
-            $navLink('User Management', 'user-management', 'user-management'),
-            $navLink('System Logs', 'system-logs', 'system-logs'),
-            $navLink('System Health', 'system-health', 'system-health'),
         ];
-        $moreGroup = [
-            $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
-            $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Predictions', 'weather', 'weather'),
-            $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
-            $navLink('Rice Production', 'rice-production', 'rice-production'),
-        ];
-        $publishingGroup = [
-            $navLink('Planting Advisories', 'advisories', 'advisories'),
-            $navLink('Community Feed', 'community', 'community'),
-            $navLink('Messages', 'messages', 'messages'),
+        $moreGroup = [];
+        $publishingGroup = [];
+        $itSections = [
+            ['Main', $primaryGroup],
+            ['Management', [
+                $navLink('User Management', 'user-management', 'user-management'),
+                $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
+            ]],
+            ['Data', [
+                $navLink('Climate Records', 'climate-records', 'climate-records'),
+                $navLink('Rice Production', 'rice-production', 'rice-production'),
+                $navLink('Predictions', 'weather', 'weather'),
+            ]],
+            ['System', [
+                $navLink('System Health', 'system-health', 'system-health'),
+                $navLink('System Logs', 'system-logs', 'system-logs'),
+            ]],
+            ['Content', [
+                $navLink('Planting Advisories', 'advisories', 'advisories'),
+                $navLink('Community Feed', 'community', 'community'),
+                $navLink('Messages', 'messages', 'messages'),
+            ]],
+            ['Support', [
+                $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
+            ]],
         ];
     }
 
-    $sidebarSections = array_values(array_filter([
-        ['Main Menu', $primaryGroup],
-        ['More Tools', $moreGroup],
-        ['Community & Updates', $publishingGroup],
-    ], fn ($section) => ! empty($section[1])));
+    $sidebarSections = isset($itSections)
+        ? $itSections
+        : array_values(array_filter([
+            ['Main Menu', $primaryGroup],
+            [$isFarmer ? 'My Farm' : 'More Tools', $moreGroup],
+            ['Community & Updates', $publishingGroup],
+        ], fn ($section) => ! empty($section[1])));
 
     $renderSidebarNav = function () use ($sidebarSections, $sidebarIcon): string {
         $html = '';

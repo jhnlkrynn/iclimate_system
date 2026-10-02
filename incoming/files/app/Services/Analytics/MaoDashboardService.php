@@ -1,0 +1,618 @@
+<?php
+
+namespace App\Services\Analytics;
+
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
+use App\Models\FarmerProfile;
+use App\Models\FieldReport;
+use App\Models\HeatmapArea;
+use App\Models\PlantingAdvisory;
+use App\Models\SystemLog;
+use App\Models\TyphoonSafetyResponse;
+use App\Models\User;
+use App\Services\FarmerOrganizationSummaryService;
+use App\Services\TyphoonSafetyService;
+use App\Services\Weather\FarmerDashboardWeatherService;
+use App\Services\Weather\WeatherFeedbackSummaryService;
+use App\Services\WeatherApiService;
+use App\Support\DashboardData;
+use App\Support\LianBarangays;
+use App\Support\ProjectYieldDataset;
+use App\Support\SchemaCache;
+use App\Support\SystemLogPresenter;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
+use Throwable;
+
+/**
+ * Everything the MAO overview shows, from ONE place: agriculture, weather, farmers, farm risk, yield and advisories.
+ *
+ * Rules that shape it:
+ *   - every number is queried or computed here from a real source, never typed in;
+ *   - a section with no meaningful data is simply absent (null / empty), never "0", "N/A" or "No data";
+ *   - a source that FAILED gives an error state for that section only, never a fake zero;
+ *   - a legitimate zero (for example 0.0 mm of rain, or 0 pending advisories) is kept when its record exists;
+ *   - historical, recorded, live, forecast and calculated data are labelled and never mixed.
+ */
+final class MaoDashboardService
+{
+    public const TIMEZONE = 'Asia/Manila';
+
+    /** Forecast days are flagged for attention only past these documented thresholds (same as the calendar's "High" band). */
+    /**
+     * PENDING MAO / METHODOLOGY CONFIRMATION. This 25 mm/day figure is NOT a validated
+     * MAO/PAGASA threshold; do not describe it as official. All uses are listed in
+     * docs/data-audit/phase-2-report.md so it can be replaced consistently.
+     */
+    public const HEAVY_RAIN_MM = 25.0;
+
+    public const STRONG_WIND_KMH = 35.0;
+
+    public const VERY_HOT_C = 35.0;
+
+    /** A yield change is shown only when at least this many months are recorded in BOTH years. */
+    public const MIN_COMPARABLE_MONTHS = 6;
+
+    /** How many forecast days ahead a heavy-rain warning looks. */
+    private const HEAVY_RAIN_LOOKAHEAD_DAYS = 3;
+
+    public function __construct(
+        private readonly FarmerDashboardWeatherService $weather,
+        private readonly WeatherApiService $weatherApi,
+        private readonly DashboardOverviewService $overview,
+        private readonly FarmerOrganizationSummaryService $farmers,
+        private readonly ProjectYieldDataset $yields,
+        private readonly DashboardData $data,
+        private readonly TyphoonSafetyService $typhoon,
+        private readonly WeatherFeedbackSummaryService $feedback,
+    ) {}
+
+    // ------------------------------------------------------------------ payload
+
+    /** @return array<string, mixed> shared by every MAO user (cacheable) */
+    public function payload(bool $forceWeather = false): array
+    {
+        $now = CarbonImmutable::now(self::TIMEZONE);
+
+        $weather = $this->weather($forceWeather);
+        $risk = $this->risk();
+        $advisories = $this->advisories();
+        $yield = $this->yield();
+        $farmers = $this->farmerCoverage();
+        $climate = $this->climate();
+
+        return [
+            'generated_at' => $now,
+            'weather' => $weather,
+            'risk' => $risk,
+            'advisories' => $advisories,
+            'yield' => $yield,
+            'farmers' => $farmers,
+            'climate' => $climate,
+            'production' => $this->production(),
+            'feedback' => $this->feedbackPanel(),
+            'watch' => $this->watchList($risk),
+            'activity' => $this->activity(),
+            'attention' => $this->attention($weather, $risk, $advisories),
+            'kpis' => $this->kpis($weather, $yield, $risk, $advisories, $farmers),
+            'sources' => $this->sources($weather, $yield, $risk, $climate, $farmers, $now),
+        ];
+    }
+
+    /**
+     * Adds what depends on who is signed in (their unread messages) without touching the shared cache.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function forUser(array $payload, User $user): array
+    {
+        try {
+            $unread = ConversationMessage::query()
+                ->whereIn('conversation_id', Conversation::query()
+                    ->where('participant_one_id', $user->id)->orWhere('participant_two_id', $user->id)->select('id'))
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->count();
+        } catch (Throwable) {
+            $unread = 0;      // a failed count adds no item; it is never shown as a number
+        }
+
+        if ($unread > 0) {
+            $payload['attention'][] = [
+                'severity' => 'action', 'icon' => 'message',
+                'title' => number_format($unread).' Unread '.($unread === 1 ? 'Message' : 'Messages'),
+                'detail' => 'Waiting in your inbox.',
+                'action' => 'Open Messages', 'href' => route('messages.index'),
+            ];
+        }
+        $payload['attention'] = $this->sortAttention($payload['attention']);
+
+        return $payload;
+    }
+
+    // ------------------------------------------------------------------ weather
+
+    /** @return array<string, mixed> */
+    private function weather(bool $force): array
+    {
+        try {
+            $w = $this->weather->current($force);
+        } catch (Throwable) {
+            return ['state' => 'error'];
+        }
+
+        // Wind by date comes from a second, optional lookup: if it fails the forecast simply shows no wind.
+        try {
+            $series = (array) data_get($this->weatherApi->forecast(), 'daily_series', []);
+        } catch (Throwable) {
+            $series = [];
+        }
+
+        $current = is_array($w['current'] ?? null) ? $w['current'] : [];
+        if (! ($w['success'] ?? false) || ! is_numeric($current['temperature'] ?? null)) {
+            return ['state' => 'error'];
+        }
+
+        $windByDate = [];
+        foreach ((array) ($series['labels'] ?? []) as $i => $date) {
+            if (is_numeric($series['windSpeed'][$i] ?? null)) {
+                $windByDate[$date] = (float) $series['windSpeed'][$i];
+            }
+        }
+
+        $days = [];
+        foreach ((array) ($w['forecast'] ?? []) as $day) {
+            if (! is_array($day) || empty($day['date'])) {
+                continue;
+            }
+            $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
+            $high = is_numeric($day['temperature_max'] ?? null) ? (float) $day['temperature_max'] : null;
+            $wind = $windByDate[$day['date']] ?? null;
+            $flags = array_values(array_filter([
+                $rain !== null && $rain >= self::HEAVY_RAIN_MM ? 'Heavy rain' : null,
+                $wind !== null && $wind >= self::STRONG_WIND_KMH ? 'Strong wind' : null,
+                $high !== null && $high >= self::VERY_HOT_C ? 'Very hot' : null,
+            ]));
+            $days[] = [
+                'date' => CarbonImmutable::parse($day['date'], self::TIMEZONE),
+                'condition' => \App\Support\WeatherConditionLabel::display($day['condition'] ?? null),
+                'icon' => $day['icon'] ?? null,
+                'rain' => $rain, 'high' => $high,
+                'low' => is_numeric($day['temperature_min'] ?? null) ? (float) $day['temperature_min'] : null,
+                'chance' => is_numeric($day['precipitation_probability'] ?? null) ? (float) $day['precipitation_probability'] : null,
+                'wind' => $wind,
+                'flags' => $flags,
+            ];
+        }
+
+        $updatedRaw = data_get($w, 'timestamps.provider_updated_at') ?? data_get($w, 'timestamps.server_fetched_at') ?? ($w['fetched_at'] ?? null);
+
+        return [
+            'state' => 'ok',
+            'temperature' => (float) $current['temperature'],
+            'humidity' => is_numeric($current['humidity'] ?? null) ? (float) $current['humidity'] : null,
+            'rain' => is_numeric($current['precipitation'] ?? null) ? (float) $current['precipitation'] : null,    // 0.0 is a real reading
+            'wind' => is_numeric($current['wind_speed'] ?? null) ? (float) $current['wind_speed'] : null,
+            'condition' => \App\Support\WeatherConditionLabel::display($current['condition'] ?? null),
+            'updated_at' => $updatedRaw ? CarbonImmutable::parse($updatedRaw)->timezone(self::TIMEZONE) : null,
+            'source' => 'Online weather service',      // provider names stay on IT pages; MAO sees plain wording
+            'location' => (string) data_get($w, 'location.name', 'Lian').', '.(string) data_get($w, 'location.province', 'Batangas'),
+            'stale' => (bool) ($w['stale'] ?? false),
+            'days' => $days,
+        ];
+    }
+
+    // ------------------------------------------------------------------ farm risk
+
+    /** @return array<string, mixed> */
+    private function risk(): array
+    {
+        try {
+            $areas = $this->data->currentRiskRatings();
+        } catch (Throwable) {
+            return ['state' => 'error'];
+        }
+        if ($areas->isEmpty()) {
+            return ['state' => 'empty'];
+        }
+
+        $counts = [];
+        foreach (['Low', 'Moderate', 'High', 'Severe'] as $level) {
+            $counts[$level] = $areas->where('risk_level', $level)->count();
+        }
+        $computed = $areas->pluck('risk_computed_at')->filter()->max();
+
+        return [
+            'state' => 'ok',
+            'total' => $areas->count(),
+            'counts' => $counts,
+            'areas' => $areas,
+            'computed_at' => $computed ? CarbonImmutable::parse($computed)->timezone(self::TIMEZONE) : null,
+            'barangays_total' => count(LianBarangays::all()),
+        ];
+    }
+
+    /**
+     * Barangays worth watching: High and Severe only. Nothing at all when there are no ratings.
+     *
+     * @return array{state: string, items: array<int, array<string, mixed>>}
+     */
+    private function watchList(array $risk): array
+    {
+        if (($risk['state'] ?? null) !== 'ok') {
+            return ['state' => 'hidden', 'items' => []];
+        }
+
+        $items = $risk['areas']->whereIn('risk_level', ['High', 'Severe'])->sortByDesc('risk_score')->take(6)
+            ->map(fn (HeatmapArea $a): array => [
+                'barangay' => $a->barangay,
+                'level' => $a->risk_level,
+                'reason' => $this->plainReason((string) $a->main_risk_reason),
+            ])->values()->all();
+
+        return ['state' => $items === [] ? 'clear' : 'watch', 'items' => $items];
+    }
+
+    /**
+     * A risk reason is shown only if it reads as plain agricultural wording. Text that uses model or scoring jargon
+     * (which MAO-facing pages avoid) is left out; the barangay and its level are still listed.
+     */
+    private function plainReason(string $reason): string
+    {
+        $reason = trim($reason);
+
+        return preg_match('/risk score|random forest|python|open-meteo|insufficient input|classification/i', $reason) ? '' : $reason;
+    }
+
+    // ------------------------------------------------------------------ advisories
+
+    /** @return array<string, mixed> */
+    private function advisories(): array
+    {
+        try {
+            $total = PlantingAdvisory::query()->count();
+
+            return [
+                'state' => $total === 0 ? 'empty' : 'ok',
+                'total' => $total,
+                'active' => PlantingAdvisory::query()->active()->count(),
+                'pending' => PlantingAdvisory::query()->pendingReview()->count(),
+            ];
+        } catch (Throwable) {
+            return ['state' => 'error'];
+        }
+    }
+
+    // ------------------------------------------------------------------ rice yield (historical)
+
+    /**
+     * Yield history is the project's modeling dataset (municipal monthly averages), always labelled historical.
+     * A comparison is offered only when it is like-for-like (same months, enough of them) and never mixes sources.
+     *
+     * @return array<string, mixed>
+     */
+    private function yield(): array
+    {
+        try {
+            $years = $this->yields->years()->sort()->values();
+        } catch (Throwable) {
+            return ['state' => 'error'];
+        }
+        if ($years->isEmpty()) {
+            return ['state' => 'empty'];
+        }
+
+        $points = $years->map(fn (int $y): array => [
+            'year' => $y,
+            'yield' => round((float) $this->yields->yearlyMean($y), 2),
+            'months' => $this->yields->monthsRecorded($y),
+        ])->filter(fn (array $p) => $p['yield'] > 0)->values();
+        if ($points->isEmpty()) {
+            return ['state' => 'empty'];
+        }
+
+        $latest = $points->last();
+        $cmp = $this->yields->compareWithPrevious($latest['year']);
+        $comparable = $cmp && $cmp['months'] >= self::MIN_COMPARABLE_MONTHS;
+
+        return [
+            'state' => 'ok',
+            'points' => $points->all(),
+            'latest' => $latest,
+            'comparison' => $comparable ? $cmp : null,        // omitted (not shown as a percentage) when not comparable
+            'source' => ProjectYieldDataset::SOURCE_NAME,
+            'records' => $points->sum('months'),
+        ];
+    }
+
+    // ------------------------------------------------------------------ climate chart
+
+    /** @return array<string, mixed>|null */
+    private function climate(): ?array
+    {
+        try {
+            return $this->overview->climateSnapshot();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------------ farmers
+
+    /** @return array<string, mixed> */
+    private function farmerCoverage(): array
+    {
+        try {
+            $s = $this->farmers->summarize()['farmerOrganizationSummary'];
+            $covered = FarmerProfile::query()->whereNotNull('barangay')->distinct()->pluck('barangay')
+                ->intersect(LianBarangays::all())->count();
+        } catch (Throwable) {
+            return ['state' => 'error'];
+        }
+
+        return [
+            'state' => $s['totalFarmers'] === 0 ? 'empty' : 'ok',
+            'farmers' => $s['totalFarmers'],
+            'organizations' => $s['totalOrganizations'],
+            'without_organization' => $s['farmersWithoutOrganization'],
+            'farm_area' => $s['totalFarmArea'],
+            'barangays_covered' => $covered,
+            'barangays_total' => count(LianBarangays::all()),
+        ];
+    }
+
+    // ------------------------------------------------------------------ conditional sections
+
+    /**
+     * Planting & production: only when real production records exist. Recorded and expected yield are kept apart.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function production(): ?array
+    {
+        try {
+            $latest = $this->data->riceRows()->unique('barangay');
+            if ($latest->isEmpty()) {
+                return null;
+            }
+            $isIrrigated = fn ($r): bool => str_contains(strtolower((string) $r->irrigation_type), 'irrig');
+            $irrigated = $latest->filter($isIrrigated);
+            $rainfed = $latest->reject($isIrrigated);
+            $area = (float) $latest->sum('area_hectares');
+            $expected = $this->data->heatmapAreas()->whereNotNull('predicted_yield')->avg('predicted_yield');
+        } catch (Throwable) {
+            return null;
+        }
+
+        return [
+            'planted' => $area,
+            'irrigated' => (float) $irrigated->sum('area_hectares'),
+            'rainfed' => (float) $rainfed->sum('area_hectares'),
+            'expected_yield' => $expected !== null ? (float) $expected : null,                                    // model estimate
+            'recorded_yield' => $area > 0 ? (float) $latest->sum('total_production') / $area : null,              // recorded harvests
+        ];
+    }
+
+    /** Farmer weather feedback: only once enough reports exist to say anything. @return array<string, mixed>|null */
+    private function feedbackPanel(): ?array
+    {
+        try {
+            $f = $this->feedback->summarize([]);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return ($f['enough_data'] ?? false)
+            ? ['total' => (int) $f['total'], 'percentages' => $f['percentages'], 'message' => (string) $f['message']]
+            : null;
+    }
+
+    // ------------------------------------------------------------------ KPI cards
+
+    /** @return array<int, array<string, mixed>> */
+    private function kpis(array $weather, array $yield, array $risk, array $advisories, array $farmers): array
+    {
+        $cards = [];
+
+        if (($farmers['state'] ?? null) === 'ok') {
+            $cards[] = [
+                'key' => 'farmers', 'icon' => 'farmers', 'label' => 'Registered Farmers', 'unit' => null,
+                'value' => number_format($farmers['farmers']),
+                'context' => number_format($farmers['organizations']).' Farmer '.($farmers['organizations'] === 1 ? 'Organization' : 'Organizations'),
+                'trend' => null, 'href' => route('farmer-profiles.index'),
+                'tip' => 'Farmers with a registered profile in iClimate, and the farmer organizations they belong to.',
+            ];
+        }
+
+        if ($weather['state'] === 'ok') {
+            $bits = array_filter([
+                $weather['humidity'] !== null ? number_format($weather['humidity'], 0).'% humidity' : null,
+                $weather['rain'] !== null ? number_format($weather['rain'], 1).' mm rain' : null,
+            ]);
+            $cards[] = [
+                'key' => 'weather', 'icon' => 'weather', 'label' => 'Weather Today', 'unit' => '°C',
+                'value' => number_format($weather['temperature'], 1),
+                'context' => implode(' • ', $bits) ?: $weather['condition'],
+                'trend' => null, 'href' => route('weather-predictions.index'),
+                'tip' => 'Live reading for Lian from an online weather service. Not a forecast.',
+            ];
+        }
+
+        if (($yield['state'] ?? null) === 'ok') {
+            $l = $yield['latest'];
+            $cmp = $yield['comparison'];
+            $cards[] = [
+                'key' => 'yield', 'icon' => 'yield', 'label' => 'Average Rice Yield', 'unit' => 't/ha',
+                'value' => number_format($l['yield'], 2),
+                'context' => 'Historical · '.$l['year'].' · '.$l['months'].' monthly '.($l['months'] === 1 ? 'record' : 'records'),
+                'trend' => $cmp ? [
+                    'delta' => $cmp['change'],
+                    'label' => 'vs same '.$cmp['months'].' months of '.$cmp['previous_year'],
+                    'basis' => 'Based on '.$cmp['months'].' comparable monthly records',
+                ] : null,
+                'href' => route('rice-productions.index'),
+                'tip' => 'Mean of the municipal monthly average yields on file for '.$l['year'].' ('.$l['months'].' of 12 months). Historical data from the iClimate modeling dataset, not a forecast. '
+                    .'The change compares only the months recorded in both years.',
+            ];
+        }
+
+        if (($risk['state'] ?? null) === 'ok') {
+            $cards[] = [
+                'key' => 'barangays', 'icon' => 'map', 'label' => 'Barangays Monitored', 'unit' => 'of '.$risk['barangays_total'],
+                'value' => number_format($risk['total']),
+                'context' => 'Municipality-wide farm risk monitoring',
+                'trend' => null, 'href' => '#mtdRiskMap',
+                'tip' => 'Barangays that currently have a calculated farm-risk rating.',
+            ];
+        }
+
+        if (($advisories['state'] ?? null) === 'ok') {
+            $cards[] = [
+                'key' => 'advisories', 'icon' => 'advisory', 'label' => 'Active Advisories', 'unit' => null,
+                'value' => number_format($advisories['active']),
+                'context' => $advisories['pending'] > 0 ? number_format($advisories['pending']).' pending review' : 'None pending review',
+                'trend' => null, 'href' => route('planting-advisories.index'),
+                'tip' => 'Published advisories that are currently in effect. Advisories awaiting review are counted separately.',
+            ];
+        }
+
+        return $cards;
+    }
+
+    // ------------------------------------------------------------------ attention center
+
+    /** @return array<int, array<string, mixed>> */
+    private function attention(array $weather, array $risk, array $advisories): array
+    {
+        $items = [];
+
+        if (($advisories['pending'] ?? 0) > 0) {
+            $n = $advisories['pending'];
+            $items[] = ['severity' => 'action', 'icon' => 'advisory', 'title' => number_format($n).' '.($n === 1 ? 'Advisory' : 'Advisories').' Awaiting Review',
+                'detail' => 'Review before farmers can see '.($n === 1 ? 'it' : 'them').'.', 'action' => 'Review', 'href' => route('management.advisories.index')];
+        }
+
+        if (($risk['state'] ?? null) === 'ok') {
+            $severe = $risk['counts']['Severe'];
+            $high = $risk['counts']['High'] + $severe;
+            if ($high > 0) {
+                $items[] = ['severity' => $severe > 0 ? 'urgent' : 'action', 'icon' => 'map',
+                    'title' => number_format($high).' '.($high === 1 ? 'Barangay' : 'Barangays').' Under High Farm Risk',
+                    'detail' => ($severe > 0 ? number_format($severe).' at Severe level. ' : '').'Planning indicator, not an official hazard assessment.',
+                    'action' => 'View Risk Map', 'href' => '#mtdRiskMap'];
+            }
+        }
+
+        if ($weather['state'] === 'ok') {
+            $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
+            foreach ($weather['days'] as $day) {
+                $ahead = (int) $today->diffInDays($day['date']->startOfDay(), false);
+                if ($ahead >= 0 && $ahead <= self::HEAVY_RAIN_LOOKAHEAD_DAYS && $day['rain'] !== null && $day['rain'] >= self::HEAVY_RAIN_MM) {
+                    $when = $ahead === 0 ? 'Today' : ($ahead === 1 ? 'Tomorrow' : $day['date']->format('l'));
+                    $items[] = ['severity' => 'action', 'icon' => 'rain', 'title' => 'Heavy Rain Expected '.$when,
+                        'detail' => number_format($day['rain'], 0).' mm forecast (threshold '.number_format(self::HEAVY_RAIN_MM, 0).' mm).', 'action' => 'View Forecast', 'href' => route('weather-predictions.index')];
+                    break;
+                }
+            }
+        }
+
+        try {
+            $reports = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
+            if ($reports > 0) {
+                $items[] = ['severity' => 'action', 'icon' => 'report', 'title' => number_format($reports).' Field '.($reports === 1 ? 'Report' : 'Reports').' Unresolved',
+                    'detail' => 'Issues reported from the field.', 'action' => 'Review', 'href' => route('field-reports.index')];
+            }
+        } catch (Throwable) {
+            // an unreadable count adds no item
+        }
+
+        if ($item = $this->typhoonItem()) {
+            $items[] = $item;
+        }
+
+        return $this->sortAttention($items);
+    }
+
+    /** An active typhoon safety check-in is a genuine safety warning: surfaced here, never hidden. */
+    private function typhoonItem(): ?array
+    {
+        try {
+            $event = $this->typhoon->activeEvent();
+            if (! $event) {
+                return null;
+            }
+            $needsHelp = SchemaCache::hasTable('typhoon_safety_responses')
+                ? TyphoonSafetyResponse::query()->where('event_key', $event['key'])->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count()
+                : 0;
+        } catch (Throwable) {
+            return null;
+        }
+
+        return [
+            'severity' => $needsHelp > 0 ? 'urgent' : 'action', 'icon' => 'storm',
+            'title' => $needsHelp > 0 ? number_format($needsHelp).' '.($needsHelp === 1 ? 'Farmer Needs' : 'Farmers Need').' Help (Typhoon Check-In)' : 'Typhoon Safety Check-In Is Active',
+            'detail' => 'Farmer safety responses are being collected.', 'action' => 'Open Check-In', 'href' => route('mao.operations').'#typhoon-safety',
+        ];
+    }
+
+    /** @param  array<int, array<string, mixed>>  $items */
+    private function sortAttention(array $items): array
+    {
+        $rank = ['urgent' => 0, 'action' => 1];
+        usort($items, fn ($a, $b) => ($rank[$a['severity']] ?? 2) <=> ($rank[$b['severity']] ?? 2));
+
+        return $items;
+    }
+
+    // ------------------------------------------------------------------ recent activity
+
+    /** Recent agricultural work (advisories, records, reports), not sign-ins. @return array<string, mixed> */
+    private function activity(): array
+    {
+        try {
+            $rows = SystemLog::query()->with('user:id,name,role')
+                ->whereRaw('lower(action) not in (?, ?, ?, ?)', ['user login', 'user logout', 'login', 'logout'])
+                ->latest('id')->take(8)->get()
+                ->map(function (SystemLog $log): array {
+                    $p = SystemLogPresenter::present($log);
+
+                    return ['at' => $log->created_at, 'user' => $p['user'], 'role' => $p['role'], 'action' => $p['action'], 'detail' => $p['description']];
+                });
+        } catch (Throwable) {
+            return ['state' => 'error', 'rows' => []];
+        }
+
+        return ['state' => $rows->isEmpty() ? 'empty' : 'ok', 'rows' => $rows->all()];
+    }
+
+    // ------------------------------------------------------------------ data sources
+
+    /** @return array<int, array<string, mixed>> */
+    private function sources(array $weather, array $yield, array $risk, ?array $climate, array $farmers, CarbonImmutable $now): array
+    {
+        $rows = [];
+        if ($weather['state'] === 'ok') {
+            $rows[] = ['label' => 'Current weather', 'type' => 'LIVE', 'source' => $weather['source'].' · '.$weather['location'], 'updated' => $weather['updated_at']];
+            if ($weather['days']) {
+                $rows[] = ['label' => 'Weather outlook', 'type' => 'FORECAST', 'source' => $weather['source'].' daily forecast', 'updated' => $weather['updated_at']];
+            }
+        }
+        if ($climate) {
+            $rows[] = ['label' => 'Rainfall & temperature', 'type' => 'HISTORICAL', 'source' => 'Ambulong monthly climate records ('.$climate['year'].'); dashed lines are model forecasts', 'updated' => null];
+        }
+        if (($yield['state'] ?? null) === 'ok') {
+            $rows[] = ['label' => 'Rice yield', 'type' => 'HISTORICAL', 'source' => $yield['source'], 'updated' => null];
+        }
+        if (($farmers['state'] ?? null) === 'ok') {
+            $rows[] = ['label' => 'Farmer profiles', 'type' => 'RECORDED', 'source' => 'iClimate database', 'updated' => $now];
+        }
+        if (($risk['state'] ?? null) === 'ok') {
+            $rows[] = ['label' => 'Farm risk', 'type' => 'CALCULATED', 'source' => 'Calculated by iClimate from weather, yield and barangay exposure', 'updated' => $risk['computed_at']];
+        }
+
+        return $rows;
+    }
+}

@@ -13,7 +13,25 @@ use Illuminate\View\View;
 
 class CalendarController extends Controller
 {
+    /**
+     * Private to the person (advisories for their barangay, their own schedules) and reused for a minute
+     * per month shown; advisory, post and schedule changes rebuild it. Five database round trips to build.
+     */
     public function index(Request $request): View
+    {
+        return view('calendar.index', \App\Support\PageCache::forUser(
+            (int) $request->user()->id,
+            'calendar',
+            60,
+            fn (): array => $this->calendarData($request),
+            \App\Support\PageCache::queryVary($request, ['month', 'year']) + ['day' => now()->toDateString()],
+        ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function calendarData(Request $request): array
     {
         $month = max(1, min(12, (int) $request->integer('month', now()->month)));
         $year = (int) $request->integer('year', now()->year);
@@ -42,7 +60,7 @@ class CalendarController extends Controller
             ->orderBy('event_date')
             ->get();
 
-        $plantingScheduleFeatureReady = Schema::hasTable('farmer_planting_schedules');
+        $plantingScheduleFeatureReady = \App\Support\SchemaCache::hasTable('farmer_planting_schedules');
         $schedules = $plantingScheduleFeatureReady
             ? FarmerPlantingSchedule::query()
                 ->with('farmer:id,name')
@@ -127,7 +145,7 @@ class CalendarController extends Controller
         $previous = $current->copy()->subMonth();
         $next = $current->copy()->addMonth();
 
-        return view('calendar.index', [
+        return [
             'current' => $current,
             'today' => $today,
             'weeks' => $weeks,
@@ -141,7 +159,7 @@ class CalendarController extends Controller
                 ? $user->plantingSchedules()->latest('planting_date')->get()
                 : collect(),
             'plantingScheduleFeatureReady' => $plantingScheduleFeatureReady,
-        ]);
+        ];
     }
 
     private function advisoryCalendarEvent(PlantingAdvisory $advisory): array

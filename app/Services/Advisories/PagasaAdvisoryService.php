@@ -31,7 +31,10 @@ class PagasaAdvisoryService
             $summary['sources_checked']++;
 
             try {
+                // Retry brief network/DNS hiccups (cURL error 6 was failing whole runs); HTTP
+                // error statuses are still handled below instead of throwing.
                 $response = Http::timeout((int) config('services.pagasa.timeout', 12))
+                    ->retry(2, 800, throw: false)
                     ->accept('text/html')
                     ->get($source['url']);
 
@@ -338,7 +341,7 @@ class PagasaAdvisoryService
     private function generationKey(array $source, string $excerpt): string
     {
         $period = $source['horizon'] === 'weekly'
-            ? now()->startOfDay()->toDateTimeString()
+            ? \App\Support\BusinessClock::today()->toDateTimeString()
             : now()->startOfHour()->toDateTimeString();
 
         return hash('sha256', implode('|', [

@@ -66,10 +66,17 @@ class FarmerDashboardWeatherService
      */
     public function current(bool $force = false, ?float $budgetSeconds = null): array
     {
+        // Who is waiting decides how patient this call may be (see InteractiveRequest). An explicit
+        // budget (the chatbot) is always strict and may use a recent stored reading.
+        $mode = $budgetSeconds !== null
+            ? ['budget' => $budgetSeconds, 'stale_ok' => true]
+            : \App\Support\InteractiveRequest::weatherMode();
+        $budgetSeconds = $mode['budget'];
         $this->budget = $budgetSeconds;
         $cacheKey = $this->cacheKey();
         $lastSuccessfulKey = $cacheKey.'.last_successful';
-        $ttl = now($this->timezone())->addMinutes(max(1, (int) config('services.weather.cache_minutes', 5)));
+        // Never cached longer than the dashboard's own limit, whatever WEATHER_CACHE_MINUTES says.
+        $ttl = now($this->timezone())->addMinutes(max(1, min((int) config('services.weather.cache_minutes', 5), (int) config('farmer_dashboard.weather.cache_max_minutes', 30))));
 
         // One cache read (not has() then get()): on a database cache that is one query instead of two.
         $cached = $force ? null : Cache::get($cacheKey);
@@ -82,7 +89,7 @@ class FarmerDashboardWeatherService
 
         // An interactive caller (the chatbot) is happy with a snapshot a few minutes old: the
         // dashboard's 1-minute cache would otherwise send most chat questions out to the provider.
-        if (! $force && $budgetSeconds !== null) {
+        if (! $force && $mode['stale_ok']) {
             $recent = Cache::get($lastSuccessfulKey);
 
             if (is_array($recent) && $this->youngerThan($recent, (int) config('ai.weather_max_age_minutes', 10))) {
@@ -121,6 +128,20 @@ class FarmerDashboardWeatherService
         }
     }
 
+    /**
+     * The last stored reading (fresh or not), or null if none exists. Never calls a provider; used where a
+     * page must render without any outside call, such as the login screen.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function stored(): ?array
+    {
+        $key = $this->cacheKey();
+        $snapshot = Cache::get($key) ?? Cache::get($key.'.last_successful');
+
+        return is_array($snapshot) ? $snapshot : null;
+    }
+
     /** Whether a stored snapshot was fetched by this server within the last $minutes minutes. */
     private function youngerThan(array $snapshot, int $minutes): bool
     {
@@ -145,6 +166,7 @@ class FarmerDashboardWeatherService
         if (($current['humidity'] ?? 0) >= 85) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'humidity',
                 'message' => 'High humidity may increase fungal disease risk. Monitor rice crops closely for symptoms.',
             ];
         }
@@ -152,6 +174,7 @@ class FarmerDashboardWeatherService
         if (($today['precipitation_probability'] ?? 0) >= 70 || ($today['rainfall'] ?? 0) >= 10) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'rain',
                 'message' => 'Rain is likely today. Consider delaying fertilizer or pesticide application when possible.',
             ];
         }
@@ -159,19 +182,24 @@ class FarmerDashboardWeatherService
         if (($current['wind_speed'] ?? 0) >= 20) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'wind',
                 'message' => 'Wind conditions may reduce spraying effectiveness. Consider delaying chemical spraying.',
             ];
         }
 
-        if (($current['temperature'] ?? 0) >= 34 && ($today['rainfall'] ?? 0) < 2) {
+        // Both readings must exist: a missing rainfall is not "0 mm, dry".
+        if (is_numeric($current['temperature'] ?? null) && is_numeric($today['rainfall'] ?? null)
+            && (float) $current['temperature'] >= 34 && (float) $today['rainfall'] < 2) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'heat',
                 'message' => 'Hot and dry conditions may increase water demand. Check soil moisture before irrigation.',
             ];
         }
 
         return [
             'title' => 'iClimate Weather Guidance',
+            'topic' => 'normal',
             'message' => 'Weather conditions are within normal monitoring range. Keep checking advisories before field work.',
         ];
     }
@@ -425,6 +453,8 @@ class FarmerDashboardWeatherService
                 'rainfall_mm' => $this->number($today['totalprecip_mm'] ?? null),
                 'precipitation_probability' => $this->number($today['daily_chance_of_rain'] ?? null),
                 'chance_of_rain_percent' => $this->number($today['daily_chance_of_rain'] ?? null),
+                'wind_speed_max' => $this->number($today['maxwind_kph'] ?? null),
+                'humidity_avg' => $this->number($today['avghumidity'] ?? null),
             ],
             'forecast' => $this->weatherApiForecast($forecastDays),
             'icon' => $mapped['icon'],
@@ -554,6 +584,8 @@ class FarmerDashboardWeatherService
                 'temperature_min' => $this->number($dayPayload['mintemp_c'] ?? null),
                 'rainfall' => $this->number($dayPayload['totalprecip_mm'] ?? null),
                 'precipitation_probability' => $this->number($dayPayload['daily_chance_of_rain'] ?? null),
+                'wind_speed_max' => $this->number($dayPayload['maxwind_kph'] ?? null),
+                'humidity_avg' => $this->number($dayPayload['avghumidity'] ?? null),
             ];
         }
 
@@ -579,6 +611,8 @@ class FarmerDashboardWeatherService
                 'temperature_min' => $this->number($daily['temperature_2m_min'][$index] ?? null),
                 'rainfall' => $this->number($daily['precipitation_sum'][$index] ?? $daily['rain_sum'][$index] ?? null),
                 'precipitation_probability' => $this->number($daily['precipitation_probability_max'][$index] ?? null),
+                'wind_speed_max' => $this->number($daily['wind_speed_10m_max'][$index] ?? null),
+                'feels_like_max' => $this->number($daily['apparent_temperature_max'][$index] ?? null),
             ];
         }
 
@@ -600,8 +634,8 @@ class FarmerDashboardWeatherService
             ],
             [
                 'location_name' => 'Lian, Batangas',
-                'latitude' => (float) config('services.weather.latitude', 14.033),
-                'longitude' => (float) config('services.weather.longitude', 120.650),
+                'latitude' => (float) config('services.weather.latitude', \App\Support\LianLocation::LATITUDE),
+                'longitude' => (float) config('services.weather.longitude', \App\Support\LianLocation::LONGITUDE),
                 'weather_code' => $weather['current']['weather_code'] ?? null,
                 'temperature' => $weather['current']['temperature'] ?? null,
                 'temperature_max' => $weather['today']['temperature_max'] ?? null,
@@ -611,7 +645,8 @@ class FarmerDashboardWeatherService
                 'precipitation_probability' => $weather['today']['precipitation_probability'] ?? null,
                 'wind_speed' => $weather['current']['wind_speed'] ?? null,
                 'raw_response' => $payload,
-                'fetched_at' => $weather['fetched_at'] ?? now($this->timezone()),
+                // Stored timestamps are UTC; a Manila-zoned value would be saved 8 hours ahead and look "in the future".
+                'fetched_at' => Carbon::parse($weather['fetched_at'] ?? now())->utc(),
             ],
         );
     }
@@ -737,7 +772,8 @@ class FarmerDashboardWeatherService
 
     private function mapWeatherApiCondition(string $condition, ?int $code, bool $isDay): array
     {
-        $text = strtolower($condition);
+        // Provider wording such as "Moderate Drizzle" is normalised to rain wording (keeping intensity) before matching.
+        $text = strtolower(\App\Support\WeatherConditionLabel::display($condition));
 
         return match (true) {
             str_contains($text, 'thunder') => ['condition' => 'Thunderstorm', 'icon' => '/images/weather/thunderstorm.svg'],
@@ -804,8 +840,8 @@ class FarmerDashboardWeatherService
             'name' => 'Lian',
             'province' => 'Batangas',
             'country' => 'Philippines',
-            'latitude' => (float) config('services.weather.latitude', 14.033),
-            'longitude' => (float) config('services.weather.longitude', 120.650),
+            'latitude' => (float) config('services.weather.latitude', \App\Support\LianLocation::LATITUDE),
+            'longitude' => (float) config('services.weather.longitude', \App\Support\LianLocation::LONGITUDE),
             'timezone' => $this->timezone(),
         ];
     }

@@ -24,6 +24,12 @@ class PythonService
         $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
         $timeout = (int) config('services.farming_ai.timeout', 5);
 
+        // Inside a chat request the wait is capped by what is left of the response budget.
+        $timings = app(\App\Services\AI\AiTimings::class);
+        if ($timings->isActive()) {
+            $timeout = max(1, min($timeout, (int) floor($timings->remainingSeconds() - 1)));
+        }
+
         self::recordAttempt();
 
         try {
@@ -55,22 +61,22 @@ class PythonService
 
     public static function attemptsToday(): int
     {
-        return (int) Cache::get('metrics:python-service:attempts:'.today()->toDateString(), 0);
+        return (int) Cache::get('metrics:python-service:attempts:'.\App\Support\BusinessClock::today()->toDateString(), 0);
     }
 
     public static function failuresToday(): int
     {
-        return (int) Cache::get('metrics:python-service:failures:'.today()->toDateString(), 0);
+        return (int) Cache::get('metrics:python-service:failures:'.\App\Support\BusinessClock::today()->toDateString(), 0);
     }
 
     private static function recordAttempt(): void
     {
-        self::bumpCounter('metrics:python-service:attempts:'.today()->toDateString());
+        self::bumpCounter('metrics:python-service:attempts:'.\App\Support\BusinessClock::today()->toDateString());
     }
 
     private static function recordFailure(): void
     {
-        self::bumpCounter('metrics:python-service:failures:'.today()->toDateString());
+        self::bumpCounter('metrics:python-service:failures:'.\App\Support\BusinessClock::today()->toDateString());
     }
 
     private static function bumpCounter(string $key): void

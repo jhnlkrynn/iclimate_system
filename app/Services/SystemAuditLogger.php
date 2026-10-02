@@ -13,7 +13,7 @@ class SystemAuditLogger
 {
     public static function record(string $action, ?Request $request = null, array $context = [], ?User $user = null): void
     {
-        if (! Schema::hasTable('system_logs')) {
+        if (! \App\Support\SchemaCache::hasTable('system_logs')) {
             return;
         }
 

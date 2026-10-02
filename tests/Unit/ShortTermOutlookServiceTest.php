@@ -113,7 +113,7 @@ class ShortTermOutlookServiceTest extends TestCase
         $this->assertStringContainsString('not an independent weekly prediction', $outlook['disclaimer']);
     }
 
-    public function test_missing_previous_values_fall_back_to_the_current_value_instead_of_erroring(): void
+    public function test_missing_previous_values_produce_no_outlook_instead_of_copying_the_current_value(): void
     {
         $service = new ShortTermOutlookService;
 
@@ -122,11 +122,7 @@ class ShortTermOutlookServiceTest extends TestCase
             'temp_avg' => 30.0,
         ], CarbonImmutable::parse('2026-07-01'));
 
-        $this->assertSame('Stable', $outlook['rainfall_trend']['direction']);
-
-        foreach ($outlook['weeks'] as $week) {
-            $this->assertSame(200.0, $week['rainfall']);
-            $this->assertSame(30.0, $week['temperature']);
-        }
+        // A missing "last month" value is never replaced by this month's value: no outlook at all.
+        $this->assertNull($outlook);
     }
 }

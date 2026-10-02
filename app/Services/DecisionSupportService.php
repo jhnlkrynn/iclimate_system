@@ -2,25 +2,32 @@
 
 namespace App\Services;
 
+use App\Contracts\RiskMethodology;
 use App\Services\Risk\AgriculturalRiskScorer;
 
 class DecisionSupportService
 {
     public function __construct(
-        private readonly AgriculturalRiskScorer $riskScorer,
+        private readonly RiskMethodology $riskScorer,
     ) {}
 
     public function evaluate(array $input): array
     {
-        $rainfall = (float) ($input['rainfall'] ?? 0);
-        $windSpeed = (float) ($input['wind_speed'] ?? 0);
-        $humidity = (float) ($input['humidity'] ?? 0);
-        $temperature = (float) ($input['temperature'] ?? $input['temp_avg'] ?? 0);
+        $rainfall = $this->numberOrNull($input['rainfall'] ?? null);
+        $temperature = $this->numberOrNull($input['temperature'] ?? $input['temp_avg'] ?? null);
+        $windSpeed = $this->numberOrNull($input['wind_speed'] ?? null);
+        $humidity = $this->numberOrNull($input['humidity'] ?? null);
         $yield = $input['predicted_yield'] ?? null;
         $yield = $yield !== null ? (float) $yield : null;
         $season = (string) ($input['season'] ?? 'Wet');
         $farmType = (string) ($input['farm_type'] ?? 'Rainfed');
         $barangay = (string) ($input['barangay'] ?? '');
+
+        // Rainfall and temperature drive every rule and the risk score. Without
+        // them the advice would be computed from an artificial 0 mm / 0 °C.
+        if ($rainfall === null || $temperature === null) {
+            return $this->insufficientData($barangay, $farmType, $yield);
+        }
 
         $planting = $this->plantingAdvisory($rainfall, $season, $yield);
         $irrigation = $this->irrigationRecommendation($farmType, $rainfall);
@@ -46,8 +53,8 @@ class DecisionSupportService
             'farm_type' => $farmType,
             'weather' => [
                 'rainfall' => round($rainfall, 2),
-                'wind_speed' => round($windSpeed, 2),
-                'humidity' => round($humidity, 2),
+                'wind_speed' => $windSpeed !== null ? round($windSpeed, 2) : null,
+                'humidity' => $humidity !== null ? round($humidity, 2) : null,
                 'summary' => $this->weatherSummary($rainfall, $windSpeed, $humidity),
                 'warnings' => $weatherWarnings,
             ],
@@ -61,6 +68,43 @@ class DecisionSupportService
             'confidence' => $confidence,
             'notifications' => $notifications,
             'overall_recommendation' => $this->overallRecommendation($barangay, $planting, $irrigation, $weatherWarnings, $yieldAdvisory, $risk, $score),
+        ];
+    }
+
+    private function numberOrNull(mixed $value): ?float
+    {
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    /** Same shape as evaluate(), but with no advice or score: the inputs needed to produce them are missing. */
+    private function insufficientData(string $barangay, string $farmType, ?float $yield): array
+    {
+        $message = 'Not enough verified weather data to give this advice yet.';
+        $yieldAdvisory = $this->yieldAdvisory($yield);
+
+        return [
+            'barangay' => $barangay,
+            'farm_type' => $farmType,
+            'insufficient_data' => true,
+            'weather' => ['rainfall' => null, 'wind_speed' => null, 'humidity' => null, 'summary' => $message, 'warnings' => []],
+            'planting' => ['module' => 'Planting Advisory', 'recommendation' => $message, 'items' => []],
+            'irrigation' => ['module' => 'Irrigation Recommendation', 'recommendation' => $message],
+            'yield' => $yieldAdvisory,
+            'risk' => ['score' => null, 'level' => 'Unknown', 'label' => 'Not assessed', 'color' => 'gray', 'components' => []],
+            'risk_breakdown' => ['factors' => [], 'caveat' => AgriculturalRiskScorer::METHODOLOGY_CAVEAT],
+            'score' => ['value' => null, 'interpretation' => 'Not enough data'],
+            'stress_factors' => [],
+            'confidence' => ['value' => null, 'label' => 'No confidence rating', 'note' => $message],
+            'notifications' => [],
+            'overall_recommendation' => [
+                'barangay' => $barangay,
+                'weather' => $message,
+                'yield' => $yield !== null ? number_format($yield, 2).' tons/hectare' : 'No yield prediction yet.',
+                'planting' => $message,
+                'irrigation' => $message,
+                'risk_level' => 'Not assessed',
+                'score' => 'Not enough data',
+            ],
         ];
     }
 
@@ -121,7 +165,7 @@ class DecisionSupportService
         ];
     }
 
-    private function weatherWarnings(float $rainfall, float $windSpeed, float $humidity): array
+    private function weatherWarnings(float $rainfall, ?float $windSpeed, ?float $humidity): array
     {
         $warnings = [];
 
@@ -133,11 +177,11 @@ class DecisionSupportService
             $warnings[] = 'Drought warning.';
         }
 
-        if ($windSpeed > 20) {
+        if ($windSpeed !== null && $windSpeed > 20) {
             $warnings[] = 'Strong wind advisory.';
         }
 
-        if ($humidity > 90) {
+        if ($humidity !== null && $humidity > 90) {
             $warnings[] = 'High humidity alert.';
         }
 
@@ -171,7 +215,7 @@ class DecisionSupportService
         ];
     }
 
-    private function stressFactors(float $rainfall, float $windSpeed, float $humidity, ?float $yield, string $season, string $farmType): array
+    private function stressFactors(float $rainfall, ?float $windSpeed, ?float $humidity, ?float $yield, string $season, string $farmType): array
     {
         $factors = [];
 
@@ -201,7 +245,7 @@ class DecisionSupportService
             ];
         }
 
-        if ($windSpeed > 20) {
+        if ($windSpeed !== null && $windSpeed > 20) {
             $factors[] = [
                 'label' => 'Strong wind',
                 'severity' => 'Moderate',
@@ -209,7 +253,7 @@ class DecisionSupportService
             ];
         }
 
-        if ($humidity > 90) {
+        if ($humidity !== null && $humidity > 90) {
             $factors[] = [
                 'label' => 'Disease pressure',
                 'severity' => 'Moderate',
@@ -337,7 +381,7 @@ class DecisionSupportService
         return array_values(array_unique($notifications));
     }
 
-    private function weatherSummary(float $rainfall, float $windSpeed, float $humidity): string
+    private function weatherSummary(float $rainfall, ?float $windSpeed, ?float $humidity): string
     {
         if ($rainfall > 300) {
             return 'Heavy rainfall is expected.';
@@ -347,11 +391,11 @@ class DecisionSupportService
             return 'Rainfall may be limited.';
         }
 
-        if ($windSpeed > 20) {
+        if ($windSpeed !== null && $windSpeed > 20) {
             return 'Wind conditions need monitoring.';
         }
 
-        if ($humidity > 90) {
+        if ($humidity !== null && $humidity > 90) {
             return 'Humidity is high and disease pressure may increase.';
         }
 

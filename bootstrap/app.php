@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ReadPreparedPredictionsOnly;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackUserActivity;
@@ -21,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SecurityHeaders::class,
             TrackUserActivity::class,
+            // No page request trains or rebuilds a model; it reads what the scheduled jobs prepared.
+            ReadPreparedPredictionsOnly::class,
+        ]);
+
+        $middleware->api(append: [
+            ReadPreparedPredictionsOnly::class,
         ]);
 
         $middleware->alias([

@@ -39,19 +39,19 @@ return [
         'enabled' => env('WEATHER_API_ENABLED', false),
         'timeout' => env('WEATHER_API_TIMEOUT', 8),
         'location_name' => env('WEATHER_API_LOCATION_NAME', 'Lian, Batangas'),
-        'latitude' => env('WEATHER_API_LATITUDE', 14.04),
-        'longitude' => env('WEATHER_API_LONGITUDE', 120.65),
-        'timezone' => env('WEATHER_API_TIMEZONE', env('APP_TIMEZONE', 'Asia/Manila')),
+        'latitude' => env('WEATHER_API_LATITUDE', \App\Support\LianLocation::LATITUDE),
+        'longitude' => env('WEATHER_API_LONGITUDE', \App\Support\LianLocation::LONGITUDE),
+        'timezone' => env('WEATHER_API_TIMEZONE', \App\Support\LianLocation::TIMEZONE),
         'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
         'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 45),
         'realtime' => env('WEATHER_API_REALTIME', true),
     ],
 
     'weather' => [
-        'provider' => env('WEATHER_PROVIDER', 'weatherapi'),
-        'latitude' => env('ICLIMATE_WEATHER_LAT', env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', 14.033))),
-        'longitude' => env('ICLIMATE_WEATHER_LON', env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', 120.650))),
-        'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', 'Asia/Manila')),
+        'provider' => env('WEATHER_PROVIDER', 'open_meteo'),
+        'latitude' => env('ICLIMATE_WEATHER_LAT', env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE))),
+        'longitude' => env('ICLIMATE_WEATHER_LON', env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', \App\Support\LianLocation::LONGITUDE))),
+        'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', \App\Support\LianLocation::TIMEZONE)),
         'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
         'cache_minutes' => env('WEATHER_CACHE_MINUTES', 1),
         'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
@@ -67,9 +67,9 @@ return [
 
     'open_meteo' => [
         'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
-        'latitude' => env('ICLIMATE_LATITUDE', 14.033),
-        'longitude' => env('ICLIMATE_LONGITUDE', 120.650),
-        'timezone' => env('ICLIMATE_TIMEZONE', 'Asia/Manila'),
+        'latitude' => env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE),
+        'longitude' => env('ICLIMATE_LONGITUDE', \App\Support\LianLocation::LONGITUDE),
+        'timezone' => env('ICLIMATE_TIMEZONE', \App\Support\LianLocation::TIMEZONE),
         'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),
         'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
@@ -119,7 +119,9 @@ return [
     // farming_ai.cache_minutes above, which is for rice-yield AnalyticsRun
     // results, not monthly weather.
     'prediction' => [
-        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 360),
+        // Prepared monthly forecasts are refreshed daily (02:00), so they stay valid for a day plus a
+        // margin. Anything older is still served to chat as "latest available" while a refresh runs.
+        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 1560),
     ],
 
     'groq' => [

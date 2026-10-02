@@ -6,6 +6,8 @@ use App\Jobs\GenerateMonthlyWeatherForecast;
 use App\Models\AnalyticsRun;
 use App\Models\MonthlyWeatherPrediction;
 use App\Models\RiceYieldModelComparison;
+use App\Exceptions\PredictionNotReady;
+use App\Services\AI\AiTimings;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -57,7 +59,7 @@ class PredictionOrchestrator
         $month = $month->startOfMonth();
         $cacheKey = $this->cacheKey($month);
 
-        $cached = Cache::get($cacheKey);
+        $cached = app(AiTimings::class)->time('cache', fn () => Cache::get($cacheKey));
         if (is_array($cached)) {
             return $cached;
         }
@@ -82,15 +84,63 @@ class PredictionOrchestrator
     public function monthlyWeatherForecast(CarbonImmutable $month, bool $forceRefresh = false): array
     {
         $month = $month->startOfMonth();
+        $readOnly = app(PredictionReadMode::class)->active();
 
-        if (! $forceRefresh) {
-            $existing = $this->cachedMonthlyWeatherForecast($month);
+        // A chat request only reads: "force" means nothing there, and the model is never trained.
+        if (! $forceRefresh || $readOnly) {
+            $existing = app(AiTimings::class)->time('prediction_lookup', fn () => $this->cachedMonthlyWeatherForecast($month));
             if ($existing !== null) {
                 return $existing;
             }
         }
 
+        if ($readOnly) {
+            return $this->preparedOnly($month);
+        }
+
         return $this->generateAndPersist($month);
+    }
+
+    /**
+     * Whether a fresh forecast for $month is already prepared (read-only).
+     */
+    public function hasPreparedMonthlyWeatherForecast(CarbonImmutable $month): bool
+    {
+        return $this->cachedMonthlyWeatherForecast($month) !== null;
+    }
+
+    /** Whether a background generation for $month has been queued and not finished yet. */
+    public function isGenerationQueued(CarbonImmutable $month): bool
+    {
+        return Cache::has($this->dispatchLockKey($month->startOfMonth()));
+    }
+
+    /**
+     * What a chat request gets when nothing fresh is prepared: the latest
+     * valid row for the month even if past its freshness window (the forest is
+     * deterministic for a dataset, so it is the same numbers, just older),
+     * with a refresh queued behind it. If there is no row at all, a refresh is
+     * queued and PredictionNotReady is thrown; the caller answers "being
+     * refreshed". Nothing is trained here.
+     *
+     * @throws PredictionNotReady
+     */
+    private function preparedOnly(CarbonImmutable $month): array
+    {
+        $this->ensureMonthlyWeatherForecastQueued($month);
+
+        $row = MonthlyWeatherPrediction::query()
+            ->where('prediction_year', $month->year)
+            ->where('prediction_month', $month->month)
+            ->where('weather_model', MonthlyWeatherRandomForest::MODEL_VERSION)
+            ->where('status', MonthlyWeatherPrediction::STATUS_READY)
+            ->first();
+
+        if (! $row) {
+            throw new PredictionNotReady();
+        }
+
+        return [...$this->payloadFromRow($row), 'stale' => true, 'refresh_queued' => true];
     }
 
     /**
@@ -130,6 +180,11 @@ class PredictionOrchestrator
     public function generateAndPersist(CarbonImmutable $month): array
     {
         $month = $month->startOfMonth();
+
+        // Defense in depth: no code path may train the forest while a chat request is being answered.
+        if (app(PredictionReadMode::class)->active()) {
+            throw new PredictionNotReady();
+        }
 
         $result = $this->weatherModel->predict($month);
         $row = $this->persistResult($month, $result);

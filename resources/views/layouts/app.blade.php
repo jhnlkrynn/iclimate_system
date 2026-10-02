@@ -7,8 +7,8 @@
         <title>{{ config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-        @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/js/app.js'])
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+        @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/css/glass-system.css', 'resources/js/app.js'])
         <style>
             :root {
                 --iclimate-primary: #123F32;
@@ -188,7 +188,7 @@
             .sidebar-link.active .sidebar-link-arrow { opacity: .9; transform: translateX(0); color: var(--iclimate-accent-light); }
             .sidebar-section { color: rgba(255,255,255,.72); font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 700; text-transform: none; letter-spacing: 0; margin: 1.25rem .75rem .45rem; }
             .sidebar-ai-card { width: calc(100% - 2rem); margin: .75rem 1rem 1rem; padding: .8rem .85rem; border-radius: 10px; background: rgba(143,175,154,.14); backdrop-filter: blur(10px); border: 1px solid rgba(143,175,154,.32); display: flex; align-items: center; gap: .75rem; cursor: pointer; transition: background .15s ease, border-color .15s ease; color: inherit; text-align: left; font: inherit; flex-shrink: 0; }
-            .sidebar-ai-card:hover { background: rgba(143,175,154,.22); border-color: rgba(143,175,154,.48); }
+            .sidebar-ai-card:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.28); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
             .sidebar-ai-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(143,175,154,.16); display: flex; align-items: center; justify-content: center; color: var(--iclimate-accent-light); flex-shrink: 0; }
             .sidebar-ai-title { color: #fff; font-weight: 700; font-size: .96rem; }
             .sidebar-ai-sub { color: rgba(255,255,255,.8); font-size: .86rem; }
@@ -213,7 +213,7 @@
             .btn:active { transform: translateY(0); }
             .btn:focus-visible, .form-control:focus, .form-select:focus, .form-check-input:focus { outline: 3px solid rgba(82,183,136,.24); outline-offset: 2px; }
             .btn-primary { --bs-btn-bg: var(--iclimate-primary-medium); --bs-btn-border-color: var(--iclimate-primary-medium); --bs-btn-color: #fff; --bs-btn-hover-bg: var(--iclimate-primary); --bs-btn-hover-border-color: var(--iclimate-primary); --bs-btn-hover-color: #fff; box-shadow: none; }
-            .btn-outline-primary { --bs-btn-color: var(--ic-green-700); --bs-btn-border-color: var(--ic-green-700); --bs-btn-hover-bg: var(--ic-green-700); --bs-btn-hover-border-color: var(--ic-green-700); --bs-btn-hover-color: #fff; }
+            .btn-outline-primary { --bs-btn-color: var(--ic-green-700); --bs-btn-border-color: var(--ic-green-700); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: var(--ic-green-700); --bs-btn-hover-color: var(--ic-green-700); }
             .page-hero .btn-outline-light { --bs-btn-color: #fff; --bs-btn-border-color: #fff; --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: #fff; --bs-btn-hover-color: var(--ic-ink); }
             .btn-light { --bs-btn-bg: var(--iclimate-surface); --bs-btn-border-color: var(--iclimate-border); --bs-btn-color: var(--iclimate-text); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: var(--iclimate-accent); --bs-btn-hover-color: var(--iclimate-primary); --bs-btn-active-bg: #fff; --bs-btn-active-border-color: var(--iclimate-accent); box-shadow: none; }
             .btn-warning { --bs-btn-bg: var(--iclimate-warning); --bs-btn-border-color: var(--iclimate-warning); --bs-btn-color: #fff; --bs-btn-hover-bg: #a87420; --bs-btn-hover-border-color: #a87420; --bs-btn-hover-color: #fff; }
@@ -315,6 +315,15 @@
             .sidebar-fixed .sidebar-ai-card:active {
                 transform: none;
             }
+            /* Desktop sidebar: menu groups and their links stretch to use the free height. */
+            @media (min-width: 992px) {
+                .sidebar-fixed .sidebar-nav-scroll { display: flex; flex-direction: column; }
+                .sidebar-fixed .sidebar-group { flex: 1 0 auto; display: flex; flex-direction: column; }
+                .sidebar-fixed .sidebar-stack { flex: 1 1 auto; display: flex !important; flex-direction: column; gap: .3rem !important; }
+                .sidebar-fixed .sidebar-link { flex: 1 1 0; min-height: 46px; max-height: 80px; font-size: 1.02rem; align-items: center; padding-top: .55rem; padding-bottom: .55rem; }
+                .sidebar-fixed .sidebar-link .sidebar-icon { transform: scale(1.15); }
+                .sidebar-fixed .sidebar-link .sidebar-icon svg { width: 20px; height: 20px; }
+            }
             .form-control:focus, .form-select:focus { transform: translateY(-1px); }
             .loading-overlay.show .card { animation: icSoftRise var(--ic-motion-med) both; }
             .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover, .ic-action-close:hover { transform: translateY(-1px); }
@@ -362,13 +371,13 @@
             }
         </style>
     </head>
-    <body>
+    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard')])>
         @include('layouts.sidebar')
         <div class="app-main">
             @include('layouts.navigation')
             <main class="page-shell">
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" data-auto-dismiss="5000">
                         <strong>Success.</strong> {{ session('success') }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -393,6 +402,15 @@
             </main>
         </div>
         <x-flash-toast />
+        <script>
+            // A success message is good news, not something to keep on screen: it closes itself after 5 seconds.
+            document.querySelectorAll('[data-auto-dismiss]').forEach((el) => {
+                setTimeout(() => {
+                    const close = el.querySelector('.btn-close');
+                    close ? close.click() : el.remove();
+                }, Number(el.dataset.autoDismiss) || 5000);
+            });
+        </script>
         <div id="icLogoutConfirm" class="ic-logout-confirm" role="dialog" aria-modal="true" aria-labelledby="icLogoutTitle">
             <div class="ic-logout-card">
                 <div class="ic-logout-body">

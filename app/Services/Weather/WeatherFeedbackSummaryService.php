@@ -50,7 +50,7 @@ class WeatherFeedbackSummaryService
      */
     public function validatedObservations(array $filters = []): Collection
     {
-        if (! Schema::hasTable('weather_forecast_feedback')) {
+        if (! \App\Support\SchemaCache::hasTable('weather_forecast_feedback')) {
             return collect();
         }
 

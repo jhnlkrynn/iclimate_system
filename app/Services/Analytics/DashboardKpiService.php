@@ -15,6 +15,7 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\PythonService;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Support\DashboardData;
 use App\Support\LianBarangays;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -36,7 +37,10 @@ use Illuminate\Support\Facades\Schema;
  */
 class DashboardKpiService
 {
-    private const CACHE_SECONDS = 60;
+    // Long TTL is safe: DashboardData::bump() invalidates on any data write.
+    private const CACHE_SECONDS = 300;
+
+    public function __construct(private readonly DashboardData $data) {}
 
     /* ------------------------------------------------------------------
      | Shared rice-yield math
@@ -52,10 +56,9 @@ class DashboardKpiService
      */
     public function yieldByYear(?string $barangay = null): Collection
     {
-        return RiceProduction::query()
-            ->when($barangay, fn ($query) => $query->where('barangay', $barangay))
+        return $this->data->riceRows()
+            ->when($barangay, fn (Collection $rows) => $rows->where('barangay', $barangay))
             ->whereNotNull('year')
-            ->get(['year', 'barangay', 'area_hectares', 'total_production'])
             ->groupBy('year')
             ->map(function (Collection $rows, $year): array {
                 $area = (float) $rows->sum('area_hectares');
@@ -120,7 +123,7 @@ class DashboardKpiService
 
     private function weightedFor(int $year, Collection $barangays): array
     {
-        $rows = RiceProduction::query()->where('year', $year)->whereIn('barangay', $barangays)->get();
+        $rows = $this->data->riceRows()->where('year', $year)->whereIn('barangay', $barangays->all());
         $area = (float) $rows->sum('area_hectares');
 
         return [
@@ -136,7 +139,7 @@ class DashboardKpiService
     public function farmer(User $user, ?string $barangay, ?array $barangayRisk): array
     {
         $cached = Cache::remember(
-            'dashboard:kpi:farmer:'.$user->id.':'.md5((string) $barangay),
+            'dashboard:kpi:farmer:v'.DashboardData::version().':'.$user->id.':'.md5((string) $barangay),
             now()->addSeconds(self::CACHE_SECONDS),
             fn (): array => $this->farmerFigures($user, $barangay)
         );
@@ -197,7 +200,7 @@ class DashboardKpiService
         // Advisories currently active for this farmer's barangay.
         $activeAdvisories = PlantingAdvisory::query()->active()->forBarangay($barangay);
         $activeAdvisoryCount = (clone $activeAdvisories)->count();
-        $rated = Schema::hasTable('advisory_feedback')
+        $rated = \App\Support\SchemaCache::hasTable('advisory_feedback')
             ? AdvisoryFeedback::query()
                 ->where('user_id', $user->id)
                 ->whereIn('planting_advisory_id', (clone $activeAdvisories)->select('id'))
@@ -219,12 +222,12 @@ class DashboardKpiService
         ];
 
         // Farmer's own planting schedules.
-        if (Schema::hasTable('farmer_planting_schedules')) {
+        if (\App\Support\SchemaCache::hasTable('farmer_planting_schedules')) {
             $schedules = FarmerPlantingSchedule::query()->where('user_id', $user->id)->get();
             $open = $schedules->reject(fn (FarmerPlantingSchedule $s) => $s->monitoringStatus() === 'harvested');
             $nextHarvest = $open
                 ->map(fn (FarmerPlantingSchedule $s) => $s->harvestDateForPlanning())
-                ->filter(fn (?Carbon $date) => $date && $date->gte(today()))
+                ->filter(fn (?Carbon $date) => $date && $date->gte(\App\Support\BusinessClock::today()))
                 ->sort()
                 ->first();
             $kpis[] = [
@@ -233,7 +236,7 @@ class DashboardKpiService
                 'value' => number_format($open->count()),
                 'unit' => null,
                 'note' => $nextHarvest
-                    ? 'Next harvest: '.$nextHarvest->format('M j, Y').' ('.$nextHarvest->diffForHumans(today(), ['parts' => 1, 'syntax' => Carbon::DIFF_RELATIVE_TO_NOW]).')'
+                    ? 'Next harvest: '.$nextHarvest->format('M j, Y').' ('.$nextHarvest->diffForHumans(\App\Support\BusinessClock::today(), ['parts' => 1, 'syntax' => Carbon::DIFF_RELATIVE_TO_NOW]).')'
                     : ($schedules->isEmpty() ? 'No schedule added yet' : 'No upcoming harvest date'),
                 'trend' => null,
                 'status' => null,
@@ -267,7 +270,7 @@ class DashboardKpiService
 
     public function mao(): array
     {
-        return Cache::remember('dashboard:kpi:mao', now()->addSeconds(self::CACHE_SECONDS), function (): array {
+        return Cache::remember('dashboard:kpi:mao:v'.DashboardData::version(), now()->addSeconds(self::CACHE_SECONDS), function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
@@ -303,7 +306,7 @@ class DashboardKpiService
             ];
 
             // Farm risk across the 19 barangays.
-            $areas = HeatmapArea::query()->get()->unique('barangay');
+            $areas = $this->data->currentRiskRatings();
             $highRisk = $areas->whereIn('risk_level', ['High', 'Severe'])->count();
             $severe = $areas->where('risk_level', 'Severe')->count();
             $current = $areas->filter(fn (HeatmapArea $area) => $area->isCurrentlyComputed())->count();
@@ -362,7 +365,7 @@ class DashboardKpiService
             ];
 
             // Farmer feedback on advisories.
-            if (Schema::hasTable('advisory_feedback')) {
+            if (\App\Support\SchemaCache::hasTable('advisory_feedback')) {
                 $ratings = AdvisoryFeedback::query()->whereNotNull('is_helpful');
                 $ratedCount = (clone $ratings)->count();
                 $helpful = (clone $ratings)->where('is_helpful', true)->count();
@@ -408,7 +411,7 @@ class DashboardKpiService
 
     public function itExpert(): array
     {
-        return Cache::remember('dashboard:kpi:it', now()->addSeconds(self::CACHE_SECONDS), function (): array {
+        return Cache::remember('dashboard:kpi:it:v'.DashboardData::version(), now()->addSeconds(self::CACHE_SECONDS), function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
@@ -456,7 +459,7 @@ class DashboardKpiService
                 'href' => route('system-health.index'),
             ];
 
-            $current = HeatmapArea::query()->get()->unique('barangay')
+            $current = $this->data->currentRiskRatings()
                 ->filter(fn (HeatmapArea $area) => $area->isCurrentlyComputed())->count();
             $riskFailures = BarangayRiskMapService::failuresToday();
             $kpis[] = [

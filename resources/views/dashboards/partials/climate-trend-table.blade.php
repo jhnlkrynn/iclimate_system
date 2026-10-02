@@ -1,5 +1,5 @@
 @if($records->isEmpty())
-    <div class="empty-soft"><strong>No recent records</strong><div class="small mt-1" style="color: rgba(255,255,255,.5);">Climate records will appear here once logged.</div></div>
+    <div class="empty-soft"><strong>No recent records</strong><div class="small mt-1" style="color: var(--bs-secondary-color);">Climate records will appear here once logged.</div></div>
 @else
     <div class="table-responsive">
         <table class="table table-sm fc-modal-table mb-0">

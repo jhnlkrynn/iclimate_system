@@ -156,7 +156,7 @@ class WeatherFeedbackSummaryServiceTest extends TestCase
         $this->report('Malaruhatan', ['accurate' => 5, 'different' => 1]);
         $mao = User::factory()->maoPersonnel()->create();
 
-        $this->actingAs($mao)->get(route('mao.dashboard'))
+        $this->actingAs($mao)->get(route('mao.operations'))
             ->assertOk()
             ->assertSee('Farmer Weather Feedback')
             ->assertSee('Most farmers reported that the forecast matched actual conditions.')
@@ -175,7 +175,7 @@ class WeatherFeedbackSummaryServiceTest extends TestCase
         Http::fake();
         $mao = User::factory()->maoPersonnel()->create();
 
-        $this->actingAs($mao)->get(route('mao.dashboard'))
+        $this->actingAs($mao)->get(route('mao.operations'))
             ->assertOk()
             ->assertSee('Not enough farmer reports yet');
     }

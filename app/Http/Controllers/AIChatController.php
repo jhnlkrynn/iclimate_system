@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AIChat;
 use App\Services\AI\AIOrchestratorService;
+use App\Services\AI\AiTimings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,16 @@ class AIChatController extends Controller
             'save_conversation' => ['sometimes', 'boolean'],
         ]);
 
+        // A chat answer must finish well inside the browser's wait; if anything stalls, PHP stops it.
+        // Web requests only: in the console (tests, queue) set_time_limit() would stay in force for
+        // the whole process and kill unrelated work that legitimately takes longer.
+        if (! app()->runningInConsole()) {
+            @set_time_limit((int) ceil((float) config('ai.response_budget_seconds', 10)) + 8);
+        }
+
+        $timings = app(AiTimings::class);
+        $timings->begin();
+
         $result = $orchestrator->answer($request->user(), $validated['question']);
 
         // A message the language filter blocked is never stored or sent back;
@@ -36,11 +47,11 @@ class AIChatController extends Controller
         $shouldSave = (bool) ($validated['save_conversation'] ?? true);
 
         $chat = $shouldSave
-            ? AIChat::query()->create([
+            ? $timings->time('insert', fn () => AIChat::query()->create([
                 'user_id' => $request->user()->id,
                 'question' => $question,
                 ...$result,
-            ])
+            ]))
             : [
                 'id' => null,
                 'user_id' => $request->user()->id,
@@ -49,6 +60,8 @@ class AIChatController extends Controller
                 'saved' => false,
                 ...$result,
             ];
+
+        $timings->report();
 
         return response()->json([
             'chat' => $chat,

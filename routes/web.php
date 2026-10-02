@@ -87,6 +87,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ])
         ->name('farmer.dashboard.weather');
 
+    Route::get('/farmer/dashboard/live', [DashboardController::class, 'farmerLive'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
+        ->name('farmer.dashboard.live');
+
 
     Route::middleware(
         'role:'.User::ROLE_FARMER
@@ -204,6 +208,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ])
         ->name('mao.dashboard.weather');
 
+    Route::middleware('role:'.User::ROLE_MAO)->group(function () {
+        Route::get('/mao/dashboard/live', [DashboardController::class, 'maoLive'])->middleware('throttle:30,1')->name('mao.dashboard.live');
+        Route::get('/mao/operations', [DashboardController::class, 'maoOperations'])->name('mao.operations');
+    });
+
 
     /*
     |--------------------------------------------------------------------------
@@ -219,6 +228,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'role:'.User::ROLE_IT_EXPERT
         )
         ->name('admin.dashboard');
+
+    Route::middleware('role:'.User::ROLE_IT_EXPERT)->group(function () {
+        Route::get('/admin/dashboard/live', [DashboardController::class, 'adminLive'])->name('admin.dashboard.live');
+        Route::get('/admin/dashboard/activity', [DashboardController::class, 'adminActivity'])->name('admin.dashboard.activity');
+        Route::get('/admin/dashboard/recent', [DashboardController::class, 'adminRecent'])->name('admin.dashboard.recent');
+        Route::post('/admin/dashboard/retry-failed', [DashboardController::class, 'adminRetryFailed'])->name('admin.dashboard.retry-failed');
+    });
 
 
     /*

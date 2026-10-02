@@ -15,7 +15,7 @@ class AdminDashboardOrganizationChartTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_dashboard_shows_dynamic_farmer_organization_summary_and_chart_data(): void
+    public function test_admin_dashboard_no_longer_has_a_farmer_database_section(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
 
@@ -44,17 +44,20 @@ class AdminDashboardOrganizationChartTest extends TestCase
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
+        // The farmer database (area, average size, organizations) belongs on the MAO dashboard, not here.
         $response->assertOk()
-            ->assertSee('Farmers by Organization')
-            ->assertSee('Total Farmers')
-            ->assertSee('Total Organizations')
-            ->assertSee('Farmers Without Organization')
-            ->assertSee('Total Farm Area')
-            ->assertSee('7.50 ha')
-            ->assertSee('"counts":[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]', false);
+            ->assertDontSee('Farmer Database')
+            ->assertDontSee('Registered Farm Area')
+            ->assertDontSee('Average Farm Size')
+            ->assertDontSee('Farmers by Organization')
+            ->assertDontSee('"counts":[1,1,0,0,0', false);
+
+        // What IT does see is whether the records are complete: here the one farmer without an organization.
+        $response->assertViewHas('it', fn (array $it) => $it['integrity']['without_org'] === 1
+            && $it['integrity']['farmer_profiles'] === 3);
     }
 
-    public function test_registering_a_farmer_updates_the_admin_organization_chart_count(): void
+    public function test_registering_a_farmer_updates_the_integrity_counts(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
 
@@ -80,7 +83,9 @@ class AdminDashboardOrganizationChartTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('"counts":[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', false);
+            ->assertViewHas('it', fn (array $it) => $it['integrity']['farmer_profiles'] === 1
+                && $it['integrity']['farmer_accounts'] === 1
+                && $it['integrity']['without_org'] === 0);
     }
 
     /**

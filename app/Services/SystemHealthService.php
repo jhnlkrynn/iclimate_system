@@ -61,23 +61,48 @@ class SystemHealthService
 
     public function checks(): array
     {
-        return [
-            $this->guard('database', $this->databaseTitle(), fn () => $this->database()),
-            $this->guard('backup', 'Database Backup', fn () => $this->databaseBackup()),
-            $this->guard('backup-verification', 'Backup Verification', fn () => $this->backupVerification()),
-            $this->guard('queue', 'Pending queue jobs', fn () => $this->pendingJobs()),
-            $this->guard('failed-jobs', 'Failed jobs', fn () => $this->failedJobs()),
-            $this->guard('weather', 'Latest weather update', fn () => $this->latestWeather()),
-            $this->guard('prediction', 'Latest monthly prediction', fn () => $this->latestPrediction()),
-            $this->guard('analytics', 'Latest dataset processing', fn () => $this->latestAnalytics()),
-            $this->guard('python', 'Python executable', fn () => $this->python()),
-            $this->guard('weather-model', 'Weather model', fn () => $this->modelFile('weather')),
-            $this->guard('rice-yield-model', 'Rice-yield model', fn () => $this->modelFile('rice_yield')),
-            $this->guard('model-sync', 'Model sync', fn () => $this->modelSync()),
-            $this->guard('scheduler', 'Scheduler freshness', fn () => $this->scheduler()),
-        ];
+        return $this->only(array_keys($this->definitions()));
     }
 
+    /**
+     * Runs only the named checks (each still guarded), in their usual order, so a caller that needs a
+     * few does not pay for all of them.
+     *
+     * @param  array<int, string>  $keys
+     * @return array<int, array{key: string, title: string, status: string, summary: string, details: array<string, string>}>
+     */
+    public function only(array $keys): array
+    {
+        $results = [];
+
+        foreach ($this->definitions() as $key => [$title, $check]) {
+            if (in_array($key, $keys, true)) {
+                $results[] = $this->guard($key, $title(), $check);
+            }
+        }
+
+        return $results;
+    }
+
+    /** @return array<string, array{0: callable(): string, 1: callable(): array}> */
+    private function definitions(): array
+    {
+        return [
+            'database' => [fn () => $this->databaseTitle(), fn () => $this->database()],
+            'backup' => [fn () => 'Database Backup', fn () => $this->databaseBackup()],
+            'backup-verification' => [fn () => 'Backup Verification', fn () => $this->backupVerification()],
+            'queue' => [fn () => 'Pending queue jobs', fn () => $this->pendingJobs()],
+            'failed-jobs' => [fn () => 'Failed jobs', fn () => $this->failedJobs()],
+            'weather' => [fn () => 'Latest weather update', fn () => $this->latestWeather()],
+            'prediction' => [fn () => 'Latest monthly prediction', fn () => $this->latestPrediction()],
+            'analytics' => [fn () => 'Latest dataset processing', fn () => $this->latestAnalytics()],
+            'python' => [fn () => 'Python executable', fn () => $this->python()],
+            'weather-model' => [fn () => 'Weather model', fn () => $this->modelFile('weather')],
+            'rice-yield-model' => [fn () => 'Rice-yield model', fn () => $this->modelFile('rice_yield')],
+            'model-sync' => [fn () => 'Model sync', fn () => $this->modelSync()],
+            'scheduler' => [fn () => 'Scheduler freshness', fn () => $this->scheduler()],
+        ];
+    }
     /**
      * @param  array<int, array{status: string}>  $checks
      * @return array{healthy: int, needs_attention: int, unavailable: int, headline: string}
@@ -155,7 +180,7 @@ class SystemHealthService
      */
     private function backupVerification(): array
     {
-        if (! Schema::hasTable('backup_verifications')) {
+        if (! \App\Support\SchemaCache::hasTable('backup_verifications')) {
             return $this->result(self::UNAVAILABLE, 'Backup verification has not been set up yet. Run the database migrations.');
         }
 
@@ -204,13 +229,19 @@ class SystemHealthService
 
         $table = (string) config('queue.connections.database.table', 'jobs');
 
-        if (! Schema::hasTable($table)) {
+        if (! \App\Support\SchemaCache::hasTable($table)) {
             return $this->result(self::UNAVAILABLE, 'The queue table was not found. Run the database migrations.');
         }
 
-        $waiting = DB::table($table)->whereNull('reserved_at')->count();
-        $running = DB::table($table)->whereNotNull('reserved_at')->count();
-        $oldest = DB::table($table)->whereNull('reserved_at')->min('available_at');
+        // One query for all three figures (each used to be its own database round trip).
+        $queue = DB::table($table)->selectRaw(
+            'COALESCE(SUM(CASE WHEN reserved_at IS NULL THEN 1 ELSE 0 END), 0) AS waiting, '
+            .'COALESCE(SUM(CASE WHEN reserved_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS running, '
+            .'MIN(CASE WHEN reserved_at IS NULL THEN available_at END) AS oldest'
+        )->first();
+        $waiting = (int) $queue->waiting;
+        $running = (int) $queue->running;
+        $oldest = $queue->oldest;
         $oldestMinutes = $oldest === null ? 0 : max(0, (int) floor((now()->timestamp - (int) $oldest) / 60));
 
         $details = ['Waiting' => (string) $waiting, 'Running now' => (string) $running];
@@ -229,13 +260,14 @@ class SystemHealthService
     {
         $table = (string) config('queue.failed.table', 'failed_jobs');
 
-        if (! Schema::hasTable($table)) {
+        if (! \App\Support\SchemaCache::hasTable($table)) {
             return $this->result(self::UNAVAILABLE, 'The failed-jobs table was not found. Run the database migrations.');
         }
 
-        $total = DB::table($table)->count();
-        $recent = DB::table($table)->where('failed_at', '>=', now()->subDay())->count();
-        $latest = DB::table($table)->max('failed_at');
+        $failed = DB::table($table)->selectRaw('COUNT(*) AS total, COALESCE(SUM(CASE WHEN failed_at >= ? THEN 1 ELSE 0 END), 0) AS recent, MAX(failed_at) AS latest', [now()->subDay()])->first();
+        $total = (int) $failed->total;
+        $recent = (int) $failed->recent;
+        $latest = $failed->latest;
 
         if ($total === 0) {
             return $this->result(self::HEALTHY, 'No failed jobs.', ['Failed jobs' => '0']);
@@ -521,7 +553,7 @@ class SystemHealthService
      */
     private function pythonBinaryExists(): bool
     {
-        $configured = trim((string) env('PYTHON_BINARY', ''), " \t\n\r\0\x0B\"'");
+        $configured = trim((string) config('iclimate.python_binary', ''), " \t\n\r\0\x0B\"'");
 
         $candidates = $configured !== ''
             ? [$configured]

@@ -173,7 +173,7 @@ class RiceYieldShadowComparisonService
         }
 
         $pythonBinary = trim(
-            (string) env('PYTHON_BINARY', base_path('.venv/Scripts/python.exe')),
+            (string) (config('iclimate.python_binary') ?: base_path('.venv/Scripts/python.exe')),
             " \t\n\r\0\x0B\"'"
         );
 

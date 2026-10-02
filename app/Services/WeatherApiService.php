@@ -46,8 +46,8 @@ class WeatherApiService
         ?float $longitude = null,
         ?string $location = null,
     ): ?array {
-        $latitude ??= (float) config('services.weather.latitude', config('services.open_meteo.latitude', config('services.weather_api.latitude', 14.04)));
-        $longitude ??= (float) config('services.weather.longitude', config('services.open_meteo.longitude', config('services.weather_api.longitude', 120.65)));
+        $latitude ??= (float) config('services.weather.latitude', config('services.open_meteo.latitude', config('services.weather_api.latitude', \App\Support\LianLocation::LATITUDE)));
+        $longitude ??= (float) config('services.weather.longitude', config('services.open_meteo.longitude', config('services.weather_api.longitude', \App\Support\LianLocation::LONGITUDE)));
         $location ??= (string) config('services.weather.location_name', config('services.weather_api.location_name', 'Lian, Batangas'));
         $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(number_format($latitude, 5).','.number_format($longitude, 5));
         $latestCacheKey = $cacheKey.':latest';
@@ -80,7 +80,15 @@ class WeatherApiService
             return $cached;
         }
 
-        $fresh = $this->fetchForecast($latitude, $longitude, $location);
+        // A page a person is waiting on uses the last good forecast (up to an hour old) instead of
+        // calling the provider; the scheduled weather refresh keeps it current.
+        $mode = \App\Support\InteractiveRequest::weatherMode();
+
+        if ($mode['stale_ok'] && ($recent = $this->recentSnapshot(Cache::get($latestCacheKey))) !== null) {
+            return $recent;
+        }
+
+        $fresh = $this->fetchForecast($latitude, $longitude, $location, $mode['budget']);
 
         if ($fresh !== null) {
             Cache::put($cacheKey, $fresh, $ttl);
@@ -91,6 +99,42 @@ class WeatherApiService
 
         return $this->cachedFallback(Cache::get($latestCacheKey))
             ?? $this->storedFallback($latitude, $longitude);
+    }
+
+    /**
+     * The last stored forecast of any age (cache, then stored records), or null. Never calls a provider; for optional
+     * details on a page that must render without any outside call. The scheduled weather refresh keeps it current.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function storedForecast(): ?array
+    {
+        $latitude = (float) config('services.weather.latitude', config('services.open_meteo.latitude', config('services.weather_api.latitude', \App\Support\LianLocation::LATITUDE)));
+        $longitude = (float) config('services.weather.longitude', config('services.open_meteo.longitude', config('services.weather_api.longitude', \App\Support\LianLocation::LONGITUDE)));
+        $location = (string) config('services.weather.location_name', config('services.weather_api.location_name', 'Lian, Batangas'));
+        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(number_format($latitude, 5).','.number_format($longitude, 5));
+
+        $cached = Cache::get($cacheKey);
+
+        return is_array($cached)
+            ? $cached
+            : ($this->cachedFallback(Cache::get($cacheKey.':latest')) ?? $this->storedFallback($latitude, $longitude));
+    }
+
+    /** The stored forecast if it was fetched within the last hour, marked as served from the store. */
+    private function recentSnapshot(mixed $weather): ?array
+    {
+        if (! is_array($weather) || empty($weather['fetched_at'])) {
+            return null;
+        }
+
+        try {
+            $fresh = \Illuminate\Support\Carbon::parse($weather['fetched_at'])->gt(now()->subMinutes(60));
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $fresh ? $weather : null;
     }
 
     private function cachedFallback(mixed $weather): ?array
@@ -106,7 +150,7 @@ class WeatherApiService
         return $weather;
     }
 
-    private function fetchForecast(float $latitude, float $longitude, string $location): ?array
+    private function fetchForecast(float $latitude, float $longitude, string $location, ?float $budget = null): ?array
     {
         if (! config('services.weather_api.enabled', true)) {
             return null;
@@ -117,9 +161,12 @@ class WeatherApiService
         $forecastDays = min(10, max(1, (int) config('services.weather_api.forecast_days', config('services.weather.forecast_days', 7))));
 
         try {
-            $response = Http::timeout($timeout)
-                ->retry(2, 250)
-                ->acceptJson()
+            // With a budget (a person is waiting): that long at most, and no retries.
+            $client = $budget !== null
+                ? Http::timeout(max(1.0, min((float) $timeout, $budget)))->acceptJson()
+                : Http::timeout($timeout)->retry(2, 250)->acceptJson();
+
+            $response = $client
                 ->get(rtrim((string) config('services.open_meteo.base_url', 'https://api.open-meteo.com/v1'), '/').'/forecast', [
                     'latitude' => $latitude,
                     'longitude' => $longitude,
@@ -274,12 +321,12 @@ class WeatherApiService
             'is_cached_fallback' => true,
             'daily_series' => [
                 'labels' => $records->map(fn (ExternalWeatherData $record) => $record->forecast_date?->toDateString())->all(),
-                'rainfall' => $records->map(fn (ExternalWeatherData $record) => round((float) ($record->rainfall_mm ?? 0), 2))->all(),
-                'temperature' => $records->map(fn (ExternalWeatherData $record) => round((float) ($record->temperature ?? 0), 2))->all(),
+                'rainfall' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->rainfall_mm) ? round((float) $record->rainfall_mm, 2) : null)->all(),
+                'temperature' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->temperature) ? round((float) $record->temperature, 2) : null)->all(),
                 'temperatureMax' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->temperature_max) ? round((float) $record->temperature_max, 2) : null)->all(),
                 'temperatureMin' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->temperature_min) ? round((float) $record->temperature_min, 2) : null)->all(),
-                'humidity' => $records->map(fn (ExternalWeatherData $record) => round((float) ($record->humidity ?? 0), 2))->all(),
-                'windSpeed' => $records->map(fn (ExternalWeatherData $record) => round((float) ($record->wind_speed ?? 0), 2))->all(),
+                'humidity' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->humidity) ? round((float) $record->humidity, 2) : null)->all(),
+                'windSpeed' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->wind_speed) ? round((float) $record->wind_speed, 2) : null)->all(),
                 'precipitationProbability' => $records->map(fn (ExternalWeatherData $record) => is_numeric($record->precipitation_probability) ? round((float) $record->precipitation_probability, 2) : null)->all(),
                 'conditions' => $records->map(fn (ExternalWeatherData $record) => $this->icons->map(is_numeric($record->weather_code) ? (int) $record->weather_code : null, true)['condition'])->all(),
                 'icons' => $records->map(fn (ExternalWeatherData $record) => $this->icons->map(is_numeric($record->weather_code) ? (int) $record->weather_code : null, true)['icon'])->all(),
@@ -292,7 +339,7 @@ class WeatherApiService
         $values = $daily[$key] ?? ($fallbackKey ? ($daily[$fallbackKey] ?? []) : []);
 
         return array_map(
-            fn (int $index): float => (float) ($values[$index] ?? 0),
+            fn (int $index): ?float => is_numeric($values[$index] ?? null) ? (float) $values[$index] : null,
             array_keys($dates),
         );
     }

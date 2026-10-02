@@ -1,9 +1,19 @@
 {{-- Renders the farmer-by-organization bar chart + legend for a given canvas/legend/status id set. --}}
+<script type="application/json" data-organization-chart-config>{!! json_encode([
+    'canvasId' => $canvasId,
+    'statusId' => $statusId,
+    'legendId' => $legendId,
+    'compact' => (bool) ($compact ?? false),
+    'chartData' => $chartData,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
 <script>
-    const initialize{{ ucfirst($canvasId) }} = async () => {
-        const organizationCanvas = document.getElementById('{{ $canvasId }}');
-        const organizationChartData = @json($chartData);
-        const statusTarget = document.getElementById('{{ $statusId }}');
+(() => {
+    // Each include reads the config block right before it; the IIFE keeps several charts on one page from clashing.
+    const chartConfig = JSON.parse(document.currentScript.previousElementSibling.textContent);
+    const initializeOrganizationChart = async () => {
+        const organizationCanvas = document.getElementById(chartConfig.canvasId);
+        const organizationChartData = chartConfig.chartData;
+        const statusTarget = document.getElementById(chartConfig.statusId);
         const chartState = organizationCanvas?.parentElement?.querySelector('[data-organization-chart-state]');
         const setLoadingState = (message, ready = false) => {
             if (chartState) {
@@ -56,7 +66,7 @@
             };
 
             const maxOrganizationCount = Math.max(...organizationCounts, 0);
-            const isCompact = {{ $compact ?? false ? 'true' : 'false' }};
+            const isCompact = chartConfig.compact;
 
             // Many bars crowd vertical labels (rotated, overlapping). Switch to a
             // horizontal layout past this threshold so labels stay flat and readable.
@@ -72,7 +82,7 @@
             }
 
             const organizationValueLabels = {
-                id: '{{ $canvasId }}ValueLabels',
+                id: chartConfig.canvasId + 'ValueLabels',
                 afterDatasetsDraw(chart) {
                     const { ctx } = chart;
                     const meta = chart.getDatasetMeta(0);
@@ -95,7 +105,7 @@
                     ctx.restore();
                 },
             };
-            const legendTarget = document.getElementById('{{ $legendId }}');
+            const legendTarget = document.getElementById(chartConfig.legendId);
             if (legendTarget) {
                 legendTarget.innerHTML = organizationDisplayLabels.map((label, index) => {
                     const count = Number(organizationCounts[index] ?? 0);
@@ -238,8 +248,9 @@
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize{{ ucfirst($canvasId) }}, { once: true });
+        document.addEventListener('DOMContentLoaded', initializeOrganizationChart, { once: true });
     } else {
-        initialize{{ ucfirst($canvasId) }}();
+        initializeOrganizationChart();
     }
+})();
 </script>

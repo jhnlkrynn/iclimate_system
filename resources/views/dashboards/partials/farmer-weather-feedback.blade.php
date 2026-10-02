@@ -26,7 +26,7 @@
 
         <details class="mt-3">
             <summary class="fw-bold" style="cursor:pointer">View Details</summary>
-            <form method="GET" action="{{ route('mao.dashboard') }}#farmer-weather-feedback" class="row g-2 align-items-end mt-2">
+            <form method="GET" action="{{ route('mao.operations') }}#farmer-weather-feedback" class="row g-2 align-items-end mt-2">
                 <div class="col-md-3">
                     <label class="small text-muted" for="fb_barangay">Barangay</label>
                     <select id="fb_barangay" name="fb_barangay" class="form-select form-select-sm">
@@ -57,7 +57,7 @@
                             <tr>
                                 <td>{{ $group['barangay'] }}</td>
                                 <td>{{ \Carbon\Carbon::parse($group['forecast_date'])->format('F Y') }}</td>
-                                <td>{{ $group['forecast_condition'] }}</td>
+                                <td>{{ \App\Support\WeatherConditionLabel::display($group['forecast_condition']) }}</td>
                                 <td>{{ $group['total'] }}</td>
                                 <td>{{ $group['counts']['accurate'] }}</td>
                                 <td>{{ $group['counts']['partly'] }}</td>

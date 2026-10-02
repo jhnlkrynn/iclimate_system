@@ -59,6 +59,9 @@ final class MonthlyWeatherCalendarService
             'fetched_at' => data_get($weather, 'fetched_at'),
             'is_cached_fallback' => (bool) data_get($weather, 'is_cached_fallback', false),
             'monthly_prediction' => $this->monthlyPredictionSummary($monthlyPrediction),
+            'monthly_prediction_message' => is_array($monthlyPrediction) && ! ($monthlyPrediction['ready'] ?? false)
+                ? ($monthlyPrediction['message'] ?? null)
+                : null,
         ];
     }
 
@@ -86,7 +89,13 @@ final class MonthlyWeatherCalendarService
             'temperature_c' => is_numeric($predictions['temperature'] ?? null) ? round((float) $predictions['temperature'], 1) : null,
             'humidity_percent' => is_numeric($predictions['humidity'] ?? null) ? round((float) $predictions['humidity'], 1) : null,
             'wind_speed_kmh' => is_numeric($predictions['wind_speed'] ?? null) ? round((float) $predictions['wind_speed'], 1) : null,
+            'tmax_c' => is_numeric($predictions['tmax'] ?? null) ? round((float) $predictions['tmax'], 1) : null,
+            'tmin_c' => is_numeric($predictions['tmin'] ?? null) ? round((float) $predictions['tmin'], 1) : null,
+            'wind_direction' => is_numeric($predictions['wind_direction'] ?? null) ? round((float) $predictions['wind_direction'], 1) : null,
             'season' => $predictions['season'] ?? null,
+            'generated_at' => $monthlyPrediction['generated_at'] ?? null,
+            'training_from' => data_get($monthlyPrediction, 'training_period.from'),
+            'training_to' => data_get($monthlyPrediction, 'training_period.to'),
             'confidence_label' => data_get($monthlyPrediction, 'confidence.label'),
         ];
     }
@@ -106,7 +115,7 @@ final class MonthlyWeatherCalendarService
             }
 
             $result[$date] = [
-                'condition' => $this->textAt($series, 'conditions', $index),
+                'condition' => \App\Support\WeatherConditionLabel::display($this->textAt($series, 'conditions', $index)),
                 'icon' => $this->textAt($series, 'icons', $index),
                 'rainfall' => $this->numberAt($series, 'rainfall', $index),
                 'temperature' => $this->numberAt($series, 'temperature', $index),

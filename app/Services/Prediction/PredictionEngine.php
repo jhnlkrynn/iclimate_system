@@ -15,9 +15,24 @@ use Throwable;
  * The single computation path for rice-yield/weather predictions, shared by
  * the System Prediction page and the AI Assistant so identical inputs always
  * produce identical outputs.
+ *
+ * Data accuracy rule: this class never invents a number. A missing input is
+ * reported (missing_inputs) and the model is not run; a failed model call
+ * returns a null yield. There is no rule-based or hardcoded fallback yield.
  */
 class PredictionEngine
 {
+    /**
+     * Inputs the DEPLOYED models need (rice_yield_service.py rice_features() and
+     * weather_features()). If any is unavailable the model is not run: a missing
+     * input is reported, never replaced with a guess or a zero.
+     */
+    public const REQUIRED_MODEL_INPUTS = [
+        'rainfall', 'temp_avg', 'temp_range', 'area', 'previous_rainfall', 'previous_temp',
+        'previous_humidity', 'previous_wind_speed', 'rainfall_6m', 'temp_3m', 'temp_6m',
+        'seasonal_rainfall', 'seasonal_temp', 'season', 'month_num',
+    ];
+
     public function __construct(
         private readonly PredictionOrchestrator $orchestrator,
         private readonly PythonService $python,
@@ -44,9 +59,17 @@ class PredictionEngine
         $weatherResult = $this->orchestrator->monthlyWeatherForecast($targetMonth);
 
         $modelInput = $this->buildModelInput($weatherResult, $farmType, $targetDate, $areaOverride, $user, $manualOverrides);
-        $weatherLabel = WeatherLabeler::fromRainfall($modelInput['rainfall']);
+        $missing = $this->missingInputs($modelInput);
+        $weatherLabel = $modelInput['rainfall'] !== null ? WeatherLabeler::fromRainfall((float) $modelInput['rainfall']) : null;
 
-        [$yield, $apiError] = $this->requestYield($modelInput);
+        [$yield, $apiError] = $missing === []
+            ? $this->requestYieldFromModel($modelInput)
+            : [null, 'Not enough verified input data to run the rice-yield model (missing: '.implode(', ', $missing).').'];
+
+        if ($apiError !== null) {
+            // Real problems stay visible to IT in the logs (System Logs / Health); the farmer sees a plain "not available".
+            \Illuminate\Support\Facades\Log::warning('Rice-yield prediction was not produced.', ['reason' => $apiError, 'missing_inputs' => $missing, 'target_month' => $targetMonth->format('Y-m')]);
+        }
 
         $decision = $this->decisionSupport->evaluate([
             ...$modelInput,
@@ -59,12 +82,27 @@ class PredictionEngine
             'weather' => $weatherResult,
             'weather_label' => $weatherLabel,
             'model_input' => $modelInput,
+            'missing_inputs' => $missing,
             'yield' => $yield,
             'decision_support' => $decision,
             'api_error' => $apiError,
         ];
     }
 
+    /** @return list<string> required model inputs that are null */
+    private function missingInputs(array $modelInput): array
+    {
+        return array_values(array_filter(
+            self::REQUIRED_MODEL_INPUTS,
+            fn (string $key): bool => ! isset($modelInput[$key]) || $modelInput[$key] === '',
+        ));
+    }
+
+    /**
+     * Every value is either a real number from a real source or null. Nothing is
+     * substituted: no zero for a missing reading, no forecast standing in for a
+     * "previous month" value, no default farm area.
+     */
     private function buildModelInput(
         array $weatherResult,
         string $farmType,
@@ -80,48 +118,51 @@ class PredictionEngine
         // hardcoding any row ID. These derived features feed the rice-yield
         // model's "recent real climate trend" inputs — a different concern
         // from MonthlyWeatherRandomForest's own CSV-trained history.
-        $recentClimateRecords = ClimateRecord::query()
+        $recent = ClimateRecord::query()
             ->plausible()
             ->latest('record_date')
             ->take(6)
             ->get();
-        $latestClimate = $recentClimateRecords->first();
-        $averageRainfall = $recentClimateRecords->avg('rainfall');
-        $averageTemperature = $recentClimateRecords->avg('temperature');
-        $totalRainfall = $recentClimateRecords->sum('rainfall');
-        $temperatureRange = $recentClimateRecords->isNotEmpty()
-            ? ((float) $recentClimateRecords->max('temperature') - (float) $recentClimateRecords->min('temperature'))
-            : null;
+        $latest = $recent->first();
 
-        $rainfall = (float) ($predictions['rainfall'] ?? $averageRainfall ?? $latestClimate?->rainfall ?? 0);
-        $temperature = (float) ($predictions['temperature'] ?? $averageTemperature ?? $latestClimate?->temperature ?? 0);
-        $humidity = (float) ($predictions['humidity'] ?? $latestClimate?->humidity ?? 0);
-        $windSpeed = (float) ($predictions['wind_speed'] ?? $latestClimate?->wind_speed ?? 0);
-        $forecastSeason = $predictions['season'] ?? 'Wet';
-        $season = in_array($forecastSeason, ['Wet', 'Dry'], true)
-            ? $forecastSeason
-            : ($latestClimate?->season ?? 'Wet');
+        $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;
+        $round = static fn (?float $v): ?float => $v === null ? null : round($v, 2);
+
+        $rainfall = $num($predictions['rainfall'] ?? null);
+        $temperature = $num($predictions['temperature'] ?? null);
+        $humidity = $num($predictions['humidity'] ?? null);
+        $windSpeed = $num($predictions['wind_speed'] ?? null);
+        $forecastSeason = $predictions['season'] ?? null;
+        $season = in_array($forecastSeason, ['Wet', 'Dry'], true) ? $forecastSeason : null;
+
+        // Trailing windows are only valid when the whole window is present.
+        $has6 = $recent->count() >= 6;
+        $has3 = $recent->count() >= 3;
+        $inSeason = $season !== null ? $recent->where('season', $season) : collect();
+        $temps = $recent->pluck('temperature')->filter(fn ($v) => $v !== null);
 
         $area = $areaOverride
             ?? $user?->farmerProfile?->farm_area
-            ?? ($user ? 1.0 : (float) (RiceProduction::query()->avg('area_hectares') ?? 0));
+            ?? ($user ? null : RiceProduction::query()->avg('area_hectares'));
+        $area = $num($area);
+        $area = $area !== null && $area > 0 ? $area : null;
 
         $modelInput = [
-            'rainfall' => round($rainfall, 2),
-            'temp_avg' => round($temperature, 2),
-            'temp_range' => round(max(0, $temperatureRange ?? 0), 2),
-            'area' => round((float) $area, 2),
-            'previous_rainfall' => round((float) ($latestClimate?->rainfall ?? $rainfall), 2),
-            'previous_temp' => round((float) ($latestClimate?->temperature ?? $temperature), 2),
-            'previous_humidity' => round((float) ($latestClimate?->humidity ?? $humidity), 2),
-            'previous_wind_speed' => round((float) ($latestClimate?->wind_speed ?? $windSpeed), 2),
-            'rainfall_6m' => round((float) ($totalRainfall ?: $rainfall), 2),
-            'temp_3m' => round((float) ($recentClimateRecords->take(3)->avg('temperature') ?? $temperature), 2),
-            'temp_6m' => round((float) ($averageTemperature ?? $temperature), 2),
-            'seasonal_rainfall' => round((float) ($recentClimateRecords->where('season', $season)->sum('rainfall') ?: $rainfall), 2),
-            'seasonal_temp' => round((float) ($recentClimateRecords->where('season', $season)->avg('temperature') ?? $temperature), 2),
-            'humidity' => round($humidity, 2),
-            'wind_speed' => round($windSpeed, 2),
+            'rainfall' => $round($rainfall),
+            'temp_avg' => $round($temperature),
+            'temp_range' => $temps->isNotEmpty() ? round((float) $temps->max() - (float) $temps->min(), 2) : null,
+            'area' => $round($area),
+            'previous_rainfall' => $round($num($latest?->rainfall)),
+            'previous_temp' => $round($num($latest?->temperature)),
+            'previous_humidity' => $round($num($latest?->humidity)),
+            'previous_wind_speed' => $round($num($latest?->wind_speed)),
+            'rainfall_6m' => $has6 ? round((float) $recent->sum('rainfall'), 2) : null,
+            'temp_3m' => $has3 ? $round($num($recent->take(3)->avg('temperature'))) : null,
+            'temp_6m' => $has6 ? $round($num($recent->avg('temperature'))) : null,
+            'seasonal_rainfall' => $inSeason->isNotEmpty() ? round((float) $inSeason->sum('rainfall'), 2) : null,
+            'seasonal_temp' => $inSeason->isNotEmpty() ? $round($num($inSeason->avg('temperature'))) : null,
+            'humidity' => $round($humidity),
+            'wind_speed' => $round($windSpeed),
             'season' => $season,
             'farm_type' => $farmType,
             'month_num' => (int) $targetDate->format('n'),
@@ -136,24 +177,12 @@ class PredictionEngine
         return $modelInput;
     }
 
-    private function requestYield(array $modelInput): array
-    {
-        [$modelYield, $apiError] = $this->requestYieldFromModel($modelInput);
-
-        if ($modelYield !== null) {
-            return [$modelYield, $apiError];
-        }
-
-        return [$this->localYieldFallback($modelInput), $apiError];
-    }
-
     /**
      * The single "ask the trained model" path — calls the iClimate ML service
      * (python_scripts/main.py, FastAPI). Shared by every feature that needs a
-     * raw model yield (System Prediction, AI Assistant, and per-barangay
-     * heatmap risk) so results never diverge. On any failure (network error,
-     * invalid response), returns a null yield with the error message so the
-     * caller falls back to localYieldFallback().
+     * raw model yield so results never diverge. There is NO fallback: on any
+     * failure (network error, invalid response) the yield is null and the error
+     * message is returned. A number is only ever returned if the model made it.
      *
      * @return array{0: array<string, mixed>|null, 1: string|null} [yield, apiError]
      */
@@ -167,7 +196,7 @@ class PredictionEngine
             $yield = data_get($apiResult, 'rice_yield_prediction', $apiResult);
             $predicted = data_get($yield, 'predicted_yield');
 
-            if ($predicted !== null) {
+            if (is_numeric($predicted)) {
                 return [[
                     'predicted_yield' => round((float) $predicted, 2),
                     'unit' => data_get($yield, 'unit', 'tons/hectare'),
@@ -186,77 +215,5 @@ class PredictionEngine
         }
 
         return [null, $apiError];
-    }
-
-    /**
-     * Shared last-resort estimate used identically by both features when the
-     * Flask API and the local script are both unreachable.
-     */
-    private function localYieldFallback(array $modelInput): array
-    {
-        $season = (string) $modelInput['season'];
-
-        $records = RiceProduction::query()
-            ->where('season', $season)
-            ->whereNotNull('yield_per_hectare')
-            ->latest('year')
-            ->take(8)
-            ->get();
-
-        $baseYield = $records->isNotEmpty()
-            ? (float) $records->avg('yield_per_hectare')
-            : (strtolower($season) === 'dry' ? 3.6 : 4.1);
-
-        $rainfall = (float) $modelInput['rainfall'];
-        $temperature = (float) $modelInput['temp_avg'];
-        $humidity = (float) $modelInput['humidity'];
-        $windSpeed = (float) $modelInput['wind_speed'];
-        $farmType = strtolower((string) $modelInput['farm_type']);
-
-        $adjustment = match (true) {
-            $rainfall < 80 => -0.8,
-            $rainfall < 120 => -0.35,
-            $rainfall >= 180 && $rainfall <= 280 => 0.25,
-            $rainfall > 350 => -0.65,
-            $rainfall > 300 => -0.35,
-            default => 0.0,
-        };
-
-        $adjustment += match (true) {
-            $temperature > 34 => -0.4,
-            $temperature > 32 => -0.2,
-            $temperature < 22 => -0.25,
-            default => 0.0,
-        };
-
-        if ($humidity > 92) {
-            $adjustment -= 0.15;
-        }
-
-        if ($windSpeed > 30) {
-            $adjustment -= 0.25;
-        } elseif ($windSpeed > 20) {
-            $adjustment -= 0.1;
-        }
-
-        if ($farmType === 'irrigated') {
-            $adjustment += 0.15;
-        } elseif ($farmType === 'rainfed' && strtolower($season) === 'dry') {
-            $adjustment -= 0.25;
-        }
-
-        $predictedYield = max(1.2, min(6.5, $baseYield + $adjustment));
-
-        return [
-            'predicted_yield' => round($predictedYield, 2),
-            'unit' => 'tons/hectare',
-            'uncertainty' => null,
-            'confidence' => null,
-            'fallback' => true,
-            'source_type' => 'Local Estimate',
-            'source_name' => 'Local estimate — trained model unavailable',
-            'source_credit' => 'Estimated locally from recent rice production records and weather adjustments because no trained model was reachable.',
-            'records_used' => $records->count(),
-        ];
     }
 }

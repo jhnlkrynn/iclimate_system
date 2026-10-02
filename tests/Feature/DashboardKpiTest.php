@@ -141,7 +141,7 @@ class DashboardKpiTest extends TestCase
     public function test_it_risk_freshness_reports_failures_recorded_today(): void
     {
         HeatmapArea::query()->delete(); // no barangay refreshed recently
-        Cache::put('metrics:risk-map:failures:'.today()->toDateString(), 2, now()->addDay());
+        Cache::put('metrics:risk-map:failures:'.\App\Support\BusinessClock::today()->toDateString(), 2, now()->addDay());
 
         $kpi = $this->kpi(app(DashboardKpiService::class)->itExpert(), 'risk-freshness');
 
@@ -157,21 +157,33 @@ class DashboardKpiTest extends TestCase
         $this->actingAs($farmer)->get(route('farmer.dashboard'))
             ->assertOk()
             ->assertSee('My Farm at a Glance')
-            ->assertSee('data-kpi="barangay-yield"', false)
-            ->assertDontSee('data-kpi="active-users"', false);
+            ->assertSee('data-kpi="alerts"', false)
+            ->assertSee('data-kpi="rain_past"', false)
+            ->assertDontSee('data-kpi="historical-yield"', false)        // municipal history is not a farmer KPI
+            ->assertDontSee('My Farm Today')
+            ->assertDontSee('data-kpi="users"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('mao.dashboard'))
+        $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))
             ->assertOk()
-            ->assertSee('Key Performance Indicators')
+            ->assertSee('Agriculture at a Glance')
             ->assertSee('data-kpi="yield"', false)
-            ->assertSee('Rice Production (2024)');
+            ->assertSee('Total Rice Production (2024)');
 
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
         $this->actingAs($it)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Platform KPIs')
-            ->assertSee('data-kpi="ml-success"', false)
-            ->assertDontSee('data-kpi="barangay-yield"', false);
+            ->assertSee('IT Dashboard')
+            ->assertSee('data-kpi="users"', false)
+            ->assertSee('data-kpi="status"', false)
+            ->assertDontSee('data-kpi="prediction"', false)          // prediction diagnostics live on System Health, not the overview
+            ->assertDontSee('data-kpi="historical-yield"', false);
+
+        // The MAO overview has its own agriculture-focused KPI strip.
+        $this->actingAs($mao)->get(route('mao.dashboard'))
+            ->assertOk()
+            ->assertSee('data-mao-kpis', false)
+            ->assertDontSee('data-kpi="users"', false)
+            ->assertDontSee('Agriculture at a Glance');
     }
 }
