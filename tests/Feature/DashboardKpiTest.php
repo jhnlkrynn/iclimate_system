@@ -141,7 +141,7 @@ class DashboardKpiTest extends TestCase
     public function test_it_risk_freshness_reports_failures_recorded_today(): void
     {
         HeatmapArea::query()->delete(); // no barangay refreshed recently
-        Cache::put('metrics:risk-map:failures:'.today()->toDateString(), 2, now()->addDay());
+        Cache::put('metrics:risk-map:failures:'.\App\Support\BusinessClock::today()->toDateString(), 2, now()->addDay());
 
         $kpi = $this->kpi(app(DashboardKpiService::class)->itExpert(), 'risk-freshness');
 
