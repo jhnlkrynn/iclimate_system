@@ -377,8 +377,8 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Your Barangay: Bagong Pook');
-        $response->assertDontSee('Your farm outline is saved');
+        $response->assertSee('Bagong Pook');                      // the barangay is on the farm information card (the risk card needs a stored rating)
+        $response->assertDontSee('Farm Outline');                 // no mapped farm: no outline row
     }
 
     public function test_farmer_with_farm_boundary_sees_your_farm(): void
@@ -397,8 +397,9 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Your Barangay: Bagong Pook');
-        $response->assertSee('Your farm outline is saved');
+        $response->assertSee('Bagong Pook');                      // the barangay is on the farm information card (the risk card needs a stored rating)
+        $response->assertSee('Farm Map');
+        $response->assertSee('Saved (1.50 ha mapped)');
     }
 
     public function test_mao_dashboard_loads_with_risk_map_section(): void
@@ -516,21 +517,25 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('data-risk-map-refresh', false);
     }
 
-    public function test_admin_dashboard_shows_the_full_19_barangay_map(): void
+    public function test_admin_dashboard_no_longer_embeds_the_risk_map_but_mao_still_does(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $response = $this->actingAs($itExpert)->get(route('admin.dashboard'));
+        $this->actingAs($itExpert)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertDontSee('id="barangayRiskMap"', false)
+            ->assertDontSee('Lian Municipality Risk Map');
 
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+        $response = $this->actingAs($mao)->get(route('mao.dashboard'));
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('Lian Municipality Risk Map');
         $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // Admin is management-level, like MAO: the refresh control is present.
+        // MAO is management-level: the refresh control is present.
         $response->assertSee('data-risk-map-refresh', false);
     }
 
@@ -592,7 +597,7 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('data-highlight-barangay', false);
     }
 
-    public function test_all_three_roles_render_the_same_shared_risk_map_component(): void
+    public function test_farmer_and_mao_render_the_same_shared_risk_map_component(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
@@ -600,13 +605,11 @@ class BarangayRiskMapTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
         $farmerResponse = $this->actingAs($farmer)->get(route('farmer.dashboard'));
         $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
-        $adminResponse = $this->actingAs($itExpert)->get(route('admin.dashboard'));
 
-        foreach ([$farmerResponse, $maoResponse, $adminResponse] as $response) {
+        foreach ([$farmerResponse, $maoResponse] as $response) {
             $response->assertOk();
             $response->assertSee('id="barangayRiskMap"', false);
             // Every role points the same element at the exact same public

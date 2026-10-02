@@ -99,7 +99,7 @@ class AuthenticatedSessionController extends Controller
             ],
             in_array((int) $weatherCode, [95, 96, 99], true) => ['Thunderstorm', '⛈️'],
             in_array((int) $weatherCode, [80, 81, 82, 61, 63, 65, 66, 67], true) => ['Rain', '🌧️'],
-            in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Drizzle', '🌧️'],
+            in_array((int) $weatherCode, [51, 53, 55, 56, 57], true) => ['Light Rain', '🌧️'],
             in_array((int) $weatherCode, [45, 48], true) => ['Foggy', '🌫️'],
             in_array((int) $weatherCode, [1, 2, 3], true) => ['Cloudy', '⛅️'],
             $weatherCode !== null && (int) $weatherCode === 0 => ['Clear', '☀️'],

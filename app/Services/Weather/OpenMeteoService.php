@@ -166,8 +166,8 @@ class OpenMeteoService
                 ],
                 [
                     'location_name' => config('services.open_meteo.location_name', 'Lian, Batangas'),
-                    'latitude' => (float) config('services.open_meteo.latitude', 14.033),
-                    'longitude' => (float) config('services.open_meteo.longitude', 120.650),
+                    'latitude' => (float) config('services.open_meteo.latitude', \App\Support\LianLocation::LATITUDE),
+                    'longitude' => (float) config('services.open_meteo.longitude', \App\Support\LianLocation::LONGITUDE),
                     'weather_code' => $daily['weather_code'][$index] ?? null,
                     'temperature' => $this->average($hourlyForDate['temperature_2m'] ?? []),
                     'temperature_max' => $daily['temperature_2m_max'][$index] ?? null,

@@ -25,6 +25,10 @@ class FetchPagasaAdvisories extends Command
             $this->warn($error);
         }
 
-        return empty($summary['errors']) ? self::SUCCESS : self::FAILURE;
+        // A page that is briefly unreachable is reported above but is not a failed run;
+        // only fail (and log a scheduler error) when not a single source could be read.
+        $allSourcesFailed = $summary['sources_checked'] > 0 && count($summary['errors']) >= $summary['sources_checked'];
+
+        return $allSourcesFailed ? self::FAILURE : self::SUCCESS;
     }
 }

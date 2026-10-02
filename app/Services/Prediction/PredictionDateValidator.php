@@ -10,13 +10,14 @@ final class PredictionDateValidator
 
     public function validate(CarbonImmutable $targetDate): ?string
     {
-        return $targetDate->startOfDay()->greaterThan(CarbonImmutable::today())
+        // Compare calendar dates: the target is a plain date (parsed as UTC midnight), "today" is the Manila date.
+        return $targetDate->toDateString() > \App\Support\BusinessClock::today()->toDateString()
             ? null
             : self::ERROR_MESSAGE;
     }
 
     public static function defaultTargetDate(): CarbonImmutable
     {
-        return CarbonImmutable::now()->addMonthNoOverflow();
+        return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow();
     }
 }

@@ -2,7 +2,11 @@
 
 namespace App\Services\Risk;
 
+use App\Contracts\RiskMethodology;
+
 /**
+ * STATUS: REQUIRES METHODOLOGY VALIDATION (see App\Contracts\RiskMethodology). Not a validated risk model.
+ *
  * NOTE ON METHODOLOGY: BARANGAY_EXPOSURE below and the risk-weighting formula
  * in score() are engineering-judgment placeholder values, not derived from
  * cited hazard/flood-zone/elevation data. See docs/system_audit_fix_plan.md
@@ -24,7 +28,7 @@ namespace App\Services\Risk;
  *    only ever reach the score indirectly via the caller-supplied
  *    stress_factor_count.
  */
-final class AgriculturalRiskScorer
+final class AgriculturalRiskScorer implements RiskMethodology
 {
     private const BARANGAY_EXPOSURE = [
         'Bagong Pook' => 0.55,

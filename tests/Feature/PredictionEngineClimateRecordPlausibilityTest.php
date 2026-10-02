@@ -117,7 +117,7 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
         $this->assertNotSame($anotherBadRow->id, $plausibleLatest->id);
     }
 
-    public function test_empty_plausible_set_falls_back_to_forest_primary_values_not_zero(): void
+    public function test_empty_plausible_set_leaves_history_inputs_missing_not_copied_or_zero(): void
     {
         // Only an implausible row exists — the plausible-filtered set is empty.
         ClimateRecord::factory()->create([
@@ -132,15 +132,11 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
 
         $modelInput = $this->buildModelInputFor();
 
-        // With no plausible historical context, derived features must fall
-        // back to the forest's own primary prediction values (never 0, never
-        // the excluded row's values).
-        $this->assertSame($modelInput['rainfall'], $modelInput['previous_rainfall']);
-        $this->assertSame($modelInput['temp_avg'], $modelInput['previous_temp']);
-        $this->assertSame($modelInput['wind_speed'], $modelInput['previous_wind_speed']);
-        $this->assertNotSame(5000.0, $modelInput['previous_rainfall']);
-        $this->assertNotSame(100.0, $modelInput['previous_temp']);
-        $this->assertNotSame(500.0, $modelInput['previous_wind_speed']);
+        // No verified history means the "previous" and trailing-window inputs are null: not 0,
+        // not the forecast copied in their place, and never the excluded row's values.
+        foreach (['previous_rainfall', 'previous_temp', 'previous_humidity', 'previous_wind_speed', 'rainfall_6m', 'temp_3m', 'temp_6m', 'seasonal_rainfall', 'seasonal_temp', 'temp_range'] as $key) {
+            $this->assertNull($modelInput[$key], "{$key} must be null when there is no verified history");
+        }
     }
 
     /**

@@ -66,13 +66,14 @@ class RiceYieldPredictionService
     public function standardizeResult(array $engineResult, ?float $areaOverride = null, ?User $user = null, array $manualOverrides = []): array
     {
         $yield = $engineResult['yield'] ?? [];
+        $yield = is_array($yield) ? $yield : [];
         $modelInput = $engineResult['model_input'] ?? [];
         $decision = $engineResult['decision_support'] ?? [];
         $decimals = (int) config('prediction.rice_yield.display_decimals', 2);
         $predictedYield = array_key_exists('predicted_yield', $yield) && $yield['predicted_yield'] !== null
             ? round((float) $yield['predicted_yield'], $decimals)
             : null;
-        $area = array_key_exists('area', $modelInput) ? round((float) $modelInput['area'], 2) : null;
+        $area = is_numeric($modelInput['area'] ?? null) ? round((float) $modelInput['area'], 2) : null;
         $totalProduction = $predictedYield !== null && $area !== null
             ? round($predictedYield * $area, $decimals)
             : null;
@@ -119,10 +120,15 @@ class RiceYieldPredictionService
             'notifications' => $decision['notifications'] ?? [],
             'decision_support' => $decision,
             'api_error' => $engineResult['api_error'] ?? null,
+            'missing_inputs' => $engineResult['missing_inputs'] ?? [],
             'engine_result' => $engineResult,
         ];
 
-        $this->assertCompleteResult($result);
+        // A prediction that was made must be complete. When the model could not run
+        // (missing inputs / service down) there is nothing to complete: success=false.
+        if ($predictedYield !== null) {
+            $this->assertCompleteResult($result);
+        }
 
         return $result;
     }
@@ -236,7 +242,7 @@ class RiceYieldPredictionService
                     array_key_exists($key, $manualOverrides) => 'user',
                     $key === 'area' && $areaOverride !== null => 'user',
                     $key === 'area' && $user?->farmerProfile?->farm_area !== null => 'farmer_profile',
-                    $key === 'area' => 'documented_default',
+                    $key === 'area' => 'unavailable',
                     in_array($key, ['season', 'farm_type'], true) => 'profile_or_model_default',
                     default => 'shared_prediction_engine',
                 },

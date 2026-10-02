@@ -1,0 +1,22 @@
+@php
+    $paths = [
+        'alert' => '<path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+        'heat' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+        'calendar' => '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+        'bell' => '<path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+        'sprout' => '<path d="M12 21v-9M12 12c0-3 2-5 5-5 0 3-2 5-5 5ZM12 14c0-2.5-1.7-4.2-4.2-4.2 0 2.5 1.7 4.2 4.2 4.2Z"/>',
+        'farmers' => '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18.5 14.8c1.6.7 2.5 2.3 2.5 4.2"/>',
+        'weather' => '<path d="M7 18a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 11a3.5 3.5 0 0 1-.5 7Z"/>',
+        'yield' => '<path d="M12 21V8M12 8c0-3 2-5 5-5 0 3-2 5-5 5ZM12 12c0-2.5-1.7-4.2-4.2-4.2 0 2.5 1.7 4.2 4.2 4.2Z"/>',
+        'map' => '<path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z"/><circle cx="12" cy="11" r="2.2"/>',
+        'advisory' => '<path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M9 15h6M9 7h3"/>',
+        'message' => '<path d="M4 5h16v11H9l-5 4z"/>',
+        'rain' => '<path d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+        'report' => '<path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+        'storm' => '<path d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path d="M12 14l-2 4h4l-2 4"/>',
+        'temperature' => '<path d="M10 14V5a2 2 0 1 1 4 0v9a4 4 0 1 1-4 0Z"/>',
+        'humidity' => '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',
+        'wind' => '<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/>',
+    ];
+@endphp
+<svg class="mtd-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] ?? '' !!}</svg>

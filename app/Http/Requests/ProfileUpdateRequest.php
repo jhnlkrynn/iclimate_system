@@ -28,7 +28,7 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
-            'barangay' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::in(\App\Support\LianBarangays::all())],
         ];
     }
 }

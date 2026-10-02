@@ -84,6 +84,17 @@
                                 @foreach(\App\Models\FarmerPlantingSchedule::MANUAL_STATUSES as $status)<option value="{{ $status }}" @selected(old('progress_status', $schedule->progress_status) === $status)>{{ $status }}</option>@endforeach
                             </select>
                         </div>
+                        @if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield'))
+                            <div class="col-md-6">
+                                <label class="form-label" for="actual_yield">My harvest (tons per hectare)</label>
+                                <input class="form-control @error('actual_yield') is-invalid @enderror" id="actual_yield" name="actual_yield" type="number" min="0.01" max="15" step="0.01" value="{{ old('actual_yield', $schedule->actual_yield) }}">
+                                <div class="schedule-help mt-1">After harvest only. Your total harvest in tons divided by your farm size in hectares. Your own records make your yield comparison more accurate.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="harvested_on">Date harvested</label>
+                                <input class="form-control @error('harvested_on') is-invalid @enderror" id="harvested_on" name="harvested_on" type="date" max="{{ \App\Support\BusinessClock::today()->toDateString() }}" value="{{ old('harvested_on', $schedule->harvested_on?->format('Y-m-d')) }}">
+                            </div>
+                        @endif
                         <div class="col-12">
                             <label class="form-label" for="notes">Notes (optional)</label>
                             <textarea class="form-control" id="notes" name="notes" rows="4" maxlength="2000">{{ old('notes', $schedule->notes) }}</textarea>

@@ -334,6 +334,23 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertRedirect();
 
         $this->assertTrue($notification->fresh()->is_read);
+        $this->assertNull($notification->category);                                            // no topic chosen: a general warning
+    }
+
+    public function test_a_notification_marked_as_weather_is_stored_with_that_category(): void
+    {
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
+
+        $this->actingAs($mao)->post(route('notifications.store'), [
+            'recipient_scope' => 'farmers', 'title' => 'Storm signal', 'message' => 'Stay alert.', 'type' => 'Warning', 'category' => 'weather',
+        ])->assertRedirect(route('notifications.index'));
+
+        $this->assertSame(Notification::CATEGORY_WEATHER, Notification::query()->where('user_id', $farmer->id)->firstOrFail()->category);
+
+        $this->actingAs($mao)->post(route('notifications.store'), [
+            'recipient_scope' => 'farmers', 'title' => 'Pickup', 'message' => 'Bring a bag.', 'type' => 'Warning', 'category' => 'not-a-topic',
+        ])->assertSessionHasErrors('category');
     }
 
     public function test_mao_can_publish_announcement_category_to_community_feed(): void

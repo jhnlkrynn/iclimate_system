@@ -9,14 +9,19 @@ use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
+use App\Services\Advisories\AdvisoryWeatherService;
+use App\Services\Advisories\PagasaAdvisoryService;
 use App\Services\Advisory\AdvisoryVerificationService;
 use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
+use App\Support\DashboardData;
 use App\Support\LianBarangays;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -63,8 +68,7 @@ class PlantingAdvisoryController extends Controller
 
         return [
             'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
-            'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
-            'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('created_at')->first(),
+            ...Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']),
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
             'typhoonSafetyResponse' => \App\Support\SchemaCache::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
                 ? TyphoonSafetyResponse::query()
@@ -72,8 +76,6 @@ class PlantingAdvisoryController extends Controller
                     ->where('event_key', $activeTyphoonSafetyEvent['key'])
                     ->first()
                 : null,
-            'activeCount' => PlantingAdvisory::query()->active()->count(),
-            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
@@ -84,19 +86,34 @@ class PlantingAdvisoryController extends Controller
         ];
     }
 
-    public function adminIndex(Request $request): View
+    /**
+     * Header figures shared by both advisory pages: seven separate queries
+     * (~300 ms each against Supabase) that only change when an advisory or the
+     * weather record is saved. Cached for a minute, and any advisory save
+     * retires it at once (DashboardData::version()).
+     *
+     * @return array<string, mixed>
+     */
+    private function advisorySummary(): array
     {
-        $this->authorizeManage($request);
-
-        return view('advisories.management', [
-            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(10)->withQueryString(),
+        return Cache::remember('advisories:summary:v'.DashboardData::version(), now()->addSeconds(60), fn (): array => [
             'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
             'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('created_at')->first(),
             'activeCount' => PlantingAdvisory::query()->active()->count(),
             'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
             'pendingCount' => PlantingAdvisory::query()->pendingReview()->count(),
             'highRiskCount' => PlantingAdvisory::query()->whereIn('severity', ['high', 'critical'])->whereIn('status', ['published', 'pending_review'])->count(),
-            'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->whereDate('updated_at', today())->count(),
+            'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->where('updated_at', '>=', \App\Support\BusinessClock::todayUtc())->where('updated_at', '<', \App\Support\BusinessClock::todayUtc()->addDay())->count(),
+        ]);
+    }
+
+    public function adminIndex(Request $request): View
+    {
+        $this->authorizeManage($request);
+
+        return view('advisories.management', [
+            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(10)->withQueryString(),
+            ...$this->advisorySummary(),
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,
             'statuses' => self::STATUSES,
@@ -139,7 +156,7 @@ class PlantingAdvisoryController extends Controller
         return redirect()->route('planting-advisories.show', $advisory)->with('success', 'Advisory saved successfully.');
     }
 
-    public function show(Request $request, PlantingAdvisory $plantingAdvisory, AdvisoryVerificationService $verification): View
+    public function show(Request $request, PlantingAdvisory $plantingAdvisory, AdvisoryVerificationService $verification, AdvisoryWeatherService $advisoryWeather): View
     {
         if ($request->user()->role === User::ROLE_FARMER && (! $plantingAdvisory->isActive() || ! $this->isVisibleToFarmer($plantingAdvisory, $request->user()))) {
             abort(403);
@@ -164,6 +181,8 @@ class PlantingAdvisoryController extends Controller
             'advisory' => $plantingAdvisory,
             'canManage' => $this->canManage($request),
             'verification' => $verification->score($plantingAdvisory),
+            // Forecast for THIS advisory's place and validity window (never the current weather).
+            'advisoryWeather' => $advisoryWeather->forAdvisory($plantingAdvisory),
             'feedbackFeatureReady' => $feedbackFeatureReady,
             'myFeedback' => $feedbackFeatureReady && $request->user()->role === User::ROLE_FARMER
                 ? $plantingAdvisory->feedback->firstWhere('user_id', $request->user()->id)
@@ -363,13 +382,22 @@ class PlantingAdvisoryController extends Controller
             ->with('success', 'Advisory generation was queued for Python processing.');
     }
 
-    public function refreshPagasa(Request $request, AnalyticsDispatcher $analytics): RedirectResponse
+    public function refreshPagasa(Request $request, PagasaAdvisoryService $pagasa): RedirectResponse
     {
         $this->authorizeManage($request);
-        $run = $analytics->dispatch('advisory_ai', ['reason' => 'pagasa_refresh'], $request->user());
 
-        return redirect()->route('planting-advisories.index', ['run' => $run->uuid])
-            ->with('success', 'PAGASA advisory analysis was queued for Python processing.');
+        // Fetch the PAGASA pages right now. This used to only queue a Python
+        // "advisory_ai" job, which never called PAGASA and needed a queue
+        // worker plus the ML service to be running.
+        $summary = $pagasa->fetchAndStore(true);
+
+        if (! empty($summary['errors']) && $summary['sources_checked'] === count($summary['errors'])) {
+            return redirect()->route('planting-advisories.index')
+                ->with('error', 'Could not reach PAGASA right now. Please try again later.');
+        }
+
+        return redirect()->route('planting-advisories.index')
+            ->with('success', $summary['message']);
     }
 
     private function requestedAnalyticsRun(Request $request): ?AnalyticsRun

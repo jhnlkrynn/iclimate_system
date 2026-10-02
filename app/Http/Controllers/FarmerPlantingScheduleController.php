@@ -103,6 +103,8 @@ class FarmerPlantingScheduleController extends Controller
             'barangay' => ['nullable', Rule::in(LianBarangays::all())],
             'farm_area_hectares' => ['nullable', 'numeric', 'gt:0', 'max:10000'],
             'progress_status' => ['nullable', Rule::in(FarmerPlantingSchedule::MANUAL_STATUSES)],
+            'actual_yield' => ['nullable', 'numeric', 'gt:0', 'max:15'],                          // tons per hectare; no rice field yields more
+            'harvested_on' => ['nullable', 'date', 'after_or_equal:planting_date', 'before_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
     }
@@ -113,6 +115,17 @@ class FarmerPlantingScheduleController extends Controller
         $data['scheduled_harvest_date'] = $data['scheduled_harvest_date'] ?? null;
         $data['barangay'] = $data['barangay'] ?? null;
         $data['progress_status'] = $data['progress_status'] ?? null;
+
+        // A recorded harvest means the crop is harvested; the harvest columns are only written once they exist in the database.
+        if (! \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield')) {
+            unset($data['actual_yield'], $data['harvested_on']);
+        } else {
+            $data['actual_yield'] = $data['actual_yield'] ?? null;
+            $data['harvested_on'] = $data['harvested_on'] ?? null;
+            if ($data['actual_yield'] !== null || $data['harvested_on'] !== null) {
+                $data['progress_status'] = 'Harvested';
+            }
+        }
 
         return $data;
     }

@@ -1,1052 +1,319 @@
 <x-app-layout>
-    <style>
-        .it-console {
-            --it-ink: #1F2937;
-            --it-muted: #475569;
-            --it-green: #1F5A46;
-            --it-green-bright: #8FAF9A;
-            --it-blue: #4B7185;
-            --it-accent: #8FAF9A;
-            --it-accent-dark: #6F8978;
-            --it-red: #B84A4A;
-            --it-line: #D8E0DA;
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        .it-console h1, .it-console h2, .it-console h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400 !important; letter-spacing: -.01em; }
-        .it-console .mono { font-family: 'DM Mono', monospace; }
-        /* -- Buttons unified with landing/farmer pill style -- */
-        .it-console .btn { border-radius: 999px !important; font-weight: 600 !important; letter-spacing: .01em; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease; }
-        .it-console .btn-primary, .it-console .btn-light {
-            background: var(--it-green) !important; border-color: var(--it-green) !important; color: #fff !important;
-            box-shadow: none;
-        }
-        .it-console .btn-primary:hover, .it-console .btn-light:hover { background: #123F32 !important; border-color: #123F32 !important; color: #fff !important; transform: translateY(-1px); }
-        .it-console .btn-outline-light { border-color: rgba(255,255,255,.55) !important; color: #fff !important; background: transparent !important; }
-        .it-console .btn-outline-light:hover { background: #fff !important; border-color: #fff !important; color: var(--it-ink) !important; }
-        .it-console .btn-outline-primary { border-color: var(--it-green) !important; color: var(--it-green) !important; background: transparent !important; }
-        .it-console .btn-outline-primary:hover { background: var(--it-green) !important; border-color: var(--it-green) !important; color: #fff !important; transform: translateY(-1px); }
-        .it-console .btn-sm { padding: .4rem .9rem; font-size: .78rem; }
-        .it-hero {
-            position: relative;
-            overflow: hidden;
-            border-radius: 32px;
-            padding: 1.35rem;
-            margin-bottom: 1.25rem;
-            color: #fff;
-            background: linear-gradient(145deg, #163B2D 0%, #1F4D3A 100%);
-            border: 1px solid rgba(255,255,255,.12);
-            box-shadow: 0 1rem 2.3rem rgba(13,31,24,.24);
-        }
-        .it-hero::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px),
-                linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px);
-            background-size: 38px 38px;
-            mask-image: linear-gradient(90deg, rgba(0,0,0,.78), transparent 88%);
-        }
-        .it-hero > * { position: relative; z-index: 1; }
-        .it-eyebrow {
-            font-family: 'DM Mono', monospace;
-            font-size: .72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-            color: #C9D8CE;
-        }
-        .it-hero h1 { color: #fff; }
-        .it-hero p { color: rgba(255,255,255,.72); max-width: 700px; }
-        .it-live-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: .5rem;
-            border: 1px solid rgba(255,255,255,.18);
-            border-radius: 999px;
-            padding: .45rem .75rem;
-            background: rgba(255,255,255,.1);
-            color: #fff;
-            font-family: 'DM Mono', monospace;
-            font-size: .78rem;
-            font-weight: 500;
-        }
-        .it-hero .btn-outline-light { border-color: rgba(255,255,255,.5); color: #fff; }
-        .it-hero .btn-outline-light:hover { background: #fff; border-color: #fff; color: var(--it-ink); }
-        .it-pulse {
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            background: #C9D8CE;
-            box-shadow: none;
-        }
-        .it-highlights { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.25rem; }
-        .it-highlight { display: flex; align-items: flex-start; gap: .65rem; border-radius: 14px; padding: .75rem .95rem; border: 1px solid var(--it-line); background: linear-gradient(145deg, #ffffff, #f7fbf8); box-shadow: 0 .5rem 1.2rem rgba(20,32,51,.06); }
-        .it-highlight-critical { border-left: 5px solid var(--it-red); }
-        .it-highlight-warning { border-left: 5px solid #C58B2A; }
-        .it-highlight-info { border-left: 5px solid var(--it-blue); }
-        .it-highlight-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 999px; margin-top: .35rem; }
-        .it-highlight-critical .it-highlight-dot { background: var(--it-red); }
-        .it-highlight-warning .it-highlight-dot { background: #C58B2A; }
-        .it-highlight-info .it-highlight-dot { background: var(--it-blue); }
-        .it-highlight-title { color: var(--it-ink); font-weight: 700; font-size: .92rem; }
-        .it-highlight-message { color: var(--it-muted); font-size: .82rem; margin-top: .1rem; }
-        .it-pipeline-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .65rem 0; }
-        .it-pipeline-row + .it-pipeline-row { border-top: 1px solid var(--it-line); }
-        .it-pipeline-label { color: var(--it-muted); font-size: .82rem; }
-        .it-pipeline-value { color: var(--it-ink); font-weight: 700; font-size: .92rem; font-family: 'DM Mono', monospace; }
-        .it-stat-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.25rem;
-        }
-        .it-card {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid var(--it-line);
-            border-radius: 18px;
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
-            width: 100%;
-            text-align: left;
-            font: inherit;
-            cursor: pointer;
-            transition: transform .18s ease, box-shadow .18s ease;
-        }
-        .it-card:hover { transform: translateY(-2px); box-shadow: 0 1.1rem 2.2rem rgba(20,32,51,.11); }
-        .it-card:focus-visible { outline: 2px solid var(--it-green-bright); outline-offset: 2px; }
-        .it-tap-hint { color: var(--it-green); font-family: 'DM Mono', monospace; font-size: .64rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-top: .5rem; opacity: 0; transform: translateY(2px); transition: opacity .18s ease, transform .18s ease; }
-        .it-card:hover .it-tap-hint, .it-card:focus-visible .it-tap-hint { opacity: 1; transform: translateY(0); }
-        .it-modal-content { border-radius: 18px; background: linear-gradient(145deg, #ffffff, #f7fbf8); color: var(--it-muted); overflow: hidden; }
-        .it-modal-content .modal-footer { border-top-color: rgba(95,143,120,.4); }
-        .it-modal-header { background: linear-gradient(90deg, rgba(95,143,120,.1), rgba(127,214,181,.22)); color: var(--it-ink); }
-        .it-modal-header .modal-title { color: var(--it-ink); }
-        .it-modal-headline { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: var(--it-ink); }
-        .it-modal-sub { color: var(--it-muted); font-size: .85rem; margin: .3rem 0 .9rem; }
-        .it-card-body { padding: 1rem; position: relative; z-index: 1; }
-        .it-label {
-            color: var(--it-muted);
-            font-family: 'DM Mono', monospace;
-            font-size: .68rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: .07em;
-        }
-        .it-value {
-            margin-top: .35rem;
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.8rem, 3vw, 2.4rem);
-            line-height: 1;
-            font-weight: 400;
-            color: var(--it-ink);
-            letter-spacing: -.02em;
-        }
-        .it-note { color: var(--it-muted); font-size: .84rem; margin-top: .65rem; }
-        .it-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(127,214,181,.35);
-            background: rgba(95,143,120,.14);
-            color: var(--it-green);
-        }
-        .it-icon svg { width: 19px; height: 19px; }
-        .it-panel {
-            border: 1px solid var(--it-line);
-            border-radius: 18px;
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            box-shadow: 0 .9rem 2rem rgba(20,32,51,.07);
-            overflow: hidden;
-        }
-        .it-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 1rem 1rem .75rem;
-            border-bottom: 1px solid rgba(95,143,120,.58);
-            background: rgba(95,143,120,.08);
-        }
-        .it-panel-title { font-size: 1.05rem; margin: 0; color: var(--it-ink); }
-        .it-panel-sub { margin: .15rem 0 0; color: var(--it-muted); font-size: .82rem; }
-        .it-panel-body { padding: 1rem; }
-        .farmer-org-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: .85rem;
-            margin-bottom: 1rem;
-        }
-        .farmer-org-card {
-            border: 1px solid rgba(255,255,255,.55);
-            border-radius: 10px;
-            background: rgba(255,255,255,.66);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            padding: .9rem;
-        }
-        .farmer-org-card-label {
-            color: var(--it-muted);
-            font-family: 'DM Mono', monospace;
-            font-size: .68rem;
-            font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-        }
-        .farmer-org-card-value {
-            margin-top: .35rem;
-            color: var(--it-ink);
-            font-family: 'DM Serif Display', Georgia, serif;
-            font-size: clamp(1.45rem, 2.6vw, 2rem);
-            line-height: 1;
-        }
-        .farmer-org-card-note {
-            color: var(--it-muted);
-            font-size: .78rem;
-            margin-top: .45rem;
-        }
-        .farmer-org-chart-shell {
-            position: relative;
-            min-height: 400px;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: .5rem .25rem 0;
-        }
-        .farmer-org-chart-inner {
-            min-width: 0;
-            width: 100%;
-            height: 400px;
-        }
-        .farmer-org-chart-inner canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        .farmer-org-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem .9rem; margin-top: .9rem; padding-top: .85rem; border-top: 1px solid rgba(95,143,120,.24); }
-        .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: .65rem; min-width: 0; padding: .72rem .78rem; border: 1px solid rgba(255,255,255,.55); border-radius: 8px; background: rgba(255,255,255,.66); backdrop-filter: blur(12px) saturate(160%); color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.5; text-align: left; cursor: pointer; }
-        .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.45); background: rgba(247,251,248,.78); }
-        .farmer-org-legend-item:focus-visible { outline: 3px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
-        .farmer-org-legend-swatch { width: 20px; height: 20px; border-radius: 5px; margin-top: .15rem; border: 1px solid rgba(13,31,24,.2); }
-        .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
-        .farmer-org-legend-count { color: #1F2937; font-size: 16px; font-weight: 800; line-height: 1.5; white-space: nowrap; }
-        .farmer-org-chart-status { margin-top: .65rem; color: #1F2937; font-size: 16px; font-weight: 700; line-height: 1.4; }
-        .module-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .module-link {
-            display: block;
-            padding: .9rem;
-            border: 1px solid rgba(95,143,120,.72);
-            border-radius: 10px;
-            background: linear-gradient(145deg, #ffffff, #f7fbf8);
-            text-decoration: none;
-            color: inherit;
-            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-        }
-        .module-link:hover { border-color: rgba(143,175,154,.55); transform: translateY(-1px); box-shadow: 0 .6rem 1.4rem rgba(20,32,51,.08); }
-        .module-top { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
-        .module-name { font-weight: 700; color: var(--it-ink); font-size: .9rem; }
-        .module-count { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--it-green); }
-        .module-meter { height: 6px; border-radius: 999px; background: rgba(95,143,120,.18); overflow: hidden; margin-top: .75rem; }
-        .module-meter span { display: block; height: 100%; width: var(--meter); background: linear-gradient(90deg, var(--it-green-bright), var(--it-accent)); }
-        .role-row, .log-row, .user-row, .report-row {
-            display: flex;
-            align-items: center;
-            gap: .85rem;
-            padding: .8rem 0;
-        }
-        .role-row + .role-row, .log-row + .log-row, .user-row + .user-row, .report-row + .report-row { border-top: 1px solid rgba(95,143,120,.55); }
-        .avatar-soft {
-            width: 38px;
-            height: 38px;
-            border-radius: 999px;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(135deg, var(--it-green-bright), var(--it-green));
-            color: #fff;
-            font-family: 'DM Mono', monospace;
-            font-weight: 700;
-            font-size: .74rem;
-            flex: 0 0 auto;
-        }
-        .log-dot {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            background: rgba(95,143,120,.14);
-            border: 1px solid rgba(127,214,181,.35);
-            color: var(--it-green);
-            flex: 0 0 auto;
-        }
-        .log-dot svg { width: 17px; height: 17px; }
-        .row-title { font-weight: 700; color: var(--it-ink); line-height: 1.25; }
-        .row-sub { color: var(--it-muted); font-size: .82rem; margin-top: .12rem; }
-        .it-risk-badge { display: inline-flex; align-items: center; margin-left: .5rem; padding: .15rem .55rem; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
-        .it-risk-badge-severe { background: rgba(239,68,68,.16); color: #b91c1c; }
-        .it-risk-badge-high { background: rgba(249,115,22,.16); color: #c2410c; }
-        .it-risk-badge-moderate { background: rgba(250,204,21,.22); color: #854d0e; }
-        .it-risk-badge-low { background: rgba(34,197,94,.16); color: #15803d; }
-        .it-risk-interpretation { font-weight: 500; color: var(--it-ink); }
-        .it-risk-score-meta { font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; font-weight: 600; }
-        .quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
-        .quick-action {
-            min-height: 104px;
-            padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid rgba(95,143,120,.72);
-            background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08));
-            color: inherit;
-            text-decoration: none;
-        }
-        .quick-action:hover { transform: translateY(-2px); border-color: rgba(31,77,58,.55); }
-        .quick-action strong { display: block; color: var(--it-ink); }
-        .quick-action span { display: block; color: var(--it-muted); font-size: .82rem; margin-top: .25rem; }
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: .3rem .62rem;
-            font-family: 'DM Mono', monospace;
-            font-size: .64rem;
-            font-weight: 700;
-            letter-spacing: .03em;
-            text-transform: uppercase;
-            background: rgba(95,143,120,.14);
-            color: var(--it-green);
-        }
-        .status-pill.muted { background: rgba(95,143,120,.1); color: var(--it-muted); }
-        .dashboard-section-label {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin: 1.35rem 0 .75rem;
-        }
-        .dashboard-section-label:first-of-type { margin-top: 0; }
-        .section-title {
-            color: #C9D8CE;
-            font-family: 'DM Mono', monospace !important;
-            font-size: .74rem;
-            font-weight: 600 !important;
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            margin: 0;
-        }
-        .section-note { color: #7FD6B5; font-size: .84rem; margin: 0; }
-        .dashboard-tabs {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            border-bottom: 1px solid rgba(255,255,255,.18);
-            margin: 0 0 1.25rem;
-        }
-        .dashboard-tabs::-webkit-scrollbar { display: none; }
-        .dashboard-tab {
-            flex: 0 0 auto;
-            border: 0;
-            background: transparent;
-            color: rgba(255,255,255,.8);
-            font-family: 'Inter', sans-serif;
-            font-size: var(--text-sm);
-            font-weight: 600;
-            padding: .75rem .2rem;
-            margin-right: 1.5rem;
-            white-space: nowrap;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            transition: color .16s ease, border-color .16s ease;
-        }
-        .dashboard-tab:hover { color: #fff; }
-        .dashboard-tab.active { color: #fff; border-bottom-color: var(--it-accent); }
-        .dashboard-tab-panel { display: none; }
-        .dashboard-tab-panel.active { display: block; animation: icPageEnter var(--ic-motion-slow, 420ms) both; }
-        .dashboard-tab-panel > .row:last-child { margin-bottom: 0 !important; }
-        .list-compact .log-row:nth-of-type(n+5), .list-compact .user-row:nth-of-type(n+5), .list-compact .report-row:nth-of-type(n+5) { display: none; }
-        @media (max-width: 1399.98px) { .it-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 1199.98px) { .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 767.98px) {
-            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { grid-template-columns: 1fr; }
-            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
-            .it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .module-list, .quick-grid { grid-template-columns: 1fr; }
-            .it-stat-grid, .farmer-org-grid, .module-list, .quick-grid { gap: .6rem; }
-            .it-stat-grid { margin-bottom: .9rem; }
-            .it-panel-header, .dashboard-section-label { align-items: flex-start; flex-direction: column; }
-            .it-panel-header { padding: .85rem .85rem .6rem; }
-            .it-panel-body { padding: .8rem; }
-            .it-card-body { padding: .85rem; }
-            .it-value { font-size: clamp(1.5rem, 6vw, 1.9rem); }
-            .module-link { padding: .7rem; }
-            .module-top { gap: .5rem; }
-            .module-name { font-size: .82rem; }
-            .quick-action { min-height: 84px; padding: .8rem; }
-            .role-row, .log-row, .user-row, .report-row { padding: .65rem 0; gap: .65rem; }
-            .dashboard-section-label { margin: 1rem 0 .6rem; }
-            .dashboard-tab { margin-right: 1rem; font-size: .84rem; }
-            .it-hero { padding: 1.05rem; border-radius: 22px; margin-bottom: .9rem; }
-            .farmer-org-chart-shell { min-height: 380px; overflow-x: auto; overflow-y: hidden; }
-            .farmer-org-chart-inner { min-width: 0; width: 100%; height: 380px; }
-            .farmer-org-legend { grid-template-columns: 1fr; max-height: 230px; overflow-y: auto; padding-right: .25rem; }
-        }
-        @media (max-width: 380px) {
-            .it-stat-grid { grid-template-columns: 1fr; }
-            .it-card-body { padding: .72rem; }
-        }
-
-        .it-console .empty-state { background: linear-gradient(135deg, rgba(95,143,120,.08), rgba(127,214,181,.08)); border: 1px dashed rgba(95,143,120,.55); color: var(--it-muted); border-radius: 8px; }
-        .it-console .empty-state .fw-bold { color: var(--it-ink); }
-        /* Product UI restraint pass */
-        .it-console .btn { border-radius: 8px !important; box-shadow: none !important; }
-        .it-console .btn:hover { transform: translateY(-1px) !important; }
-        .it-hero {
-            border-radius: 16px;
-            padding: 1.25rem 1.4rem;
-            background: linear-gradient(145deg, rgba(22,59,45,.6) 0%, rgba(31,77,58,.5) 100%);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            box-shadow: 0 6px 16px rgba(13,31,24,.12);
-        }
-        .it-hero::before { opacity: .28; }
-        .it-eyebrow { text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif; font-size: .82rem; }
-        .it-live-chip { border-radius: 8px; background: rgba(255,255,255,.12); backdrop-filter: blur(8px); font-family: 'Inter', sans-serif; letter-spacing: 0; }
-        .it-pulse { width: 8px; height: 8px; box-shadow: none; }
-        .it-card,
-        .it-panel,
-        .module-link,
-        .quick-action {
-            border: 1px solid rgba(255,255,255,.55);
-            border-radius: 12px;
-            background: rgba(255,255,255,.66);
-            backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            -webkit-backdrop-filter: var(--glass-blur, blur(22px) saturate(170%));
-            box-shadow: 0 1px 2px rgba(13,31,24,.08);
-        }
-        .it-card:hover,
-        .module-link:hover,
-        .quick-action:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(13,31,24,.10); }
-        .it-panel-header,
-        .it-modal-header { background: rgba(245,247,244,.55); backdrop-filter: blur(8px); }
-        .it-icon,
-        .log-dot,
-        .avatar-soft { width: 32px; height: 32px; border-radius: 8px; box-shadow: none; }
-        .it-label,
-        .it-tap-hint { letter-spacing: 0; text-transform: none; font-family: 'Inter', sans-serif; }
-        .it-console {
-            --text-xs: .75rem;
-            --text-sm: .875rem;
-            --text-base: 1rem;
-            --text-lg: 1.125rem;
-            --text-2xl: 1.5rem;
-            font-size: var(--text-base);
-            line-height: 1.58;
-        }
-        .it-console .btn { font-size: var(--text-sm); line-height: 1.35; }
-        .it-console .btn-sm { font-size: var(--text-sm); padding: .46rem .95rem; }
-        .it-eyebrow,
-        .section-title,
-        .it-label,
-        .dashboard-tab {
-            font-size: var(--text-sm);
-            line-height: 1.35;
-        }
-        .it-hero p,
-        .section-note,
-        .it-note,
-        .it-panel-sub,
-        .row-sub,
-        .quick-action span,
-        .it-modal-sub {
-            font-size: var(--text-sm);
-            line-height: 1.5;
-            color: var(--it-muted);
-        }
-        .it-panel-title,
-        .row-title,
-        .quick-action strong,
-        .module-name {
-            font-size: var(--text-base);
-            line-height: 1.35;
-        }
-        .it-value { font-size: clamp(1.75rem, 3vw, 2.25rem); line-height: 1.08; }
-        .status-pill { font-size: var(--text-xs); line-height: 1.25; padding: .34rem .62rem; }
-        .it-modal-headline { font-size: var(--text-2xl); line-height: 1.18; }
-        .it-console .table th,
-        .it-console .table td { font-size: var(--text-sm); line-height: 1.45; }
-    </style>
-
     @php
-        $moduleRoutes = [
-            'Farmer Profiles' => 'farmer-profiles.index',
-            'Climate Records' => 'climate-records.index',
-            'Rice Productions' => 'rice-productions.index',
-            'Advisories' => 'planting-advisories.index',
-            'Community Feed' => 'community-feed.index',
-            'Notifications' => 'notifications.index',
-            'Reports' => 'reports.index',
-        ];
-        $moduleTotal = max(array_sum($moduleCounts), 1);
-        $healthScore = $userCount > 0 ? round(($activeUsers / max($userCount, 1)) * 100) : 100;
+        $glyph = ['ok' => '✓', 'warn' => '!', 'crit' => '✕'];
+        $overall = $it['overall'];
     @endphp
 
-    <div class="it-console">
-        <section class="it-hero">
-            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
-                <div>
-                    <div class="it-eyebrow mb-2">IT Expert Console</div>
-                    <h1 class="h2 fw-bold mb-2">IT Dashboard</h1>
-                    <p class="mb-0">Monitor user access, heat map risk records, reports, and system activity for the iClimate platform in one operational dashboard.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="it-live-chip"><span class="it-pulse"></span> System Online</span>
-                    <a class="btn btn-light fw-bold" href="{{ route('users.index') }}">Manage Users</a>
-                    <a class="btn btn-outline-light fw-bold" href="{{ route('system-logs.index') }}">View Logs</a>
-                </div>
-            </div>
-        </section>
+    <style>
+        /* IT dashboard: light working surface inside the green shell; status colours carry meaning. */
+        .itd {
+            --itd-ink: #0d1f18; --itd-ink-2: #26382f; --itd-muted: #4a5a52;
+            --itd-line: #dde6e0; --itd-surface: #f3f6f4; --itd-card: #fff;
+            --itd-ok: #2f9e6e; --itd-ok-bg: #e3f5ec; --itd-ok-ink: #14503a;
+            --itd-warn: #d9a21b; --itd-warn-bg: #fff3cd; --itd-warn-ink: #6b4400;
+            --itd-crit: #c8483a; --itd-crit-bg: #fde3df; --itd-crit-ink: #8a2a1c;
+            --itd-unk: #8a958f; --itd-unk-bg: #eef1ef; --itd-unk-ink: #3d4a43;
+            --itd-gap: 1.25rem;
+            padding: 1.5rem; border-radius: 16px; background: var(--itd-surface); color: var(--itd-ink);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: .9375rem; line-height: 1.5;
+        }
+        .itd, .itd * { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+        .itd h1, .itd h2, .itd h3 { font-weight: 700; letter-spacing: 0; color: var(--itd-ink); margin: 0; }
+        .itd p { margin: 0; color: var(--itd-ink-2); font-size: .9375rem; }
+        .itd small, .itd .itd-muted { color: var(--itd-muted); font-size: .8125rem; }
+        .itd-muted.d-block { display: block; }
 
-        @if(! empty($itHighlights))
-            <section class="it-highlights" aria-label="System health highlights">
-                @foreach($itHighlights as $highlight)
-                    <div class="it-highlight it-highlight-{{ $highlight['severity'] }}">
-                        <span class="it-highlight-dot"></span>
-                        <div>
-                            <div class="it-highlight-title">{{ $highlight['title'] }}</div>
-                            <div class="it-highlight-message">{{ $highlight['message'] }}</div>
+        /* header */
+        .itd-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: var(--itd-gap); }
+        .itd-header h1 { font-size: 1.75rem; line-height: 1.2; }
+        .itd-header p { margin-top: .25rem; }
+        .itd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+        .itd-refreshed { font-size: .8125rem; color: var(--itd-muted); }
+        .itd-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .8rem; border-radius: 999px; font-size: .8125rem; font-weight: 700; }
+        .itd-pill.is-ok, .itd-badge.is-ok { background: var(--itd-ok-bg); color: var(--itd-ok-ink); }
+        .itd-pill.is-warn, .itd-badge.is-warn { background: var(--itd-warn-bg); color: var(--itd-warn-ink); }
+        .itd-pill.is-crit, .itd-badge.is-crit { background: var(--itd-crit-bg); color: var(--itd-crit-ink); }
+        .itd-pill.is-unk, .itd-badge.is-unk, .itd-badge.is-neutral { background: var(--itd-unk-bg); color: var(--itd-unk-ink); }
+        .itd-btn { display: inline-flex; align-items: center; justify-content: center; padding: .4rem .9rem; border-radius: 8px; border: 1px solid #1f5a46; background: #1f5a46; color: #fff !important; font-size: .8125rem; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; }
+        .itd-btn:hover { background: #184a3a; }
+        .itd-btn.is-quiet { background: #fff; color: #1f5a46 !important; }
+        .itd-btn.is-quiet:hover { background: #e8f5ec; }
+        .itd-btn:disabled { opacity: .6; cursor: progress; }
+        .itd-btn:focus-visible, .itd a:focus-visible, .itd summary:focus-visible, .itd .itd-info:focus-visible { outline: 3px solid rgba(31,90,70,.4); outline-offset: 2px; }
+        .itd-link { font-size: .8125rem; font-weight: 600; color: #1f5a46; }
+
+        /* rows: flex, so when a card is hidden its neighbour simply grows to fill the row */
+        .itd-row { display: flex; flex-wrap: wrap; gap: var(--itd-gap); margin-bottom: var(--itd-gap); align-items: stretch; }
+        .itd-cell { display: flex; flex: 1 1 100%; min-width: 0; }
+        .itd-cell[hidden] { display: none; }
+        .itd-cell > .itd-card, .itd-cell > .itd-kpis { flex: 1; min-width: 0; }
+        @media (min-width: 1100px) {
+            .itd-row.r-55-45 > .itd-cell:first-child { flex: 11 1 0; } .itd-row.r-55-45 > .itd-cell:last-child { flex: 9 1 0; }
+            .itd-row.r-60-40 > .itd-cell:first-child { flex: 3 1 0; } .itd-row.r-60-40 > .itd-cell:last-child { flex: 2 1 0; }
+        }
+        /* cards */
+        .itd-card { background: var(--itd-card); border: 1px solid var(--itd-line); border-radius: 12px; padding: 1rem; box-shadow: 0 1px 2px rgba(13,31,24,.05); }
+        .itd-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .75rem; }
+        .itd-card-head h2 { font-size: 1.0625rem; display: flex; align-items: center; gap: .4rem; }
+        .itd-foot { margin-top: .75rem !important; font-size: .8125rem !important; color: var(--itd-muted) !important; }
+        .itd-empty { padding: 1rem; text-align: center; color: var(--itd-muted); background: var(--itd-unk-bg); border-radius: 8px; font-weight: 600; }
+        .itd-error { padding: .6rem .8rem; border-radius: 8px; background: var(--itd-crit-bg); color: var(--itd-crit-ink); font-weight: 600; font-size: .875rem; }
+
+        /* KPI row */
+        .itd-kpis { display: grid; gap: var(--itd-gap); grid-template-columns: minmax(0, 1fr); }
+        @media (min-width: 576px) { .itd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1000px) { .itd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .itd-kpi { display: flex; flex-direction: column; justify-content: flex-start; gap: .15rem; min-height: 9.5rem; padding: 1rem; background: var(--itd-card); border: 1px solid var(--itd-line); border-left: 5px solid var(--itd-line); border-radius: 12px; text-decoration: none; color: var(--itd-ink); box-shadow: 0 1px 2px rgba(13,31,24,.05); min-width: 0; }
+        .itd-kpi:hover { border-color: #b9dcc6; box-shadow: 0 4px 12px rgba(13,31,24,.08); }
+        .itd-kpi.is-ok { border-left-color: var(--itd-ok); } .itd-kpi.is-warn { border-left-color: var(--itd-warn); }
+        .itd-kpi.is-crit { border-left-color: var(--itd-crit); } .itd-kpi.is-unk { border-left-color: var(--itd-unk); }
+        .itd-kpi-top { display: flex; align-items: center; gap: .4rem; }
+        .itd-kpi-label { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--itd-ink-2); }
+        .itd-kpi-value { display: flex; align-items: center; gap: .5rem; margin-top: .35rem; font-size: 2.125rem; font-weight: 800; line-height: 1.1; color: var(--itd-ink); overflow-wrap: anywhere; }
+        .itd-kpi-value.is-compact { font-size: 1.5rem; line-height: 1.2; }
+        .itd-kpi.is-warn .itd-kpi-value { color: var(--itd-warn-ink); } .itd-kpi.is-crit .itd-kpi-value { color: var(--itd-crit-ink); }
+        .itd-kpi.is-unk .itd-kpi-value { color: var(--itd-unk-ink); }
+        .itd-glyph { display: inline-grid; place-items: center; flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .85rem; font-weight: 800; color: #fff; background: var(--itd-unk); }
+        .is-ok > .itd-kpi-value .itd-glyph { background: var(--itd-ok); } .is-warn > .itd-kpi-value .itd-glyph { background: var(--itd-warn); }
+        .is-crit > .itd-kpi-value .itd-glyph { background: var(--itd-crit); }
+        .itd-kpi-caption { font-size: .875rem; font-weight: 600; color: var(--itd-ink-2); }
+        .itd-kpi-sub { font-size: .8125rem; color: var(--itd-muted); overflow-wrap: anywhere; }
+
+        /* info tooltips */
+        .itd-info { position: relative; display: inline-grid; place-items: center; width: 1.05rem; height: 1.05rem; flex: none; border-radius: 50%; border: 1px solid #7d8c84; color: #3d4a43; font-size: .68rem; font-weight: 700; font-style: normal; cursor: help; text-transform: none; letter-spacing: 0; }
+        .itd-info::after { content: attr(data-tip); position: absolute; z-index: 30; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); width: max-content; max-width: min(260px, 70vw); padding: .5rem .65rem; border-radius: 8px; background: #0d1f18; color: #fff; font-size: .78rem; font-weight: 500; line-height: 1.4; text-align: left; white-space: normal; opacity: 0; pointer-events: none; transition: opacity .12s; }
+        .itd-info:hover::after, .itd-info:focus::after { opacity: 1; }
+
+        /* attention */
+        .itd-count { min-width: 1.6rem; padding: .1rem .5rem; border-radius: 999px; text-align: center; font-size: .8125rem; font-weight: 800; background: var(--itd-ok-bg); color: var(--itd-ok-ink); }
+        .itd-count.has-items { background: var(--itd-crit-bg); color: var(--itd-crit-ink); }
+        .itd-allgood { display: flex; align-items: center; gap: .6rem; padding: .75rem 1rem; border-radius: 8px; background: var(--itd-ok-bg); color: var(--itd-ok-ink) !important; font-weight: 600; }
+        .itd-allgood.is-neutral { background: var(--itd-unk-bg); color: var(--itd-unk-ink) !important; }
+        .itd-alerts.is-clear { padding: .6rem 1rem; }
+        .itd-alert-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+        .itd-alert { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .9rem; padding: .75rem 1rem; border-radius: 10px; border: 1px solid var(--itd-line); border-left: 5px solid var(--itd-warn); background: #fffdf5; }
+        .itd-alert.is-critical { border-left-color: var(--itd-crit); background: #fff7f5; }
+        .itd-sev { font-size: .72rem; font-weight: 800; letter-spacing: .06em; padding: .2rem .55rem; border-radius: 6px; background: var(--itd-warn-bg); color: var(--itd-warn-ink); }
+        .is-critical .itd-sev { background: var(--itd-crit-bg); color: var(--itd-crit-ink); }
+        .itd-alert-body strong { display: block; font-size: .9375rem; color: var(--itd-ink); }
+        .itd-alert-body p { font-size: .875rem; }
+        @media (max-width: 640px) { .itd-alert { grid-template-columns: minmax(0, 1fr); } .itd-alert .itd-btn { justify-self: start; } }
+
+        /* tables */
+        .itd-table-wrap { overflow-x: auto; }
+        .itd-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+        .itd-table th { padding: .5rem .6rem; text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--itd-ink-2); border-bottom: 2px solid var(--itd-line); white-space: nowrap; }
+        .itd-table td { padding: .6rem; border-bottom: 1px solid var(--itd-line); vertical-align: middle; color: var(--itd-ink); }
+        .itd-table tr:last-child td { border-bottom: 0; }
+        .itd-nowrap { white-space: nowrap; }
+        .itd-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+        @media (max-width: 767.98px) {
+            .itd-table-cards thead { display: none; }
+            .itd-table-cards, .itd-table-cards tbody, .itd-table-cards tr, .itd-table-cards td { display: block; width: 100%; }
+            .itd-table-cards tr { padding: .5rem 0; border-bottom: 1px solid var(--itd-line); }
+            .itd-table-cards td { border: 0; padding: .15rem 0; }
+            .itd-table-cards td::before { content: attr(data-label) ": "; font-weight: 600; color: var(--itd-muted); font-size: .8125rem; }
+        }
+
+        /* distribution */
+        .itd-dist { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1.25rem; }
+        .itd-donut { position: relative; width: 190px; height: 190px; flex: none; }
+        .itd-donut canvas { width: 100% !important; height: 100% !important; }
+        .itd-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .itd-donut-center strong { font-size: 1.75rem; line-height: 1; font-weight: 800; }
+        .itd-donut-center span { margin-top: .2rem; font-size: .68rem; letter-spacing: .08em; font-weight: 700; color: var(--itd-muted); }
+        .itd-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; min-width: 190px; }
+        .itd-legend li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .5rem; }
+        .itd-swatch { width: 12px; height: 12px; border-radius: 3px; }
+        .itd-legend strong { font-size: 1rem; }
+
+        /* activity chart */
+        .itd-range { display: inline-flex; border: 1px solid var(--itd-line); border-radius: 8px; overflow: hidden; }
+        .itd-range button { padding: .35rem .8rem; border: 0; background: #fff; color: var(--itd-ink-2); font-size: .8125rem; font-weight: 600; cursor: pointer; }
+        .itd-range button + button { border-left: 1px solid var(--itd-line); }
+        .itd-range button[aria-pressed="true"] { background: #1f5a46; color: #fff; }
+        .itd-chart { position: relative; height: 280px; }
+        .itd-chart-state { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 1rem; color: var(--itd-muted); font-weight: 600; }
+        .itd-chart-state[hidden] { display: none; }
+
+        /* data status + farmers */
+        .itd-data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+        @media (max-width: 575.98px) { .itd-data { grid-template-columns: minmax(0, 1fr); } }
+        .itd-data-item { padding: .75rem; border: 1px solid var(--itd-line); border-radius: 10px; background: #fafcfb; min-width: 0; }
+        .itd-data-item h3 { font-size: .875rem; margin-bottom: .4rem; }
+        .itd-data-item dl { margin: 0; display: grid; gap: .2rem; }
+        .itd-data-item dl > div { display: flex; justify-content: space-between; gap: .5rem; font-size: .8125rem; }
+        .itd-data-item dt { color: var(--itd-muted); font-weight: 500; } .itd-data-item dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+        .itd-rows { margin: 0; display: grid; }
+        .itd-rows > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px solid var(--itd-line); font-size: .875rem; }
+        .itd-rows > div:last-child { border-bottom: 0; }
+        .itd-rows dt { color: var(--itd-ink-2); font-weight: 500; display: flex; align-items: center; gap: .4rem; } .itd-rows dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+        .itd-bad { color: var(--itd-crit-ink); }
+        .itd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; }
+        .itd-stats > div { padding: .75rem; border-radius: 10px; background: #f3f8f4; border: 1px solid #d9eadf; display: flex; flex-direction: column; gap: .15rem; }
+        .itd-stat-label { font-size: .78rem; font-weight: 600; color: var(--itd-ink-2); text-transform: uppercase; letter-spacing: .04em; }
+        .itd-stats strong { font-size: 1.625rem; line-height: 1.15; font-weight: 800; } .itd-stats small { font-size: .85rem; }
+
+        .itd-data-value { display: block; font-size: 1.375rem; font-weight: 800; line-height: 1.2; margin-bottom: .1rem; }
+        .itd-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; }
+        .itd-quick a { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; border: 1px solid var(--itd-line); border-radius: 10px; background: #fafcfb; color: var(--itd-ink); font-weight: 600; text-decoration: none; }
+        .itd-quick a:hover { border-color: #b9dcc6; background: #eef7f1; }
+        .itd-quick svg { flex: none; width: 1.4rem; height: 1.4rem; color: #1f5a46; }
+
+        .itd.is-loading [data-slot] { opacity: .55; transition: opacity .15s; }
+        @media (max-width: 575.98px) { .itd { padding: 1rem; } .itd-header h1 { font-size: 1.5rem; } .itd-stats { grid-template-columns: minmax(0, 1fr); } }
+        @media (prefers-reduced-motion: reduce) { .itd * { transition: none !important; } }
+    </style>
+
+    <div class="itd" data-it-dashboard data-live-url="{{ route('admin.dashboard.live') }}" data-activity-url="{{ route('admin.dashboard.activity') }}">
+        <header class="itd-header">
+            <div>
+                <h1>IT Dashboard</h1>
+                <p>Monitor users, system health, data, and system activity.</p>
+            </div>
+            <div class="itd-tools">
+                <span class="itd-pill is-{{ $overall['level'] }}" data-it-status><span aria-hidden="true">{{ $glyph[$overall['level']] }}</span> System status: {{ $overall['label'] }}</span>
+                <span class="itd-refreshed" role="status" aria-live="polite">Last refreshed: <span data-it-refreshed>{{ $it['checked_at']->format('g:i A') }}</span></span>
+                <button type="button" class="itd-btn" data-it-refresh>Refresh</button>
+            </div>
+        </header>
+
+        <div class="itd-row"><div class="itd-cell" data-slot="kpis">@include('dashboards.it.kpis')</div></div>
+        <div class="itd-row"><div class="itd-cell" data-slot="alerts">@include('dashboards.it.alerts')</div></div>
+
+        <div class="itd-row r-55-45">
+            <div class="itd-cell" data-slot="health">@include('dashboards.it.health')</div>
+            <div class="itd-cell" data-slot="distribution">@include('dashboards.it.distribution')</div>
+        </div>
+
+        <div class="itd-row r-60-40">
+            <div class="itd-cell">
+                <section class="itd-card" aria-labelledby="itdActivityTitle" data-it-activity>
+                    <div class="itd-card-head">
+                        <h2 id="itdActivityTitle">System Activity <span class="itd-muted" data-activity-range-label>— Last 30 Days</span></h2>
+                        <div class="itd-range" role="group" aria-label="Activity period">
+                            <button type="button" data-range="7" aria-pressed="false">7 Days</button>
+                            <button type="button" data-range="30" aria-pressed="true">30 Days</button>
+                            <button type="button" data-range="90" aria-pressed="false">90 Days</button>
                         </div>
                     </div>
-                @endforeach
-            </section>
+                    <div class="itd-chart">
+                        <canvas id="itSystemActivityTrendChart" data-chart-unit="events" aria-label="System activity over time"></canvas>
+                        <div class="itd-chart-state" data-activity-state role="status">Loading system activity...</div>
+                    </div>
+                </section>
+            </div>
+            <div class="itd-cell" data-slot="data" @if (count($it['data']) === 0) hidden @endif>@include('dashboards.it.data')</div>
+        </div>
+
+        <div class="itd-row"><div class="itd-cell" data-slot="farmers">@include('dashboards.it.farmers')</div></div>
+        <div class="itd-row"><div class="itd-cell" data-slot="recent">@include('dashboards.it.recent')</div></div>
+
+        <div class="itd-row">
+            <div class="itd-cell">
+                <section class="itd-card" aria-label="Quick actions">
+                    <div class="itd-card-head"><h2>Quick Actions</h2></div>
+                    <div class="itd-quick">
+                        <a href="{{ route('users.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18.5 14.8c1.6.7 2.5 2.3 2.5 4.2"/></svg>Manage Users</a>
+                        <a href="{{ route('system-logs.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>View System Logs</a>
+                        <a href="{{ route('system-health.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6 5 12 2.5-6H21"/></svg>System Health</a>
+                        <a href="{{ route('reports.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>Generate Report</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+        @if (! empty($it['reconciliation']))
+            <p class="itd-foot" role="note">{{ implode(' ', $it['reconciliation']) }}</p>
         @endif
-
-        <div class="dashboard-section-label">
-            <div>
-                <h2 class="section-title">System Overview</h2>
-                <p class="section-note">Heat map, user, farmer, audit, and report status at a glance.</p>
-            </div>
-        </div>
-
-        <section class="it-stat-grid">
-            <button type="button" class="it-card text-decoration-none" data-drawer-open="#itStatUsers">
-                <div class="it-card-body">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div><div class="it-label">Total Users</div><div class="it-value">{{ number_format($userCount) }}</div></div>
-                        <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="currentColor" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 16c.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-                    </div>
-                    <div class="it-note">{{ number_format($activeUsers) }} active, {{ number_format($inactiveUsers) }} inactive</div>
-                    <div class="it-tap-hint">View details &rarr;</div>
-                </div>
-            </button>
-            <button type="button" class="it-card text-decoration-none" data-drawer-open="#itStatFarmers">
-                <div class="it-card-body">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div><div class="it-label">Farmers</div><div class="it-value">{{ number_format($totalFarmers) }}</div></div>
-                        <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-                    </div>
-                    <div class="it-note">Registered farmer access accounts</div>
-                    <div class="it-tap-hint">View details &rarr;</div>
-                </div>
-            </button>
-            <button type="button" class="it-card text-decoration-none" data-drawer-open="#itStatLogs">
-                <div class="it-card-body">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div><div class="it-label">System Logs</div><div class="it-value">{{ number_format($logCount) }}</div></div>
-                        <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                    </div>
-                    <div class="it-note">Audit trail events recorded</div>
-                    <div class="it-tap-hint">View details &rarr;</div>
-                </div>
-            </button>
-            <button type="button" class="it-card text-decoration-none" data-drawer-open="#itStatReports">
-                <div class="it-card-body">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div><div class="it-label">Reports</div><div class="it-value">{{ number_format($moduleCounts['Reports'] ?? 0) }}</div></div>
-                        <div class="it-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 3h10l4 4v12H4V3z" stroke="currentColor" stroke-width="1.4"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.4"/><path d="M7 10h8M7 13h6M7 16h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div>
-                    </div>
-                    <div class="it-note">Generated report history</div>
-                    <div class="it-tap-hint">View details &rarr;</div>
-                </div>
-            </button>
-        </section>
-
-        <div class="dashboard-section-label">
-            <div>
-                <h2 class="section-title">Farmers by Organization</h2>
-                <p class="section-note">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
-            </div>
-        </div>
-
-        <section class="it-panel mb-4">
-            <div class="it-panel-header">
-                <div>
-                    <h2 class="it-panel-title">Farmers by Organization</h2>
-                    <p class="it-panel-sub">Registered farmer profiles grouped by Farmer's Association from the live database.</p>
-                </div>
-                <span class="status-pill">{{ number_format($farmerOrganizationSummary['totalFarmers']) }} farmers</span>
-            </div>
-            <div class="it-panel-body">
-                <div class="farmer-org-grid">
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Farmers</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</div>
-                        <div class="farmer-org-card-note">Registered farmer profiles</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Organizations</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalOrganizations']) }}</div>
-                        <div class="farmer-org-card-note">Farmer associations on record</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Farmers Without Organization</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['farmersWithoutOrganization']) }}</div>
-                        <div class="farmer-org-card-note">Not yet linked to an association</div>
-                    </div>
-                    <div class="farmer-org-card">
-                        <div class="farmer-org-card-label">Total Farm Area</div>
-                        <div class="farmer-org-card-value">{{ number_format($farmerOrganizationSummary['totalFarmArea'], 2) }} ha</div>
-                        <div class="farmer-org-card-note">Combined registered farm area</div>
-                    </div>
-                </div>
-                <div class="farmer-org-chart-shell">
-                    <div class="farmer-org-chart-inner">
-                        <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading real farmer organization data...</div>
-                        <canvas id="adminFarmersByOrganizationChart" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." aria-busy="true" role="img" tabindex="0"></canvas>
-                    </div>
-                </div>
-                <div id="adminFarmersByOrganizationLegend" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                <div id="adminFarmersByOrganizationStatus" class="farmer-org-chart-status" aria-live="polite">Loading real farmer organization data...</div>
-            </div>
-        </section>
-        @include('dashboards.partials.farmer-organization-chart', [
-            'chartData' => $farmerOrganizationChart,
-            'canvasId' => 'adminFarmersByOrganizationChart',
-            'legendId' => 'adminFarmersByOrganizationLegend',
-            'statusId' => 'adminFarmersByOrganizationStatus',
-        ])
-
-        <div class="ic-drawer" id="itStatUsers" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatUsersLabel">
-                <div class="modal-content border-0 it-modal-content">
-                    <div class="modal-header it-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="itStatUsersLabel">Total Users</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="it-modal-headline">{{ number_format($userCount) }} accounts</div>
-                        <p class="it-modal-sub">{{ number_format($activeUsers) }} active &middot; {{ number_format($inactiveUsers) }} inactive.</p>
-                        @foreach($roleCounts as $role => $count)
-                            <div class="role-row">
-                                <div class="avatar-soft">{{ collect(explode(' ', $role))->map(fn ($part) => $part[0] ?? '')->take(2)->implode('') }}</div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $role }}</div>
-                                    <div class="row-sub">{{ number_format($count) }} account{{ $count === 1 ? '' : 's' }}</div>
-                                </div>
-                                <span class="status-pill muted">{{ $userCount ? round(($count / $userCount) * 100) : 0 }}%</span>
-                            </div>
-                        @endforeach
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('users.index') }}">Manage Users</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ic-drawer" id="itStatFarmers" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatFarmersLabel">
-                <div class="modal-content border-0 it-modal-content">
-                    <div class="modal-header it-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="itStatFarmersLabel">Farmer Accounts</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="it-modal-headline">{{ number_format($totalFarmers) }} registered</div>
-                        <p class="it-modal-sub">Most recently created farmer accounts.</p>
-                        @forelse($recentFarmers as $user)
-                            <div class="user-row">
-                                <div class="avatar-soft">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $user->name }}</div>
-                                    <div class="row-sub">{{ $user->email }} &middot; {{ $user->barangay ?? 'Barangay not set' }}</div>
-                                </div>
-                                <span class="status-pill {{ $user->status === 'Active' ? '' : 'muted' }}">{{ $user->status }}</span>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4"><div class="fw-bold">No farmer accounts yet</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('farmer-profiles.index') }}">Open Farmer Profiles</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ic-drawer" id="itStatLogs" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatLogsLabel">
-                <div class="modal-content border-0 it-modal-content">
-                    <div class="modal-header it-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="itStatLogsLabel">System Logs</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="it-modal-headline">{{ number_format($logCount) }} events</div>
-                        <p class="it-modal-sub">Most recent audit trail activity.</p>
-                        @forelse($latestLogs as $log)
-                            <div class="log-row">
-                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $log->action }}</div>
-                                    <div class="row-sub">{{ $log->user?->name ?? 'System' }} &middot; {{ $log->created_at?->shortDateTime('M d, Y') }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4"><div class="fw-bold">No logs yet</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('system-logs.index') }}">Open Logs</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ic-drawer" id="itStatReports" aria-hidden="true">
-            <div class="ic-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="itStatReportsLabel">
-                <div class="modal-content border-0 it-modal-content">
-                    <div class="modal-header it-modal-header">
-                        <h2 class="modal-title h5 fw-bold" id="itStatReportsLabel">Reports</h2>
-                        <button type="button" class="btn-close" data-drawer-close aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="it-modal-headline">{{ number_format($moduleCounts['Reports'] ?? 0) }} generated</div>
-                        <p class="it-modal-sub">Most recent report history.</p>
-                        @forelse($latestReports as $report)
-                            <div class="report-row">
-                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $report->title }}</div>
-                                    <div class="row-sub">{{ $report->report_type }} &middot; {{ $report->generatedBy?->name ?? 'System' }} &middot; {{ $report->created_at?->format('M d, Y') }}</div>
-                                </div>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4"><div class="fw-bold">No reports yet</div></div>
-                        @endforelse
-                    </div>
-                    <div class="modal-footer">
-                        <a class="btn btn-primary fw-bold" href="{{ route('reports.index') }}">Open Reports</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
-            <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
-            <button type="button" class="dashboard-tab" data-tab="activity" role="tab" aria-selected="false">Activity</button>
-            <button type="button" class="dashboard-tab" data-tab="admin" role="tab" aria-selected="false">Administration</button>
-            <button type="button" class="dashboard-tab" data-tab="riskmap" role="tab" aria-selected="false">Risk Map</button>
-        </div>
-
-        <div class="dashboard-tab-panels">
-        <div class="dashboard-tab-panel active" data-panel="overview">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-5">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">System Usage</h2>
-                            <p class="it-panel-sub">Live counts from each managed iClimate module.</p>
-                        </div>
-                        <span class="status-pill">{{ number_format($moduleTotal) }} total records</span>
-                    </div>
-                    <div class="it-panel-body">
-                        <div class="module-list">
-                            @foreach($moduleCounts as $module => $count)
-                                @php
-                                    $routeName = $moduleRoutes[$module] ?? 'admin.dashboard';
-                                    $meter = min(100, max(8, round(($count / $moduleTotal) * 100)));
-                                @endphp
-                                <a class="module-link" href="{{ route($routeName) }}">
-                                    <div class="module-top">
-                                        <div class="module-name">{{ $module }}</div>
-                                        <div class="module-count">{{ number_format($count) }}</div>
-                                    </div>
-                                    <div class="module-meter" style="--meter: {{ $meter }}%;"><span></span></div>
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Login &amp; Access Status</h2>
-                            <p class="it-panel-sub">Role distribution and account status.</p>
-                        </div>
-                        <span class="status-pill {{ $healthScore < 80 ? 'muted' : '' }}">{{ $healthScore }}% active</span>
-                    </div>
-                    <div class="it-panel-body">
-                        @foreach($roleCounts as $role => $count)
-                            <div class="role-row">
-                                <div class="avatar-soft">{{ collect(explode(' ', $role))->map(fn ($part) => $part[0] ?? '')->take(2)->implode('') }}</div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $role }}</div>
-                                    <div class="row-sub">{{ number_format($count) }} account{{ $count === 1 ? '' : 's' }}</div>
-                                </div>
-                                <span class="status-pill muted">{{ $userCount ? round(($count / $userCount) * 100) : 0 }}%</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-4">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Data Processing Status</h2>
-                            <p class="it-panel-sub">Background jobs the app depends on.</p>
-                        </div>
-                    </div>
-                    <div class="it-panel-body">
-                        <div class="it-pipeline-row">
-                            <span class="it-pipeline-label">Last risk map refresh</span>
-                            <span class="it-pipeline-value">{{ $heatmapLastRefresh ? \Illuminate\Support\Carbon::parse($heatmapLastRefresh)->diffForHumans() : 'Never' }}</span>
-                        </div>
-                        <div class="it-pipeline-row">
-                            <span class="it-pipeline-label">Refresh failures today</span>
-                            <span class="it-pipeline-value">{{ $heatmapRefreshFailuresToday }}</span>
-                        </div>
-                        <div class="it-pipeline-row">
-                            <span class="it-pipeline-label">Prediction success rate</span>
-                            <span class="it-pipeline-value">{{ $predictionSuccessRate !== null ? number_format($predictionSuccessRate, 1).'%' : 'No calls today' }}</span>
-                        </div>
-                        <div class="it-pipeline-row">
-                            <span class="it-pipeline-label">Prediction calls today</span>
-                            <span class="it-pipeline-value">{{ $predictionAttemptsToday }} ({{ $predictionFailuresToday }} failed)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mt-0">
-            <div class="col-12">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Model Evaluation</h2>
-                            <p class="it-panel-sub">Rice-yield model accuracy — not yet evaluated against the deployed model's exact feature set (see caveat below).</p>
-                        </div>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('model-evaluation.index') }}">Full Evaluation</a>
-                    </div>
-                    <div class="it-panel-body">
-                        @if($modelEvaluation['ready'] && $modelEvaluationBestRow)
-                            <div class="d-flex flex-wrap gap-4">
-                                <div><div class="it-label">Selected Model</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['algorithm'] }}</div></div>
-                                <div><div class="it-label">R&sup2;</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['r2'] !== null ? number_format((float) $modelEvaluationBestRow['r2'], 3) : 'N/A' }}</div></div>
-                                <div><div class="it-label">RMSE</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['rmse'] !== null ? number_format((float) $modelEvaluationBestRow['rmse'], 3) : 'N/A' }}</div></div>
-                                <div><div class="it-label">MAE</div><div class="it-value" style="font-size:1.4rem;">{{ $modelEvaluationBestRow['mae'] !== null ? number_format((float) $modelEvaluationBestRow['mae'], 3) : 'N/A' }}</div></div>
-                            </div>
-                            <p class="it-panel-sub mt-3 mb-0">{{ $modelEvaluation['schema_caveat'] }}</p>
-                        @else
-                            <div class="empty-state text-center p-3">
-                                <div class="fw-bold">Evaluation unavailable</div>
-                                <div class="small text-muted">{{ $modelEvaluation['message'] }}</div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="activity">
-        <div class="row g-4 mb-0">
-            <div class="col-xl-7">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Recent Activity</h2>
-                            <p class="it-panel-sub">Latest recorded events across the system.</p>
-                        </div>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('system-logs.index') }}">Open Logs</a>
-                    </div>
-                    <div class="it-panel-body list-compact">
-                        @forelse($latestLogs as $log)
-                            <div class="log-row">
-                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $log->action }}</div>
-                                    <div class="row-sub">{{ $log->user?->name ?? 'System' }} | {{ $log->created_at?->shortDateTime('M d, Y') }}</div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4">
-                                <div class="fw-bold">No logs yet</div>
-                                <div class="small text-muted">System activity will appear here after users start working.</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-5">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">New User Accounts</h2>
-                            <p class="it-panel-sub">Recently created users in the platform.</p>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('users.index') }}">View All</a>
-                            <a class="btn btn-sm btn-primary" href="{{ route('users.create') }}">Add User</a>
-                        </div>
-                    </div>
-                    <div class="it-panel-body list-compact">
-                        @forelse($latestUsers as $user)
-                            <div class="user-row">
-                                <div class="avatar-soft">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $user->name }}</div>
-                                    <div class="row-sub">{{ $user->email }} | {{ $user->role }}</div>
-                                </div>
-                                <span class="status-pill {{ $user->status === 'Active' ? '' : 'muted' }}">{{ $user->status }}</span>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4">
-                                <div class="fw-bold">No users found</div>
-                                <div class="small text-muted">Create an account to populate this list.</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="admin">
-        <div class="row g-4">
-            <div class="col-xl-5">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Quick Actions</h2>
-                            <p class="it-panel-sub">Common IT Expert operations.</p>
-                        </div>
-                    </div>
-                    <div class="it-panel-body list-compact">
-                        <div class="quick-grid">
-                            <a class="quick-action" href="{{ route('users.create') }}"><strong>Add New User</strong><span>Create Farmer, MAO Personnel, or IT Expert accounts.</span></a>
-                            <a class="quick-action" href="{{ route('reports.index') }}"><strong>Reports Center</strong><span>Generate and review platform reports.</span></a>
-                            <a class="quick-action" href="{{ route('system-logs.index') }}"><strong>Audit Trail</strong><span>Inspect recent system actions and changes.</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-7">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Recent Reports</h2>
-                            <p class="it-panel-sub">Latest generated report history.</p>
-                        </div>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.index') }}">View Reports</a>
-                    </div>
-                    <div class="it-panel-body">
-                        @forelse($latestReports as $report)
-                            <div class="report-row">
-                                <div class="log-dot"><svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $report->title }}</div>
-                                    <div class="row-sub">{{ $report->report_type }} | {{ $report->generatedBy?->name ?? 'System' }} | {{ $report->created_at?->format('M d, Y') }}</div>
-                                </div>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.show', $report) }}">Open</a>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4">
-                                <div class="fw-bold">No reports yet</div>
-                                <div class="small text-muted">Generated reports will appear here.</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mt-0">
-            <div class="col-12">
-                <div class="it-panel h-100">
-                    <div class="it-panel-header">
-                        <div>
-                            <h2 class="it-panel-title">Report &amp; Download History</h2>
-                            <p class="it-panel-sub">Who is generating reports, and how often.</p>
-                        </div>
-                    </div>
-                    <div class="it-panel-body list-compact">
-                        @forelse($reportUsageAudit as $row)
-                            <div class="user-row">
-                                <div class="avatar-soft">{{ strtoupper(substr($row->generatedBy?->name ?? 'SY', 0, 2)) }}</div>
-                                <div class="flex-grow-1">
-                                    <div class="row-title">{{ $row->generatedBy?->name ?? 'System' }}</div>
-                                    <div class="row-sub">{{ $row->generatedBy?->role ?? 'N/A' }} &middot; last generated {{ \Illuminate\Support\Carbon::parse($row->last_generated_at)->diffForHumans() }}</div>
-                                </div>
-                                <span class="status-pill">{{ number_format($row->total) }} report{{ $row->total === 1 ? '' : 's' }}</span>
-                            </div>
-                        @empty
-                            <div class="empty-state text-center p-4">
-                                <div class="fw-bold">No report activity yet</div>
-                                <div class="small text-muted">Report generation and CSV exports will appear here once users start using the Reports Center.</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="dashboard-tab-panel" data-panel="riskmap">
-        <div class="it-panel h-100">
-            <div class="it-panel-body">
-                @include('partials.barangay-risk-map', [
-                    'heading' => 'Lian Municipality Risk Map',
-                    'subheading' => 'Choropleth of all 19 Lian barangays, from live weather and recorded rice yield — the same data source used by the MAO and Farmer dashboards. Click a barangay for details.',
-                    'showRefresh' => true,
-                ])
-            </div>
-        </div>
-        </div>
-        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tabButtons = document.querySelectorAll('.dashboard-tabs .dashboard-tab');
-            const tabPanels = document.querySelectorAll('.dashboard-tab-panels .dashboard-tab-panel');
+        (() => {
+            const root = document.querySelector('[data-it-dashboard]');
+            if (!root) return;
+            const $ = (s) => root.querySelector(s);
+            let donut = null; let activity = null; let range = 30;
 
-            tabButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach((btn) => {
-                        btn.classList.toggle('active', btn === button);
-                        btn.setAttribute('aria-selected', btn === button ? 'true' : 'false');
-                    });
-                    tabPanels.forEach((panel) => {
-                        panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab);
-                    });
-                    tabPanels.forEach((panel) => {
-                        if (panel.dataset.panel !== button.dataset.tab) return;
-                        panel.querySelectorAll('canvas').forEach((canvas) => Chart.getChart(canvas)?.resize());
-                    });
+            const ready = async () => { try { await window.iClimateVisualsReady; } catch (e) { /* handled by callers */ } return !!window.Chart; };
+
+            async function initDonut() {
+                const canvas = $('canvas[data-donut]');
+                if (!canvas || !(await ready())) return;
+                if (donut) { donut.destroy(); donut = null; }
+                const cfg = JSON.parse(canvas.dataset.donut);
+                donut = new window.Chart(canvas, {
+                    type: 'doughnut',
+                    data: { labels: cfg.labels, datasets: [{ data: cfg.counts, backgroundColor: cfg.colors, borderColor: '#fff', borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } },
                 });
-            });
-        });
+            }
+
+            const longDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+            async function loadActivity() {
+                const state = $('[data-activity-state]');
+                state.hidden = false; state.textContent = 'Loading system activity...';
+                $('[data-activity-range-label]').textContent = '— Last ' + range + ' Days';
+                root.querySelectorAll('.itd-range button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.range) === range)));
+                try {
+                    const res = await fetch(root.dataset.activityUrl + '?range=' + range, { headers: { Accept: 'application/json' } });
+                    if (!res.ok) throw new Error('bad status');
+                    const data = await res.json();
+                    if (data.state === 'error') { state.textContent = data.message; return; }
+                    if (data.state === 'empty') { if (activity) { activity.destroy(); activity = null; } state.textContent = 'No system activity was recorded in this period.'; return; }
+                    if (!(await ready())) { state.textContent = 'The chart library could not be loaded.'; return; }
+                    state.hidden = true;
+                    const datasets = data.datasets.map((d) => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.color, borderWidth: 2, tension: .3, pointRadius: data.days <= 30 ? 3 : 0, pointHoverRadius: 6 }));
+                    if (activity) { activity.data.labels = data.labels; activity.data.datasets = datasets; activity.$dates = data.dates; activity.update(); return; }
+                    activity = new window.Chart($('#itSystemActivityTrendChart'), {
+                        type: 'line', data: { labels: data.labels, datasets },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Events' }, grid: { color: '#eef2ef' } }, x: { grid: { display: false }, ticks: { autoSkip: true, maxRotation: 0 } } },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 12 } },
+                                tooltip: { callbacks: {
+                                    title: (items) => activity.$dates ? longDate(activity.$dates[items[0].dataIndex]) : items[0].label,
+                                    label: (c) => c.dataset.label + ': ' + c.parsed.y,
+                                } },
+                            },
+                        },
+                    });
+                    activity.$dates = data.dates;
+                } catch (e) {
+                    state.hidden = false; state.textContent = 'Unable to retrieve system activity.';
+                }
+            }
+
+            root.querySelectorAll('.itd-range button').forEach((b) => b.addEventListener('click', () => { range = Number(b.dataset.range); loadActivity(); }));
+
+            const glyphs = { ok: '✓', warn: '!', crit: '✕' };
+            async function refresh() {
+                const btn = $('[data-it-refresh]');
+                btn.disabled = true; btn.textContent = 'Refreshing...'; root.classList.add('is-loading');
+                try {
+                    const res = await fetch(root.dataset.liveUrl, { headers: { Accept: 'application/json' } });
+                    if (!res.ok) throw new Error('bad status');
+                    const data = await res.json();
+                    if (donut) { donut.destroy(); donut = null; }
+                    Object.entries(data.slots).forEach(([key, html]) => { const el = root.querySelector('[data-slot="' + key + '"]'); if (el) { el.innerHTML = html; el.hidden = html.trim() === ''; } });
+                    $('[data-it-refreshed]').textContent = data.refreshed_at;
+                    const pill = $('[data-it-status]');
+                    pill.className = 'itd-pill is-' + data.level;
+                    pill.textContent = glyphs[data.level] + ' System status: ' + data.status;
+                    initDonut(); loadActivity();
+                } catch (e) {
+                    $('[data-it-refreshed]').textContent = 'failed. Showing the last loaded data.';
+                } finally {
+                    btn.disabled = false; btn.textContent = 'Refresh'; root.classList.remove('is-loading');
+                }
+            }
+            $('[data-it-refresh]').addEventListener('click', refresh);
+            // Health changes slowly, so refresh it every 5 minutes, and only while the tab is visible.
+            setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 300000);
+
+            const start = () => { initDonut(); loadActivity(); };
+            document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
+        })();
     </script>
 </x-app-layout>

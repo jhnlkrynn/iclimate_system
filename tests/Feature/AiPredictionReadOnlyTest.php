@@ -53,10 +53,27 @@ class AiPredictionReadOnlyTest extends TestCase
         ]);
 
         $this->farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
+        $this->recentClimate();
 
         Log::listen(function ($event): void {
             $this->logs[] = ['message' => $event->message, 'context' => $event->context];
         });
+    }
+
+    /**
+     * The yield model runs only when every input it needs is a real number, and the "previous month" and
+     * 3/6-month trend inputs come from the last six recorded months. Without those the engine reports the
+     * missing inputs and does not run the model, so these tests record six months of climate first.
+     */
+    private function recentClimate(): void
+    {
+        foreach (range(1, 6) as $monthsAgo) {
+            \App\Models\ClimateRecord::factory()->create([
+                'record_date' => now()->subMonths($monthsAgo)->startOfMonth()->toDateString(),
+                'rainfall' => 150 + $monthsAgo * 10, 'temperature' => 27 + $monthsAgo * 0.2, 'humidity' => 80,
+                'wind_speed' => 10, 'season' => \App\Models\ClimateRecord::SEASON_WET,
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */

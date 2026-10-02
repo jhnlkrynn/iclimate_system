@@ -83,6 +83,23 @@ class PredictionService
         $sharedYieldResult = $this->riceYield->predictForUser($targetDate, $farmType, $areaOverride, $user, $manualOverrides);
         $engineResult = $sharedYieldResult['engine_result'];
 
+        // No model result means no prediction, and nothing is estimated in its place. Advice that does not
+        // need a yield (e.g. irrigation from supplied weather) can still be given; a yield question, or advice
+        // without enough weather data, cannot.
+        $decisionLacksData = (bool) data_get($engineResult, 'decision_support.insufficient_data', false);
+        if (! ($sharedYieldResult['success'] ?? false) && ($decisionLacksData || $intent === IntentDetectionService::RICE_YIELD_PREDICTION)) {
+            $message = $this->isTagalog($language)
+                ? 'Hindi pa available ang prediksyon ng ani dahil kulang ang mga napatunayang datos o hindi gumagana ang prediction system. Walang tantiyang ginawa. Subukan muli mamaya.'
+                : 'A rice-yield prediction is not available right now because verified input data is incomplete or the prediction service is unavailable. No estimate was made. Please try again later.';
+
+            return $this->textResponse($message, $intent, $language, $memory, $startedAt, [
+                'source_type' => 'System',
+                'source_name' => 'iClimate Prediction System',
+                'confidence_score' => 0,
+                'intent_detection' => $intentResult,
+            ]);
+        }
+
         $context = [
             ...$engineResult['model_input'],
             'barangay' => (string) ($profile?->barangay ?? $user->barangay ?? ''),
@@ -130,7 +147,10 @@ class PredictionService
             'intent' => $intent,
             'answer' => $answer,
             'source_type' => $groqFallback ? 'Machine Learning + Generative AI' : 'Machine Learning',
-            'source_name' => $groqFallback ? $yield['source_name'].' + '.$groqFallback['source_name'] : $yield['source_name'],
+            // With no model result there is no yield source to name: the advice then rests on the weather rules alone.
+            'source_name' => $groqFallback
+                ? ($yield['source_name'] ?? 'iClimate Decision Support').' + '.$groqFallback['source_name']
+                : ($yield['source_name'] ?? 'iClimate Decision Support'),
             'source_url' => null,
             'source_credit' => $groqFallback
                 ? 'Prediction values came from trained iClimate models/rules; explanation was assisted by Groq.'
@@ -208,11 +228,11 @@ class PredictionService
         $text = str($question)->lower()->toString();
 
         if (str_contains($text, 'next month') || str_contains($text, 'susunod na buwan')) {
-            return CarbonImmutable::now()->addMonthNoOverflow();
+            return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow();
         }
 
         if (str_contains($text, 'this month') || str_contains($text, 'ngayong buwan')) {
-            return CarbonImmutable::now();
+            return \App\Support\BusinessClock::now()->toImmutable();
         }
 
         if (preg_match('/\b(\d{4})-(\d{1,2})(?:-(\d{1,2}))?\b/', $question, $match)) {
@@ -234,7 +254,7 @@ class PredictionService
             $month = $months[strtolower($match[1])];
             $day = ! empty($match[2]) ? (int) $match[2] : 1;
             $hasYear = ! empty($match[3]);
-            $year = $hasYear ? (int) $match[3] : CarbonImmutable::now()->year;
+            $year = $hasYear ? (int) $match[3] : \App\Support\BusinessClock::now()->toImmutable()->year;
 
             try {
                 $date = CarbonImmutable::createFromDate($year, $month, $day);
@@ -242,7 +262,7 @@ class PredictionService
                 return null;
             }
 
-            if (! $hasYear && $date->lessThanOrEqualTo(CarbonImmutable::today())) {
+            if (! $hasYear && $date->toDateString() <= \App\Support\BusinessClock::today()->toDateString()) {
                 $date = $date->addYear();
             }
 
@@ -254,7 +274,7 @@ class PredictionService
 
     private function groqPredictionFallback(User $user, string $question, string $intent, string $language, array $memory, array $context, array $weather, array $yield, array $decision, array $warnings, array $quality, ?string $apiError): ?array
     {
-        if (! $this->shouldAskGroqForPredictionFallback($quality, $apiError, (bool) ($yield['fallback'] ?? false))) {
+        if (! $this->shouldAskGroqForPredictionFallback($quality, $apiError, false)) {
             return null;
         }
 
@@ -270,7 +290,7 @@ class PredictionService
             'warnings' => $warnings,
             'quality' => $quality,
             'python_api_error' => $apiError,
-            'fallback_used' => $apiError !== null || (($yield['fallback'] ?? false) === true),
+            'fallback_used' => $apiError !== null,
         ]);
     }
 
@@ -859,22 +879,18 @@ class PredictionService
         $issues = [];
 
         if ($apiError) {
-            $issues[] = 'Trained model API unavailable; fallback rules were used.';
+            $issues[] = 'The trained yield model gave no result, so this advice uses weather rules only and has no yield estimate.';
         }
 
-        if (($yield['fallback'] ?? false) === true) {
-            $issues[] = 'Trained model was unavailable; a local rule-based estimate was used.';
-        }
-
-        if ((float) $context['rainfall'] < 0 || (float) $context['rainfall'] > 600) {
+        if (is_numeric($context['rainfall']) && ((float) $context['rainfall'] < 0 || (float) $context['rainfall'] > 600)) {
             $issues[] = 'Rainfall is outside the normal model planning range.';
         }
 
-        if ((float) $context['temp_avg'] < 18 || (float) $context['temp_avg'] > 40) {
+        if (is_numeric($context['temp_avg']) && ((float) $context['temp_avg'] < 18 || (float) $context['temp_avg'] > 40)) {
             $issues[] = 'Temperature is outside the normal model planning range.';
         }
 
-        if ((float) $context['humidity'] < 35 || (float) $context['humidity'] > 100) {
+        if (is_numeric($context['humidity']) && ((float) $context['humidity'] < 35 || (float) $context['humidity'] > 100)) {
             $issues[] = 'Humidity is outside the normal model planning range.';
         }
 
@@ -920,15 +936,15 @@ class PredictionService
             $steps[] = $tagalog ? 'Suriin ang bukid pagkatapos ng ulan at panatilihing bukas ang drainage channels.' : 'Check the field after rainfall and keep drainage channels open.';
         }
 
-        if ((float) $context['rainfall'] < 100) {
+        if (is_numeric($context['rainfall']) && (float) $context['rainfall'] < 100) {
             $steps[] = $tagalog ? 'Para sa rainfed na bukid, ipagpaliban muna ang paglilipat-tanim hanggang bumuti ang ulan o makahanap ng dagdag na patubig.' : 'For rainfed fields, delay transplanting until rainfall improves or arrange supplemental water.';
         }
 
-        if ((float) $context['rainfall'] > 300) {
+        if (is_numeric($context['rainfall']) && (float) $context['rainfall'] > 300) {
             $steps[] = $tagalog ? 'Iwasan muna ang dagdag na tubig at tingnan ang mabababang bahagi kung may waterlogging.' : 'Avoid adding more water and inspect low areas for waterlogging.';
         }
 
-        if ((float) $context['temp_avg'] >= 34) {
+        if (is_numeric($context['temp_avg']) && (float) $context['temp_avg'] >= 34) {
             $steps[] = $tagalog ? 'Magpatubig sa umaga o late afternoon para mabawasan ang heat stress.' : 'Schedule irrigation early morning or late afternoon to reduce heat stress.';
         }
 
@@ -956,9 +972,15 @@ class PredictionService
             'next_steps' => array_values(array_unique($steps)),
             'quality' => $quality,
             'input_summary' => $tagalog
-                ? 'Ulan '.number_format((float) $context['rainfall'], 1).' mm, temperatura '.number_format((float) $context['temp_avg'], 1).' C, humidity '.number_format((float) $context['humidity'], 1).'%, hangin '.number_format((float) $context['wind_speed'], 1).', '.$context['season'].' season, '.$context['farm_type'].' na bukid.'
-                : 'Rainfall '.number_format((float) $context['rainfall'], 1).' mm, temperature '.number_format((float) $context['temp_avg'], 1).' C, humidity '.number_format((float) $context['humidity'], 1).'%, wind '.number_format((float) $context['wind_speed'], 1).', '.$context['season'].' season, '.$context['farm_type'].' farm.',
+                ? 'Ulan '.$this->fmtNumber($context['rainfall'], 1, ' mm').', temperatura '.$this->fmtNumber($context['temp_avg'], 1, ' C').', humidity '.$this->fmtNumber($context['humidity'], 1, '%').', hangin '.$this->fmtNumber($context['wind_speed'], 1).', '.($context['season'] ?? 'hindi alam ang').' season, '.$context['farm_type'].' na bukid.'
+                : 'Rainfall '.$this->fmtNumber($context['rainfall'], 1, ' mm').', temperature '.$this->fmtNumber($context['temp_avg'], 1, ' C').', humidity '.$this->fmtNumber($context['humidity'], 1, '%').', wind '.$this->fmtNumber($context['wind_speed'], 1).', '.($context['season'] ?? 'unknown').' season, '.$context['farm_type'].' farm.',
         ];
+    }
+
+    /** A missing value reads "not available", never "0.0". */
+    private function fmtNumber(mixed $value, int $decimals, string $unit = ''): string
+    {
+        return is_numeric($value) ? number_format((float) $value, $decimals).$unit : 'not available';
     }
 
     private function explanation(array $weather, array $yield, array $insights, ?string $apiError, string $language): string

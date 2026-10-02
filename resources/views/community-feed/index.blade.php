@@ -425,8 +425,8 @@
         .feed-badge { background: rgba(82,183,136,.16); color: #2d6a4f; }
         .feed-badge.archived { background: rgba(45,106,79,.06); color: var(--feed-muted); border-color: var(--feed-line); }
         .manage-actions { border-top-color: var(--feed-line); }
-        .manage-panel summary { border-color: #74c69d; background: rgba(82,183,136,.12); color: #2d6a4f; }
-        .manage-panel summary:hover, .manage-panel[open] summary { background: rgba(82,183,136,.2); }
+        .manage-panel summary { border-color: #74c69d; background: rgba(82,183,136,.08); color: #2d6a4f; }
+        .manage-panel summary:hover, .manage-panel[open] summary { background: #fff; border-color: #2d6a4f; box-shadow: 0 2px 8px rgba(8,25,19,.08); }
         .manage-panel-body { border-color: var(--feed-line); background: rgba(45,106,79,.03); }
         .file-tile { border-color: var(--feed-line); background: rgba(45,106,79,.03); color: var(--feed-ink); }
         .reaction-row { border-color: #edf3ee; background: #fbfdfb; }
@@ -440,10 +440,10 @@
         .feed-empty p { color: var(--feed-muted); }
         .feed-wrap .text-muted { color: var(--feed-muted) !important; }
         .feed-wrap .alert-success { background: rgba(82,183,136,.14); border-color: rgba(116,198,157,.35); color: #1a3a2a; }
-        .feed-wrap .btn-outline-primary { color: #74c69d; border-color: #74c69d; }
-        .feed-wrap .btn-outline-primary:hover { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
+        .feed-wrap .btn-outline-primary { color: #1f6f4a; border-color: #74c69d; }
+        .feed-wrap .btn-outline-primary:hover { background: #fff; border-color: #2d6a4f; color: #1f6f4a; box-shadow: 0 4px 12px rgba(8,25,19,.1); }
         .feed-wrap .btn-outline-secondary { color: var(--feed-muted); border-color: var(--feed-line); }
-        .feed-wrap .btn-outline-secondary:hover { background: rgba(45,106,79,.08); border-color: #2d6a4f; color: var(--feed-ink); }
+        .feed-wrap .btn-outline-secondary:hover { background: #fff; border-color: #74c69d; color: var(--feed-ink); box-shadow: 0 4px 12px rgba(8,25,19,.08); }
 
         .feed-post-card > .feed-card-body {
             color: #0d1f18 !important;

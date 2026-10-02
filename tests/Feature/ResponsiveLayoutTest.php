@@ -11,8 +11,8 @@ class ResponsiveLayoutTest extends TestCase
         $appCss = file_get_contents(resource_path('css/app.css'));
         $navigation = file_get_contents(resource_path('views/layouts/navigation.blade.php'));
         $sidebar = file_get_contents(resource_path('views/layouts/sidebar.blade.php'));
-        $maoDashboard = file_get_contents(resource_path('views/dashboards/mao.blade.php'));
-        $farmerDashboard = file_get_contents(resource_path('views/dashboards/farmer.blade.php'));
+        $maoDashboard = file_get_contents(resource_path('views/dashboards/mao-operations.blade.php'));
+        $maoOverview = file_get_contents(resource_path('views/dashboards/mao.blade.php'));
         $itDashboard = file_get_contents(resource_path('views/dashboards/it-expert.blade.php'));
         $crudIndex = file_get_contents(resource_path('views/crud/index.blade.php'));
 
@@ -25,13 +25,23 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('overscroll-behavior-inline: contain', $appCss);
         $this->assertStringContainsString('max-height: 100dvh', $appCss);
 
-        $this->assertStringContainsString('.farmer-hero-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerDashboard);
-        $this->assertStringContainsString('.climate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerDashboard);
+        // Farmer dashboard: its styles live in resources/css/farmer-dashboard.css; 2 KPI cards per row on phones, one column on very small screens.
+        $farmerCss = file_get_contents(resource_path('css/farmer-dashboard.css'));
+        $this->assertStringContainsString('.mfd-kpis { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerCss);
+        $this->assertStringContainsString('@media (max-width: 479.98px) { .mfd-kpis { grid-template-columns: minmax(0, 1fr); } }', $farmerCss);
         $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
-        $this->assertStringContainsString('.it-stat-grid, .farmer-org-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itDashboard);
+        // IT dashboard: 1 KPI card per row on phones, 2 on tablets, 4 equal cards on desktop; tables become cards on phones.
+        $this->assertStringContainsString('.itd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itDashboard);
+        $this->assertStringContainsString('.itd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }', $itDashboard);
+        $this->assertStringContainsString('.itd-table-cards thead { display: none; }', $itDashboard);
         $this->assertStringContainsString('height: min(52vh, 320px)', $maoDashboard);
+        // MAO overview: 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
+        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoOverview);
+        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }', $maoOverview);
+        $this->assertStringContainsString('repeat(var(--mtd-kpi-count, 5), minmax(0, 1fr))', $maoOverview);
+        $this->assertStringContainsString('.mtd-table-cards thead { display: none; }', $maoOverview);
     }
 
     public function test_rendered_blade_sources_do_not_contain_merge_conflict_markers(): void

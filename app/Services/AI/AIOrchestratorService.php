@@ -453,7 +453,7 @@ class AIOrchestratorService
             'source' => $weather['source'] ?? $weather['provider'] ?? 'Weather service',
             'location' => $weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas'],
             'data' => [
-                'condition' => data_get($weather, 'current.condition'),
+                'condition' => \App\Support\WeatherConditionLabel::display(data_get($weather, 'current.condition')),
                 'temperature_c' => data_get($weather, 'current.temperature'),
                 'feels_like_c' => data_get($weather, 'current.feels_like'),
                 'humidity_percent' => data_get($weather, 'current.humidity'),
@@ -490,7 +490,10 @@ class AIOrchestratorService
     private function weatherForecast(User $user, string $question, string $language, array $memory, array $entities): array
     {
         $weather = $this->weather();
-        $forecast = (array) ($weather['forecast'] ?? []);
+        $forecast = array_map(
+            fn ($day) => is_array($day) && isset($day['condition']) ? ['condition' => \App\Support\WeatherConditionLabel::display($day['condition'])] + $day : $day,
+            (array) ($weather['forecast'] ?? [])
+        );
         $target = $entities['target_period'] ?? null;
         $selected = $target === 'tomorrow' && isset($forecast[1]) ? [$forecast[1]] : $forecast;
         $tool = [
@@ -902,18 +905,18 @@ class AIOrchestratorService
     private function targetMonth(array $entities): CarbonImmutable
     {
         if (($entities['target_period'] ?? null) === 'next_month') {
-            return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+            return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
         }
 
         if (isset($entities['target_date']) && is_string($entities['target_date'])) {
             try {
                 return CarbonImmutable::parse($entities['target_date'])->startOfMonth();
             } catch (Throwable) {
-                return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+                return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
             }
         }
 
-        return CarbonImmutable::now()->addMonthNoOverflow()->startOfMonth();
+        return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
     }
 
     private function translate(string $language, string $english, string $tagalog): string

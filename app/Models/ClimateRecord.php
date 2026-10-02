@@ -102,7 +102,7 @@ class ClimateRecord extends Model
     public function scopePlausible(Builder $query): Builder
     {
         return $query
-            ->where('record_date', '<=', now()->toDateString())
+            ->where('record_date', '<=', \App\Support\BusinessClock::today()->toDateString())
             ->where(function (Builder $q) {
                 $q->whereNull('temperature')
                     ->orWhereBetween('temperature', [self::TEMPERATURE_MIN_C, self::TEMPERATURE_MAX_C]);

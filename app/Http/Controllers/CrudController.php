@@ -231,7 +231,7 @@ abstract class CrudController extends Controller
             'role' => ['required', Rule::in([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
-            'barangay' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255', Rule::in(\App\Support\LianBarangays::all())],
             'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
         ];
     }

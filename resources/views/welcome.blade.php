@@ -4,7 +4,7 @@
         'hero'     => asset('images/rice-hero-aerial.jpg'),
         'about'    => asset('images/rice-about-farmer.jpg'),
         'features' => asset('images/rice-features-paddy.jpg'),
-        'roles'    => asset('images/rice-roles-terrace.png'),
+        'roles'    => asset('images/rice-roles-terrace.jpg'),
         'contact'  => asset('images/rice-contact-golden.jpg'),
     ];
 @endphp
@@ -426,8 +426,8 @@
     .hws-icon { color: var(--green-400); flex-shrink: 0; }
     .hws-val { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--white); line-height: 1; }
     .hws-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,.74); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
-    .hws-item { transition: transform .3s cubic-bezier(.34,1.4,.64,1), border-color .25s ease, background .25s ease; }
-    .hws-item:hover { transform: translateY(-3px); border-color: rgba(127,214,181,.55); background: rgba(22,59,45,.78); }
+    .hws-item { transition: transform .3s cubic-bezier(.34,1.4,.64,1), border-color .25s ease, background .25s ease, box-shadow .25s ease; }
+    .hws-item:hover { transform: translateY(-3px); border-color: rgba(127,214,181,.65); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
     .hws-item:hover .hws-icon { transform: scale(1.15) rotate(-6deg); }
     .hws-icon { transition: transform .35s cubic-bezier(.34,1.4,.64,1); }
     .hws-val.is-updating { animation: heroValIn .5s ease both; }
@@ -455,9 +455,9 @@
       box-shadow: var(--shadow-sm);
       backdrop-filter: blur(18px) saturate(170%);
       -webkit-backdrop-filter: blur(18px) saturate(170%);
-      transition: background .2s ease, border-color .2s ease;
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
-    .trust-item:hover { background: rgba(238,246,240,.85); border-color: rgba(95,143,120,.32); }
+    .trust-item:hover { background: #ffffff; border-color: rgba(95,143,120,.45); box-shadow: 0 4px 14px rgba(8,25,19,.08); }
     .trust-icon {
       width: 40px; height: 40px;
       flex-shrink: 0;
@@ -627,8 +627,7 @@
       transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s var(--ease), box-shadow 0.25s ease;
     }
     .pillar-card:hover {
-      background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
-      border-color: rgba(143,175,154,.45);
+      border-color: rgba(143,175,154,.65);
       transform: translateY(-4px);
       box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
     }
@@ -798,8 +797,7 @@
     .feature-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.32);
-      border-color: rgba(143,175,154,.5);
-      background: linear-gradient(180deg, rgba(31,77,58,.7), rgba(22,59,45,.76));
+      border-color: rgba(143,175,154,.65);
     }
     .fc-icon-wrap {
       width: 52px; height: 52px;
@@ -2133,7 +2131,7 @@
 <nav class="navbar" id="navbar">
   <div class="nav-container">
     <a href="{{ url('/') }}" class="nav-logo">
-      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
+      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" class="nav-link active">Home</a></li>
@@ -2791,7 +2789,7 @@
       <!-- Column 1: Brand -->
       <div class="footer-brand">
         <a href="{{ url('/') }}" class="nav-logo footer-logo">
-          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" class="brand-logo-img">
+          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
         </a>
         <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
         <div class="footer-tagline-chip">

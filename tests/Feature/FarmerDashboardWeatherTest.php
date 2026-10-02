@@ -78,6 +78,7 @@ class FarmerDashboardWeatherTest extends TestCase
         Notification::factory()->create([
             'user_id' => $user->id,
             'type' => 'Warning',
+            'category' => Notification::CATEGORY_WEATHER,
             'is_read' => false,
             'title' => 'Heavy rain warning',
         ]);
@@ -93,30 +94,23 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertOk();
         $response->assertSee('Lian, Batangas');
         $response->assertSee('Light Rain');
-        $response->assertSee('Today&apos;s Rainfall', false);
+        $response->assertSee('Rain expected today');
         $response->assertSee('25.5°C');
         $response->assertDontSee('&deg;C', false);
         $response->assertDontSee('Â°C', false);
         $response->assertSee('6.2 mm');
         $response->assertSee('1 active');
-        $response->assertSee('WEATHER_POLL_INTERVAL = 60000', false);
-        $response->assertSee('getManilaDateKey', false);
-        $response->assertSee('Live as of', false);
-        $response->assertSee('data-weather-live-line', false);
-        $response->assertSee('Near-real-time weather data', false);
-        $response->assertSee('data-weather-provider', false);
-        $response->assertDontSee('Data updated', false);
+        // Live weather is labelled as Lian's current reading with its update time, and refreshes on its own.
+        $response->assertSee('Last updated');
+        $response->assertSee('Weather for Lian, Batangas');
+        $response->assertSee('data-mfd-refresh', false);
+        $response->assertSee('data-mfd-clock', false);
+        $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
+        $this->assertStringContainsString('const REFRESH_EVERY_MS = 300000;', $js);
+        $this->assertStringContainsString("if (document.visibilityState === 'visible') refresh(false); }, REFRESH_EVERY_MS);", $js);
+        $response->assertDontSee('Live as of', false);
         $response->assertDontSee('Observation updated', false);
         $response->assertDontSee('Dashboard checked', false);
-        $response->assertDontSee('data-weather-data-updated-line', false);
-        $response->assertSee('updateLiveWeatherTimestamp', false);
-        $response->assertSee('startMinuteClock', false);
-        $response->assertSee('visibilitychange', false);
-        $response->assertSee('data-weather-freshness', false);
-        $response->assertSee('updateWeatherFreshness', false);
-        $response->assertSee('weatherFetchedAt =', false);
-        $response->assertSee("window.addEventListener('online'", false);
-        $response->assertSee("window.addEventListener('offline'", false);
     }
 
     public function test_weather_endpoint_returns_normalized_json_for_farmer(): void
@@ -268,7 +262,7 @@ class FarmerDashboardWeatherTest extends TestCase
         $user = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($user)
-            ->get(route('mao.dashboard'))
+            ->get(route('mao.operations'))
             ->assertOk()
             ->assertSee('data-mao-weather-root', false)
             ->assertSee('MAO_WEATHER_POLL_INTERVAL = 60000', false)
@@ -291,7 +285,7 @@ class FarmerDashboardWeatherTest extends TestCase
         ]);
 
         $user = User::factory()->maoPersonnel()->create();
-        $response = $this->actingAs($user)->get(route('mao.dashboard'));
+        $response = $this->actingAs($user)->get(route('mao.operations'));
         $content = $response->getContent();
 
         $response->assertOk()

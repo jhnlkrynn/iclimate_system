@@ -34,20 +34,22 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertDontSee('farmersByOrganizationChart', false);
     }
 
-    public function test_mao_dashboard_shows_a_farmer_organizations_stat_card_linking_to_farmer_profiles(): void
+    public function test_mao_dashboard_shows_registered_farmers_with_organizations_linking_to_farmer_profiles(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $organization = FarmerOrganization::query()->where('name', 'Balibago Farmers Association')->firstOrFail();
         FarmerProfile::factory()->create(['farmer_organization_id' => $organization->id]);
 
-        $this->actingAs($mao)
+        $response = $this->actingAs($mao)
             ->get(route('mao.dashboard'))
             ->assertOk()
-            ->assertSee('Farmer Organizations')
-            ->assertSee((string) FarmerOrganization::count())
-            ->assertSee('1 farmers registered')
+            ->assertSee('Registered Farmers')
+            ->assertSee(FarmerOrganization::count().' Farmer Organizations')
             ->assertSee('href="'.route('farmer-profiles.index').'"', false);
+
+        $farmers = collect($response->viewData('mao')['kpis'])->firstWhere('key', 'farmers');
+        $this->assertSame('1', $farmers['value']);
     }
 
     public function test_farmer_profiles_page_shows_a_compact_organization_chart_to_mao(): void
@@ -67,7 +69,8 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertSee('Farmers by Organization')
             ->assertSee($organization->name)
             ->assertSee('id="farmersByOrganizationChartCompact"', false)
-            ->assertSee('const isCompact = true;', false);
+            ->assertSee('"compact":true', false)                                   // chart config data block
+            ->assertSee('const isCompact = chartConfig.compact;', false);
     }
 
     public function test_farmer_does_not_see_the_organization_chart_on_their_own_profile_page(): void
@@ -98,7 +101,7 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertSee('horizontalCategoryTicks', false);
     }
 
-    public function test_admin_dashboard_organization_chart_is_unaffected(): void
+    public function test_admin_dashboard_links_to_farmer_analytics_instead_of_embedding_the_chart(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
         $admin = User::factory()->itExpert()->create();
@@ -106,6 +109,8 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Farmers by Organization');
+            ->assertSee('Farmer Database')
+            ->assertSee('View Farmer Analytics')
+            ->assertDontSee('Farmers by Organization');
     }
 }

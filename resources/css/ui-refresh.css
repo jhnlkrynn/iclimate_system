@@ -115,7 +115,7 @@ body .page-hero {
    ui-enhancements.js sets --ic-mx/--ic-my on hover; the glow sits in the
    background layer so it never clips children or dropdowns. */
 .ic-spot:hover {
-    background-image: radial-gradient(360px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .16), transparent 55%);
+    background-image: none;
 }
 
 body .card:hover,
@@ -308,8 +308,8 @@ button.card:focus-visible,
 }
 
 .table-hover tbody tr:hover {
-    background: linear-gradient(90deg, rgba(127, 214, 181, .16), rgba(240, 247, 244, .9) 40%) !important;
-    box-shadow: inset 3px 0 0 var(--ic-leaf) !important;
+    background: rgba(240, 247, 244, .95) !important;
+    box-shadow: inset 3px 0 0 rgba(63, 166, 107, .45) !important;
 }
 
 .pagination .page-link {
@@ -1235,10 +1235,10 @@ body .btn-outline-danger {
     background-color: rgba(255, 255, 255, .72);
     backdrop-filter: blur(6px);
 }
-body .btn-outline-primary { --bs-btn-color: #1f5a46; --bs-btn-border-color: rgba(31, 90, 70, .55); --bs-btn-hover-bg: #1f5a46; --bs-btn-hover-color: #fff; }
+body .btn-outline-primary { --bs-btn-color: #1f5a46; --bs-btn-border-color: rgba(31, 90, 70, .55); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1f5a46; }
 body .btn-outline-secondary { --bs-btn-color: #2f3d35; --bs-btn-border-color: rgba(47, 61, 53, .35); --bs-btn-hover-bg: #fff; --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1f5a46; }
-body .btn-outline-success { --bs-btn-color: #1b5e3b; --bs-btn-border-color: rgba(27, 94, 59, .5); --bs-btn-hover-bg: #1f6440; --bs-btn-hover-color: #fff; }
-body .btn-outline-danger { --bs-btn-color: #a3283a; --bs-btn-border-color: rgba(163, 40, 58, .45); --bs-btn-hover-bg: #a3283a; --bs-btn-hover-color: #fff; }
+body .btn-outline-success { --bs-btn-color: #1b5e3b; --bs-btn-border-color: rgba(27, 94, 59, .5); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1b5e3b; }
+body .btn-outline-danger { --bs-btn-color: #a3283a; --bs-btn-border-color: rgba(163, 40, 58, .45); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #a3283a; --bs-btn-hover-border-color: #a3283a; }
 body .topbar .btn-outline-primary,
 body .topbar .btn-outline-secondary,
 body .page-hero .btn-outline-primary,
@@ -1374,7 +1374,7 @@ body .it-panel {
     background-image: none;
 }
 body .ic-spot:hover {
-    background-image: radial-gradient(360px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .18), transparent 55%);
+    background-image: none !important;
 }
 
 /* Themed pill tabs (replaces default Bootstrap blue). */
@@ -1480,3 +1480,87 @@ body .table-responsive > .table > tbody > tr > td.text-end:last-child {
 body .table-responsive > .table > thead > tr > th.text-end:last-child {
     background: rgba(236, 244, 239, .98);
 }
+
+/* ========================================================== HOVER NORMALIZATION
+   Enforces clean, subtle hover feedback across iClimate:
+   - Removes green filled background / overlay on hover
+   - Prevents cards, calendar cells, buttons, or sidebar items from filling with green
+   - Uses subtle border highlight, soft shadow, or small brightness change
+   - Preserves active/selected states and green theme branding
+*/
+body .ic-spot:hover,
+.ic-spot:hover {
+    background-image: none !important;
+}
+
+/* Outline and light buttons: do NOT fill with green on hover */
+body .btn-outline-primary:hover,
+body .btn-outline-success:hover,
+body .fc-btn-outline:hover,
+body .it-console .btn-outline-primary:hover,
+body .mao-console .btn-outline-primary:hover,
+body .dark-workspace .btn-outline-primary:hover {
+    background-color: #ffffff !important;
+    color: var(--iclimate-primary, #123F32) !important;
+    border-color: var(--iclimate-primary-medium, #1F5A46) !important;
+    box-shadow: 0 4px 14px rgba(8, 25, 19, .12) !important;
+    transform: translateY(-1px);
+}
+
+body .btn-light:hover,
+body .it-console .btn-light:hover,
+body .mao-console .btn-light:hover {
+    background-color: #ffffff !important;
+    color: var(--iclimate-primary, #123F32) !important;
+    border-color: rgba(31, 90, 70, .35) !important;
+    box-shadow: 0 4px 12px rgba(8, 25, 19, .08) !important;
+    transform: translateY(-1px);
+}
+
+/* Calendar day cells: subtle highlight without green filled overlay */
+body .calendar-page .calendar-day:hover,
+body .wp-calendar-day:hover {
+    background-color: #ffffff !important;
+    border-color: rgba(82, 183, 136, .5) !important;
+    box-shadow: 0 6px 16px rgba(13, 31, 24, .08) !important;
+    transform: translateY(-1px);
+}
+
+body .calendar-page .upcoming-item:hover {
+    background-color: rgba(255, 255, 255, .8) !important;
+    box-shadow: 0 4px 12px rgba(13, 31, 24, .06) !important;
+}
+
+/* Cards & panels: keep existing background fill intact, apply subtle border highlight & soft shadow */
+body .card:hover,
+body .glass-card:hover,
+body .module-tile:hover,
+body .climate-chip:hover,
+body .soft-section:hover,
+body .quick-action:hover,
+body .priority-card:hover,
+body .farmer-panel:hover,
+body .mao-card:hover,
+body .it-card:hover,
+body .feed-post-card:hover,
+body .variable-info-card:hover {
+    border-color: rgba(127, 214, 181, .55) !important;
+    box-shadow: 0 10px 24px rgba(8, 25, 19, .12) !important;
+}
+
+body .quick-action:hover {
+    background-color: #ffffff !important;
+}
+
+/* Sidebar links: subtle translucent glass highlight, active state untouched */
+body .sidebar-link:hover:not(.active) {
+    background-color: rgba(255, 255, 255, .10) !important;
+    color: #ffffff !important;
+}
+
+body .sidebar-ai-card:hover {
+    background: rgba(255, 255, 255, .14) !important;
+    border-color: rgba(255, 255, 255, .28) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .15) !important;
+}
+

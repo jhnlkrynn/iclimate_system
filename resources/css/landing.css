@@ -148,17 +148,14 @@ select:focus-visible {
     transition-timing-function: cubic-bezier(.2, .8, .2, 1);
 }
 
-/* Pointer spotlight (landing.js sets --ic-mx / --ic-my, like the app). */
+/* Pointer spotlight disabled: no green filled overlay on hover */
 .feature-card.ic-spot:hover,
 .pillar-card.ic-spot:hover,
 .role-card.ic-spot:hover,
 .mission-card.ic-spot:hover,
-.contact-method.ic-spot:hover {
-    background-image: radial-gradient(340px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .2), transparent 60%);
-}
-
+.contact-method.ic-spot:hover,
 .trust-item.ic-spot:hover {
-    background-image: radial-gradient(240px circle at var(--ic-mx, 50%) var(--ic-my, 50%), rgba(127, 214, 181, .28), transparent 65%);
+    background-image: none;
 }
 
 .trust-item {

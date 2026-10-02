@@ -66,10 +66,13 @@ class FarmerDashboardSimpleWordingTest extends TestCase
             $this->assertStringNotContainsStringIgnoringCase($term, $text, "Farmer dashboard should not show \"{$term}\".");
         }
 
-        foreach (["Today's Weather", 'Upcoming Weather', 'Important Farm Warning', 'Expected Rice Yield', 'Recommended Action', 'Weather Check'] as $heading) {
+        foreach (["Today's Weather", 'My Farm Today', 'What You Should Do Today', 'My Farm Status', 'Quick Actions'] as $heading) {
             $this->assertStringContainsString($heading, $text);
         }
         $response->assertSee(route('weather-predictions.index', ['tab' => 'weather-forecast']), false);
+        foreach (['Upcoming Weather', 'Farm Status Summary', 'Recommended Action', 'More for Your Farm'] as $old) {
+            $this->assertStringNotContainsString($old, $text);              // the retired section names
+        }
     }
 
     public function test_risk_panel_keeps_planning_guide_note(): void
@@ -95,8 +98,10 @@ class FarmerDashboardSimpleWordingTest extends TestCase
         $response->assertOk();
         $text = $this->visibleText($response->getContent());
 
-        $this->assertStringContainsString('Your Barangay: Bagong Pook', $text);
+        // With no rating there is no risk card at all: an unrated barangay is never presented as Low.
+        $this->assertStringNotContainsString('Farm Risk in Your Barangay', $text);
         $this->assertStringNotContainsString('Low Farm Risk', $text);
+        $this->assertDoesNotMatchRegularExpression('/(?<!not )Low risk/', $text);   // the map legend's "not Low risk" note is fine
     }
 
     public function test_dashboard_renders_with_and_without_barangay(): void

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Notification as UserNotification;
 use App\Models\User;
 use App\Services\SystemAuditLogger;
+use App\Support\SampleData;
+use App\Support\SchemaCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +35,18 @@ class NotificationController extends CrudController
             ['name' => 'title', 'label' => 'Title'],
             ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
             ['name' => 'type', 'label' => 'Type', 'type' => 'select', 'options' => ['Announcement' => 'Announcement', 'Advisory' => 'Advisory', 'Warning' => 'Warning']],
+            ['name' => 'category', 'label' => 'Topic (a weather warning shows as a weather alert on the farmer dashboard)', 'type' => 'select', 'options' => ['general' => 'General', 'weather' => 'Weather']],
         ];
+    }
+
+    /** null (general) unless the sender marked it as weather; null too when the column has not been migrated yet. */
+    private function categoryColumns(array $data): array
+    {
+        if (! SchemaCache::hasColumn('notifications', 'category')) {
+            return [];
+        }
+
+        return ['category' => ($data['category'] ?? null) === UserNotification::CATEGORY_WEATHER ? UserNotification::CATEGORY_WEATHER : null];
     }
 
     public function store(Request $request): RedirectResponse
@@ -43,7 +56,8 @@ class NotificationController extends CrudController
         $recipients = $this->recipients($data);
 
         $timestamp = now();
-        $recipients->pluck('id')->chunk(500)->each(function ($userIds) use ($data, $timestamp): void {
+        $category = $this->categoryColumns($data);
+        $recipients->pluck('id')->chunk(500)->each(function ($userIds) use ($data, $timestamp, $category): void {
             UserNotification::query()->insert($userIds->map(fn (int $userId): array => [
                 'user_id' => $userId,
                 'title' => $data['title'],
@@ -52,7 +66,7 @@ class NotificationController extends CrudController
                 'is_read' => false,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-            ])->all());
+            ] + $category)->all());
         });
         Cache::forget('dashboard:shared-stats');
         Cache::forget('dashboard:admin-aggregates');
@@ -77,7 +91,7 @@ class NotificationController extends CrudController
             'message' => $data['message'],
             'type' => $data['type'],
             'is_read' => $request->boolean('is_read'),
-        ]);
+        ] + $this->categoryColumns($data));
         SystemAuditLogger::forModel('updated', $record, $request, [
             'recipient_id' => $record->user_id,
             'type' => $record->type,
@@ -88,7 +102,22 @@ class NotificationController extends CrudController
 
     protected function baseQuery(Request $request): Builder
     {
-        return UserNotification::query()->with('user')->where('user_id', $request->user()->id);
+        // Seeded placeholder notifications are left out here too, so the list agrees with the bell and the dashboard.
+        return SampleData::without(UserNotification::query()->with('user')->where('user_id', $request->user()->id), 'notifications');
+    }
+
+    /** Opening a notification counts as reading it, so its unread emphasis and the badge update at once. */
+    public function show(Request $request, int $id): \Illuminate\View\View
+    {
+        $view = parent::show($request, $id);
+        $record = $view->getData()['record'] ?? null;
+
+        if ($record instanceof UserNotification && ! $record->is_read && (int) $record->user_id === (int) $request->user()->id) {
+            $record->update(['is_read' => true]);
+            $this->forgetUnreadCaches($request->user());
+        }
+
+        return $view;
     }
 
     public function markRead(Request $request, int $notification): RedirectResponse
@@ -97,6 +126,7 @@ class NotificationController extends CrudController
 
         $record->update(['is_read' => true]);
         SystemAuditLogger::forModel('marked read', $record, $request);
+        $this->forgetUnreadCaches($request->user());
 
         return back()->with('success', 'Notification marked as read.');
     }
@@ -109,8 +139,16 @@ class NotificationController extends CrudController
         SystemAuditLogger::record('Marked All Notifications Read', $request, [
             'updated_count' => $updated,
         ]);
+        $this->forgetUnreadCaches($request->user());
 
         return back()->with('success', 'All notifications marked as read.');
+    }
+
+    /** The sidebar badge and the farmer overview both count unread notifications; drop their caches so they update at once. */
+    private function forgetUnreadCaches(User $user): void
+    {
+        Cache::forget('sidebar:unread-notifications:'.$user->id);
+        Cache::forget(\App\Services\Analytics\FarmerDashboardService::cacheKey($user));
     }
 
     protected function rules(Request $request, ?int $id = null): array
@@ -122,6 +160,7 @@ class NotificationController extends CrudController
                 'message' => ['required', 'string'],
                 'type' => ['required', Rule::in(['Announcement', 'Advisory', 'Warning'])],
                 'is_read' => ['nullable', 'boolean'],
+                'category' => ['nullable', Rule::in(['general', 'weather'])],
             ];
         }
 
@@ -131,6 +170,7 @@ class NotificationController extends CrudController
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
             'type' => ['required', Rule::in(['Announcement', 'Advisory', 'Warning'])],
+            'category' => ['nullable', Rule::in(['general', 'weather'])],
         ];
     }
 

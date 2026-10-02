@@ -25,7 +25,7 @@ class CandidatePredictionController extends Controller
 
         $month = (int) $request->query(
             'month',
-            now()->month
+            \App\Support\BusinessClock::month()
         );
 
         $year = $this->normalizeYear(
@@ -1677,6 +1677,6 @@ class CandidatePredictionController extends Controller
             $month <= 12
         )
             ? $month
-            : now()->month;
+            : \App\Support\BusinessClock::month();
     }
 }

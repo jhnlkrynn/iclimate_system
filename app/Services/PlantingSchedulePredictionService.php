@@ -38,15 +38,12 @@ class PlantingSchedulePredictionService
             );
 
             $prediction = data_get($result, 'predicted_yield');
-            $usesEmptyFallback = (bool) data_get($result, 'fallback', false)
-                && (int) data_get($result, 'records_used', 0) === 0;
 
-            if ($prediction === null || $usesEmptyFallback) {
-                $reason = $usesEmptyFallback
-                    ? 'The trained prediction model is unavailable and no historical production records are available for a data-based fallback.'
-                    : ((string) data_get($result, 'api_error') ?: 'The yield prediction service did not return a result.');
-
-                return $this->unavailable($schedule, $reason);
+            if ($prediction === null) {
+                return $this->keepLastOrUnavailable(
+                    $schedule,
+                    (string) data_get($result, 'api_error') ?: 'The yield prediction service did not return a result.',
+                );
             }
 
             $schedule->forceFill([
@@ -76,7 +73,7 @@ class PlantingSchedulePredictionService
         } catch (Throwable $exception) {
             report($exception);
 
-            return $this->unavailable($schedule, 'The iClimate yield prediction service could not complete this schedule. Try again later or ask MAO to review the required data.');
+            return $this->keepLastOrUnavailable($schedule, 'The iClimate yield prediction service could not complete this schedule. Try again later or ask MAO to review the required data.');
         }
     }
 
@@ -140,6 +137,29 @@ class PlantingSchedulePredictionService
         };
 
         return $reason.' Recommended MAO actions: validate the field, check irrigation status, review rainfall and pest/disease risk, send an advisory to the farmer, and schedule a follow-up.';
+    }
+
+    /**
+     * A failed run must never replace a valid earlier prediction with nothing, and never
+     * invents a number. If the schedule still has the same planning inputs as when that
+     * prediction was made, it is kept untouched (its own prediction_generated_at stays, so
+     * it is shown as the last successful prediction, not a new one) and only the reason for
+     * the failed refresh is recorded. If the inputs changed, the old figure no longer
+     * describes this schedule, so it is cleared.
+     */
+    private function keepLastOrUnavailable(FarmerPlantingSchedule $schedule, string $reason): FarmerPlantingSchedule
+    {
+        $inputsChanged = $schedule->wasChanged(['farm_area_hectares', 'farm_type', 'season', 'barangay', 'scheduled_harvest_date', 'harvest_month', 'planting_date']);
+
+        if ($schedule->predicted_yield !== null && $schedule->prediction_generated_at !== null && ! $inputsChanged) {
+            $schedule->forceFill([
+                'prediction_unavailable_reason' => 'Showing the last successful prediction ('.$schedule->prediction_generated_at->timezone(config('iclimate.timezone', 'Asia/Manila'))->format('M j, Y g:i A').'). A newer prediction could not be generated: '.$reason,
+            ])->save();
+
+            return $schedule;
+        }
+
+        return $this->unavailable($schedule, $reason);
     }
 
     private function unavailable(FarmerPlantingSchedule $schedule, string $reason): FarmerPlantingSchedule

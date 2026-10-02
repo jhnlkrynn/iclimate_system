@@ -159,10 +159,19 @@ _REQUIRED_RICE_FEATURES = {
 }
 
 
-def _feature(features: dict, key: str, default=0, *, required: bool = False):
-    if required and key not in features:
+def _feature(features: dict, key: str, default=None, *, required: bool = False):
+    """A required feature that is absent OR null is an error: a missing value is never turned into 0."""
+    if required and features.get(key) is None:
         raise ValueError(f"Missing required feature: {key}")
     return features.get(key, default)
+
+
+def _optional(features: dict, key: str):
+    """float(features[key]) or None when missing / not numeric (no invented default)."""
+    try:
+        return float(features[key]) if features.get(key) is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def weather_features(features: dict) -> pd.DataFrame:
@@ -249,24 +258,26 @@ def rice_prediction_with_uncertainty(models: dict, features: pd.DataFrame):
 
 def warnings_for(features: dict, predicted_weather: str, predicted_yield) -> list[dict]:
     result = []
-    rainfall = float(_feature(features, "rainfall", 180))
-    temperature = float(_feature(features, "temp_avg", 29))
-    humidity = float(_feature(features, "humidity", 78))
-    wind_speed = float(_feature(features, "wind_speed", 8))
+    # Each rule only fires on a value that was actually supplied; a missing humidity or
+    # wind speed produces no warning (it is not treated as a measured 0 or a typical value).
+    rainfall = _optional(features, "rainfall")
+    temperature = _optional(features, "temp_avg")
+    humidity = _optional(features, "humidity")
+    wind_speed = _optional(features, "wind_speed")
 
-    if rainfall >= 300 or predicted_weather == "Heavy Rain":
+    if (rainfall is not None and rainfall >= 300) or predicted_weather == "Heavy Rain":
         result.append({"title": "Heavy rainfall", "reason": "Rainfall is high enough to increase flood and waterlogging risk."})
-    if rainfall >= 360:
+    if rainfall is not None and rainfall >= 360:
         result.append({"title": "Flood risk", "reason": "Very high rainfall may overwhelm field drainage."})
-    if wind_speed >= 20:
+    if wind_speed is not None and wind_speed >= 20:
         result.append({"title": "Strong winds", "reason": "Wind speed may increase lodging risk for rice."})
-    if temperature >= 34:
+    if temperature is not None and temperature >= 34:
         result.append({"title": "High temperature", "reason": "Heat can stress rice, especially during flowering."})
-    if humidity <= 55:
+    if humidity is not None and humidity <= 55:
         result.append({"title": "Low humidity", "reason": "Low humidity can dry soil and seedlings faster."})
-    if rainfall <= 80:
+    if rainfall is not None and rainfall <= 80:
         result.append({"title": "Drought", "reason": "Rainfall is below the safer range for rice establishment."})
-    if rainfall <= 100 and str(_feature(features, "farm_type", "Rainfed")) == "Rainfed":
+    if rainfall is not None and rainfall <= 100 and str(_feature(features, "farm_type", "Rainfed")) == "Rainfed":
         result.append({"title": "Water shortage", "reason": "Rainfed fields may not have enough available water."})
     if predicted_yield is not None and predicted_yield < 3:
         result.append({"title": "Low yield outlook", "reason": "The rice yield model predicted below 3 tons per hectare."})
@@ -275,9 +286,11 @@ def warnings_for(features: dict, predicted_weather: str, predicted_yield) -> lis
 
 
 def recommendations(features: dict, predicted_weather: str, predicted_yield) -> dict:
-    rainfall = float(_feature(features, "rainfall", 180))
-    temperature = float(_feature(features, "temp_avg", 29))
-    humidity = float(_feature(features, "humidity", 78))
+    # rainfall and temp_avg are required model features, so they are present here;
+    # humidity is optional and only used when it was supplied.
+    rainfall = float(_feature(features, "rainfall", required=True))
+    temperature = float(_feature(features, "temp_avg", required=True))
+    humidity = _optional(features, "humidity")
     farm_type = str(_feature(features, "farm_type", "Rainfed"))
 
     if rainfall < 80:
@@ -295,7 +308,7 @@ def recommendations(features: dict, predicted_weather: str, predicted_yield) -> 
         irrigation = "Additional irrigation is recommended for rainfed fields because rainfall is insufficient."
     elif farm_type == "Irrigated" and rainfall > 280:
         irrigation = "Reduce irrigation and check drainage because rainfall is already high."
-    elif temperature >= 34 or humidity <= 55:
+    elif temperature >= 34 or (humidity is not None and humidity <= 55):
         irrigation = "Irrigate early in the morning to reduce heat and moisture stress."
     else:
         irrigation = "Maintain normal irrigation monitoring."

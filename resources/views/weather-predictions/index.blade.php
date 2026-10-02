@@ -124,29 +124,97 @@
         .stress-chip { display: grid; gap: .25rem; border: 1px solid #d4edda; border-left: 5px solid var(--accent, #52b788); border-radius: 8px; background: #fff; padding: .8rem; }
         .stress-chip.high { --accent: #d85b45; }
         .stress-chip.moderate { --accent: #ffd166; }
+        /* Monthly / weekly prediction panel: explicit dark text so nothing inherits the layout's white body colour. */
+        .wp-outlook { margin-bottom: 1rem; padding: 1.1rem; border: 1px solid #b9dcc6; border-radius: 14px; background: rgba(247,251,248,.96); color: #0d1f18; box-shadow: 0 6px 18px rgba(13,31,24,.07); }
+        .wp-outlook h3, .wp-outlook h4, .wp-outlook h5, .wp-outlook p, .wp-outlook dt, .wp-outlook dd, .wp-outlook li { color: inherit; }
+        .wp-outlook .text-muted, .wp-outlook small { color: #3d5247 !important; }
+        .wp-outlook-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .35rem 1rem; margin-bottom: .9rem; }
+        .wp-outlook-head h3 { font-size: 1.4rem; font-weight: 800; color: #0d3b2a; }
+        .wp-outlook-period { font-size: 1rem; color: #26382f; font-weight: 600; }
+        .wp-outlook-block { padding: .9rem; margin-bottom: .85rem; border: 1px solid #cfe4d6; border-radius: 12px; background: #fff; }
+        .wp-outlook-tag { display: inline-block; margin-bottom: .6rem; padding: .25rem .8rem; border-radius: 999px; font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        .wp-outlook-tag.is-model { background: #fff0c2; color: #6b4400; }
+        .wp-outlook-tag.is-daily { background: #d8f3dc; color: #1b4d38; }
+        .wp-outlook-tag.is-history { background: #dde8f6; color: #243f6b; }
+        .wp-outlook-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; }
+        .wp-outlook-row { display: flex; flex-direction: column; gap: .1rem; padding: .6rem .8rem; border-radius: 10px; background: #eef6f0; border: 1px solid #d9eadf; min-width: 0; }
+        .wp-outlook-k { font-size: .95rem; font-weight: 700; color: #26382f; }
+        .wp-outlook-v { font-size: 1.35rem; font-weight: 800; color: #0d1f18; line-height: 1.25; overflow-wrap: anywhere; }
+        .wp-outlook-v small { font-size: .85rem; font-weight: 600; color: #3d5247 !important; }
+        .wp-outlook-row.is-unavailable { background: #f5f6f5; }
+        .wp-outlook-row.is-unavailable .wp-outlook-v { font-size: 1rem; font-weight: 600; color: #4a5a52; }
+        .wp-outlook-subtitle { margin: 1.1rem 0 .6rem; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; color: #0d3b2a; }
+        .wp-outlook-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+        .wp-ocard { display: flex; flex-direction: column; gap: .35rem; padding: 1rem; border: 1px solid #b9dcc6; border-radius: 14px; background: linear-gradient(180deg, #ffffff 0%, #f1f8f3 100%); box-shadow: 0 4px 12px rgba(13,31,24,.06); min-width: 0; }
+        .wp-ocard-title { margin: 0 0 .2rem; font-size: 1rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; color: #1f5a46; }
+        .wp-ocard-status { align-self: flex-start; padding: .25rem .8rem; border-radius: 999px; font-size: 1rem; font-weight: 800; background: #d8f3dc; color: #14503a; }
+        .wp-ocard-status.is-above-normal { background: #fff0c2; color: #6b4400; }
+        .wp-ocard-status.is-below-normal { background: #dde8f6; color: #243f6b; }
+        .wp-ocard-value { font-size: 2.1rem; font-weight: 800; line-height: 1.1; color: #0d1f18; }
+        .wp-ocard-caption { margin: 0; font-size: 1rem; line-height: 1.4; color: #26382f; }
+        .wp-ocard-basis { margin: auto 0 0; padding-top: .5rem; border-top: 1px solid #d9eadf; font-size: .9rem; color: #33483d; }
+        .wp-ocard-none { font-size: 1.1rem; font-weight: 700; color: #4a5a52; }
+        .wp-season { display: flex; align-items: center; gap: .7rem; padding: .6rem .75rem; border-radius: 10px; border: 1px solid #d9eadf; background: #f7faf8; }
+        .wp-season.is-active { background: #d8f3dc; border-color: #52b788; }
+        .wp-season-icon { font-size: 1.7rem; line-height: 1; }
+        .wp-season div { display: flex; flex-direction: column; min-width: 0; }
+        .wp-season strong { font-size: 1.05rem; color: #0d1f18; }
+        .wp-season span:not(.wp-season-icon) { font-size: 1rem; color: #26382f; }
+        .wp-season em { margin-left: auto; font-size: .8rem; font-style: normal; font-weight: 800; color: #14503a; text-align: right; }
+        .wp-panel .text-muted, .wp-panel-body .text-muted { color: #3d5247 !important; }
+        .wp-outlook-fineprint { margin: .7rem 0 0; font-size: .9rem; color: #3d5247; }
+        .wp-outlook-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem 1.2rem; margin: 1rem 0 0; }
+        .wp-outlook-meta dt { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 800; color: #33483d; }
+        .wp-outlook-meta dd { margin: 0; font-size: .98rem; color: #0d1f18; overflow-wrap: anywhere; }
+        .wp-outlook-missing, .wp-outlook-pagasa { margin: .7rem 0 0; font-size: .9rem; color: #3d5247; }
+        .wp-outlook-empty { font-size: 1.1rem; font-weight: 700; color: #26382f; }
+        .wp-outlook-weeks { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: .8rem; margin-bottom: .85rem; }
+        .wp-outlook-week { padding: .9rem; border: 1px solid #cfe4d6; border-radius: 12px; background: #fff; min-width: 0; color: #0d1f18; }
+        .wp-outlook-week.is-empty { background: #f5f6f5; }
+        .wp-outlook-week-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .2rem; font-size: 1.15rem; letter-spacing: -0.01em; color: #0d1f18; }
+        .wp-outlook-week-head span { font-weight: 800; color: #1f5a46; }
+        .wp-outlook-grid.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 991.98px) { .wp-outlook-cards { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+        @media (max-width: 575.98px) { .wp-outlook { padding: .8rem; } .wp-outlook-head h3 { font-size: 1.2rem; } .wp-outlook-cards, .wp-outlook-grid.is-compact { grid-template-columns: 1fr; } .wp-ocard-value { font-size: 1.8rem; } }
         .wp-calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
-        .wp-calendar-nav { display: inline-flex; align-items: center; gap: .5rem; }
+        .wp-calendar-bar { display: flex; align-items: center; gap: .6rem; margin-bottom: .75rem; padding: .5rem .75rem; border: 1px solid #d4edda; border-radius: 12px; background: rgba(255,255,255,.85); }
+        .wp-calendar-arrow { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid #cfe4d6; background: #fff; color: #1f5a46; font-size: 1.6rem; line-height: 1; text-decoration: none; font-weight: 700; }
+        .wp-calendar-arrow:hover, .wp-calendar-arrow:focus-visible { background: #e8f5ec; border-color: #52b788; color: #0d3b2a; }
+        .wp-calendar-today { margin-left: auto; padding: .35rem .9rem; border-radius: 999px; border: 1px solid #2d6a4f; color: #1f5a46; background: #fff; font-weight: 700; font-size: .9rem; text-decoration: none; }
+        .wp-calendar-today:hover { background: #2d6a4f; color: #fff; }
+        .wp-calendar-daynum { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 .35rem; border-radius: 999px; font-size: 1.25rem; font-weight: 800; line-height: 1; color: #0d1f18; }
+        .wp-calendar-dow { display: none; margin-right: .4rem; font-size: .85rem; font-weight: 700; color: #4f665b; }
+        .wp-calendar-day.is-today .wp-calendar-daynum { background: #2d6a4f; color: #fff; }
+        .wp-calendar-day.outside-month .wp-calendar-daynum { color: #5f6f66; font-weight: 700; }
+        .wp-calendar-month { min-width: 9.5ch; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; color: #1f5a46; }
+        .wp-calendar-day.no-forecast { background: #f7faf8; border-style: dashed; border-top-style: solid; }
+        .wp-calendar-day.no-forecast:hover { transform: none; box-shadow: none; }
+        .wp-calendar-day.has-forecast { background: #fff; box-shadow: 0 2px 8px rgba(13,31,24,.06); }
         .wp-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .55rem; }
         .wp-calendar-week { display: contents; }
-        .wp-calendar-weekday { color: #4f665b; padding: .35rem; font-size: 1rem; font-weight: 900; text-align: center; }
-        .wp-calendar-day { min-height: 190px; border: 1px solid #d4edda; border-top: 6px solid #cbd5cf; border-radius: 10px; background: #fff; padding: .75rem; font-size: 1rem; line-height: 1.45; }
-        .wp-calendar-day.outside-month { opacity: .45; background: #f5f7f4; }
+        .wp-calendar-weekday { color: #1f3a2d; padding: .35rem; font-size: 1rem; font-weight: 800; text-align: center; }
+        .wp-calendar-day { color: #0d1f18; min-height: 150px; border: 1px solid #d4edda; border-top: 6px solid #cbd5cf; border-radius: 10px; background: #fff; padding: .75rem; font-size: 1rem; line-height: 1.45; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+        .wp-calendar-day:hover { transform: translateY(-1px); border-color: #52b788; box-shadow: 0 6px 16px rgba(13,31,24,.08); }
+        .wp-calendar-day.outside-month { background: #eef1ef; border-color: #d9e0dc; color: #55665d; }
+        .wp-calendar-day.outside-month .wp-calendar-values, .wp-calendar-day.outside-month .wp-calendar-condition { opacity: 1; color: #55665d; }
         .wp-calendar-day.is-today { outline: 3px solid rgba(45,106,79,.28); outline-offset: 1px; }
         .wp-calendar-day.risk-low { border-top-color: #52b788; }
         .wp-calendar-day.risk-moderate { border-top-color: #ffd166; }
         .wp-calendar-day.risk-high, .wp-calendar-day.risk-severe { border-top-color: #d85b45; }
-        .wp-calendar-date { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .55rem; font-size: 1.05rem; font-weight: 900; }
-        .wp-calendar-risk { display: inline-flex; border-radius: 999px; padding: .25rem .5rem; background: #edf2ee; color: #4f665b; font-size: .78rem; font-weight: 900; }
-        .risk-low .wp-calendar-risk { background: #d8f3dc; color: #2d6a4f; }
-        .risk-moderate .wp-calendar-risk { background: #fff4cf; color: #8a5a00; }
-        .risk-high .wp-calendar-risk, .risk-severe .wp-calendar-risk { background: #fde8e2; color: #9f3728; }
-        .wp-calendar-condition { display: flex; align-items: center; gap: .35rem; color: #0d1f18; font-size: 1rem; font-weight: 900; }
+        .wp-calendar-date { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .45rem; }
+        .wp-calendar-risk { display: inline-flex; border-radius: 999px; padding: .25rem .55rem; background: #edf2ee; color: #33483d; font-size: .8rem; font-weight: 800; }
+        .risk-low .wp-calendar-risk { background: #d8f3dc; color: #14503a; }
+        .risk-moderate .wp-calendar-risk { background: #fff0c2; color: #6b4400; }
+        .risk-high .wp-calendar-risk, .risk-severe .wp-calendar-risk { background: #fde1da; color: #8a2a1c; }
+        .wp-calendar-condition { display: flex; align-items: center; gap: .35rem; color: #0d1f18; font-size: .94rem; font-weight: 800; line-height: 1.3; }
         .wp-calendar-icon { width: 20px; height: 20px; flex: 0 0 auto; }
-        .wp-calendar-values { display: grid; gap: .22rem; margin-top: .45rem; color: #33483d; font-size: .93rem; }
+        .wp-calendar-values { display: grid; gap: .18rem; margin-top: .35rem; color: #1f3327; font-size: .875rem; line-height: 1.35; overflow-wrap: anywhere; }
+        .wp-calendar-values strong { font-weight: 700; color: #0d1f18; }
         .wp-calendar-unavailable { color: #6b7c72; font-size: .93rem; }
-        .wp-risk-legend { display: flex; flex-wrap: wrap; gap: .55rem 1rem; margin-top: .85rem; }
-        .wp-risk-legend-item { display: inline-flex; align-items: center; gap: .42rem; font-size: .95rem; font-weight: 800; }
-        .wp-risk-swatch { width: 14px; height: 14px; border-radius: 4px; }
+        /* Severity legend: same family as the section headings, but smaller. */
+        .wp-risk-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.6rem; margin: 0 0 .75rem; padding: .5rem .9rem; border: 1px solid #cfe4d6; border-radius: 10px; background: rgba(255,255,255,.9); }
+        .wp-risk-legend-item { display: inline-flex; align-items: center; gap: .55rem; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; color: #0d1f18; }
+        .wp-risk-swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(13,31,24,.35); flex: none; }
         .wp-calendar-loading { min-height: 220px; place-items: center; text-align: center; }
         .wp-calendar-loading:not([hidden]) { display: grid; }
         .wp-monthly-prediction { background: #f4f9f5; border: 1px solid #cfe4d6; border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1.1rem; }
@@ -173,8 +241,40 @@
             .wp-page .row.g-4 { --bs-gutter-y: .75rem; }
             .wp-page .mb-4 { margin-bottom: 1rem !important; }
             .wp-result-card, .wp-input-card { padding: .85rem; }
-            .wp-calendar-toolbar { align-items: stretch; }
-            .wp-calendar-nav { width: 100%; justify-content: space-between; }
+            .wp-outlook { margin-bottom: 1rem; padding: 1rem; border: 1px solid #d4edda; border-radius: 12px; background: rgba(247,251,248,.9); }
+        .wp-outlook-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .35rem 1rem; margin-bottom: .75rem; }
+        .wp-outlook-period { font-size: .9rem; color: #4f665b; font-weight: 600; }
+        .wp-outlook-block { padding: .75rem; margin-bottom: .75rem; border: 1px solid #e3ece6; border-radius: 10px; background: #fff; }
+        .wp-outlook-tag { display: inline-block; margin-bottom: .5rem; padding: .15rem .65rem; border-radius: 999px; font-size: .75rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+        .wp-outlook-tag.is-model { background: #fff4cf; color: #8a5a00; }
+        .wp-outlook-tag.is-daily { background: #d8f3dc; color: #2d6a4f; }
+        .wp-outlook-tag.is-history { background: #e4ecf7; color: #2f4f7f; }
+        .wp-outlook-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .5rem; }
+        .wp-outlook-row { display: flex; flex-direction: column; padding: .45rem .65rem; border-radius: 8px; background: #f3f8f4; min-width: 0; }
+        .wp-outlook-k { font-size: .8rem; font-weight: 700; color: #4f665b; }
+        .wp-outlook-v { font-size: 1.15rem; font-weight: 800; color: #0d1f18; overflow-wrap: anywhere; }
+        .wp-outlook-v small { font-size: .75rem; font-weight: 600; color: #4f665b; }
+        .wp-outlook-notes { margin-top: .6rem; display: grid; gap: .25rem; font-size: .92rem; }
+        .wp-outlook-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .4rem 1rem; margin: .75rem 0 0; font-size: .88rem; }
+        .wp-outlook-meta dt { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: #4f665b; }
+        .wp-outlook-meta dd { margin: 0; overflow-wrap: anywhere; }
+        .wp-outlook-missing, .wp-outlook-pagasa { margin: .6rem 0 0; font-size: .82rem; color: #5b6b64; }
+        .wp-outlook-empty { font-weight: 700; }
+        .wp-outlook-weeks { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: .75rem; margin-bottom: .75rem; }
+        .wp-outlook-week { padding: .75rem; border: 1px solid #e3ece6; border-radius: 10px; background: #fff; min-width: 0; }
+        .wp-outlook-week.is-empty { background: #f7f8f7; }
+        .wp-outlook-week-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .15rem; color: #0d1f18; }
+        .wp-outlook-week-head span { font-weight: 700; color: #2d6a4f; }
+        .wp-outlook-grid.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (max-width: 420px) { .wp-outlook-grid.is-compact { grid-template-columns: 1fr; } }
+        .wp-outlook-row.is-unavailable { background: #f7f8f7; }
+        .wp-outlook-row.is-unavailable .wp-outlook-v { font-size: .9rem; font-weight: 600; color: #6b7c72; }
+        .wp-outlook-pagasa { margin-bottom: 0; }
+        .wp-calendar-toolbar { align-items: stretch; }
+            .wp-calendar-dow { display: inline; }
+            .wp-calendar-daynum { justify-content: flex-start; }
+            .wp-calendar-month { font-size: 1.35rem; }
+            .wp-calendar-day.no-forecast { padding: .5rem .9rem; }
             .wp-calendar-grid { display: block; }
             .wp-calendar-weekday { display: none; }
             .wp-calendar-week { display: block; }
@@ -254,6 +354,107 @@
         details.wp-panel > summary { list-style: none; }
         details.wp-panel > summary::-webkit-details-marker { display: none; }
         details.wp-panel[open] > summary { border-bottom: 1px solid rgba(212,237,218,.9); }
+    
+        /* ====================================================================
+           Weather Forecast typography system
+           One font family, one colour palette, one size scale and one spacing
+           scale for the whole page. Only presentation: no data or logic here.
+           ==================================================================== */
+        .wp-page {
+            --wp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            /* colour palette (all pass 4.5:1 on the light cards) */
+            --wp-ink: #0d1f18;        /* primary text */
+            --wp-ink-2: #26382f;      /* secondary text */
+            --wp-ink-3: #3d5247;      /* muted text: still clearly readable */
+            --wp-green: #0d3b2a;      /* headings and key values */
+            /* size scale */
+            --wp-fs-title: 1.5rem;    /* 24px  page / calendar title */
+            --wp-fs-h1: 1.4rem;       /* 22px  main section heading */
+            --wp-fs-h2: 1.15rem;      /* 18px  section heading */
+            --wp-fs-card: 0.9375rem;  /* 15px  card titles */
+            --wp-fs-label: 0.875rem;  /* 14px  metric labels */
+            --wp-fs-value: 1.375rem;  /* 22px  important values */
+            --wp-fs-body: 0.9375rem;  /* 15px  supporting text */
+            --wp-fs-meta: 0.875rem;   /* 14px  metadata values */
+            --wp-fs-meta-label: 0.8125rem; /* 13px metadata labels */
+            /* spacing scale */
+            --wp-s1: .5rem; --wp-s2: .75rem; --wp-s3: 1rem; --wp-s4: 1.25rem;
+        }
+        .wp-page, .wp-page * { font-family: var(--wp-font); }
+        .wp-page h1, .wp-page h2, .wp-page h3, .wp-page h4, .wp-page h5, .wp-page h6 { font-weight: 700; letter-spacing: 0; text-wrap: balance; }
+        .wp-page .wp-panel h2, .wp-page .wp-panel h3, .wp-page .wp-panel h4, .wp-page .wp-panel h5 { color: var(--wp-green); }
+        .wp-page .wp-panel .text-muted, .wp-page .wp-panel small, .wp-page .wp-note, .wp-page .ds-note, .wp-page .wp-unit,
+        .wp-page .wp-source-line { color: var(--wp-ink-3) !important; }
+        .wp-page .wp-note, .wp-page .ds-note, .wp-page .wp-unit { font-size: var(--wp-fs-meta); line-height: 1.5; }
+        .wp-page .wp-label { font-weight: 700; color: var(--wp-ink-2); }
+
+        /* Title + intro lines */
+        .wp-page .wp-calendar-toolbar h2 { font-size: var(--wp-fs-title); font-weight: 800; margin-bottom: .2rem !important; }
+        .wp-page .wp-calendar-toolbar .text-muted { font-size: var(--wp-fs-body); }
+        .wp-page [data-weather-calendar] > .mb-2 { font-size: var(--wp-fs-body); color: var(--wp-ink-2) !important; margin-bottom: var(--wp-s3) !important; }
+
+        /* Monthly Weather Prediction */
+        .wp-page .wp-outlook { padding: var(--wp-s4); margin-bottom: var(--wp-s4); }
+        .wp-page .wp-outlook-head { margin-bottom: var(--wp-s3); gap: var(--wp-s1) var(--wp-s3); }
+        .wp-page .wp-outlook-head h3 { font-size: var(--wp-fs-h1); font-weight: 800; color: var(--wp-green); line-height: 1.25; }
+        .wp-page .wp-outlook-period { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-2); }
+        .wp-page .wp-outlook-block { padding: var(--wp-s3); margin-bottom: var(--wp-s3); }
+        .wp-page .wp-outlook-tag { font-size: var(--wp-fs-meta-label); font-weight: 700; letter-spacing: .05em; padding: .3rem .85rem; margin-bottom: var(--wp-s2); }
+        .wp-page .wp-outlook-grid { gap: var(--wp-s2); }
+        .wp-page .wp-outlook-row { min-height: 4.75rem; justify-content: space-between; gap: .25rem; padding: var(--wp-s2) var(--wp-s3); }
+        .wp-page .wp-outlook-k { font-size: var(--wp-fs-label); font-weight: 600; color: var(--wp-ink-2); line-height: 1.3; }
+        .wp-page .wp-outlook-v { font-size: var(--wp-fs-value); font-weight: 700; color: var(--wp-ink); line-height: 1.25; }
+        .wp-page .wp-outlook-v small { font-size: var(--wp-fs-label); font-weight: 600; color: var(--wp-ink-3) !important; }
+        .wp-page .wp-outlook-row.is-unavailable .wp-outlook-v { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-3); }
+
+        /* Seasonal & Outlook cards: identical structure */
+        .wp-page .wp-outlook-subtitle { font-size: var(--wp-fs-h2); font-weight: 700; color: var(--wp-green); margin: var(--wp-s4) 0 var(--wp-s2); letter-spacing: 0; }
+        .wp-page .wp-outlook-cards { gap: var(--wp-s2); align-items: stretch; }
+        .wp-page .wp-ocard { padding: var(--wp-s3); gap: var(--wp-s1); }
+        .wp-page .wp-ocard-title { font-size: var(--wp-fs-card); font-weight: 700; letter-spacing: .05em; color: #1f5a46; margin: 0; }
+        .wp-page .wp-ocard-status { font-size: var(--wp-fs-card); font-weight: 700; padding: .25rem .8rem; }
+        .wp-page .wp-ocard-value { font-size: var(--wp-fs-value); font-weight: 800; color: var(--wp-green); line-height: 1.2; }
+        .wp-page .wp-ocard-caption { font-size: var(--wp-fs-body); font-weight: 400; line-height: 1.5; color: var(--wp-ink-2); }
+        .wp-page .wp-ocard-basis { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink-2); padding-top: var(--wp-s2); }
+        .wp-page .wp-ocard-basis strong { font-weight: 700; color: var(--wp-ink); }
+        .wp-page .wp-ocard-none { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-3); }
+        .wp-page .wp-season { padding: var(--wp-s2); gap: var(--wp-s2); }
+        .wp-page .wp-season strong { font-size: var(--wp-fs-card); font-weight: 700; color: var(--wp-ink); }
+        .wp-page .wp-season span:not(.wp-season-icon) { font-size: var(--wp-fs-body); color: var(--wp-ink-2); }
+        .wp-page .wp-season em { font-size: var(--wp-fs-meta-label); font-weight: 600; color: #1f5a46; }
+        .wp-page .wp-outlook-fineprint, .wp-page .wp-outlook-missing, .wp-page .wp-outlook-pagasa { font-size: var(--wp-fs-meta); color: var(--wp-ink-3); line-height: 1.5; }
+
+        /* Metadata: Forecast Period / Type / Source / Last Updated / Uncertainty */
+        .wp-page .wp-outlook-meta { gap: var(--wp-s2) var(--wp-s4); margin-top: var(--wp-s3); padding-top: var(--wp-s3); border-top: 1px solid #d9eadf; }
+        .wp-page .wp-outlook-meta dt { font-size: var(--wp-fs-meta-label); font-weight: 700; letter-spacing: .05em; color: var(--wp-ink-2); margin-bottom: .15rem; }
+        .wp-page .wp-outlook-meta dd { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink); line-height: 1.5; }
+
+        /* Weekly fallback cards */
+        .wp-page .wp-outlook-week { padding: var(--wp-s3); }
+        .wp-page .wp-outlook-week-head { font-size: var(--wp-fs-h2); font-weight: 700; letter-spacing: 0; color: var(--wp-ink); }
+        .wp-page .wp-outlook-week-head span { font-size: var(--wp-fs-card); font-weight: 700; color: #1f5a46; }
+        .wp-page .wp-outlook-empty { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-2); }
+
+        /* Month bar, legend, calendar */
+        .wp-page .wp-calendar-month { font-size: var(--wp-fs-title); font-weight: 800; letter-spacing: 0; color: var(--wp-green); }
+        .wp-page .wp-calendar-today { font-size: var(--wp-fs-label); font-weight: 700; }
+        .wp-page .wp-risk-legend { margin-bottom: var(--wp-s2); }
+        .wp-page .wp-risk-legend-item { font-size: 1rem; font-weight: 600; letter-spacing: 0; color: var(--wp-ink); }
+        .wp-page .wp-calendar-weekday { font-size: var(--wp-fs-body); font-weight: 700; color: var(--wp-ink); }
+        .wp-page .wp-calendar-daynum { font-size: 1.0625rem; font-weight: 700; }
+        .wp-page .wp-calendar-condition { font-size: var(--wp-fs-body); font-weight: 700; color: var(--wp-ink); }
+        .wp-page .wp-calendar-values { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink-2); }
+        .wp-page .wp-calendar-values strong { font-weight: 600; color: var(--wp-ink); }
+        .wp-page .wp-calendar-risk { font-size: var(--wp-fs-meta-label); font-weight: 700; }
+        .wp-page .wp-calendar-day.outside-month, .wp-page .wp-calendar-day.outside-month .wp-calendar-values, .wp-page .wp-calendar-day.outside-month .wp-calendar-condition { color: #4c5d54; }
+        .wp-page .wp-calendar-day.outside-month .wp-calendar-daynum { color: #56675e; font-weight: 600; }
+        .wp-page [data-calendar-content] > .small { font-size: var(--wp-fs-meta); color: var(--wp-ink-3) !important; }
+
+        @media (max-width: 575.98px) {
+            .wp-page { --wp-fs-title: 1.3rem; --wp-fs-h1: 1.2rem; --wp-fs-value: 1.25rem; }
+            .wp-page .wp-outlook { padding: var(--wp-s3); }
+            .wp-page .wp-outlook-row { min-height: 0; }
+        }
     </style>
 
     <div class="wp-page">
@@ -574,7 +775,7 @@
             </div>
         @endif
 
-        <details class="wp-panel mb-4">
+        <details class="wp-panel mb-4" @if(request()->has('calendar_month')) open @endif>
             <summary class="wp-panel-header fw-bold" style="cursor:pointer">View Details</summary>
             <div class="wp-panel-body" data-weather-calendar>
                 <div class="wp-calendar-toolbar mb-3">
@@ -582,33 +783,22 @@
                         <h2 class="h5 fw-bold mb-1">Monthly Weather Calendar</h2>
                         <div class="text-muted">Forecast for <strong>Lian, Batangas municipal preview</strong></div>
                     </div>
-                    <div class="wp-calendar-nav" aria-label="Choose calendar month">
-                        <a class="btn btn-outline-secondary fw-bold" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => $weatherCalendar['previous_month'], 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav aria-label="Show previous month">Previous</a>
-                        <strong class="h5 mb-0" aria-live="polite">{{ $weatherCalendar['label'] }}</strong>
-                        <a class="btn btn-outline-secondary fw-bold" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => $weatherCalendar['next_month'], 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav aria-label="Show next month">Next</a>
-                    </div>
                 </div>
                 <div class="mb-2 text-muted"><strong>Daily forecast values:</strong> shown on the exact dates they cover.@if($isTechnical) Source (IT only): Open-Meteo Forecast API.@endif</div>
-                <div class="wp-risk-legend mb-3" aria-label="Daily planning risk colors">
+                @include('weather-predictions.partials.monthly-outlook')
+                <div class="wp-calendar-bar" role="group" aria-label="Choose calendar month">
+                    <a class="wp-calendar-arrow" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => $weatherCalendar['previous_month'], 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav aria-label="Show previous month" rel="prev"><span aria-hidden="true">&lsaquo;</span></a>
+                    <h3 class="wp-calendar-month mb-0" aria-live="polite" data-calendar-month>{{ $weatherCalendar['label'] }}</h3>
+                    <a class="wp-calendar-arrow" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => $weatherCalendar['next_month'], 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav aria-label="Show next month" rel="next"><span aria-hidden="true">&rsaquo;</span></a>
+                    @if($weatherCalendar['month']->format('Y-m') !== now('Asia/Manila')->format('Y-m'))
+                        <a class="wp-calendar-today" href="{{ route('weather-predictions.index', array_filter(['calendar_month' => now('Asia/Manila')->format('Y-m'), 'tab' => 'weather-forecast', 'run' => request('run')])) }}" data-calendar-nav>Today</a>
+                    @endif
+                </div>
+                <div class="wp-risk-legend" role="group" aria-label="Daily planning risk colors">
                     <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#52b788"></span>Low</span>
                     <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#ffd166"></span>Moderate</span>
                     <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#d85b45"></span>High / Severe</span>
-                    <span class="wp-risk-legend-item"><span class="wp-risk-swatch" style="background:#cbd5cf"></span>No forecast data</span>
                 </div>
-                @if($weatherCalendar['monthly_prediction'])
-                    @php $mp = $weatherCalendar['monthly_prediction']; @endphp
-                    <div class="wp-monthly-prediction" role="note" aria-label="Monthly estimate for {{ $weatherCalendar['label'] }}">
-                        <div class="wp-monthly-prediction-title">Monthly Estimate</div>
-                        <p class="wp-monthly-prediction-note">A whole-month estimate for {{ $weatherCalendar['label'] }}, not a daily forecast.@if($isTechnical) Source (IT only): {{ $mp['source_name'] }}.@endif</p>
-                        <div class="wp-monthly-prediction-grid">
-                            @if($mp['rainfall_mm'] !== null)<div><strong>Rainfall (month total):</strong> {{ number_format($mp['rainfall_mm'], 1) }} mm</div>@endif
-                            @if($mp['temperature_c'] !== null)<div><strong>Average Temperature:</strong> {{ number_format($mp['temperature_c'], 1) }}&deg;C</div>@endif
-                            @if($mp['humidity_percent'] !== null)<div><strong>Average Humidity:</strong> {{ number_format($mp['humidity_percent'], 1) }}%</div>@endif
-                            @if($isTechnical && $mp['wind_speed_kmh'] !== null)<div><strong>Average Wind (unit not confirmed, IT only):</strong> {{ number_format($mp['wind_speed_kmh'], 1) }}</div>@endif
-                            @if($mp['season'])<div><strong>Season:</strong> {{ $mp['season'] }}</div>@endif
-                        </div>
-                    </div>
-                @endif
                 <div class="wp-calendar-loading" data-calendar-loading hidden role="status" aria-live="polite">
                     <div>
                         <div class="spinner-border text-success mb-3" aria-hidden="true"></div>
@@ -627,10 +817,10 @@
                                         $forecast = $day['forecast'];
                                         $riskLevel = data_get($day, 'risk.level');
                                     @endphp
-                                    <article class="wp-calendar-day {{ $day['in_month'] ? '' : 'outside-month' }} {{ $day['is_today'] ? 'is-today' : '' }} {{ $riskLevel ? 'risk-'.strtolower($riskLevel) : '' }}" role="gridcell" aria-label="{{ $day['day_label'] }}{{ $forecast ? ', forecast available' : ', no forecast data' }}">
+                                    <article class="wp-calendar-day {{ $day['in_month'] ? '' : 'outside-month' }} {{ $day['is_today'] ? 'is-today' : '' }} {{ $forecast ? 'has-forecast' : 'no-forecast' }} {{ $riskLevel ? 'risk-'.strtolower($riskLevel) : '' }}" role="gridcell" aria-label="{{ $day['day_label'] }}{{ $forecast ? ', forecast available' : '' }}">
                                         <div class="wp-calendar-date">
-                                            <span>{{ $day['day'] }}</span>
-                                            <span class="wp-calendar-risk">{{ $riskLevel ?: 'No forecast data' }}</span>
+                                            <span class="wp-calendar-daynum"><span class="wp-calendar-dow">{{ \Carbon\Carbon::parse($day['date'])->format('D') }}</span>{{ $day['day'] }}</span>
+                                            @if($riskLevel)<span class="wp-calendar-risk">{{ $riskLevel }}</span>@endif
                                         </div>
                                         @if($forecast)
                                             <div class="wp-calendar-condition">
@@ -640,26 +830,23 @@
                                             <div class="wp-calendar-values">
                                                 @if($forecast['rainfall'] !== null)
                                                     <div><strong>Rainfall:</strong> {{ number_format($forecast['rainfall'], 1) }} mm</div>
-                                                @else
-                                                    <div><strong>Rainfall:</strong> No forecast data</div>
                                                 @endif
                                                 @if($forecast['temperature_max'] !== null || $forecast['temperature_min'] !== null)
                                                     <div><strong>Temperature:</strong> {{ $forecast['temperature_min'] !== null ? number_format($forecast['temperature_min'], 1).'°' : '—' }} / {{ $forecast['temperature_max'] !== null ? number_format($forecast['temperature_max'], 1).'°C' : '—' }}</div>
                                                 @elseif($forecast['temperature'] !== null)
                                                     <div><strong>Temperature:</strong> {{ number_format($forecast['temperature'], 1) }}°C</div>
-                                                @else
-                                                    <div><strong>Temperature:</strong> No forecast data</div>
+                                                @endif
+                                                @if($forecast['humidity'] !== null)
+                                                    <div><strong>RH:</strong> {{ number_format($forecast['humidity'], 0) }}%</div>
                                                 @endif
                                             </div>
-                                        @else
-                                            <div class="wp-calendar-condition wp-calendar-unavailable">No forecast data</div>
                                         @endif
                                     </article>
                                 @endforeach
                             </div>
                         @endforeach
                     </div>
-                    <div class="small text-muted mt-3">Dates without a forecast stay marked “No forecast data”. We never fill them in with invented values.</div>
+                    <div class="small text-muted mt-3">Only dates with a real forecast show values; other dates are left blank. We never fill them in with invented values.</div>
                 </div>
 
                 @if(! empty($shortTermOutlook))

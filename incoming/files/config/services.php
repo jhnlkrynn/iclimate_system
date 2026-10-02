@@ -1,0 +1,133 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Third Party Services
+    |--------------------------------------------------------------------------
+    |
+    | This file is for storing the credentials for third party services such
+    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+    | location for this type of information, allowing packages to have
+    | a conventional file to locate the various service credentials.
+    |
+    */
+
+    'postmark' => [
+        'key' => env('POSTMARK_API_KEY'),
+    ],
+
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'weather_api' => [
+        'enabled' => env('WEATHER_API_ENABLED', false),
+        'timeout' => env('WEATHER_API_TIMEOUT', 8),
+        'location_name' => env('WEATHER_API_LOCATION_NAME', 'Lian, Batangas'),
+        'latitude' => env('WEATHER_API_LATITUDE', \App\Support\LianLocation::LATITUDE),
+        'longitude' => env('WEATHER_API_LONGITUDE', \App\Support\LianLocation::LONGITUDE),
+        'timezone' => env('WEATHER_API_TIMEZONE', \App\Support\LianLocation::TIMEZONE),
+        'forecast_days' => env('WEATHER_API_FORECAST_DAYS', 5),
+        'refresh_minutes' => env('WEATHER_API_REFRESH_MINUTES', 45),
+        'realtime' => env('WEATHER_API_REALTIME', true),
+    ],
+
+    'weather' => [
+        'provider' => env('WEATHER_PROVIDER', 'open_meteo'),
+        'latitude' => env('ICLIMATE_WEATHER_LAT', env('WEATHER_LATITUDE', env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE))),
+        'longitude' => env('ICLIMATE_WEATHER_LON', env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', \App\Support\LianLocation::LONGITUDE))),
+        'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', \App\Support\LianLocation::TIMEZONE)),
+        'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
+        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 1),
+        'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
+        'poll_seconds' => env('WEATHER_POLL_SECONDS', 60),
+    ],
+
+    'weatherapi' => [
+        'key' => env('WEATHERAPI_KEY'),
+        'base_url' => env('WEATHERAPI_BASE_URL', 'https://api.weatherapi.com/v1'),
+        'timeout' => env('WEATHERAPI_TIMEOUT', 8),
+    ],
+
+
+    'open_meteo' => [
+        'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
+        'latitude' => env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE),
+        'longitude' => env('ICLIMATE_LONGITUDE', \App\Support\LianLocation::LONGITUDE),
+        'timezone' => env('ICLIMATE_TIMEZONE', \App\Support\LianLocation::TIMEZONE),
+        'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
+        'timeout' => env('OPEN_METEO_TIMEOUT', 10),
+        'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
+        'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
+        'realtime' => env('OPEN_METEO_REALTIME', true),
+    ],
+
+    'accuweather' => [
+        'key' => env('ACCUWEATHER_API_KEY'),
+        'timeout' => env('ACCUWEATHER_TIMEOUT', 8),
+    ],
+
+    'pagasa' => [
+        'enabled' => env('PAGASA_ADVISORIES_ENABLED', true),
+        'regional_forecast_url' => env('PAGASA_REGIONAL_FORECAST_URL', 'https://bagong.pagasa.dost.gov.ph/regional-forecast/ncrprsd'),
+        'regional_forecast_urls' => array_filter(array_map('trim', explode(',', env(
+            'PAGASA_REGIONAL_FORECAST_URLS',
+            'https://www.pagasa.dost.gov.ph/regional-forecast/ncrprsd,https://bagong.pagasa.dost.gov.ph/regional-forecast/slprsd,https://bagong.pagasa.dost.gov.ph/ten-day-regional-agri-weather'
+        )))),
+        'weekly_outlook_url' => env('PAGASA_WEEKLY_OUTLOOK_URL', 'https://pagasa.dost.gov.ph/weather/weather-outlook-weekly'),
+        'timeout' => env('PAGASA_TIMEOUT', 12),
+        'cache_minutes' => env('PAGASA_CACHE_MINUTES', 10),
+        'realtime' => env('PAGASA_REALTIME', true),
+        'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),
+    ],
+
+    // iClimate ML service (python_scripts/main.py, FastAPI) — rice yield +
+    // weather predictions and live model-evaluation metrics. Config key kept
+    // as "farming_ai" for compatibility with existing callers/tests.
+    'farming_ai' => [
+        'url' => env('FARMING_AI_API_URL', 'http://127.0.0.1:8010'),
+        'timeout' => env('FARMING_AI_API_TIMEOUT', 5),
+        'connect_timeout' => env('FARMING_AI_CONNECT_TIMEOUT', 3),
+        // Shared secret for POST /model/switch; must equal ML_ADMIN_TOKEN in the
+        // Python service's environment. Empty disables model switching.
+        'admin_token' => env('ML_ADMIN_TOKEN'),
+        'model_switch_timeout' => env('FARMING_AI_MODEL_SWITCH_TIMEOUT', 30),
+        'analytics_timeout' => env('FARMING_AI_ANALYTICS_TIMEOUT', 60),
+        'cache_minutes' => env('FARMING_AI_CACHE_MINUTES', 30),
+        'queue_connection' => env('FARMING_AI_QUEUE_CONNECTION', 'database'),
+        'queue' => env('FARMING_AI_QUEUE', 'analytics'),
+    ],
+
+    // PredictionOrchestrator (App\Services\Prediction) — how long a
+    // persisted monthly weather prediction is served from cache before the
+    // next read falls back to the (fresh) database row. Independent of
+    // farming_ai.cache_minutes above, which is for rice-yield AnalyticsRun
+    // results, not monthly weather.
+    'prediction' => [
+        'weather_cache_minutes' => env('ICLIMATE_WEATHER_CACHE_MINUTES', 360),
+    ],
+
+    'groq' => [
+        'enabled' => env('GROQ_ENABLED', env('GROQ_API_KEY') !== null),
+        'key' => env('GROQ_API_KEY'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+        'timeout' => env('GROQ_TIMEOUT', 12),
+    ],
+
+];

@@ -19,7 +19,7 @@ class FarmerPlantingSchedule extends Model
 
     protected $fillable = [
         'user_id', 'planting_date', 'scheduled_harvest_date', 'harvest_month',
-        'season', 'farm_type', 'barangay', 'farm_area_hectares', 'notes',
+        'season', 'farm_type', 'barangay', 'farm_area_hectares', 'actual_yield', 'harvested_on', 'notes',
         'progress_status', 'predicted_yield', 'prediction_confidence',
         'prediction_source', 'prediction_unavailable_reason', 'prediction_details',
         'historical_same_month_average', 'yield_difference',
@@ -32,6 +32,8 @@ class FarmerPlantingSchedule extends Model
         'scheduled_harvest_date' => 'date',
         'harvest_month' => 'date',
         'farm_area_hectares' => 'decimal:2',
+        'actual_yield' => 'decimal:2',
+        'harvested_on' => 'date',
         'predicted_yield' => 'decimal:2',
         'prediction_confidence' => 'decimal:2',
         'prediction_details' => 'array',
@@ -56,14 +58,17 @@ class FarmerPlantingSchedule extends Model
             return strtolower(str_replace(' ', '_', $this->progress_status));
         }
 
-        $today = today();
+        // Compare calendar dates in Manila time. The date columns are stored as UTC midnight,
+        // so comparing them with the current instant is wrong for the first 8 hours of a Manila day.
+        $today = \App\Support\BusinessClock::today();
+        $todayDate = $today->toDateString();
         $harvest = $this->harvestDateForPlanning();
 
-        if ($this->planting_date?->isFuture()) {
+        if ($this->planting_date && $this->planting_date->toDateString() > $todayDate) {
             return 'upcoming_planting';
         }
 
-        if ($harvest?->isPast()) {
+        if ($harvest && $harvest->toDateString() < $todayDate) {
             return 'delayed';
         }
 

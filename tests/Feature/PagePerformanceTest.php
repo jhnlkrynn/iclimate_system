@@ -377,10 +377,11 @@ class PagePerformanceTest extends TestCase
     public function test_one_persons_cached_page_is_never_shown_to_another(): void
     {
         Http::fake();
+        // The farmer dashboard lists weather-category notifications as alerts; that is the private, per-person content under test.
         $alice = $this->user(User::ROLE_FARMER);
         $bob = $this->user(User::ROLE_FARMER);
-        Notification::factory()->create(['user_id' => $alice->id, 'title' => 'ALICE-ONLY-NOTICE', 'type' => 'Warning', 'is_read' => false]);
-        Notification::factory()->create(['user_id' => $bob->id, 'title' => 'BOB-ONLY-NOTICE', 'type' => 'Warning', 'is_read' => false]);
+        Notification::factory()->create(['user_id' => $alice->id, 'title' => 'ALICE-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
+        Notification::factory()->create(['user_id' => $bob->id, 'title' => 'BOB-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
 
         $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('ALICE-ONLY-NOTICE')->assertDontSee('BOB-ONLY-NOTICE');
         $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('BOB-ONLY-NOTICE')->assertDontSee('ALICE-ONLY-NOTICE');
@@ -405,14 +406,13 @@ class PagePerformanceTest extends TestCase
     {
         Http::fake();
         $mao = $this->user(User::ROLE_MAO);
-        $before = $this->actingAs($mao)->get('/mao/dashboard')->viewData('farmerOrganizationSummary');
+        $before = $this->actingAs($mao)->get('/mao/dashboard')->assertOk()->viewData('mao')['farmers'];
 
         // The MAO dashboard is prepared; new data must not wait for the copy to age out.
-        User::factory()->count(3)->create(['role' => User::ROLE_FARMER, 'status' => User::STATUS_ACTIVE]);
+        \App\Models\FarmerProfile::factory()->count(3)->create();
 
-        $after = $this->actingAs($mao)->get('/mao/dashboard')->viewData('totalFarmers');
-        $this->assertGreaterThanOrEqual(3, $after);
-        $this->assertNotNull($before);
+        $after = $this->actingAs($mao)->get('/mao/dashboard')->assertOk()->viewData('mao')['farmers'];
+        $this->assertSame(3, $after['farmers'] - ($before['farmers'] ?? 0));
     }
 
     public function test_page_cache_scopes_never_mix(): void

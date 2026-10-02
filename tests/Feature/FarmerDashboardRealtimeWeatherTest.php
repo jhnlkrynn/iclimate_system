@@ -28,7 +28,7 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
             ->assertSee('28.7°C')
             ->assertSee('0.0 mm')
             ->assertSee('77%')
-            ->assertSee('Live as of')
+            ->assertSee('Last updated')
             ->assertDontSee('Live online fetch')
             ->assertDontSee('Live database count');
     }

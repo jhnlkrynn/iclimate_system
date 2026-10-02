@@ -25,6 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // The risk calculation is replaceable: bind a validated methodology here when one is approved.
+        $this->app->bind(\App\Contracts\RiskMethodology::class, \App\Services\Risk\AgriculturalRiskScorer::class);
+
+        // The dashboards share one request-scoped copy of the tables they read (see the class).
+        $this->app->singleton(\App\Support\DashboardData::class);
+
         // One stopwatch and one history read per chat message, shared by every AI service.
         $this->app->singleton(\App\Services\AI\AiTimings::class);
         $this->app->singleton(\App\Services\AI\ConversationContext::class);
@@ -97,6 +103,10 @@ class AppServiceProvider extends ServiceProvider
             // Everything cached with PageCache::shared() (dashboards, lists, reference data).
             \App\Support\PageCache::flushShared();
 
+            // The MAO / IT dashboards key their cached payload on this version, so a data change retires them at once.
+            app(\App\Support\DashboardData::class)->forget();
+            \App\Support\DashboardData::bump();
+
             foreach ([
                 'dashboard:shared-stats',
                 'dashboard:mao-aggregates',
@@ -133,9 +143,33 @@ class AppServiceProvider extends ServiceProvider
             \App\Models\FeedComment::class,
             \App\Models\FeedReaction::class,
             \App\Models\FeedMedia::class,
+            \App\Models\TyphoonSafetyResponse::class,
+            \App\Models\AnalyticsRun::class,
         ] as $model) {
-            $model::saved($flush);
+            // Eloquent fires "saved" even when nothing changed (e.g. the risk-map refresh re-saves 19 identical rows);
+            // only a real change should throw the cached pages away.
+            $model::saved(static function ($record) use ($flush): void {
+                if ($record->wasRecentlyCreated || $record->wasChanged()) {
+                    $flush();
+                }
+            });
             $model::deleted($flush);
+        }
+
+        // A farmer's expected yield depends on their farm area, farm type and planting schedule, so it must not outlive an edit
+        // to any of them. Both the payload cache and the 6-hour prediction cache are dropped for that one farmer.
+        foreach ([FarmerProfile::class, \App\Models\FarmerPlantingSchedule::class] as $model) {
+            $forgetFarmer = static function ($record): void {
+                if ($record->user_id) {
+                    Cache::forget(\App\Services\Analytics\FarmerDashboardService::predictionCacheKey((int) $record->user_id));
+                }
+            };
+            $model::saved(static function ($record) use ($forgetFarmer): void {
+                if ($record->wasRecentlyCreated || $record->wasChanged()) {
+                    $forgetFarmer($record);
+                }
+            });
+            $model::deleted($forgetFarmer);
         }
 
         // Private per-person data (notifications, their advisory feedback, their profile): only that person's cache is cleared.

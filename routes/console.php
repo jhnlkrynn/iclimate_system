@@ -108,15 +108,45 @@ Schedule::command('iclimate:refresh-lian-weather')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
+// Keeps the MAO / IT dashboard payloads cached (they cost ~40 Supabase round
+// trips to build). Replaced in place every minute, so page loads stay instant.
+Schedule::command('iclimate:warm-dashboards')
+    ->everyMinute()
+    ->withoutOverlapping(5)
+    ->runInBackground()
+    ->appendOutputTo($automationLog);
+
+// Prepare the pages that are the same for everyone (MAO / IT dashboards, System Health) so opening one is
+// instant instead of waiting for dozens of database round trips after every data change. System Health is
+// only prepared by this command.
+Schedule::command('iclimate:warm-dashboard-cache')
+    ->everyTwoMinutes()
+    ->withoutOverlapping(10)
+    ->appendOutputTo($automationLog);
+
+// Keep the stored weather fresh so pages and the chatbot read it instantly instead of waiting on a provider.
+Schedule::command('iclimate:refresh-weather-cache')
+    ->everyThreeMinutes()
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog);
+
+// PAGASA online advisories are only fetched by this command; without a
+// schedule the stored ones expire (6h) and the Advisories page goes empty.
+// Runs at :07/:22/:37/:52 rather than on the quarter hour: every run that failed with
+// "Could not resolve host" started at :00/:15/:30/:45, when the weather, risk-map and
+// warm-up jobs all start their own PHP processes at the same moment.
+Schedule::command('iclimate:fetch-pagasa-advisories --force')
+    ->cron('7,22,37,52 * * * *')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog);
+
 Schedule::command('iclimate:refresh-lian-boundaries')
     ->daily()
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
-// Every 20 minutes: the map is cached for 20, and pages never compute it themselves (they show the last
-// complete map and queue a refresh), so this is what keeps the risk map current.
 Schedule::command('iclimate:refresh-barangay-risk')
-    ->cron('*/20 * * * *')
+    ->everyFourHours()
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
@@ -129,19 +159,6 @@ Schedule::command('iclimate:process-datasets')
 // predictions warm (queues background generation only for months that are
 // missing/stale) so the weather-predictions page and barangay risk map
 // almost never have to fall back to computing a forecast inline.
-// Prepare the pages that are the same for everyone (MAO / IT dashboards, System Health) so opening one is
-// instant instead of waiting for dozens of database round trips after every data change.
-Schedule::command('iclimate:warm-dashboard-cache')
-    ->everyTwoMinutes()
-    ->withoutOverlapping(10)
-    ->appendOutputTo($automationLog);
-
-// Keep the stored weather fresh so pages and the chatbot read it instantly instead of waiting on a provider.
-Schedule::command('iclimate:refresh-weather-cache')
-    ->everyThreeMinutes()
-    ->withoutOverlapping(5)
-    ->appendOutputTo($automationLog);
-
 Schedule::command('iclimate:refresh-predictions')
     ->dailyAt('02:00')
     ->withoutOverlapping()

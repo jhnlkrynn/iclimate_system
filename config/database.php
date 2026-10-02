@@ -95,6 +95,17 @@ return [
             // the "iclimate_laravel" PostgreSQL schema.
             'search_path' => env('DB_SEARCH_PATH', 'public'),
 
+            // Send the search path as a start-up option instead of a follow-up
+            // SET statement: one network round trip less on every connection.
+            // Supabase's pooler supports this; defaults on for Supabase hosts only.
+            'search_path_in_dsn' => (bool) env('DB_SEARCH_PATH_IN_DSN', str_contains((string) env('DB_HOST'), 'supabase')),
+
+            // Reuse the database connection between requests in the same PHP
+            // process (saves ~0.6 s of TLS/auth per request against Supabase).
+            // Opt-in: with a session-mode pooler each PHP worker keeps one
+            // connection open, so only enable it where the worker count is small.
+            'options' => env('DB_PERSISTENT', false) ? [PDO::ATTR_PERSISTENT => true] : [],
+
             // Supabase requires SSL.
             'sslmode' => env('DB_SSLMODE', 'require'),
 

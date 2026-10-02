@@ -87,6 +87,26 @@ class BarangayRiskMapService
     }
 
     /**
+     * Barangays whose risk refresh failed today (weather lookup threw).
+     * Read by the IT-expert dashboard.
+     */
+    public static function failuresToday(): int
+    {
+        return (int) Cache::get('metrics:risk-map:failures:'.\App\Support\BusinessClock::today()->toDateString(), 0);
+    }
+
+    private static function recordFailure(): void
+    {
+        $key = 'metrics:risk-map:failures:'.\App\Support\BusinessClock::today()->toDateString();
+
+        if (! Cache::has($key)) {
+            Cache::put($key, 0, now()->addDay());
+        }
+
+        Cache::increment($key);
+    }
+
+    /**
      * Full 19-barangay risk map, cached under self::CACHE_KEY.
      */
     public function riskMap(bool $refresh = false): array
@@ -141,6 +161,24 @@ class BarangayRiskMapService
     }
 
     /**
+     * Recomputes the map and swaps it into the cache in place. Called by the
+     * scheduled warm-up so no signed-in user has to sit through a recompute
+     * when the 20-minute cache entry lapses.
+     */
+    public function refreshCache(): void
+    {
+        Cache::put(self::CACHE_KEY, $this->compute(false), now()->addMinutes(self::CACHE_TTL_MINUTES));
+    }
+
+    /** Age of the cached map in minutes, or null when nothing is cached. */
+    public function cachedAgeMinutes(): ?int
+    {
+        $generatedAt = Cache::get(self::CACHE_KEY)['generated_at'] ?? null;
+
+        return $generatedAt ? (int) \Illuminate\Support\Carbon::parse($generatedAt)->diffInMinutes(now()) : null;
+    }
+
+    /**
      * Detailed breakdown (risk factors + advisory) for a single barangay,
      * matched by canonical name. Returns null if the name doesn't resolve to
      * one of the 19 canonical Lian barangays.
@@ -172,6 +210,13 @@ class BarangayRiskMapService
         $monthlyRainfall = $this->monthlyRainfall();
         $results = [];
 
+        // Three queries for all 19 barangays instead of three per barangay —
+        // each round trip to Supabase is ~300 ms, so the old loop spent ~17 s
+        // just reading rice, farm-type and heat-map rows one barangay at a time.
+        $latestYields = $this->latestYieldsByBarangay();
+        $farmTypes = $this->dominantFarmTypes();
+        $existingAreas = $this->existingAreas();
+
         foreach (LianBarangays::coordinates() as $barangay => [$latitude, $longitude]) {
             $psgc = $psgcMap[$barangay] ?? null;
 
@@ -183,10 +228,12 @@ class BarangayRiskMapService
                     'message' => $exception->getMessage(),
                 ]);
                 $weather = ['status' => 'unavailable', 'stale' => true];
+                self::recordFailure();
             }
 
-            $lastYield = $this->lastRecordedYield($barangay);
-            $hasFreshWeather = ($weather['status'] ?? null) === 'fresh';
+            $lastYield = $latestYields[$barangay] ?? null;
+            // Temperature is a scored input: "fresh" weather without it is not usable (never read as 0 °C).
+            $hasFreshWeather = ($weather['status'] ?? null) === 'fresh' && is_numeric($weather['temperature_c'] ?? null);
             $hasMonthlyRainfall = $monthlyRainfall['available'];
 
             // Two independent guards: temperature/humidity/wind context comes
@@ -200,10 +247,10 @@ class BarangayRiskMapService
                 continue;
             }
 
-            $farmType = $this->dominantFarmType($barangay);
+            $farmType = $farmTypes[$barangay] ?? FarmerProfile::FARM_TYPE_RAINFED;
             $evaluation = $this->evaluate($barangay, $weather, $lastYield, $farmType, $monthlyRainfall['value']);
             $results[] = $this->realResult($barangay, $psgc, $weather, $lastYield, $farmType, $evaluation, $monthlyRainfall['value']);
-            $this->persist($barangay, $latitude, $longitude, $weather, $evaluation);
+            $this->persist($barangay, $latitude, $longitude, $weather, $evaluation, $existingAreas[$barangay] ?? null);
         }
 
         return [
@@ -252,7 +299,7 @@ class BarangayRiskMapService
             // every riskMap() cache miss (still at most once per 20-minute
             // riskMap() cache window either way, but now also benefits from
             // the longer-lived persisted table across separate cache windows).
-            $result = $this->predictionOrchestrator->monthlyWeatherForecast(now()->startOfMonth()->toImmutable());
+            $result = $this->predictionOrchestrator->monthlyWeatherForecast(\App\Support\BusinessClock::now()->startOfMonth()->toImmutable());
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: monthly rainfall forest failed, treating monthly rainfall as unavailable.', [
                 'message' => $exception->getMessage(),
@@ -297,12 +344,13 @@ class BarangayRiskMapService
             // MonthlyWeatherRandomForest) is the ONLY rainfall figure that
             // reaches DecisionSupportService/AgriculturalRiskScorer.
             'rainfall' => $monthlyRainfallMm,
-            'wind_speed' => $weather['wind_speed_kmh'] ?? 0.0,
-            'humidity' => $weather['humidity_percent'] ?? 0.0,
+            // Missing wind / humidity stay null (DecisionSupportService skips those rules); they are not 0.
+            'wind_speed' => $weather['wind_speed_kmh'] ?? null,
+            'humidity' => $weather['humidity_percent'] ?? null,
             // Temperature genuinely is a live/current per-barangay Open-Meteo
             // reading — the scorer's temperature thresholds are instantaneous,
             // not monthly-scale, so this is correct as-is.
-            'temperature' => $weather['temperature_c'] ?? 0.0,
+            'temperature' => $weather['temperature_c'] ?? null,
             'predicted_yield' => $lastYield?->yield_per_hectare !== null ? (float) $lastYield->yield_per_hectare : null,
             'season' => $this->currentSeason(),
             'farm_type' => $farmType,
@@ -424,23 +472,23 @@ class BarangayRiskMapService
         ];
     }
 
-    private function persist(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation): void
+    private function persist(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, ?HeatmapArea $existing = null): void
     {
         $risk = $evaluation['risk'];
         $stressLabels = array_map(fn (array $f): string => (string) ($f['label'] ?? ''), $evaluation['stress_factors'] ?? []);
-        $temperature = (float) ($weather['temperature_c'] ?? 0.0);
+        $temperature = is_numeric($weather['temperature_c'] ?? null) ? (float) $weather['temperature_c'] : null;
 
         $riskType = match (true) {
             in_array('Flooding risk', $stressLabels, true), in_array('Wet field risk', $stressLabels, true) => 'Flood',
             in_array('Drought stress', $stressLabels, true), in_array('Limited rainfall', $stressLabels, true) => 'Drought',
             in_array('Strong wind', $stressLabels, true) => 'Typhoon',
-            $temperature >= 32 => 'Heat',
+            $temperature !== null && $temperature >= 32 => 'Heat',
             default => 'Drought',
         };
 
         try {
-            HeatmapArea::query()->updateOrCreate(
-                ['barangay' => $barangay],
+            // Same effect as updateOrCreate(), minus its SELECT: the row was preloaded.
+            ($existing ?? new HeatmapArea(['barangay' => $barangay]))->fill(
                 [
                     'latitude' => $latitude,
                     'longitude' => $longitude,
@@ -453,12 +501,70 @@ class BarangayRiskMapService
                     'irrigation_recommendation' => $evaluation['irrigation']['recommendation'] ?? null,
                     'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
                 ]
-            );
+            )->save();
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: failed to persist HeatmapArea row.', [
                 'barangay' => $barangay,
                 'message' => $exception->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Latest recorded yield row per barangay (same ordering the per-barangay
+     * query used, so null-month handling is unchanged).
+     *
+     * @return array<string, RiceProduction>
+     */
+    private function latestYieldsByBarangay(): array
+    {
+        try {
+            return \App\Support\SampleData::without(RiceProduction::query(), 'rice_productions')
+                ->orderByDesc('year')
+                ->orderByDesc('production_month')
+                ->get()
+                ->unique('barangay')
+                ->keyBy('barangay')
+                ->all();
+        } catch (Throwable $exception) {
+            Log::warning('Barangay risk map: rice production lookup failed.', ['message' => $exception->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Most common real farm type per barangay; barangays without farmer data
+     * are absent, and callers fall back to the documented Rainfed default.
+     *
+     * @return array<string, string>
+     */
+    private function dominantFarmTypes(): array
+    {
+        try {
+            return FarmerProfile::query()
+                ->whereNotNull('farm_type')
+                ->selectRaw('barangay, farm_type, COUNT(*) as total')
+                ->groupBy('barangay', 'farm_type')
+                ->orderByDesc('total')
+                ->get()
+                ->groupBy('barangay')
+                ->map(fn ($rows) => (string) $rows->first()->farm_type)
+                ->all();
+        } catch (Throwable $exception) {
+            Log::warning('Barangay risk map: farm type lookup failed.', ['message' => $exception->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /** @return array<string, HeatmapArea> */
+    private function existingAreas(): array
+    {
+        try {
+            return HeatmapArea::query()->get()->keyBy('barangay')->all();
+        } catch (Throwable) {
+            return [];
         }
     }
 
@@ -511,7 +617,7 @@ class BarangayRiskMapService
 
     private function currentSeason(): string
     {
-        return in_array((int) now()->month, self::WET_SEASON_MONTHS, true) ? 'Wet' : 'Dry';
+        return in_array(\App\Support\BusinessClock::month(), self::WET_SEASON_MONTHS, true) ? 'Wet' : 'Dry';
     }
 
     private function colorFor(string $level): string

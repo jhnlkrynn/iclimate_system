@@ -15,7 +15,7 @@ class AdminDashboardOrganizationChartTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_dashboard_shows_dynamic_farmer_organization_summary_and_chart_data(): void
+    public function test_admin_dashboard_shows_a_compact_dynamic_farmer_database_summary_without_the_chart(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
 
@@ -45,16 +45,29 @@ class AdminDashboardOrganizationChartTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
 
         $response->assertOk()
-            ->assertSee('Farmers by Organization')
+            ->assertSee('Farmer Database')
             ->assertSee('Total Farmers')
-            ->assertSee('Total Organizations')
-            ->assertSee('Farmers Without Organization')
-            ->assertSee('Total Farm Area')
-            ->assertSee('7.50 ha')
-            ->assertSee('"counts":[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]', false);
+            ->assertSee('Without Organization')
+            ->assertSee('Registered Farm Area')
+            ->assertSee('7.50')
+            ->assertSee('View Farmer Analytics')
+            ->assertSee(route('farmer-profiles.index'), false)
+            // The detailed 16-organization chart no longer lives on the IT dashboard.
+            ->assertDontSee('Farmers by Organization')
+            ->assertDontSee('"counts":[1,1,0,0,0', false);
+
+        $response->assertViewHas('it', function (array $it) {
+            $f = $it['farmers'];
+
+            return $f['total_farmers'] === 3
+                && $f['organizations'] === FarmerOrganization::query()->count()
+                && $f['without_organization'] === 1
+                && abs($f['farm_area'] - 7.5) < 0.001
+                && abs($f['average_area'] - 2.5) < 0.001;
+        });
     }
 
-    public function test_registering_a_farmer_updates_the_admin_organization_chart_count(): void
+    public function test_registering_a_farmer_updates_the_admin_farmer_database_summary(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
 
@@ -80,7 +93,7 @@ class AdminDashboardOrganizationChartTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('"counts":[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]', false);
+            ->assertViewHas('it', fn (array $it) => $it['farmers']['total_farmers'] === 1 && $it['farmers']['without_organization'] === 0);
     }
 
     /**

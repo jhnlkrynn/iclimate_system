@@ -1,6 +1,12 @@
 @php
     $user = auth()->user();
     $initials = collect(explode(' ', trim($user->name)))->filter()->map(fn ($part) => mb_strtoupper($part[0]))->take(2)->implode('');
+    $isFarmerNav = $user->role === \App\Models\User::ROLE_FARMER;
+    $navBarangay = $isFarmerNav ? ($user->farmerProfile?->barangay ?? $user->barangay) : null;
+    // Same cached count as the sidebar badge, so the two always agree.
+    $navUnread = $isFarmerNav
+        ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())
+        : 0;
 @endphp
 <style>
     .topbar-user { display: flex; align-items: center; gap: .7rem; min-width: 0; }
@@ -90,21 +96,34 @@
             <div class="topbar-user">
                 <div class="topbar-avatar" aria-hidden="true">{{ $initials ?: '?' }}</div>
                 <div class="topbar-user-meta d-none d-sm-block min-w-0">
-                    <div class="topbar-eyebrow">Signed in as</div>
-                    <div class="topbar-name text-truncate">{{ $user->name }}</div>
+                    @if ($isFarmerNav)
+                        <div class="topbar-name text-truncate">{{ $user->name }}</div>
+                        <div class="topbar-eyebrow">Farmer{{ $navBarangay ? ' • '.$navBarangay : '' }}</div>
+                    @else
+                        <div class="topbar-eyebrow">Signed in as</div>
+                        <div class="topbar-name text-truncate">{{ $user->name }}</div>
+                    @endif
                 </div>
             </div>
         </div>
-        <div class="d-none d-md-flex align-items-center me-2">
-            <span class="topbar-role-badge">{{ $user->roleLabel() }}</span>
-        </div>
+        @unless ($isFarmerNav)
+            <div class="d-none d-md-flex align-items-center me-2">
+                <span class="topbar-role-badge">{{ $user->roleLabel() }}</span>
+            </div>
+        @endunless
         <div class="topbar-actions">
-            @unless($user->role === \App\Models\User::ROLE_FARMER)
+            @if ($isFarmerNav)
+                <a class="topbar-btn position-relative" href="{{ route('notifications.index') }}" aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    @if ($navUnread > 0)<span class="sidebar-badge" style="position:absolute;top:-6px;right:-6px">{{ $navUnread }}</span>@endif
+                </a>
+            @endif
+            @if (true)
                 <a class="topbar-btn d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">
                     <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     <span>Profile</span>
                 </a>
-            @endunless
+            @endif
             <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?" data-loading="true">
                 @csrf
                 <button class="topbar-btn topbar-btn-logout" type="submit" data-loading-text="Logging out...">

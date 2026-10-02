@@ -61,23 +61,48 @@ class SystemHealthService
 
     public function checks(): array
     {
-        return [
-            $this->guard('database', $this->databaseTitle(), fn () => $this->database()),
-            $this->guard('backup', 'Database Backup', fn () => $this->databaseBackup()),
-            $this->guard('backup-verification', 'Backup Verification', fn () => $this->backupVerification()),
-            $this->guard('queue', 'Pending queue jobs', fn () => $this->pendingJobs()),
-            $this->guard('failed-jobs', 'Failed jobs', fn () => $this->failedJobs()),
-            $this->guard('weather', 'Latest weather update', fn () => $this->latestWeather()),
-            $this->guard('prediction', 'Latest monthly prediction', fn () => $this->latestPrediction()),
-            $this->guard('analytics', 'Latest dataset processing', fn () => $this->latestAnalytics()),
-            $this->guard('python', 'Python executable', fn () => $this->python()),
-            $this->guard('weather-model', 'Weather model', fn () => $this->modelFile('weather')),
-            $this->guard('rice-yield-model', 'Rice-yield model', fn () => $this->modelFile('rice_yield')),
-            $this->guard('model-sync', 'Model sync', fn () => $this->modelSync()),
-            $this->guard('scheduler', 'Scheduler freshness', fn () => $this->scheduler()),
-        ];
+        return $this->only(array_keys($this->definitions()));
     }
 
+    /**
+     * Runs only the named checks (each still guarded), in their usual order, so a caller that needs a
+     * few does not pay for all of them.
+     *
+     * @param  array<int, string>  $keys
+     * @return array<int, array{key: string, title: string, status: string, summary: string, details: array<string, string>}>
+     */
+    public function only(array $keys): array
+    {
+        $results = [];
+
+        foreach ($this->definitions() as $key => [$title, $check]) {
+            if (in_array($key, $keys, true)) {
+                $results[] = $this->guard($key, $title(), $check);
+            }
+        }
+
+        return $results;
+    }
+
+    /** @return array<string, array{0: callable(): string, 1: callable(): array}> */
+    private function definitions(): array
+    {
+        return [
+            'database' => [fn () => $this->databaseTitle(), fn () => $this->database()],
+            'backup' => [fn () => 'Database Backup', fn () => $this->databaseBackup()],
+            'backup-verification' => [fn () => 'Backup Verification', fn () => $this->backupVerification()],
+            'queue' => [fn () => 'Pending queue jobs', fn () => $this->pendingJobs()],
+            'failed-jobs' => [fn () => 'Failed jobs', fn () => $this->failedJobs()],
+            'weather' => [fn () => 'Latest weather update', fn () => $this->latestWeather()],
+            'prediction' => [fn () => 'Latest monthly prediction', fn () => $this->latestPrediction()],
+            'analytics' => [fn () => 'Latest dataset processing', fn () => $this->latestAnalytics()],
+            'python' => [fn () => 'Python executable', fn () => $this->python()],
+            'weather-model' => [fn () => 'Weather model', fn () => $this->modelFile('weather')],
+            'rice-yield-model' => [fn () => 'Rice-yield model', fn () => $this->modelFile('rice_yield')],
+            'model-sync' => [fn () => 'Model sync', fn () => $this->modelSync()],
+            'scheduler' => [fn () => 'Scheduler freshness', fn () => $this->scheduler()],
+        ];
+    }
     /**
      * @param  array<int, array{status: string}>  $checks
      * @return array{healthy: int, needs_attention: int, unavailable: int, headline: string}

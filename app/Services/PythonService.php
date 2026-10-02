@@ -61,22 +61,22 @@ class PythonService
 
     public static function attemptsToday(): int
     {
-        return (int) Cache::get('metrics:python-service:attempts:'.today()->toDateString(), 0);
+        return (int) Cache::get('metrics:python-service:attempts:'.\App\Support\BusinessClock::today()->toDateString(), 0);
     }
 
     public static function failuresToday(): int
     {
-        return (int) Cache::get('metrics:python-service:failures:'.today()->toDateString(), 0);
+        return (int) Cache::get('metrics:python-service:failures:'.\App\Support\BusinessClock::today()->toDateString(), 0);
     }
 
     private static function recordAttempt(): void
     {
-        self::bumpCounter('metrics:python-service:attempts:'.today()->toDateString());
+        self::bumpCounter('metrics:python-service:attempts:'.\App\Support\BusinessClock::today()->toDateString());
     }
 
     private static function recordFailure(): void
     {
-        self::bumpCounter('metrics:python-service:failures:'.today()->toDateString());
+        self::bumpCounter('metrics:python-service:failures:'.\App\Support\BusinessClock::today()->toDateString());
     }
 
     private static function bumpCounter(string $key): void

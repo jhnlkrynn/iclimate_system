@@ -165,6 +165,7 @@ class FarmerDashboardWeatherService
         if (($current['humidity'] ?? 0) >= 85) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'humidity',
                 'message' => 'High humidity may increase fungal disease risk. Monitor rice crops closely for symptoms.',
             ];
         }
@@ -172,6 +173,7 @@ class FarmerDashboardWeatherService
         if (($today['precipitation_probability'] ?? 0) >= 70 || ($today['rainfall'] ?? 0) >= 10) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'rain',
                 'message' => 'Rain is likely today. Consider delaying fertilizer or pesticide application when possible.',
             ];
         }
@@ -179,19 +181,24 @@ class FarmerDashboardWeatherService
         if (($current['wind_speed'] ?? 0) >= 20) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'wind',
                 'message' => 'Wind conditions may reduce spraying effectiveness. Consider delaying chemical spraying.',
             ];
         }
 
-        if (($current['temperature'] ?? 0) >= 34 && ($today['rainfall'] ?? 0) < 2) {
+        // Both readings must exist: a missing rainfall is not "0 mm, dry".
+        if (is_numeric($current['temperature'] ?? null) && is_numeric($today['rainfall'] ?? null)
+            && (float) $current['temperature'] >= 34 && (float) $today['rainfall'] < 2) {
             return [
                 'title' => 'iClimate Weather Guidance',
+                'topic' => 'heat',
                 'message' => 'Hot and dry conditions may increase water demand. Check soil moisture before irrigation.',
             ];
         }
 
         return [
             'title' => 'iClimate Weather Guidance',
+            'topic' => 'normal',
             'message' => 'Weather conditions are within normal monitoring range. Keep checking advisories before field work.',
         ];
     }
@@ -620,8 +627,8 @@ class FarmerDashboardWeatherService
             ],
             [
                 'location_name' => 'Lian, Batangas',
-                'latitude' => (float) config('services.weather.latitude', 14.033),
-                'longitude' => (float) config('services.weather.longitude', 120.650),
+                'latitude' => (float) config('services.weather.latitude', \App\Support\LianLocation::LATITUDE),
+                'longitude' => (float) config('services.weather.longitude', \App\Support\LianLocation::LONGITUDE),
                 'weather_code' => $weather['current']['weather_code'] ?? null,
                 'temperature' => $weather['current']['temperature'] ?? null,
                 'temperature_max' => $weather['today']['temperature_max'] ?? null,
@@ -757,7 +764,8 @@ class FarmerDashboardWeatherService
 
     private function mapWeatherApiCondition(string $condition, ?int $code, bool $isDay): array
     {
-        $text = strtolower($condition);
+        // Provider wording such as "Moderate Drizzle" is normalised to rain wording (keeping intensity) before matching.
+        $text = strtolower(\App\Support\WeatherConditionLabel::display($condition));
 
         return match (true) {
             str_contains($text, 'thunder') => ['condition' => 'Thunderstorm', 'icon' => '/images/weather/thunderstorm.svg'],
@@ -824,8 +832,8 @@ class FarmerDashboardWeatherService
             'name' => 'Lian',
             'province' => 'Batangas',
             'country' => 'Philippines',
-            'latitude' => (float) config('services.weather.latitude', 14.033),
-            'longitude' => (float) config('services.weather.longitude', 120.650),
+            'latitude' => (float) config('services.weather.latitude', \App\Support\LianLocation::LATITUDE),
+            'longitude' => (float) config('services.weather.longitude', \App\Support\LianLocation::LONGITUDE),
             'timezone' => $this->timezone(),
         ];
     }

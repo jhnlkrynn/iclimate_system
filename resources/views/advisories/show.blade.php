@@ -62,18 +62,54 @@
                 </div>
             </div>
 
-            <details class="ic-collapse">
+            <details class="ic-collapse" open data-advisory-weather="{{ $advisoryWeather['status'] }}">
                 <summary><span class="ic-collapse-title">Weather Behind This Advice</span></summary>
             <div class="card no-lift">
                 <div class="card-body">
-                    @php($basis = $advisory->metadata['weather_basis'] ?? [])
-                    <dl class="row mb-0 details-list g-3">
-                        <dt class="col-sm-4">Expected rainfall</dt><dd class="col-sm-8">{{ data_get($basis, 'expected_rainfall_mm', 'N/A') }} mm</dd>
-                        <dt class="col-sm-4">Rain probability</dt><dd class="col-sm-8">{{ data_get($basis, 'rain_probability_percent', 'N/A') }}%</dd>
-                        <dt class="col-sm-4">Maximum temperature</dt><dd class="col-sm-8">{{ data_get($basis, 'maximum_temperature_c', 'N/A') }}°C</dd>
-                        <dt class="col-sm-4">Strongest wind</dt><dd class="col-sm-8">{{ data_get($basis, 'maximum_wind_speed_kmh', 'N/A') }} km/h</dd>
-                        <dt class="col-sm-4">Forecast period</dt><dd class="col-sm-8">{{ data_get($basis, 'forecast_period', 'N/A') }}</dd>
-                    </dl>
+                    @php
+                        $wx = $advisoryWeather;
+                        $wxTime = fn ($iso) => $iso ? \Illuminate\Support\Carbon::parse($iso)->timezone(\App\Services\Advisories\AdvisoryWeatherService::TIMEZONE)->format('M j, Y g:i A') : null;
+                    @endphp
+
+                    @if ($wx['status'] === 'unavailable')
+                        <div class="alert alert-warning mb-3" role="status">
+                            <strong>Weather data unavailable</strong>
+                            <div class="small mt-1">{{ implode(' ', $wx['messages']) }}</div>
+                        </div>
+                        <dl class="row mb-0 details-list g-3">
+                            <dt class="col-sm-4">Forecast period</dt><dd class="col-sm-8">{{ $wx['period'] }}</dd>
+                            <dt class="col-sm-4">Location</dt><dd class="col-sm-8">{{ $wx['location'] }}</dd>
+                        </dl>
+                    @else
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                            <span class="badge text-bg-info">{{ $wx['kind'] }}</span>
+                            <span class="small text-muted">for {{ $wx['location'] }} · not observed weather, not an ML prediction</span>
+                        </div>
+                        <dl class="row mb-0 details-list g-3">
+                            @foreach ($wx['rows'] as $row)
+                                <dt class="col-sm-4">{{ $row['label'] }}</dt>
+                                <dd class="col-sm-8">
+                                    @if ($row['value'] !== null)
+                                        <strong>{{ $row['value'] }}</strong>
+                                        @if ($row['detail'])<span class="small text-muted ms-1">{{ $row['detail'] }}</span>@endif
+                                    @else
+                                        <span class="text-muted">Not provided by source</span>
+                                    @endif
+                                </dd>
+                            @endforeach
+                            <dt class="col-sm-4">Forecast period</dt><dd class="col-sm-8"><strong>{{ $wx['period'] }}</strong></dd>
+                        </dl>
+                        @foreach ($wx['messages'] as $message)
+                            <p class="small text-muted mt-3 mb-0">{{ $message }}</p>
+                        @endforeach
+                    @endif
+
+                    <div class="small text-muted border-top pt-2 mt-3" data-advisory-weather-source>
+                        <div><strong>Source:</strong> {{ $wx['source'] }}@if (! empty($wx['source_url'])) &middot; <a href="{{ $wx['source_url'] }}" target="_blank" rel="noopener">{{ parse_url($wx['source_url'], PHP_URL_HOST) }}</a>@endif</div>
+                        <div><strong>Forecast issued:</strong> {{ $wx['issued'] }}</div>
+                        <div><strong>Last updated:</strong> {{ $wx['updated'] ? $wxTime($wx['updated']).' (Philippine time)' : 'Not available — no forecast was retrieved' }}{{ ! empty($wx['stale']) ? ' — the source could not be reached, so this is the last copy retrieved' : '' }}</div>
+                        @if ($wx['window_note'])<div>{{ $wx['window_note'] }}</div>@endif
+                    </div>
                 </div>
             </div>
             </details>
@@ -155,8 +191,8 @@
                         <dt>Applies to</dt><dd>{{ $advisory->targetLabel() }}</dd>
                         @if(auth()->user()->role === \App\Models\User::ROLE_IT_EXPERT)<dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>@else<dt>Source</dt><dd>{{ $advisory->source && stripos($advisory->source, 'pagasa') !== false ? 'PAGASA' : 'Live weather and iClimate guidance' }}</dd>@endif
                         <dt>Period</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
-                        <dt>Issued on</dt><dd>{{ $advisory->created_at?->shortDateTime('F d, Y') }}</dd>
-                        <dt>Valid</dt><dd>{{ $advisory->valid_from?->shortDateTime('M d, Y') }} to {{ $advisory->valid_until?->shortDateTime('M d, Y') }}</dd>
+                        <dt>Issued on</dt><dd>{{ $advisory->created_at?->timezone('Asia/Manila')?->shortDateTime('F d, Y') }} <span class="small text-muted">(Philippine time)</span></dd>
+                        <dt>Valid</dt><dd>{{ $advisory->valid_from?->timezone('Asia/Manila')?->shortDateTime('M d, Y') }} to {{ $advisory->valid_until?->timezone('Asia/Manila')?->shortDateTime('M d, Y') }} <span class="small text-muted">(Philippine time)</span></dd>
                         <dt>Review status</dt><dd>{{ $advisory->approved_at ? 'Approved by '.$advisory->approvedBy?->name : $advisory->statusLabel() }}</dd>
                     </div>
                 </div>

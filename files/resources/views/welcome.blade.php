@@ -1,0 +1,3040 @@
+@php
+    $heroClimate = \App\Support\ClimateSnapshot::latest();
+    $rice = [
+        'hero'     => asset('images/rice-hero-aerial.jpg'),
+        'about'    => asset('images/rice-about-farmer.jpg'),
+        'features' => asset('images/rice-features-paddy.jpg'),
+        'roles'    => asset('images/rice-roles-terrace.jpg'),
+        'contact'  => asset('images/rice-contact-golden.jpg'),
+    ];
+@endphp
+<!DOCTYPE html>
+<html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ config('app.name', 'iClimate') }} | Weather Impact Analysis for Lian, Batangas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* -- TOKENS --------------------------------------- */
+    :root {
+      --iclimate-primary: #123F32;
+      --iclimate-primary-medium: #1F5A46;
+      --iclimate-accent: #8FAF9A;
+      --iclimate-accent-light: #C9D8CE;
+      --iclimate-surface: #F4F6F2;
+      --iclimate-border: #D8E0DA;
+      --iclimate-text: #1E2B25;
+      --iclimate-text-muted: #68756D;
+      --iclimate-warning: #C58B2A;
+      --iclimate-danger: #B84A4A;
+      --iclimate-info: #4B7185;
+      --green-950: var(--iclimate-primary);
+      --green-900: var(--iclimate-primary-medium);
+      --green-800: var(--iclimate-primary-medium);
+      --green-700: var(--iclimate-primary-medium);
+      --green-500: #5F8F78;
+      --green-400: #7FD6B5;
+      --green-200: #7FD6B5;
+      --green-100: rgba(127,214,181,0.22);
+      --green-50:  rgba(95,143,120,0.08);
+      --sand:      var(--iclimate-surface);
+      --sand-dark: var(--iclimate-border);
+      --accent:      var(--iclimate-accent);
+      --accent-dark: #6F8978;
+      --accent-light:var(--iclimate-accent-light);
+      --ink:       var(--iclimate-text);
+      --ink-mid:   var(--iclimate-text-muted);
+      --ink-light: rgba(100,116,139,0.72);
+      --white:     #FFFFFF;
+      --border:    #5F8F78;
+      --mint:      #7FD6B5;
+      --hero-from: #1F4D3A;
+      --hero-to:   #1F4D3A;
+      --sidebar-bg: #F7F6F2;
+      --sidebar-active-bg: rgba(127,214,181,0.18);
+      --radius-sm: 4px;
+      --radius-md: 10px;
+      --radius-lg: 18px;
+      --radius-xl: 32px;
+      --radius-blob: 62% 38% 41% 59% / 48% 42% 58% 52%;
+      --radius-pill: 100px;
+      --shadow-sm: 0 1px 4px rgba(22,59,45,0.08);
+      --shadow-md: 0 4px 20px rgba(22,59,45,0.12);
+      --shadow-lg: 0 16px 56px rgba(22,59,45,0.18);
+      --shadow-accent: 0 10px 28px rgba(143,175,154,0.35);
+      --nav-h: 92px;
+      --ease: cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* -- RESET ----------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--green-800);
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    ul { list-style: none; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    p { color: var(--white); }
+
+    /* -- TYPE ------------------------------------------ */
+    h1, h2, h3, h4 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      line-height: 1.1;
+      font-weight: 400;
+      color: var(--white);
+    }
+    h1 { font-size: clamp(2.4rem, 5.5vw, 4rem); letter-spacing: -0.02em; }
+    h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); letter-spacing: -0.02em; }
+    h3 { font-size: 1.28rem; }
+    small, .small, .feature-card p, .role-card p, .pillar-card p, .contact-card p {
+      font-size: .96rem;
+      line-height: 1.58;
+    }
+    .mono { font-family: 'DM Mono', monospace; }
+
+    /* -- LAYOUT ---------------------------------------- */
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* -- BUTTONS --------------------------------------- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px;
+      border-radius: var(--radius-pill);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s var(--ease);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary {
+      background: var(--green-700);
+      color: var(--white);
+      box-shadow: none;
+    }
+    .btn-primary:hover {
+      background: var(--green-950);
+      color: var(--white);
+      transform: translateY(-1px);
+      box-shadow: none;
+    }
+    .btn-outline {
+      border: 1.5px solid var(--white);
+      color: var(--white);
+      background: transparent;
+    }
+    .btn-outline:hover {
+      background: var(--white);
+      color: var(--ink);
+    }
+    .btn-ghost-light {
+      color: var(--white);
+      background: transparent;
+      padding-left: 0;
+    }
+    .btn-ghost-light:hover { color: var(--accent); }
+    .btn-lg { padding: 14px 32px; font-size: 0.95rem; border-radius: var(--radius-pill); }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* -- EYEBROW --------------------------------------- */
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green-500);
+      margin-bottom: 20px;
+    }
+    .eyebrow::before { content: none; }
+
+    /* ===============================================
+       NAVBAR
+    =============================================== */
+    .navbar {
+      position: sticky;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: rgba(31,77,58,.55);
+      backdrop-filter: blur(22px) saturate(170%);
+      -webkit-backdrop-filter: blur(22px) saturate(170%);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+    }
+    .nav-container {
+      max-width: 1120px; margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
+      display: flex; align-items: center; gap: 40px;
+      background: transparent;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--green-500);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .logo-text em { font-style: italic; color: var(--accent); }
+    .nav-links {
+      display: flex; align-items: center; gap: 2px;
+      margin-left: auto;
+    }
+    .nav-link {
+      position: relative;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--mint);
+      transition: color 0.2s, background 0.2s;
+    }
+    .nav-link:hover { color: var(--white); }
+    .nav-link.active {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      left: 50%; bottom: -2px;
+      transform: translateX(-50%);
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .nav-login {
+      padding: 9px 20px;
+      border: 1px solid var(--white);
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--white);
+      transition: all 0.2s;
+    }
+    .nav-login:hover {
+      background: var(--white);
+      color: var(--ink);
+    }
+    .nav-cta {
+      padding: 9px 22px;
+      border-radius: var(--radius-pill);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--accent);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+    @media (max-width: 640px) { .nav-cta { display: none; } }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      width: 28px; padding: 4px;
+    }
+    .hamburger span {
+      display: block; height: 1.5px;
+      background: var(--ink); border-radius: 2px;
+      transition: all 0.2s var(--ease);
+    }
+
+    /* ===============================================
+       HERO
+    =============================================== */
+    .hero {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(15,41,32,0.94) 0%, rgba(22,59,45,0.90) 55%, rgba(31,77,58,0.94) 100%),
+        url('{{ $rice['hero'] }}') center 30% / cover no-repeat;
+      min-height: calc(100vh - var(--nav-h));
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    /* Grain texture overlay */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: 0.5;
+    }
+    /* Radial glow */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -20%; right: -10%;
+      width: 70%; height: 100%;
+      background: radial-gradient(ellipse at center, rgba(95,143,120,0.10) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      flex: 1;
+      max-width: 1120px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      padding-top: 72px;
+      padding-bottom: 100px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 80px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-location {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mint);
+      margin-bottom: 24px;
+    }
+    .hero-location svg { flex-shrink: 0; }
+    .hero-title {
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .hero-title-italic {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .hero-subtitle {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+    }
+    .hero-desc {
+      font-size: 0.975rem;
+      color: var(--white);
+      max-width: 460px;
+      line-height: 1.75;
+      margin-bottom: 40px;
+    }
+    .hero-actions {
+      display: flex; align-items: center; gap: 20px;
+      flex-wrap: wrap; margin-bottom: 0;
+    }
+    .hero-text .trust-grid {
+      margin-top: 40px;
+      margin-bottom: 0;
+    }
+
+    /* ===============================================
+       HERO VISUAL (location map panel)
+    =============================================== */
+    .hero-visual {
+      position: relative;
+      height: 480px;
+    }
+    .hero-map-panel {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background-color: var(--green-950);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow-lg);
+    }
+    .hero-map-dot {
+      position: absolute;
+      top: 16%; left: 50%;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green-400);
+      animation: heroMapPulse 2.4s infinite;
+    }
+    @keyframes heroMapPulse {
+      0%   { box-shadow: 0 0 0 5px rgba(127,214,181,0.22), 0 0 18px 4px rgba(127,214,181,0.4), 0 0 0 0 rgba(127,214,181,0.5); }
+      70%  { box-shadow: 0 0 0 5px rgba(127,214,181,0.22), 0 0 18px 4px rgba(127,214,181,0.4), 0 0 0 10px rgba(127,214,181,0); }
+      100% { box-shadow: 0 0 0 5px rgba(127,214,181,0.22), 0 0 18px 4px rgba(127,214,181,0.4), 0 0 0 0 rgba(127,214,181,0); }
+    }
+    .hero-map-card {
+      position: absolute;
+      top: 30%; left: 50%;
+      transform: translateX(-50%);
+      width: 270px;
+      background: rgba(22,59,45,.68);
+      border: 1.5px solid rgba(127,214,181,.24);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 45px rgba(0,0,0,.32);
+    }
+    .hmc-location {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--green-400);
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .hmc-office {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    /* Weather stat strip (bottom of hero map panel) */
+    .hero-weather-strip {
+      position: absolute;
+      left: 20px; right: 20px; bottom: 20px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .hws-item {
+      flex: 1 1 120px;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(22,59,45,.6);
+      border: 1.5px solid rgba(127,214,181,.2);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+    }
+    .hws-icon { color: var(--green-400); flex-shrink: 0; }
+    .hws-val { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: var(--white); line-height: 1; }
+    .hws-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,.74); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+    .hws-item { transition: transform .3s cubic-bezier(.34,1.4,.64,1), border-color .25s ease, background .25s ease, box-shadow .25s ease; }
+    .hws-item:hover { transform: translateY(-3px); border-color: rgba(127,214,181,.65); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+    .hws-item:hover .hws-icon { transform: scale(1.15) rotate(-6deg); }
+    .hws-icon { transition: transform .35s cubic-bezier(.34,1.4,.64,1); }
+    .hws-val.is-updating { animation: heroValIn .5s ease both; }
+    @keyframes heroValIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .hmc-live { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: .8rem; font-weight: 600; color: #b9e8d3; }
+    .hmc-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7fd6b5; box-shadow: 0 0 0 0 rgba(127,214,181,.6); animation: heroLive 2.2s ease-out infinite; flex-shrink: 0; }
+    @keyframes heroLive { 70% { box-shadow: 0 0 0 7px rgba(127,214,181,0); } 100% { box-shadow: 0 0 0 0 rgba(127,214,181,0); } }
+    @media (prefers-reduced-motion: reduce) { .hmc-live::before, .hws-val.is-updating { animation: none; } .hws-item:hover { transform: none; } }
+
+    /* Trust / stats band */
+    .trust-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 12px;
+      flex: 1;
+      min-width: 150px;
+      background: rgba(244,249,245,.94);
+      border: 1.5px solid rgba(255,255,255,.7);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(18px) saturate(170%);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .trust-item:hover { background: #ffffff; border-color: rgba(95,143,120,.45); box-shadow: 0 4px 14px rgba(8,25,19,.08); }
+    .trust-icon {
+      width: 40px; height: 40px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: rgba(31,90,70,0.12);
+      border: 1px solid rgba(31,90,70,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .trust-icon svg path { stroke: #1F5A46; }
+    .trust-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      color: #12291f;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .trust-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #34493d;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1.3;
+      margin-top: 5px;
+    }
+    @media (max-width: 480px) {
+      .trust-grid { flex-direction: column; }
+    }
+
+    /* ===============================================
+       ABOUT
+    =============================================== */
+    .about-section {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96) 0%, rgba(31,77,58,.90) 48%, rgba(22,59,45,.95) 100%),
+        url('{{ $rice['hero'] }}') center 44% / cover no-repeat;
+      padding: 120px 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .about-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(127,214,181,.16), transparent 28%),
+        radial-gradient(circle at 85% 72%, rgba(143,175,154,.10), transparent 30%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.75;
+    }
+    .about-section::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 190px;
+      background: linear-gradient(180deg, transparent 0%, rgba(31,77,58,.72) 62%, rgba(31,77,58,1) 100%);
+      pointer-events: none;
+    }
+    .about-section > .container { position: relative; z-index: 1; }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .about-visual {
+      position: relative;
+    }
+
+    /* ===============================================
+       ABOUT PHOTO + MISSION CARD
+    =============================================== */
+    .about-text { display: flex; flex-direction: column; gap: 20px; }
+    .about-text .hero-location { margin-bottom: 0; }
+    .about-text .section-title { margin-bottom: 4px; color: var(--white); }
+    .about-text .section-title em { font-style: italic; color: var(--accent); }
+    .about-text p { font-size: 0.975rem; line-height: 1.8; color: rgba(255,255,255,.72); }
+    .about-tagline {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+    .tagline-flourish {
+      position: relative;
+      width: 22px; height: 1px;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .tagline-flourish::after {
+      content: '';
+      position: absolute; top: 50%;
+      transform: translateY(-50%);
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--green-400);
+    }
+    .tagline-flourish:first-child::after { right: -9px; }
+    .tagline-flourish:last-child::after { left: -9px; }
+    .about-photo {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 420px;
+      box-shadow: var(--shadow-lg);
+      background-color: var(--green-950);
+      background-image:
+        linear-gradient(180deg, rgba(22,59,45,0.12) 0%, rgba(22,59,45,0.28) 55%, rgba(15,41,32,0.82) 100%),
+        url('{{ $rice['about'] }}');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .about-photo-leaf {
+      position: absolute; right: -20px; bottom: -30px;
+      width: 220px; height: 220px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cpath d='M110 10C60 40 30 90 40 150c6 24 22 40 40 48-12-48 0-100 30-148 10-16 10-30 0-40Z' fill='%235F8F78' fill-opacity='.18'/%3E%3Cpath d='M100 20C68 62 52 112 62 168' stroke='%237FD6B5' stroke-opacity='.4' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    .mission-card {
+      position: absolute;
+      right: 20px; bottom: 20px; left: 20px;
+      max-width: 340px;
+      margin-left: auto;
+      background: rgba(22,59,45,.72);
+      border: 1.5px solid rgba(127,214,181,.24);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 45px rgba(0,0,0,.32);
+      backdrop-filter: blur(16px);
+      padding: 22px 24px;
+      display: flex; gap: 14px; align-items: flex-start;
+      z-index: 1;
+    }
+    .mission-icon {
+      flex-shrink: 0;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.16);
+      border: 1px solid rgba(143,175,154,0.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mission-card strong { display: block; font-size: 0.95rem; color: var(--white); margin-bottom: 4px; }
+    .mission-card p { font-size: 0.83rem; line-height: 1.55; color: rgba(255,255,255,.8); }
+
+    /* ===============================================
+       PILLARS ROW (5 cards)
+    =============================================== */
+    .pillars-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 64px;
+    }
+    .pillar-card {
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(143,175,154,.22);
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-lg);
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s var(--ease), box-shadow 0.25s ease;
+    }
+    .pillar-card:hover {
+      border-color: rgba(143,175,154,.65);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
+    }
+    .pillar-card .pillar-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .pillar-card strong { display: block; font-size: 0.88rem; color: var(--white); margin-bottom: 6px; }
+    .pillar-card p { font-size: 0.78rem; line-height: 1.55; color: rgba(255,255,255,.8); }
+    @media (max-width: 900px) {
+      .pillars-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .pillars-row { grid-template-columns: 1fr; }
+    }
+
+    /* ===============================================
+       WHO WE ARE / BUILT FOR LIAN, BATANGAS
+    =============================================== */
+    .who-we-are {
+      position: relative;
+      overflow: hidden;
+      margin-top: 72px;
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
+      border: 1px solid rgba(143,175,154,.22);
+      border-radius: var(--radius-xl);
+      padding: 56px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-lg);
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,1.4fr);
+      gap: 48px;
+      align-items: center;
+    }
+    .who-we-are::before {
+      content: "";
+      position: absolute; left: -40px; bottom: -40px;
+      width: 260px; height: 200px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 200'%3E%3Cpath d='M0 160 Q60 120 130 150 T260 140 V200 H0Z' stroke='%237FD6B5' stroke-opacity='0.3' fill='none' stroke-width='2'/%3E%3Cpath d='M20 170 h30 l10 -30 10 30 h30' stroke='%238FAF9A' stroke-opacity='0.35' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      opacity: 0.9;
+    }
+    .who-we-are-text { position: relative; z-index: 1; }
+    .who-we-are-text .eyebrow { color: var(--mint); }
+    .who-we-are-text h2 { color: var(--white); margin: 10px 0 14px; }
+    .who-we-are-text p { color: rgba(255,255,255,.7); font-size: 0.92rem; line-height: 1.7; }
+    .wwa-grid {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .wwa-stat { display: flex; flex-direction: column; gap: 10px; }
+    .wwa-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wwa-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+    .wwa-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.64rem;
+      color: var(--mint);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+    .wwa-desc {
+      font-size: 0.76rem;
+      color: rgba(255,255,255,.8);
+      line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+      .who-we-are { grid-template-columns: 1fr; padding: 36px 28px; }
+      .wwa-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ===============================================
+       FEATURES
+    =============================================== */
+    .features-section {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(31,77,58,.96) 0%, rgba(22,59,45,.89) 45%, rgba(31,77,58,.96) 100%),
+        url('{{ $rice['features'] }}') center center / cover no-repeat;
+      padding: 120px 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .features-section::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 340px; height: 340px;
+      background-image: radial-gradient(rgba(127,214,181,0.3) 1.5px, transparent 1.5px);
+      background-size: 22px 22px;
+      -webkit-mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at top left, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .features-section::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(15,41,32,.30), transparent 36%, rgba(15,41,32,.26)),
+        radial-gradient(circle at 50% 18%, rgba(143,175,154,.08), transparent 34%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .features-section > .container { position: relative; z-index: 1; }
+    .section-header {
+      max-width: 560px;
+      margin-bottom: 56px;
+    }
+    .section-header .eyebrow { margin-bottom: 16px; }
+    .section-header h2 { margin-bottom: 14px; }
+    .section-header p { font-size: 1rem; line-height: 1.7; }
+    .features-section > .container > .section-header {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+    .features-section > .container > .section-header .eyebrow {
+      justify-content: center;
+      color: var(--mint);
+    }
+    .features-section > .container > .section-header h2 { color: var(--white); }
+    .features-section > .container > .section-header h2 em { font-style: italic; color: var(--accent); }
+    .features-section > .container > .section-header p { color: var(--white); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      padding: 32px 26px;
+      display: flex; flex-direction: column; gap: 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(143,175,154,.22);
+      backdrop-filter: blur(10px);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s, background 0.25s;
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; top: -30%; left: -20%;
+      width: 60%; height: 60%;
+      background: radial-gradient(circle, rgba(143,175,154,0.18) 0%, transparent 72%);
+      pointer-events: none;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.32);
+      border-color: rgba(143,175,154,.65);
+    }
+    .fc-icon-wrap {
+      width: 52px; height: 52px;
+      background: rgba(143,175,154,0.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+      border: 1px solid rgba(143,175,154,0.38);
+      flex-shrink: 0;
+      position: relative; z-index: 1;
+    }
+    .feature-card h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.975rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      position: relative; z-index: 1;
+    }
+    .feature-card p { font-size: 0.85rem; line-height: 1.65; color: rgba(255,255,255,.8); position: relative; z-index: 1; }
+    .fc-badge {
+      display: inline-block; margin-top: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.35);
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      width: fit-content;
+      position: relative; z-index: 1;
+    }
+
+    /* How it works */
+    .how-block {
+      position: relative;
+      overflow: hidden;
+      margin-top: 96px;
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
+      border: 1px solid rgba(143,175,154,.2);
+      border-radius: var(--radius-xl);
+      padding: 56px;
+      backdrop-filter: blur(10px);
+    }
+    .how-block > * { position: relative; z-index: 1; }
+    .how-block .section-header { margin-bottom: 56px; }
+    .how-block .eyebrow { color: var(--mint); }
+    .how-block .section-header h2 { color: var(--white); }
+    .how-block .section-header h2 em { font-style: italic; color: var(--accent); }
+    .how-block .section-header p { color: rgba(255,255,255,.7); }
+    .how-steps {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      position: relative;
+    }
+    .how-step {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .how-step-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .how-step-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .how-step-num {
+      font-family: 'DM Mono', monospace;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+    .how-step:not(:last-child) .how-step-top::after {
+      content: '';
+      flex: 1;
+      height: 0;
+      border-top: 2px dotted rgba(143,175,154,.4);
+      margin-left: 6px;
+    }
+    .how-step h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .how-step p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,.8);
+    }
+    @media (max-width: 1024px) {
+      .how-block { padding: 36px 28px; }
+    }
+
+    /* ===============================================
+       DASHBOARD PREVIEW
+    =============================================== */
+    .preview-section {
+      background: var(--green-800);
+      padding: 120px 0;
+    }
+    .preview-section .section-header { margin: 0 auto 56px; }
+    .dashboard-mockup {
+      border: 1px solid #E5E7EB;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      height: 440px;
+      box-shadow: var(--shadow-lg);
+    }
+    .dm-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 20px 0;
+    }
+    .dms-brand {
+      padding: 0 20px 20px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dms-brand-mark {
+      width: 26px; height: 26px;
+      background: var(--green-500);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 0.8rem;
+      color: var(--white);
+    }
+    .dms-brand-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 0.9rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .dms-nav { padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .dms-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .dms-link:hover, .dms-link.active {
+      color: var(--ink);
+      background: var(--sidebar-active-bg);
+    }
+    .dms-link.active { color: var(--green-700); }
+    .dm-main { flex: 1; background: var(--green-50); overflow: hidden; display: flex; flex-direction: column; }
+    .dm-topbar {
+      height: 52px;
+      background: var(--white);
+      border-bottom: 1px solid #E5E7EB;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+    }
+    .dm-page-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .dm-topbar-right { display: flex; align-items: center; gap: 10px; }
+    .dm-chip {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      background: var(--accent-light);
+      color: var(--green-950);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.05em;
+    }
+    .dm-avatar {
+      width: 28px; height: 28px;
+      background: var(--green-500);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem; font-weight: 600;
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+    }
+    .dm-body { flex: 1; padding: 16px; overflow: hidden; }
+    .dm-widgets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      height: 100%;
+    }
+    .dmw {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 1px solid #E5E7EB;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .dmw-wide { grid-column: span 2; }
+    .dmw-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--ink-light);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .dmw-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .dmw-trend {
+      font-size: 0.72rem;
+      color: var(--ink-light);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .dmw-trend.up { color: var(--green-500); }
+    .dmw-chart svg { width: 100%; margin-top: 4px; }
+
+    /* ===============================================
+       CONTACT
+    =============================================== */
+    .contact-section {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96) 0%, rgba(31,77,58,.86) 44%, rgba(15,41,32,.96) 100%),
+        url('{{ $rice['contact'] }}') center 55% / cover no-repeat;
+      padding: 120px 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .contact-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(rgba(127,214,181,0.18) 1.5px, transparent 1.5px) right 6% top 8% / 24px 24px no-repeat,
+        radial-gradient(circle at 12% 22%, rgba(127,214,181,.14), transparent 28%),
+        radial-gradient(circle at 80% 72%, rgba(143,175,154,.12), transparent 30%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .contact-section > .container { position: relative; z-index: 1; }
+    .contact-leaf-float {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cpath d='M110 10C60 40 30 90 40 150c6 24 22 40 40 48-12-48 0-100 30-148 10-16 10-30 0-40Z' fill='%235F8F78' fill-opacity='.3'/%3E%3Cpath d='M100 20C68 62 52 112 62 168' stroke='%237FD6B5' stroke-opacity='.5' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    }
+    .contact-leaf-1 { top: 8%; left: -2%; width: 90px; height: 90px; opacity: 0.5; transform: rotate(-16deg); }
+    .contact-leaf-2 { top: 30%; left: 5%; width: 56px; height: 56px; opacity: 0.4; transform: rotate(20deg) scaleX(-1); }
+    .contact-leaf-3 { top: 62%; left: -1%; width: 70px; height: 70px; opacity: 0.42; transform: rotate(-30deg); }
+    .contact-leaf-4 { top: 12%; right: -2%; width: 80px; height: 80px; opacity: 0.45; transform: rotate(150deg); }
+    .contact-leaf-5 { top: 55%; right: 3%; width: 60px; height: 60px; opacity: 0.4; transform: rotate(200deg) scaleX(-1); }
+    @media (max-width: 1200px) { .contact-leaf-float { display: none; } }
+    .contact-methods {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .contact-method {
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(143,175,154,.22);
+      border-radius: var(--radius-lg);
+      padding: 24px 24px 22px;
+      display: flex; flex-direction: column; gap: 8px;
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+      position: relative;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+    .contact-method:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
+      background: linear-gradient(180deg, rgba(31,77,58,.68), rgba(22,59,45,.74));
+      border-color: rgba(143,175,154,.45);
+    }
+    .contact-method-media {
+      margin: -24px -24px 4px;
+      height: 108px;
+      overflow: hidden;
+      position: relative;
+    }
+    .contact-method-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .contact-method-media::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(15,41,32,0) 40%, rgba(15,41,32,.85) 100%);
+    }
+    .contact-method-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+      position: relative; z-index: 1;
+    }
+    .contact-method h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .contact-method p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,.8);
+    }
+    .contact-method-link {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: minmax(290px, 1.05fr) minmax(360px, 1.28fr) minmax(260px, .82fr);
+      gap: 36px;
+      align-items: stretch;
+    }
+    .contact-info { display: flex; flex-direction: column; gap: 0; }
+    .contact-info .hero-location { margin-bottom: 18px; }
+    .contact-info h2 { color: var(--white); margin-bottom: 10px; }
+    .contact-info h2 em { font-style: italic; color: var(--accent); }
+    .contact-info .about-tagline { margin-bottom: 18px; }
+    .contact-info > p { font-size: 0.9rem; color: var(--white); margin-bottom: 28px; }
+    .contact-details { display: flex; flex-direction: column; gap: 18px; }
+    .cd-item {
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .cd-icon-wrap {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.16);
+      border: 1px solid rgba(143,175,154,0.35);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+    .cd-text { min-width: 0; flex: 1; }
+    .cd-text strong { font-size: 0.8rem; font-weight: 700; display: block; color: var(--white); margin-bottom: 2px; }
+    .cd-text span { font-size: 0.875rem; color: var(--white); }
+    .cd-hours { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+    .cd-hours-row { display: grid; grid-template-columns: minmax(110px, 1fr) max-content; gap: 18px; align-items: baseline; font-size: 0.8rem; }
+    .cd-hours-row span:first-child { color: var(--mint); }
+    .cd-hours-row span:last-child { color: var(--white); font-weight: 600; white-space: nowrap; text-align: right; }
+
+    .contact-form-card {
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.65));
+      border-radius: var(--radius-xl);
+      padding: 40px 40px 38px;
+      border: 1px solid rgba(143,175,154,.24);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .cfc-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 24px;
+    }
+    .cfc-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .contact-form-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-bottom: 2px;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+    .contact-form-sub {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,.8);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(190px, 1fr);
+      gap: 16px;
+    }
+    .form-row .form-input {
+      min-width: 0;
+    }
+    .form-group { margin-bottom: 18px; }
+    .contact-form-card .form-group:has(textarea) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .contact-form-card .form-group:has(textarea) textarea.form-input {
+      flex: 1;
+      resize: none;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 7px;
+      letter-spacing: 0.01em;
+    }
+    .form-input {
+      width: 100%;
+      background: rgba(15,41,32,.4);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(143,175,154,.28);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--white);
+      transition: all 0.2s;
+      outline: none;
+      resize: vertical;
+    }
+    select.form-input { cursor: pointer; }
+    select.form-input option { color: var(--ink); }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(143,175,154,0.16);
+    }
+    .form-input::placeholder { color: rgba(255,255,255,.62); }
+    .btn-dark { background: var(--green-800); color: var(--white); border: 1px solid rgba(143,175,154,.3); }
+    .btn-dark:hover {
+      background: var(--green-950);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* ===============================================
+       FOOTER
+    =============================================== */
+    .footer {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.96), rgba(15,41,32,.98)),
+        url('{{ $rice['roles'] }}') center 62% / cover no-repeat;
+      padding: 58px 0 30px;
+      border-top: 1px solid rgba(143,175,154,.18);
+      overflow: hidden;
+    }
+    .footer::before {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 260px; height: 260px;
+      background-image: radial-gradient(rgba(143,175,154,0.10) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at bottom right, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .footer > .container { position: relative; z-index: 1; }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.45fr) minmax(150px, .72fr) minmax(260px, 1.24fr) minmax(150px, .7fr);
+      gap: 28px;
+      margin-bottom: 34px;
+      padding-bottom: 34px;
+      border-bottom: 1px solid rgba(143,175,154,.14);
+      align-items: start;
+    }
+    .footer-col-label {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 0;
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      margin-bottom: 14px;
+    }
+    .footer-col-icon {
+      width: 18px; height: 18px;
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .footer-social h4,
+    .footer-links h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.64rem;
+      font-weight: 500;
+      color: var(--mint);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .footer-social-icons { display: flex; gap: 10px; }
+    .footer-social-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(143,175,154,0.28);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent);
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .footer-email { position: relative; display: inline-flex; }
+    .footer-email-menu {
+      position: fixed; left: 0; top: 0; z-index: 3000;
+      min-width: 210px; padding: 6px;
+      display: flex; flex-direction: column; gap: 2px;
+      border-radius: 12px;
+      background: rgba(13,38,30,.97);
+      border: 1px solid rgba(127,214,181,.3);
+      box-shadow: 0 16px 34px rgba(0,0,0,.4);
+      backdrop-filter: blur(12px);
+      animation: emailMenuIn .18s ease-out;
+    }
+    .footer-email-menu[hidden] { display: none; }
+    .footer-email-menu::after {
+      content: ""; position: absolute; left: var(--arrow-x, 50%); bottom: 100%; transform: translateX(-50%);
+      border: 7px solid transparent; border-bottom-color: rgba(13,38,30,.97);
+    }
+    .footer-email-menu.opens-up::after { bottom: auto; top: 100%; border-bottom-color: transparent; border-top-color: rgba(13,38,30,.97); }
+    .footer-email-addr { padding: 6px 10px 8px; font-size: .78rem; color: #b9e8d3; border-bottom: 1px solid rgba(127,214,181,.18); margin-bottom: 4px; }
+    .footer-email-menu a,
+    .footer-email-menu button {
+      display: block; width: 100%; text-align: left;
+      padding: 8px 10px; border: 0; border-radius: 8px;
+      background: transparent; color: #fff;
+      font: inherit; font-size: .86rem; font-weight: 600;
+      text-decoration: none; cursor: pointer;
+      transition: background .15s ease;
+    }
+    .footer-email-menu a:hover, .footer-email-menu a:focus-visible,
+    .footer-email-menu button:hover, .footer-email-menu button:focus-visible {
+      background: rgba(127,214,181,.16); outline: none;
+    }
+    .footer-email-menu button.is-copied { color: #7fd6b5; }
+    @keyframes emailMenuIn { from { opacity: 0; } to { opacity: 1; } }
+    .footer-social-icon:hover { background: rgba(143,175,154,.18); border-color: var(--accent); color: var(--accent-light); transform: translateY(-1px); }
+    .footer-message-card {
+      position: relative;
+      overflow: hidden;
+      margin-top: 18px;
+      padding: 0 0 0 14px;
+      border-radius: 0;
+      border: 0;
+      border-left: 2px solid rgba(143,175,154,.48);
+      background: transparent;
+      box-shadow: none;
+    }
+    .footer-message-card p {
+      position: relative; z-index: 1;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--white);
+      max-width: 100%;
+    }
+    .footer-message-card p em { font-style: normal; color: var(--accent); font-weight: 600; }
+    .footer-col-pair {
+      display: grid;
+      grid-template-columns: minmax(110px, .8fr) minmax(150px, 1.2fr);
+      column-gap: 24px;
+      align-items: start;
+    }
+    .footer-logo { margin-bottom: 14px; display: inline-flex; }
+    .footer-logo .brand-logo-img { height: 68px; width: auto; object-fit: contain; }
+    .footer-tagline {
+      font-size: 0.875rem;
+      color: var(--white);
+      line-height: 1.6;
+      max-width: 100%;
+    }
+    .footer-tagline-chip {
+      display: inline-flex; align-items: flex-start; gap: 10px;
+      margin-top: 16px;
+      max-width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(143,175,154,.32);
+      background: rgba(143,175,154,0.08);
+    }
+    .footer-tagline-chip-icon {
+      width: 22px; height: 22px;
+      border-radius: var(--radius-sm);
+      background: rgba(143,175,154,0.12);
+      border: 1px solid rgba(143,175,154,0.28);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .footer-tagline-chip span { font-size: 0.8rem; color: var(--white); font-weight: 500; line-height: 1.4; }
+    .footer-links ul { display: flex; flex-direction: column; }
+    .footer-links li { border-bottom: 1px solid rgba(255,255,255,.08); }
+    .footer-links li:last-child { border-bottom: none; }
+    .footer-links a {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 0.875rem;
+      color: var(--white);
+      padding: 8px 0;
+      transition: color 0.2s;
+      line-height: 1.35;
+    }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-links a::before {
+      content: '';
+      width: 5px; height: 5px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.75;
+    }
+    .footer-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .footer-bottom-brand { display: flex; align-items: center; gap: 12px; }
+    .footer-bottom-icon {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.35);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .footer-bottom p { font-size: 0.8rem; color: var(--mint); margin: 0; }
+    .footer-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--mint);
+      text-transform: uppercase;
+    }
+
+    /* ===============================================
+       RESPONSIVE
+    =============================================== */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 0; }
+      .hero-visual { display: none; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-visual { order: 2; }
+      .about-text { order: 1; }
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+      .how-steps { flex-wrap: wrap; }
+      .how-step-top::after { display: none; }
+      .how-step { flex: 1 1 45%; }
+      .contact-grid { grid-template-columns: 1fr; gap: 48px; }
+      .contact-methods { flex-direction: row; flex-wrap: wrap; }
+      .contact-methods .contact-method { flex: 1 1 240px; }
+      .footer { padding-top: 48px; }
+      .footer-grid { grid-template-columns: 1.25fr 1fr; gap: 28px; }
+      .footer-brand { grid-column: span 1; }
+      .footer-social { grid-column: span 1; }
+      .footer-col-pair { grid-template-columns: 1fr 1fr; column-gap: 24px; }
+      .dm-widgets { grid-template-columns: repeat(2,1fr); }
+      .dmw-wide { grid-column: span 2; }
+      .dashboard-mockup { height: auto; flex-direction: column; }
+      .dm-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; height: auto; padding: 12px 12px; }
+      .dms-brand { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+      .dms-nav { flex-direction: row; padding: 0 4px; gap: 2px; }
+      .dm-body { padding: 12px; }
+    }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: fixed;
+        top: var(--nav-h); left: 0; right: 0;
+        background: rgba(31,77,58,.72);
+        backdrop-filter: blur(24px) saturate(170%);
+        -webkit-backdrop-filter: blur(24px) saturate(170%);
+        padding: 16px 24px;
+        gap: 4px;
+        border-top: 1px solid rgba(255,255,255,.14);
+        box-shadow: var(--shadow-md);
+        z-index: 99;
+      }
+      .hamburger { display: flex; }
+      .nav-login { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .how-step { flex: 1 1 100%; }
+      .contact-methods { flex-direction: column; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-brand { grid-column: span 1; }
+      .footer-col-pair { grid-template-columns: 1fr 1fr; column-gap: 20px; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .hero-actions { flex-direction: column; align-items: flex-start; }
+      .hero-actions .btn-lg { width: 100%; justify-content: center; }
+      .contact-form-card { padding: 28px 20px; }
+      .footer { padding: 38px 0 26px; }
+      .footer-grid { gap: 24px; margin-bottom: 24px; padding-bottom: 24px; }
+      .footer-col-pair { grid-template-columns: 1fr; row-gap: 24px; }
+      .footer-logo .brand-logo-img { height: 60px; }
+    }
+
+    /* -- SCROLL ANIMATIONS ------------------------- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.6s var(--ease) both; }
+    .fade-up-1 { animation-delay: 0.1s; }
+    .fade-up-2 { animation-delay: 0.2s; }
+    .fade-up-3 { animation-delay: 0.3s; }
+    .fade-up-4 { animation-delay: 0.45s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; }
+    }
+
+    /* Card entrance: unlike .fade-up (hero, plays immediately on load),
+       these are below the fold, so they wait for an IntersectionObserver
+       (see the script at the bottom of this page) to add
+       .ic-card-enter-visible the first time each card scrolls into view,
+       then stop observing it — no repeat/looping, no constant flipping.
+       perspective(900px) is embedded directly in the card's own transform
+       (rather than set on the grid container) so this stays a self-contained,
+       drop-in class that doesn't require touching every grid's CSS. */
+    .ic-card-enter {
+      opacity: 0;
+      transform: translateY(20px) scale(.98);
+      transition: opacity 560ms var(--ease) var(--ic-card-delay, 0ms), transform 560ms var(--ease) var(--ic-card-delay, 0ms);
+    }
+    .ic-card-enter-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    @media (max-width: 767.98px) {
+      .ic-card-enter { transform: translateY(12px) scale(.985); transition-duration: 480ms; }
+    }
+    /* Reusable hover-lift + shadow transition for any landing-page card
+       that doesn't already define its own :hover (feature-card,
+       pillar-card, and role-card already have a tailored one). */
+    .ic-card-hover {
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+    .ic-card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
+    }
+    /* Subtle icon emphasis on card hover — a small scale + brighter border
+       on the icon badge, not the whole card. */
+    .fc-icon-wrap,
+    .pillar-icon,
+    .role-icon-wrap--img,
+    .contact-method-icon,
+    .wwa-icon {
+      transition: transform 220ms var(--ease), border-color 220ms var(--ease), background-color 220ms var(--ease);
+    }
+    .feature-card:hover .fc-icon-wrap,
+    .pillar-card:hover .pillar-icon,
+    .role-card:hover .role-icon-wrap--img,
+    .contact-method:hover .contact-method-icon,
+    .wwa-stat:hover .wwa-icon {
+      transform: scale(1.08);
+      border-color: rgba(143,175,154,.7);
+      background-color: rgba(143,175,154,0.22);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ic-card-enter {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ===============================================
+       USER ROLES
+    =============================================== */
+    .roles-section {
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(22,59,45,.93) 0%, rgba(22,59,45,.88) 50%, rgba(15,41,32,.95) 100%),
+        url('{{ $rice['roles'] }}') center 35% / cover no-repeat;
+      padding: 120px 0;
+      overflow: hidden;
+    }
+    .roles-section::before {
+      content: '';
+      position: absolute; top: 8%; left: 4%;
+      width: 300px; height: 300px;
+      background-image: radial-gradient(rgba(127,214,181,0.22) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .roles-section > .container { position: relative; z-index: 1; }
+    .roles-section .section-header {
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 620px;
+      margin-bottom: 64px;
+    }
+    .roles-section .section-header .eyebrow { justify-content: center; color: var(--mint); }
+    .roles-section .section-header h2 { color: var(--white); }
+    .roles-section .section-header h2 em { font-style: italic; color: var(--accent); }
+    .roles-section .section-header p { color: var(--white); }
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+    .role-card {
+      background: linear-gradient(180deg, rgba(31,77,58,.55), rgba(22,59,45,.62));
+      border: 1px solid rgba(143,175,154,.22);
+      border-radius: var(--radius-xl);
+      padding: 40px 32px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(10px);
+      transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s, background 0.25s;
+    }
+    .role-card:hover {
+      box-shadow: 0 16px 40px rgba(0,0,0,.28), 0 0 0 1px rgba(143,175,154,.3);
+      transform: translateY(-4px);
+      border-color: rgba(143,175,154,.45);
+    }
+    .role-workspace-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mint);
+      margin-bottom: 8px;
+    }
+    .role-card.role-card--highlight {
+      background: linear-gradient(180deg, rgba(31,77,58,.74), rgba(22,59,45,.84));
+      border-color: rgba(143,175,154,.5);
+      margin-top: -16px;
+      padding-bottom: 48px;
+      box-shadow: 0 24px 56px rgba(0,0,0,.36), 0 0 0 1px rgba(143,175,154,.28), var(--shadow-accent);
+    }
+    .role-card.role-card--highlight:hover { border-color: rgba(143,175,154,.7); }
+    .role-card.role-card--highlight .role-workspace-label { color: var(--accent); }
+    .role-card.role-card--highlight .role-cta {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--ink);
+    }
+    .role-card.role-card--highlight .role-cta:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+    @media (max-width: 1024px) {
+      .role-card.role-card--highlight { margin-top: 0; padding-bottom: 32px; }
+    }
+
+    /* How the roles connect */
+    .roles-connect {
+      background: linear-gradient(180deg, rgba(31,77,58,.5), rgba(22,59,45,.58));
+      border: 1px solid rgba(143,175,154,.22);
+      border-radius: var(--radius-xl);
+      padding: 32px 40px;
+      margin-top: 64px;
+      backdrop-filter: blur(10px);
+    }
+    .connect-bar {
+      display: flex;
+      align-items: center;
+    }
+    .connect-intro {
+      display: flex; align-items: center; gap: 16px;
+      flex: 1 1 260px;
+      min-width: 0;
+      padding-right: 32px;
+    }
+    .connect-intro h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+    .connect-divider {
+      width: 1px;
+      align-self: stretch;
+      background: rgba(255,255,255,.14);
+      flex-shrink: 0;
+    }
+    .connect-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 0 28px;
+    }
+    .connect-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.14);
+      border: 1px solid rgba(143,175,154,0.4);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .connect-icon-lg { width: 52px; height: 52px; }
+    .connect-item h4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .connect-item p {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,.8);
+    }
+    @media (max-width: 900px) {
+      .roles-connect { padding: 28px 24px; }
+      .connect-bar { flex-direction: column; align-items: stretch; gap: 20px; }
+      .connect-intro { padding-right: 0; }
+      .connect-divider { width: 100%; height: 1px; }
+      .connect-item { padding: 0; }
+    }
+    /* Role icon wrap - simple line icon in a sage-accent badge */
+    .role-icon-wrap--img {
+      width: 84px; height: 84px;
+      border-radius: 50%;
+      background: rgba(143,175,154,0.12);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      flex-shrink: 0;
+      border: 1px solid rgba(143,175,154,0.4);
+      box-shadow: 0 0 0 4px rgba(143,175,154,0.14), 0 10px 24px rgba(0,0,0,.22);
+    }
+    .role-card--highlight .role-icon-wrap--img {
+      box-shadow: 0 0 0 4px rgba(143,175,154,0.26), 0 12px 28px rgba(0,0,0,0.3);
+    }
+    .role-card h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .role-card > p {
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: rgba(255,255,255,.8);
+      margin-bottom: 24px;
+    }
+    .role-divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,.12);
+      margin-bottom: 20px;
+    }
+    .role-features-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.8);
+      margin-bottom: 14px;
+    }
+    .role-features {
+      display: flex; flex-direction: column; gap: 9px;
+      margin-bottom: 28px;
+      flex: 1;
+      width: 100%;
+      text-align: left;
+    }
+    .role-feature-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.875rem;
+      color: rgba(255,255,255,.82);
+    }
+    .role-feature-item svg { flex-shrink: 0; color: var(--accent); }
+    .role-cta {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 24px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid rgba(255,255,255,.35);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--white);
+      transition: all 0.2s var(--ease);
+      margin-top: auto;
+      width: 100%;
+    }
+    .role-cta:hover {
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--ink);
+    }
+    @media (max-width: 1024px) {
+      .roles-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .roles-grid { grid-template-columns: 1fr; }
+    }
+  
+    /* Laravel self-contained asset fallbacks */
+    .brand-wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--white);
+    }
+    .brand-glyph {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--green-500), var(--green-800));
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      box-shadow: 0 10px 28px rgba(95,143,120,0.24);
+    }
+    .brand-copy { display: flex; flex-direction: column; line-height: 1.05; }
+    .brand-copy strong {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 1.16rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+    .brand-copy small {
+      color: rgba(255,255,255,.8);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .footer-logo .brand-glyph { filter: none; }
+    .role-fallback {
+      width: 96px;
+      height: 96px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 24px;
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      font-weight: 700;
+      font-size: 1.05rem;
+      box-shadow: 0 18px 40px rgba(22,59,45,0.14);
+    }
+    .role-farmer { background: linear-gradient(135deg, #5F8F78, #1F4D3A); }
+    .role-mao { background: linear-gradient(135deg, var(--accent), #1F4D3A); }
+    .role-it { background: linear-gradient(135deg, #1F4D3A, #163B2D); }
+    .contact-form-card button[type="button"] { cursor: default; }
+    .brand-logo-img {
+      height: 76px;
+      width: auto;
+      max-width: 300px;
+      object-fit: contain;
+      display: block;
+    }
+    @media (max-width: 640px) {
+      .brand-logo-img {
+        height: 58px;
+        max-width: 230px;
+      }
+    }
+
+    /* Responsive hardening: keep the landing page stable on narrow screens. */
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      text-rendering: optimizeLegibility;
+    }
+    .container,
+    .nav-container,
+    .hero-inner,
+    section,
+    .navbar,
+    .footer,
+    .dashboard-mockup,
+    .contact-form-card,
+    .role-card,
+    .feature-card,
+    .pillar-card {
+      min-width: 0;
+    }
+    .btn,
+    .nav-login,
+    .nav-cta,
+    .role-cta,
+    input,
+    textarea,
+    select,
+    button {
+      max-width: 100%;
+    }
+    input,
+    textarea,
+    select {
+      min-width: 0;
+    }
+    h1,
+    h2,
+    h3,
+    p,
+    .btn,
+    .nav-link,
+    .role-card,
+    .feature-card,
+    .contact-method,
+    .footer-links {
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 768px) {
+      :root { --nav-h: 76px; }
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+      .nav-container {
+        gap: 14px;
+        justify-content: space-between;
+      }
+      .nav-actions {
+        margin-left: auto;
+      }
+      .nav-links.open {
+        max-height: calc(100dvh - var(--nav-h));
+        overflow-y: auto;
+      }
+      .nav-link {
+        width: 100%;
+        padding: 11px 4px;
+      }
+      .hero {
+        min-height: auto;
+      }
+      .hero-inner {
+        padding-top: 42px;
+        padding-bottom: 56px;
+      }
+      .hero-desc {
+        max-width: none;
+      }
+      .about-section,
+      .roles-section {
+        padding: 72px 0;
+      }
+      .mission-card {
+        position: relative;
+        inset: auto;
+        max-width: none;
+        margin: -96px 16px 0;
+      }
+      .about-photo {
+        min-height: 340px;
+      }
+      .dashboard-mockup {
+        width: 100%;
+        overflow: hidden;
+      }
+      .dm-sidebar,
+      .dms-nav {
+        min-width: 0;
+      }
+    }
+    @media (max-width: 560px) {
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .brand-logo-img {
+        height: 48px;
+        max-width: min(210px, 56vw);
+      }
+      .nav-actions {
+        gap: 6px;
+      }
+      .hamburger {
+        flex: 0 0 auto;
+      }
+      .hero-actions,
+      .contact-methods,
+      .footer-col-pair {
+        width: 100%;
+      }
+      .btn,
+      .role-cta {
+        white-space: normal;
+        text-align: center;
+      }
+      .footer-col-pair {
+        grid-template-columns: 1fr;
+        row-gap: 28px;
+      }
+      .roles-connect,
+      .contact-form-card,
+      .role-card {
+        border-radius: 18px;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      .mission-card {
+        display: block;
+        padding: 18px;
+      }
+      .mission-icon {
+        margin-bottom: 12px;
+      }
+    }
+    @media (max-width: 380px) {
+      .container,
+      .nav-container,
+      .hero-inner {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .brand-logo-img {
+        max-width: 52vw;
+      }
+    }
+    /* Final readability pass: preserve landing layout while avoiding tiny content text. */
+    .eyebrow,
+    .nav-link,
+    .hws-label,
+    .stat-label,
+    .feature-tag,
+    .module-tag,
+    .footer-kicker,
+    .contact-label,
+    .mini-label,
+    .dm-label {
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+    .hero-copy p,
+    .section-lead,
+    .feature-card p,
+    .role-card p,
+    .pillar-card p,
+    .contact-card p,
+    .footer-copy,
+    .dm-body,
+    .dm-note,
+    .form-helper {
+      font-size: 1rem;
+      line-height: 1.58;
+    }
+    .badge,
+    .mini-badge,
+    .status-badge,
+    .footer-pill,
+    .hws-badge {
+      font-size: 0.75rem;
+      line-height: 1.25;
+    }
+    .form-control,
+    .form-select,
+    input,
+    textarea,
+    select {
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+  </style>
+  {{-- Shared iClimate design language (tokens, motion, card interactions),
+       loaded after the page's own styles so it refines them. --}}
+  @vite(['resources/css/landing.css', 'resources/js/landing.js'])
+</head>
+<body>
+<x-flash-toast />
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="{{ url('/') }}" class="nav-logo">
+      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home" class="nav-link active">Home</a></li>
+      <li><a href="#about" class="nav-link">About</a></li>
+      <li><a href="#roles" class="nav-link">User Roles</a></li>
+      <li><a href="#features" class="nav-link">Features</a></li>
+      <li><a href="#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="{{ route('login') }}" class="nav-login">Login</a>
+      <a href="{{ route('register') }}" class="nav-cta">Create Account</a>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-location fade-up fade-up-1">
+        <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+          <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/>
+        </svg>
+        Lian, Batangas &mdash; Philippines
+      </div>
+      <h1 class="hero-title fade-up fade-up-2">
+        Climate-smart<br>
+        <span class="hero-title-italic">rice farming.</span>
+      </h1>
+      <p class="hero-subtitle fade-up fade-up-2">Weather and Farming Guide for Lian, Batangas</p>
+      <p class="hero-desc fade-up fade-up-3">A web-based weather impact analysis and rice yield prediction platform for Lian, Batangas &mdash; built for rice farmers, MAO staff with technicians, and IT personnel.</p>
+      <div class="hero-actions fade-up fade-up-3">
+        <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#163B2D" stroke-width="1.6"/></svg>
+          Get Started
+        </a>
+        <a href="#about" class="btn-ghost-light btn">
+          Learn More
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="trust-grid fade-up fade-up-4">
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2a5 5 0 100 10 5 5 0 000-10zM3 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">3</div>
+            <div class="trust-label">User Roles</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M3 17V9M9 17V5M15 17v-7M19 17V3" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">24/7</div>
+            <div class="trust-label">Real-Time Monitoring</div>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6.5 15a4 4 0 01-.5-7.97A5.5 5.5 0 0116.9 8.6 3.6 3.6 0 0116 15.5H6.5z" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18.5v1M11.5 18.5v2M15 18.5v1" stroke="#8FAF9A" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="trust-num">PAGASA</div>
+            <div class="trust-label">Verified Data Source</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual fade-up fade-up-3">
+      <div class="hero-map-panel">
+        <div class="hero-map-dot"></div>
+        <div class="hero-map-card">
+          <div class="hmc-location">Lian, Batangas</div>
+          <div class="hmc-office">Municipal Agricultural Office</div>
+          <div class="hmc-live" data-hero-live>{{ $heroClimate ? 'Latest saved climate record' : 'Checking live weather…' }}</div>
+        </div>
+        <div class="hero-weather-strip">
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5.5 10.5a3 3 0 0 1 .6-5.9 4 4 0 0 1 7.7.7A2.7 2.7 0 0 1 13.5 10.5h-8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 13.5v1M9 13.5v1.6M12 13.5v1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <div><div class="hws-val" data-hero-temp>{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</div><div class="hws-label">Temperature</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c1.6 2.2 3 4.3 3 6.1A3 3 0 1 1 7 8.1C7 6.3 8.4 4.2 10 2Z" stroke="currentColor" stroke-width="1.4"/></svg>
+            <div><div class="hws-val" data-hero-humidity>{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</div><div class="hws-label">Humidity</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 7h9a2.2 2.2 0 1 0-2.2-2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 11.5h12.2a2.4 2.4 0 1 1-2.4 2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            {{-- This wind figure is from a stored historical ClimateRecord, whose wind
+                 unit is not established by any repository evidence, so no unit is
+                 asserted here (unlike genuinely-km/h live Open-Meteo readings). --}}
+            <div><div class="hws-val" data-hero-wind>{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</div><div class="hws-label">Wind Speed</div></div>
+          </div>
+          <div class="hws-item">
+            <svg class="hws-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="2.6" height="11" rx="1" fill="currentColor"/><rect x="8.7" y="6" width="2.6" height="8" rx="1" fill="currentColor" opacity=".7"/><rect x="13.4" y="8.5" width="2.6" height="5.5" rx="1" fill="currentColor" opacity=".5"/></svg>
+            <div><div class="hws-val" data-hero-rain>{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</div><div class="hws-label" data-hero-rain-label>{{ $heroClimate ? 'Rainfall (record)' : 'Rainfall Today' }}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text">
+        <div>
+          <div class="hero-location fade-up fade-up-1">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+              <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/>
+            </svg>
+            Lian, Batangas &mdash; Philippines
+          </div>
+          <h2 class="section-title">About <em>iClimate</em></h2>
+          <p class="about-tagline"><span class="tagline-flourish"></span>Understand today. Prepare tomorrow.<span class="tagline-flourish"></span></p>
+        </div>
+        <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed, data-driven decisions for better agricultural outcomes in Lian, Batangas.</p>
+      </div>
+
+      <div class="about-visual">
+        <div class="about-photo">
+          <div class="mission-card">
+            <div class="mission-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#6F8978" stroke-width="1.6"/></svg>
+            </div>
+            <div>
+              <strong>Our Mission</strong>
+              <p>To empower the farming community of Lian, Batangas through accurate climate information, smart analytics, and practical recommendations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pillars-row">
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:0ms">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#6F8978"/></svg></div>
+        <strong>Climate-Informed</strong>
+        <p>Integrating PAGASA climate data for real-time weather monitoring and seasonal forecasting.</p>
+        <p>Combining stored climate records, live weather forecasts, and official PAGASA advisory references for localized guidance.</p>
+      </div>
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:100ms">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#6F8978" stroke-width="1.5"/></svg></div>
+        <strong>Rice-Focused</strong>
+        <p>Specialized in rice production analysis, yield prediction, and planting recommendations.</p>
+      </div>
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:200ms">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#6F8978"/><rect x="8.5" y="6" width="3" height="11" fill="#6F8978" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#6F8978" opacity="0.6"/></svg></div>
+        <strong>Data-Driven</strong>
+        <p>Using historical records and analytics to generate accurate insights and reports.</p>
+      </div>
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:300ms">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#6F8978" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <strong>Community-Centered</strong>
+        <p>Built for farmers, supported by MAO staff and technicians, and optimized by IT personnel.</p>
+      </div>
+      <div class="pillar-card ic-card-enter" style="--ic-card-delay:400ms">
+        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#6F8978" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+        <strong>Secure &amp; Reliable</strong>
+        <p>Ensuring data security, system reliability, and continuous improvement.</p>
+      </div>
+    </div>
+
+    <div class="who-we-are">
+      <div class="who-we-are-text">
+        <span class="eyebrow">Who We Are</span>
+        <h2>Built for Lian, Batangas</h2>
+        <p>iClimate is developed to address the unique agricultural challenges of Lian, Batangas. By combining local knowledge with modern technology, we help our community adapt to climate variability and build a more resilient future.</p>
+      </div>
+      <div class="wwa-grid">
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:0ms">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.2" stroke="#8FAF9A" stroke-width="1.3"/><circle cx="12" cy="7" r="1.8" stroke="#8FAF9A" stroke-width="1.3"/><path d="M2 15c.4-2.7 1.8-4 4.5-4s4 1.3 4.5 4" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 15c.3-2 1.5-3.2 3-3.2s2.7.9 3 2.9" stroke="#8FAF9A" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+          <div class="wwa-num">3</div>
+          <div class="wwa-label">User Roles</div>
+          <p class="wwa-desc">Rice Farmers, MAO Staff with Technician, and IT Personnel</p>
+        </div>
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:100ms">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="10" width="2.6" height="5" fill="#8FAF9A"/><rect x="7.7" y="6" width="2.6" height="9" fill="#8FAF9A" opacity="0.85"/><rect x="12.4" y="3" width="2.6" height="12" fill="#8FAF9A" opacity="0.6"/></svg></div>
+          <div class="wwa-num">24/7</div>
+          <div class="wwa-label">Real-Time Monitoring</div>
+          <p class="wwa-desc">Continuous weather and climate updates</p>
+        </div>
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:200ms">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 2v4c0 4-2.6 6.7-6 7.5-3.4-.8-6-3.5-6-7.5V4l6-2z" stroke="#8FAF9A" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+          <div class="wwa-num">PAGASA</div>
+          <div class="wwa-label">Verified Data Source</div>
+          <p class="wwa-desc">Trusted climate data from PAGASA</p>
+        </div>
+        <div class="wwa-stat ic-card-enter" style="--ic-card-delay:300ms">
+          <div class="wwa-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9s-5-5.5-5-9a5 5 0 0 1 5-5z" stroke="#8FAF9A" stroke-width="1.4"/><circle cx="9" cy="7" r="1.6" stroke="#8FAF9A" stroke-width="1.2"/></svg></div>
+          <div class="wwa-num">1 Goal</div>
+          <div class="wwa-label">Stronger Farming Community</div>
+          <p class="wwa-desc">Better decisions for better harvests</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">Features</span>
+      <h2>Six tools, one <em>growing</em> cycle</h2>
+      <p>Each module helps you plan, monitor, and decide with confidence &mdash; from planting to harvest.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:0ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#8FAF9A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M5 17c1-2.5 3-4 6-4s5 1.5 6 4" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="11" cy="4.5" r="2" fill="#5F8F78"/>
+          </svg>
+        </div>
+        <h3>Weather Analysis</h3>
+        <p>Access real-time and historical climate data including rainfall, temperature, humidity, wind, and more from PAGASA.</p>
+        <span class="fc-badge">Climate Records</span>
+      </div>
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:100ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="2" y="14" width="4" height="6" rx="1" fill="#5F8F78"/>
+            <rect x="9" y="9" width="4" height="11" rx="1" fill="#5F8F78" opacity="0.7"/>
+            <rect x="16" y="5" width="4" height="15" rx="1" fill="#5F8F78" opacity="0.45"/>
+            <path d="M4 10l7-5 7-3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Rice Production</h3>
+        <p>View and analyze local rice production records and forecasts to support planning and food security.</p>
+        <span class="fc-badge">Records</span>
+      </div>
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:200ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M11 6v5l3.5 2" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Planting Advisory</h3>
+        <p>Get data-driven planting recommendations based on season, rainfall outlook, and soil conditions.</p>
+        <span class="fc-badge">Advisory</span>
+      </div>
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:300ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M2 11C5 5,8 3,11 3C14 3,17 5,20 11C17 17,14 19,11 19C8 19,5 17,2 11Z" stroke="#8FAF9A" stroke-width="1.8"/>
+            <circle cx="11" cy="11" r="3" fill="#5F8F78"/>
+          </svg>
+        </div>
+        <h3>Climate Monitoring</h3>
+        <p>Monitor long-term climate trends and detect anomalies that affect farming and productivity.</p>
+        <span class="fc-badge">Monitoring</span>
+      </div>
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:400ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#8FAF9A" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <h3>Heat Map</h3>
+        <p>Visualize risk levels of flood, drought, typhoon, and heat across barangays using interactive maps.</p>
+        <span class="fc-badge">Risk Records</span>
+      </div>
+      <div class="feature-card ic-card-enter" style="--ic-card-delay:500ms">
+        <div class="fc-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M4 3h10l4 4v12H4V3z" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M14 3v4h4" stroke="#8FAF9A" stroke-width="1.8"/>
+            <path d="M7 10h8M7 13h6M7 16h7" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Reports &amp; Analytics</h3>
+        <p>Generate and download seasonal reports, yield forecasts, and analytics for smarter decision-making.</p>
+        <span class="fc-badge">Analytics</span>
+      </div>
+    </div>
+
+    <div class="how-block">
+      <div class="section-header">
+        <span class="eyebrow">How It Works</span>
+        <h2>From records to<br>harvest, in <em>four steps</em></h2>
+      </div>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 13.5A3 3 0 0 1 4 7.6a4 4 0 0 1 7.7-1.2A2.7 2.7 0 0 1 13.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 15V8.5M6.5 11l2.5-2.5L11.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="how-step-num">01</span>
+          </div>
+          <h3>Log climate data</h3>
+          <p>We collect real-time and historical climate data from trusted sources like PAGASA.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.7 2.7 3.6 4.8 3.6 6.75A3.6 3.6 0 1 1 5.4 8.75C5.4 6.8 6.3 4.7 9 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <span class="how-step-num">02</span>
+          </div>
+          <h3>Get advisories</h3>
+          <p>Our system analyzes the data to provide planting and fertilizer recommendations.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11.3 11.3 15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <span class="how-step-num">03</span>
+          </div>
+          <h3>Monitor risk</h3>
+          <p>We track weather risks and climate patterns that may impact your crops.</p>
+        </div>
+        <div class="how-step">
+          <div class="how-step-top">
+            <div class="how-step-icon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <span class="how-step-num">04</span>
+          </div>
+          <h3>Report outcomes</h3>
+          <p>Generate reports and yield forecasts to guide better farming decisions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USER ROLES -->
+<section class="roles-section" id="roles">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">User Roles</span>
+      <h2>Who Uses <em>iClimate?</em></h2>
+      <p>iClimate supports three role-based workspaces for Rice Farmers, MAO Personnel, and IT Experts, each designed to support climate-informed agricultural planning and decision-making.</p>
+    </div>
+    <div class="roles-grid">
+
+      <!-- Rice Farmer -->
+      <div class="role-card ic-card-enter" style="--ic-card-delay:0ms">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="role-workspace-label">Workspace 01</div>
+        <h3>Rice Farmer</h3>
+        <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
+        <div class="role-divider"></div>
+        <div class="role-features-label">Key Features</div>
+        <ul class="role-features">
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Climate Monitoring
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Planting Guidance
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Weather Risk Alerts
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Notifications
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Seasonal Reports
+          </li>
+        </ul>
+        <a href="{{ route('login') }}" class="role-cta">
+          View Dashboard
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
+        </a>
+      </div>
+
+      <!-- MAO Personnel -->
+      <div class="role-card role-card--highlight ic-card-enter" style="--ic-card-delay:100ms">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="role-workspace-label">Workspace 02</div>
+        <h3>MAO Personnel</h3>
+        <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
+        <div class="role-divider"></div>
+        <div class="role-features-label">Key Features</div>
+        <ul class="role-features">
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Production Monitoring
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Climate Analytics
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Report Generation
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Record Validation
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Heat Map Monitoring
+          </li>
+        </ul>
+        <a href="{{ route('login') }}" class="role-cta">
+          View Dashboard
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
+        </a>
+      </div>
+
+      <!-- IT Expert -->
+      <div class="role-card ic-card-enter" style="--ic-card-delay:200ms">
+        <div class="role-icon-wrap--img" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <div class="role-workspace-label">Workspace 03</div>
+        <h3>IT Expert</h3>
+        <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
+        <div class="role-divider"></div>
+        <div class="role-features-label">Key Features</div>
+        <ul class="role-features">
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            User Management
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            System Logs
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Record Maintenance
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Access Control
+          </li>
+          <li class="role-feature-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Security Monitoring
+          </li>
+        </ul>
+        <a href="{{ route('login') }}" class="role-cta">
+          View Dashboard
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="roles-connect">
+      <div class="connect-bar">
+        <div class="connect-intro">
+          <div class="connect-icon connect-icon-lg">
+            <svg width="24" height="24" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>One climate picture, three vantage points</h3>
+        </div>
+        <div class="connect-divider"></div>
+        <div class="connect-item">
+          <div class="connect-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 20c-5-1-8-5-8-11 6 0 10 3 11 8 1-5 5-8 11-8 0 6-3 10-8 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h4>Rice Farmer</h4>
+            <p>Follows planting advisories and weather alerts in the field.</p>
+          </div>
+        </div>
+        <div class="connect-divider"></div>
+        <div class="connect-item">
+          <div class="connect-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="7.5" cy="6" r="3" fill="currentColor"/><path d="M2.5 17c.5-4.5 2.7-7 5-7s4.5 2.5 5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="15.5" cy="7.5" r="2.7" fill="currentColor" opacity="0.7"/><path d="M11.5 18c.4-3.5 2.3-5.5 4-5.5s3.6 2 4 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/></svg>
+          </div>
+          <div>
+            <h4>MAO Personnel</h4>
+            <p>Validates records and turns data into reports for planning.</p>
+          </div>
+        </div>
+        <div class="connect-divider"></div>
+        <div class="connect-item">
+          <div class="connect-icon">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M6 5l-4 6 4 6M16 5l4 6-4 6M13 3L9 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h4>IT Expert</h4>
+            <p>Keeps accounts, access, and system records secure for everyone.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+  <div class="contact-leaf-float contact-leaf-1" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-2" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-3" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-4" aria-hidden="true"></div>
+  <div class="contact-leaf-float contact-leaf-5" aria-hidden="true"></div>
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="hero-location">
+          <svg width="10" height="12" viewBox="0 0 10 12" fill="none">
+            <path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/>
+          </svg>
+          Lian, Batangas &mdash; Philippines
+        </div>
+        <h2>Have questions about <em>iClimate?</em></h2>
+        <p class="about-tagline"><span class="tagline-flourish"></span>We&rsquo;re here to help.<span class="tagline-flourish"></span></p>
+        <p>Reach out to the team at the Municipal Agricultural Office of Lian, Batangas. We support farmers, MAO personnel, and IT experts using the platform.</p>
+        <div class="contact-details">
+          <div class="cd-item">
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
+            </div>
+            <div class="cd-text">
+              <strong>Address</strong>
+              <span>Municipal Agricultural Office, Lian, Batangas, Philippines</span>
+            </div>
+          </div>
+          <div class="cd-item">
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cd-text">
+              <strong>Email</strong>
+              <span>mao@lianbatangas.gov.ph</span>
+            </div>
+          </div>
+          <div class="cd-item">
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cd-text">
+              <strong>Phone</strong>
+              <span>+63 917 123 4567</span>
+            </div>
+          </div>
+          <div class="cd-item">
+            <div class="cd-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#6F8978" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cd-text">
+              <strong>Office Hours</strong>
+              <div class="cd-hours">
+                <div class="cd-hours-row"><span>Monday to Friday</span><span>8:00 AM to 5:00 PM</span></div>
+                <div class="cd-hours-row"><span>Saturday</span><span>By appointment</span></div>
+                <div class="cd-hours-row"><span>Sunday</span><span>Closed</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form-card">
+        <div class="cfc-header">
+          <div class="cfc-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h3>Send us a message</h3>
+            <p class="contact-form-sub">We typically respond within one business day.</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" class="form-input" placeholder="Juan Dela Cruz"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" class="form-input" placeholder="juan@gmail.com"/>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select class="form-input">
+              <option value="" selected disabled>Select your role</option>
+              <option>Rice Farmer</option>
+              <option>MAO Personnel</option>
+              <option>IT Expert</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea class="form-input" rows="4" placeholder="How can we help you?"></textarea>
+        </div>
+        <button type="button" class="btn btn-dark btn-full">
+          Send Message
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="contact-methods">
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:0ms">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Call Us</h3>
+          <p>Speak with the MAO front desk about records, advisories, or general inquiries.</p>
+          <a href="tel:+639171234567" class="contact-method-link">
+            Call During Office Hours
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:100ms">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Email Us</h3>
+          <p>Email the team directly for account setup, data corrections, or partnership questions.</p>
+          <a href="mailto:mao@lianbatangas.gov.ph" class="contact-method-link">
+            Send An Email
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="contact-method ic-card-enter" style="--ic-card-delay:200ms">
+          <div class="contact-method-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
+          </div>
+          <h3>Visit Us</h3>
+          <p>Visit the Municipal Agricultural Office to consult on-site during standard business hours.</p>
+          <a href="#contact" class="contact-method-link">
+            Get Directions
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <!-- Column 1: Brand -->
+      <div class="footer-brand">
+        <a href="{{ url('/') }}" class="nav-logo footer-logo">
+          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
+        </a>
+        <p class="footer-tagline">A climate-informed agricultural decision-support platform integrating PAGASA climate data and local rice production records to support farmers, MAO personnel, and IT experts in strategic forecasting, monitoring, and serving Lian, Batangas.</p>
+        <div class="footer-tagline-chip">
+          <span class="footer-tagline-chip-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span>Empowering agriculture through data and technology.</span>
+        </div>
+      </div>
+
+      <!-- Column 2: Platform -->
+      <div class="footer-links">
+        <div class="footer-col-label">
+          <span class="footer-col-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="2" y="14" width="4" height="6" rx="1" fill="currentColor"/><rect x="8" y="9" width="4" height="11" rx="1" fill="currentColor" opacity="0.7"/><rect x="14" y="5" width="4" height="15" rx="1" fill="currentColor" opacity="0.45"/></svg>
+          </span>
+          <h4>Platform</h4>
+        </div>
+        <ul>
+          <li><a href="{{ route('login') }}">Dashboard</a></li>
+          <li><a href="#features">Climate Records</a></li>
+          <li><a href="#features">Rice Production Records</a></li>
+          <li><a href="#features">Reports</a></li>
+        </ul>
+      </div>
+
+      <!-- Columns 3 & 4: Company + Access side-by-side -->
+      <div class="footer-col-pair">
+        <div class="footer-links">
+          <div class="footer-col-label">
+            <span class="footer-col-icon">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </span>
+            <h4>Company</h4>
+          </div>
+          <ul>
+            <li><a href="#about">About iClimate</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-col-label">
+            <span class="footer-col-icon">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
+            </span>
+            <h4>Access</h4>
+          </div>
+          <ul>
+            <li><a href="{{ route('login') }}">Login</a></li>
+            <li><a href="{{ route('register') }}">Create Account</a></li>
+            <li><a href="{{ route('login') }}">Rice Farmer Dashboard</a></li>
+            <li><a href="{{ route('login') }}">MAO Personnel Dashboard</a></li>
+            <li><a href="{{ route('login') }}">IT Personnel Dashboard</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Column 5: Follow Us -->
+      <div class="footer-social">
+        <div class="footer-col-label">
+          <span class="footer-col-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <h4>Follow Us</h4>
+        </div>
+        <div class="footer-social-icons">
+          <a href="https://www.facebook.com/profile.php?id=61551743430540" class="footer-social-icon" target="_blank" rel="noopener noreferrer" aria-label="Follow iClimate on Facebook (opens in a new tab)" title="Follow us on Facebook">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg>
+          </a>
+          <a href="#" class="footer-social-icon" aria-label="Twitter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 5.9c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1-.7-.8-1.8-1.3-3-1.3-2.3 0-4.1 1.9-4.1 4.1 0 .3 0 .6.1.9-3.4-.2-6.4-1.8-8.4-4.3-.4.6-.6 1.3-.6 2.1 0 1.4.7 2.7 1.8 3.4-.7 0-1.3-.2-1.9-.5v.1c0 2 1.4 3.7 3.3 4-.3.1-.7.2-1.1.2-.3 0-.5 0-.8-.1.5 1.7 2.1 2.9 3.9 2.9-1.4 1.1-3.2 1.8-5.2 1.8-.3 0-.7 0-1-.1 1.8 1.2 4 1.9 6.3 1.9 7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2.1-2.1z"/></svg>
+          </a>
+          <div class="footer-email" data-email-menu data-email="mao_lian@yahoo.com">
+            <a href="mailto:mao_lian@yahoo.com" class="footer-social-icon" aria-label="Email iClimate at mao_lian@yahoo.com" title="Email us: mao_lian@yahoo.com" aria-haspopup="true" aria-expanded="false" data-email-trigger>
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <div class="footer-email-menu" role="menu" hidden data-email-panel>
+              <div class="footer-email-addr">mao_lian@yahoo.com</div>
+              <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=mao_lian@yahoo.com">Write in Gmail</a>
+              <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://compose.mail.yahoo.com/?to=mao_lian@yahoo.com">Write in Yahoo Mail</a>
+              <a role="menuitem" href="mailto:mao_lian@yahoo.com">Use my email app</a>
+              <button type="button" role="menuitem" data-email-copy>Copy address</button>
+            </div>
+          </div>
+        </div>
+        <div class="footer-message-card">
+          <p>Together, we build a climate-resilient future for <em>agriculture</em>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-brand">
+        <span class="footer-bottom-icon">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" fill="currentColor"/></svg>
+        </span>
+        <p>&copy; 2026 iClimate Research Group &mdash; Batangas State University ARASOF-Nasugbu</p>
+      </div>
+      <span class="footer-badge">
+        <svg width="12" height="12" viewBox="0 0 10 12" fill="none"><path d="M5 0C2.24 0 0 2.24 0 5c0 3.75 5 7 5 7s5-3.25 5-7c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg>
+        Lian &middot; Batangas &middot; PH
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Email icon: a mailto: link does nothing when the visitor has no desktop
+  // mail app configured, so offer webmail, the mail app, or copying instead.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-email-menu]').forEach((wrap) => {
+      const trigger = wrap.querySelector('[data-email-trigger]');
+      const panel = wrap.querySelector('[data-email-panel]');
+      const copyBtn = wrap.querySelector('[data-email-copy]');
+      const email = wrap.dataset.email;
+      // The footer clips overflow, so the panel lives on <body> and is
+      // positioned beside the icon, opening wherever there is room.
+      document.body.appendChild(panel);
+      const place = () => {
+        const r = trigger.getBoundingClientRect();
+        const w = panel.offsetWidth;
+        const h = panel.offsetHeight;
+        const gap = 10;
+        const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+        const up = window.innerHeight - r.bottom < h + gap + 8 && r.top > h + gap + 8;
+        panel.style.left = `${left}px`;
+        panel.style.top = `${up ? r.top - h - gap : r.bottom + gap}px`;
+        panel.style.setProperty('--arrow-x', `${r.left + r.width / 2 - left}px`);
+        panel.classList.toggle('opens-up', up);
+      };
+      const setOpen = (open) => {
+        panel.hidden = !open;
+        trigger.setAttribute('aria-expanded', String(open));
+        if (open) { place(); panel.querySelector('a, button')?.focus({ preventScroll: true }); }
+      };
+      window.addEventListener('scroll', () => { if (!panel.hidden) place(); }, { passive: true });
+      window.addEventListener('resize', () => { if (!panel.hidden) place(); });
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        setOpen(panel.hidden);
+      });
+      panel.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+      copyBtn?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(email);
+        } catch (e) {
+          const tmp = document.createElement('textarea');
+          tmp.value = email; document.body.appendChild(tmp); tmp.select();
+          document.execCommand('copy'); tmp.remove();
+        }
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('is-copied');
+        setTimeout(() => { copyBtn.textContent = 'Copy address'; copyBtn.classList.remove('is-copied'); setOpen(false); }, 1200);
+      });
+      document.addEventListener('click', (event) => {
+        if (!wrap.contains(event.target) && !panel.contains(event.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !panel.hidden) { setOpen(false); trigger.focus(); }
+      });
+    });
+  });
+
+  // Live Lian weather for the hero card, from the same public endpoint the
+  // login page uses. The stored record rendered server-side stays as the
+  // fallback when the live service is unavailable.
+  document.addEventListener('DOMContentLoaded', async () => {
+    const set = (selector, value) => {
+      const el = document.querySelector(selector);
+      if (!el || value === null || value === undefined) return;
+      el.textContent = value;
+      el.classList.remove('is-updating'); void el.offsetWidth; el.classList.add('is-updating');
+    };
+    try {
+      const res = await fetch('{{ route('login.weather') }}', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const w = await res.json();
+      if (!w || !w.has_real_weather) return;
+      const n = (v, d = 0) => (v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v).toFixed(d));
+      if (n(w.temperature) !== null) set('[data-hero-temp]', `${n(w.temperature)}°C`);
+      if (n(w.humidity) !== null) set('[data-hero-humidity]', `${n(w.humidity)}%`);
+      if (n(w.wind_speed) !== null) set('[data-hero-wind]', `${n(w.wind_speed)} km/h`);
+      if (n(w.rainfall, 1) !== null) set('[data-hero-rain]', `${n(w.rainfall, 1)} mm`);
+      set('[data-hero-rain-label]', 'Rainfall Today');
+      set('[data-hero-live]', `Live now · ${w.condition_label || 'Current weather'}${w.updated_label ? ' · ' + w.updated_label : ''}`);
+    } catch (e) { /* keep the saved record */ }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.getElementById('navLinks');
+    const hamburger = document.getElementById('hamburger');
+    const links = document.querySelectorAll('.nav-link');
+
+    hamburger?.addEventListener('click', () => navLinks?.classList.toggle('open'));
+    links.forEach(link => link.addEventListener('click', () => navLinks?.classList.remove('open')));
+
+    const sections = document.querySelectorAll('section[id]');
+    const spyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.getAttribute('id');
+        links.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+    sections.forEach(section => spyObserver.observe(section));
+
+    // Staggered card entrance (pillar/feature/role cards): reveal each
+    // .ic-card-enter once it scrolls into view, then stop watching it —
+    // no looping. Reduced-motion users (or browsers without
+    // IntersectionObserver) get the cards shown immediately, unanimated.
+    // Section headings and text blocks reveal the same way as the cards;
+    // grouped siblings get a small stagger.
+    [['.section-header', 0], ['.about-text', 0], ['.about-visual', 120], ['.contact-info', 0], ['.contact-form-card, .contact-form', 120]]
+      .forEach(([selector, delay]) => {
+        document.querySelectorAll(selector).forEach((block) => {
+          if (block.classList.contains('ic-card-enter')) return;
+          block.classList.add('ic-card-enter');
+          block.style.setProperty('--ic-card-delay', delay + 'ms');
+        });
+      });
+
+    const enterCards = document.querySelectorAll('.ic-card-enter');
+    if (enterCards.length) {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        enterCards.forEach(card => card.classList.add('ic-card-enter-visible'));
+      } else {
+        const cardObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('ic-card-enter-visible');
+            cardObserver.unobserve(entry.target);
+            // Once revealed, drop the delay so later hover transitions are instant.
+            setTimeout(() => entry.target.style.setProperty('--ic-card-delay', '0ms'), 1200);
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        enterCards.forEach(card => cardObserver.observe(card));
+      }
+    }
+  });
+
+</script>
+</body>
+</html>
