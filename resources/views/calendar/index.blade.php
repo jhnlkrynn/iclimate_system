@@ -145,7 +145,7 @@
                         <p class="fad-support">Edit progress or remove an incorrect record.</p>
                     </div>
                     @if($schedules->isNotEmpty())
-                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
+                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}" data-fast-nav-bound="true" data-plan-open aria-haspopup="dialog">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
                     @endif
                 </div>
                 @forelse($schedules as $schedule)
@@ -178,10 +178,126 @@
                     <div class="fcal-records-empty">
                         <p class="fad-lead">No farm schedule yet.</p>
                         <p class="fad-body">Add your planting date and expected harvest to begin.</p>
-                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
+                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}" data-fast-nav-bound="true" data-plan-open aria-haspopup="dialog">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
                     </div>
                 @endforelse
             </section>
         @endif
     </div>
+
+    @if($canPlan)
+        {{-- Add My Planting Plan opens here, built from the same pop-up parts as the Advisories "View" pop-up
+             (.fad-modal / .fad-m-* in farmer-advisories.css). The link still leads to the full page when scripts are
+             unavailable. Outside .fad on purpose: that size container would trap a fixed-position pop-up inside it. --}}
+        @php $planProfile = auth()->user()->farmerProfile; @endphp
+        <div class="fad-modal" id="plantingPlanModal" data-open-on-load="{{ $errors->any() ? 'true' : 'false' }}" hidden>
+            <div class="fad-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="plantingPlanModalTitle" tabindex="-1">
+                <header class="fad-m-head">
+                    <div class="fad-m-head-text">
+                        <p class="fad-m-eyebrow">Farmer Calendar</p>
+                        <h2 id="plantingPlanModalTitle" tabindex="-1">Add My Planting Plan</h2>
+                        <p class="fad-m-meta"><span>Record your field plan. Unusual dates show a warning, but you can still save them.</span></p>
+                    </div>
+                    <button type="button" class="fad-m-x" data-plan-close aria-label="Close planting plan">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                    </button>
+                </header>
+                @include('planting-schedules._form', [
+                    'schedule' => new \App\Models\FarmerPlantingSchedule([
+                        'barangay' => $planProfile?->barangay ?: auth()->user()->barangay,
+                        'farm_type' => $planProfile?->farm_type,
+                        'farm_area_hectares' => $planProfile?->farm_area,
+                    ]),
+                    'barangays' => \App\Support\LianBarangays::all(),
+                    'action' => route('farmer.planting-schedules.store'),
+                    'method' => 'POST',
+                    'inModal' => true,
+                ])
+            </div>
+        </div>
+        <style>
+            /* The form sits between the pop-up's header and footer, so it carries the scrolling body and the footer. */
+            #plantingPlanModal form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 0; }
+            #plantingPlanModal .fad-m-scroll { gap: 20px; }
+            #plantingPlanModal .fcal-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+            #plantingPlanModal .fad-field.is-full { grid-column: 1 / -1; }
+            #plantingPlanModal .fad-input.is-invalid { border-color: var(--danger); }
+            #plantingPlanModal .fcal-plan-error { font-size: .875rem; font-weight: 600; color: var(--danger-ink); }
+            #plantingPlanModal .fad-m-foot { justify-content: flex-start; }
+            /* The saving spinner stays in front of the pop-up. */
+            html.fad-modal-open .icl-overlay { z-index: 10001; }
+            @media (min-width: 641px) { #plantingPlanModal .fad-modal-dialog { width: min(640px, calc(100vw - 64px)); } }
+            @media (max-width: 640px) { #plantingPlanModal .fcal-plan-grid { grid-template-columns: minmax(0, 1fr); } }
+        </style>
+        <script>
+            // Opens and closes the same way as the Advisories pop-up (resources/js/farmer-advisories.js).
+            (() => {
+                const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+                const modal = document.getElementById('plantingPlanModal');
+                const dialog = modal.querySelector('.fad-modal-dialog');
+                const form = modal.querySelector('[data-plan-form]');
+                let opener = null;
+                let touched = false;
+
+                // The page wrapper is animated with a transform, which would make it the box a fixed pop-up covers.
+                document.body.appendChild(modal);
+
+                const open = (trigger) => {
+                    opener = trigger;
+                    modal.hidden = false;
+                    document.documentElement.classList.add('fad-modal-open');
+                    (modal.querySelector('.is-invalid') || document.getElementById('plantingPlanModalTitle')).focus();
+                };
+                const close = () => {
+                    if (modal.hidden) return;
+                    modal.hidden = true;
+                    document.documentElement.classList.remove('fad-modal-open');
+                    opener?.focus();
+                    opener = null;
+                };
+
+                form.addEventListener('input', () => { touched = true; });
+
+                document.addEventListener('click', (event) => {
+                    const link = event.target.closest('[data-plan-open]');
+                    // Ctrl/Cmd/Shift/middle click keep their normal "open in a new tab/window" meaning.
+                    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                    event.preventDefault();
+                    open(link);
+                });
+
+                modal.addEventListener('click', (event) => {
+                    // A click on the dimmed page closes it only while nothing has been typed, so entries are not lost by accident.
+                    if (event.target.closest('[data-plan-close]') || (event.target === modal && !touched)) close();
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (modal.hidden) return;
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        close();
+                        return;
+                    }
+                    if (event.key !== 'Tab') return;
+                    // Keep keyboard focus inside the pop-up.
+                    const items = Array.from(dialog.querySelectorAll(FOCUSABLE)).filter((el) => el.getClientRects().length > 0);
+                    const first = items[0];
+                    const last = items[items.length - 1];
+                    if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                });
+
+                // The plan was sent back with mistakes: reopen the pop-up so they are seen.
+                if (modal.dataset.openOnLoad === 'true') {
+                    touched = true;
+                    open(document.querySelector('[data-plan-open]'));
+                }
+            })();
+        </script>
+    @endif
 </x-app-layout>
