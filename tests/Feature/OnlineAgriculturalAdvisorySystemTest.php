@@ -358,12 +358,16 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $list = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->getContent();
         $this->assertStringContainsString('data-fad-view', $list);                                  // a View button per card
         $this->assertStringContainsString('role="dialog" aria-modal="true" aria-labelledby="fadModalTitle"', $list);
-        $this->assertStringNotContainsString('What Is Happening', $list);                           // no full detail on the list
+        $this->assertStringNotContainsString('What You Should Do', $list);                          // no full detail on the list
 
         $popup = $this->actingAs($farmer)->get(route('planting-advisories.show', [$advisory, 'modal' => 1]))->assertOk()->getContent();
         $this->assertStringNotContainsString('<html', $popup);                                      // body only, no page layout
-        foreach (['id="fadModalTitle"', 'Popup advisory', 'What Is Happening', 'What To Do', 'Check the paddy water level.', 'Weather Behind This Advice', 'Advisory Information', 'Disclaimer', 'PAGASA Website', 'Was This Advisory Helpful?', 'data-fad-close'] as $part) {
+        foreach (['id="fadModalTitle"', 'Popup advisory', 'Quick Summary', 'What You Should Do', 'Check the paddy water level.', 'Weather at a Glance', 'Advisory Details', 'Important', 'Official Source', 'Was This Advice Helpful?', 'Yes, Helpful', 'No, Not Helpful', 'data-fad-close'] as $part) {
             $this->assertStringContainsString($part, $popup, $part);
+        }
+        // Farmer view: no system wording in the popup.
+        foreach (['Review status', 'Unverified', 'qualitative', 'weather-model', 'Not provided by source'] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $popup, $hidden);
         }
 
         $this->actingAs($farmer)->get(route('planting-advisories.show', $advisory))->assertOk()->assertSee('<html', false);

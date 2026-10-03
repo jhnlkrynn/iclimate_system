@@ -206,7 +206,7 @@
 html.fad-modal-open, html.fad-modal-open body { overflow: hidden; }
 html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad-modal-dialog {
-    display: flex; flex-direction: column; width: min(1100px, calc(100vw - 64px)); max-height: calc(100vh - 64px); max-height: calc(100dvh - 64px);
+    display: flex; flex-direction: column; width: min(820px, calc(100vw - 64px)); max-height: calc(100vh - 64px); max-height: calc(100dvh - 64px);
     background: var(--card); border: 1px solid var(--rule); border-top: 4px solid var(--brand); border-radius: 8px; overflow: hidden;
     box-shadow: 0 24px 64px rgba(10, 30, 20, .28);
 }
@@ -222,38 +222,52 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad-m-x svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .fad-m-x:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand); }
 .fad-m-x:focus-visible, .fad-modal .fad-btn:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
-.fad-m-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; display: grid; gap: 24px; align-content: start; }
-.fad-m-grid { display: grid; gap: 24px 32px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 992px) { .fad-m-grid { grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); } }
-@media (min-width: 992px) and (max-width: 1399.98px) { .fad-m-grid { gap: 16px 24px; } }
-.fad-m-main, .fad-m-side { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-.fad-m-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.fad-m-main > .fad-meta { margin-top: -16px; }
+/* One scroll area (the body); header and footer stay in place. Single column so nothing gets squeezed. */
+.fad-m-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 24px 28px 28px; display: grid; gap: 28px; align-content: start; }
+.fad-m-eyebrow { font-size: .875rem; font-weight: 600; color: var(--brand); }
+.fad-m-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .9375rem; color: var(--muted); }
+.fad-m-alert { display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-top: 2px; padding: 4px 10px; border-radius: 999px; font-size: .875rem; font-weight: 600; }
+.fad-m-alert .mtd-svg { width: 16px; height: 16px; }
+.fad-m-alert.is-watch { background: var(--watch-bg); color: var(--watch-ink); }
+.fad-m-alert.is-danger { background: var(--danger-bg); color: var(--danger-ink); }
 .fad-m-section { display: grid; gap: 12px; min-width: 0; }
-.fad-m-section > h3 { font-family: var(--serif) !important; font-size: 1.25rem; font-weight: 700; line-height: 1.25; color: var(--ink); }
-.fad-m-section > h3::after { content: ""; display: block; width: 48px; height: 2px; margin-top: 8px; background: var(--brand); }
-.fad-m-lead { font-size: 1.0625rem; font-weight: 600; line-height: 1.5; color: var(--ink); }
-.fad-m-text { white-space: pre-line; font-size: 1rem; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
-.fad-m-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.fad-m-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.fad-m-metrics > div { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-top: 1px solid var(--line); }
-.fad-m-metrics > div:nth-child(-n+2) { border-top: 0; }
-.fad-m-metrics > div:nth-child(odd) { border-right: 1px solid var(--line); }
-.fad-m-metrics dt, .fad-m-facts dt, .fad-m-info dt { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-.fad-m-metrics dd { display: grid; gap: 2px; margin: 0; }
-.fad-m-metrics dd strong { font-size: 1.375rem; font-weight: 700; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
-.fad-m-metrics dd span { font-size: .875rem; color: var(--muted); }
-.fad-m-facts { margin: 0; }
-.fad-m-facts > div { display: grid; gap: 2px; }
-.fad-m-facts dd { margin: 0; font-weight: 600; }
-.fad-m-source { display: grid; gap: 2px; padding-top: 12px; border-top: 1px solid var(--line); font-size: .875rem; color: var(--muted); }
-.fad-m-source p { font-size: inherit; color: inherit; }
-.fad-m-source a { color: var(--brand); }
-.fad-m-info { margin: 0; border-top: 1px solid var(--line); }
-.fad-m-info > div { display: grid; gap: 2px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.fad-m-info dd { margin: 0; font-size: 1rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.fad-m-disclaimer { display: grid; gap: 4px; padding: 16px; background: var(--watch-bg); border-left: 4px solid var(--watch); border-radius: 6px; color: var(--watch-ink); }
-.fad-m-disclaimer p { font-size: .9375rem; line-height: 1.5; color: var(--ink); }
+.fad-modal h3 { font-family: var(--serif) !important; font-size: 1.3125rem; font-weight: 700; line-height: 1.25; color: var(--ink); }
+.fad-m-body { font-size: 1rem; line-height: 1.6; color: var(--ink); }
+.fad-m-small { font-size: .875rem; line-height: 1.5; color: var(--muted); }
+.fad-m-small + .fad-m-small { margin-top: -8px; }
+
+/* Quick Summary: the first thing the farmer reads. */
+.fad-m-summary { display: grid; gap: 8px; padding: 18px 20px; border-radius: 8px; background: var(--good-bg); border-left: 4px solid var(--brand); }
+.fad-m-summary p { font-size: 1.0625rem; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.fad-m-summary p:first-of-type { font-weight: 600; }
+
+.fad-m-list { display: grid; gap: 10px; }
+.fad-m-list li { position: relative; padding-left: 26px; font-size: 1rem; line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; }
+.fad-m-list li::before { content: ""; position: absolute; left: 6px; top: .62em; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+.fad-m-list.is-actions li::before { left: 2px; top: .3em; width: 14px; height: 8px; border-radius: 0; background: none; border-left: 2.5px solid var(--good); border-bottom: 2.5px solid var(--good); transform: rotate(-45deg); }
+
+/* Weather at a Glance: 2 x 2 on wider screens, one column on phones. */
+.fad-m-weather { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.fad-m-weather > div { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 8px; background: var(--subtle); border: 1px solid var(--line); }
+.fad-m-weather dt { font-size: .9375rem; font-weight: 600; color: var(--head); }
+.fad-m-weather dd { display: grid; gap: 2px; margin: 0; }
+.fad-m-weather dd strong { font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fad-m-weather dd span { font-size: .875rem; color: var(--muted); }
+.fad-m-weather dd .is-missing { font-size: 1rem; color: var(--muted); }
+.fad-m-empty { padding: 12px 16px; border-radius: 8px; background: var(--subtle); font-size: 1rem; color: var(--muted); }
+
+/* Advisory Details: plain label / value rows. */
+.fad-m-details { display: grid; gap: 0; margin: 0; }
+.fad-m-details > div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.fad-m-details > div:last-child { border-bottom: 0; }
+.fad-m-details dt { font-size: .9375rem; color: var(--muted); }
+.fad-m-details dd { margin: 0; font-size: 1rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+
+.fad-m-important { display: grid; gap: 6px; padding: 16px 18px; background: var(--watch-bg); border-left: 4px solid var(--watch); border-radius: 8px; }
+.fad-m-important h3 { display: flex; align-items: center; gap: 8px; font-size: 1.125rem; color: var(--watch-ink); }
+.fad-m-important h3 .mtd-svg { width: 18px; height: 18px; }
+.fad-m-important p { font-size: .9375rem; line-height: 1.55; color: var(--ink); }
+
 .fad-m-links { display: flex; flex-wrap: wrap; gap: 8px; }
 .fad-m-note { display: grid; gap: 2px; padding: 12px 16px; border-left: 4px solid var(--info); border-radius: 6px; background: var(--info-bg); font-size: .9375rem; }
 .fad-m-note.is-watch { border-left-color: var(--watch); background: var(--watch-bg); }
@@ -261,13 +275,15 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad-m-note.is-good { border-left-color: var(--good); background: var(--good-bg); }
 .fad-m-feedback { padding-top: 24px; border-top: 1px solid var(--line); }
 .fad-m-feedback form { display: grid; gap: 12px; }
-.fad-modal textarea.fad-input { min-height: 72px; resize: vertical; font-family: var(--sans); }
+.fad-m-field-label { font-size: .9375rem; font-weight: 600; color: var(--ink); }
+.fad-modal textarea.fad-input { min-height: 84px; resize: vertical; font-family: var(--sans); font-size: 1rem; }
 .fad-m-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .fad-btn.is-vote { background: #fff; color: var(--ink); border-color: var(--field); }
 .fad-btn.is-vote.is-yes[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
 .fad-btn.is-vote.is-no[aria-pressed="true"] { background: var(--danger); border-color: var(--danger); color: #fff; }
 .fad-btn.is-vote:hover { border-color: var(--brand); }
 .fad-m-saved { font-size: .9375rem; color: var(--muted); }
+.fad-m-saved:empty { display: none; }
 .fad-m-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 16px 24px; background: var(--card); border-top: 1px solid var(--line); }
 .fad-skel { height: 18px; border-radius: 4px; background: linear-gradient(100deg, #eef2ef 30%, #f8faf9 50%, #eef2ef 70%) 0 0 / 200% 100%; animation: fad-shimmer 1.2s linear infinite; }
 .fad-skel.is-wide { height: 28px; width: 55%; }
@@ -281,12 +297,13 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
     .fad-modal-dialog { width: 100%; height: 100%; max-height: 100vh; max-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; }
     .fad-m-head { padding: 16px; }
     .fad-m-head h2 { font-size: 1.375rem; }
-    .fad-m-scroll { padding: 16px; }
-    .fad-m-metrics { grid-template-columns: minmax(0, 1fr); }
-    .fad-m-metrics > div:nth-child(odd) { border-right: 0; }
-    .fad-m-metrics > div:nth-child(2) { border-top: 1px solid var(--line); }
+    .fad-m-scroll { padding: 16px; gap: 24px; }
+    .fad-modal h3 { font-size: 1.25rem; }
+    .fad-m-summary { padding: 14px 16px; }
+    .fad-m-weather { grid-template-columns: minmax(0, 1fr); }
+    .fad-m-details > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
     .fad-m-foot { padding: 12px 16px; }
-    .fad-m-foot .fad-btn, .fad-m-vote .fad-btn { flex: 1 1 auto; }
+    .fad-m-foot .fad-btn, .fad-m-vote .fad-btn, .fad-m-links .fad-btn { flex: 1 1 auto; }
 }
 
 /* ------------------------------------------------------------ responsive */
