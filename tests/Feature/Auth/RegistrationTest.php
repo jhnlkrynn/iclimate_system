@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\FarmerOrganization;
+use App\Models\User;
 use App\Services\Security\CaptchaService;
 use Database\Seeders\FarmerOrganizationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +23,7 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'register']), false);
         $response->assertSee('Balibago Farmers Association');
-        $response->assertSee('Farm Location/Barangay');
+        $response->assertSee('Farm Location / Barangay');
         $response->assertSee('At least 8 characters');
         $response->assertSee('Uppercase letter');
         $response->assertSee('Symbol');
@@ -121,6 +122,32 @@ class RegistrationTest extends TestCase
 
         $this->assertGuest();
         $response->assertSessionHasErrors('password');
+    }
+
+    public function test_registration_rejects_duplicate_email_and_keeps_entered_names(): void
+    {
+        User::factory()->create(['email' => 'taken@example.com']);
+
+        $response = $this->from('/register')->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Juan Dela Cruz',
+            'first_name' => 'Juan',
+            'last_name' => 'Dela Cruz',
+            'email' => 'taken@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Balibago',
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertGuest();
+        $response->assertRedirect('/register');
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseCount('users', 1);
+
+        $this->followRedirects($response)
+            ->assertSee('The email has already been taken.')
+            ->assertSee('value="Juan"', false)
+            ->assertSee('value="Dela Cruz"', false);
     }
 
     public function test_registration_fails_when_captcha_is_missing(): void
