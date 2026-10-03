@@ -61,7 +61,8 @@
         display: grid;
         place-items: center;
         color: #fff;
-        background: linear-gradient(135deg, #123123, #2d6a4f);
+        background: #fff;
+        border: 2px solid #2d6a4f;
         box-shadow: 0 18px 34px rgba(13, 31, 24, .28);
         padding: 0;
         overflow: hidden;
@@ -160,7 +161,7 @@
         border-radius: 12px;
         object-fit: contain;
         flex-shrink: 0;
-        background: #e8f5eb;
+        background: #fff;
         border: 1px solid #cfe8d6;
     }
 
@@ -503,7 +504,7 @@
     <section class="ic-ai-panel" role="dialog" aria-modal="false" aria-labelledby="icAiTitle">
         <header class="ic-ai-header">
             <div class="ic-ai-head-main">
-                <img src="{{ asset('images/iclimate-icon.png') }}" alt="iClimate" class="ic-ai-logo">
+                <img src="{{ asset('images/climora-ai-icon.png') }}" alt="" class="ic-ai-logo">
                 <div>
                     <h2 id="icAiTitle" class="ic-ai-title">Climora AI</h2>
                     <p class="ic-ai-subtitle">Weather, rice yield, planting, and system guidance</p>
@@ -610,7 +611,7 @@
     </section>
 
     <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open Climora AI">
-        <img src="{{ asset('images/' . rawurlencode('ai assistant.png')) }}" alt="Climora AI">
+        <img src="{{ asset('images/climora-ai-icon.png') }}" alt="Climora AI">
     </button>
 </div>
 

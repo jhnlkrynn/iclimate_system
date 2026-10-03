@@ -21,6 +21,9 @@
         .ai-hero { position:relative; overflow:hidden; border-radius:32px; padding:1.35rem; margin-bottom:1.25rem; color:#1f2a24; background:radial-gradient(circle at 84% 12%, rgba(82,183,136,.16), transparent 30%), linear-gradient(145deg,#f6f9f7 0%,#e7f0ea 100%); border:1px solid #e3ece6; box-shadow:0 1rem 2.3rem rgba(31,42,36,.08); }
         .ai-hero::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(31,42,36,.05) 1px,transparent 1px),linear-gradient(0deg,rgba(31,42,36,.04) 1px,transparent 1px); background-size:38px 38px; mask-image:linear-gradient(90deg,rgba(0,0,0,.78),transparent 88%); }
         .ai-hero > * { position:relative; z-index:1; }
+        .ai-hero-brand { display:flex; align-items:center; gap:1.1rem; }
+        .ai-hero-logo { width:112px; height:auto; flex-shrink:0; }
+        @media (max-width: 575.98px) { .ai-hero-brand { flex-direction:column; align-items:flex-start; gap:.6rem; } .ai-hero-logo { width:88px; } }
         .ai-eyebrow { font-size:.72rem; font-weight:900; text-transform:uppercase; letter-spacing:.12em; color:#2d6a4f; }
         .ai-hero h1 { overflow-wrap:anywhere; }
         .ai-hero p { max-width:min(820px,100%); }
@@ -102,10 +105,13 @@
     <div class="ai-console">
         <section class="ai-hero">
             <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-end">
-                <div>
+                <div class="ai-hero-brand">
+                    <img class="ai-hero-logo" src="{{ asset('images/climora-ai-logo.png') }}" alt="{{ $assistantName }} logo">
+                    <div>
                     <div class="ai-eyebrow mb-2">{{ $assistantName }}</div>
                     <h1 class="h2 fw-bold mb-2">Chat with climate-aware rice guidance</h1>
                     <p class="mb-0 text-white-50" style="max-width:820px;">{{ $assistantSubtitle }}. Ask natural farming questions and get weather, yield, planting, irrigation, and warning guidance.</p>
+                    </div>
                 </div>
                 <div class="ai-hero-actions">
                     <form method="POST" action="{{ route('ai-chat.clear') }}" data-loading="true">
