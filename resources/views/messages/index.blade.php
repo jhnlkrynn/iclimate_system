@@ -11,6 +11,8 @@
             ->filter()
             ->unique()
             ->values();
+        // Farmers get the farmer design system (farmer-messages.css); MAO and IT keep this page's original look.
+        $isFarmerPage = $currentUser->role === \App\Models\User::ROLE_FARMER;
     @endphp
     <style>
         .msg-wrap { --msg-ink:#1f2a24; --msg-muted:#55645b; --msg-line:#e3ece6; --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; color: var(--msg-ink); }
@@ -149,6 +151,21 @@
         }
     </style>
 
+    @if($isFarmerPage)
+    {{-- #unsendConfirm stays outside .fad: .fad is a size container and would trap the fixed-position dialog. --}}
+    <div class="fad fmsg">
+        <header class="fad-hero">
+            <div class="fad-hero-text">
+                <span class="fad-kicker">Farmer Messages</span>
+                <h1>Messages</h1>
+                <p>Send private messages to the Municipal Agriculture Office and other farmers, and review your conversations.</p>
+            </div>
+            <div class="fad-hero-actions">
+                <span class="fmsg-private">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private conversations</span></span>
+                <a href="{{ route('community-feed.index') }}" class="fad-btn is-light">Community Feed</a>
+            </div>
+        </header>
+    @endif
     <div class="msg-wrap"
          data-current-user-id="{{ $currentUser->id }}"
          data-search-url="{{ route('messages.search') }}"
@@ -162,6 +179,7 @@
              data-last-message-id="{{ $messages->max('id') ?? 0 }}"
          @endif
     >
+        @unless($isFarmerPage)
         <section class="msg-hero">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
                 <div>
@@ -175,6 +193,7 @@
                 </div>
             </div>
         </section>
+        @endunless
 
         @if(session('success'))
             <div class="alert alert-success mt-3">{{ session('success') }}</div>
@@ -235,7 +254,7 @@
                             </div>
                         </a>
                     @empty
-                        <div class="p-3 text-muted">No conversations yet. Use the search box above to message someone.</div>
+                        <div class="p-3 text-muted msg-list-empty">@if($isFarmerPage)<strong>No messages yet.</strong> Use the search box above to message the Municipal Agriculture Office or another farmer.@else No conversations yet. Use the search box above to message someone.@endif</div>
                     @endforelse
                 </div>
                 @if(($conversationPaginator ?? null)?->hasPages())
@@ -311,13 +330,16 @@
                     </div>
                 @else
                     <div class="msg-empty text-center text-muted">
-                        <h2 class="h5 fw-bold" style="color:var(--msg-ink);">Select or start a conversation</h2>
+                        <h2 class="h5 fw-bold" style="color:var(--msg-ink);">{{ $isFarmerPage ? 'Select a conversation' : 'Select or start a conversation' }}</h2>
                         <p class="mb-0">Search for a person above, or pick a thread on the left, to message farmers, MAO staff, or IT support.</p>
                     </div>
                 @endif
             </main>
         </div>
     </div>
+    @if($isFarmerPage)
+    </div>
+    @endif
     <div id="unsendConfirm" class="unsend-confirm" role="alertdialog" aria-modal="true" aria-labelledby="unsendConfirmTitle">
         <div class="unsend-card">
             <div class="unsend-body">
@@ -456,6 +478,7 @@
                     try {
                         const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
                             headers: { 'Accept': 'application/json' },
+                            loader: false, // live search while typing: no full-screen overlay
                         });
                         const data = await response.json();
                         const notYetMessaged = (data.recipients || []).filter((r) => !knownOtherIds.has(String(r.id)));
@@ -596,6 +619,7 @@
                 try {
                     const response = await fetch(`${pollUrl}?after_id=${lastMessageId}`, {
                         headers: { 'Accept': 'application/json' },
+                        loader: false, // background polling
                     });
                     if (!response.ok) return;
                     const data = await response.json();
@@ -698,6 +722,7 @@
                 lastTypingPing = now;
                 fetch(typingUrl, {
                     method: 'POST',
+                    loader: false, // typing indicator ping
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 }).catch(() => {});
             });

@@ -152,6 +152,27 @@ class PlantingAdvisory extends Model
         });
     }
 
+    /**
+     * Each forecast run of a rule creates its own advisory (same title, new weather basis and validity), so an
+     * older run stays active next to the newer one that replaces it. Keep only the newest active run per rule,
+     * title and target; nothing is changed in the table. PAGASA and hand-written advisories have no rule and are never hidden.
+     */
+    public function scopeLatestRuns(Builder $query): Builder
+    {
+        $table = $query->getModel()->getTable();
+
+        return $query->whereNotExists(function ($newer) use ($table) {
+            $newer->selectRaw('1')
+                ->from($table.' as newer')
+                ->whereColumn('newer.advisory_rule_id', $table.'.advisory_rule_id')
+                ->whereColumn('newer.title', $table.'.title')
+                ->whereRaw("coalesce(newer.target_barangay, '') = coalesce({$table}.target_barangay, '')")
+                ->whereColumn('newer.created_at', '>', $table.'.created_at')
+                ->where('newer.status', self::STATUS_PUBLISHED)
+                ->where(fn ($q) => $q->whereNull('newer.valid_until')->orWhere('newer.valid_until', '>=', now()));
+        });
+    }
+
     public function scopeFromPagasaOnline(Builder $query): Builder
     {
         return $query->whereIn('source', self::pagasaOnlineSources());

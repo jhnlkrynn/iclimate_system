@@ -2123,6 +2123,7 @@
   {{-- Shared iClimate design language (tokens, motion, card interactions),
        loaded after the page's own styles so it refines them. --}}
   @vite(['resources/css/landing.css', 'resources/js/landing.js'])
+    @include('partials.global-loader')
 </head>
 <body>
 <x-flash-toast />

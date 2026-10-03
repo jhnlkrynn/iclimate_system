@@ -236,7 +236,7 @@
                 if (!banner) return;
                 const check = async () => {
                     try {
-                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                         const run = await response.json();
                         if (run.status === 'completed' || run.status === 'failed') window.location.reload();
                     } catch (_) {}

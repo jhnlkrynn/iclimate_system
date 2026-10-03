@@ -359,6 +359,7 @@
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
                         body: JSON.stringify({ question, save_conversation: shouldSaveConversation() }),
                         signal: controller.signal,
+                        loader: false, // the chat shows its own typing indicator
                     });
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.message || 'The assistant could not answer right now.');

@@ -10,6 +10,7 @@ import { initUiEnhancements } from './ui-enhancements';
 import { registerChartExplainer } from './chart-explainer';
 import '../css/chart-explainer.css';
 import { initFarmerDashboard } from './farmer-dashboard';
+import { initAdvisoryModal } from './farmer-advisories';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -169,13 +170,13 @@ function initApp() {
     bindRevealMotion();
     bindLogoutConfirmations();
     bindFastNavigation();
-    bindLoadingForms();
     bindDeleteConfirmations();
     bindResponsiveCollapse();
     bindChartTabs();
     bindStatDrawers();
     initUiEnhancements(document);
     initFarmerDashboard();
+    initAdvisoryModal();
 }
 
 // Support cached/back-forward pages where DOMContentLoaded has already fired.
@@ -349,32 +350,10 @@ function bindRegisterNameSync() {
     sync();
 }
 
-function bindLoadingForms() {
-    const overlay = document.getElementById('loadingOverlay');
-    document.querySelectorAll('form[data-loading="true"]').forEach((form) => {
-        if (form.dataset.loadingBound === 'true') return;
-        form.dataset.loadingBound = 'true';
-
-        form.addEventListener('submit', (event) => {
-            if (event.defaultPrevented) return;
-
-            if (form.matches('[data-logout-confirm]') && form.dataset.logoutConfirmed !== 'true') {
-                return;
-            }
-
-            form.dataset.submitting = 'true';
-            overlay?.classList.add('show');
-            lockSubmitButtons(form);
-        });
-    });
-}
-
 function bindLogoutConfirmations() {
     const modal = document.getElementById('icLogoutConfirm');
     const cancelButton = modal?.querySelector('[data-logout-cancel]');
     const confirmButton = modal?.querySelector('[data-logout-confirm-submit]');
-    const overlay = document.getElementById('loadingOverlay');
-    const progress = document.getElementById('pageProgress');
     let pendingForm = null;
 
     const close = () => {
@@ -387,8 +366,7 @@ function bindLogoutConfirmations() {
         pendingForm = form;
         form.classList.remove('is-loading-action');
         delete form.dataset.submitting;
-        overlay?.classList.remove('show');
-        progress?.classList.remove('show');
+        window.iClimateLoader?.reset();
         modal?.classList.add('show');
         document.body.classList.add('ic-modal-open');
         cancelButton?.focus();
@@ -410,6 +388,7 @@ function bindLogoutConfirmations() {
         modal?.classList.remove('show');
         confirmButton.disabled = true;
         confirmButton.textContent = 'Logging out...';
+        // form.submit() is covered by the global loader ("Logging out...").
         HTMLFormElement.prototype.submit.call(form);
     });
 
@@ -478,8 +457,9 @@ function bindStatDrawers() {
     });
 }
 
+// The centered overlay itself comes from the global iClimate loader
+// (public/js/iclimate-loader.js); this only warms links and dims the page.
 function bindFastNavigation() {
-    const progress = document.getElementById('pageProgress');
     const prefetched = new Set();
     const maxPrefetches = 10;
     const samePage = (link) => {
@@ -520,7 +500,6 @@ function bindFastNavigation() {
         link.addEventListener('click', () => {
             if (!canWarm(link)) return;
 
-            progress?.classList.add('show');
             document.body.classList.add('ic-page-leaving');
             link.classList.add('is-loading-action');
         });
@@ -541,7 +520,6 @@ function bindFastNavigation() {
             form.dataset.submitting = 'true';
 
             const method = (form.getAttribute('method') || 'GET').toUpperCase();
-            progress?.classList.add('show');
             lockSubmitButtons(form);
 
             if (method !== 'GET') {
@@ -552,9 +530,7 @@ function bindFastNavigation() {
     });
 
     window.addEventListener('pageshow', () => {
-        progress?.classList.remove('show');
         document.body.classList.remove('ic-page-leaving');
-        document.getElementById('loadingOverlay')?.classList.remove('show');
         document.querySelectorAll('.is-loading-action').forEach((element) => element.classList.remove('is-loading-action'));
         document.querySelectorAll('form[data-submitting="true"]').forEach((form) => delete form.dataset.submitting);
         document.querySelectorAll('button[disabled]').forEach((button) => {

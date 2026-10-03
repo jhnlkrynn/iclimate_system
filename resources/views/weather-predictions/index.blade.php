@@ -457,7 +457,20 @@
         }
     </style>
 
+    @if($isFarmer)
+    {{-- Farmers get the farmer design system (farmer-predictions.css). The confirm dialog below stays outside .fad:
+         .fad is a size container and would trap a fixed-position dialog. --}}
+    <div class="fad fpred">
+        <header class="fad-hero">
+            <div class="fad-hero-text">
+                <span class="fad-kicker">Rice Yield and Weather Predictions</span>
+                <h1>Predictions</h1>
+                <p>Expected rice yield and expected weather for your area. These are estimates, not guarantees.</p>
+            </div>
+        </header>
+    @endif
     <div class="wp-page">
+    @unless($isFarmer)
     <section class="wp-hero">
         <div>
             <div class="wp-eyebrow mb-2">Farm planning</div>
@@ -465,6 +478,7 @@
             <p class="mb-0 text-white-50" style="max-width: 720px;">Expected rice yield and expected weather for your area. These are forecasts, not guarantees.</p>
         </div>
     </section>
+    @endunless
 
     <div class="wp-tabs" role="tablist" aria-label="Prediction types" data-initial-weather-tab="{{ $activeWeatherTab }}">
         <button id="rice-yield-tab" class="wp-tab-button {{ $activeWeatherTab === 'rice-yield' ? 'active' : '' }}" type="button" role="tab" aria-controls="rice-yield-panel" aria-selected="{{ $activeWeatherTab === 'rice-yield' ? 'true' : 'false' }}" tabindex="{{ $activeWeatherTab === 'rice-yield' ? '0' : '-1' }}" data-weather-tab="rice-yield">Rice Yield</button>
@@ -872,6 +886,9 @@
         </details>
     </div>
     </div>
+    @if($isFarmer)
+    </div>
+    @endif
 
     <div class="modal fade" id="yieldConfirmModal" tabindex="-1" aria-labelledby="yieldConfirmTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1156,7 +1173,7 @@
                 let failures = 0;
                 const poll = window.setInterval(async () => {
                     try {
-                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                         if (!response.ok) throw new Error(`Status check failed.`);
                         const run = await response.json();
                         failures = 0;

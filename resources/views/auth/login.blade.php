@@ -319,6 +319,7 @@
       }
     }
   </style>
+    @include('partials.global-loader')
 </head>
 <body class="login-page" style="--login-bg-img: url('{{ asset('images/rice-hero-aerial.jpg') }}');">
   <x-flash-toast />

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RiceProduction;
 use App\Support\LianBarangays;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,6 +21,22 @@ class RiceProductionController extends CrudController
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];
 
     protected array $filterable = ['season' => ['Wet', 'Dry'], 'irrigation_type' => ['Rainfed', 'Irrigated']];
+
+    protected bool $farmerPages = true;
+
+    protected string $farmerSortColumn = 'year';
+
+    protected function farmerIndexData(Request $request, Builder $filtered): array
+    {
+        $stats = (clone $filtered)->toBase()->selectRaw('count(*) as records, sum(total_production) as total_production, avg(yield_per_hectare) as avg_yield, sum(area_hectares) as total_area, max(year) as latest_year')->first();
+
+        return [
+            'stats' => $stats,
+            'yieldBars' => (clone $filtered)->whereNotNull('yield_per_hectare')->orderBy('year')->orderBy('id')->limit(16)->get(['id', 'barangay', 'season', 'year', 'yield_per_hectare']),
+            'farmerBarangay' => $request->user()->barangay,
+            'ownBarangayCount' => $request->user()->barangay ? (clone $filtered)->where('barangay', $request->user()->barangay)->count() : 0,
+        ];
+    }
 
     public function __construct()
     {

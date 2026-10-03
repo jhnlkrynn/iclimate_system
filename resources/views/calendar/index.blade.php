@@ -1,212 +1,186 @@
 <x-app-layout>
-    @include('layouts.partials.dark-workspace')
-    <div class="dark-workspace calendar-page">
-        <style>
-            .calendar-page .calendar-card, .calendar-page .upcoming-card { overflow: hidden; border-color: var(--ic-sand-dark); box-shadow: 0 1.2rem 2.6rem rgba(13,31,24,.08); }
-            .calendar-page .calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--ic-border); background: linear-gradient(90deg, rgba(82,183,136,.08), rgba(31,42,36,.02)); }
-            .calendar-page .calendar-toolbar-month { font-family: 'DM Serif Display', serif; font-size: 1.45rem; min-width: 170px; text-align: center; color: var(--ic-ink); }
-            .calendar-page .calendar-legend { display: flex; flex-wrap: wrap; gap: .6rem; padding: 1rem 1.25rem 0; }
-            .calendar-page .calendar-legend-item { display: inline-flex; align-items: center; gap: .4rem; font-size: .875rem; color: var(--ic-ink-mid); line-height: 1.4; }
-            .calendar-page .calendar-legend-dot { width: 10px; height: 10px; border-radius: 999px; box-shadow: 0 0 0 4px rgba(31,42,36,.05); }
-            .calendar-page .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: .75rem; gap: .45rem; }
-            .calendar-page .calendar-weekday { padding: .6rem .5rem; font-size: .875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ic-muted); text-align: center; }
-            .calendar-page .calendar-day { min-height: 128px; padding: .55rem; border: 1px solid var(--ic-border); border-radius: 10px; background: rgba(31,42,36,.02); transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease; }
-            .calendar-page .calendar-day:hover { transform: translateY(-1px); border-color: rgba(116,198,157,.6); background: #ffffff; box-shadow: 0 4px 12px rgba(13,31,24,.06); }
-            .calendar-page .calendar-day.is-outside { opacity: .5; background: rgba(31,42,36,.01); }
-            .calendar-page .calendar-day.is-today { border-color: rgba(82,183,136,.62); background: linear-gradient(145deg, rgba(82,183,136,.16), rgba(82,183,136,.045)); box-shadow: inset 0 0 0 1px rgba(82,183,136,.18); }
-            .calendar-page .calendar-day-number { display: inline-grid; place-items: center; min-width: 1.75rem; height: 1.75rem; padding: 0 .35rem; border-radius: 999px; font-size: .875rem; color: var(--ic-ink-mid); margin-bottom: .45rem; font-weight: 800; }
-            .calendar-page .calendar-day.is-today .calendar-day-number { color: #0d1f18; background: var(--ic-green-400); }
-            .calendar-page .calendar-event { display: grid; gap: .25rem; font-size: .875rem; line-height: 1.35; padding: .48rem .55rem; border-radius: 8px; margin-bottom: .35rem; text-decoration: none; color: var(--ic-ink) !important; background: rgba(31,42,36,.035); border: 1px solid var(--ic-border); border-left: 4px solid var(--event-accent, var(--ic-green-500)); }
-            .calendar-page .calendar-event:hover { background: rgba(31,42,36,.06); border-color: rgba(31,42,36,.14); transform: translateX(1px); }
-            .calendar-page .calendar-event-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 800; }
-            .calendar-page .calendar-event-badge { justify-self: start; border-radius: 999px; padding: .2rem .5rem; font-family: 'DM Mono', monospace; font-size: .75rem; font-weight: 800; letter-spacing: .03em; color: #fff; background: var(--event-accent, var(--ic-green-500)); line-height: 1.2; }
-            .calendar-page .calendar-event.type-climate { --event-accent: #0d6efd; }
-            .calendar-page .calendar-event.type-planting { --event-accent: #198754; }
-    .calendar-page .calendar-event.type-harvesting { --event-accent: #8FAF9A; }
-            .calendar-page .calendar-event.type-irrigation { --event-accent: #0dcaf0; }
-            .calendar-page .calendar-event.type-community { --event-accent: #b7e4c7; }
-            .calendar-page .calendar-event.type-schedule-planting { --event-accent: #198754; background: rgba(25,135,84,.08); }
-            .calendar-page .calendar-event.type-schedule-harvest { --event-accent: #d18b00; background: rgba(255,193,7,.12); }
-            .calendar-page .calendar-event-more { font-size: .875rem; color: var(--ic-muted); padding-left: .25rem; line-height: 1.35; }
-            .calendar-page .upcoming-item { display: flex; gap: .75rem; padding: .75rem 0; border-bottom: 1px solid var(--ic-border); transition: background .15s ease, box-shadow .15s ease; }
-            .calendar-page .upcoming-item:hover { background: rgba(255,255,255,.8); margin-inline: -.55rem; padding-inline: .55rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(13,31,24,.05); }
-            .calendar-page .upcoming-item:last-child { border-bottom: none; }
-            .calendar-page .upcoming-date { min-width: 54px; text-align: center; padding-top: .15rem; }
-            .calendar-page .upcoming-date-day { font-family: 'DM Serif Display', serif; font-size: 1.35rem; line-height: 1; color: var(--ic-ink); }
-            .calendar-page .upcoming-date-month { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ic-muted); }
-            .calendar-page .upcoming-title { color: var(--ic-ink); line-height: 1.25; }
-            .calendar-page .upcoming-title:hover { color: var(--ic-green-700); }
-            .calendar-page .schedule-record { border: 1px solid var(--ic-border); border-radius: 10px; padding: 1rem; background: rgba(255,255,255,.7); }
-            .calendar-page .schedule-record strong { font-size: 1.05rem; color: var(--ic-ink); }
-            @media (max-width: 767.98px) {
-                .calendar-page .calendar-grid { grid-template-columns: 1fr; padding: .5rem; gap: .4rem; }
-                .calendar-page .calendar-weekday { display: none; }
-                .calendar-page .calendar-day { min-height: auto; padding: .5rem .6rem; }
-                .calendar-page .calendar-day.is-outside { display: none; }
-                .calendar-page .calendar-toolbar { padding: .75rem 1rem; gap: .5rem; }
-                .calendar-page .calendar-toolbar-month { font-size: 1.15rem; min-width: 0; }
-                .calendar-page .calendar-legend { padding: .65rem 1rem 0; gap: .4rem; }
-                .calendar-page .upcoming-item { padding: .6rem 0; gap: .6rem; }
-                .calendar-page .upcoming-date { min-width: 44px; }
-                .row.g-3 { --bs-gutter-y: .75rem; }
-            }
-        </style>
+    {{-- Same design system as the farmer dashboard and Advisories page (.fad tokens, buttons and badges in
+         farmer-advisories.css); the calendar's own parts are .fcal-* in farmer-calendar.css. --}}
+    @php
+        $isFarmer = auth()->user()->role === \App\Models\User::ROLE_FARMER;
+        $canPlan = ($plantingScheduleFeatureReady ?? true) && $isFarmer;
+        // One name and one colour family per kind of entry; the legend, the cells and Upcoming all use it.
+        $kinds = [
+            'climate' => 'Weather', 'planting' => 'Planting', 'harvesting' => 'Harvesting', 'irrigation' => 'Watering', 'community' => 'Events',
+        ];
+        $kindOf = fn (array $event) => match ($event['type_key']) {
+            'schedule-planting' => 'planting',
+            'schedule-harvest' => 'harvesting',
+            default => array_key_exists($event['type_key'], $kinds) ? $event['type_key'] : 'community',
+        };
+        $perDay = 2;
+    @endphp
 
-        <section class="page-hero">
-            <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
-                <div>
-                    <div class="eyebrow mb-2">Planting Schedule</div>
-                    <h1 class="h2 fw-bold mb-2">Calendar</h1>
-                    <p class="mb-0" style="color: var(--ic-ink-mid);">See when advisories start and expire, laid out by day, so you can plan planting and harvesting activities ahead of time.</p>
-                </div>
-                @if(($plantingScheduleFeatureReady ?? true) && auth()->user()->role === \App\Models\User::ROLE_FARMER)
-                    <a class="btn btn-primary btn-lg" href="{{ route('farmer.planting-schedules.create') }}">+ Add My Planting Plan</a>
-                @endif
+    <div class="fad fcal">
+        <header class="fad-hero">
+            <div class="fad-hero-text">
+                <span class="fad-kicker">Planting Schedule</span>
+                <h1>Calendar</h1>
+                <p>See when advisories start and expire, laid out by day, so you can plan planting and harvesting activities ahead of time.</p>
             </div>
-        </section>
+        </header>
 
         @if(session('schedule_warnings'))
-            <div class="alert alert-warning" role="alert">
-                <strong>Schedule saved with a date warning.</strong>
-                <ul class="mb-0 mt-2">@foreach(session('schedule_warnings') as $warning)<li>{{ $warning }}</li>@endforeach</ul>
+            <div class="fad-empty is-watch" role="alert">
+                <p class="fad-lead">Schedule saved with a date warning.</p>
+                <ul class="fcal-warnings">@foreach(session('schedule_warnings') as $warning)<li>{{ $warning }}</li>@endforeach</ul>
             </div>
         @endif
-
         @unless($plantingScheduleFeatureReady ?? true)
-            <div class="alert alert-warning" role="status"><strong>Farmer schedules are temporarily unavailable.</strong> Advisories and community events are still shown while the database update is completed.</div>
+            <div class="fad-empty is-watch" role="status"><p class="fad-lead">Farmer schedules are temporarily unavailable.</p><p class="fad-body">Advisories and community events are still shown while the database update is completed.</p></div>
         @endunless
         @if(session('schedule_feature_warning'))
-            <div class="alert alert-warning" role="status">{{ session('schedule_feature_warning') }}</div>
+            <div class="fad-empty is-watch" role="status"><p class="fad-body">{{ session('schedule_feature_warning') }}</p></div>
         @endif
 
-        <div class="row g-3">
-            <div class="col-xl-8">
-                <div class="card no-lift calendar-card">
-                    <div class="calendar-toolbar">
-                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('calendar.index', ['month' => $previousMonth, 'year' => $previousYear]) }}" aria-label="Previous month">&laquo; Prev</a>
-                        <div class="calendar-toolbar-month">{{ $current->format('F Y') }}</div>
-                        <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('calendar.index') }}">Today</a>
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('calendar.index', ['month' => $nextMonth, 'year' => $nextYear]) }}" aria-label="Next month">Next &raquo;</a>
-                        </div>
-                    </div>
-
-                    <div class="calendar-legend">
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-primary"></span> Weather</span>
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-success"></span> Planting</span>
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:#8FAF9A;"></span> Harvesting</span>
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot bg-info"></span> Watering</span>
-                        <span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:#b7e4c7;"></span> Events</span>
-                    </div>
-
-                    <div class="calendar-grid">
-                        @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday)
-                            <div class="calendar-weekday">{{ $weekday }}</div>
-                        @endforeach
-
-                        @foreach($weeks as $week)
-                            @foreach($week as $day)
-                                @php
-                                    $dayEvents = $eventsByDay[$day->toDateString()] ?? [];
-                                    $visibleEvents = collect($dayEvents)->take(2);
-                                    $remaining = count($dayEvents) - $visibleEvents->count();
-                                @endphp
-                                <div class="calendar-day {{ $day->month !== $current->month ? 'is-outside' : '' }} {{ $day->isSameDay($today) ? 'is-today' : '' }}">
-                                    <div class="calendar-day-number">{{ $day->day }}</div>
-                                    @foreach($visibleEvents as $event)
-                                        <a href="{{ $event['url'] }}" class="calendar-event type-{{ $event['type_key'] }}" title="{{ $event['title'] }}">
-                                            <span class="calendar-event-title">{{ $event['title'] }}</span>
-                                            <span class="calendar-event-badge">{{ $event['type_label'] }}</span>
-                                        </a>
-                                    @endforeach
-                                    @if($remaining > 0)
-                                        <div class="calendar-event-more">+{{ $remaining }} more</div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        @endforeach
+        <div class="fcal-layout">
+            {{-- Month --}}
+            <section class="fcal-month" aria-labelledby="fcalMonthTitle">
+                <div class="fcal-toolbar">
+                    <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index', ['month' => $previousMonth, 'year' => $previousYear]) }}" aria-label="Previous month, {{ $current->copy()->subMonth()->format('F Y') }}"><span aria-hidden="true">‹</span> Prev</a>
+                    <h2 id="fcalMonthTitle" class="fcal-month-title" aria-live="polite">{{ $current->format('F Y') }}</h2>
+                    <div class="fcal-toolbar-end">
+                        <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index') }}" aria-label="Go to this month ({{ $today->format('F Y') }})" @if($current->isSameMonth($today)) aria-current="date" @endif>Today</a>
+                        <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index', ['month' => $nextMonth, 'year' => $nextYear]) }}" aria-label="Next month, {{ $current->copy()->addMonth()->format('F Y') }}">Next <span aria-hidden="true">›</span></a>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-xl-4">
-                <details class="ic-collapse">
-                    <summary>
-                        <span class="ic-collapse-title">
-                            Upcoming
-                            @if($upcoming->count())
-                                <span class="ic-collapse-count">{{ $upcoming->count() }}</span>
-                            @endif
-                        </span>
-                    </summary>
-                <div class="card no-lift h-100 upcoming-card">
-                    <div class="card-header border-0 py-3">
-                        <div class="fw-semibold">Upcoming</div>
-                        <div class="small text-muted">Advisories and important MAO events.</div>
-                    </div>
-                    <div class="card-body pt-0">
-                        @if($upcoming->count())
-                            @foreach($upcoming as $event)
-                                <div class="upcoming-item">
-                                    <div class="upcoming-date">
-                                        <div class="upcoming-date-day">{{ $event['starts_at']?->format('d') ?? '--' }}</div>
-                                        <div class="upcoming-date-month">{{ $event['starts_at']?->format('M') ?? '' }}</div>
-                                    </div>
-                                    <div>
-                                        <a class="fw-semibold text-decoration-none upcoming-title" href="{{ $event['url'] }}">{{ $event['title'] }}</a>
-                                        <div class="small text-muted">{{ $event['summary'] }}</div>
-                                        <span class="badge {{ $event['badge_class'] }} mt-1">{{ $event['type_label'] }}</span>
-                                    </div>
+                <ul class="fcal-legend" aria-label="Colour key">
+                    @foreach($kinds as $key => $label)
+                        <li><span class="fcal-dot" data-kind="{{ $key }}" aria-hidden="true"></span>{{ $label }}</li>
+                    @endforeach
+                </ul>
+
+                <div class="fcal-grid">
+                    @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday)
+                        <div class="fcal-weekday" aria-hidden="true">{{ $weekday }}</div>
+                    @endforeach
+
+                    @foreach($weeks as $week)
+                        @foreach($week as $day)
+                            @php
+                                $dayEvents = $eventsByDay[$day->toDateString()] ?? [];
+                                $outside = $day->month !== $current->month;
+                                $isToday = $day->isSameDay($today);
+                            @endphp
+                            <div @class(['fcal-day', 'is-outside' => $outside, 'is-today' => $isToday, 'is-empty' => count($dayEvents) === 0])
+                                 role="group" aria-label="{{ $day->format('l, F j') }}{{ $isToday ? ', today' : '' }}{{ count($dayEvents) ? ', '.count($dayEvents).' '.(count($dayEvents) === 1 ? 'entry' : 'entries') : '' }}">
+                                <div class="fcal-day-head">
+                                    <span class="fcal-day-number">{{ $day->day }}</span>
+                                    <span class="fcal-day-name">{{ $day->format('D, M j') }}</span>
+                                    @if($isToday)<span class="fcal-today-tag">Today</span>@endif
                                 </div>
-                            @endforeach
-                        @else
-                            <div class="empty-state text-center p-4">
-                                <div class="mb-1">No upcoming advisories.</div>
-                                <p class="text-muted mb-0 small">Check back after new guidance is published.</p>
+                                @foreach(array_slice($dayEvents, 0, $perDay) as $event)
+                                    @include('calendar._event', ['event' => $event, 'kind' => $kindOf($event), 'kinds' => $kinds])
+                                @endforeach
+                                @if(count($dayEvents) > $perDay)
+                                    {{-- "+N more" opens in place: no JavaScript, works with the keyboard. --}}
+                                    <details class="fcal-more">
+                                        <summary><span class="fcal-more-closed">+{{ count($dayEvents) - $perDay }} more</span><span class="fcal-more-open">Show fewer</span></summary>
+                                        @foreach(array_slice($dayEvents, $perDay) as $event)
+                                            @include('calendar._event', ['event' => $event, 'kind' => $kindOf($event), 'kinds' => $kinds])
+                                        @endforeach
+                                    </details>
+                                @endif
                             </div>
-                        @endif
-                    </div>
+                        @endforeach
+                    @endforeach
                 </div>
-                </details>
-            </div>
-        </div>
+                <p class="fcal-empty-month">Nothing is planned for {{ $current->format('F Y') }} yet.</p>
+            </section>
 
-        @if(($plantingScheduleFeatureReady ?? true) && auth()->user()->role === \App\Models\User::ROLE_FARMER)
-            <section class="card no-lift mt-3">
-                <div class="card-header border-0 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <div><div class="fw-bold fs-5">My planting and harvest records</div><div class="text-muted">Edit progress or remove an incorrect record.</div></div>
-                    <a class="btn btn-primary" href="{{ route('farmer.planting-schedules.create') }}">Add My Planting Plan</a>
-                </div>
-                <div class="card-body pt-0 d-grid gap-3">
-                    @forelse($schedules as $schedule)
-                        <article class="schedule-record">
-                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-                                <div>
-                                    <strong>{{ $schedule->planting_date?->format('M d, Y') }} planting &rarr; {{ ($schedule->scheduled_harvest_date ?? $schedule->harvest_month)?->format($schedule->scheduled_harvest_date ? 'M d, Y' : 'F Y') }}</strong>
-                                    <div class="mt-1">{{ $schedule->season }} season &middot; {{ $schedule->farm_type }} &middot; {{ $schedule->barangay ?: 'Location not provided' }}</div>
-                                    <div class="text-muted mt-1">Status: {{ $schedule->monitoringStatusLabel() }}</div>
-                                    <div class="mt-2">
-                                        @if($schedule->predicted_yield !== null)
-                                            <span class="badge text-bg-success fs-6">Estimated harvest: {{ number_format((float)$schedule->predicted_yield, 2) }} tons/hectare</span>
+            {{-- Upcoming --}}
+            <details class="ic-collapse fcal-upcoming" open>
+                <summary>
+                    <span class="fcal-upcoming-title">Upcoming</span>
+                    @if($upcoming->count())<span class="fad-count" aria-label="{{ $upcoming->count() }} items">{{ $upcoming->count() }}</span>@endif
+                </summary>
+                <div class="fcal-upcoming-body">
+                    <p class="fad-support">Active and coming advisories, your planting and harvest dates, and MAO events.</p>
+                    @if($upcoming->count())
+                        <ol class="fcal-up-list">
+                            @foreach($upcoming as $event)
+                                @php $kind = $kindOf($event); @endphp
+                                <li class="fcal-up">
+                                    <div @class(['fcal-up-date', 'is-now' => $event['active_now']])>
+                                        @if($event['active_now'])
+                                            <span class="fcal-up-day">Now</span>
                                         @else
-                                            <span class="badge text-bg-secondary fs-6">Estimate not available yet</span>
-                                            <div class="text-muted mt-1">{{ $schedule->prediction_unavailable_reason }}</div>
+                                            <span class="fcal-up-day">{{ $event['date']->format('j') }}</span>
+                                            <span class="fcal-up-month">{{ $event['date']->format('M') }}</span>
                                         @endif
                                     </div>
-                                </div>
-                                <div class="d-flex flex-wrap align-items-start gap-2">
-                                    <a class="btn btn-outline-primary" href="{{ route('farmer.planting-schedules.edit', $schedule) }}">Edit</a>
-                                    <form method="POST" action="{{ route('farmer.planting-schedules.destroy', $schedule) }}" onsubmit="return confirm('Delete this schedule?')">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-outline-danger" type="submit">Delete</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </article>
-                    @empty
-                        <div class="empty-state text-center p-4"><strong>No farm schedule yet.</strong><p class="text-muted mb-0 mt-1">Add your planting date and expected harvest to begin.</p></div>
-                    @endforelse
+                                    <div class="fcal-up-body">
+                                        <a class="fcal-up-title" href="{{ $event['url'] }}">{{ $event['title'] }}</a>
+                                        @if($event['summary'])<p class="fcal-up-summary">{{ $event['summary'] }}</p>@endif
+                                        <div class="fcal-up-meta">
+                                            <span class="fad-badge fcal-kind" data-kind="{{ $kind }}">{{ $event['type_label'] }}</span>
+                                            @if($event['active_now'] && $event['until'])<span class="fad-meta">Active until {{ $event['until']->format('M j') }}</span>@endif
+                                        </div>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                        <a class="fad-link fcal-up-all" href="{{ route('planting-advisories.index') }}">See all advisories</a>
+                    @else
+                        <div class="fcal-up-empty">
+                            <p class="fad-lead">No upcoming advisories.</p>
+                            <p class="fad-support">Check back after new guidance is published.</p>
+                        </div>
+                    @endif
                 </div>
+            </details>
+        </div>
+
+        @if($canPlan)
+            <section class="fcal-records" aria-labelledby="fcalRecordsTitle">
+                <div class="fcal-records-head">
+                    <div>
+                        <h2 id="fcalRecordsTitle">My Planting and Harvest Records</h2>
+                        <p class="fad-support">Edit progress or remove an incorrect record.</p>
+                    </div>
+                    @if($schedules->isNotEmpty())
+                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
+                    @endif
+                </div>
+                @forelse($schedules as $schedule)
+                    @php $harvest = $schedule->scheduled_harvest_date ?? $schedule->harvest_month; @endphp
+                    <article class="fcal-record">
+                        <div class="fcal-record-main">
+                            <h3 class="fcal-record-title">{{ $schedule->planting_date?->format('M j, Y') }} planting <span aria-hidden="true">→</span><span class="visually-hidden">, harvest</span> {{ $harvest?->format($schedule->scheduled_harvest_date ? 'M j, Y' : 'F Y') ?? 'harvest date not set' }}</h3>
+                            <dl class="fcal-record-facts">
+                                <div><dt>Season</dt><dd>{{ $schedule->season ?: '—' }}</dd></div>
+                                <div><dt>Farm type</dt><dd>{{ $schedule->farm_type ?: '—' }}</dd></div>
+                                <div><dt>Barangay</dt><dd>{{ $schedule->barangay ?: 'Location not provided' }}</dd></div>
+                                <div><dt>Status</dt><dd>{{ $schedule->monitoringStatusLabel() }}</dd></div>
+                            </dl>
+                            @if($schedule->predicted_yield !== null)
+                                <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong></p>
+                            @else
+                                <p class="fcal-record-estimate">Estimate not available yet.@if($schedule->prediction_unavailable_reason) <span>{{ $schedule->prediction_unavailable_reason }}</span>@endif</p>
+                            @endif
+                        </div>
+                        <div class="fcal-record-actions">
+                            <a class="fad-btn is-quiet" href="{{ route('farmer.planting-schedules.edit', $schedule) }}">Edit</a>
+                            <form method="POST" action="{{ route('farmer.planting-schedules.destroy', $schedule) }}" onsubmit="return confirm('Delete this schedule?')">
+                                @csrf @method('DELETE')
+                                <button class="fad-btn is-quiet is-danger" type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </article>
+                @empty
+                    {{-- The page's one Add My Planting Plan button while there are no records (the header has none). --}}
+                    <div class="fcal-records-empty">
+                        <p class="fad-lead">No farm schedule yet.</p>
+                        <p class="fad-body">Add your planting date and expected harvest to begin.</p>
+                        <a class="fad-btn is-primary fcal-add" href="{{ route('farmer.planting-schedules.create') }}">@include('dashboards.mao.icon', ['name' => 'plus'])<span>Add My Planting Plan</span></a>
+                    </div>
+                @endforelse
             </section>
         @endif
     </div>

@@ -1,150 +1,135 @@
 <x-app-layout>
     @include('advisories._analytics-status')
     <style>
+        /* Typhoon safety check: an actual alert, so it keeps its dark, high-contrast panel. */
         .advisory-safety-card {
             position: relative;
             overflow: hidden;
             height: 100%;
             border: 1px solid rgba(255,209,102,.48);
-            border-radius: 14px;
-            background:
-                linear-gradient(135deg, rgba(197,139,42,.22) 0%, rgba(18,43,32,.98) 42%, rgba(7,25,18,.99) 100%),
-                #0d1f18;
+            border-radius: 6px;
+            background: #0d1f18;
             color: #fff;
-            padding: 1rem;
-            box-shadow: 0 4px 20px rgba(13,31,24,.12);
+            padding: 20px 24px;
         }
-        .advisory-safety-card::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(circle at 8% 35%, rgba(255,232,163,.16), transparent 18rem),
-                radial-gradient(circle at 92% 85%, rgba(82,183,136,.22), transparent 16rem);
-        }
-        .advisory-safety-card > * { position: relative; z-index: 1; }
         .advisory-safety-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #74c69d;
-            font-family: 'DM Mono', monospace;
-            font-size: .875rem;
-            font-weight: 800;
-            letter-spacing: .12em;
+            color: #ffd166;
+            font-family: Inter, Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
             text-transform: uppercase;
-        }
-        .advisory-safety-eyebrow::before {
-            content: none;
         }
         .advisory-safety-card h2 {
             color: #fff;
-            font-family: 'DM Serif Display', Georgia, serif;
-            font-size: 1.1rem;
-            margin: .75rem 0 .35rem;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.375rem;
+            font-weight: 700;
+            margin: 10px 0 6px;
         }
-        .advisory-safety-card p {
-            color: rgba(255,255,255,.8);
-            line-height: 1.55;
-            margin: 0;
-        }
+        .advisory-safety-card p { color: rgba(255,255,255,.85); line-height: 1.5; margin: 0; }
         .advisory-safety-status {
             display: inline-flex;
             align-items: center;
-            border-radius: 999px;
-            padding: .42rem .7rem;
+            border-radius: 4px;
+            padding: 4px 10px;
             background: rgba(82,183,136,.18);
             color: #74c69d;
-            font-size: .875rem;
-            font-weight: 900;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
         }
-        .advisory-safety-status.needs-help {
-            background: rgba(255,209,102,.16);
-            color: #ffe8a3;
-        }
+        .advisory-safety-status.needs-help { background: rgba(255,209,102,.16); color: #ffe8a3; }
         .advisory-safety-note {
             min-height: 74px;
-            border: 1px solid rgba(255,255,255,.16);
-            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.24);
+            border-radius: 4px;
             background: rgba(255,255,255,.06);
             color: #fff;
-            padding: .7rem .85rem;
+            padding: 10px 12px;
+            font-size: 15px;
         }
-        .advisory-safety-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .6rem;
-        }
-        @media (max-width: 767.98px) {
-            .row.g-3.mb-4 { margin-bottom: 1rem !important; }
-            .advisory-safety-card { padding: .85rem; }
-            .advisory-safety-card h2 { font-size: 1rem; margin: .6rem 0 .3rem; }
-            .advisory-safety-note { min-height: 60px; padding: .6rem .7rem; }
-            .advisory-safety-actions { gap: .45rem; }
-            .advisory-safety-actions .btn { flex: 1 1 auto; }
-            .empty-state.p-5 { padding: 2rem 1rem !important; }
-        }
+        .advisory-safety-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .advisory-safety-actions .btn { min-height: 44px; border-radius: 4px; font-weight: 600; flex: 1 1 auto; }
     </style>
-    <section class="page-hero">
-        <div class="d-flex flex-column flex-xl-row justify-content-between gap-3 align-items-xl-end">
-            <div>
-                <div class="eyebrow mb-2">Forecast-Based Guidance</div>
-                <h1 class="h2 fw-bold mb-2">Farming Advisories</h1>
-                <p class="mb-0" style="color: var(--ic-ink-mid);">View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
-            </div>
-            @if($canManage)
-                <div class="d-flex flex-wrap gap-2 action-cluster">
-                    <a class="btn btn-light" href="{{ route('management.advisories.index') }}">Review Advisories</a>
-                    <a class="btn btn-outline-light" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
-                    <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true">
-                        @csrf
-                        <button class="btn btn-outline-light" type="submit" data-loading-text="Refreshing...">Refresh PAGASA</button>
-                    </form>
-                </div>
-            @else
-                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true" class="action-cluster">
-                    @csrf
-                    <button class="btn btn-light" type="submit" data-loading-text="Refreshing...">Refresh PAGASA</button>
-                </form>
-            @endif
-        </div>
-    </section>
 
-    <div class="row g-3 mb-4">
-        <div class="col-lg-4">
-            <div class="card no-lift h-100">
-                <div class="card-body">
-                    <div class="stat-label">Latest Weather Bureau Update</div>
-                    <div class="h5 fw-bold mt-2 mb-1">{{ $latestPagasaAdvisory?->created_at?->shortDateTime('F d, Y,') ?? 'No PAGASA update for Lian yet' }}</div>
-                    <div class="text-muted small">Source: {{ $latestPagasaAdvisory?->plainSourceLabel() ?: 'PAGASA' }}, for Lian, Batangas</div>
-                    @isset($pagasaSummary)
-                        <details class="text-muted small mt-2">
-                            <summary>View Details</summary>
+    @php
+        $activeFilterCount = collect(['search', 'advisory_type', 'status', 'severity', 'target_barangay'])
+            ->filter(fn ($field) => request()->filled($field))
+            ->count();
+        $pagasaSources = \App\Models\PlantingAdvisory::pagasaOnlineSources();
+        $isPagasa = fn ($advisory) => in_array($advisory->source, $pagasaSources, true);
+        // PAGASA advisories are official; everything iClimate makes from forecast data is labelled as guidance, never as PAGASA.
+        $sourceText = fn ($advisory) => $isPagasa($advisory)
+            ? 'PAGASA (official advisory)'
+            : ($advisory->generated_automatically ? 'iClimate guidance from forecast data' : $advisory->plainSourceLabel());
+        $severityTone = ['information' => 'info', 'low' => 'good', 'moderate' => 'watch', 'high' => 'danger', 'critical' => 'danger'];
+        $severityIcon = ['info' => 'info', 'good' => 'check', 'watch' => 'alert', 'danger' => 'alert'];
+        $statusTone = ['published' => 'good', 'pending_review' => 'watch', 'expired' => 'muted', 'rejected' => 'danger', 'archived' => 'muted'];
+        $statusIcon = ['good' => 'check', 'watch' => 'clock', 'danger' => 'danger', 'muted' => 'info'];
+        $typeKey = fn ($advisory) => strtolower((string) ($advisory->advisory_type ?: $advisory->type));
+        $iCount = max(0, $activeCount - $pagasaAdvisoryCount);
+        // Times are stored in UTC; farmers read them in Lian time.
+        $local = fn ($time) => $time?->copy()->timezone(\App\Support\BusinessClock::timezone());
+    @endphp
+
+    <div class="fad">
+        {{-- 1. Header --}}
+        <header class="fad-hero">
+            <div class="fad-hero-text">
+                <span class="fad-kicker">Forecast-Based Guidance</span>
+                <h1>Farming Advisories</h1>
+                <p>View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
+            </div>
+            <div class="fad-hero-actions">
+                @if($canManage)
+                    <a class="fad-btn is-on-dark" href="{{ route('management.advisories.index') }}">Review Advisories</a>
+                    <a class="fad-btn is-on-dark" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
+                @endif
+                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true">
+                    @csrf
+                    <button class="fad-btn is-light" type="submit" data-loading-text="Refreshing...">@include('dashboards.mao.icon', ['name' => 'refresh'])<span>Refresh PAGASA</span></button>
+                </form>
+            </div>
+        </header>
+
+        {{-- 2. Summary cards --}}
+        <section class="fad-summary" aria-label="Advisory overview">
+            <article class="fad-card">
+                <h2 class="fad-label">Latest Weather Bureau Update</h2>
+                <p class="fad-value">{{ $local($latestPagasaAdvisory?->created_at)?->shortDateTime('F d, Y,') ?? 'No PAGASA update for Lian yet' }}</p>
+                <p class="fad-support">Source: {{ $latestPagasaAdvisory?->plainSourceLabel() ?: 'PAGASA' }}, for Lian, Batangas</p>
+                @isset($pagasaSummary)
+                    <details class="fad-details">
+                        <summary>View Details</summary>
+                        <p class="fad-support">
                             PAGASA pages checked: {{ number_format($pagasaSummary['sources_checked'] ?? 0) }};
                             new updates: {{ number_format($pagasaSummary['advisories_created'] ?? 0) }};
                             none for Lian: {{ number_format($pagasaSummary['sources_without_lian_batangas_match'] ?? 0) }}
-                        </details>
-                    @endisset
+                        </p>
+                    </details>
+                @endisset
+                <div class="fad-card-foot">
                     @if($lastWeather)
-                        <div class="text-muted small mt-2">Weather last updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</div>
+                        <p class="fad-support">{{-- fetched_at is the forecast provider's own reading time, already stored in Lian time (unlike the UTC advisory times). --}}
+                        Weather last updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</p>
                     @endif
                     @if($latestPagasaAdvisory)
-                        <span class="badge text-bg-success mt-2">{{ $latestPagasaAdvisory->plainSourceLabel() }} Active</span>
+                        <span class="fad-badge is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ $latestPagasaAdvisory->plainSourceLabel() }} Active</span></span>
                     @endif
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card no-lift h-100">
-                <div class="card-body">
-                    <div class="stat-label">Active Advisories</div>
-                    <div class="h3 fw-bold mt-2 mb-1">{{ number_format($activeCount) }}</div>
-                    <div class="text-muted small">{{ number_format($pagasaAdvisoryCount) }} of these come from PAGASA.</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
+            </article>
+
+            <article class="fad-card">
+                <h2 class="fad-label">Active Advisories</h2>
+                <p class="fad-kpi">{{ number_format($activeCount) }}</p>
+                <p class="fad-support">{{ number_format($pagasaAdvisoryCount) }} of these come directly from PAGASA.</p>
+                @if($iCount > 0)
+                    <p class="fad-support">{{ number_format($iCount) }} {{ $iCount === 1 ? 'is' : 'are' }} iClimate guidance made from forecast data.</p>
+                @endif
+            </article>
+
             @if($activeTyphoonSafetyEvent)
                 <div class="advisory-safety-card" aria-labelledby="typhoonSafetyTitle">
                     <div class="advisory-safety-eyebrow">Typhoon safety check</div>
@@ -160,142 +145,168 @@
                     <form class="d-grid gap-2 mt-3" method="POST" action="{{ route('typhoon-safety.store') }}" data-loading="true">
                         @csrf
                         <input type="hidden" name="event_key" value="{{ $activeTyphoonSafetyEvent['key'] }}">
-                        <textarea class="advisory-safety-note" name="note" rows="2" placeholder="Optional note for MAO.">{{ old('note', $typhoonSafetyResponse?->note) }}</textarea>
+                        <label class="visually-hidden" for="typhoonSafetyNote">Optional note for MAO</label>
+                        <textarea id="typhoonSafetyNote" class="advisory-safety-note" name="note" rows="2" placeholder="Optional note for MAO.">{{ old('note', $typhoonSafetyResponse?->note) }}</textarea>
                         <div class="advisory-safety-actions">
-                            <button class="btn btn-primary fw-bold rounded-pill px-4" type="submit" name="status" value="safe">I am safe</button>
-                            <button class="btn btn-danger fw-bold rounded-pill px-4" type="submit" name="status" value="needs_help">I need help</button>
+                            <button class="btn btn-primary" type="submit" name="status" value="safe">I am safe</button>
+                            <button class="btn btn-danger" type="submit" name="status" value="needs_help">I need help</button>
                         </div>
                     </form>
                 </div>
             @else
-                <div class="card no-lift h-100">
-                    <div class="card-body">
-                        <div class="stat-label">Safety Reminder</div>
-                        <div class="text-muted mt-2">Generated advisories support planning. Follow official PAGASA online advisories and LGU warnings during severe weather.</div>
-                    </div>
+                <article class="fad-card">
+                    <h2 class="fad-label">Safety Reminder</h2>
+                    <p class="fad-lead">Generated advisories support planning.</p>
+                    <p class="fad-body">Follow official PAGASA online advisories and LGU warnings during severe weather.</p>
+                </article>
+            @endif
+        </section>
+
+        {{-- 3. Filters (open on desktop, collapsed on phones; see bindResponsiveCollapse in app.js) --}}
+        <details class="ic-collapse fad-filters" @if($activeFilterCount) data-force-open="true" @endif>
+            <summary>
+                <span class="fad-label">Filters</span>
+                @if($activeFilterCount)
+                    <span class="fad-count" aria-label="{{ $activeFilterCount }} active {{ $activeFilterCount === 1 ? 'filter' : 'filters' }}">{{ $activeFilterCount }}</span>
+                @endif
+            </summary>
+            <form class="fad-filter-form" method="GET" action="{{ route('planting-advisories.index') }}">
+                <div class="fad-field is-search">
+                    <label class="fad-label" for="fadSearch">Search</label>
+                    <input class="fad-input" id="fadSearch" type="search" name="search" value="{{ request('search') }}" placeholder="Search advisories">
+                </div>
+                <div class="fad-field">
+                    <label class="fad-label" for="fadType">Type</label>
+                    <select class="fad-input" id="fadType" name="advisory_type">
+                        <option value="">All</option>
+                        @foreach($types as $type)
+                            <option value="{{ $type }}" @selected(request('advisory_type') === $type)>{{ str($type)->headline() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fad-field">
+                    <label class="fad-label" for="fadStatus">Status</label>
+                    <select class="fad-input" id="fadStatus" name="status">
+                        <option value="">All</option>
+                        @foreach($statuses as $status)
+                            <option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fad-field">
+                    <label class="fad-label" for="fadSeverity">Severity</label>
+                    <select class="fad-input" id="fadSeverity" name="severity">
+                        <option value="">All</option>
+                        @foreach($severities as $severity)
+                            <option value="{{ $severity }}" @selected(request('severity') === $severity)>{{ str($severity)->headline() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fad-field">
+                    <label class="fad-label" for="fadBarangay">Target Barangay</label>
+                    <select class="fad-input" id="fadBarangay" name="target_barangay">
+                        <option value="">All Barangays</option>
+                        @foreach($barangays as $barangay)
+                            <option value="{{ $barangay }}" @selected(request('target_barangay') === $barangay)>{{ $barangay }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fad-filter-actions">
+                    <button class="fad-btn is-primary" type="submit">Apply Filters</button>
+                    <a class="fad-btn is-quiet" href="{{ route('planting-advisories.index') }}">Reset</a>
+                </div>
+            </form>
+        </details>
+
+        {{-- 4. Advisories: compact cards. "View" opens the full advisory in a popup (farmer-advisories.js);
+             without JavaScript, or with Ctrl/Cmd-click, it is a normal link to the advisory page. --}}
+        <section class="fad-list" aria-labelledby="fadListTitle">
+            <div class="fad-list-head">
+                <h2 id="fadListTitle">Available Advisories</h2>
+                @if($advisories->total() > 0)
+                    <p class="fad-support">Showing {{ $advisories->firstItem() }}–{{ $advisories->lastItem() }} of {{ $advisories->total() }}</p>
+                @endif
+            </div>
+
+            @if($advisories->count())
+                <ul class="fad-cards">
+                    @foreach($advisories as $advisory)
+                        @php
+                            $sev = $severityTone[$advisory->severity] ?? 'info';
+                            $st = $statusTone[$advisory->status] ?? 'muted';
+                            $issued = $local($advisory->created_at);
+                        @endphp
+                        <li class="fad-acard">
+                            <div class="fad-acard-tags">
+                                <span class="fad-badge is-type" data-type="{{ $typeKey($advisory) }}">{{ $advisory->typeLabel() }}</span>
+                                <span class="fad-badge is-{{ $sev }}">@include('dashboards.mao.icon', ['name' => $severityIcon[$sev]])<span>{{ $advisory->severityLabel() }}</span></span>
+                                <span class="fad-badge is-{{ $st }} is-status">@include('dashboards.mao.icon', ['name' => $statusIcon[$st]])<span>{{ $advisory->statusLabel() }}</span></span>
+                            </div>
+                            <h3 class="fad-title">{{ $advisory->title }}</h3>
+                            <p class="fad-summary-text">{{ $advisory->displaySummary() }}</p>
+                            <dl class="fad-acard-facts">
+                                <div><dt>Applies to</dt><dd>{{ $advisory->targetLabel() }}</dd></div>
+                                <div><dt>Valid until</dt><dd>{{ $advisory->valid_until ? $local($advisory->valid_until)->format('M j, Y · g:i A') : 'Open' }}</dd></div>
+                            </dl>
+                            <div class="fad-acard-foot">
+                                <p class="fad-meta"><span class="fad-source {{ $isPagasa($advisory) ? 'is-official' : '' }}">{{ $sourceText($advisory) }}</span>@if($issued)<span>Issued {{ $issued->format('M j, Y') }}</span>@endif</p>
+                                {{-- data-fast-nav-bound: the site's link prefetch / page-fade (app.js) skips this link; the popup handles it. --}}
+                                <a class="fad-btn is-primary fad-view" href="{{ route('planting-advisories.show', $advisory) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog" aria-label="View advisory: {{ $advisory->title }}">View</a>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+
+                @if($advisories->hasPages())
+                    <div class="fad-pages">{{ $advisories->links() }}</div>
+                @endif
+            @elseif($activeFilterCount)
+                <div class="fad-empty">
+                    <p class="fad-lead">No advisories match these filters.</p>
+                    <p class="fad-body">Try a different type, severity or barangay, or clear the filters to see everything.</p>
+                    <a class="fad-btn is-quiet" href="{{ route('planting-advisories.index') }}">Reset Filters</a>
+                </div>
+            @else
+                <div class="fad-empty">
+                    <p class="fad-lead">No active advisories are available for your location.</p>
+                    <p class="fad-body">New advice will appear here when the weather calls for it.</p>
                 </div>
             @endif
-        </div>
+        </section>
+
     </div>
 
-    @php
-        $activeFilterCount = collect(['search', 'advisory_type', 'status', 'severity', 'target_barangay'])
-            ->filter(fn ($field) => request()->filled($field))
-            ->count();
-    @endphp
-    <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
-        <summary>
-            <span class="ic-collapse-title">
-                Filters
-                @if($activeFilterCount)
-                    <span class="ic-collapse-count">{{ $activeFilterCount }}</span>
-                @endif
-            </span>
-        </summary>
-        <div class="card filter-panel no-lift mb-4">
-            <div class="card-body">
-                <form class="row g-3 align-items-end" method="GET">
-                    <div class="col-lg-3">
-                        <label class="form-label">Search</label>
-                        <input class="form-control form-control-lg" name="search" value="{{ request('search') }}" placeholder="Search advisories">
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label">Type</label>
-                        <select class="form-select form-select-lg" name="advisory_type">
-                            <option value="">All</option>
-                            @foreach($types as $type)
-                                <option value="{{ $type }}" @selected(request('advisory_type') === $type)>{{ str($type)->headline() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-select form-select-lg" name="status">
-                            <option value="">All</option>
-                            @foreach($statuses as $status)
-                                <option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label">Severity</label>
-                        <select class="form-select form-select-lg" name="severity">
-                            <option value="">All</option>
-                            @foreach($severities as $severity)
-                                <option value="{{ $severity }}" @selected(request('severity') === $severity)>{{ str($severity)->headline() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-sm-6 col-lg-2">
-                        <label class="form-label">Target Barangay</label>
-                        <select class="form-select form-select-lg" name="target_barangay">
-                            <option value="">All Barangays</option>
-                            @foreach($barangays as $barangay)
-                                <option value="{{ $barangay }}" @selected(request('target_barangay') === $barangay)>{{ $barangay }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-lg-auto d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-lg" type="submit">Apply</button>
-                        <a class="btn btn-outline-secondary btn-lg" href="{{ route('planting-advisories.index') }}">Reset</a>
-                    </div>
-                </form>
+    {{-- Outside .fad on purpose: .fad is a size container, which would trap a fixed-position popup inside it. One popup for every advisory; its content comes from the advisory page (?modal=1). --}}
+    <div class="fad-modal" data-fad-modal hidden>
+        <div class="fad-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="fadModalTitle" data-fad-dialog tabindex="-1"></div>
+        <template id="fadModalLoading">
+            <header class="fad-m-head">
+                <div class="fad-m-head-text">
+                    <p class="fad-label">Advisory</p>
+                    <h2 id="fadModalTitle" tabindex="-1">Loading advisory details…</h2>
+                </div>
+                <button type="button" class="fad-m-x" data-fad-close aria-label="Close advisory"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </header>
+            <div class="fad-m-scroll" aria-busy="true">
+                <div class="fad-skel is-wide"></div><div class="fad-skel"></div><div class="fad-skel is-short"></div>
+                <div class="fad-skel is-block"></div>
             </div>
-        </div>
-    </details>
-
-    @if($advisories->count())
-        <div class="card no-lift">
-            <div class="table-responsive ic-table-hide-mobile">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Applies To</th>
-                            <th>Severity</th>
-                            <th>Valid Until</th>
-                            <th>Status</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($advisories as $advisory)
-                            <tr>
-                                <td><div class="fw-bold">{{ $advisory->title }}</div><div class="small text-muted">{{ $advisory->displaySummary() }}</div><div class="small text-muted">{{ $advisory->horizonLabel() }} &middot; {{ $advisory->plainSourceLabel() }}</div></td>
-                                <td><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></td>
-                                <td>{{ $advisory->targetLabel() }}</td>
-                                <td><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></td>
-                                <td>{{ $advisory->valid_until?->shortDateTime() ?? 'Open' }}</td>
-                                <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
-                                <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a></td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+        </template>
+        <template id="fadModalError">
+            <header class="fad-m-head">
+                <div class="fad-m-head-text">
+                    <p class="fad-label">Advisory</p>
+                    <h2 id="fadModalTitle" tabindex="-1">Unable to load advisory details.</h2>
+                </div>
+                <button type="button" class="fad-m-x" data-fad-close aria-label="Close advisory"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </header>
+            <div class="fad-m-scroll">
+                <div class="fad-m-note is-danger" role="alert"><strong>Something went wrong.</strong><span>Please check your connection and try again.</span></div>
             </div>
-            <div class="card-body ic-table-cards">
-                @foreach($advisories as $advisory)
-                    <div class="ic-table-card">
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Title</div><div class="ic-table-card-value fw-bold">{{ $advisory->title }}<div class="small text-muted fw-normal">{{ $advisory->displaySummary() }}</div></div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Type</div><div class="ic-table-card-value"><span class="badge {{ $advisory->typeBadgeClass() }}">{{ $advisory->typeLabel() }}</span></div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Period</div><div class="ic-table-card-value"><span class="badge text-bg-light">{{ $advisory->horizonLabel() }}</span></div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Target</div><div class="ic-table-card-value">{{ $advisory->targetLabel() }}</div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Severity</div><div class="ic-table-card-value"><span class="badge {{ $advisory->severityBadgeClass() }}">{{ $advisory->severityLabel() }}</span></div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Valid Until</div><div class="ic-table-card-value">{{ $advisory->valid_until?->format('M d, Y g:i A') ?? 'Open' }}</div></div>
-                        <div class="ic-table-card-row"><div class="ic-table-card-label">Status</div><div class="ic-table-card-value"><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></div></div>
-                        <div class="ic-table-card-actions">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-            <div class="card-body border-top d-flex justify-content-end">{{ $advisories->links() }}</div>
-        </div>
-    @else
-        <div class="empty-state text-center p-5">
-            <div class="h5 mb-2">No active advisories are available for your location.</div>
-            <p class="text-muted mb-0">New advice will appear here when the weather calls for it.</p>
-        </div>
-    @endif
+            <footer class="fad-m-foot">
+                <button type="button" class="fad-btn is-primary" data-fad-retry>Retry</button>
+                <button type="button" class="fad-btn is-quiet" data-fad-close>Close</button>
+            </footer>
+        </template>
+    </div>
 </x-app-layout>

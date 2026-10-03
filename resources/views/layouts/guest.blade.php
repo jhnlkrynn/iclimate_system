@@ -81,6 +81,7 @@
       .login-panel-right { padding: 32px 24px; min-height: 100vh; }
     }
   </style>
+    @include('partials.global-loader')
 </head>
 <body class="login-page">
 

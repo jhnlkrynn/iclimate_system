@@ -6,7 +6,7 @@
 
 const TIMEZONE = 'Asia/Manila';
 const REFRESH_EVERY_MS = 300000;
-const FONT = '"Public Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif';
+const FONT = '"Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif';
 
 // Palette (matches the page's status colours; every series also differs by shape or dash, never by colour alone).
 const COLORS = { brand: '#0f5132', accent: '#198754', rain: '#1f6fb2', danger: '#c0392b', muted: '#5b6660', grid: '#e3e8e5' };

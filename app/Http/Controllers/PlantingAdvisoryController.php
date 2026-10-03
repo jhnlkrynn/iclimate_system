@@ -48,7 +48,8 @@ class PlantingAdvisoryController extends Controller
             'advisories-index',
             60,
             fn (): array => $this->indexData($request, $typhoonSafety),
-            \App\Support\PageCache::queryVary($request, ['page', 'type', 'severity', 'status', 'barangay', 'search', 'q']),
+            // Every filter the page's form sends must be listed, or a filtered request is served the unfiltered page.
+            \App\Support\PageCache::queryVary($request, ['page', 'type', 'advisory_type', 'severity', 'status', 'barangay', 'target_barangay', 'search', 'q']),
         ));
     }
 
@@ -58,17 +59,24 @@ class PlantingAdvisoryController extends Controller
     private function indexData(Request $request, TyphoonSafetyService $typhoonSafety): array
     {
         $pagasaSummary = ['advisories_created' => 0, 'errors' => []];
-        $query = $this->filteredQuery($request)
-            ->when($request->user()->role === User::ROLE_FARMER, function ($query) use ($request) {
-                $query->active()->forBarangay($request->user()->barangay);
-            });
-        $activeTyphoonSafetyEvent = $request->user()->role === User::ROLE_FARMER
+        $isFarmer = $request->user()->role === User::ROLE_FARMER;
+        // A farmer sees what is active for their barangay, newest forecast run only (older runs of the same rule stay in the table).
+        $farmerScope = fn ($query) => $query->active()->forBarangay($request->user()->barangay)->latestRuns();
+        $query = $this->filteredQuery($request)->when($isFarmer, $farmerScope);
+        $activeTyphoonSafetyEvent = $isFarmer
             ? $typhoonSafety->activeEvent()
             : null;
+        $summary = Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']);
+
+        if ($isFarmer) {
+            // The farmer's own count, so the card matches the list below it.
+            $summary['activeCount'] = $farmerScope(PlantingAdvisory::query())->count();
+            $summary['pagasaAdvisoryCount'] = $farmerScope(PlantingAdvisory::query())->fromPagasaOnline()->count();
+        }
 
         return [
             'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
-            ...Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']),
+            ...$summary,
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
             'typhoonSafetyResponse' => \App\Support\SchemaCache::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
                 ? TyphoonSafetyResponse::query()
@@ -78,7 +86,8 @@ class PlantingAdvisoryController extends Controller
                 : null,
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,
-            'statuses' => self::STATUSES,
+            // Farmers only ever see published advisories, so the other statuses would always return nothing.
+            'statuses' => $isFarmer ? [PlantingAdvisory::STATUS_PUBLISHED] : self::STATUSES,
             'barangays' => LianBarangays::all(),
             'canManage' => $this->canManage($request),
             'pagasaSummary' => $pagasaSummary,
@@ -177,7 +186,9 @@ class PlantingAdvisoryController extends Controller
             $plantingAdvisory->setRelation('feedback', collect());
         }
 
-        return view('advisories.show', [
+        // The Advisories page opens an advisory in a popup (?modal=1): the same data, without the page layout.
+        // A separate URL, so a browser never shows the popup body in place of the full page.
+        return view($request->boolean('modal') ? 'advisories._modal' : 'advisories.show', [
             'advisory' => $plantingAdvisory,
             'canManage' => $this->canManage($request),
             'verification' => $verification->score($plantingAdvisory),
@@ -384,12 +395,11 @@ class PlantingAdvisoryController extends Controller
 
     public function refreshPagasa(Request $request, PagasaAdvisoryService $pagasa): RedirectResponse
     {
-        $this->authorizeManage($request);
-
-        // Fetch the PAGASA pages right now. This used to only queue a Python
-        // "advisory_ai" job, which never called PAGASA and needed a queue
+        // Anyone signed in may refresh (the route is throttled). MAO and IT always fetch the PAGASA pages again;
+        // a farmer reuses a fetch from the last few minutes (services.pagasa.cache_minutes) so PAGASA is not hammered.
+        // This used to only queue a Python "advisory_ai" job, which never called PAGASA and needed a queue
         // worker plus the ML service to be running.
-        $summary = $pagasa->fetchAndStore(true);
+        $summary = $pagasa->fetchAndStore($this->canManage($request));
 
         if (! empty($summary['errors']) && $summary['sources_checked'] === count($summary['errors'])) {
             return redirect()->route('planting-advisories.index')

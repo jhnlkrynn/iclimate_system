@@ -676,7 +676,7 @@ class FarmerDashboardTest extends TestCase
         foreach (['Rain (mm)', 'Temperature (°C)', 'Month', 'Day'] as $axisTitle) {
             $this->assertStringContainsString("axisText('$axisTitle')", $js);
         }
-        $this->assertStringContainsString('"Public Sans"', $js);                                 // the chart library's font
+        $this->assertStringContainsString('"Inter"', $js);                                       // the chart library's font
         $this->assertStringContainsString('C.defaults.font.family = FONT', $js);
     }
 
@@ -1212,40 +1212,42 @@ class FarmerDashboardTest extends TestCase
         }
     }
 
-    public function test_public_sans_is_loaded_and_is_the_only_family_on_the_page(): void
+    public function test_georgia_titles_and_inter_text_are_the_only_families_on_the_page(): void
     {
         $html = $this->page($this->farmer())->getContent();
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
         $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
 
-        $this->assertStringContainsString('family=Public+Sans:wght@400;500;600;700', $html);   // only the four weights
+        $this->assertStringContainsString('family=Inter:wght@', $html);
         $this->assertStringContainsString('class="is-farmer-dashboard"', $html);
-        $this->assertStringContainsString('"Public Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $css);
+        $this->assertStringContainsString('--mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;', $css);
+        $this->assertStringContainsString('--mfd-serif: Georgia, "Times New Roman", Times, serif;', $css);         // page and section titles
         $this->assertStringContainsString('font-variant-numeric: tabular-nums', $css);
-        $this->assertStringContainsString('"Public Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif', $js);
+        $this->assertStringContainsString('"Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif', $js);
         $this->assertStringNotContainsString('DM Serif', $css);
         $this->assertStringNotContainsString('DM Mono', $css);
-        $this->assertDoesNotMatchRegularExpression('/font-family:\s*+(?!"Public Sans"|var)/', preg_replace('#/\*.*?\*/#s', '', $css));
+        $this->assertDoesNotMatchRegularExpression('/font-family:\s*+(?!var\(--mfd-)/', preg_replace('#/\*.*?\*/#s', '', $css));
     }
 
     public function test_the_type_scale_and_colours_follow_the_design_system(): void
     {
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
 
-        $this->assertMatchesRegularExpression('/\.mfd h1 \{ font-size: 1\.75rem; font-weight: 700; \}/', $css);        // greeting 28px
-        $this->assertMatchesRegularExpression('/\.mfd h2 \{ font-size: 1\.125rem; font-weight: 600; \}/', $css);      // section title 18px
-        $this->assertMatchesRegularExpression('/\.mfd-kpi-value \{[^}]*font-size: 2rem; font-weight: 700/', $css);    // KPI number 32px
+        $this->assertMatchesRegularExpression('/\.mfd h1 \{ font-size: 2rem; font-weight: 700; \}/', $css);           // page title 32px
+        $this->assertMatchesRegularExpression('/\.mfd h2 \{ font-size: 1\.5rem; font-weight: 700; \}/', $css);        // section title 24px
+        $this->assertMatchesRegularExpression('/\.mfd-kpi-value \{[^}]*font-size: 1\.75rem; font-weight: 700/', $css); // KPI number 28px
+        $this->assertMatchesRegularExpression('/\.mfd-kpi-label[^{]*\{[^}]*font-size: \.8125rem; font-weight: 600;[^}]*text-transform: uppercase; letter-spacing: 1px/', $css); // labels 13px caps
         $this->assertMatchesRegularExpression('/font-size: 1rem; line-height: 1\.5;/', $css);                           // body 16px, 1.5 line height
         $this->assertMatchesRegularExpression('/\.mfd h1, \.mfd h2, \.mfd h3 \{[^}]*line-height: 1\.2;/', $css);
         $this->assertStringContainsString('@media (max-width: 640px)', $css);
-        $this->assertStringContainsString('.mfd h1 { font-size: 1.375rem; }', $css);                                    // greeting 22px on a phone
-        $this->assertStringContainsString('.mfd-kpi-value { font-size: 1.625rem; }', $css);                             // KPI number 26px on a phone
+        $this->assertStringContainsString('.mfd h1 { font-size: 1.625rem; }', $css);                                    // page title 26px on a phone
+        $this->assertStringContainsString('.mfd-kpi-value { font-size: 1.5rem; }', $css);                               // KPI number 24px on a phone
         foreach (['#0f5132', '#198754', '#f5f7f6', '#e3e8e5', '#1b1f1d', '#5b6660', '#b7791f', '#c0392b', '#1f6fb2'] as $color) {
             $this->assertStringContainsString($color, $css, $color);
         }
         preg_match_all('/font-size: ([\d.]+)rem/', $css, $sizes);
         foreach ($sizes[1] as $rem) {
-            $this->assertGreaterThanOrEqual(0.8125, (float) $rem, 'no text under 13px');
+            $this->assertGreaterThanOrEqual(0.75, (float) $rem, 'no text under 12px (badges)');
         }
     }
 
@@ -1253,7 +1255,7 @@ class FarmerDashboardTest extends TestCase
     {
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
 
-        $this->assertStringContainsString('max-width: 1280px', $css);
+        $this->assertStringContainsString('max-width: 1680px', $css);                           // fills a 1728px-wide screen
         $this->assertStringContainsString('.mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }', $css);   // two columns on a phone
         $this->assertStringContainsString('.mfd-today { display: grid;', $css);
         $this->assertStringContainsString('grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch', $css);        // side by side on a desktop

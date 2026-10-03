@@ -27,6 +27,20 @@ class NotificationController extends CrudController
 
     protected array $filterable = ['type' => ['Announcement', 'Advisory', 'Warning'], 'is_read' => [0 => 'Unread', 1 => 'Read']];
 
+    protected bool $farmerPages = true;
+
+    protected string $farmerSortColumn = 'created_at';
+
+    protected function farmerIndexData(Request $request, Builder $filtered): array
+    {
+        $all = $this->baseQuery($request);
+
+        return [
+            'unreadCount' => (clone $all)->where('is_read', false)->count(),
+            'totalCount' => (clone $all)->count(),
+        ];
+    }
+
     public function __construct()
     {
         $this->fields = [

@@ -2,6 +2,11 @@
 @import 'leaflet/dist/leaflet.css';
 @import './animations.css';
 @import './farmer-dashboard.css';
+@import './farmer-advisories.css';
+@import './farmer-calendar.css';
+@import './farmer-records.css';
+@import './farmer-messages.css';
+@import './farmer-predictions.css';
 
 @tailwind base;
 @tailwind components;
