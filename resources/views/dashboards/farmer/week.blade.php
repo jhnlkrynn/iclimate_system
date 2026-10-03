@@ -33,12 +33,14 @@
                         @if ($day['chance'] !== null)<li>{{ __('farmer.week.chance', ['percent' => number_format($day['chance'], 0)]) }}</li>@endif
                         @if ($day['rain'] !== null)<li>{{ \App\Services\Analytics\FarmerKpiService::formatRain($day['rain']) }} mm</li>@endif
                     </ul>
-                    @if ($day['good'])
-                        <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ __('farmer.week.good_day') }}</span></span>
-                    @endif
-                    @foreach ($day['flags'] as $flag)
-                        <span class="mfd-pill is-watch">@include('dashboards.mao.icon', ['name' => 'alert'])<span>{{ __('farmer.week.flag_'.$flag) }}</span></span>
-                    @endforeach
+                    <div class="mfd-day-tags">
+                        @if ($day['good'])
+                            <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ __('farmer.week.good_day') }}</span></span>
+                        @endif
+                        @foreach ($day['flags'] as $flag)
+                            <span class="mfd-pill is-watch">@include('dashboards.mao.icon', ['name' => 'alert'])<span>{{ __('farmer.week.flag_'.$flag) }}</span></span>
+                        @endforeach
+                    </div>
                 </li>
             @endforeach
         </ol>

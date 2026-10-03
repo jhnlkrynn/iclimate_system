@@ -1,0 +1,72 @@
+/*
+ * Messages page for farmers (resources/views/messages/index.blade.php wraps itself in .fad.fmsg for farmers only).
+ * Restyles the page's own markup to the farmer design system; the IDs, data attributes and script are untouched,
+ * and MAO / IT keep the page's original look.
+ */
+
+.fmsg .msg-wrap { --msg-ink: var(--ink); --msg-muted: var(--muted); --msg-line: var(--line); color: var(--ink); }
+.fmsg-private { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; font-size: .875rem; font-weight: 600; color: #b9e4cb; }
+.fmsg-private .mtd-svg { width: 16px; height: 16px; }
+
+/* two panels: conversations | conversation */
+.fmsg .msg-shell { margin-top: 0; gap: var(--gap); grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); min-height: clamp(560px, calc(100vh - 260px), 820px); }
+.fmsg .msg-panel { border: 1px solid var(--rule); border-radius: 6px; background: var(--card); box-shadow: none; }
+.fmsg .msg-head { padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+.fmsg .msg-head h2 { font-family: var(--serif) !important; font-size: 1.375rem; font-weight: 700; color: var(--ink); }
+
+/* search and role tabs */
+.fmsg .msg-search-input { min-height: 44px; border: 1px solid var(--field); border-radius: 4px; font-size: .9375rem; }
+.fmsg .msg-search-input:focus { border-color: var(--brand); outline: 3px solid rgba(31, 111, 178, .35); outline-offset: 1px; }
+.fmsg .msg-search-results { border-color: var(--rule); border-radius: 4px; }
+.fmsg .msg-search-result { min-height: 44px; }
+.fmsg .msg-search-result:hover { background: var(--good-bg); }
+.fmsg .msg-tab { min-height: 36px; border-color: var(--rule); border-radius: 4px; color: var(--ink); font-size: .875rem; font-weight: 600; }
+.fmsg .msg-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+/* conversation list */
+.fmsg .thread-link { padding: 14px 20px; border-bottom: 1px solid var(--line); border-left: 4px solid transparent; }
+.fmsg .thread-link:hover { background: var(--subtle); }
+.fmsg .thread-link.active { background: #f1f8f4; border-left-color: var(--brand); }
+.fmsg .thread-link:focus-visible { outline: 3px solid var(--info); outline-offset: -3px; }
+.fmsg .thread-name { font-size: 1rem; font-weight: 600 !important; color: var(--ink); }
+.fmsg .thread-link.unread .thread-name, .fmsg .thread-link.unread .thread-preview { font-weight: 700 !important; color: var(--ink); }
+.fmsg .thread-time { font-family: var(--sans); font-size: .8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fmsg .thread-preview { font-size: .875rem; }
+.fmsg .unread-badge { min-width: 22px; min-height: 22px; border-radius: 999px; background: var(--brand); font-family: var(--sans); font-size: .75rem; font-weight: 600; }
+.fmsg .avatar { width: 40px; height: 40px; background: var(--good-bg); border: 1px solid var(--good-line); color: var(--brand); font-family: var(--sans); font-weight: 700; }
+.fmsg .avatar-status.online { background: var(--good); }
+.fmsg .msg-list-empty { padding: 20px !important; font-size: .9375rem; line-height: 1.5; color: var(--muted) !important; }
+.fmsg .msg-list-empty strong { display: block; margin-bottom: 4px; font-size: 1rem; color: var(--ink); }
+
+/* conversation */
+.fmsg .msg-back-link { min-height: 44px; color: var(--brand); font-size: .9375rem; font-weight: 600; }
+.fmsg .chat-window { padding: 20px; background: var(--subtle); }
+.fmsg .bubble { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 1rem; line-height: 1.5; }
+.fmsg .mine .bubble { background: var(--brand); border-color: var(--brand); }
+.fmsg .msg-meta { font-family: var(--sans); font-size: .8125rem; letter-spacing: 0; }
+.fmsg .msg-check.seen { color: #b9e4cb; }
+.fmsg .msg-unsend { min-height: 32px; border-radius: 4px; font-family: var(--sans); font-size: .8125rem; font-weight: 600; }
+.fmsg .msg-typing { font-family: var(--sans); font-size: .875rem; }
+.fmsg .msg-compose-wrap { padding: 16px 20px; background: var(--card); border-top: 1px solid var(--line); }
+.fmsg .msg-compose { min-height: 52px; border: 1px solid var(--field); border-radius: 6px; padding: 4px 6px 4px 8px; }
+.fmsg .msg-compose:focus-within { border-color: var(--brand); outline: 3px solid rgba(31, 111, 178, .25); outline-offset: 1px; }
+.fmsg .compose-icon-btn { width: 40px; height: 40px; border-radius: 4px; }
+.fmsg .compose-send { width: 44px; height: 44px; border-radius: 4px; background: var(--brand); }
+.fmsg .compose-send:hover { background: #0b3d26; }
+.fmsg .compose-file-chip { border-radius: 4px; }
+.fmsg .emoji-popover { border-color: var(--rule); border-radius: 6px; }
+.fmsg .msg-empty { padding: 32px; }
+.fmsg .msg-empty h2 { font-family: var(--serif) !important; font-size: 1.5rem !important; font-weight: 700; color: var(--ink) !important; }
+.fmsg .msg-empty p { max-width: 46ch; font-size: 1rem; }
+.fmsg .alert-success { border-radius: 6px; border: 1px solid var(--good-line); border-left: 4px solid var(--good); background: var(--good-bg); color: var(--ink); }
+
+@media (max-width: 1199.98px) {
+    .fmsg .msg-shell { grid-template-columns: minmax(0, 1fr); min-height: auto; gap: 16px; }
+}
+@media (max-width: 767.98px) {
+    .fmsg .msg-head, .fmsg .thread-link { padding: 12px 16px; }
+    .fmsg .chat-window { padding: 12px; }
+    .fmsg .msg-compose-wrap { padding: 12px; }
+    .fmsg .msg-empty h2 { font-size: 1.25rem !important; }
+    .fmsg .fad-hero-actions { flex-direction: row; flex-wrap: wrap; }
+}

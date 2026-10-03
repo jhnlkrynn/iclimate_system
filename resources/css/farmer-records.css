@@ -1,0 +1,109 @@
+/*
+ * Farmer record pages: Climate Records, Rice Production and Notifications (resources/views/farmer-records/*),
+ * plus their detail page. Built on the farmer design system in farmer-advisories.css (.fad tokens, header, buttons,
+ * badges, filters, empty states); only page parts live here. Staff (MAO, IT) keep the shared crud views.
+ */
+
+/* ------------------------------------------------------------ KPI row */
+.frec-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@container fad (min-width: 900px) { .frec-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container fad (max-width: 459.98px) { .frec-kpis { grid-template-columns: minmax(0, 1fr); } }
+.frec-kpi { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 20px 24px; background: var(--card); border: 1px solid var(--rule); border-top: 3px solid var(--brand); border-radius: 6px; }
+.frec-kpi .fad-label { margin-bottom: 2px; }
+.frec-kpi-value { display: flex; align-items: baseline; gap: 6px; font-size: 1.75rem; font-weight: 700; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
+.frec-kpi-value small { font-size: .9375rem; font-weight: 600; color: var(--muted); }
+
+/* ------------------------------------------------------------ panels */
+.frec-panel { display: grid; gap: 16px; min-width: 0; padding: 24px; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; }
+.frec-panel-head { display: grid; gap: 4px; padding-bottom: 12px; border-bottom: 2px solid var(--brand); }
+.frec-panel-head.is-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+.frec-panel-head h2 { font-family: var(--serif) !important; font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: var(--ink); }
+.frec-takeaway { font-size: 1rem; font-weight: 600; color: var(--ink); }
+.frec-note { display: grid; gap: 6px; padding: 16px 20px; background: var(--subtle); border: 1px solid var(--line); border-left: 4px solid var(--info); border-radius: 6px; }
+.frec-note a { color: var(--brand); font-weight: 600; }
+
+/* ------------------------------------------------------------ comparison bars (real values, drawn to one scale) */
+.frec-bars { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.frec-bars li { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr) 96px; align-items: center; gap: 12px; }
+.frec-bar-label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .875rem; font-weight: 600; color: var(--ink); }
+.frec-bar { height: 18px; border-radius: 2px; background: #eef2ef; overflow: hidden; }
+.frec-bar > i { display: block; height: 100%; background: var(--info); }
+.frec-bars.is-yield .frec-bar > i { background: #7fa892; }
+.frec-bars li.is-mine .frec-bar > i { background: var(--brand); }
+.frec-bar-value { font-size: .875rem; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+@container fad (max-width: 599.98px) {
+    .frec-bars li { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+    .frec-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ------------------------------------------------------------ table (wide) / cards (narrow) */
+.frec-table-wrap { border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.frec-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+.frec-table th, .frec-table td { padding: 14px 16px; text-align: left; vertical-align: middle; border-top: 1px solid var(--line); color: var(--ink); }
+.frec-table thead th { border-top: 0; background: var(--head-bg); font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--head); white-space: nowrap; }
+.frec-table tbody th { font-weight: 600; white-space: nowrap; }
+.frec-table tbody tr:nth-child(even) > * { background: #fbfcfb; }
+.frec-table tbody tr.is-mine > * { background: #f1f8f4; }
+.frec-table .is-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.frec-table .is-end { text-align: right; white-space: nowrap; }
+.frec-table .is-end form { display: inline; margin: 0; }
+.frec-cards { display: none; margin: 0; padding: 0; list-style: none; }
+.frec-card { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+.frec-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.frec-card-head h3 { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.frec-facts, .frec-detail { margin: 0; border-top: 1px solid var(--line); }
+.frec-facts > div, .frec-detail > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.frec-facts dt, .frec-detail dt { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.frec-facts dd, .frec-detail dd { margin: 0; font-size: .9375rem; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.frec-card .fad-btn { width: 100%; }
+@container fad (max-width: 899.98px) {
+    .frec-table-wrap { display: none; }
+    .frec-cards { display: grid; gap: 12px; }
+}
+@container fad (min-width: 600px) and (max-width: 899.98px) { .frec-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* detail page */
+.frec-detail > div { padding: 12px 0; }
+.frec-detail dd { font-size: 1rem; }
+.frec-message { font-size: 1rem; line-height: 1.6; white-space: pre-line; color: var(--ink); max-width: 75ch; }
+
+/* ------------------------------------------------------------ notifications */
+.frec-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.frec-tab {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 18px; border: 1px solid var(--rule); border-radius: 6px;
+    background: var(--card); color: var(--ink); font-size: .9375rem; font-weight: 600; text-decoration: none;
+}
+.frec-tab:hover { border-color: var(--brand); color: var(--brand); }
+.frec-tab.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.frec-tab:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
+.frec-tab-count { font-size: .8125rem; font-weight: 600; opacity: .8; font-variant-numeric: tabular-nums; }
+.frec-tab.is-active .fad-count { background: #fff; color: var(--brand); }
+.frec-notes { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.frec-noteitem { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 16px 12px; border-bottom: 1px solid var(--line); }
+.frec-noteitem.is-unread { background: #f4faf6; box-shadow: inset 4px 0 0 var(--brand); }
+.frec-note-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--rule); background: var(--subtle); color: var(--brand); }
+.frec-note-icon[data-type="warning"] { color: var(--watch-ink); background: var(--watch-bg); border-color: var(--watch-line); }
+.frec-note-icon[data-type="advisory"] { color: var(--info-ink); background: var(--info-bg); border-color: var(--info-line); }
+.frec-note-body { display: grid; gap: 6px; min-width: 0; }
+.frec-note-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.frec-note-title { font-size: 1rem; font-weight: 500; line-height: 1.35; }
+.frec-noteitem.is-unread .frec-note-title { font-weight: 700; }
+.frec-note-title a { color: var(--ink); text-decoration: none; }
+.frec-note-title a:hover { color: var(--brand); text-decoration: underline; }
+.frec-note-title a:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
+.frec-note-text { font-size: .9375rem; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
+.frec-note-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.frec-note-actions form { margin: 0; }
+@container fad (max-width: 639.98px) {
+    .frec-noteitem { grid-template-columns: 40px minmax(0, 1fr); }
+    .frec-note-actions { grid-column: 1 / -1; justify-content: stretch; }
+    .frec-note-actions > *, .frec-note-actions .fad-btn { flex: 1 1 auto; }
+}
+
+@media (max-width: 767.98px) {
+    .frec-panel { padding: 16px; }
+    .frec-panel-head h2 { font-size: 1.25rem; }
+    .frec-kpi { padding: 16px; }
+    .frec-kpi-value { font-size: 1.5rem; }
+    .frec-tab { flex: 1 1 auto; justify-content: center; }
+}

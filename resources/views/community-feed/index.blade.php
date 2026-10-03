@@ -990,6 +990,22 @@
     </style>
 
     <div class="feed-wrap">
+        @if(auth()->user()->role === \App\Models\User::ROLE_FARMER)
+            {{-- Farmers get the same header as the other farmer pages (.fad-hero, farmer-advisories.css); MAO and IT keep the original. --}}
+            <div class="fad is-header-only">
+                <header class="fad-hero">
+                    <div class="fad-hero-text">
+                        <span class="fad-kicker">Community Feed</span>
+                        <h1>Community</h1>
+                        <p>MAO news and farmer discussions. Read MAO posts, react, and leave comments.</p>
+                    </div>
+                    <div class="fad-hero-actions">
+                        <span class="fad-hero-note">@include('dashboards.mao.icon', ['name' => 'check'])<span>MAO Updates</span></span>
+                        <a href="{{ route('messages.index') }}" class="fad-btn is-light">Open Messages</a>
+                    </div>
+                </header>
+            </div>
+        @else
         <section class="feed-hero">
             <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
                 <div>
@@ -1003,6 +1019,7 @@
                 </div>
             </div>
         </section>
+        @endif
 
         @if(session('success'))
             <div class="alert alert-success mt-3">{{ session('success') }}</div>

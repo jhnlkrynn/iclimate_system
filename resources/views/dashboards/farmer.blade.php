@@ -10,7 +10,7 @@
         data-text-refreshing="{{ __('farmer.header.refreshing') }}" data-text-refresh="{{ __('farmer.header.refresh') }}"
         data-text-failed="{{ __('farmer.state.refresh_failed') }}" data-text-offline="{{ __('farmer.state.offline') }}" data-text-seeing="{{ __('farmer.state.seeing_from') }}"
         data-text-updated="{{ __('farmer.state.updated_announce') }}" data-text-old="{{ __('farmer.header.old_data') }}"
-        data-font="Public Sans">
+        data-font="Inter">
         {{-- Read out by screen readers after a refresh; the sections themselves are not live, so a refresh does not re-read the page. --}}
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden>

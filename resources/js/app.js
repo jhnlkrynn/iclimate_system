@@ -10,6 +10,7 @@ import { initUiEnhancements } from './ui-enhancements';
 import { registerChartExplainer } from './chart-explainer';
 import '../css/chart-explainer.css';
 import { initFarmerDashboard } from './farmer-dashboard';
+import { initAdvisoryModal } from './farmer-advisories';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -176,6 +177,7 @@ function initApp() {
     bindStatDrawers();
     initUiEnhancements(document);
     initFarmerDashboard();
+    initAdvisoryModal();
 }
 
 // Support cached/back-forward pages where DOMContentLoaded has already fired.

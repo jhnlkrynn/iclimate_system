@@ -5,6 +5,7 @@
 @endphp
 <header class="mfd-header">
     <div class="mfd-header-main">
+        <span class="mfd-kicker">{{ __('farmer.header.kicker') }}</span>
         <h1>{{ $f['greeting'] }}</h1>
         <p class="mfd-place">@include('dashboards.mao.icon', ['name' => 'map']){{ $f['place'] }}</p>
         <p class="mfd-date" data-mfd-clock>{{ $now->format('l, F j, Y') }} • {{ $now->format('g:i A') }}</p>

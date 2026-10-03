@@ -34,6 +34,16 @@ abstract class CrudController extends Controller
 
     protected bool $viewOnly = false;
 
+    /**
+     * Farmers see this module in the farmer design system (resources/views/farmer-records/<route>.blade.php and
+     * farmer-records/show.blade.php) instead of the shared staff table. Same query, filters, paging and permissions;
+     * MAO and IT keep crud.index. Off unless a module opts in.
+     */
+    protected bool $farmerPages = false;
+
+    /** Column the farmer list is sorted by, newest first (the staff list sorts by id). */
+    protected string $farmerSortColumn = 'id';
+
     public function index(Request $request): View
     {
         $this->authorizeView($request);
@@ -56,16 +66,40 @@ abstract class CrudController extends Controller
             }
         }
 
-        return view('crud.index', [
+        $data = [
             'title' => $this->title,
             'routeName' => $this->routeName,
-            'records' => $query->latest('id')->paginate(10)->withQueryString(),
             'columns' => $this->columns,
             'search' => $search,
             'filterable' => $this->filterable,
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
+        ];
+
+        if ($this->usesFarmerPages($request)) {
+            return view('farmer-records.'.$this->routeName, $data + [
+                'records' => (clone $query)->latest($this->farmerSortColumn)->latest('id')->paginate(10)->withQueryString(),
+            ] + $this->farmerIndexData($request, clone $query));
+        }
+
+        return view('crud.index', $data + [
+            'records' => $query->latest('id')->paginate(10)->withQueryString(),
         ]);
+    }
+
+    protected function usesFarmerPages(Request $request): bool
+    {
+        return $this->farmerPages && $request->user()?->role === User::ROLE_FARMER;
+    }
+
+    /**
+     * Read-only figures for the farmer page, worked out from the same filtered query as the list.
+     *
+     * @return array<string, mixed>
+     */
+    protected function farmerIndexData(Request $request, Builder $filtered): array
+    {
+        return [];
     }
 
     public function create(Request $request): View
@@ -100,7 +134,7 @@ abstract class CrudController extends Controller
         $this->authorizeView($request);
         $record = $this->findRecord($request, $id);
 
-        return view('crud.show', [
+        return view($this->usesFarmerPages($request) ? 'farmer-records.show' : 'crud.show', [
             'title' => $this->title,
             'routeName' => $this->routeName,
             'record' => $record,

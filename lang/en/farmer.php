@@ -19,6 +19,7 @@ return [
     'place_default' => 'Lian, Batangas',
 
     'header' => [
+        'kicker' => 'Farmer Dashboard',
         'updated' => 'Updated :age',
         'minutes_ago' => '{0} just now|{1} 1 minute ago|[2,*] :count minutes ago',
         'hours_ago' => '{0} just now|{1} 1 hour ago|[2,*] :count hours ago',

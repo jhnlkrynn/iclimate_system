@@ -290,9 +290,108 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->actingAs($farmer)
             ->get(route('planting-advisories.index'))
             ->assertOk()
-            ->assertSee('Municipal')
-            ->assertSee('Matabungkay')
-            ->assertDontSee('<div class="fw-bold">Prenza</div>', false);
+            ->assertSee('<h3 class="fad-title">Municipal</h3>', false)
+            ->assertSee('<h3 class="fad-title">Matabungkay</h3>', false)
+            ->assertDontSee('<h3 class="fad-title">Prenza</h3>', false);
+    }
+
+    public function test_farmer_sees_only_the_newest_forecast_run_of_a_rule_and_older_runs_are_kept(): void
+    {
+        $this->seed(AdvisoryRuleSeeder::class);
+        $rule = \App\Models\AdvisoryRule::query()->firstOrFail();
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $older = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => '16-Day Heavy Rainfall Warning', 'summary' => 'Older forecast run', 'advisory_rule_id' => $rule->id]));
+        $older->forceFill(['created_at' => now()->subDay()])->save();
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => '16-Day Heavy Rainfall Warning', 'summary' => 'Newer forecast run', 'advisory_rule_id' => $rule->id]));
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Written by MAO', 'summary' => 'Hand-written advisory']));
+
+        $this->actingAs($farmer)->get(route('planting-advisories.index'))
+            ->assertOk()
+            ->assertSee('Newer forecast run')
+            ->assertDontSee('Older forecast run')
+            ->assertSee('Hand-written advisory')
+            ->assertSee('<p class="fad-kpi">2</p>', false);                  // the count matches the list
+        $this->assertSame(3, PlantingAdvisory::query()->count());            // nothing is deleted
+    }
+
+    public function test_farmer_filters_are_never_served_from_another_filters_cached_page(): void
+    {
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Rain advisory', 'advisory_type' => 'climate']));
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Water advisory', 'advisory_type' => 'irrigation']));
+
+        $this->actingAs($farmer)->get(route('planting-advisories.index', ['advisory_type' => 'climate']))
+            ->assertSee('<h3 class="fad-title">Rain advisory</h3>', false)
+            ->assertDontSee('<h3 class="fad-title">Water advisory</h3>', false);
+        $this->actingAs($farmer)->get(route('planting-advisories.index', ['advisory_type' => 'irrigation']))
+            ->assertSee('<h3 class="fad-title">Water advisory</h3>', false)
+            ->assertDontSee('<h3 class="fad-title">Rain advisory</h3>', false);
+    }
+
+    public function test_farmer_can_use_refresh_pagasa(): void
+    {
+        Http::fake(['*' => Http::response('', 500)]);
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+
+        $this->actingAs($farmer)->post(route('planting-advisories.refresh-pagasa'))
+            ->assertRedirect(route('planting-advisories.index'));             // used to be 403 Forbidden
+    }
+
+    public function test_advisory_times_are_shown_in_lian_time_and_sources_are_labelled(): void
+    {
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $until = now('UTC')->addDays(2)->setTime(8, 44);
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Timed advisory', 'valid_until' => $until, 'generated_automatically' => true]));
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Bureau advisory', 'source' => PlantingAdvisory::SOURCE_PAGASA_LEGACY]));
+
+        $this->actingAs($farmer)->get(route('planting-advisories.index'))
+            ->assertSee($until->copy()->timezone('Asia/Manila')->format('M j, Y').' · 4:44 PM')   // 08:44 UTC is 4:44 PM in Lian
+            ->assertSee('iClimate guidance from forecast data')
+            ->assertSee('PAGASA (official advisory)');
+    }
+
+    public function test_view_opens_the_advisory_in_a_popup_and_the_full_page_still_works(): void
+    {
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $advisory = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Popup advisory', 'recommended_action' => 'Check the paddy water level.']));
+
+        $list = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-fad-view', $list);                                  // a View button per card
+        $this->assertStringContainsString('role="dialog" aria-modal="true" aria-labelledby="fadModalTitle"', $list);
+        $this->assertStringNotContainsString('What Is Happening', $list);                           // no full detail on the list
+
+        $popup = $this->actingAs($farmer)->get(route('planting-advisories.show', [$advisory, 'modal' => 1]))->assertOk()->getContent();
+        $this->assertStringNotContainsString('<html', $popup);                                      // body only, no page layout
+        foreach (['id="fadModalTitle"', 'Popup advisory', 'What Is Happening', 'What To Do', 'Check the paddy water level.', 'Weather Behind This Advice', 'Advisory Information', 'Disclaimer', 'PAGASA Website', 'Was This Advisory Helpful?', 'data-fad-close'] as $part) {
+            $this->assertStringContainsString($part, $popup, $part);
+        }
+
+        $this->actingAs($farmer)->get(route('planting-advisories.show', $advisory))->assertOk()->assertSee('<html', false);
+    }
+
+    public function test_popup_follows_the_same_access_rules_as_the_advisory_page(): void
+    {
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $other = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Other barangay', 'target_barangay' => 'Matabungkay', 'target_scope' => 'barangay']));
+        $draft = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Draft', 'status' => 'pending_review']));
+
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertForbidden();
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$draft, 'modal' => 1]))->assertForbidden();
+    }
+
+    public function test_popup_feedback_is_saved_through_the_existing_json_answer(): void
+    {
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $advisory = PlantingAdvisory::query()->create($this->advisoryPayload());
+
+        $this->actingAs($farmer)
+            ->postJson(route('planting-advisories.feedback', $advisory), ['is_helpful' => 1, 'comment' => 'Useful for my field.'])
+            ->assertOk()->assertJson(['ok' => true, 'is_helpful' => true]);
+        $this->assertDatabaseHas('advisory_feedback', ['planting_advisory_id' => $advisory->id, 'user_id' => $farmer->id, 'is_helpful' => true]);
+
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$advisory, 'modal' => 1]))
+            ->assertSee('Your answer is saved. You can change it.')
+            ->assertSee('Useful for my field.');
     }
 
     public function test_mao_can_approve_and_farmer_cannot_approve(): void
