@@ -38,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Postgres connector that passes the schema at connect time (saves a round trip per request).
         $this->app->bind('db.connector.pgsql', fn () => new \App\Database\StartupSearchPathPostgresConnector);
+
+        // A missing Vite build logs a warning instead of breaking every page with a 500.
+        $this->app->singleton(\Illuminate\Foundation\Vite::class, \App\Support\SafeVite::class);
     }
 
     /**
