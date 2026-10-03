@@ -292,6 +292,7 @@
       }
     }
   </style>
+    @include('partials.global-loader')
 </head>
 <body class="register-page">
   <div class="scene-glow scene-glow-1"></div>

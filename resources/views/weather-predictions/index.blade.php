@@ -1173,7 +1173,7 @@
                 let failures = 0;
                 const poll = window.setInterval(async () => {
                     try {
-                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' } });
+                        const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                         if (!response.ok) throw new Error(`Status check failed.`);
                         const run = await response.json();
                         failures = 0;

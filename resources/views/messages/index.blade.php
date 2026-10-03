@@ -478,6 +478,7 @@
                     try {
                         const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
                             headers: { 'Accept': 'application/json' },
+                            loader: false, // live search while typing: no full-screen overlay
                         });
                         const data = await response.json();
                         const notYetMessaged = (data.recipients || []).filter((r) => !knownOtherIds.has(String(r.id)));
@@ -618,6 +619,7 @@
                 try {
                     const response = await fetch(`${pollUrl}?after_id=${lastMessageId}`, {
                         headers: { 'Accept': 'application/json' },
+                        loader: false, // background polling
                     });
                     if (!response.ok) return;
                     const data = await response.json();
@@ -720,6 +722,7 @@
                 lastTypingPing = now;
                 fetch(typingUrl, {
                     method: 'POST',
+                    loader: false, // typing indicator ping
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 }).catch(() => {});
             });

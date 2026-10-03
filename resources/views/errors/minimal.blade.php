@@ -45,6 +45,7 @@
     .err-btn-outline:hover { border-color: rgba(31,42,36,0.45); color: #122b20; }
     .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e3ece6; font-size: 0.78rem; color: #56655c; }
   </style>
+    @include('partials.global-loader')
 </head>
 <body>
   <div class="err-blob err-blob-1"></div>

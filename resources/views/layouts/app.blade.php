@@ -259,12 +259,6 @@
             .table-hover tbody tr:hover { background: rgba(240,247,244,.95); transform: none; }
             .badge { border-radius: 999px; padding: .35rem .55rem; font-family: 'Inter', sans-serif; font-size: var(--text-xs); line-height: 1.2; font-weight: 700; letter-spacing: 0; }
             .empty-state { border: 1px dashed var(--glass-light-border); background: var(--glass-light-bg); backdrop-filter: var(--glass-blur-soft); border-radius: var(--ic-radius-lg); }
-            .loading-overlay { position: fixed; inset: 0; background: rgba(13,31,24,.5); backdrop-filter: blur(10px) saturate(150%); z-index: 2000; display: none; align-items: center; justify-content: center; }
-            .loading-overlay.show { display: flex; }
-            .loading-overlay .card { min-width: 220px; }
-            .page-progress { display: none; position: fixed; inset: 0 0 auto; height: 3px; z-index: 2100; pointer-events: none; background: transparent; opacity: 0; transition: opacity .12s ease; }
-            .page-progress::before { content: ""; display: block; width: 42%; height: 100%; background: var(--iclimate-accent); transform: translateX(-100%); animation: pageProgress 1s ease-in-out infinite; }
-            .page-progress.show { opacity: 1; }
             .is-loading-action { opacity: .72; pointer-events: none; }
             .ic-logout-confirm { position: fixed; inset: 0; z-index: 10000; display: none; place-items: center; padding: 1rem; overflow-y: auto; background: radial-gradient(circle at 50% 10%, rgba(143,175,154,.22), transparent 22rem), rgba(13,31,24,.6); backdrop-filter: blur(10px) saturate(150%); }
             .ic-logout-confirm.show { display: grid !important; }
@@ -289,11 +283,6 @@
             .ic-logout-cancel { background: var(--ic-green-50); color: var(--ic-green-800); }
             .ic-logout-confirm-btn { background: var(--ic-coral); color: #fff; box-shadow: 0 .75rem 1.45rem rgba(216,91,69,.22); }
             @keyframes icPopupIn { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-            @keyframes pageProgress {
-                0% { transform: translateX(-110%); }
-                55% { transform: translateX(80vw); }
-                100% { transform: translateX(110vw); }
-            }
             .bg-white, .table-light { background-color: #ffffff !important; }
             .text-bg-light { color: var(--ic-ink) !important; background-color: var(--ic-green-50) !important; }
             .border-top, .border-bottom, .border-start, .border-end, .border { border-color: rgba(212,237,218,.98) !important; }
@@ -325,13 +314,12 @@
                 .sidebar-fixed .sidebar-link .sidebar-icon svg { width: 20px; height: 20px; }
             }
             .form-control:focus, .form-select:focus { transform: translateY(-1px); }
-            .loading-overlay.show .card { animation: icSoftRise var(--ic-motion-med) both; }
             .ic-logout-cancel:hover, .ic-logout-confirm-btn:hover, .ic-action-close:hover { transform: translateY(-1px); }
             .ic-logout-cancel:active, .ic-logout-confirm-btn:active, .ic-action-close:active { transform: translateY(0) scale(.985); }
             @keyframes icPageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes icSoftRise { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
             @media (prefers-reduced-motion: reduce) {
-                .page-shell, .loading-overlay.show .card, .ic-action-dialog, .ic-logout-card { animation: none !important; }
+                .page-shell, .ic-action-dialog, .ic-logout-card { animation: none !important; }
                 .sidebar-link, .sidebar-ai-card, .card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .filter-panel, .quick-action, .priority-card, .btn, .form-control, .form-select { transition-duration: .01ms !important; }
             }
             @media (min-width: 1400px) { .page-shell { padding: 1.75rem 2rem; } }
@@ -370,6 +358,7 @@
                 .ic-logout-actions { grid-template-columns: 1fr; }
             }
         </style>
+        @include('partials.global-loader')
     </head>
     <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard')])>
         @include('layouts.sidebar')
@@ -424,10 +413,6 @@
                 </div>
             </div>
         </div>
-        <div id="loadingOverlay" class="loading-overlay">
-            <div class="card border-0 shadow-sm"><div class="card-body d-flex align-items-center gap-3"><div class="spinner-border" style="color: var(--ic-green-500);" role="status" aria-hidden="true"></div><div class="fw-semibold">Loading...</div></div></div>
-        </div>
-        <div id="pageProgress" class="page-progress" aria-hidden="true"></div>
         @auth
             @include('components.ai-chat-widget')
         @endauth
