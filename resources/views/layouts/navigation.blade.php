@@ -127,9 +127,11 @@
                 </a>
             @endif
             @if (true)
-                <a class="topbar-btn" href="{{ route('profile.edit') }}" aria-label="Profile">
+                {{-- IT accounts call this page Account (same route); it is marked as the open page like a sidebar item. --}}
+                @php $accountLabel = $user->role === \App\Models\User::ROLE_IT_EXPERT ? 'Account' : 'Profile'; @endphp
+                <a @class(['topbar-btn', 'is-current' => request()->routeIs('profile.*')]) href="{{ route('profile.edit') }}" aria-label="{{ $accountLabel }}" @if (request()->routeIs('profile.*')) aria-current="page" @endif>
                     <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    <span>Profile</span>
+                    <span>{{ $accountLabel }}</span>
                 </a>
             @endif
             <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?" data-loading="true">

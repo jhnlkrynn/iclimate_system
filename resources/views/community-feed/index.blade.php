@@ -989,8 +989,17 @@
         }
     </style>
 
-    <div class="feed-wrap">
-        @if(auth()->user()->role === \App\Models\User::ROLE_FARMER)
+    @php $isItFeed = auth()->user()->role === \App\Models\User::ROLE_IT_EXPERT; @endphp
+    {{-- IT accounts get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
+    <div @class(['feed-wrap', 'mfd itd itp' => $isItFeed])>
+        @if($isItFeed)
+            <x-it.page-header kicker="Community and Updates" title="Community Feed" lede="MAO news and farmer discussions. Read MAO posts, react, and leave comments.">
+                <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>MAO Updates</span></span>
+                <div class="itd-header-actions">
+                    <a href="{{ route('messages.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'message'])Open Messages</a>
+                </div>
+            </x-it.page-header>
+        @elseif(auth()->user()->role === \App\Models\User::ROLE_FARMER)
             {{-- Farmers get the same header as the other farmer pages (.fad-hero, farmer-advisories.css); MAO and IT keep the original. --}}
             <div class="fad is-header-only">
                 <header class="fad-hero">
