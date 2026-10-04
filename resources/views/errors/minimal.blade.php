@@ -9,12 +9,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ $code }} | {{ config('app.name', 'iClimate') }}</title>
+  {{-- Same Light / Dark choice as the rest of iClimate (layouts/app.blade.php), applied before the first paint. --}}
+  <script>(function(){var t='light';try{t=localStorage.getItem('iclimate-theme')==='dark'?'dark':'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
+    html { overflow-x: hidden; }   /* the soft background blobs sit partly off-screen */
     body {
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 60%, #eef5f1 100%);
@@ -44,6 +47,17 @@
     .err-btn-outline { border: 1.5px solid rgba(31,42,36,0.18); color: #1f2a24; }
     .err-btn-outline:hover { border-color: rgba(31,42,36,0.45); color: #122b20; }
     .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e3ece6; font-size: 0.78rem; color: #56655c; }
+    html[data-theme="dark"] body { background: #0e1814; }
+    html[data-theme="dark"] .err-grid { background-image: radial-gradient(rgba(127,214,181,0.07) 1px, transparent 1px); }
+    html[data-theme="dark"] .err-card { background: #16231e; border-color: #2a3b33; box-shadow: 0 20px 48px rgba(0,0,0,.4); }
+    .err-logo-dark-theme, html[data-theme="dark"] .err-logo-light-theme { display: none; }
+    html[data-theme="dark"] .err-logo-dark-theme { display: inline; }
+    html[data-theme="dark"] .err-code { color: #7fd6b5; }
+    html[data-theme="dark"] .err-title { color: #e4ece7; }
+    html[data-theme="dark"] .err-message { color: #c3cfc8; }
+    html[data-theme="dark"] .err-btn-outline { border-color: #36493f; color: #e4ece7; }
+    html[data-theme="dark"] .err-btn-outline:hover { border-color: #7fd6b5; color: #fff; }
+    html[data-theme="dark"] .err-foot { border-top-color: #2a3b33; color: #9fb1a7; }
   </style>
     @include('partials.global-loader')
 </head>
@@ -54,7 +68,8 @@
 
   <div class="err-card">
     <a href="{{ url('/') }}" class="err-logo">
-      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
+      <img class="err-logo-light-theme" src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
+      <img class="err-logo-dark-theme" src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate">
     </a>
 
     <div class="err-code">Error {{ $code }}</div>

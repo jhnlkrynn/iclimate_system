@@ -69,7 +69,6 @@ html body .filter-panel { will-change: auto; backface-visibility: visible; }
 
 html body .ic-ripple { display: none !important; }        /* click ripples */
 html body .stat-card:hover .stat-dot { transform: none; }
-html body .sidebar-link:hover .sidebar-icon { transform: none; }
 
 /* Scroll-reveal: short and simple, and never leaves content invisible. */
 html body .ic-reveal { transform: none; }
@@ -138,48 +137,6 @@ html body :is(a.card, button.card, a.it-card, button.it-card, .mao-card[data-dra
 }
 
 html body .table-responsive { background: transparent; }
-
-/* ------------------------------------------------------------------
- | Navigation: dark glass, clear active state, subtle hover
- * ------------------------------------------------------------------ */
-html body .sidebar-fixed {
-    background: linear-gradient(180deg, rgba(14, 46, 36, .72), var(--gl-dark));
-    border-right: 1px solid var(--gl-dark-border);
-    box-shadow: 2px 0 18px rgba(4, 18, 12, .22);
-}
-
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    html body .sidebar-fixed {
-        -webkit-backdrop-filter: var(--gl-blur-nav);
-        backdrop-filter: var(--gl-blur-nav);
-    }
-}
-
-html body .sidebar-link {
-    position: relative;
-    border-radius: var(--gl-radius-sm);
-    border-left: 3px solid transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;                 /* the per-link blur was pure cost */
-    transition: background-color var(--gl-t), color var(--gl-t), border-color var(--gl-t) !important;
-}
-
-html body .sidebar-link:hover {
-    padding-left: inherit;                 /* no sliding on hover */
-    transform: none;
-    color: #fff;
-    background: rgba(255, 255, 255, .08);  /* subtle translucent highlight, not a colour change */
-}
-
-html body .sidebar-link.active {
-    color: #fff;
-    font-weight: 650;
-    background: linear-gradient(90deg, rgba(127, 214, 181, .2), rgba(127, 214, 181, .06)) !important;
-    border-left-color: var(--ic-mint) !important;
-    box-shadow: inset 0 0 0 1px rgba(127, 214, 181, .16);
-}
-
-html body .sidebar-link.active .sidebar-icon { filter: none; }
 
 /* ------------------------------------------------------------------
  | Buttons, forms, search, filters
@@ -349,7 +306,6 @@ html body .dash-overview .dash-chart-sub { color: #55665d; }
     outline-offset: 2px;
 }
 
-html body .sidebar-fixed :focus-visible { outline-color: var(--ic-mint); }
 html body .btn:focus-visible,
 html body .form-control:focus-visible,
 html body .form-select:focus-visible { outline: none !important; }   /* these draw their own ring */

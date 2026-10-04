@@ -220,6 +220,7 @@
             .ic-table-card details.ic-collapse { margin-bottom: 0; }
             .ic-table-card details.ic-collapse > summary { padding: .55rem .75rem; margin-bottom: .5rem; font-size: .82rem; }
         }
+            .me-lede { color: #4a5c52; }
     </style>
 
     <section class="me-hero">
@@ -227,7 +228,7 @@
             <div>
                 <div class="me-eyebrow mb-2">Model Evaluation Report</div>
                 <h1 class="h2 fw-bold mb-2">Rice Yield Algorithm Comparison</h1>
-        <p class="mb-0" style="max-width: 820px; color: #4a5c52;">
+        <p class="mb-0 me-lede" style="max-width: 820px;">
                     Metrics on this page are computed live by the iClimate ML service each time it runs a fresh cross-validation over the current exported training data — not a one-off notebook run.
                 </p>
             </div>

@@ -56,7 +56,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
     font-size: .9375rem; font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer; white-space: nowrap;
 }
 .mtd-btn:hover { background: #0b3d26; }
-.mtd-btn.is-quiet { background: #fff; color: var(--brand) !important; }
+.mtd-btn.is-quiet { background: #fff; color: var(--brand-ink, var(--brand)) !important; }
 .mtd-btn.is-quiet:hover { background: var(--ok-bg); }
 .mtd-btn:disabled { opacity: .7; cursor: progress; }
 .mtd-btn .mtd-svg { width: 18px; height: 18px; }
@@ -65,7 +65,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-header .mtd-btn.is-ghost { background: transparent; color: #fff !important; border-color: rgba(255, 255, 255, .55); }
 .mtd-header .mtd-btn.is-ghost:hover { background: rgba(255, 255, 255, .12); }
 .mtd-header .mtd-btn:focus-visible { outline-color: #fff; }
-.mtd-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; border: 0; background: none; padding: 0; font-size: .9375rem; font-weight: 600; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.mtd-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; border: 0; background: none; padding: 0; font-size: .9375rem; font-weight: 600; color: var(--brand-ink, var(--brand)); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* ---------------------------------------------------------------- section titles + rows */
 .mtd-section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -108,7 +108,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 }
 .mtd-kpi:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(15, 40, 28, .08); transform: translateY(-1px); }
 .mtd-kpi-top { display: flex; align-items: center; gap: 10px; }
-.mtd-kpi-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 6px; background: var(--ok-bg); color: var(--brand); }
+.mtd-kpi-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 6px; background: var(--ok-bg); color: var(--brand-ink, var(--brand)); }
 .mtd-kpi-icon .mtd-svg { width: 18px; height: 18px; }
 .mtd-kpi-label { font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 .mtd-kpi-value { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; font-size: 1.75rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
@@ -117,7 +117,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-trend { font-size: .875rem; color: var(--muted); }
 .mtd-trend.is-up strong { color: var(--ok-ink); } .mtd-trend.is-down strong { color: var(--crit-ink); }
 .mtd-basis { font-size: .8125rem; color: var(--muted); }
-.mtd-kpi-more { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: .8125rem; font-weight: 600; color: var(--brand); }
+.mtd-kpi-more { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: .8125rem; font-weight: 600; color: var(--brand-ink, var(--brand)); }
 .mtd-kpi-more .mtd-svg { width: 15px; height: 15px; }
 
 /* ---------------------------------------------------------------- attention center */
@@ -136,7 +136,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 /* ---------------------------------------------------------------- tiles (conditions, production, feedback) */
 .mtd-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .mtd-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--subtle); min-width: 0; }
-.mtd-tile-icon { color: var(--brand); }
+.mtd-tile-icon { color: var(--brand-ink, var(--brand)); }
 .mtd-tile-label { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 .mtd-tile-label em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .mtd-tile strong { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
@@ -145,7 +145,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 /* ---------------------------------------------------------------- charts */
 .mtd-chart { position: relative; height: 300px; }
 .mtd-range { display: inline-flex; padding: 4px; gap: 4px; border-radius: 8px; background: #e8efeb; }
-.mtd-range button { min-height: 36px; padding: 4px 14px; border: 0; border-radius: 6px; background: transparent; color: var(--brand); font-size: .875rem; font-weight: 600; cursor: pointer; }
+.mtd-range button { min-height: 36px; padding: 4px 14px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-ink, var(--brand)); font-size: .875rem; font-weight: 600; cursor: pointer; }
 .mtd-range button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 3px rgba(15, 40, 28, .12); }
 
 /* ---------------------------------------------------------------- rows table, forecast days, watch, activity */

@@ -1,0 +1,359 @@
+/*
+ * iClimate sidebar: the one navigation shell for Farmer, MAO and IT (markup: resources/views/layouts/sidebar.blade.php).
+ *
+ * Desktop (992px and wider): fixed to the left edge, full height; only the page beside it scrolls. Every role's links fit
+ * on a laptop screen without scrolling the menu: link height and section spacing follow the window height (clamp + vh),
+ * and on short windows (under 820px tall) the Appearance label and copyright line are dropped. If a window is shorter
+ * still, the link list (never the brand or the Light/Dark switch) scrolls as a last resort.
+ * Tablets and phones (under 992px): the same menu is a slide-in drawer (#mobileSidebar, a Bootstrap offcanvas) over a
+ * dimmed backdrop, opened by the Menu button in the top bar.
+ *
+ * Selectors start with `html body .ic-sidebar` so they win over the older generic .sidebar-* / .offcanvas rules in
+ * app.css and the layout's inline <style>.
+ */
+
+:root {
+    --sidebar-width: 248px;
+    --sb-bg: linear-gradient(180deg, #0f3d2e 0%, #0c3326 100%);
+    --sb-edge: rgba(255, 255, 255, .08);
+    --sb-text: rgba(255, 255, 255, .8);
+    --sb-text-strong: #ffffff;
+    --sb-icon: rgba(255, 255, 255, .7);
+    --sb-label: rgba(255, 255, 255, .6);
+    --sb-hover: rgba(255, 255, 255, .07);
+    --sb-active-bg: rgba(127, 214, 181, .16);
+    --sb-accent: #8fdcb8;
+    --sb-divider: rgba(255, 255, 255, .1);
+    --sb-switch-bg: rgba(0, 0, 0, .2);
+}
+
+html[data-theme="dark"] {
+    --sb-bg: linear-gradient(180deg, #0b261c 0%, #091d16 100%);
+    --sb-edge: rgba(255, 255, 255, .06);
+    --sb-active-bg: rgba(127, 214, 181, .13);
+    --sb-switch-bg: rgba(0, 0, 0, .28);
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    :root { --sidebar-width: 232px; }
+}
+
+/* ------------------------------------------------------------------ shell */
+html body .ic-sidebar {
+    display: flex;
+    flex-direction: column;
+    color: var(--sb-text);
+    background: var(--sb-bg);
+    border-right: 1px solid var(--sb-edge);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    font-family: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html body .ic-sidebar.sidebar-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1030;
+    overflow: hidden;
+}
+
+html body .ic-sidebar::before { content: none; }
+
+/* ------------------------------------------------------------------ brand */
+html body .ic-sidebar .ic-sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    margin: 0 14px;
+    padding: clamp(10px, 1.6vh, 18px) 4px clamp(8px, 1.3vh, 14px);
+    border-bottom: 1px solid var(--sb-divider);
+    color: var(--sb-text-strong);
+    text-decoration: none;
+}
+
+html body .ic-sidebar .ic-sb-logo { width: 34px; height: 34px; object-fit: contain; flex: none; }
+html body .ic-sidebar .ic-sb-brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+html body .ic-sidebar .ic-sb-wordmark { font-size: 1.125rem; font-weight: 800; letter-spacing: -.01em; color: var(--sb-text-strong); }
+html body .ic-sidebar .ic-sb-place { margin-top: 2px; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sb-label); }
+html body .ic-sidebar .ic-sb-brand:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: 2px; border-radius: 8px; }
+
+/* ------------------------------------------------------------------ menu */
+html body .ic-sidebar .ic-sb-nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0;
+    padding: 2px 12px 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .22) transparent;
+    justify-content: flex-start;
+}
+
+html body .ic-sidebar .ic-sb-nav::-webkit-scrollbar { display: block; width: 6px; }
+html body .ic-sidebar .ic-sb-nav::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .22); border-radius: 999px; }
+
+html body .ic-sidebar .sidebar-group { display: block; flex: none; min-height: 0; }
+
+html body .ic-sidebar .sidebar-section {
+    margin: clamp(7px, 1.4vh, 16px) 10px 3px;
+    font-size: .6875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--sb-label);
+}
+
+html body .ic-sidebar .sidebar-group:first-child .sidebar-section { margin-top: clamp(7px, 1.1vh, 12px); }
+
+html body .ic-sidebar .sidebar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1px, .3vh, 4px);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+html body .ic-sidebar .sidebar-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 11px;
+    flex: none;
+    height: clamp(30px, 4.3vh, 42px);
+    min-height: 0;
+    max-height: none;
+    padding: 0 10px 0 9px;
+    border: 0;
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+    color: var(--sb-text);
+    background: transparent;
+    box-shadow: none;
+    font-size: .90625rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    transform: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease !important;
+}
+
+html body .ic-sidebar .sidebar-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+html body .ic-sidebar .sidebar-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    flex: none;
+    color: var(--sb-icon);
+    background: none;
+    transform: none;
+    filter: none;
+    transition: color .2s ease;
+}
+
+html body .ic-sidebar .sidebar-icon svg { width: 18px; height: 18px; }
+
+html body .ic-sidebar .sidebar-link:hover {
+    color: var(--sb-text-strong);
+    background: var(--sb-hover);
+    padding-left: 9px;
+    transform: none;
+}
+
+html body .ic-sidebar .sidebar-link:hover .sidebar-icon { color: var(--sb-text-strong); transform: none; }
+
+html body .ic-sidebar .sidebar-link.active {
+    color: var(--sb-text-strong);
+    background: var(--sb-active-bg);
+    border-left-color: var(--sb-accent);
+    box-shadow: none;
+    font-weight: 600;
+}
+
+html body .ic-sidebar .sidebar-link.active .sidebar-icon { color: var(--sb-accent); filter: none; }
+
+html body .ic-sidebar .sidebar-link:active { transform: none; }
+
+html body .ic-sidebar .sidebar-link:focus-visible,
+html body .ic-sidebar .ic-theme-btn:focus-visible,
+html body .ic-sidebar .ic-sb-close:focus-visible {
+    outline: 2px solid var(--sb-accent);
+    outline-offset: -2px;
+}
+
+html body .ic-sidebar .sidebar-badge {
+    margin-left: auto;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 6px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--iclimate-warning, #c58b2a);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    animation: none;
+    box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ footer: Appearance + copyright */
+html body .ic-sidebar .ic-sb-foot {
+    flex: none;
+    margin: 0 14px;
+    padding: 10px 0 12px;
+    border-top: 1px solid var(--sb-divider);
+}
+
+html body .ic-sidebar .ic-sb-appearance-label {
+    display: block;
+    margin: 0 4px 6px;
+    font-size: .6875rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--sb-label);
+}
+
+html body .ic-sidebar .ic-theme-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--sb-divider);
+    border-radius: 10px;
+    background: var(--sb-switch-bg);
+}
+
+html body .ic-sidebar .ic-theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--sb-text);
+    font: inherit;
+    font-size: .8125rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transform: none;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+html body .ic-sidebar .ic-theme-btn:hover { color: var(--sb-text-strong); background: var(--sb-hover); }
+
+/* The chosen theme is a solid mint pill with dark text, unmistakable in both themes. */
+html body .ic-sidebar .ic-theme-btn[aria-pressed="true"],
+html body .ic-sidebar .ic-theme-btn[aria-pressed="true"]:hover {
+    color: #0b2a1f;
+    background: var(--sb-accent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+
+html body .ic-sidebar .ic-theme-btn[aria-pressed="true"] svg { color: #0b2a1f; }
+html body .ic-sidebar .ic-theme-btn[aria-pressed="true"]:focus-visible { outline-color: #fff; outline-offset: 2px; }
+
+html body .ic-sidebar .sidebar-foot {
+    margin: 8px 4px 0;
+    padding: 0;
+    font-size: .6875rem;
+    line-height: 1.35;
+    color: var(--sb-label);
+}
+
+/* Short laptop windows: keep every link on screen by dropping the two least useful lines. */
+@media (min-width: 992px) and (max-height: 820px) {
+    html body .ic-sidebar.sidebar-fixed .ic-sb-appearance-label,
+    html body .ic-sidebar.sidebar-fixed .sidebar-foot { display: none; }
+    html body .ic-sidebar.sidebar-fixed .ic-sb-foot { padding: 8px 0 10px; }
+    html body .ic-sidebar.sidebar-fixed .ic-sb-logo { width: 30px; height: 30px; }
+}
+
+/* Very short windows (a 1366 x 768 laptop once the browser's own bars are counted): the tightest spacing that still
+   reads comfortably, so even the longest menu (IT, 14 links) fits. */
+@media (min-width: 992px) and (max-height: 700px) {
+    html body .ic-sidebar.sidebar-fixed .ic-sb-brand { padding-top: 8px; padding-bottom: 7px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-link { height: 29px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-stack { gap: 1px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-section { margin-top: 6px; margin-bottom: 2px; }
+    html body .ic-sidebar.sidebar-fixed .ic-sb-foot { padding: 6px 0 8px; }
+}
+
+/* ------------------------------------------------------------------ tablet / phone drawer */
+html body #mobileSidebar.ic-sidebar {
+    width: min(84vw, 300px);
+    max-width: min(84vw, 300px);
+    border: 0;
+    border-right: 1px solid var(--sb-edge);
+    border-radius: 0;
+    background: var(--sb-bg);
+    color: var(--sb-text);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, .3);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+html body #mobileSidebar .ic-sb-drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    padding-right: 10px;
+    border-bottom: 1px solid var(--sb-divider);
+}
+
+html body #mobileSidebar .ic-sb-drawer-head .ic-sb-brand { flex: 1 1 auto; border-bottom: 0; padding: 14px 4px; }
+
+html body #mobileSidebar .ic-sb-close {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--sb-text-strong);
+    cursor: pointer;
+}
+
+html body #mobileSidebar .ic-sb-close:hover { background: var(--sb-hover); }
+
+html body #mobileSidebar .ic-sb-nav { padding-bottom: 12px; }
+html body #mobileSidebar .sidebar-section { margin-top: 16px; }
+html body #mobileSidebar .sidebar-link { height: 44px; font-size: .9375rem; }
+html body #mobileSidebar .sidebar-stack { gap: 2px; }
+html body #mobileSidebar .ic-theme-btn { height: 40px; }
+html body #mobileSidebar .ic-sb-foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+
+@media (prefers-reduced-motion: reduce) {
+    html body .ic-sidebar .sidebar-link,
+    html body .ic-sidebar .ic-theme-btn { transition: none !important; }
+}

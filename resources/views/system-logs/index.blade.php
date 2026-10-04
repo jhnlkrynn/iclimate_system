@@ -133,7 +133,7 @@
                             <tr>
                                 <td class="sl-td-action"><div class="sl-action"><span class="sl-ico-wrap">{!! $icon($row['kind']) !!}</span>{{ $row['action'] }}</div></td>
                                 <td data-label="User">{{ $row['user'] }}</td>
-                                <td data-label="Role" class="sl-role" style="color:#2b3a33 !important;">{{ $row['role'] }}</td>
+                                <td data-label="Role" class="sl-role">{{ $row['role'] }}</td>
                                 <td data-label="Time">{{ $row['short'] }}</td>
                                 <td data-label="Status"><span class="sl-badge {{ $row['status'] === 'Failed' ? 'is-fail' : 'is-ok' }}">{{ $row['status'] }}</span></td>
                                 <td class="text-end">

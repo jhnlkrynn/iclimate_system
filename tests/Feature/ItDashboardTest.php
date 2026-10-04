@@ -491,11 +491,12 @@ class ItDashboardTest extends TestCase
         $html = $this->page()->getContent();
         $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
 
-        foreach (['>Main<', '>Management<', '>Data<', '>System<', '>Content<', '>Support<'] as $section) {
+        // Four groups, so all 14 links fit a laptop screen without scrolling the menu.
+        foreach (['>Main Menu<', '>Management<', '>Data<', '>System<'] as $section) {
             $this->assertStringContainsString($section, $html);
         }
-        $this->assertLessThan(strpos($html, '>Management<'), strpos($html, '>Main<'));
-        $this->assertLessThan(strpos($html, '>Support<'), strpos($html, '>Content<'));
+        $this->assertLessThan(strpos($html, '>Management<'), strpos($html, '>Main Menu<'));
+        $this->assertLessThan(strpos($html, '>System<'), strpos($html, '>Data<'));
         // The menu is rendered twice (desktop sidebar + mobile offcanvas), so a page listed once per menu appears exactly twice.
         foreach ([route('users.index'), route('system-logs.index'), route('system-health.index'), route('reports.index'), route('farmer-profiles.index'), route('ai-admin.home')] as $url) {
             $this->assertSame(2, substr_count($sidebar, 'href="'.$url.'"'), $url);

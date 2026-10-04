@@ -78,7 +78,7 @@
             white-space: nowrap;
         }
         .kpi-tile.is-good .kpi-status { background: rgba(31,77,58,.12); color: #1F4D3A; }
-        .kpi-tile.is-warning .kpi-status { background: rgba(197,139,42,.14); color: #9A6B2F; }
+        .kpi-tile.is-warning .kpi-status { background: rgba(197,139,42,.14); color: #82561c; }
         .kpi-tile.is-critical .kpi-status { background: rgba(184,74,74,.14); color: #B84A4A; }
         .kpi-value {
             font-size: clamp(1.65rem, 2.2vw, 2.1rem);

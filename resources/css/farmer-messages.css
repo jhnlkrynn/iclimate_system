@@ -33,13 +33,13 @@
 .fmsg .thread-time { font-family: var(--sans); font-size: .8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .fmsg .thread-preview { font-size: .875rem; }
 .fmsg .unread-badge { min-width: 22px; min-height: 22px; border-radius: 999px; background: var(--brand); font-family: var(--sans); font-size: .75rem; font-weight: 600; }
-.fmsg .avatar { width: 40px; height: 40px; background: var(--good-bg); border: 1px solid var(--good-line); color: var(--brand); font-family: var(--sans); font-weight: 700; }
+.fmsg .avatar { width: 40px; height: 40px; background: var(--good-bg); border: 1px solid var(--good-line); color: var(--brand-ink, var(--brand)); font-family: var(--sans); font-weight: 700; }
 .fmsg .avatar-status.online { background: var(--good); }
 .fmsg .msg-list-empty { padding: 20px !important; font-size: .9375rem; line-height: 1.5; color: var(--muted) !important; }
 .fmsg .msg-list-empty strong { display: block; margin-bottom: 4px; font-size: 1rem; color: var(--ink); }
 
 /* conversation */
-.fmsg .msg-back-link { min-height: 44px; color: var(--brand); font-size: .9375rem; font-weight: 600; }
+.fmsg .msg-back-link { min-height: 44px; color: var(--brand-ink, var(--brand)); font-size: .9375rem; font-weight: 600; }
 .fmsg .chat-window { padding: 20px; background: var(--subtle); }
 .fmsg .bubble { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 1rem; line-height: 1.5; }
 .fmsg .mine .bubble { background: var(--brand); border-color: var(--brand); }
