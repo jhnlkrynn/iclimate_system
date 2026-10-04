@@ -496,7 +496,7 @@ class AIOrchestratorService
 
             if ($user->role === User::ROLE_FARMER) {
                 $condition = (string) ($data['condition'] ?: 'uncertain');
-                $temperature = is_numeric($data['temperature_c'] ?? null) ? round((float) $data['temperature_c']).'°C' : null;
+                $temperature = is_numeric($data['temperature_c'] ?? null) ? number_format((float) $data['temperature_c'], 1, '.', '').'°C' : null;
 
                 return $this->translate(
                     $language,
@@ -547,12 +547,13 @@ class AIOrchestratorService
             $first = $tool['data'][0] ?? [];
 
             if ($user->role === User::ROLE_FARMER) {
-                $rain = is_numeric($first['rainfall'] ?? null) ? ' About '.round((float) $first['rainfall']).' mm of rain may fall.' : '';
+                $rain = is_numeric($first['rainfall'] ?? null) ? ' About '.number_format((float) $first['rainfall'], 1, '.', '').' mm of rain may fall.' : '';
+                $chance = is_numeric($first['precipitation_probability'] ?? null) ? ' Rain chance is '.number_format((float) $first['precipitation_probability'], 0, '.', '').'%.' : '';
 
                 return $this->translate(
                     $language,
-                    ($first['day'] ?? 'The next forecast period').' will be '.($first['condition'] ?? 'uncertain').'.'.$rain.' Check the weather before field work.',
-                    'Sa '.($first['day'] ?? 'susunod na forecast').' ay '.($first['condition'] ?? 'hindi tiyak').'.'.(is_numeric($first['rainfall'] ?? null) ? ' Mga '.round((float) $first['rainfall']).' mm ang posibleng ulan.' : '').' Tingnan ang panahon bago magtrabaho sa bukid.'
+                    ($first['day'] ?? 'The next forecast period').' will be '.($first['condition'] ?? 'uncertain').'.'.$rain.$chance.' Check the weather before field work.',
+                    'Sa '.($first['day'] ?? 'susunod na forecast').' ay '.($first['condition'] ?? 'hindi tiyak').'.'.(is_numeric($first['rainfall'] ?? null) ? ' Mga '.number_format((float) $first['rainfall'], 1, '.', '').' mm ang posibleng ulan.' : '').(is_numeric($first['precipitation_probability'] ?? null) ? ' '.$chance.' ' : '').'Tingnan ang panahon bago magtrabaho sa bukid.'
                 );
             }
 
