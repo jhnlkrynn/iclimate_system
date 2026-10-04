@@ -13,6 +13,7 @@
             ->values();
         // Farmers get the farmer design system (farmer-messages.css); MAO and IT keep this page's original look.
         $isFarmerPage = $currentUser->role === \App\Models\User::ROLE_FARMER;
+        $isStaffPage = ! $isFarmerPage;
     @endphp
     <style>
         .msg-wrap { --msg-ink:#1f2a24; --msg-muted:#55645b; --msg-line:#e3ece6; --msg-green:#2d6a4f; --msg-mint:#52b788; --msg-blue:#2f6f8f; color: var(--msg-ink); }
@@ -166,7 +167,8 @@
             </div>
         </header>
     @endif
-    <div class="msg-wrap"
+    {{-- Staff accounts (IT and MAO) get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
+    <div @class(['msg-wrap', 'mfd itd itp' => $isStaffPage])
          data-current-user-id="{{ $currentUser->id }}"
          data-search-url="{{ route('messages.search') }}"
          data-open-url="{{ route('messages.open') }}"
@@ -179,21 +181,14 @@
              data-last-message-id="{{ $messages->max('id') ?? 0 }}"
          @endif
     >
-        @unless($isFarmerPage)
-        <section class="msg-hero">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
-                <div>
-                    <div class="msg-eyebrow">Messages</div>
-                    <h1 class="h3 mb-1">Your Messages</h1>
-                    <p class="mb-0 text-muted">Send private messages to MAO and farmers.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="msg-chip"><span class="msg-pulse"></span> Private Channel</span>
-                    <a href="{{ route('community-feed.index') }}" class="btn btn-light fw-bold">Community Feed</a>
-                </div>
+        @if($isStaffPage)
+        <x-it.page-header kicker="Private Conversations" title="Messages" lede="Send private messages to MAO staff and farmers, and review your conversations.">
+            <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private Channel</span></span>
+            <div class="itd-header-actions">
+                <a href="{{ route('community-feed.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])Community Feed</a>
             </div>
-        </section>
-        @endunless
+        </x-it.page-header>
+        @endif
 
         @if(session('success'))
             <div class="alert alert-success mt-3">{{ session('success') }}</div>

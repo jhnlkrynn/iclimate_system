@@ -104,7 +104,8 @@ class FarmerPagesDesignTest extends TestCase
         // The unsend dialog is fixed-position, so it must sit outside the .fad size container.
         $this->assertGreaterThan(strrpos(substr($html, 0, strpos($html, 'id="unsendConfirm"')), '</main>'), strpos($html, 'id="unsendConfirm"'));
 
-        $this->actingAs($mao)->get(route('messages.index'))->assertOk()->assertDontSee('fad fmsg', false)->assertSee('Your Messages');
+        // MAO gets the staff header (it-pages.css), not the farmer one.
+        $this->actingAs($mao)->get(route('messages.index'))->assertOk()->assertDontSee('fad fmsg', false)->assertSee('<h1>Messages</h1>', false);
     }
 
     public function test_predictions_use_the_farmer_header_and_keep_the_confirm_dialog_outside_it(): void

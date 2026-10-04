@@ -989,9 +989,18 @@
         }
     </style>
 
-    <div class="feed-wrap">
-        @if(auth()->user()->role === \App\Models\User::ROLE_FARMER)
-            {{-- Farmers get the same header as the other farmer pages (.fad-hero, farmer-advisories.css); MAO and IT keep the original. --}}
+    @php $isStaffFeed = auth()->user()->role !== \App\Models\User::ROLE_FARMER; @endphp
+    {{-- Staff accounts (IT and MAO) get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
+    <div @class(['feed-wrap', 'mfd itd itp' => $isStaffFeed])>
+        @if($isStaffFeed)
+            <x-it.page-header kicker="Community and Updates" title="Community Feed" lede="MAO news and farmer discussions. Read MAO posts, react, and leave comments.">
+                <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>MAO Updates</span></span>
+                <div class="itd-header-actions">
+                    <a href="{{ route('messages.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'message'])Open Messages</a>
+                </div>
+            </x-it.page-header>
+        @else
+            {{-- Farmers get the same header as the other farmer pages (.fad-hero, farmer-advisories.css). --}}
             <div class="fad is-header-only">
                 <header class="fad-hero">
                     <div class="fad-hero-text">
@@ -1005,20 +1014,6 @@
                     </div>
                 </header>
             </div>
-        @else
-        <section class="feed-hero">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
-                <div>
-                    <div class="feed-eyebrow">Community Feed</div>
-                    <h1 class="h3 mb-1">MAO news and farmer discussions</h1>
-                    <p class="mb-0 text-muted">Read MAO posts, react, and leave comments.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <span class="feed-chip"><span class="feed-pulse"></span> MAO Updates</span>
-                    <a href="{{ route('messages.index') }}" class="btn btn-light fw-bold">Open Messages</a>
-                </div>
-            </div>
-        </section>
         @endif
 
         @if(session('success'))

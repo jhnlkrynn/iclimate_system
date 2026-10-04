@@ -469,15 +469,10 @@
             </div>
         </header>
     @endif
-    <div class="wp-page">
+    {{-- Staff accounts (IT and MAO) get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
+    <div @class(['wp-page', 'mfd itd itp' => ! $isFarmer])>
     @unless($isFarmer)
-    <section class="wp-hero">
-        <div>
-            <div class="wp-eyebrow mb-2">Farm planning</div>
-            <h1 class="h2 fw-bold mb-2">Predictions</h1>
-            <p class="mb-0 text-white-50" style="max-width: 720px;">Expected rice yield and expected weather for your area. These are forecasts, not guarantees.</p>
-        </div>
-    </section>
+    <x-it.page-header kicker="Rice Yield and Weather Forecasts" title="Predictions" lede="Expected rice yield and expected weather for Lian. These are forecasts, not guarantees." />
     @endunless
 
     <div class="wp-tabs" role="tablist" aria-label="Prediction types" data-initial-weather-tab="{{ $activeWeatherTab }}">
