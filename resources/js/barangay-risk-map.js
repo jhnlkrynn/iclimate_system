@@ -30,7 +30,95 @@ function detailMarkup(name, entry) {
     if (weather?.temperature_c != null) facts.push(`Temperature: ${escapeHtml(weather.temperature_c)}°C`);
     if (weather?.rainfall_24h_mm != null) facts.push(`Rainfall: ${escapeHtml(weather.rainfall_24h_mm)} mm`);
     if (yieldData?.value != null) facts.push(`Recorded yield: ${escapeHtml(yieldData.value)} t/ha`);
-    return `<div class="risk-map-detail-content"><div><span class="risk-map-detail-kicker">Selected barangay</span><h3>${escapeHtml(displayName(name))}</h3></div><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">FARM RISK: ${escapeHtml(level.toUpperCase())}</span>${facts.length ? `<p>${facts.join(' · ')}</p>` : '<p>Current supporting details are not available.</p>'}<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+    return `<div class="risk-map-detail-content"><div><span class="risk-map-detail-kicker">Selected barangay</span><h3>${escapeHtml(displayName(name))}</h3></div><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">FARM RISK: ${escapeHtml(level.toUpperCase())}</span>${facts.length ? `<p>${facts.join(' · ')}</p>` : '<p>Current weather information is temporarily unavailable.</p>'}<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+}
+
+const CURRENT_RISK_MEANING = {
+    Low: 'Conditions are generally okay for rice farming.',
+    Moderate: 'Some weather conditions may affect rice farming.',
+    High: 'Weather conditions may seriously affect rice farming.',
+    Severe: 'Weather conditions may severely affect rice farming.',
+    'No Data': 'The farm risk cannot be assessed because some current information is unavailable.',
+};
+
+const numberValue = (value) => (value == null || value === '' || Number.isNaN(Number(value)) ? null : Number(value));
+
+function philippineTime(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    try {
+        return new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    } catch (error) {
+        return date.toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
+    }
+}
+
+function currentWeatherParts(entry) {
+    const weather = entry?.weather || {};
+    const temperature = numberValue(weather.temperature_c);
+    const humidity = numberValue(weather.humidity_percent);
+    const wind = numberValue(weather.wind_speed_kmh);
+    const rainfall = numberValue(weather.rainfall_24h_mm);
+    const rainfallStatus = String(weather.rainfall_status || '').trim();
+    const fresh = weather.status === 'fresh';
+    const stale = weather.status === 'stale' || entry?.status === 'stale';
+    const rows = [];
+
+    if (rainfallStatus) rows.push(['Rainfall', rainfall != null ? `${rainfallStatus} (${rainfall} mm in the last 24 hours)` : rainfallStatus]);
+    else if (rainfall != null) rows.push(['Rainfall in the last 24 hours', `${rainfall} mm`]);
+    if (temperature != null) rows.push(['Temperature', `${temperature}°C`]);
+    if (humidity != null) rows.push(['Humidity', `${humidity}%`]);
+    if (wind != null && wind > 20) rows.push(['Wind', `${wind} km/h (strong)`]);
+
+    let effect = 'No major weather problem is affecting rice farming right now.';
+    let action = 'Continue normal farm work and monitor weather updates.';
+    if (rainfallStatus.toLowerCase().includes('high') || (rainfall != null && rainfall >= 80)) {
+        effect = 'Too much rain may cause water to collect in rice fields.';
+        action = 'Check drainage and do not let water stay too long in the field.';
+    } else if (rainfallStatus.toLowerCase().includes('low') || (rainfall != null && rainfall < 25)) {
+        effect = 'Rice fields may need more water.';
+        action = 'Check field water levels and prepare irrigation if needed.';
+    } else if (temperature != null && temperature >= 35) {
+        effect = 'Very hot weather may affect rice plants.';
+        action = 'Check field water levels often and avoid letting the soil become too dry.';
+    } else if (wind != null && wind > 20) {
+        effect = 'Strong winds may damage rice plants.';
+        action = 'Monitor rice plants and secure loose farm materials.';
+    }
+    if (!rows.length && !stale) {
+        effect = 'Current weather information is unavailable, so the local effect cannot be confirmed.';
+        action = 'Check field conditions and wait for the next weather update before changing farm work.';
+    }
+
+    const observedAt = philippineTime(weather.observed_at || (fresh ? entry?.updated_at : null));
+    const updateLabel = stale ? 'Last successful update' : fresh ? 'Updated' : 'Update time';
+    return {
+        rows,
+        effect,
+        action,
+        fresh,
+        stale,
+        observedAt,
+        updateText: observedAt ? `${updateLabel} Philippine time: ${observedAt}` : stale ? 'Weather data is stale and a new update is not available.' : 'Weather update is temporarily unavailable.',
+    };
+}
+
+function farmerCurrentPopupMarkup(name, entry) {
+    const level = riskLevel(entry);
+    const weather = currentWeatherParts(entry);
+    const weatherLine = weather.rows.length ? weather.rows.slice(0, 3).map(([, value]) => value).join(' · ') : weather.stale ? 'Weather data is stale' : 'Weather unavailable';
+    return `<div class="risk-map-popup rf-popup"><div class="rf-head"><strong>${escapeHtml(displayName(name))}</strong><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><p class="rf-popup-weather"><span>Current conditions</span>${escapeHtml(weatherLine)}</p><p>${escapeHtml(weather.effect)}</p><p class="rf-small">${escapeHtml(weather.updateText)}</p></div>`;
+}
+
+function farmerCurrentDetailMarkup(name, entry) {
+    const level = riskLevel(entry);
+    const weather = currentWeatherParts(entry);
+    const conditions = weather.rows.length
+        ? rowsMarkup(weather.rows).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts')
+        : `<p>${escapeHtml(weather.stale ? 'Weather data is stale. A new reading is not available right now.' : 'Weather information is temporarily unavailable.')}</p>`;
+    const riskMeaning = CURRENT_RISK_MEANING[level] || CURRENT_RISK_MEANING['No Data'];
+    return `<div class="rf-detail"><div class="rf-head"><h3>${escapeHtml(displayName(name))}</h3><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><div class="rf-grid">${farmerBlock('Current Conditions', conditions)}${farmerBlock('Why This Risk', `<p>${escapeHtml(riskMeaning)}</p>`)}${farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)}${farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)}</div><p class="rf-small">${escapeHtml(weather.updateText)}</p><button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
 }
 
 const TREND_TEXT = { increasing: '↑ Increasing risk', decreasing: '↓ Decreasing risk', stable: '→ Stable' };
@@ -247,7 +335,7 @@ export function initBarangayRiskMap() {
     };
     const showDetails = (name) => {
         if (!details) return;
-        details.innerHTML = !activeMonth ? detailMarkup(name, entries.get(name))
+        details.innerHTML = !activeMonth ? (farmerView ? farmerCurrentDetailMarkup(name, entries.get(name)) : detailMarkup(name, entries.get(name)))
             : farmerView ? farmerDetailMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months)
             : forecastDetailMarkup(name, forecastEntries.get(name), activeForecast());
         details.hidden = false;
@@ -394,7 +482,7 @@ export function initBarangayRiskMap() {
                     const own = name === highlightBarangay;
                     // Content is built when shown, so it always matches the selected month.
                     layer.bindTooltip(() => tooltipMarkup(name), { sticky: true, direction: 'top', className: own ? 'your-barangay-tooltip' : '' });
-                    layer.bindPopup(() => (!activeMonth ? popupMarkup(name, entries.get(name))
+                    layer.bindPopup(() => (!activeMonth ? (farmerView ? farmerCurrentPopupMarkup(name, entries.get(name)) : popupMarkup(name, entries.get(name)))
                         : farmerView ? farmerPopupMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months)
                         : forecastPopupMarkup(name, forecastEntries.get(name), activeForecast())), { closeButton: true, maxWidth: 260, maxHeight: 320 });
                     layer.on({ mouseover: () => layer.setStyle(styleFor(name, name === selectedName, true)), mouseout: () => layer.setStyle(styleFor(name, name === selectedName)), click: () => { selectLayer(name, layer); layer.openPopup(); } });

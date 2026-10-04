@@ -6,6 +6,7 @@ use App\Models\ClimateRecord;
 use App\Models\FarmBoundary;
 use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
+use App\Models\MonthlyWeatherPrediction;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
@@ -22,7 +23,53 @@ class BarangayRiskMapTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function fakeFreshWeather(float $rainfall24h, float $temperature, float $humidity = 70, float $wind = 10, ?int $weatherCode = 0, bool $isDay = true)
+    protected function setUp(): void
+    {
+        parent::setUp();
+        set_time_limit(30);
+
+        // A risk-map test must never silently wait on an unmatched provider
+        // request. Individual tests below install the Open-Meteo fake they
+        // need; this turns every other HTTP request into an immediate failure.
+        Http::preventStrayRequests();
+
+        // The risk map only needs a prepared municipality-wide monthly value
+        // for current-weather tests. Persisting a small fixture keeps those
+        // tests focused on the 19 barangay/weather paths instead of retraining
+        // the pure-PHP forest after every Cache::flush(). Tests that verify
+        // the forest itself explicitly remove this row with
+        // forgetPreparedMonthlyForecast().
+        $month = now()->startOfMonth();
+        MonthlyWeatherPrediction::create([
+            'prediction_year' => $month->year,
+            'prediction_month' => $month->month,
+            'rainfall' => 200,
+            'tmax' => 30,
+            'tmin' => 24,
+            'temperature_average' => 27,
+            'humidity' => 75,
+            'wind_speed' => 10,
+            'wind_direction' => 180,
+            'season' => 'Wet',
+            'weather_model' => MonthlyWeatherRandomForest::MODEL_VERSION,
+            'generated_at' => now(),
+            'expires_at' => now()->addDay(),
+            'status' => MonthlyWeatherPrediction::STATUS_READY,
+            'metadata' => ['dataset_version' => app(MonthlyWeatherRandomForest::class)->datasetVersion()],
+        ]);
+    }
+
+    private function forgetPreparedMonthlyForecast(): void
+    {
+        Cache::flush();
+        MonthlyWeatherPrediction::query()
+            ->where('prediction_year', now()->year)
+            ->where('prediction_month', now()->month)
+            ->where('weather_model', MonthlyWeatherRandomForest::MODEL_VERSION)
+            ->delete();
+    }
+
+    private function fakeFreshWeather(float $rainfall24h, float $temperature, ?float $humidity = 70, float $wind = 10, ?int $weatherCode = 0, bool $isDay = true)
     {
         return Http::response([
             'current' => [
@@ -118,6 +165,8 @@ class BarangayRiskMapTest extends TestCase
         ]);
 
         FarmerProfile::factory()->create(['barangay' => 'Matabungkay', 'farm_type' => 'Rainfed']);
+
+        $this->forgetPreparedMonthlyForecast();
 
         // Resolve the SAME monthly rainfall figure the fix uses, then
         // compute the expected evaluation independently via
@@ -232,6 +281,8 @@ class BarangayRiskMapTest extends TestCase
             AmbulongHistoricalClimateDataset::class,
             new AmbulongHistoricalClimateDataset(database_path('data/does-not-exist.csv'))
         );
+
+        $this->forgetPreparedMonthlyForecast();
 
         $forest = app(MonthlyWeatherRandomForest::class);
         $prediction = $forest->predict(now()->startOfMonth()->toImmutable());
@@ -781,5 +832,20 @@ class BarangayRiskMapTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('/images/weather/', false);      // the dashboard uses one line-icon style, not coloured tiles
         $response->assertSee('Thunderstorm');
+    }
+
+    public function test_missing_humidity_keeps_the_other_current_weather_values_usable(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(12, 29, null, 10)]);
+
+        $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Puting-Kahoy');
+
+        $this->assertNotNull($entry);
+        $this->assertSame('fresh', $entry['weather']['status']);
+        $this->assertSame(29.0, $entry['weather']['temperature_c']);
+        $this->assertNull($entry['weather']['humidity_percent']);
+        $this->assertSame(12.0, $entry['weather']['rainfall_24h_mm']);
     }
 }
