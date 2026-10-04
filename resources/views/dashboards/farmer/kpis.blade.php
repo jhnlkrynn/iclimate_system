@@ -2,8 +2,8 @@
 <section aria-labelledby="mfdKpiTitle" data-mfd-kpis>
     <h2 class="mfd-section-title" id="mfdKpiTitle">{{ __('farmer.kpi.title') }}</h2>
     <div class="mfd-kpis">
-        {{-- Today's heat is in Weather Now; alerts remain a KPI because they are a direct, actionable count. --}}
-        @foreach (collect($f['kpis'])->reject(fn ($k) => $k['key'] === 'heat') as $k)
+        {{-- Today's heat is in Weather Now and the alert count is in What to Do Today: neither is repeated here. --}}
+        @foreach (collect($f['kpis'])->reject(fn ($k) => in_array($k['key'], ['heat', 'alerts'], true)) as $k)
             <a class="mfd-kpi {{ $k['missing'] ? 'is-missing' : '' }}" href="{{ $k['href'] }}" data-kpi="{{ $k['key'] }}">
                 <span class="mfd-kpi-label">{{ $k['label'] }}</span>
                 <span class="mfd-kpi-value"><span>{{ $k['display'] }}</span>@if ($k['unit'] !== '' && ! $k['missing'])<small>{{ $k['unit'] }}</small>@endif</span>

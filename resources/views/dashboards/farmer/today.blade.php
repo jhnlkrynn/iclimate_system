@@ -37,7 +37,7 @@
     @endif
 
     {{-- Right: what the farmer should know today. Real warnings always come first and are never left out. --}}
-    <section class="mfd-card mfd-advice" aria-labelledby="mfdAdviceTitle" data-mfd-advice>
+    <section class="mfd-card mfd-advice" aria-labelledby="mfdAdviceTitle" data-mfd-advice data-kpi="alerts">
         <div class="mfd-card-head"><h2 id="mfdAdviceTitle">{{ __('farmer.advice.title') }}</h2></div>
 
         @if (count($alerts) === 0)
