@@ -6,6 +6,7 @@ use App\Models\ClimateRecord;
 use App\Models\FarmBoundary;
 use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
+use App\Models\MonthlyWeatherPrediction;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
@@ -22,7 +23,66 @@ class BarangayRiskMapTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function fakeFreshWeather(float $rainfall24h, float $temperature, float $humidity = 70, float $wind = 10, ?int $weatherCode = 0, bool $isDay = true)
+    /** The process-wide time limit before this test, restored in tearDown(). */
+    private string|false $previousTimeLimit = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // set_time_limit() in the console applies to the whole PHPUnit process, so it is restored
+        // after each test; otherwise every later test shares a 30-second budget.
+        $this->previousTimeLimit = ini_get('max_execution_time');
+        set_time_limit(30);
+
+        // A risk-map test must never silently wait on an unmatched provider
+        // request. Individual tests below install the Open-Meteo fake they
+        // need; this turns every other HTTP request into an immediate failure.
+        Http::preventStrayRequests();
+
+        // The risk map only needs a prepared municipality-wide monthly value
+        // for current-weather tests. Persisting a small fixture keeps those
+        // tests focused on the 19 barangay/weather paths instead of retraining
+        // the pure-PHP forest after every Cache::flush(). Tests that verify
+        // the forest itself explicitly remove this row with
+        // forgetPreparedMonthlyForecast().
+        $month = now()->startOfMonth();
+        MonthlyWeatherPrediction::create([
+            'prediction_year' => $month->year,
+            'prediction_month' => $month->month,
+            'rainfall' => 200,
+            'tmax' => 30,
+            'tmin' => 24,
+            'temperature_average' => 27,
+            'humidity' => 75,
+            'wind_speed' => 10,
+            'wind_direction' => 180,
+            'season' => 'Wet',
+            'weather_model' => MonthlyWeatherRandomForest::MODEL_VERSION,
+            'generated_at' => now(),
+            'expires_at' => now()->addDay(),
+            'status' => MonthlyWeatherPrediction::STATUS_READY,
+            'metadata' => ['dataset_version' => app(MonthlyWeatherRandomForest::class)->datasetVersion()],
+        ]);
+    }
+
+    protected function tearDown(): void
+    {
+        set_time_limit((int) $this->previousTimeLimit);
+
+        parent::tearDown();
+    }
+
+    private function forgetPreparedMonthlyForecast(): void
+    {
+        Cache::flush();
+        MonthlyWeatherPrediction::query()
+            ->where('prediction_year', now()->year)
+            ->where('prediction_month', now()->month)
+            ->where('weather_model', MonthlyWeatherRandomForest::MODEL_VERSION)
+            ->delete();
+    }
+
+    private function fakeFreshWeather(float $rainfall24h, float $temperature, ?float $humidity = 70, float $wind = 10, ?int $weatherCode = 0, bool $isDay = true)
     {
         return Http::response([
             'current' => [
@@ -118,6 +178,8 @@ class BarangayRiskMapTest extends TestCase
         ]);
 
         FarmerProfile::factory()->create(['barangay' => 'Matabungkay', 'farm_type' => 'Rainfed']);
+
+        $this->forgetPreparedMonthlyForecast();
 
         // Resolve the SAME monthly rainfall figure the fix uses, then
         // compute the expected evaluation independently via
@@ -232,6 +294,8 @@ class BarangayRiskMapTest extends TestCase
             AmbulongHistoricalClimateDataset::class,
             new AmbulongHistoricalClimateDataset(database_path('data/does-not-exist.csv'))
         );
+
+        $this->forgetPreparedMonthlyForecast();
 
         $forest = app(MonthlyWeatherRandomForest::class);
         $prediction = $forest->predict(now()->startOfMonth()->toImmutable());
@@ -412,7 +476,7 @@ class BarangayRiskMapTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('Barangay Agricultural Risk Map');
+        $response->assertSee('Lian Municipality Risk Map');
     }
 
     /**
@@ -516,7 +580,41 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('data-risk-map-refresh', false);
     }
 
-    public function test_admin_dashboard_no_longer_embeds_the_risk_map_but_mao_still_does(): void
+    public function test_farmer_can_open_the_heat_map_tab(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create([
+            'role' => User::ROLE_FARMER,
+            'barangay' => 'Malaruhatan',
+        ]);
+
+        $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']))
+            ->assertOk()
+            ->assertViewHas('tab', 'heatmap')
+            ->assertSee('aria-current="page"', false)
+            ->assertSee('Lian Municipality Risk Map')
+            ->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
+            ->assertSee('data-highlight-barangay="Malaruhatan"', false);
+    }
+
+    public function test_shared_heat_map_page_is_available_to_every_account_role(): void
+    {
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($user)->get(route('heat-map.index'))
+                ->assertOk()
+                ->assertSee('Lian Municipality Risk Map')
+                ->assertSee('id="barangayRiskMap"', false)
+                ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
+                ->assertSee('href="'.route('heat-map.index').'"', false);
+        }
+    }
+
+    public function test_admin_dashboard_has_a_heat_map_tab_and_mao_still_does(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
@@ -525,8 +623,10 @@ class BarangayRiskMapTest extends TestCase
 
         $this->actingAs($itExpert)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertDontSee('id="barangayRiskMap"', false)
-            ->assertDontSee('Lian Municipality Risk Map');
+            ->assertSee('Heat Map')
+            ->assertSee('id="itd-panel-heatmap"', false)
+            ->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
@@ -704,6 +804,33 @@ class BarangayRiskMapTest extends TestCase
         }
     }
 
+    public function test_live_outage_keeps_last_verified_colored_risk_instead_of_erasing_the_map(): void
+    {
+        Cache::flush();
+        Cache::forever(BarangayRiskMapService::LATEST_KEY, [
+            'generated_at' => now()->subMinutes(8)->toIso8601String(),
+            'source_note' => 'Verified test map.',
+            'barangays' => [[
+                'barangay' => 'Bagong Pook',
+                'risk_level' => 'High',
+                'risk_score' => 0.72,
+                'color' => 'orange',
+                'status' => 'ok',
+                'updated_at' => now()->subMinutes(8)->toIso8601String(),
+                'weather' => ['status' => 'fresh', 'temperature_c' => 29],
+            ]],
+        ]);
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+
+        $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
+
+        $this->assertSame('High', $entry['risk_level']);
+        $this->assertSame('stale', $entry['status']);
+        $this->assertTrue($map['stale']);
+        $this->assertSame(1, $map['stale_count']);
+    }
+
     public function test_farmer_summary_card_shows_the_weather_icon_when_fresh_weather_is_available(): void
     {
         Cache::flush();
@@ -718,5 +845,20 @@ class BarangayRiskMapTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('/images/weather/', false);      // the dashboard uses one line-icon style, not coloured tiles
         $response->assertSee('Thunderstorm');
+    }
+
+    public function test_missing_humidity_keeps_the_other_current_weather_values_usable(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(12, 29, null, 10)]);
+
+        $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Puting-Kahoy');
+
+        $this->assertNotNull($entry);
+        $this->assertSame('fresh', $entry['weather']['status']);
+        $this->assertSame(29.0, $entry['weather']['temperature_c']);
+        $this->assertNull($entry['weather']['humidity_percent']);
+        $this->assertSame(12.0, $entry['weather']['rainfall_24h_mm']);
     }
 }

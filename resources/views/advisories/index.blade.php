@@ -81,13 +81,16 @@
                 <span class="fad-kicker">Forecast-Based Guidance</span>
                 <h1>Farming Advisories</h1>
                 <p>View PAGASA online advisories for Lian, Batangas plus local farm guidance based on current forecast conditions.</p>
+                @if(auth()->user()->role === \App\Models\User::ROLE_FARMER)
+                    <p class="fad-hero-note">Latest advisory check: {{ $advisoryCheck['checked_at']?->copy()->timezone(\App\Support\BusinessClock::timezone())->format('g:i A') ?? 'Not checked yet' }}</p>
+                @endif
             </div>
             <div class="fad-hero-actions">
                 @if($canManage)
                     <a class="fad-btn is-on-dark" href="{{ route('management.advisories.index') }}">Review Advisories</a>
                     <a class="fad-btn is-on-dark" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
                 @endif
-                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true">
+                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true" @if(auth()->user()->role === \App\Models\User::ROLE_FARMER) data-fad-refresh @endif>
                     @csrf
                     <button class="fad-btn is-light" type="submit" data-loading-text="Refreshing...">@include('dashboards.mao.icon', ['name' => 'refresh'])<span>Refresh PAGASA</span></button>
                 </form>
@@ -218,6 +221,15 @@
             </form>
         </details>
 
+        {{-- 4. Advisories: compact cards. Farmers see their barangay first, then Lian-wide advice. --}}
+        @if(auth()->user()->role === \App\Models\User::ROLE_FARMER)
+            @include('advisories._farmer-lists', [
+                'myBarangayAdvisories' => $myBarangayAdvisories,
+                'lianWideAdvisories' => $lianWideAdvisories,
+                'farmerBarangay' => $farmerBarangay,
+                'advisoryCheck' => $advisoryCheck,
+            ])
+        @else
         {{-- 4. Advisories: compact cards. "View" opens the full advisory in a popup (farmer-advisories.js);
              without JavaScript, or with Ctrl/Cmd-click, it is a normal link to the advisory page. --}}
         <section class="fad-list" aria-labelledby="fadListTitle">
@@ -273,6 +285,7 @@
                 </div>
             @endif
         </section>
+        @endif
 
     </div>
 

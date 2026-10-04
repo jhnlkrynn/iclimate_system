@@ -62,7 +62,7 @@
     <p class="err-message">{{ $message }}</p>
 
     <div class="err-actions">
-      @auth
+      @if(($showDashboardLink ?? true) && auth()->check())
         <a href="{{ route(auth()->user()->dashboardRoute()) }}" class="err-btn err-btn-primary">Back to Dashboard</a>
       @else
         <a href="{{ url('/') }}" class="err-btn err-btn-primary">Back to Home</a>

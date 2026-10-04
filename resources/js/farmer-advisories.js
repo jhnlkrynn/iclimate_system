@@ -21,6 +21,43 @@ export function initAdvisoryModal() {
     let currentUrl = null;
     let saving = false;
 
+    // Refresh the configured PAGASA endpoint without navigating away. The
+    // returned page is fetched again so cards, timestamps, and empty states
+    // all reflect the same server-side cache/database snapshot.
+    document.addEventListener('submit', async (event) => {
+        const form = event.target.closest('[data-fad-refresh]');
+        if (!form || form.dataset.refreshing === 'true') return;
+        event.preventDefault();
+        form.dataset.refreshing = 'true';
+        const button = form.querySelector('button');
+        const original = button?.textContent;
+        if (button) { button.disabled = true; button.textContent = 'Refreshing…'; }
+        try {
+            const body = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST', body,
+                headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.ok) throw new Error(result.message || 'Could not refresh advisories.');
+            const page = await fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' });
+            if (!page.ok) throw new Error('Advisories refreshed, but the page could not be updated.');
+            const html = await page.text();
+            const template = document.createElement('template');
+            template.innerHTML = html;
+            const current = document.querySelector('.fad');
+            const updated = template.content.querySelector('.fad');
+            if (current && updated) current.replaceWith(updated);
+        } catch (error) {
+            window.dispatchEvent(new CustomEvent('fad-refresh-error', { detail: error.message }));
+            if (button) button.setAttribute('aria-label', error.message);
+        } finally {
+            form.dataset.refreshing = 'false';
+            if (button) { button.disabled = false; button.textContent = original || 'Refresh Advisories'; }
+        }
+    });
+
     const render = (content) => dialog.replaceChildren(content);
     const focusTitle = () => (dialog.querySelector('#fadModalTitle') || dialog).focus();
     const modalUrl = (href) => {

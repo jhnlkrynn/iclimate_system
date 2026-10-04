@@ -5,6 +5,7 @@
     $navBarangay = $isFarmerNav ? ($user->farmerProfile?->barangay ?? $user->barangay) : null;
     // IT Personnel get the same notification bell as farmers (their own notifications, same list page).
     $showNavBell = $isFarmerNav || $user->role === \App\Models\User::ROLE_IT_EXPERT;
+    $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
     // Same cached count as the sidebar badge, so the two always agree.
     $navUnread = $showNavBell
         ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())

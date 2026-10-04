@@ -100,6 +100,47 @@ class FarmerAdvisoryView
             : 'All barangays in Lian';
     }
 
+    public function farmerArea(): string
+    {
+        return $this->advisory->target_barangay
+            ? 'Barangay '.$this->advisory->target_barangay.', Lian, Batangas'
+            : 'Lian, Batangas';
+    }
+
+    public function farmerRiskLevel(): string
+    {
+        return match ($this->advisory->severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => 'Severe',
+            PlantingAdvisory::SEVERITY_HIGH => 'High',
+            PlantingAdvisory::SEVERITY_MODERATE => 'Moderate',
+            default => 'Low',
+        };
+    }
+
+    public function farmerRiskTone(): string
+    {
+        return match ($this->farmerRiskLevel()) {
+            'Severe', 'High' => 'danger',
+            'Moderate' => 'watch',
+            default => 'good',
+        };
+    }
+
+    public function farmerEffect(): string
+    {
+        return $this->quickSummary()[0] ?? ($this->farmEffects()[0] ?? 'Weather conditions may affect rice fields.');
+    }
+
+    public function farmerAction(): string
+    {
+        return $this->actions()[0] ?? 'Check your field before doing farm work.';
+    }
+
+    public function farmerSourceLabel(): string
+    {
+        return $this->isPagasa() ? 'PAGASA' : 'iClimate Weather Analysis';
+    }
+
     public function officialUrl(): ?string
     {
         if (! $this->isPagasa()) {

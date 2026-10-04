@@ -7,6 +7,7 @@ use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Database\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -36,6 +37,47 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $exception, Request $request) {
+            // A database outage must not turn every database-backed page into the generic 500 screen.
+            // Only an unreachable or dropped connection counts as an outage: any other database error
+            // (bad SQL, missing table) is a bug and goes through the normal 500 path, so it is not
+            // disguised as "Data Service Unavailable". With APP_DEBUG on, Laravel shows the real exception.
+            if (config('app.debug')) {
+                return null;
+            }
+
+            $lostConnection = app(\Illuminate\Contracts\Database\LostConnectionDetector::class);
+
+            // Walk the exception chain because Laravel commonly wraps PDOException in QueryException.
+            for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
+                $unavailable = $current instanceof ConnectionException
+                    || $current instanceof \Illuminate\Database\LostConnectionException
+                    // SQLSTATE class 08 = connection exception (e.g. 08006 could not connect).
+                    || ($current instanceof \PDOException && (str_starts_with((string) $current->getCode(), '08') || $lostConnection->causedByLostConnection($current)));
+
+                if (! $unavailable) {
+                    continue;
+                }
+
+                Log::error('Database unavailable while handling a request.', [
+                    'url' => $request->fullUrl(),
+                    'method' => $request->method(),
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'The data service is temporarily unavailable. Please try again shortly.',
+                    ], 503);
+                }
+
+                return response()->view('errors.503', [
+                    'exception' => $exception,
+                    'title' => 'Data Service Unavailable',
+                    'message' => 'The data service is temporarily unavailable. Please try again shortly.',
+                ], 503);
+            }
+
             if (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() !== 505) {
                 return null;
             }

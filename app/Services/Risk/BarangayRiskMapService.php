@@ -117,8 +117,15 @@ class BarangayRiskMapService
 
         $cached = Cache::get(self::CACHE_KEY);
 
-        if (is_array($cached)) {
+        // An earlier cold-cache response could contain an empty barangay list.
+        // Never treat that as a valid map: the Leaflet layer still has 19
+        // polygons and would otherwise count every one as No Data.
+        if (is_array($cached) && count($cached['barangays'] ?? []) === count(LianBarangays::all())) {
             return $cached;
+        }
+
+        if (is_array($cached)) {
+            Cache::forget(self::CACHE_KEY);
         }
 
         // A page a person is waiting on never computes the map (about 19 weather lookups and 19
@@ -128,12 +135,38 @@ class BarangayRiskMapService
             return $this->lastKnownMap();
         }
 
-        $map = $this->compute($refresh);
+        $map = $this->retainLastKnownGood($this->compute($refresh));
 
         Cache::put(self::CACHE_KEY, $map, now()->addMinutes(self::CACHE_TTL_MINUTES));
         Cache::forever(self::LATEST_KEY, $map);
 
         return $map;
+    }
+
+    /**
+     * Queue the slow 19-barangay refresh without making a web request wait for
+     * 19 external weather calls. The current cached/stored map remains the
+     * response until the queue worker swaps in the refreshed result.
+     */
+    public function queueRefresh(): bool
+    {
+        if (! Cache::add(self::REFRESH_LOCK_KEY, true, now()->addMinutes(10))) {
+            return false;
+        }
+
+        try {
+            \App\Jobs\RefreshBarangayRiskMap::dispatch()
+                ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
+                ->onQueue((string) config('services.farming_ai.queue', 'analytics'))
+                ->afterCommit();
+        } catch (Throwable $exception) {
+            Cache::forget(self::REFRESH_LOCK_KEY);
+            Log::warning('Barangay risk map: refresh could not be queued.', ['message' => $exception->getMessage()]);
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -145,19 +178,86 @@ class BarangayRiskMapService
         $generatedAt = is_array($latest) ? ($latest['generated_at'] ?? null) : null;
         $old = $generatedAt === null || \Illuminate\Support\Carbon::parse($generatedAt)->lt(now()->subMinutes(self::REFRESH_AFTER_MINUTES));
 
-        if ($old && Cache::add(self::REFRESH_LOCK_KEY, true, now()->addMinutes(10))) {
-            \App\Jobs\RefreshBarangayRiskMap::dispatch()
-                ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
-                ->onQueue((string) config('services.farming_ai.queue', 'analytics'))
-                ->afterCommit();
+        if ($old) {
+            $this->queueRefresh();
         }
 
-        if (is_array($latest)) {
+        if (is_array($latest) && count($latest['barangays'] ?? []) === count(LianBarangays::all())) {
             return $latest + ['stale' => true];
         }
 
-        // Nothing has ever been computed: an empty map (every barangay reads as "no data yet").
-        return ['generated_at' => null, 'source_note' => AgriculturalRiskScorer::METHODOLOGY_CAVEAT, 'barangays' => [], 'stale' => true];
+        // On a cold install, use persisted verified risk rows immediately.
+        // Computing live weather for all 19 barangays belongs in the queue
+        // worker, otherwise a normal page request can exceed PHP's 30-second
+        // execution limit.
+        $map = $this->storedMap();
+        Cache::put(self::CACHE_KEY, $map, now()->addMinutes(self::CACHE_TTL_MINUTES));
+        Cache::forever(self::LATEST_KEY, $map);
+
+        return $map;
+    }
+
+    /** Build a complete, fast response from the last persisted risk rows. */
+    private function storedMap(): array
+    {
+        $psgcMap = $this->safePsgcMap();
+        $areas = $this->existingAreas();
+        $rows = [];
+
+        foreach (LianBarangays::all() as $barangay) {
+            $area = $areas[$barangay] ?? null;
+
+            if ($area === null || ! in_array($area->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)) {
+                $rows[] = $this->noDataResult(
+                    $barangay,
+                    $psgcMap[$barangay] ?? null,
+                    ['status' => 'unavailable', 'message' => 'Live risk refresh is still in progress.'],
+                    null,
+                    false,
+                    ['available' => false, 'value' => null, 'message' => 'Live risk refresh is still in progress.']
+                );
+
+                continue;
+            }
+
+            $rows[] = [
+                'barangay' => $barangay,
+                'psgc_10d' => $psgcMap[$barangay] ?? null,
+                'risk_level' => $area->risk_level,
+                'risk_score' => $area->risk_score !== null ? (float) $area->risk_score : null,
+                'color' => $this->colorFor($area->risk_level),
+                'status' => 'stale',
+                'updated_at' => $area->risk_computed_at?->toIso8601String() ?? $area->updated_at?->toIso8601String(),
+                'weather' => [
+                    'status' => 'unavailable',
+                    'message' => 'Live weather is refreshing. Showing the last verified risk result.',
+                    'temperature_c' => null,
+                    'rainfall_24h_mm' => null,
+                    'humidity_percent' => null,
+                    'wind_speed_kmh' => null,
+                ],
+                'monthly_rainfall' => [
+                    'value_mm' => null,
+                    'unit' => 'mm/calendar month',
+                    'available' => false,
+                    'message' => 'Live risk refresh is still in progress.',
+                ],
+                'last_recorded_yield' => null,
+                'advisory' => null,
+                'risk_breakdown' => $area->risk_components,
+                'last_known_good' => true,
+                'stale_reason' => 'Showing the last persisted iClimate risk result while live weather refresh runs.',
+            ];
+        }
+
+        $generatedAt = collect($rows)->pluck('updated_at')->filter()->max() ?: now()->toIso8601String();
+
+        return [
+            'generated_at' => $generatedAt,
+            'source_note' => AgriculturalRiskScorer::METHODOLOGY_CAVEAT,
+            'barangays' => $rows,
+            'stale' => true,
+        ];
     }
 
     /**
@@ -167,7 +267,58 @@ class BarangayRiskMapService
      */
     public function refreshCache(): void
     {
-        Cache::put(self::CACHE_KEY, $this->compute(false), now()->addMinutes(self::CACHE_TTL_MINUTES));
+        $map = $this->retainLastKnownGood($this->compute(false));
+        Cache::put(self::CACHE_KEY, $map, now()->addMinutes(self::CACHE_TTL_MINUTES));
+        Cache::forever(self::LATEST_KEY, $map);
+    }
+
+    /**
+     * A provider outage must not replace a verified colored map with an all-grey
+     * map. Keep the last verified risk result for only the affected barangays,
+     * mark it stale, and let the UI explain that it is not a live reading.
+     */
+    private function retainLastKnownGood(array $map): array
+    {
+        $previous = Cache::get(self::LATEST_KEY);
+        if (! is_array($previous) || ! is_array($previous['barangays'] ?? null)) {
+            return $map;
+        }
+
+        $previousByBarangay = collect($previous['barangays'])->keyBy('barangay');
+        $fallbackCount = 0;
+        $levels = ['Low', 'Moderate', 'High', 'Severe'];
+
+        $map['barangays'] = collect($map['barangays'] ?? [])->map(function (array $entry) use ($previousByBarangay, $levels, &$fallbackCount): array {
+            if (($entry['risk_level'] ?? 'No Data') !== 'No Data') {
+                return $entry;
+            }
+
+            $last = $previousByBarangay->get($entry['barangay']);
+            if (! is_array($last) || ! in_array($last['risk_level'] ?? null, $levels, true)) {
+                return $entry;
+            }
+
+            $fallbackCount++;
+            $last['status'] = 'stale';
+            $last['last_known_good'] = true;
+            $last['stale_reason'] = 'Live weather or supporting data could not be refreshed; showing the last verified risk result.';
+            if (is_array($last['weather'] ?? null)) {
+                $last['weather']['status'] = 'stale';
+                $last['weather']['message'] = 'Live weather is temporarily unavailable. This is the last verified risk result.';
+            }
+
+            return $last;
+        })->values()->all();
+
+        if ($fallbackCount === 0) {
+            return $map;
+        }
+
+        $map['stale'] = true;
+        $map['stale_count'] = $fallbackCount;
+        $map['source_note'] = trim((string) ($map['source_note'] ?? '')).' Live refresh was unavailable for '.$fallbackCount.' barangay(s); colored values are last verified results and should be refreshed when the source recovers.';
+
+        return $map;
     }
 
     /** Age of the cached map in minutes, or null when nothing is cached. */
@@ -397,6 +548,7 @@ class BarangayRiskMapService
             'status' => 'no_data',
             'updated_at' => null,
             'weather' => $weatherBlock,
+            'no_data_reason' => $message,
             // No monthly rainfall figure was used to produce a score — this
             // barangay's No Data is (at least partly) because of that.
             'monthly_rainfall' => [
@@ -516,15 +668,18 @@ class BarangayRiskMapService
      *
      * @return array<string, RiceProduction>
      */
-    private function latestYieldsByBarangay(): array
+    public function latestYieldsByBarangay(): array
     {
         try {
-            return \App\Support\SampleData::without(RiceProduction::query(), 'rice_productions')
+            $rows = \App\Support\SampleData::without(RiceProduction::query(), 'rice_productions')
                 ->orderByDesc('year')
                 ->orderByDesc('production_month')
-                ->get()
-                ->unique('barangay')
-                ->keyBy('barangay')
+                ->get();
+
+            return $rows
+                ->filter(fn (RiceProduction $row): bool => LianBarangays::canonicalName($row->barangay) !== null)
+                ->unique(fn (RiceProduction $row): string => LianBarangays::canonicalName($row->barangay))
+                ->mapWithKeys(fn (RiceProduction $row): array => [LianBarangays::canonicalName($row->barangay) => $row])
                 ->all();
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: rice production lookup failed.', ['message' => $exception->getMessage()]);
@@ -539,17 +694,20 @@ class BarangayRiskMapService
      *
      * @return array<string, string>
      */
-    private function dominantFarmTypes(): array
+    public function dominantFarmTypes(): array
     {
         try {
-            return FarmerProfile::query()
+            $rows = FarmerProfile::query()
                 ->whereNotNull('farm_type')
                 ->selectRaw('barangay, farm_type, COUNT(*) as total')
                 ->groupBy('barangay', 'farm_type')
                 ->orderByDesc('total')
-                ->get()
-                ->groupBy('barangay')
-                ->map(fn ($rows) => (string) $rows->first()->farm_type)
+                ->get();
+
+            return $rows
+                ->filter(fn ($row): bool => LianBarangays::canonicalName($row->barangay) !== null)
+                ->groupBy(fn ($row): string => LianBarangays::canonicalName($row->barangay))
+                ->map(fn ($rows): string => (string) $rows->first()->farm_type)
                 ->all();
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: farm type lookup failed.', ['message' => $exception->getMessage()]);
@@ -562,7 +720,10 @@ class BarangayRiskMapService
     private function existingAreas(): array
     {
         try {
-            return HeatmapArea::query()->get()->keyBy('barangay')->all();
+            return HeatmapArea::query()->get()
+                ->filter(fn (HeatmapArea $area): bool => LianBarangays::canonicalName($area->barangay) !== null)
+                ->mapWithKeys(fn (HeatmapArea $area): array => [LianBarangays::canonicalName($area->barangay) => $area])
+                ->all();
         } catch (Throwable) {
             return [];
         }

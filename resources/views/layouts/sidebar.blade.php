@@ -15,6 +15,7 @@
     $sidebarIcon = function (string $key): string {
         return match ($key) {
             'dashboard' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2.5 8.5 9 3l6.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 7.5V15h10V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            'heatmap' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 3.5h12v11H3z" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 12V9.5M9 12V6M12.5 12V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
             'advisories' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 2.5 16 15H2L9 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 8v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="13" r=".9" fill="currentColor"/></svg>',
             'calendar' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3.5" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 7.5h13M6 2v3M12 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             'community' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6.5" r="2.2" stroke="currentColor" stroke-width="1.4"/><circle cx="12.5" cy="7.5" r="1.8" stroke="currentColor" stroke-width="1.4"/><path d="M2 15c.5-2.7 2-4.2 4.5-4.2s4 1.5 4.5 4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 15c.4-2.2 1.6-3.4 3.2-3.4s2.8 1 3.2 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
@@ -35,6 +36,7 @@
 
     $routeDefs = [
         'dashboard' => [$dashboardRoute, [$dashboardRoute]],
+        'heatmap' => ['heat-map.index', ['heat-map.*']],
         'advisories' => ['planting-advisories.index', ['planting-advisories.*']],
         'calendar' => ['calendar.index', ['calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
@@ -64,6 +66,7 @@
     if ($isFarmer) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Advisories', 'advisories', 'advisories'),
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
@@ -79,6 +82,7 @@
     } elseif ($isMao) {
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Farm Calendar', 'calendar', 'calendar'),
             $navLink('Climate Records', 'climate-records', 'climate-records'),
             $navLink('Planting Advisories', 'advisories', 'advisories'),
@@ -98,6 +102,7 @@
         // IT Personnel: grouped by purpose; each page appears once.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Reports', 'reports', 'reports'),
         ];
         $moreGroup = [];

@@ -19,8 +19,17 @@ class BarangayRiskMapController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $refreshQueued = false;
+
+        // A manual refresh is intentionally asynchronous. The risk service
+        // performs 19 weather lookups and database writes; doing that inside
+        // this HTTP request can exceed PHP's 30-second execution limit.
+        if ($request->boolean('refresh')) {
+            $refreshQueued = $this->riskMapService->queueRefresh();
+        }
+
         try {
-            $map = $this->riskMapService->riskMap($request->boolean('refresh'));
+            $map = $this->riskMapService->riskMap(false);
         } catch (Throwable $exception) {
             return $this->unavailableResponse($exception);
         }
@@ -48,6 +57,9 @@ class BarangayRiskMapController extends Controller
         return response()->json([
             'status' => 'ok',
             'generated_at' => $map['generated_at'],
+            'stale' => (bool) ($map['stale'] ?? false),
+            'stale_count' => (int) ($map['stale_count'] ?? 0),
+            'refresh_queued' => $refreshQueued,
             'source_note' => $map['source_note'],
             'legend' => ['Low', 'Moderate', 'High', 'Severe', 'No Data'],
             'barangays' => $barangays,
@@ -60,8 +72,14 @@ class BarangayRiskMapController extends Controller
      */
     public function show(Request $request, string $barangay): JsonResponse
     {
+        if ($request->boolean('refresh')) {
+            $this->riskMapService->queueRefresh();
+        }
+
         try {
-            $entry = $this->riskMapService->detailFor($barangay, $request->boolean('refresh'));
+            // Detail requests must be bounded too; live refresh is handled by
+            // the queue and the current verified entry is returned now.
+            $entry = $this->riskMapService->detailFor($barangay, false);
         } catch (Throwable $exception) {
             return $this->unavailableResponse($exception);
         }

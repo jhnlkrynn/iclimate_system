@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Support\PythonRuntime;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -1269,9 +1270,7 @@ class GenerateCandidate2026 extends Command
         |--------------------------------------------------------------------------
         */
 
-        return base_path(
-            '.venv/Scripts/python.exe'
-        );
+        return PythonRuntime::executable() ?? 'python';
     }
 
     /*

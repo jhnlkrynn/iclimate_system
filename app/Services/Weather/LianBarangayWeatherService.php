@@ -43,7 +43,10 @@ class LianBarangayWeatherService
         $weather = [];
 
         foreach (LianBarangays::coordinates() as $barangay => [$latitude, $longitude]) {
-            $weather[$this->normalizeBarangay($barangay)] = $this->forBarangay($barangay, $latitude, $longitude, $refresh);
+            $canonical = LianBarangays::canonicalName($barangay);
+            if ($canonical !== null) {
+                $weather[$canonical] = $this->forBarangay($canonical, $latitude, $longitude, $refresh);
+            }
         }
 
         return $weather;
@@ -187,15 +190,6 @@ class LianBarangayWeatherService
     private function refreshMinutes(): int
     {
         return max(10, (int) config('services.open_meteo.refresh_minutes', 30));
-    }
-
-    private function normalizeBarangay(string $barangay): string
-    {
-        $value = strtolower($barangay);
-        $value = str_replace(['barangay', 'brgy', '(pob.)', 'pob.', 'poblacion', '-', '.'], ' ', $value);
-        $value = preg_replace('/[^a-z0-9]+/', ' ', $value) ?: '';
-
-        return trim(preg_replace('/\s+/', ' ', $value) ?: '');
     }
 
     private function sumFirst(array $values, int $limit): ?float

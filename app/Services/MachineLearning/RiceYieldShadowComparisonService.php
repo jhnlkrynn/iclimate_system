@@ -4,6 +4,7 @@ namespace App\Services\MachineLearning;
 
 use App\Models\RiceYieldModelComparison;
 use App\Services\Prediction\PredictionOrchestrator;
+use App\Support\PythonRuntime;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
@@ -172,12 +173,9 @@ class RiceYieldShadowComparisonService
             throw new RuntimeException('Candidate rice-yield model was not found: '.$model);
         }
 
-        $pythonBinary = trim(
-            (string) (config('iclimate.python_binary') ?: base_path('.venv/Scripts/python.exe')),
-            " \t\n\r\0\x0B\"'"
-        );
+        $pythonBinary = PythonRuntime::executable();
 
-        if (! File::exists($pythonBinary)) {
+        if ($pythonBinary === null || ! File::exists($pythonBinary)) {
             throw new RuntimeException('Python executable was not found: '.$pythonBinary);
         }
 

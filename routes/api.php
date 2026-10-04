@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BarangayRiskForecastController;
 use App\Http\Controllers\Api\BarangayRiskMapController;
 use App\Http\Controllers\Api\LianBoundaryController;
 use App\Http\Controllers\Api\LianWeatherController;
@@ -16,6 +17,9 @@ Route::get('lian/risk-map', [BarangayRiskMapController::class, 'index'])
     ->middleware('throttle:30,1');
 
 Route::get('lian/risk-map/{barangay}', [BarangayRiskMapController::class, 'show'])
+    ->middleware('throttle:30,1');
+
+Route::get('lian/risk-forecast', BarangayRiskForecastController::class)
     ->middleware('throttle:30,1');
 
 Route::prefix('mobile')->group(function (): void {

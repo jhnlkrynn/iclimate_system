@@ -149,6 +149,8 @@ class PlantingAdvisory extends Model
     {
         return $query->where(function (Builder $builder) {
             $builder->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+        })->where(function (Builder $builder) {
+            $builder->whereNull('valid_from')->orWhere('valid_from', '<=', now());
         });
     }
 
