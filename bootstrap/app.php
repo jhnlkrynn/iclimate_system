@@ -36,6 +36,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Every reported error says where it happened and for which role (a fatal timeout otherwise logs only the
+        // user id). No input, headers, cookies or tokens: only the request line and the route.
+        $exceptions->context(function (): array {
+            $request = app()->bound('request') ? request() : null;
+            if ($request === null || $request->route() === null) {                 // commands and queue jobs
+                return [];
+            }
+
+            return array_filter([
+                'path' => '/'.ltrim($request->path(), '/'),
+                'method' => $request->method(),
+                'route' => $request->route()?->getName(),
+                'role' => rescue(fn () => $request->user()?->role, null, false),
+                'request_id' => $request->headers->get('X-Request-Id'),
+            ], fn ($value) => $value !== null && $value !== '');
+        });
+
         $exceptions->render(function (Throwable $exception, Request $request) {
             // A database outage must not turn every database-backed page into the generic 500 screen.
             // Only an unreachable or dropped connection counts as an outage: any other database error

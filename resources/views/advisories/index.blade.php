@@ -58,8 +58,7 @@
         $activeFilterCount = collect(['search', 'advisory_type', 'status', 'severity', 'target_barangay'])
             ->filter(fn ($field) => request()->filled($field))
             ->count();
-        $pagasaSources = \App\Models\PlantingAdvisory::pagasaOnlineSources();
-        $isPagasa = fn ($advisory) => in_array($advisory->source, $pagasaSources, true);
+        $isPagasa = fn ($advisory) => $advisory->isOfficialPagasa();
         // PAGASA advisories are official; everything iClimate makes from forecast data is labelled as guidance, never as PAGASA.
         $sourceText = fn ($advisory) => $isPagasa($advisory)
             ? 'PAGASA (official advisory)'
@@ -74,7 +73,7 @@
         $local = fn ($time) => $time?->copy()->timezone(\App\Support\BusinessClock::timezone());
     @endphp
 
-    <div class="fad">
+    <div class="fad" @if(auth()->user()->role === \App\Models\User::ROLE_FARMER && $advisoryCheck['needs_refresh']) data-fad-auto-refresh @endif>
         {{-- 1. Header --}}
         <header class="fad-hero">
             <div class="fad-hero-text">
@@ -90,19 +89,26 @@
                     <a class="fad-btn is-on-dark" href="{{ route('management.advisories.index') }}">Review Advisories</a>
                     <a class="fad-btn is-on-dark" href="{{ route('planting-advisories.create') }}">Create Advisory</a>
                 @endif
-                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true" @if(auth()->user()->role === \App\Models\User::ROLE_FARMER) data-fad-refresh @endif>
+                <form method="POST" action="{{ route('planting-advisories.refresh-pagasa') }}" data-loading="true" @if(auth()->user()->role === \App\Models\User::ROLE_FARMER) data-fad-refresh data-no-loader @endif>
                     @csrf
-                    <button class="fad-btn is-light" type="submit" data-loading-text="Refreshing...">@include('dashboards.mao.icon', ['name' => 'refresh'])<span>Refresh PAGASA</span></button>
+                    @if($selectedBarangay)<input type="hidden" name="target_barangay" value="{{ $selectedBarangay }}">@endif
+                    <button class="fad-btn is-light" type="submit" data-loading-text="Refreshing...">@include('dashboards.mao.icon', ['name' => 'refresh'])<span>Refresh Advisories</span></button>
                 </form>
             </div>
         </header>
+        <p class="fad-support" role="status" aria-live="polite" data-fad-refresh-status hidden></p>
 
         {{-- 2. Summary cards --}}
         <section class="fad-summary" aria-label="Advisory overview">
             <article class="fad-card">
-                <h2 class="fad-label">Latest Weather Bureau Update</h2>
-                <p class="fad-value">{{ $local($latestPagasaAdvisory?->created_at)?->shortDateTime('F d, Y,') ?? 'No PAGASA update for Lian yet' }}</p>
-                <p class="fad-support">Source: {{ $latestPagasaAdvisory?->plainSourceLabel() ?: 'PAGASA' }}, for Lian, Batangas</p>
+                <h2 class="fad-label">Official Advisories</h2>
+                <p class="fad-value">{{ $local($latestPagasaAdvisory?->published_at)?->format('M j, Y · g:i A') ?? 'No published PAGASA update for Lian yet' }}</p>
+                <p class="fad-support">
+                    Source: PAGASA
+                    @if($latestPagasaAdvisory)
+                        · Scope: {{ data_get($latestPagasaAdvisory->metadata, 'scope_name', $latestPagasaAdvisory->targetLabel()) }}
+                    @endif
+                </p>
                 @isset($pagasaSummary)
                     <details class="fad-details">
                         <summary>View Details</summary>
@@ -116,20 +122,35 @@
                 <div class="fad-card-foot">
                     @if($lastWeather)
                         <p class="fad-support">{{-- fetched_at is the forecast provider's own reading time, already stored in Lian time (unlike the UTC advisory times). --}}
-                        Weather last updated: {{ $lastWeather->fetched_at?->shortDateTime('M d,') }}</p>
+                        {{ $lastWeather->source }} weather last updated: {{ $local($lastWeather->fetched_at)?->format('M j, Y · g:i A') }}</p>
                     @endif
-                    @if($latestPagasaAdvisory)
-                        <span class="fad-badge is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ $latestPagasaAdvisory->plainSourceLabel() }} Active</span></span>
-                    @endif
+                    <span class="fad-badge {{ $advisoryCheck['pagasa_connected'] ? 'is-good' : 'is-watch' }}">
+                        <span>PAGASA {{ $advisoryCheck['unavailable'] ? 'Temporarily unavailable' : ($advisoryCheck['pagasa_connected'] ? ($advisoryCheck['pagasa_complete'] ? 'Connected' : 'Some sources unavailable') : 'Not checked yet') }}</span>
+                    </span>
+                    <p class="fad-support">Last checked: {{ $local($advisoryCheck['checked_at'])?->format('M j, Y · g:i A') ?? 'Not checked yet' }}</p>
                 </div>
+            </article>
+
+            <article class="fad-card">
+                <h2 class="fad-label">Weather Data</h2>
+                <p class="fad-value">Open-Meteo</p>
+                @if($selectedBarangay)
+                    <p class="fad-support">Location: {{ $selectedBarangay }}, Lian, Batangas</p>
+                @else
+                    <p class="fad-support">Add a barangay for location-specific conditions.</p>
+                @endif
+                <span class="fad-badge {{ $barangayWeather && !($barangayWeather['stale'] ?? true) ? 'is-good' : 'is-watch' }}">
+                    {{ $barangayWeather ? (($barangayWeather['stale'] ?? false) ? 'Update delayed' : 'Connected') : 'Not checked yet' }}
+                </span>
+                <p class="fad-support">Last checked: {{ !empty($barangayWeather['fetched_at']) ? \Illuminate\Support\Carbon::parse($barangayWeather['fetched_at'])->timezone('Asia/Manila')->format('M j, Y · g:i A') : 'Not available' }}</p>
             </article>
 
             <article class="fad-card">
                 <h2 class="fad-label">Active Advisories</h2>
                 <p class="fad-kpi">{{ number_format($activeCount) }}</p>
-                <p class="fad-support">{{ number_format($pagasaAdvisoryCount) }} of these come directly from PAGASA.</p>
+                <p class="fad-support">Official PAGASA: {{ number_format($pagasaAdvisoryCount) }}</p>
                 @if($iCount > 0)
-                    <p class="fad-support">{{ number_format($iCount) }} {{ $iCount === 1 ? 'is' : 'are' }} iClimate guidance made from forecast data.</p>
+                    <p class="fad-support">iClimate Guidance: {{ number_format($iCount) }}</p>
                 @endif
             </article>
 
@@ -176,14 +197,14 @@
             <form class="fad-filter-form" method="GET" action="{{ route('planting-advisories.index') }}">
                 <div class="fad-field is-search">
                     <label class="fad-label" for="fadSearch">Search</label>
-                    <input class="fad-input" id="fadSearch" type="search" name="search" value="{{ request('search') }}" placeholder="Search advisories">
+                    <input class="fad-input" id="fadSearch" type="search" name="search" value="{{ is_string(request('search')) ? request('search') : '' }}" placeholder="Search advisories">
                 </div>
                 <div class="fad-field">
                     <label class="fad-label" for="fadType">Type</label>
                     <select class="fad-input" id="fadType" name="advisory_type">
                         <option value="">All</option>
                         @foreach($types as $type)
-                            <option value="{{ $type }}" @selected(request('advisory_type') === $type)>{{ str($type)->headline() }}</option>
+                            <option value="{{ $type }}" @selected(is_string(request('advisory_type')) && request('advisory_type') === $type)>{{ str($type)->headline() }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -192,7 +213,7 @@
                     <select class="fad-input" id="fadStatus" name="status">
                         <option value="">All</option>
                         @foreach($statuses as $status)
-                            <option value="{{ $status }}" @selected(request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>
+                            <option value="{{ $status }}" @selected(is_string(request('status')) && request('status') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -201,7 +222,7 @@
                     <select class="fad-input" id="fadSeverity" name="severity">
                         <option value="">All</option>
                         @foreach($severities as $severity)
-                            <option value="{{ $severity }}" @selected(request('severity') === $severity)>{{ str($severity)->headline() }}</option>
+                            <option value="{{ $severity }}" @selected(is_string(request('severity')) && request('severity') === $severity)>{{ str($severity)->headline() }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -210,7 +231,7 @@
                     <select class="fad-input" id="fadBarangay" name="target_barangay">
                         <option value="">All Barangays</option>
                         @foreach($barangays as $barangay)
-                            <option value="{{ $barangay }}" @selected(request('target_barangay') === $barangay)>{{ $barangay }}</option>
+                            <option value="{{ $barangay }}" @selected(is_string(request('target_barangay')) && request('target_barangay') === $barangay)>{{ $barangay }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -227,12 +248,24 @@
                 'myBarangayAdvisories' => $myBarangayAdvisories,
                 'lianWideAdvisories' => $lianWideAdvisories,
                 'farmerBarangay' => $farmerBarangay,
+                'selectedBarangay' => $selectedBarangay,
+                'barangayAdvisory' => $barangayAdvisory,
+                'barangayWeather' => $barangayWeather,
+                'officialPagasaAdvisories' => $officialPagasaAdvisories,
+                'additionalPagasaInformation' => $additionalPagasaInformation,
                 'advisoryCheck' => $advisoryCheck,
             ])
         @else
         {{-- 4. Advisories: compact cards. "View" opens the full advisory in a popup (farmer-advisories.js);
              without JavaScript, or with Ctrl/Cmd-click, it is a normal link to the advisory page. --}}
         <section class="fad-list" aria-labelledby="fadListTitle">
+            @if($selectedBarangay)
+                @include('advisories._barangay-weather-card', [
+                    'selectedBarangay' => $selectedBarangay,
+                    'barangayAdvisory' => $advisories->getCollection()->first(fn ($advisory) => $advisory->target_barangay === $selectedBarangay && data_get($advisory->metadata, 'source_type') === 'iclimate'),
+                    'barangayWeather' => $barangayWeather,
+                ])
+            @endif
             <div class="fad-list-head">
                 <h2 id="fadListTitle">Available Advisories</h2>
                 @if($advisories->total() > 0)
@@ -277,6 +310,11 @@
                     <p class="fad-lead">No advisories match these filters.</p>
                     <p class="fad-body">Try a different type, severity or barangay, or clear the filters to see everything.</p>
                     <a class="fad-btn is-quiet" href="{{ route('planting-advisories.index') }}">Reset Filters</a>
+                </div>
+            @elseif(!empty($advisoryCheck['unavailable']))
+                <div class="fad-empty">
+                    <p class="fad-lead">Advisory Information Temporarily Unavailable</p>
+                    <p class="fad-body">Online advisory source is temporarily unreachable. Stored guidance will update when connection is restored.</p>
                 </div>
             @else
                 <div class="fad-empty">

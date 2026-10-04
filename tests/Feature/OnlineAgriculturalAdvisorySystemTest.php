@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AdvisoryRule;
 use App\Models\ExternalWeatherData;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
@@ -237,7 +238,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         );
     }
 
-    public function test_pagasa_service_keeps_all_barangays_when_multiple_lian_barangays_are_named_online(): void
+    public function test_pagasa_service_keeps_named_barangay_coverage_when_multiple_are_named_online(): void
     {
         User::factory()->maoPersonnel()->create();
 
@@ -251,7 +252,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->assertDatabaseHas('planting_advisories', [
             'source' => PlantingAdvisory::SOURCE_PAGASA_ONLINE_ADVISORY,
             'target_barangay' => null,
-            'target_scope' => 'municipality',
+            'target_scope' => 'barangay',
         ]);
         $this->assertTrue(PlantingAdvisory::query()->whereJsonContains('metadata->pagasa_barangay_matches', 'Matabungkay')->exists());
         $this->assertTrue(PlantingAdvisory::query()->whereJsonContains('metadata->pagasa_barangay_matches', 'Binubusan')->exists());
@@ -298,7 +299,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
     public function test_farmer_sees_only_the_newest_forecast_run_of_a_rule_and_older_runs_are_kept(): void
     {
         $this->seed(AdvisoryRuleSeeder::class);
-        $rule = \App\Models\AdvisoryRule::query()->firstOrFail();
+        $rule = AdvisoryRule::query()->firstOrFail();
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $older = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => '16-Day Heavy Rainfall Warning', 'summary' => 'Older forecast run', 'advisory_rule_id' => $rule->id]));
         $older->forceFill(['created_at' => now()->subDay()])->save();
@@ -342,7 +343,8 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $until = now('UTC')->addDays(2)->setTime(8, 44);
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Timed advisory', 'valid_until' => $until, 'generated_automatically' => true]));
-        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Bureau advisory', 'source' => PlantingAdvisory::SOURCE_PAGASA_LEGACY]));
+        PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Bureau advisory', 'source' => PlantingAdvisory::SOURCE_PAGASA_LEGACY,
+            'source_url' => 'https://www.pagasa.dost.gov.ph/regional-forecast/ncrprsd']));
 
         $this->actingAs($farmer)->get(route('planting-advisories.index'))
             ->assertSee($until->copy()->timezone('Asia/Manila')->format('M j, Y').' · 4:44 PM')   // 08:44 UTC is 4:44 PM in Lian

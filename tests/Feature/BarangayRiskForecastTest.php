@@ -170,11 +170,9 @@ class BarangayRiskForecastTest extends TestCase
         $this->actingAs($farmer)->get(route('heat-map.index'))
             ->assertOk()
             ->assertSee('data-forecast-audience="farmer"', false)
-            ->assertSee('Risk Meaning')
-            // Each meaning button opens the shared information pop-up for its category (barangay-risk-map.js).
-            ->assertSee('data-risk-category="low"', false)
-            ->assertSee('data-risk-category="moderate"', false)
-            ->assertSee('data-risk-category="high"', false)
+            ->assertSee('id="riskMapLegend"', false)
+            ->assertDontSee('id="riskMeaningTitle"', false)
+            ->assertDontSee('class="risk-map-meaning"', false)
             ->assertSee('data-risk-overview data-audience="farmer"', false)
             ->assertDontSee('data-risk-meaning-overlay', false);
 
@@ -182,6 +180,9 @@ class BarangayRiskForecastTest extends TestCase
             $this->actingAs(User::factory()->create(['role' => $role]))->get(route('heat-map.index'))
                 ->assertOk()
                 ->assertSee('data-forecast-audience="staff"', false)
+                ->assertSee('id="riskMapLegend"', false)
+                ->assertDontSee('id="riskMeaningTitle"', false)
+                ->assertDontSee('class="risk-map-meaning"', false)
                 ->assertDontSee('Conditions are generally okay for rice farming.');
         }
     }

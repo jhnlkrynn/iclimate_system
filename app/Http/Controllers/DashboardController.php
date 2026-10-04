@@ -25,6 +25,7 @@ use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
 use App\Support\DashboardData;
+use App\Support\StaleCache;
 use App\Support\LianBarangays;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\MachineLearning\ModelEvaluationService;
@@ -54,6 +55,11 @@ class DashboardController extends Controller
     private const MAO_OVERVIEW_CACHE_SECONDS = 90;
 
     private const IT_PAGE_CACHE_SECONDS = 60;
+
+    private const ADMIN_LATEST_KEY = 'dashboard:it:overview:2:latest';
+
+    /** The IT overview shows when each section was built, so its last copy may be shown for up to an hour while it rebuilds. */
+    private const IT_MAX_STALE_SECONDS = 3600;
 
     /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'];
@@ -88,7 +94,7 @@ class DashboardController extends Controller
     /** MAO overview: shared payload (cached briefly) plus what depends on who is signed in. */
     public function mao(Request $request, MaoDashboardService $mao): View
     {
-        $payload = Cache::remember($this->maoOverviewCacheKey(), now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS), fn (): array => $mao->payload());
+        $payload = StaleCache::remember($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, fn (): array => $mao->payload());
 
         return view('dashboards.mao', ['mao' => $mao->forUser($payload, $request->user())]);
     }
@@ -119,11 +125,11 @@ class DashboardController extends Controller
         $timings = [];
 
         $started = microtime(true);
-        Cache::put($this->maoOverviewCacheKey(), app(MaoDashboardService::class)->payload(), now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS));
+        StaleCache::put($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, app(MaoDashboardService::class)->payload());
         $timings['MAO'] = round(microtime(true) - $started, 1);
 
         $started = microtime(true);
-        Cache::put($this->adminCacheKey(), app(ItDashboardService::class)->payload(), now()->addSeconds(self::IT_PAGE_CACHE_SECONDS));
+        StaleCache::put($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, app(ItDashboardService::class)->payload(), self::ADMIN_LATEST_KEY);
         $timings['IT'] = round(microtime(true) - $started, 1);
 
         return $timings;
@@ -146,9 +152,6 @@ class DashboardController extends Controller
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $user = $request->user();
-        $tab = in_array($request->query('tab'), ['overview', 'heatmap'], true)
-            ? $request->query('tab')
-            : 'overview';
         $key = FarmerDashboardService::cacheKey($user);
         $payload = Cache::get($key);
         if (! is_array($payload)) {
@@ -157,7 +160,7 @@ class DashboardController extends Controller
             Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
-        return view('dashboards.farmer', ['f' => $payload, 'tab' => $tab]);
+        return view('dashboards.farmer', ['f' => $payload]);
     }
 
     /** Shared barangay heat map available from every authenticated account. */
@@ -306,10 +309,16 @@ class DashboardController extends Controller
 
     public function maoWeather(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather): JsonResponse
     {
-        $liveWeather = $sharedWeather->alignForecast(
-            $weatherApi->forecast(refresh: $request->boolean('refresh')),
-            $request->boolean('refresh'),
-        );
+        $refresh = $request->boolean('refresh');
+        try {
+            $liveWeather = $sharedWeather->alignForecast(
+                $weatherApi->forecast(refresh: $refresh),
+                $refresh,
+            );
+        } catch (Throwable $e) {
+            Log::warning('MAO weather fetch failed: '.$e->getMessage());
+            $liveWeather = null;
+        }
 
         return response()->json([
             'ok' => $liveWeather !== null,
@@ -324,116 +333,96 @@ class DashboardController extends Controller
     public function maoOperations(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, DashboardKpiService $kpis): View
     {
         $recent = $this->recentOperationalData();
-        $climateChartRecords = ClimateRecord::query()
-            ->orderByDesc('record_date')
-            ->take(12)
-            ->get()
-            ->sortBy('record_date')
-            ->values();
+        $environment = $this->maoOperationsEnvironment($weatherApi, $sharedWeather, $recent);
+        $safety = $this->maoOperationsSafety($typhoonSafety);
+        $weatherFeedbackFilters = $this->weatherFeedbackFilters($request);
 
-        $liveWeather = $sharedWeather->alignForecast($weatherApi->forecast());
-        $storedWeatherChartData = [
-            'labels' => $climateChartRecords->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
-            'rainfall' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->rainfall)->all(),
-            'temperature' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->temperature)->all(),
-            'humidity' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->humidity)->all(),
-            'windSpeed' => $climateChartRecords->map(fn (ClimateRecord $record) => (float) $record->wind_speed)->all(),
+        return view('dashboards.mao-operations', $this->stats()
+            + $this->maoOperationsRecentData($kpis, $recent, $environment, $weatherFeedbackFilters)
+            + $this->maoOperationsMonitoringData($request, $kpis, $recent, $environment, $safety)
+            + $safety
+            + $this->maoScheduleData($request));
+    }
+
+    private function maoOperationsEnvironment(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, array $recent): array
+    {
+        $records = ClimateRecord::query()->orderByDesc('record_date')->take(12)->get()->sortBy('record_date')->values();
+        $liveWeather = rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast()), null, false);
+        $currentRiskLevels = rescue(fn () => app(DashboardData::class)->currentRiskRatings(), collect(), false);
+        $latestClimate = $recent['recentClimateRecords']->first();
+
+        return [
+            'latestClimate' => $latestClimate,
+            'liveWeather' => $liveWeather,
+            'weatherChartData' => data_get($liveWeather, 'daily_series') ?: $this->storedWeatherChartData($records),
+            'weatherDataSource' => $liveWeather
+                ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
+                : 'Stored climate records',
+            // One rating per barangay, so the counts add up to the barangays on the map.
+            'riskLevelCounts' => collect(['Low', 'Moderate', 'High', 'Severe'])
+                ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
+                ->all(),
+            'currentSeason' => $latestClimate?->season ?? data_get($liveWeather, 'season'),
+            'pendingAdvisoryCount' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PENDING_REVIEW)->count(),
         ];
-        $weatherChartData = data_get($liveWeather, 'daily_series') ?: $storedWeatherChartData;
-        $weatherDataSource = $liveWeather
-            ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
-            : 'Stored climate records';
-        $activeTyphoonSafetyEvent = $typhoonSafety->activeEvent();
-        $typhoonSafetyResponses = $this->hasTyphoonSafetyTable() && $activeTyphoonSafetyEvent
-            ? TyphoonSafetyResponse::query()
-                ->with('farmer')
-                ->where('event_key', $activeTyphoonSafetyEvent['key'])
-                ->latest('responded_at')
-                ->get()
+    }
+
+    private function maoOperationsSafety(TyphoonSafetyService $typhoonSafety): array
+    {
+        $event = rescue(fn () => $typhoonSafety->activeEvent(), null, false);
+        $responses = $this->hasTyphoonSafetyTable() && $event
+            ? TyphoonSafetyResponse::query()->with('farmer')->where('event_key', $event['key'])->latest('responded_at')->get()
             : collect();
         $farmerCount = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count();
-        $pendingAdvisoryCount = PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PENDING_REVIEW)->count();
-        $highRiskAreasList = $recent['highRiskAreas'];
-        $typhoonSafetySafeCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count();
-        $typhoonSafetyNeedsHelpCount = $typhoonSafetyResponses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count();
-        $typhoonSafetyNoResponseCount = max(0, $farmerCount - $typhoonSafetyResponses->pluck('user_id')->unique()->count());
-        // One rating per barangay, so the counts add up to the barangays on the map.
-        $currentRiskLevels = app(DashboardData::class)->currentRiskRatings();
-        $riskLevelCounts = collect(['Low', 'Moderate', 'High', 'Severe'])
-            ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
-            ->all();
-        $latestClimateRecord = $recent['recentClimateRecords']->first();
-        $currentSeason = $latestClimateRecord?->season ?? data_get($liveWeather, 'season');
-        $fieldReportsPendingCount = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
 
-        $scheduleFilters = [
-            'month' => max(0, min(12, $request->integer('schedule_month'))),
-            'season' => in_array($request->string('schedule_season')->toString(), FarmerPlantingSchedule::SEASONS, true) ? $request->string('schedule_season')->toString() : '',
-            'barangay' => $request->string('schedule_barangay')->toString(),
-            'farm_type' => in_array($request->string('schedule_farm_type')->toString(), FarmerPlantingSchedule::FARM_TYPES, true) ? $request->string('schedule_farm_type')->toString() : '',
-            'farmer' => $request->integer('schedule_farmer'),
-            'status' => $request->string('schedule_status')->toString(),
+        return [
+            'activeTyphoonSafetyEvent' => $event,
+            'typhoonSafetyResponses' => $responses,
+            'typhoonSafetySafeCount' => $responses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count(),
+            'typhoonSafetyNeedsHelpCount' => $responses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count(),
+            'typhoonSafetyNoResponseCount' => max(0, $farmerCount - $responses->pluck('user_id')->unique()->count()),
         ];
-        $plantingScheduleFeatureReady = Schema::hasTable('farmer_planting_schedules');
-        $farmerSchedules = $plantingScheduleFeatureReady
-            ? FarmerPlantingSchedule::query()
-                ->with(['farmer:id,name,barangay', 'farmer.farmerProfile:id,user_id,full_name,barangay'])
-                ->when($scheduleFilters['month'], function ($query, int $month) {
-                    $query->where(function ($query) use ($month) {
-                        $query->whereMonth('planting_date', $month)
-                            ->orWhereMonth('scheduled_harvest_date', $month)
-                            ->orWhereMonth('harvest_month', $month);
-                    });
-                })
-                ->when($scheduleFilters['season'], fn ($query, string $season) => $query->where('season', $season))
-                ->when($scheduleFilters['barangay'], fn ($query, string $barangay) => $query->where('barangay', $barangay))
-                ->when($scheduleFilters['farm_type'], fn ($query, string $farmType) => $query->where('farm_type', $farmType))
-                ->when($scheduleFilters['farmer'], fn ($query, int $farmer) => $query->where('user_id', $farmer))
-                ->orderByRaw('CASE WHEN scheduled_harvest_date IS NULL THEN harvest_month ELSE scheduled_harvest_date END ASC')
-                ->limit(150)
-                ->get()
-            : collect();
-        if ($scheduleFilters['status']) {
-            $farmerSchedules = $farmerSchedules
-                ->filter(fn (FarmerPlantingSchedule $schedule) => $schedule->monitoringStatus() === $scheduleFilters['status'])
-                ->values();
-        }
+    }
 
-        $weatherFeedbackFilters = [
-            'barangay' => $request->query('fb_barangay') ?: null,
-            'from' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('fb_from')) ? $request->query('fb_from') : null,
-            'to' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('fb_to')) ? $request->query('fb_to') : null,
-            'condition' => in_array($request->query('fb_condition'), \App\Models\WeatherForecastFeedback::OBSERVED_CONDITIONS, true) ? $request->query('fb_condition') : null,
-        ];
-
-        return view('dashboards.mao-operations', $this->stats() + [
-            'maoKpis' => $kpis->mao(),
+    private function maoOperationsRecentData(DashboardKpiService $kpis, array $recent, array $environment, array $weatherFeedbackFilters): array
+    {
+        return [
+            'maoKpis' => rescue(fn () => $kpis->mao(), [], false),
             'weatherFeedbackFilters' => $weatherFeedbackFilters,
-            'weatherFeedbackSummary' => app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters),
-            'farmerOrganizationSummary' => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'],
-            'latestClimate' => $latestClimateRecord,
+            'weatherFeedbackSummary' => rescue(fn () => app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters), [], false),
+            'farmerOrganizationSummary' => rescue(fn () => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'] ?? [], [], false),
+            'latestClimate' => $environment['latestClimate'],
             'recentClimateRecords' => $recent['recentClimateRecords'],
             'recentRiceProductions' => $recent['recentRiceProductions'],
             'latestAdvisories' => $recent['latestAdvisories'],
             'latestFeedPosts' => $recent['latestFeedPosts']->take(4),
             'latestReports' => $recent['latestReports']->take(4),
             'recentFarmerProfiles' => $recent['recentFarmerProfiles'],
-            'highRiskAreasList' => $highRiskAreasList,
-            'pendingAdvisoryCount' => $pendingAdvisoryCount,
-            'riceYoyDelta' => $kpis->yieldYoy(),
+            'highRiskAreasList' => $recent['highRiskAreas'],
+            'pendingAdvisoryCount' => $environment['pendingAdvisoryCount'],
+            'riceYoyDelta' => rescue(fn () => $kpis->yieldYoy(), null, false),
             'latestExternalWeather' => ExternalWeatherData::query()->latestSuccessful()->first(),
             'maoActionItems' => $this->maoActionItems(),
             ...$this->maoAggregates($kpis),
-            'weatherChartData' => $weatherChartData,
-            'weatherDataSource' => $weatherDataSource,
-            'liveWeather' => $liveWeather,
-            'riskLevelCounts' => $riskLevelCounts,
-            'weatherWarning' => $weatherWarning = $this->weatherWarningLevel($riskLevelCounts),
-            'overview' => app(DashboardOverviewService::class)->mao($request->integer('year') ?: null, $weatherWarning['label'] ?? null),
-            'weatherAnomaly' => $this->weatherAnomalySummary($liveWeather, $currentSeason),
-            'cropStatus' => $this->cropStatusSummary($currentSeason),
+        ];
+    }
+
+    private function maoOperationsMonitoringData(Request $request, DashboardKpiService $kpis, array $recent, array $environment, array $safety): array
+    {
+        $weatherWarning = $this->weatherWarningLevel($environment['riskLevelCounts']);
+        $fieldReportsPendingCount = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
+
+        return [
+            'weatherChartData' => $environment['weatherChartData'],
+            'weatherDataSource' => $environment['weatherDataSource'],
+            'liveWeather' => $environment['liveWeather'],
+            'riskLevelCounts' => $environment['riskLevelCounts'],
+            'weatherWarning' => $weatherWarning,
+            'overview' => rescue(fn () => app(DashboardOverviewService::class)->mao($request->integer('year') ?: null, $weatherWarning['label'] ?? null), [], false),
+            'weatherAnomaly' => $this->weatherAnomalySummary($environment['liveWeather'], $environment['currentSeason']),
+            'cropStatus' => $this->cropStatusSummary($environment['currentSeason']),
             'barangayMonitoring' => $this->barangayMonitoringTable(),
-            'riceYieldTrend' => $this->riceYieldTrendSummary($kpis),
+            'riceYieldTrend' => rescue(fn () => $this->riceYieldTrendSummary($kpis), ['latest_year' => null, 'chart' => ['labels' => [], 'avg_yield' => []], 'highest_barangay' => null, 'lowest_barangay' => null], false),
             'recentActivity' => SystemLog::query()->with('user')->latest()->take(8)->get(),
             'fieldReportsPendingCount' => $fieldReportsPendingCount,
             'recentFieldReports' => FieldReport::query()->with('assignedTo')->latest()->take(6)->get(),
@@ -442,33 +431,118 @@ class DashboardController extends Controller
                 ->selectRaw('issue_type, COUNT(*) as total')
                 ->groupBy('issue_type')
                 ->pluck('total', 'issue_type'),
-            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
-            'typhoonSafetyResponses' => $typhoonSafetyResponses,
-            'typhoonSafetySafeCount' => $typhoonSafetySafeCount,
-            'typhoonSafetyNeedsHelpCount' => $typhoonSafetyNeedsHelpCount,
-            'typhoonSafetyNoResponseCount' => $typhoonSafetyNoResponseCount,
             'maoHighlights' => $this->maoHighlights(
-                $highRiskAreasList,
-                $pendingAdvisoryCount,
-                $activeTyphoonSafetyEvent,
-                $typhoonSafetyNeedsHelpCount,
-                $typhoonSafetyNoResponseCount,
+                $recent['highRiskAreas'],
+                $environment['pendingAdvisoryCount'],
+                $safety['activeTyphoonSafetyEvent'],
+                $safety['typhoonSafetyNeedsHelpCount'],
+                $safety['typhoonSafetyNoResponseCount'],
                 $fieldReportsPendingCount,
             ),
-            'farmerSchedules' => $farmerSchedules,
-            'plantingScheduleFeatureReady' => $plantingScheduleFeatureReady,
-            'scheduleFilters' => $scheduleFilters,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, ClimateRecord>  $records
+     * @return array{labels: array<int, string>, rainfall: array<int, float|null>, temperature: array<int, float|null>, humidity: array<int, float|null>, windSpeed: array<int, float|null>}
+     */
+    private function storedWeatherChartData(Collection $records): array
+    {
+        return [
+            'labels' => $records->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
+            // A missing reading stays null (a gap in the chart), never 0 mm / 0 °C / 0 %.
+            'rainfall' => $records->map(fn (ClimateRecord $record) => $record->rainfall !== null ? (float) $record->rainfall : null)->all(),
+            'temperature' => $records->map(fn (ClimateRecord $record) => $record->temperature !== null ? (float) $record->temperature : null)->all(),
+            'humidity' => $records->map(fn (ClimateRecord $record) => $record->humidity !== null ? (float) $record->humidity : null)->all(),
+            'windSpeed' => $records->map(fn (ClimateRecord $record) => $record->wind_speed !== null ? (float) $record->wind_speed : null)->all(),
+        ];
+    }
+
+    private function maoScheduleData(Request $request): array
+    {
+        $season = $this->stringQuery($request, 'schedule_season');
+        $farmType = $this->stringQuery($request, 'schedule_farm_type');
+        $filters = [
+            'month' => max(0, min(12, $request->integer('schedule_month'))),
+            'season' => in_array($season, FarmerPlantingSchedule::SEASONS, true) ? $season : '',
+            'barangay' => $this->stringQuery($request, 'schedule_barangay'),
+            'farm_type' => in_array($farmType, FarmerPlantingSchedule::FARM_TYPES, true) ? $farmType : '',
+            'farmer' => $request->integer('schedule_farmer'),
+            'status' => $this->stringQuery($request, 'schedule_status'),
+        ];
+        $featureReady = Schema::hasTable('farmer_planting_schedules');
+        $schedules = $featureReady
+            ? FarmerPlantingSchedule::query()
+                ->with(['farmer:id,name,barangay', 'farmer.farmerProfile:id,user_id,full_name,barangay'])
+                ->when($filters['month'], function ($query, int $month) {
+                    $query->where(function ($query) use ($month) {
+                        $query->whereMonth('planting_date', $month)
+                            ->orWhereMonth('scheduled_harvest_date', $month)
+                            ->orWhereMonth('harvest_month', $month);
+                    });
+                })
+                ->when($filters['season'], fn ($query, string $value) => $query->where('season', $value))
+                ->when($filters['barangay'], fn ($query, string $value) => $query->where('barangay', $value))
+                ->when($filters['farm_type'], fn ($query, string $value) => $query->where('farm_type', $value))
+                ->when($filters['farmer'], fn ($query, int $value) => $query->where('user_id', $value))
+                ->orderByRaw('CASE WHEN scheduled_harvest_date IS NULL THEN harvest_month ELSE scheduled_harvest_date END ASC')
+                ->limit(150)
+                ->get()
+            : collect();
+
+        if ($filters['status'] !== '') {
+            $schedules = $schedules
+                ->filter(fn (FarmerPlantingSchedule $schedule) => $schedule->monitoringStatus() === $filters['status'])
+                ->values();
+        }
+
+        return [
+            'farmerSchedules' => $schedules,
+            'plantingScheduleFeatureReady' => $featureReady,
+            'scheduleFilters' => $filters,
             'scheduleFarmers' => User::query()->where('role', User::ROLE_FARMER)->orderBy('name')->get(['id', 'name']),
-            'scheduleBarangays' => $plantingScheduleFeatureReady
+            'scheduleBarangays' => $featureReady
                 ? FarmerPlantingSchedule::query()->whereNotNull('barangay')->distinct()->orderBy('barangay')->pluck('barangay')
                 : collect(),
-        ]);
+        ];
+    }
+
+    /** @return array{barangay: string|null, from: string|null, to: string|null, condition: string|null} */
+    private function weatherFeedbackFilters(Request $request): array
+    {
+        $barangay = $this->stringQuery($request, 'fb_barangay');
+        $from = $this->dateQuery($request, 'fb_from');
+        $to = $this->dateQuery($request, 'fb_to');
+        $condition = $this->stringQuery($request, 'fb_condition');
+
+        return [
+            'barangay' => $barangay !== '' ? $barangay : null,
+            'from' => $from,
+            'to' => $to,
+            'condition' => in_array($condition, \App\Models\WeatherForecastFeedback::OBSERVED_CONDITIONS, true) ? $condition : null,
+        ];
+    }
+
+    private function stringQuery(Request $request, string $key): string
+    {
+        $value = $request->query($key);
+
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function dateQuery(Request $request, string $key): ?string
+    {
+        $value = $this->stringQuery($request, $key);
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : null;
     }
 
     /** IT overview: everything comes from ItDashboardService and is cached for a short time (the warm-up job refreshes it). */
     public function admin(Request $request, ItDashboardService $it): View
     {
-        $payload = Cache::remember($this->adminCacheKey(), now()->addSeconds(self::IT_PAGE_CACHE_SECONDS), fn (): array => $it->payload());
+        // Expired or invalidated: the last good overview is shown and rebuilt after the response (the cold build is
+        // ~80 Supabase round trips, longer than a request may run).
+        $payload = StaleCache::remember($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, fn (): array => $it->payload(), self::ADMIN_LATEST_KEY, self::IT_MAX_STALE_SECONDS);
 
         $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
 
@@ -478,8 +552,10 @@ class DashboardController extends Controller
     /** Refresh button: rebuilds the live sections and returns each section's HTML. */
     public function adminLive(ItDashboardService $it): JsonResponse
     {
+        // An explicit rebuild of every section: allowed the time a full rebuild takes.
+        StaleCache::allowTime(StaleCache::COLD_BUILD_SECONDS);
         $payload = $it->payload(fresh: true);
-        Cache::put($this->adminCacheKey(), $payload, now()->addSeconds(self::IT_PAGE_CACHE_SECONDS));
+        StaleCache::put($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, $payload, self::ADMIN_LATEST_KEY);
 
         $slots = [];
         foreach (self::IT_LIVE_SLOTS as $slot) {
@@ -525,7 +601,7 @@ class DashboardController extends Controller
 
     private function recentOperationalData(): array
     {
-        return Cache::remember('dashboard:recent-operational-data', now()->addSeconds(30), fn (): array => [
+        return StaleCache::remember('dashboard:recent-operational-data', 30, fn (): array => [
             'farmerFeedPosts' => FeedPost::query()
                 ->with('author:id,name')
                 ->whereIn('visibility', ['All Farmers', 'All Users'])
@@ -552,7 +628,7 @@ class DashboardController extends Controller
      */
     private function highRiskAreas(): Collection
     {
-        return Cache::remember('dashboard:high-risk-areas', now()->addSeconds(15), fn (): Collection => HeatmapArea::query()
+        return StaleCache::remember('dashboard:high-risk-areas', 15, fn (): Collection => HeatmapArea::query()
             ->computed()                                              // install placeholders are not ratings
             ->whereIn('risk_level', ['High', 'Severe'])
             ->orderByDesc('risk_score')
@@ -567,7 +643,7 @@ class DashboardController extends Controller
      */
     private function maoActionItems(): array
     {
-        return Cache::remember('dashboard:mao-action-items', now()->addSeconds(20), fn (): array => [
+        return StaleCache::remember('dashboard:mao-action-items', 20, fn (): array => [
             'feedbackAwaitingResponse' => Schema::hasTable('advisory_feedback')
                 ? AdvisoryFeedback::query()->whereNotNull('is_helpful')->whereNull('mao_response')->count()
                 : 0,
@@ -683,8 +759,8 @@ class DashboardController extends Controller
      */
     private function maoAggregates(DashboardKpiService $kpis): array
     {
-        return Cache::remember('dashboard:mao-aggregates', now()->addSeconds(45), function () use ($kpis): array {
-            $latest = $kpis->yieldByYear()->first();
+        return StaleCache::remember('dashboard:mao-aggregates', 45, function () use ($kpis): array {
+            $latest = rescue(fn () => $kpis->yieldByYear()->first(), null, false);
 
             return [
                 'riceLatestYear' => $latest['year'] ?? null,
@@ -702,7 +778,7 @@ class DashboardController extends Controller
 
     private function adminAggregates(): array
     {
-        return Cache::remember('dashboard:admin-aggregates', now()->addSeconds(45), function (): array {
+        return StaleCache::remember('dashboard:admin-aggregates', 45, function (): array {
             $users = User::query()
                 ->selectRaw('COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active_total', [User::STATUS_ACTIVE])
@@ -925,7 +1001,11 @@ class DashboardController extends Controller
     private function riceYieldTrendSummary(DashboardKpiService $kpis): array
     {
         // Area-weighted yield per year (total tons / total hectares).
-        $byYear = $kpis->yieldByYear()->filter(fn (array $year) => $year['yield'] !== null)->sortBy('year')->values();
+        $byYear = rescue(
+            fn () => $kpis->yieldByYear()->filter(fn (array $year) => ($year['yield'] ?? null) !== null)->sortBy('year')->values(),
+            collect(),
+            false
+        );
 
         $latestYear = $byYear->max('year');
 
@@ -950,7 +1030,7 @@ class DashboardController extends Controller
 
     private function stats(): array
     {
-        return Cache::remember('dashboard:shared-stats', now()->addSeconds(45), function (): array {
+        return StaleCache::remember('dashboard:shared-stats', 45, function (): array {
             return [
                 'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
                 'totalClimateRecords' => ClimateRecord::count(),

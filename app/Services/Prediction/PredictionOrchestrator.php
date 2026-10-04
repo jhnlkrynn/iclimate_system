@@ -11,6 +11,7 @@ use App\Services\AI\AiTimings;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use App\Support\JsonColumn;
 
 /**
  * Single, centralized entry point for every module that needs a monthly
@@ -431,11 +432,15 @@ class PredictionOrchestrator
     {
         $prefix = sprintf('%04d-%02d', $year, $month);
 
-        $run = AnalyticsRun::query()
+        // analytics_runs.input is text on the live database: JSON reads go through JsonColumn (a raw ->> is a PostgreSQL error).
+        $query = AnalyticsRun::query()
             ->where('type', 'rice_yield_prediction')
-            ->where('status', AnalyticsRun::STATUS_COMPLETED)
-            ->where('input->target_date', 'like', $prefix.'%')
-            ->when($farmType, fn ($query) => $query->where('input->farm_type', $farmType))
+            ->where('status', AnalyticsRun::STATUS_COMPLETED);
+        JsonColumn::where($query, 'input', 'target_date', 'like', $prefix.'%');
+        if ($farmType) {
+            JsonColumn::where($query, 'input', 'farm_type', '=', $farmType);
+        }
+        $run = $query
             ->latest('completed_at')
             ->first();
 

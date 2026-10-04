@@ -41,7 +41,8 @@ class CalendarController extends Controller
     {
         $now = BusinessClock::now();
         $month = max(1, min(12, (int) $request->integer('month', $now->month)));
-        $year = (int) $request->integer('year', $now->year);
+        $rawYear = (int) $request->integer('year', $now->year);
+        $year = ($rawYear >= 1970 && $rawYear <= 2100) ? $rawYear : $now->year;
 
         $current = Carbon::create($year, $month, 1)->startOfMonth();
         $gridStart = $current->copy()->startOfWeek(Carbon::SUNDAY);
@@ -93,12 +94,12 @@ class CalendarController extends Controller
         }
 
         foreach ($schedules as $schedule) {
-            if ($schedule->planting_date->between($gridStart, $gridEnd)) {
+            if ($schedule->planting_date && $schedule->planting_date->between($gridStart, $gridEnd)) {
                 $eventsByDay[$schedule->planting_date->toDateString()][] = $this->scheduleCalendarEvent($schedule, false);
             }
 
             $harvest = $schedule->scheduled_harvest_date ?? $schedule->harvest_month;
-            if ($harvest?->between($gridStart, $gridEnd)) {
+            if ($harvest && $harvest->between($gridStart, $gridEnd)) {
                 $eventsByDay[$harvest->toDateString()][] = $this->scheduleCalendarEvent($schedule, true);
             }
         }
@@ -217,11 +218,11 @@ class CalendarController extends Controller
                 ->get()
                 ->flatMap(function (FarmerPlantingSchedule $schedule) use ($today) {
                     $events = [];
-                    if ($schedule->planting_date->gte($today)) {
+                    if ($schedule->planting_date && $schedule->planting_date->gte($today)) {
                         $events[] = $this->scheduleCalendarEvent($schedule, false) + ['date' => $schedule->planting_date, 'active_now' => false, 'until' => null];
                     }
                     $harvest = $schedule->scheduled_harvest_date ?? $schedule->harvest_month;
-                    if ($harvest?->gte($today)) {
+                    if ($harvest && $harvest->gte($today)) {
                         $events[] = $this->scheduleCalendarEvent($schedule, true) + ['date' => $harvest, 'active_now' => false, 'until' => null];
                     }
 
@@ -239,7 +240,9 @@ class CalendarController extends Controller
     /** The Lian (Philippine) calendar day of a stored UTC time. */
     private function lianDay($time): Carbon
     {
-        return Carbon::parse($time->copy()->timezone(BusinessClock::timezone())->toDateString())->startOfDay();
+        $c = $time instanceof Carbon ? $time : Carbon::parse($time);
+
+        return Carbon::parse($c->copy()->timezone(BusinessClock::timezone())->toDateString())->startOfDay();
     }
 
     private function advisoryCalendarEvent(PlantingAdvisory $advisory): array

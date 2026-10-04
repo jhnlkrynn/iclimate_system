@@ -55,6 +55,19 @@ class AdvisoryRuleEngine
                 $existing = PlantingAdvisory::query()->where('generation_key', $generationKey)->first();
 
                 if ($existing) {
+                    if ($context['refresh_existing'] ?? false) {
+                        // The farmer refresh updates the same day's guidance,
+                        // not another copy carrying yesterday's forecast basis.
+                        $existing->update([
+                            'content' => $this->messageFor($rule, $metrics, $context),
+                            'summary' => $this->summaryFor($rule, $metrics, $context),
+                            'message' => $this->messageFor($rule, $metrics, $context),
+                            'weather_data_id' => $weather?->id, 'valid_from' => $validFrom, 'valid_until' => $validUntil,
+                            'published_at' => $existing->status === PlantingAdvisory::STATUS_PUBLISHED ? now() : null,
+                            'metadata' => array_merge($existing->metadata ?? [], $this->forecastMetadata($metrics, $weather)),
+                        ]);
+                        $summary['advisories_updated']++;
+                    }
                     $summary['advisories_skipped_as_duplicates']++;
 
                     return;
@@ -85,7 +98,7 @@ class AdvisoryRuleEngine
                         'valid_until' => $validUntil,
                         'published_at' => $requiresReview ? null : now(),
                         'metadata' => [
-                            'weather_basis' => $this->weatherBasis($metrics, $weather),
+                            ...$this->forecastMetadata($metrics, $weather),
                             'advisory_horizon' => $context['advisory_horizon'] ?? 'forecast',
                             'advisory_horizon_label' => $context['advisory_horizon_label'] ?? 'Forecast',
                             'advisory_horizon_description' => $context['advisory_horizon_description'] ?? null,
@@ -143,6 +156,7 @@ class AdvisoryRuleEngine
                 $baselineResult = $this->createBaselineAdvisory($records, $horizonContext);
                 $result['advisories_created'] += $baselineResult['created'];
                 $result['advisories_skipped_as_duplicates'] += $baselineResult['skipped'];
+                $result['advisories_updated'] += $baselineResult['updated'] ?? 0;
             }
 
             $summary['advisories_created'] += $result['advisories_created'];
@@ -169,8 +183,18 @@ class AdvisoryRuleEngine
             $this->generationPeriodStamp($validUntil, $horizon),
         ]));
 
-        if (PlantingAdvisory::query()->where('generation_key', $generationKey)->exists()) {
-            return ['created' => 0, 'skipped' => 1];
+        if ($existing = PlantingAdvisory::query()->where('generation_key', $generationKey)->first()) {
+            if ($context['refresh_existing'] ?? false) {
+                $existing->update([
+                    'content' => $this->baselineMessage($metrics, $context),
+                    'message' => $this->baselineMessage($metrics, $context),
+                    'weather_data_id' => $weather?->id, 'valid_from' => $validFrom, 'valid_until' => $validUntil,
+                    'published_at' => now(),
+                    'metadata' => array_merge($existing->metadata ?? [], $this->forecastMetadata($metrics, $weather)),
+                ]);
+            }
+
+            return ['created' => 0, 'skipped' => 1, 'updated' => ($context['refresh_existing'] ?? false) ? 1 : 0];
         }
 
         PlantingAdvisory::query()->create([
@@ -197,7 +221,7 @@ class AdvisoryRuleEngine
             'valid_until' => $validUntil,
             'published_at' => now(),
             'metadata' => [
-                'weather_basis' => $this->weatherBasis($metrics, $weather),
+                ...$this->forecastMetadata($metrics, $weather),
                 'advisory_horizon' => $horizon,
                 'advisory_horizon_label' => $label,
                 'advisory_horizon_description' => $context['advisory_horizon_description'] ?? null,
@@ -346,6 +370,14 @@ class AdvisoryRuleEngine
         $temperature = number_format((float) ($metrics['avg_temperature_max'] ?? 0), 1);
 
         return "{$label} outlook: No high-risk advisory rule was triggered for Lian, Batangas. Forecast period: {$period}. Horizon: {$horizon}. Highest rain probability is about {$probability}%, estimated rainfall in the checked window totals about {$rainfall} mm, and average maximum temperature is about {$temperature} °C. Continue monitoring because local field conditions can change.";
+    }
+
+    private function forecastMetadata(array $metrics, ?ExternalWeatherData $weather): array
+    {
+        return ['weather_basis' => $this->weatherBasis($metrics, $weather), 'source_type' => 'iclimate',
+            'source_name' => 'Open-Meteo + iClimate Decision Rules', 'is_official' => false,
+            'scope_type' => 'municipality', 'scope_name' => 'All Lian Barangays',
+            'fetched_at' => $weather?->fetched_at?->toIso8601String()];
     }
 
     private function weatherBasis(array $metrics, ?ExternalWeatherData $weather): array

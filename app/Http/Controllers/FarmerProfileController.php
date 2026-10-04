@@ -71,7 +71,15 @@ class FarmerProfileController extends CrudController
         $view = parent::index($request);
 
         if ($this->canManage($request)) {
-            $view->with(app(FarmerOrganizationSummaryService::class)->summarize());
+            $summary = rescue(fn () => app(FarmerOrganizationSummaryService::class)->summarize(), [
+                'farmerOrganizationSummary' => [
+                    'labels' => [],
+                    'counts' => [],
+                    'totalFarmers' => 0,
+                    'topOrganization' => null,
+                ],
+            ], false);
+            $view->with($summary);
         }
 
         return $view;

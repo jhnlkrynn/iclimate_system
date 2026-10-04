@@ -128,23 +128,5 @@
         @endif
     </div>
 
-    @if($forecast && $forecastAudience === 'farmer')
-        <section class="risk-map-meaning" aria-labelledby="riskMeaningTitle">
-            <h3 id="riskMeaningTitle">Risk Meaning</h3>
-            <div class="risk-map-meaning-grid">
-                {{-- Each opens the shared information pop-up, the same one as the Municipal Risk Overview rows. --}}
-                <button type="button" class="risk-map-meaning-item" data-risk-category="low" aria-haspopup="dialog" aria-label="Show meaning of Low risk">
-                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #2e7d32"></span><strong>Low</strong></span>
-                </button>
-                <button type="button" class="risk-map-meaning-item" data-risk-category="moderate" aria-haspopup="dialog" aria-label="Show meaning of Moderate risk">
-                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #f2b134"></span><strong>Moderate</strong></span>
-                </button>
-                <button type="button" class="risk-map-meaning-item" data-risk-category="high" aria-haspopup="dialog" aria-label="Show meaning of High or Severe risk">
-                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dots"><span class="risk-map-meaning-dot" style="--risk-color: #e05a2b"></span><span class="risk-map-meaning-dot" style="--risk-color: #8b0000"></span></span><strong>High / Severe</strong></span>
-                </button>
-            </div>
-        </section>
-    @endif
-
     <div class="risk-map-details" data-risk-map-details hidden aria-live="polite"></div>
 </section>

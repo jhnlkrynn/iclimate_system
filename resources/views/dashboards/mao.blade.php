@@ -152,64 +152,73 @@
             async function initYield(range) {
                 const canvas = $('#riceYieldTrendChart');
                 if (!canvas || !(await ready())) return;
-                const cfg = JSON.parse(canvas.dataset.yield);
-                const pts = range === '5' ? cfg.points.slice(-5) : cfg.points;
-                charts.yield?.destroy();
-                charts.yield = new window.Chart(canvas, {
-                    type: 'line',
-                    data: { labels: pts.map((p) => String(p.year)), datasets: [{
-                        label: 'Average yield (t/ha)', data: pts.map((p) => p.yield), borderColor: '#0f5132', backgroundColor: 'rgba(15,81,50,.10)', borderWidth: 2.5, tension: .25, fill: true,
-                        // A year with fewer than 12 monthly records is drawn differently: hollow point, dashed line into and out of it.
-                        pointRadius: pts.map((p) => (p.months < 12 ? 5 : 4)), pointHoverRadius: 7,
-                        pointBackgroundColor: pts.map((p) => (p.months < 12 ? '#ffffff' : '#0f5132')), pointBorderColor: '#0f5132', pointBorderWidth: 2,
-                        segment: { borderDash: (c) => (pts[c.p0DataIndex].months < 12 || pts[c.p1DataIndex].months < 12 ? [6, 4] : undefined) },
-                    }] },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y: { beginAtZero: false, title: { display: true, text: 'Yield (t/ha)' }, grid: { color: '#eef2ef' } },
-                            x: { title: { display: true, text: 'Year' }, grid: { display: false } },
+                try {
+                    const cfg = JSON.parse(canvas.dataset.yield || '{}');
+                    const rawPts = Array.isArray(cfg.points) ? cfg.points : [];
+                    const pts = range === '5' ? rawPts.slice(-5) : rawPts;
+                    if (!pts.length) return;
+                    charts.yield?.destroy();
+                    charts.yield = new window.Chart(canvas, {
+                        type: 'line',
+                        data: { labels: pts.map((p) => String(p.year)), datasets: [{
+                            label: 'Average yield (t/ha)', data: pts.map((p) => p.yield), borderColor: '#0f5132', backgroundColor: 'rgba(15,81,50,.10)', borderWidth: 2.5, tension: .25, fill: true,
+                            pointRadius: pts.map((p) => (p.months < 12 ? 5 : 4)), pointHoverRadius: 7,
+                            pointBackgroundColor: pts.map((p) => (p.months < 12 ? '#ffffff' : '#0f5132')), pointBorderColor: '#0f5132', pointBorderWidth: 2,
+                            segment: { borderDash: (c) => (pts[c.p0DataIndex]?.months < 12 || pts[c.p1DataIndex]?.months < 12 ? [6, 4] : undefined) },
+                        }] },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                            scales: {
+                                y: { beginAtZero: false, title: { display: true, text: 'Yield (t/ha)' }, grid: { color: '#eef2ef' } },
+                                x: { title: { display: true, text: 'Year' }, grid: { display: false } },
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: {
+                                    title: (items) => 'Year ' + items[0]?.label,
+                                    label: (c) => 'Average yield: ' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : 'n/a') + ' t/ha',
+                                    afterLabel: (c) => { const p = pts[c.dataIndex] || {}; const rows = ['Records: ' + (p.months || 0) + ' monthly ' + (p.months === 1 ? 'record' : 'records')]; if (p.months < 12) rows.push('Partial year: average of the ' + p.months + ' months on file'); rows.push('Source: iClimate modeling dataset (historical)'); return rows; },
+                                } },
+                            },
                         },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { callbacks: {
-                                title: (items) => 'Year ' + items[0].label,
-                                label: (c) => 'Average yield: ' + c.parsed.y.toFixed(2) + ' t/ha',
-                                afterLabel: (c) => { const p = pts[c.dataIndex]; const rows = ['Records: ' + p.months + ' monthly ' + (p.months === 1 ? 'record' : 'records')]; if (p.months < 12) rows.push('Partial year: average of the ' + p.months + ' months on file'); rows.push('Source: iClimate modeling dataset (historical)'); return rows; },
-                            } },
-                        },
-                    },
-                });
+                    });
+                } catch (e) {
+                    console.warn('Failed to initialize yield chart:', e);
+                }
             }
 
             async function initClimate() {
                 const canvas = $('#maoRainTempChart');
                 if (!canvas || !(await ready())) return;
-                const cfg = JSON.parse(canvas.dataset.climate);
-                const colors = ['#1f6fb2', '#c4471f'];
-                const datasets = cfg.datasets.map((d) => ({
-                    label: d.label, data: d.data, yAxisID: d.axis || 'y', borderColor: colors[d.series ?? 0], backgroundColor: colors[d.series ?? 0],
-                    borderWidth: 2.5, tension: .3, spanGaps: false, borderDash: d.kind === 'predicted' ? [6, 4] : [],
-                    pointStyle: d.kind === 'predicted' ? 'rectRot' : 'circle', pointRadius: d.kind === 'predicted' ? 5 : 3.5,
-                })).filter((d) => d.data.some((v) => v !== null));
-                charts.climate?.destroy();
-                charts.climate = new window.Chart(canvas, {
-                    type: 'line', data: { labels: cfg.labels, datasets },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Rainfall (mm)' }, grid: { color: '#eef2ef' } },
-                            y2: { position: 'right', title: { display: true, text: 'Temperature (°C)' }, grid: { drawOnChartArea: false } },
-                            x: { title: { display: true, text: 'Month' }, grid: { display: false } },
+                try {
+                    const cfg = JSON.parse(canvas.dataset.climate || '{}');
+                    const colors = ['#1f6fb2', '#c4471f'];
+                    const datasets = Array.isArray(cfg.datasets) ? cfg.datasets.map((d) => ({
+                        label: d.label, data: Array.isArray(d.data) ? d.data : [], yAxisID: d.axis || 'y', borderColor: colors[d.series ?? 0], backgroundColor: colors[d.series ?? 0],
+                        borderWidth: 2.5, tension: .3, spanGaps: false, borderDash: d.kind === 'predicted' ? [6, 4] : [],
+                        pointStyle: d.kind === 'predicted' ? 'rectRot' : 'circle', pointRadius: d.kind === 'predicted' ? 5 : 3.5,
+                    })).filter((d) => d.data.some((v) => v !== null)) : [];
+                    charts.climate?.destroy();
+                    charts.climate = new window.Chart(canvas, {
+                        type: 'line', data: { labels: cfg.labels || [], datasets },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                            scales: {
+                                y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Rainfall (mm)' }, grid: { color: '#eef2ef' } },
+                                y2: { position: 'right', title: { display: true, text: 'Temperature (°C)' }, grid: { drawOnChartArea: false } },
+                                x: { title: { display: true, text: 'Month' }, grid: { display: false } },
+                            },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { boxWidth: 14 } },
+                                tooltip: { callbacks: {
+                                    label: (c) => c.dataset.label + ': ' + (c.parsed.y === null ? 'n/a' : c.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 1 })) + (c.dataset.yAxisID === 'y2' ? ' °C' : ' mm'),
+                                } },
+                            },
                         },
-                        plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth: 14 } },
-                            tooltip: { callbacks: {
-                                label: (c) => c.dataset.label + ': ' + (c.parsed.y === null ? 'n/a' : c.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 1 })) + (c.dataset.yAxisID === 'y2' ? ' °C' : ' mm'),
-                            } },
-                        },
-                    },
-                });
+                    });
+                } catch (e) {
+                    console.warn('Failed to initialize climate chart:', e);
+                }
             }
 
             root.querySelectorAll('[data-yield-range]').forEach((b) => b.addEventListener('click', () => {

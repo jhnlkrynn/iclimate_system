@@ -99,13 +99,6 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-section-title { margin-bottom: 16px !important; padding-bottom: 12px; border-bottom: 2px solid var(--brand); }
 .mfd-foot { margin-top: 16px; font-size: .875rem; font-weight: 400; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; }
 .mfd-foot .mtd-svg { width: 16px; height: 16px; margin-top: 2px; }
-/* Farmer dashboard tabs and full-page map view. */
-.mfd-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; background: #e8efeb; border-radius: 12px; }
-.mfd-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 18px; border-radius: 9px; color: var(--brand); font-weight: 700; text-decoration: none; }
-.mfd-tab:hover, .mfd-tab.is-active { background: #fff; box-shadow: 0 1px 3px rgba(15, 40, 28, .12); }
-.mfd-map-page { padding: var(--gap); }
-.mfd-map-page > .mfd-card-head { align-items: flex-start; }
-.mfd-map-section-label { margin: 0; color: var(--brand); font-size: .875rem !important; font-weight: 800 !important; letter-spacing: .18em !important; text-transform: uppercase; }
 .mfd-takeaway { margin-bottom: 16px; font-size: 1rem; font-weight: 600; color: var(--ink); }
 .mfd-soft { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid #ecd3a2; border-left: 4px solid var(--watch); border-radius: 4px; background: var(--watch-bg); color: var(--watch-ink); font-weight: 600; }
 

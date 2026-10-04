@@ -236,7 +236,7 @@
                                         <div class="fw-bold thread-name text-truncate">{{ $other?->name ?? 'User' }}</div>
                                         <div class="thread-time">{{ $latest?->humanTimestamp() }}</div>
                                     </div>
-                                    <div class="small text-muted">{{ $other?->role }}</div>
+                                    <div class="small text-muted">{{ $other?->role ?? 'User' }}</div>
                                     <div class="thread-preview-row">
                                         <div class="small text-muted text-truncate thread-preview">
                                             {{ $latest?->sender_id === $currentUser->id ? 'You: ' : '' }}{{ $latest?->body ?: ($latest?->attachment_name ? 'Attachment: '.$latest->attachment_name : 'No messages yet') }}
@@ -271,7 +271,7 @@
                             </div>
                             <div>
                                 <h2 class="h5 fw-bold mb-0">{{ $other?->name ?? 'Conversation' }}</h2>
-                                <div class="small text-muted" id="headerStatusText">{{ $other?->role }} &middot; {{ $other?->isOnline() ? 'Online' : 'Offline' }}</div>
+                                <div class="small text-muted" id="headerStatusText">{{ $other?->role ?? 'User' }} &middot; {{ $other?->isOnline() ? 'Online' : 'Offline' }}</div>
                             </div>
                         </div>
                     </div>
@@ -286,7 +286,7 @@
                                         <a class="{{ $message->sender_id === $currentUser->id ? 'text-white' : '' }}" href="{{ asset('storage/'.$message->attachment_path) }}" target="_blank">{{ $message->attachment_name }}</a>
                                     @endif
                                     <div class="msg-meta">
-                                        <span>{{ $message->sender?->name }} &middot; {{ $message->humanTimestamp() }}</span>
+                                        <span>{{ $message->sender?->name ?? 'User' }} &middot; {{ $message->humanTimestamp() }}</span>
                                         @if($message->sender_id === $currentUser->id)
                                             <span class="msg-check {{ $message->read_at ? 'seen' : '' }}" data-message-id="{{ $message->id }}">{{ $message->read_at ? '✓✓' : '✓' }}</span>
                                         @endif

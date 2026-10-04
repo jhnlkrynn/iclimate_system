@@ -1695,17 +1695,25 @@
                 updateInterpretation(key, labels, maoWeatherChartData[key]);
             });
 
-            const riceYieldTrendData = JSON.parse(document.getElementById('mao-rice-yield-trend-data').dataset.json);
+            let riceYieldTrendData = { labels: [], avg_yield: [] };
+            try {
+                const dataEl = document.getElementById('mao-rice-yield-trend-data');
+                if (dataEl && dataEl.dataset.json) {
+                    riceYieldTrendData = JSON.parse(dataEl.dataset.json);
+                }
+            } catch (e) {
+                console.warn('Failed to parse rice yield trend data:', e);
+            }
             const riceYieldTrendCanvas = document.getElementById('riceYieldTrendChart');
             let riceYieldTrendChart = null;
-            if (riceYieldTrendCanvas && riceYieldTrendData.labels.length >= 2) {
+            if (riceYieldTrendCanvas && Array.isArray(riceYieldTrendData?.labels) && riceYieldTrendData.labels.length >= 2) {
                 riceYieldTrendChart = new Chart(riceYieldTrendCanvas, {
                     type: 'line',
                     data: {
                         labels: riceYieldTrendData.labels,
                         datasets: [{
                             label: 'Average yield (t/ha)',
-                            data: riceYieldTrendData.avg_yield,
+                            data: Array.isArray(riceYieldTrendData.avg_yield) ? riceYieldTrendData.avg_yield : [],
                             borderColor: '#1F5A46',
                             backgroundColor: '#1F5A4622',
                             fill: true,
