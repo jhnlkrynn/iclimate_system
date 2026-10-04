@@ -6,7 +6,7 @@
     // Every role gets the same bell: it opens their own notifications in the shared pop-up (resources/js/notifications-popup.js).
     $showNavBell = true;
     $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
-    // Same cached count as the sidebar badge, so the two always agree.
+    // The bell is the only entry point to notifications (the sidebar has no Notifications item); the count is cached briefly.
     $navUnread = $showNavBell
         ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())
         : 0;

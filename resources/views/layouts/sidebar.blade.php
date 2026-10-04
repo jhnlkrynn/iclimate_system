@@ -4,13 +4,6 @@
     $isMao = $user->role === \App\Models\User::ROLE_MAO;
     $isIt = $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $dashboardRoute = $user->dashboardRoute();
-    $unreadNotifications = $isFarmer
-        ? \Illuminate\Support\Facades\Cache::remember(
-            'sidebar:unread-notifications:'.$user->id,
-            now()->addSeconds(20),
-            fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count()
-        )
-        : 0;
 
     $sidebarIcon = function (string $key): string {
         return match ($key) {
@@ -71,7 +64,7 @@
             $navLink('Calendar', 'calendar', 'calendar'),
             $navLink('Community', 'community', 'community'),
             $navLink('Messages', 'messages', 'messages'),
-            $navLink('Notifications', 'notifications', 'notifications', $unreadNotifications ?: null),
+            // Notifications are opened from the bell in the top bar (layouts/navigation.blade.php), as for MAO and IT.
         ];
         $moreGroup = [
             $navLink('Climate Records', 'climate-records', 'climate-records'),
@@ -154,10 +147,7 @@
                 $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'"'.($active ? ' aria-current="page"' : '').'>';
                 $html .= '<span class="d-flex align-items-center gap-2"><span class="sidebar-icon">'.$sidebarIcon($iconKey).'</span><span>'.e($label).'</span></span>';
                 $html .= '<span class="d-flex align-items-center gap-2">';
-                if ($iconKey === 'notifications') {
-                    // Kept in step with the header bell by resources/js/notifications-popup.js.
-                    $html .= '<span class="sidebar-badge" data-ic-notif-badge'.(empty($badge) ? ' hidden' : '').'>'.(int) $badge.'</span>';
-                } elseif (! empty($badge)) {
+                if (! empty($badge)) {
                     $html .= '<span class="sidebar-badge">'.(int) $badge.'</span>';
                 }
                 $html .= '<svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';

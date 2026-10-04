@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\SystemAuditLogger;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -116,7 +117,7 @@ abstract class CrudController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeManage($request);
 
@@ -168,7 +169,7 @@ abstract class CrudController extends Controller
         ]);
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse|JsonResponse
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
@@ -180,7 +181,7 @@ abstract class CrudController extends Controller
         return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' updated successfully.');
     }
 
-    public function destroy(Request $request, int $id): RedirectResponse
+    public function destroy(Request $request, int $id): RedirectResponse|JsonResponse
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
