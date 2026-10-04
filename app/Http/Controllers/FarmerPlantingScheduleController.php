@@ -5,10 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\FarmerPlantingSchedule;
 use App\Services\PlantingSchedulePredictionService;
 use App\Support\LianBarangays;
+use App\Models\FarmerProfile;
+use App\Models\User;
+use App\Support\BusinessClock;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 use Illuminate\View\View;
 
 class FarmerPlantingScheduleController extends Controller
@@ -90,6 +98,107 @@ class FarmerPlantingScheduleController extends Controller
         $schedule->delete();
 
         return redirect()->route('calendar.index')->with('success', 'Schedule deleted.');
+    }
+
+    /**
+     * The farmer dashboard's "Add Planting Information" pop-up: a planting date and a farm size, nothing else.
+     *
+     * Farm size is kept on the farmer's profile (farm_area, the figure the dashboard reads) and copied onto the plan.
+     * The planting date goes on the farmer's current plan (the earliest one not yet harvested); with no plan a new one
+     * is started, its harvest date set from the dashboard's own typical season length so the crop calendar and the
+     * harvest estimate have a date to work with. The farmer is always the signed-in user.
+     */
+    public function applyFromDashboard(Request $request, PlantingSchedulePredictionService $predictions): JsonResponse
+    {
+        $failed = response()->json(['message' => __('farmer.planting_info.failed')], 500);
+        if (! $this->featureReady()) {
+            return $failed;
+        }
+
+        $today = BusinessClock::today();
+        $data = $request->validate([
+            'planting_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYear()->toDateString(), 'before_or_equal:'.$today->copy()->addYear()->toDateString()],
+            'farm_area' => ['required', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
+        ], [
+            'planting_date.required' => __('farmer.planting_info.date_required'),
+            'planting_date.*' => __('farmer.planting_info.date_invalid'),
+            'farm_area.decimal' => __('farmer.planting_info.area_decimals'),
+            'farm_area.*' => __('farmer.planting_info.area_invalid'),
+        ]);
+
+        $user = $request->user();
+        $schedule = self::currentSchedule($user);
+        $harvest = $schedule?->harvestDateForPlanning();
+        if ($harvest && $harvest->toDateString() < $data['planting_date']) {
+            throw ValidationException::withMessages([
+                'planting_date' => __('farmer.planting_info.date_after_harvest', ['date' => $harvest->format('M j, Y')]),
+            ]);
+        }
+
+        try {
+            $schedule = DB::transaction(function () use ($user, $schedule, $data) {
+                $profile = $user->farmerProfile;
+                if ($profile) {
+                    $profile->update(['farm_area' => $data['farm_area']]);
+                } elseif ($user->barangay) {
+                    $profile = FarmerProfile::query()->create([
+                        'user_id' => $user->id,
+                        'full_name' => $user->name,
+                        'contact_number' => $user->contact_number,
+                        'address' => $user->address,
+                        'barangay' => $user->barangay,
+                        'farm_area' => $data['farm_area'],
+                        'farm_type' => FarmerProfile::FARM_TYPE_IRRIGATED,      // the same starting value registration gives a new farmer
+                    ]);
+                }
+
+                if ($schedule) {
+                    $schedule->update(['planting_date' => $data['planting_date'], 'farm_area_hectares' => $data['farm_area']]);
+
+                    return $schedule;
+                }
+
+                $planting = Carbon::parse($data['planting_date']);
+                $barangay = $profile?->barangay ?: $user->barangay;
+
+                return $user->plantingSchedules()->create([
+                    'planting_date' => $data['planting_date'],
+                    'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
+                    // May to September plantings are the wet season crop, the rest the dry season crop.
+                    'season' => in_array($planting->month, [5, 6, 7, 8, 9], true) ? 'Wet' : 'Dry',
+                    'farm_type' => $profile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED,
+                    'barangay' => in_array($barangay, LianBarangays::all(), true) ? $barangay : null,
+                    'farm_area_hectares' => $data['farm_area'],
+                ]);
+            });
+        } catch (Throwable $e) {
+            report($e);
+
+            return $failed;
+        }
+
+        try {
+            $predictions->refresh($schedule);
+        } catch (Throwable $e) {
+            report($e);                                                 // the plan is saved; its yield estimate is rebuilt the next time it is saved
+        }
+
+        return response()->json([
+            'message' => __('farmer.planting_info.saved'),
+            'planting_date' => $schedule->planting_date->toDateString(),
+            'farm_area' => number_format((float) $data['farm_area'], 2, '.', ''),
+        ]);
+    }
+
+    /** The plan the dashboard's Crop Season card shows first: the earliest planting that is not harvested yet. */
+    public static function currentSchedule(User $user): ?FarmerPlantingSchedule
+    {
+        if (! \App\Support\SchemaCache::hasTable('farmer_planting_schedules')) {
+            return null;
+        }
+
+        return FarmerPlantingSchedule::query()->where('user_id', $user->id)->whereNotNull('planting_date')->orderBy('planting_date')->limit(100)->get()
+            ->first(fn (FarmerPlantingSchedule $row) => $row->monitoringStatus() !== 'harvested');
     }
 
     private function validated(Request $request): array

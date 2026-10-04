@@ -87,7 +87,7 @@ const chartSelector = [
     '#farmerWeatherTrendChart',
 ].join(',');
 
-const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap';
+const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap, #mfdFarmMap';
 
 // Inline dashboard scripts are parsed before this deferred module executes. Give
 // every consumer one stable promise instead of making it race dynamic imports.
@@ -141,6 +141,7 @@ window.iClimateVisualsReady = (async () => {
         try {
             const { default: Leaflet } = await import('leaflet');
             window.L = Leaflet;
+            keepMapsSized(Leaflet);
         } catch (error) {
             console.error('iClimate could not load Leaflet.', error);
         }
@@ -177,6 +178,8 @@ function initApp() {
     initUiEnhancements(document);
     initFarmerDashboard();
     initAdvisoryModal();
+    bindSidebarDrawer();
+    bindResponsiveTables();
 }
 
 // Support cached/back-forward pages where DOMContentLoaded has already fired.
@@ -184,6 +187,74 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
     initApp();
+}
+
+/*
+ * Every Leaflet map on any page (Map My Farm, the barangay risk map, MAO maps) is told when its box changes size:
+ * a pop-up or a folded section opening, the phone rotating, the window or the sidebar changing width. Without this
+ * Leaflet keeps drawing for the old size and leaves grey tiles.
+ */
+function keepMapsSized(Leaflet) {
+    if (!Leaflet?.Map || Leaflet.Map.__icSized) return;
+    Leaflet.Map.__icSized = true;
+    Leaflet.Map.addInitHook(function () {
+        const map = this;
+        const box = map.getContainer();
+        let frame = null;
+        const refresh = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+                if (box.isConnected && box.clientWidth > 0 && box.clientHeight > 0) map.invalidateSize({ pan: false });
+            });
+        };
+        const observer = 'ResizeObserver' in window ? new ResizeObserver(refresh) : null;
+        observer?.observe(box);
+        window.addEventListener('orientationchange', refresh);
+        if (!observer) window.addEventListener('resize', refresh);
+        map.on('unload', () => {
+            observer?.disconnect();
+            window.removeEventListener('orientationchange', refresh);
+            window.removeEventListener('resize', refresh);
+        });
+    });
+}
+
+/*
+ * The phone and tablet menu (the Bootstrap offcanvas #mobileSidebar): Bootstrap already gives it the dimmed overlay,
+ * tap-outside and Escape to close, and stops the page behind it from scrolling. Added here: choosing a page closes the
+ * drawer at once, the Menu button reports open/closed, and the drawer is shut if the screen grows to the desktop layout.
+ */
+function bindSidebarDrawer() {
+    const drawer = document.getElementById('mobileSidebar');
+    if (!drawer || drawer.dataset.bound === 'true') return;
+    drawer.dataset.bound = 'true';
+    const toggle = document.querySelector('[data-bs-target="#mobileSidebar"]');
+    // Closed through the drawer's own close button, so it works however Bootstrap's script was loaded.
+    const hide = () => { if (drawer.classList.contains('show')) drawer.querySelector('[data-bs-dismiss="offcanvas"]')?.click(); };
+
+    drawer.addEventListener('click', (event) => {
+        if (event.target.closest('a.sidebar-link, [data-ai-open]')) hide();
+    });
+    drawer.addEventListener('shown.bs.offcanvas', () => toggle?.setAttribute('aria-expanded', 'true'));
+    drawer.addEventListener('hidden.bs.offcanvas', () => toggle?.setAttribute('aria-expanded', 'false'));
+    window.matchMedia('(min-width: 992px)').addEventListener('change', (event) => { if (event.matches) hide(); });
+    // Coming back with the browser's Back button must not show a drawer left open.
+    window.addEventListener('pageshow', (event) => { if (event.persisted) hide(); });
+}
+
+/*
+ * A wide table that is not already inside a scroll area gets one, so it scrolls on its own instead of pushing the whole
+ * page sideways on a phone. Tables that already stack or scroll (their own wrapper) are left alone.
+ */
+function bindResponsiveTables() {
+    const wrapped = '.table-responsive, .ic-table-scroll, [class*="table-wrap"], [class*="-scroll"], [class*="table-shell"], [class*="heat-wrap"]';
+    document.querySelectorAll('main.page-shell table').forEach((table) => {
+        if (table.closest(wrapped) || table.matches('.mfd-sr-only, .visually-hidden, .sl-table')) return;
+        const box = document.createElement('div');
+        box.className = 'ic-table-scroll';
+        table.parentNode.insertBefore(box, table);
+        box.appendChild(table);
+    });
 }
 
 function bindNavbarState() {

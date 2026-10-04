@@ -60,6 +60,36 @@ return [
         'heavy_at' => 75,
     ],
 
+    /*
+    | One plain word for today's temperature (°C), rain (mm) and humidity (%)
+    | under "Today's Farm Conditions". A value at or above the number gets
+    | that word. Heavy rain uses heavy_rain_mm and very high humidity uses
+    | humid_percent, so a word never disagrees with a warning.
+    | Defaults must be checked with the Municipal Agriculture Office.
+    */
+    'today_levels' => [
+        'temperature' => [
+            'mild_at' => 24,
+            'warm_at' => 29,
+            'hot_at' => 33,
+            'very_hot_at' => \App\Services\Analytics\MaoDashboardService::VERY_HOT_C,
+        ],
+        'rain' => [
+            'light_at' => 0.1,
+            'moderate_at' => 7.5,
+        ],
+        'humidity' => [
+            'moderate_at' => 40,
+            'high_at' => 70,
+        ],
+    ],
+
+    /*
+    | Rice yield forecast: an estimate within this percentage either side of
+    | the Lian average reads "within the typical range".
+    */
+    'yield_typical_band_percent' => 10,
+
     /* Humidity (%) at or above this: rice disease can spread. */
     'humid_percent' => 85,
 

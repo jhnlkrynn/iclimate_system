@@ -2,9 +2,12 @@
     $user = auth()->user();
     $initials = collect(explode(' ', trim($user->name)))->filter()->map(fn ($part) => mb_strtoupper($part[0]))->take(2)->implode('');
     $isFarmerNav = $user->role === \App\Models\User::ROLE_FARMER;
+    $navBarangay = $isFarmerNav ? ($user->farmerProfile?->barangay ?? $user->barangay) : null;
+    // IT Personnel get the same notification bell as farmers (their own notifications, same list page).
+    $showNavBell = $isFarmerNav || $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
     // Same cached count as the sidebar badge, so the two always agree.
-    $navUnread = $isFarmerNav
+    $navUnread = $showNavBell
         ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())
         : 0;
 @endphp
@@ -82,13 +85,14 @@
     .topbar-btn-logout:hover { background: rgba(184,74,74,.2); border-color: rgba(184,74,74,.45); }
     @media (max-width: 575.98px) {
         .topbar-name { max-width: 52vw; }
-        .topbar-btn span { display: none; }
-        .topbar-btn { padding: .5rem .6rem; }
+        .topbar-btn span:not(.sidebar-badge) { display: none; }
+        .topbar-btn { padding: .5rem .6rem; min-width: 40px; min-height: 40px; justify-content: center; }
+        .topbar-actions { gap: .35rem; }
     }
 </style>
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
     <div class="container-fluid px-0 gap-3 topbar-inner flex-wrap">
-        <button class="btn btn-outline-primary d-lg-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation menu">
+        <button class="btn btn-outline-primary d-lg-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open navigation menu">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             <span>Menu</span>
         </button>
@@ -112,14 +116,14 @@
             </div>
         @endunless
         <div class="topbar-actions">
-            @if ($isFarmerNav)
+            @if ($showNavBell)
                 <a class="topbar-btn position-relative" href="{{ route('notifications.index') }}" aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     @if ($navUnread > 0)<span class="sidebar-badge" style="position:absolute;top:-6px;right:-6px">{{ $navUnread }}</span>@endif
                 </a>
             @endif
             @if (true)
-                <a class="topbar-btn d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">
+                <a class="topbar-btn" href="{{ route('profile.edit') }}" aria-label="Profile">
                     <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     <span>Profile</span>
                 </a>

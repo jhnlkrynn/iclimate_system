@@ -3,15 +3,15 @@
     $err = $it['extra']['errors'];
     $statusLabel = ['succeeded' => ['ok', 'Succeeded'], 'failed' => ['crit', 'Failed'], 'running' => ['warn', 'Running']];
 @endphp
-<section class="itd-card" aria-labelledby="itdOpsTitle" data-it-ops>
-    <div class="itd-card-head">
+<section class="mfd-card itd-card" aria-labelledby="itdOpsTitle" data-it-ops>
+    <div class="mfd-card-head">
         <div><h2 id="itdOpsTitle">Scheduled Tasks and Application Errors</h2><p class="itd-sub">What the scheduler ran and what the application logged</p>@include('dashboards.it._updated', ['at' => $it['stamps']['extra'] ?? $it['stamps']['now']])</div>
-        <a class="itd-link" href="{{ route('system-health.index') }}">Full diagnostics</a>
+        <a class="mfd-link" href="{{ route('system-health.index') }}">Full diagnostics</a>
     </div>
 
     <h3 class="itd-h3 is-first" data-it-scheduler>Scheduled tasks <span class="itd-period">last run from the task history · next run from the schedule</span></h3>
     @if ($sched['state'] !== 'ok')
-        <p class="itd-empty">{{ $sched['state'] === 'empty' ? 'No scheduled tasks are defined.' : 'The schedule could not be read.' }}</p>
+        @include('dashboards.it._state', ['kind' => 'empty', 'text' => $sched['state'] === 'empty' ? 'No scheduled tasks are defined.' : 'The schedule could not be read.'])
     @else
         <div class="itd-table-wrap">
             <table class="itd-table is-wide">
@@ -24,7 +24,7 @@
                             <td class="itd-mono itd-nowrap">{{ $t['next']->format('M j, g:i A') }}</td>
                             <td>
                                 @if ($t['status'])@include('dashboards.it._badge', ['level' => $statusLabel[$t['status']][0] ?? 'unk', 'text' => $statusLabel[$t['status']][1] ?? ucfirst($t['status'])])@else @include('dashboards.it._badge', ['level' => 'unk', 'text' => 'Not run yet'])@endif
-                                @if ($t['status'] === 'failed' && $t['summary'])<small class="itd-muted d-block itd-mono">{{ \Illuminate\Support\Str::limit($t['summary'], 90) }}</small>@endif
+                                @if ($t['status'] === 'failed' && $t['summary'])<small class="d-block itd-mono">{{ \Illuminate\Support\Str::limit($t['summary'], 90) }}</small>@endif
                             </td>
                         </tr>
                     @endforeach
@@ -35,7 +35,7 @@
 
     <h3 class="itd-h3" data-it-app-errors>Application errors <span class="itd-period">from the daily application log</span></h3>
     @if ($err['state'] === 'empty')
-        <p class="itd-empty">No application log file was found yet. Errors will appear here once the application writes to its log.</p>
+        @include('dashboards.it._state', ['kind' => 'empty', 'text' => 'No application log file was found yet. Errors will appear here once the application writes to its log.'])
     @else
         <div class="itd-table-wrap">
             <table class="itd-table">
@@ -51,11 +51,11 @@
             <p class="itd-minor">Most repeated errors (7 days)</p>
             <ul class="itd-list">
                 @foreach ($err['top'] as $e)
-                    <li><span class="itd-mono">{{ $e['message'] }}</span> <span class="itd-badge is-warn"><span class="itd-dot" aria-hidden="true">▲</span>{{ number_format($e['count']) }}&times;</span></li>
+                    <li><span class="itd-mono">{{ $e['message'] }}</span> @include('dashboards.it._badge', ['level' => 'warn', 'text' => number_format($e['count']).'×'])</li>
                 @endforeach
             </ul>
         @else
-            <p class="itd-allgood"><span aria-hidden="true">✓</span> No errors in the last 7 days 👍</p>
+            @include('dashboards.it._state', ['kind' => 'good', 'text' => 'No errors in the last 7 days.'])
         @endif
     @endif
 </section>

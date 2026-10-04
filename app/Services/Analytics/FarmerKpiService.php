@@ -181,6 +181,55 @@ final class FarmerKpiService
         return ($hi - 32) * 5 / 9;
     }
 
+    /**
+     * One plain word each for today's temperature, rain and humidity, from the bands in config/farmer_dashboard.php
+     * (today_levels). A value that is not known has no word.
+     *
+     * @return array{temperature: ?string, rain: ?string, humidity: ?string}
+     */
+    public function todayLevels(?float $temperatureC, ?float $rainMm, ?float $humidityPercent): array
+    {
+        $bands = (array) config('farmer_dashboard.today_levels');
+
+        return [
+            'temperature' => $temperatureC === null ? null : match (true) {
+                $temperatureC >= (float) $bands['temperature']['very_hot_at'] => 'very_hot',
+                $temperatureC >= (float) $bands['temperature']['hot_at'] => 'hot',
+                $temperatureC >= (float) $bands['temperature']['warm_at'] => 'warm',
+                $temperatureC >= (float) $bands['temperature']['mild_at'] => 'mild',
+                default => 'cool',
+            },
+            'rain' => $rainMm === null ? null : match (true) {
+                $rainMm >= (float) config('farmer_dashboard.heavy_rain_mm') => 'heavy',
+                $rainMm >= (float) $bands['rain']['moderate_at'] => 'moderate',
+                $rainMm >= (float) $bands['rain']['light_at'] => 'light',
+                default => 'none',
+            },
+            'humidity' => $humidityPercent === null ? null : match (true) {
+                $humidityPercent >= (float) config('farmer_dashboard.humid_percent') => 'very_high',
+                $humidityPercent >= (float) $bands['humidity']['high_at'] => 'high',
+                $humidityPercent >= (float) $bands['humidity']['moderate_at'] => 'moderate',
+                default => 'low',
+            },
+        ];
+    }
+
+    /**
+     * How an estimated yield reads against the usual yield: within the band either side of it is "typical".
+     *
+     * @return 'above'|'typical'|'below'
+     */
+    public function yieldAgainstTypical(float $percentDifference): string
+    {
+        $band = (float) config('farmer_dashboard.yield_typical_band_percent');
+
+        return match (true) {
+            $percentDifference > $band => 'above',
+            $percentDifference < -$band => 'below',
+            default => 'typical',
+        };
+    }
+
     /** PAGASA heat class for a heat index in °C: normal, caution, extreme_caution, danger or extreme_danger. */
     public function heatLevel(float $heatIndexC): string
     {

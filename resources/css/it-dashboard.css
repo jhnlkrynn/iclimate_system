@@ -1,0 +1,203 @@
+/*
+ * IT Personnel dashboard (/admin/dashboard). Built on the farmer dashboard design system in farmer-dashboard.css:
+ * the page wrapper is .mfd.itd, so the tokens, header band, cards, KPI cards, status pills, buttons, links, notes,
+ * empty states and loading skeleton are the shared .mfd-* parts. Only what the farmer page does not have lives here
+ * as .itd-*: tabs, data tables, filters, tooltips, the attention summary, the heatmap and the small inline charts.
+ * Same type scale (nothing under 12px), same 8px spacing, same status colours paired with an icon and a word.
+ */
+
+/* ---------------------------------------------------------------- shared parts, adjusted for a denser admin page */
+.itd .mfd-btn.is-small { min-height: 36px; padding: 6px 14px; font-size: .875rem; }
+.itd .mfd-btn:disabled { opacity: .65; cursor: progress; }
+.itd .mfd-btn .mtd-svg { width: 18px; height: 18px; }
+.mfd-header .mfd-btn.is-ghost { background: transparent; border-color: rgba(255, 255, 255, .6); color: #fff !important; }
+.mfd-header .mfd-btn.is-ghost:hover { background: rgba(255, 255, 255, .14); border-color: #fff; }
+.itd select:focus-visible, .itd input:focus-visible, .itd .itd-info:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; border-radius: 4px; }
+.itd .mfd-pill.is-unk { background: var(--subtle); color: var(--muted); border-color: var(--rule); }
+.itd .mfd-note.is-good { border-left-color: var(--good); background: var(--good-bg); color: var(--good-ink); }
+.itd .mfd-note.is-good .mtd-svg { color: var(--good); }
+.itd .mfd-note p { color: inherit; }
+.itd .mfd-empty p { color: var(--ink); }
+.itd .mfd-card-head { align-items: flex-start; }
+.itd .mfd-alert-body .mfd-pill span { font-size: inherit; font-weight: inherit; color: inherit; }
+.itd .mfd-alert-body strong { font-size: 1rem; }
+.itd .mfd-link { min-height: 32px; }
+.itd .mfd-foot { display: block; }
+.itd-num { text-align: right; }
+.itd-nowrap { white-space: nowrap; }
+.itd-mono { font-size: .875rem; overflow-wrap: anywhere; }
+.itd-unit { margin-left: 4px; font-size: .875rem; font-weight: 400; color: var(--muted); }
+.itd .d-block { display: block; }
+
+/* ---------------------------------------------------------------- header band */
+.itd-lede { margin-top: 8px !important; max-width: 760px; font-size: 1rem; font-weight: 400; color: rgba(255, 255, 255, .86); }
+.itd-stamps { display: flex; flex-direction: column; gap: 2px; }
+.itd-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------------------------------------------------------------- layout: rows of one or two cards */
+.itd [data-panel] { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+.itd-row { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+/* Clears the sticky top bar when a chip or KPI card scrolls a section into view. */
+.itd-cell { display: flex; min-width: 0; scroll-margin-top: 96px; }
+.itd-cell > * { flex: 1; min-width: 0; }
+.itd-cell.is-targeted > .mfd-card { outline: 3px solid var(--info); outline-offset: 2px; }
+@media (min-width: 1400px) { .itd-row.r-50-50:not(.is-wide) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* cards holding wide tables go side by side only when each half still fits them */
+@media (min-width: 1750px) { .itd-row.r-50-50.is-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------------------------------------------------------------- cards */
+.itd-card.is-warn { border-top: 3px solid var(--watch); }
+.itd-card.is-crit { border-top: 3px solid var(--danger); }
+.itd-sub { margin-top: 4px !important; font-size: .9375rem; font-weight: 400; color: var(--muted); }
+.itd-updated { display: block; margin-top: 4px; font-size: .8125rem; font-weight: 400; color: var(--muted); }
+.itd-h3 { margin: 24px 0 12px !important; padding-top: 20px; border-top: 1px solid var(--line); }
+.itd-h3.is-first { margin-top: 0 !important; padding-top: 0; border-top: 0; }
+.itd-period { margin-left: 6px; font-size: .875rem; font-weight: 400; color: var(--muted); }
+.itd-minor { margin: 16px 0 8px !important; font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.itd-list { display: grid; gap: 8px; }
+.itd-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; overflow-wrap: anywhere; }
+.itd-count { min-width: 32px; padding: 2px 10px; border: 1px solid #b9dcc8; border-radius: 4px; text-align: center; font-size: .875rem; font-weight: 700; background: var(--good-bg); color: var(--good-ink); }
+.itd-count.has-items { border-color: #f0c2bc; background: var(--danger-bg); color: var(--danger-ink); }
+
+/* label / value rows: the shared .mfd-facts list with sentence-case labels */
+.itd-rows dt { font-size: .9375rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.itd-rows dd { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 8px; }
+.itd-meter { display: inline-block; width: 120px; height: 8px; border-radius: 2px; background: #e3e8e5; overflow: hidden; }
+.itd-meter > span { display: block; height: 100%; background: var(--accent); }
+.itd-meter.is-warn > span { background: var(--watch); }
+.itd-meter.is-crit > span { background: var(--danger); }
+
+/* ---------------------------------------------------------------- attention summary */
+.itd-summary {
+    display: flex; gap: 16px; align-items: flex-start; padding: 20px var(--gap);
+    border: 1px solid #b9dcc8; border-left: 4px solid var(--good); border-radius: 4px; background: var(--good-bg);
+}
+.itd-summary.is-warn { border-color: #ecd3a2; border-left-color: var(--watch); background: var(--watch-bg); }
+.itd-summary.is-crit { border-color: #f0c2bc; border-left-color: var(--danger); background: var(--danger-bg); }
+.itd-summary > .mtd-svg { width: 28px; height: 28px; margin-top: 2px; color: var(--good); }
+.itd-summary.is-warn > .mtd-svg { color: var(--watch); }
+.itd-summary.is-crit > .mtd-svg { color: var(--danger); }
+.itd-summary-body { min-width: 0; }
+.itd-summary h2 { font-size: 1.25rem; }
+.itd-summary p { margin-top: 4px; }
+.itd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px !important; }
+.itd-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 12px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); font-size: .875rem; font-weight: 600; text-decoration: none; }
+.itd-chips li { max-width: 100%; }
+.itd-chip:hover { border-color: var(--brand); color: var(--brand); }
+.itd-chip .mtd-svg { width: 16px; height: 16px; }
+.itd-chip.is-crit { border-color: #f0c2bc; color: var(--danger-ink); }
+.itd-chip.is-warn { border-color: #ecd3a2; color: var(--watch-ink); }
+
+/* ---------------------------------------------------------------- KPI cards: the shared .mfd-kpi with a status edge */
+.itd-kpi-stack { display: grid; gap: var(--gap); align-content: start; }
+@media (min-width: 1600px) { .itd-kpi-stack { gap: 16px; } }
+.itd .mfd-kpi { position: relative; }
+.itd .mfd-kpi.is-ok { border-top-color: var(--good); }
+.itd .mfd-kpi.is-warn { border-top-color: var(--watch); }
+.itd .mfd-kpi.is-crit { border-top-color: var(--danger); }
+.itd .mfd-kpi.is-unk { border-top-color: var(--rule); }
+.itd-kpi-top { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; }
+.itd-kpi-link { position: absolute; inset: 0; border-radius: var(--radius); }
+.itd .mfd-kpi-value { flex-wrap: wrap; }
+.itd .mfd-kpi-value.is-text { font-size: 1.375rem; }
+.itd-compare.is-good { color: var(--good-ink); font-weight: 600; }
+.itd-compare.is-bad { color: var(--danger-ink); font-weight: 600; }
+/* second row holds three or four cards: two per row until they fit on one line */
+.itd .mfd-kpis.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 1200px) { .itd .mfd-kpis.is-four { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+
+/* tooltips: hidden with display:none (not just transparent) so they never widen the page */
+.itd-info { position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: .75rem; font-weight: 700; line-height: 1; cursor: help; text-transform: none; letter-spacing: 0; }
+.itd-info::after {
+    content: attr(data-tip); position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); width: max-content; max-width: min(270px, 70vw);
+    padding: 8px 12px; border-radius: 4px; background: var(--ink); color: #fff; font-size: .8125rem; font-weight: 400; line-height: 1.45;
+    text-transform: none; letter-spacing: 0; text-align: left; white-space: normal; display: none; pointer-events: none;
+}
+.itd-info:hover::after, .itd-info:focus::after { display: block; }
+/* cards in the right-hand columns open their tooltip leftwards so it stays on screen */
+.itd .mfd-kpis.is-four .mfd-kpi:nth-child(even) .itd-info::after { left: auto; right: 0; }
+@media (max-width: 767.98px) { .itd .mfd-kpi:nth-child(even) .itd-info::after { left: auto; right: 0; } }
+@media (min-width: 768px) and (max-width: 1599.98px) { .itd .mfd-kpis:not(.is-four) .mfd-kpi:nth-child(3n) .itd-info::after { left: auto; right: 0; } }
+@media (min-width: 1200px) { .itd .mfd-kpis.is-four .mfd-kpi:nth-child(n+3) .itd-info::after { left: auto; right: 0; } }
+@media (min-width: 1600px) { .itd .mfd-kpis:not(.is-four) .mfd-kpi:nth-child(n+5) .itd-info::after { left: auto; right: 0; } }
+
+/* ---------------------------------------------------------------- tabs */
+.itd-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid var(--rule); scrollbar-width: thin; }
+.itd-tab {
+    flex: none; min-height: 44px; padding: 8px 20px; margin-bottom: -2px; border: 0; border-bottom: 3px solid transparent; border-radius: 4px 4px 0 0;
+    background: transparent; color: var(--muted); font-size: .9375rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s;
+}
+.itd-tab:hover { background: var(--good-bg); color: var(--brand); }
+.itd-tab[aria-selected="true"] { background: var(--card); color: var(--brand); border-bottom-color: var(--brand); }
+
+/* ---------------------------------------------------------------- tables: ruled, striped, scrolling inside their own box */
+.itd-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+.itd-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: .9375rem; }
+.itd-table.is-wide { min-width: 820px; }
+.itd-table.is-roles { min-width: 760px; }
+.itd-table td.itd-num { white-space: nowrap; }
+.itd-table th { padding: 12px 16px; border-bottom: 1px solid var(--rule); background: var(--subtle); text-align: left; font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
+.itd-table th.itd-num { text-align: right; }
+.itd-table th .itd-period { text-transform: none; letter-spacing: 0; }
+.itd-table td { padding: 12px 16px; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink); }
+.itd-table tbody tr:first-child td { border-top: 0; }
+.itd-table th, .itd-table td:first-child { overflow-wrap: normal; word-break: normal; }
+.itd-table tbody tr:nth-child(even) td { background: var(--subtle); }
+.itd-table tbody tr:hover td { background: #f1f8f4; }
+.itd-table tbody tr.itd-total td { border-top: 2px solid var(--rule); background: var(--card); font-weight: 600; }
+.itd-table tbody tr.is-flag-failed td { background: #fff7f6; }
+.itd-table tbody tr.is-flag-privileged td { background: #fffcf4; }
+.itd-table td .mfd-pill { margin-left: 6px; }
+.itd-table td:first-child .mfd-pill, .itd-table td > .mfd-pill:first-child { margin-left: 0; }
+.itd-table form { margin: 0; }
+.itd-share { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.itd-share .mfd-bar { flex: none; width: 72px; height: 8px; }
+
+/* ---------------------------------------------------------------- filters */
+.itd-filters { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 16px; }
+.itd-filters label { display: flex; flex-direction: column; gap: 4px; font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.itd-filters select, .itd-filters input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); font-size: .9375rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.itd-filters select:hover, .itd-filters input:hover { border-color: var(--accent); }
+
+/* ---------------------------------------------------------------- charts */
+.itd-range { display: inline-flex; border: 1px solid var(--brand); border-radius: 4px; overflow: hidden; }
+.itd-range button { min-height: 36px; padding: 6px 14px; border: 0; background: #fff; color: var(--brand); font-size: .875rem; font-weight: 600; cursor: pointer; }
+.itd-range button + button { border-left: 1px solid var(--brand); }
+.itd-range button:hover { background: var(--good-bg); }
+.itd-range button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+/* the bottom margin leaves room for the chart explainer button that app.js adds under the canvas */
+.itd-chart { height: 320px; margin-bottom: 40px; }
+.itd-chart canvas { cursor: pointer; }
+.itd-chart-state { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 16px; text-align: center; font-weight: 600; color: var(--muted); background: rgba(255, 255, 255, .9); }
+.mfd-chart.is-loading .itd-chart-state { background: transparent; }   /* the shared chart skeleton shows through while loading */
+.itd-spark { display: block; width: 100px; height: 24px; color: var(--brand); }
+.itd-spark-cell { min-width: 120px; }
+.itd-spark-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.itd-spark-row .itd-spark { width: 160px; height: 32px; }
+.itd-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap); }
+@media (min-width: 1500px) { .itd-two { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+.itd-heat-wrap { max-width: 100%; overflow-x: auto; }
+.itd-heat { border-collapse: separate; border-spacing: 2px; min-width: 600px; width: 100%; }
+.itd-heat th { padding: 0; text-align: center; font-size: .75rem; font-weight: 400; color: var(--muted); }
+.itd-heat th[scope="row"] { padding-right: 6px; text-align: right; }
+.itd-heat td { height: 24px; min-width: 20px; padding: 0; border: 0; border-radius: 2px; text-align: center; background: #eef2ef; color: var(--ink); font-size: .75rem; }
+.itd-heat td.has { background: color-mix(in srgb, #0f5132 calc(var(--heat) * 85% + 15%), #ffffff); color: #fff; }
+.itd-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: .875rem; color: var(--muted); }
+.itd-legend-scale { width: 90px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #d5e6dc, #0f5132); }
+.itd-axis { margin-left: auto; font-size: .875rem; color: var(--muted); }
+.itd-bars { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 16px; }
+.itd-bar { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.itd-bar-fill { width: 100%; border-radius: 2px 2px 0 0; background: var(--accent); }
+.itd-bar-value { font-size: .8125rem; font-weight: 600; }
+.itd-bar-label { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- phones */
+@media (max-width: 640px) {
+    .itd-summary { padding: 16px; }
+    .itd-chart { height: 280px; }
+    .itd-header-actions, .itd-header-actions .mfd-btn { flex: 1 1 100%; }
+    .itd-table th, .itd-table td { padding: 10px 12px; }
+    .itd-axis { margin-left: 0; }
+    .itd-filters label { flex: 1 1 140px; }
+    .itd-rows > div { align-items: flex-start; }
+}

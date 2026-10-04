@@ -17,7 +17,7 @@
             <div class="mfd-empty">
                 @include('dashboards.mao.icon', ['name' => 'map'])
                 <div><p><strong>{{ __('farmer.risk.no_barangay') }}</strong></p></div>
-                <a class="mfd-btn" href="{{ route('profile.edit') }}">{{ __('farmer.setup.barangay.cta') }}</a>
+                <a class="mfd-btn" href="{{ route('profile.edit') }}" data-mfd-popup="profile" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.setup.barangay.cta') }}</a>
             </div>
         @else
             <div class="mfd-empty">

@@ -3,54 +3,32 @@
     $ok = $w['state'] === 'ok';
     $alerts = $f['alerts'];
     $levelLabel = ['danger' => __('farmer.status.danger'), 'watch' => __('farmer.status.watch')];
-    $heatLevelFor = fn (?string $l) => match ($l) { 'normal' => 'good', 'caution', 'extreme_caution' => 'watch', 'danger', 'extreme_danger' => 'danger', default => 'info' };
+    $fmt = \App\Services\Analytics\FarmerKpiService::class;
+    // Today's three numbers, each with one plain word. A number the weather service did not give is left out, never shown as 0.
+    $conditions = $ok ? array_values(array_filter([
+        ['key' => 'temperature', 'icon' => 'temperature', 'value' => $fmt::formatTemperature($w['temperature']).'°C', 'level' => $w['levels']['temperature']],
+        $w['rain_today'] !== null ? ['key' => 'rain', 'icon' => 'rain', 'value' => $fmt::formatRain($w['rain_today']).' mm', 'level' => $w['levels']['rain']] : null,
+        $w['humidity'] !== null ? ['key' => 'humidity', 'icon' => 'humidity', 'value' => $fmt::formatPercent($w['humidity']).'%', 'level' => $w['levels']['humidity']] : null,
+    ])) : [];
 @endphp
 <div class="mfd-today">
-    {{-- Left: weather now. One reading feeds the condition, the sentence and today's rain. --}}
+    {{-- Left: today's conditions. The same reading feeds the Weather tile above, the sentence and today's rain. --}}
     @if ($ok)
         <section class="mfd-card mfd-now" aria-labelledby="mfdNowTitle" data-mfd-now>
             <div class="mfd-card-head">
                 <h2 id="mfdNowTitle">{{ __('farmer.now.title') }}</h2>
                 @if ($w['stale'])@include('dashboards.farmer._status', ['level' => 'watch', 'label' => __('farmer.header.old_data')])@endif
             </div>
-            <div class="mfd-now-main">
-                <span class="mfd-now-icon">@include('dashboards.mao.icon', ['name' => $w['icon']])</span>
-                <div>
-                    <div class="mfd-temp"><span>{{ \App\Services\Analytics\FarmerKpiService::formatTemperature($w['temperature']) }}</span><small>°C</small></div>
-                    <div class="mfd-cond">{{ $w['condition'] }}</div>
-                </div>
-            </div>
-            <p class="mfd-now-summary">{{ $w['now_summary'] }}</p>
-            <ul class="mfd-metrics">
-                @if ($w['feels_like'] !== null)
-                    <li>
-                        <span class="mfd-metric-label">{{ __('farmer.now.feels_like') }}</span>
-                        <strong>{{ \App\Services\Analytics\FarmerKpiService::formatTemperature($w['feels_like']) }}°C</strong>
-                        <span class="mfd-metric-note">@include('dashboards.farmer._status', ['level' => $heatLevelFor($w['feels_level']), 'label' => __('farmer.heat.'.$w['feels_level'])])</span>
+            <ul class="mfd-conditions">
+                @foreach ($conditions as $c)
+                    <li data-condition="{{ $c['key'] }}">
+                        <span class="mfd-metric-label">@include('dashboards.mao.icon', ['name' => $c['icon']]){{ __('farmer.now.'.$c['key']) }}</span>
+                        <strong>{{ $c['value'] }}</strong>
+                        <span class="mfd-condition-level">{{ __('farmer.now.level.'.$c['key'].'.'.$c['level']) }}</span>
                     </li>
-                @endif
-                @if ($w['humidity'] !== null)
-                    <li>
-                        <span class="mfd-metric-label">{{ __('farmer.now.humidity') }}</span>
-                        <strong>{{ \App\Services\Analytics\FarmerKpiService::formatPercent($w['humidity']) }}%</strong>
-                        <span class="mfd-metric-note">{{ $w['humidity_meaning'] }}</span>
-                    </li>
-                @endif
-                @if ($w['wind'] !== null)
-                    <li>
-                        <span class="mfd-metric-label">{{ __('farmer.now.wind') }}</span>
-                        <strong>{{ number_format($w['wind'], 0) }} km/h</strong>
-                        <span class="mfd-metric-note">{{ $w['wind_meaning'] }}</span>
-                    </li>
-                @endif
-                @if ($w['rain_today'] !== null)
-                    <li>
-                        <span class="mfd-metric-label">{{ __('farmer.now.rain_today') }}</span>
-                        <strong>{{ \App\Services\Analytics\FarmerKpiService::formatRain($w['rain_today']) }} mm</strong>
-                        <span class="mfd-metric-note">@if ($w['rain_chance'] !== null){{ __('farmer.now.chance', ['percent' => number_format($w['rain_chance'], 0)]) }}@else{{ __('farmer.now.rain_today_note') }}@endif</span>
-                    </li>
-                @endif
+                @endforeach
             </ul>
+            <p class="mfd-now-summary">{{ $w['now_summary'] }}</p>
             <p class="mfd-foot">{{ __('farmer.now.source', ['source' => __('farmer.source.weather'), 'time' => $w['updated_label'] ?? '—']) }}</p>
             <a class="mfd-link" href="{{ route('weather-predictions.index', ['tab' => 'weather-forecast']) }}">{{ __('farmer.now.see_full') }}</a>
         </section>
@@ -58,7 +36,7 @@
         @include('dashboards.farmer._error', ['retry' => 'today', 'title' => __('farmer.now.title')])
     @endif
 
-    {{-- Right: what to do today. --}}
+    {{-- Right: what the farmer should know today. Real warnings always come first and are never left out. --}}
     <section class="mfd-card mfd-advice" aria-labelledby="mfdAdviceTitle" data-mfd-advice>
         <div class="mfd-card-head"><h2 id="mfdAdviceTitle">{{ __('farmer.advice.title') }}</h2></div>
 

@@ -173,7 +173,7 @@ class DashboardKpiTest extends TestCase
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
         $this->actingAs($it)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('IT Dashboard')
+            ->assertSee('IT Personnel Dashboard')
             ->assertSee('data-kpi="users"', false)
             ->assertSee('data-kpi="status"', false)
             ->assertDontSee('data-kpi="prediction"', false)          // prediction diagnostics live on System Health, not the overview

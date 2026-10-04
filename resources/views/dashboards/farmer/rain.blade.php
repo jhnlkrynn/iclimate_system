@@ -11,7 +11,10 @@
         <div class="mfd-empty">@include('dashboards.mao.icon', ['name' => 'info'])<p>{{ __('farmer.rain.empty') }}</p></div>
     </section>
 @else
-    <section class="mfd-card" aria-labelledby="mfdRainTitle" data-mfd-rainfall>
+    {{-- Past records, not today's conditions: closed until the farmer asks for them. --}}
+    <details class="mfd-map mfd-more" data-mfd-rainfall>
+        <summary>{{ __('farmer.rain.summary', ['year' => $r['year']]) }}</summary>
+        <section class="mfd-map-body" aria-labelledby="mfdRainTitle">
         <div class="mfd-card-head"><h2 id="mfdRainTitle">{{ $title }}</h2></div>
         @if ($r['summary'])<p class="mfd-takeaway">{{ $r['summary'] }}</p>@endif
         <figure class="mfd-figure">
@@ -29,5 +32,6 @@
         <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'info']) {{ __('farmer.rain.station') }}</p>
         @if ($r['older'])<p class="mfd-foot">{{ __('farmer.rain.older', ['year' => $r['year']]) }}</p>@endif
         <p class="mfd-foot">{{ __('farmer.rain.usual_note', ['years' => \App\Services\Analytics\FarmerRainAnalyticsService::MIN_YEARS_FOR_AVERAGE]) }}</p>
-    </section>
+        </section>
+    </details>
 @endif

@@ -13,6 +13,7 @@ class FarmBoundary extends Model
     protected $fillable = [
         'farmer_profile_id',
         'boundary_coordinates',
+        'barangay',
         'calculated_area_hectares',
         'calculated_perimeter_meters',
     ];

@@ -69,8 +69,11 @@ class ItDashboardInsightsTest extends TestCase
             'Queries per day', 'Last run duration', 'Weather API reliability', 'Login Success Rate', 'Data Sources Overdue'] as $title) {
             $this->assertStringContainsString($title, $html, $title);
         }
-        foreach (['family=Sora', 'family=DM+Sans', 'JetBrains+Mono', '--itd-display', '--itd-sans', '--itd-mono-font'] as $font) {
-            $this->assertStringContainsString($font, $html, $font);
+        // Same two families as the farmer dashboard (Georgia titles, Inter text); the page no longer defines its own.
+        $this->assertStringContainsString('family=Inter:wght@', $html);
+        $this->assertStringContainsString('class="is-it-dashboard"', $html);
+        foreach (['--itd-display', '--itd-sans', '--itd-mono-font'] as $font) {
+            $this->assertStringNotContainsString($font, $html, $font);
         }
         // Original sections are all still there, once.
         foreach (['data-it-kpis', 'data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-activity', 'data-it-resources', 'data-it-integrity', 'data-it-recent', 'data-it-ai'] as $marker) {

@@ -153,7 +153,9 @@
                 pointer-events: none;
             }
             .sidebar-stack { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: var(--ic-radius-lg); padding: .35rem; backdrop-filter: blur(8px); }
-            .sidebar-nav-scroll { min-height: 0; flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; justify-content: space-evenly; gap: .35rem; }
+            .sidebar-nav-scroll { min-height: 0; flex: 1 1 auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent; display: flex; flex-direction: column; justify-content: space-evenly; gap: .35rem; }
+            .sidebar-nav-scroll::-webkit-scrollbar { width: 6px; }
+            .sidebar-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.28); border-radius: 999px; }
             .sidebar-group { flex-shrink: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
             .sidebar-brand { position: relative; }
             .sidebar-location { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: .74rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ic-green-400); }
@@ -348,6 +350,34 @@
                 .action-cluster .btn, .modal-footer .btn { width: 100%; }
                 .stat-value { font-size: 1.65rem; }
             }
+            /* ---- Responsive safety net for every page inside the shell (Farmer, MAO, IT) ---- */
+            /* Nothing may push the page sideways: media and charts shrink with their card, long words wrap. */
+            .page-shell img, .page-shell video, .page-shell canvas, .page-shell iframe { max-width: 100%; }
+            .page-shell pre { max-width: 100%; overflow-x: auto; }
+            .page-shell .leaflet-container { max-width: 100%; }
+            /* A table that is not already in a scroll area gets one from app.js (bindResponsiveTables). */
+            .ic-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            /* The phone menu: the drawer scrolls inside itself and never wider than the screen. */
+            /* It is the same sidebar as on desktop, so it gets the same dark green surface (glass-system.css gives every
+               other offcanvas a light one, which left this menu's white text unreadable). */
+            html body #mobileSidebar { width: min(86vw, 340px); background: linear-gradient(180deg, rgba(14,46,36,.72), var(--gl-dark, rgba(11,38,29,.66))), #1f4d3a; border: 0; border-right: 1px solid var(--glass-dark-border); border-radius: 0; color: #fff; }
+            #mobileSidebar .offcanvas-body { min-height: 0; }
+            #mobileSidebar .sidebar-nav-scroll { overflow-y: auto; overscroll-behavior: contain; }
+            .offcanvas-backdrop.show { opacity: 1; background: rgba(13,31,24,.5); }
+            @media (max-width: 991.98px) {
+                .topbar-inner { row-gap: .5rem; }
+                .topbar-actions { flex-wrap: nowrap; }
+            }
+            @media (max-width: 575.98px) {
+                /* Pop-ups: 12px from each edge, scrolling inside, close button and footer buttons always reachable. */
+                .modal-dialog { width: calc(100% - 24px); max-width: calc(100% - 24px); margin: 12px auto; }
+                .modal-content { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
+                .modal-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+                .modal-header { position: sticky; top: 0; z-index: 2; }
+                .modal-header .btn-close { flex: none; min-width: 32px; min-height: 32px; }
+                /* Charts follow their card instead of a fixed minimum width. */
+                .chart-box canvas, .chart-render-state { min-width: 0 !important; }
+            }
             @media (max-width: 575.98px) {
                 .topbar .container-fluid { align-items: flex-start; }
                 .topbar .btn { padding: .42rem .55rem; font-size: .9rem; }
@@ -361,7 +391,7 @@
         </style>
         @include('partials.global-loader')
     </head>
-    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard')])>
+    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard')])>
         @include('layouts.sidebar')
         <div class="app-main">
             @include('layouts.navigation')

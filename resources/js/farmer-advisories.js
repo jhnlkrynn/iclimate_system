@@ -1,5 +1,6 @@
-// Advisories page (/planting-advisories): "View" opens the advisory in a popup instead of leaving the list.
-// The popup body is the advisory page itself rendered without the layout (?modal=1), fetched once per page load.
+// The farmer pages' "View" pop-up (partials/fad-modal-shell.blade.php): Advisories, Climate Records and the dashboard's
+// Latest Farming Advice. A link marked data-fad-view opens in the pop-up instead of leaving the page.
+// The pop-up body is the link's own page rendered without the layout (?modal=1), fetched once per page load.
 // The list, its filters and the scroll position are never touched, so closing returns the farmer to the same place.
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';

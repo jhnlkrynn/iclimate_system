@@ -18,6 +18,7 @@ use App\Services\WeatherApiService;
 use App\Support\DashboardData;
 use App\Support\ProjectYieldDataset;
 use App\Support\SampleData;
+use App\Support\LianGeography;
 use App\Support\SchemaCache;
 use App\Support\WeatherConditionLabel;
 use Carbon\CarbonImmutable;
@@ -103,6 +104,7 @@ final class FarmerDashboardService
         $rain = $this->rainHistory(in_array('rain', $refresh, true) || $forceWeather);
         $kpis = $this->kpiCards($weather, $rain, $alerts, $now);
         $plan = $this->plan($rows, $weather, $now);
+        $season = $this->season($rows, $plan, $now);
 
         return [
             'generated_at' => $now,
@@ -115,11 +117,13 @@ final class FarmerDashboardService
             'actions' => $this->actions($weather, $risk, $now),
             'kpis' => $kpis,
             'week' => $this->week($weather, $now),
-            'season' => $this->season($rows, $plan, $now),
+            'farm' => $this->farm($profile, $rows, $season, $risk, $weather, $alerts),
+            'season' => $season,
             'harvest' => $this->harvest($prediction, $profile, $rows),
             'rain' => $this->rainSection($now),
             'risk' => $risk,
             'setup' => $this->setup($profile, $barangay, $rows),
+            'quick' => $this->quick($profile, $rows),
             'advisories' => $advisories,
             'unread' => $this->unread($user),
         ];
@@ -138,6 +142,14 @@ final class FarmerDashboardService
     private function displayName(User $user): string
     {
         $parts = preg_split('/\s+/', trim((string) $user->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        // A family name can be two words ("Dela Cruz", "De Leon", "San Jose"): both are left out of the greeting.
+        if (count($parts) >= 3 && in_array(strtolower($parts[count($parts) - 2]), ['de', 'del', 'dela', 'delos', 'la', 'los', 'san', 'santa', 'santo', 'sta.', 'sto.'], true)) {
+            array_pop($parts);
+            if (count($parts) >= 3 && in_array(strtolower($parts[count($parts) - 2]), ['de'], true)) {
+                array_pop($parts);                                      // "De La Cruz", "De Los Santos"
+            }
+        }
 
         return match (true) {
             count($parts) >= 3 => implode(' ', array_slice($parts, 0, -1)),
@@ -281,6 +293,8 @@ final class FarmerDashboardService
                 default => 'light',
             }),
             'heat' => $heat,
+            // One word each for today's temperature, rain and humidity (bands in config/farmer_dashboard.php).
+            'levels' => $this->kpi->todayLevels((float) $current['temperature'], $todayRain, $humidity),
             'days' => $days,
         ];
     }
@@ -674,13 +688,15 @@ final class FarmerDashboardService
         }
 
         $farmType = $profile?->farm_type ?: \App\Models\FarmerProfile::FARM_TYPE_RAINFED;
-        $result = Cache::remember($key, now()->addHours(6), function () use ($user, $farmType) {
+        $lacksRecords = false;                                          // the model answered, but it has too few weather records to estimate from
+        $result = Cache::remember($key, now()->addHours(6), function () use ($user, $farmType, &$lacksRecords) {
             try {
                 $prediction = $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, null, $user, [], PredictionType::RICE_YIELD->value);
 
                 // A failed run is not cached (null is never stored), so the next load retries the model.
                 if (! ($prediction['success'] ?? false)) {
                     Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
+                    $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
 
                     return null;
                 }
@@ -696,7 +712,7 @@ final class FarmerDashboardService
 
         $yield = is_array($result) ? ($result['yield_tons_per_hectare'] ?? $result['predicted_yield'] ?? null) : null;
         if (! is_numeric($yield) || (float) $yield <= 0) {
-            return ['state' => 'error', 'result' => null];
+            return ['state' => 'error', 'result' => null, 'cause' => $lacksRecords ? 'records' : 'service'];
         }
 
         return ['state' => 'ok', 'result' => $result];
@@ -722,7 +738,12 @@ final class FarmerDashboardService
             return [
                 'state' => $prediction['state'],
                 'missing' => $missing,
-                'reason' => $missing !== [] ? __('farmer.harvest.reason_missing_'.implode('_', $missing)) : __('farmer.harvest.reason_service'),
+                // What the farmer can fix comes first; otherwise say honestly whether the records or the service is the cause.
+                'reason' => match (true) {
+                    $missing !== [] => __('farmer.harvest.reason_missing_'.implode('_', $missing)),
+                    ($prediction['cause'] ?? null) === 'records' => __('farmer.harvest.reason_records'),
+                    default => __('farmer.harvest.reason_service'),
+                },
             ];
         }
 
@@ -741,11 +762,11 @@ final class FarmerDashboardService
             'month' => $month?->month,
             'area' => $usesOwnArea ? (float) $profileArea : null,
             'production' => $usesOwnArea ? round($yield * (float) $profileArea, 1) : null,
-            'reliability' => \App\Support\PredictionWording::reliability($result['api_confidence'] ?? $result['confidence'] ?? null),
             'ran_at' => $ranAt,
         ];
+        $outlook = $this->yieldOutlook($own, $rows);
 
-        return ['state' => 'ok', 'missing' => $missing] + $own + ['outlook' => $this->yieldOutlook($own, $rows)];
+        return ['state' => 'ok', 'missing' => $missing] + $own + ['outlook' => $outlook, 'typical' => $outlook ? $this->kpi->yieldAgainstTypical((float) $outlook['percent']) : null];
     }
 
     /**
@@ -1066,6 +1087,117 @@ final class FarmerDashboardService
         return ['state' => 'ok', 'plots' => $plots, 'more' => max(0, $open->count() - count($plots))];
     }
 
+    // ------------------------------------------------------------------ my farm at a glance
+
+    /**
+     * The farmer's own farm in four answers: how big it is, whether a crop is planted, the weather now and whether
+     * anything needs attention. A null value means "not saved yet" or "not available yet" (the card then says what is
+     * needed); nothing is made up. The weather is the same Lian reading every other card uses and is labelled as Lian.
+     *
+     * @param  Collection<int, FarmerPlantingSchedule>  $rows
+     * @param  array<string, mixed>  $season
+     * @param  array<string, mixed>  $risk
+     * @param  array<string, mixed>  $weather
+     * @param  array<int, array<string, mixed>>  $alerts
+     * @return array<string, mixed>
+     */
+    private function farm($profile, Collection $rows, array $season, array $risk, array $weather, array $alerts): array
+    {
+        // The barangay of the mapped farm, read from the map when it was saved (not the farmer's home barangay).
+        $farmBarangay = null;
+        try {
+            $boundary = $profile?->farmBoundary;
+            if ($boundary && (float) $boundary->calculated_area_hectares > 0) {
+                $farmBarangay = $boundary->getAttribute('barangay') ?: LianGeography::locate($boundary->boundary_coordinates ?? [])['barangay'];
+            }
+        } catch (Throwable) {
+            // an unreadable boundary counts as not mapped
+        }
+
+        $area = (float) ($profile?->farm_area ?? 0);
+        $plot = $season['plots'][0] ?? null;
+        $row = $plot ? $rows->firstWhere('id', $plot['edit_id']) : null;
+        $planted = ($plot['crop']['value'] ?? null) !== null;           // null until the planting day has come
+
+        return [
+            'size' => $area > 0
+                ? ['value' => number_format($area, 2).' ha', 'note' => $farmBarangay
+                    ? __('farmer.farm.size.note_mapped', ['barangay' => LianGeography::barangayLabel($farmBarangay)])
+                    : __('farmer.farm.size.note')]
+                : ['value' => null],
+            'planting' => $row?->planting_date
+                ? ['value' => __('farmer.farm.planting.'.($planted ? 'active' : 'upcoming')),
+                    'note' => __('farmer.farm.planting.'.($planted ? 'note' : 'note_upcoming'), ['date' => $row->planting_date->format('F j, Y')])]
+                : ['value' => null],
+            'weather' => $weather['state'] === 'ok'
+                ? ['value' => FarmerKpiService::formatTemperature($weather['temperature']).'°C', 'detail' => $weather['condition'], 'note' => __('farmer.farm.weather.note')]
+                : ['value' => null],
+            'condition' => $this->condition($weather, $risk, $alerts),
+        ];
+    }
+
+    /**
+     * "Farm Condition": Good, Needs Attention or High Weather Risk. It adds nothing of its own: it is the most serious of
+     * the warnings shown under "What You Should Know Today" and the barangay risk rating, so the card can never disagree
+     * with them. With neither weather nor a rating there is no condition to report (never "Good" by default).
+     *
+     * @param  array<string, mixed>  $weather
+     * @param  array<string, mixed>  $risk
+     * @param  array<int, array<string, mixed>>  $alerts  most serious first
+     * @return array{value: ?string, status?: string, note?: string}
+     */
+    private function condition(array $weather, array $risk, array $alerts): array
+    {
+        $rated = $risk['state'] === 'ok';
+        $top = $alerts[0] ?? null;
+        if ($weather['state'] !== 'ok' && ! $rated && $top === null) {
+            return ['value' => null];
+        }
+
+        // Heavy rain today is a risk even when no warning carries it (a stored reading has no day-by-day list to warn from).
+        $rainToday = $weather['state'] === 'ok' ? ($weather['levels']['rain'] ?? null) : null;
+        $status = match (true) {
+            ($top['level'] ?? null) === 'danger' || ($rated && $risk['high']) || $rainToday === 'heavy' => 'danger',
+            $top !== null || ($rated && strtolower((string) $risk['level']) === 'moderate') => 'watch',
+            default => 'good',
+        };
+        $note = match (true) {
+            $top !== null => (string) str(rtrim((string) $top['title'], '.').'. '.$top['message'])->squish()->limit(150),
+            $rainToday === 'heavy' => __('farmer.farm.condition.note_heavy'),
+            $status !== 'good' => (string) $risk['meaning'],
+            $rainToday !== null => __('farmer.farm.condition.note_'.$rainToday),
+            default => __('farmer.farm.condition.note_default'),
+        };
+
+        return ['value' => __('farmer.farm.condition.'.$status), 'status' => $status, 'note' => $note];
+    }
+
+    // ------------------------------------------------------------------ quick actions
+
+    /**
+     * What the three Quick Actions cards say: "Add" until the farmer has saved that thing, then "Update".
+     *
+     * @param  Collection<int, FarmerPlantingSchedule>  $rows
+     * @return array{farm: bool, map: bool, plan: bool}
+     */
+    private function quick($profile, Collection $rows): array
+    {
+        return [
+            'farm' => (float) ($profile?->farm_area ?? 0) > 0,
+            'map' => $this->hasBoundary($profile),
+            'plan' => $rows->contains(fn (FarmerPlantingSchedule $r) => $r->planting_date && $r->monitoringStatus() !== 'harvested'),
+        ];
+    }
+
+    private function hasBoundary($profile): bool
+    {
+        try {
+            return (float) ($profile?->farmBoundary?->calculated_area_hectares ?? 0) > 0;
+        } catch (Throwable) {
+            return false;                                               // an unreadable boundary counts as not mapped
+        }
+    }
+
     // ------------------------------------------------------------------ setup list
 
     /**
@@ -1077,12 +1209,7 @@ final class FarmerDashboardService
      */
     private function setup($profile, ?string $barangay, Collection $rows): ?array
     {
-        $hasBoundary = false;
-        try {
-            $hasBoundary = (float) ($profile?->farmBoundary?->calculated_area_hectares ?? 0) > 0;
-        } catch (Throwable) {
-            // an unreadable boundary counts as not mapped
-        }
+        $hasBoundary = $this->hasBoundary($profile);
         $unrecorded = $rows->first(fn (FarmerPlantingSchedule $r) => $r->monitoringStatus() === 'harvested' && ! (is_numeric($r->getAttribute('actual_yield')) && (float) $r->getAttribute('actual_yield') > 0));
 
         $checks = [

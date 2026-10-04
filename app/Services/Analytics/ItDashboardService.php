@@ -112,7 +112,7 @@ final class ItDashboardService
     /** Caches a block for 5 minutes together with the time it was built (the section's "Last updated"). */
     private function remember(string $key, callable $build): mixed
     {
-        $cacheKey = 'dashboard:it:v2:'.$key;
+        $cacheKey = 'dashboard:it:v3:'.$key;
         if ($this->fresh) {
             Cache::forget($cacheKey);
         }
@@ -155,7 +155,7 @@ final class ItDashboardService
             try {
                 $since = now()->subDays(30);
                 $active = $this->activeSql();
-                $rows = User::query()->selectRaw('role, COUNT(*) as total, SUM(CASE WHEN '.$active.' THEN 1 ELSE 0 END) as active', [$since, $since])
+                $rows = User::query()->selectRaw('role, COUNT(*) as total, SUM(CASE WHEN '.$active.' THEN 1 ELSE 0 END) as active, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as enabled', [$since, $since, User::STATUS_ACTIVE])
                     ->groupBy('role')->get()->keyBy('role');
             } catch (Throwable) {
                 return ['state' => 'error'];
@@ -165,10 +165,13 @@ final class ItDashboardService
             foreach ([['Farmer', User::ROLE_FARMER], ['MAO Personnel', User::ROLE_MAO], ['IT Expert', User::ROLE_IT_EXPERT]] as [$label, $role]) {
                 $total = (int) ($rows[$role]->total ?? 0);
                 $act = (int) ($rows[$role]->active ?? 0);
-                $list[] = ['label' => $label, 'role' => $role, 'total' => $total, 'active' => $act, 'pct' => $total > 0 ? round($act / $total * 100, 1) : null];
+                $enabled = (int) ($rows[$role]->enabled ?? 0);
+                $list[] = ['label' => $label, 'role' => $role, 'total' => $total, 'active' => $act, 'pct' => $total > 0 ? round($act / $total * 100, 1) : null,
+                    'enabled' => $enabled, 'disabled' => $total - $enabled];
             }
             $total = array_sum(array_column($list, 'total'));
             $act = array_sum(array_column($list, 'active'));
+            $enabled = array_sum(array_column($list, 'enabled'));
 
             return [
                 'state' => $total === 0 ? 'empty' : 'ok',
@@ -176,6 +179,9 @@ final class ItDashboardService
                 'total' => $total,
                 'active' => $act,
                 'pct' => $total > 0 ? round($act / $total * 100, 1) : null,
+                // Account status (users.status). Separate from "active": an enabled account may not have been used lately.
+                'enabled' => $enabled,
+                'disabled' => $total - $enabled,
             ];
         });
     }

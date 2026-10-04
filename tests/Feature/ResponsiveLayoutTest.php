@@ -32,10 +32,14 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
-        // IT dashboard: 1 KPI card per row on phones, 2 on tablets, 4 equal cards on desktop; tables become cards on phones.
-        $this->assertStringContainsString('.itd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itDashboard);
-        $this->assertStringContainsString('.itd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }', $itDashboard);
-        $this->assertStringContainsString('.itd-table-cards thead { display: none; }', $itDashboard);
+        // IT dashboard: built on the farmer KPI grid (.mfd-kpis: 2 per row on phones, 3 on tablets, 6 on wide screens);
+        // its own styles live in resources/css/it-dashboard.css. Wide tables scroll inside their own box, never the page.
+        $itCss = file_get_contents(resource_path('css/it-dashboard.css'));
+        $this->assertStringContainsString('class="mfd-kpis', file_get_contents(resource_path('views/dashboards/it/kpis.blade.php')));
+        $this->assertStringContainsString('.itd .mfd-kpis.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itCss);
+        $this->assertStringContainsString('.itd-table-wrap { max-width: 100%; overflow-x: auto;', $itCss);
+        $this->assertStringContainsString('@media (max-width: 640px)', $itCss);
+        $this->assertStringNotContainsString('<style>', $itDashboard);
         $this->assertStringContainsString('height: min(52vh, 320px)', $maoDashboard);
         // MAO overview: 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
         $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoOverview);
