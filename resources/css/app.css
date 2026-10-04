@@ -1502,3 +1502,96 @@ body[data-user-role="Farmer"] * {
     .risk-map-card .risk-map-canvas { height: min(72vh, 470px); min-height: 330px; }
     .risk-map-card .risk-map-legend { gap: .6rem .8rem; }
 }
+
+/* Monthly forecast controls on the Heat Map page (partial rendered with forecast => true). */
+.risk-forecast { display: grid; gap: .85rem; margin-bottom: 1rem; }
+.risk-forecast-select { display: grid; gap: .3rem; min-width: 220px; }
+.risk-forecast-select label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-select .form-select { border-color: #b9cec3; border-radius: 10px; font-weight: 600; min-height: 44px; }
+.risk-forecast-timeline { display: flex; flex-wrap: wrap; gap: .4rem; }
+.risk-forecast-timeline button { background: #f7fbf8; border: 1px solid #d3e2d9; border-radius: 999px; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; min-height: 40px; min-width: 52px; padding: .45rem .8rem; }
+.risk-forecast-timeline button[aria-pressed="true"] { background: #1f5a46; border-color: #1f5a46; color: #fff; }
+.risk-forecast-for { color: #52645c; font-size: .9rem; margin: 0; }
+.risk-forecast-for strong { color: #172b24; }
+.risk-forecast-cards { display: grid; gap: .7rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.risk-forecast-card { background: #f8fbf9; border: 1px solid #e3e9e5; border-left: 4px solid var(--risk-color, #1f5a46); border-radius: 12px; display: grid; gap: .15rem; padding: .7rem .9rem; }
+.risk-forecast-card span { color: #52645c; font-size: .75rem; font-weight: 700; }
+.risk-forecast-card strong { color: #172b24; font-size: 1.5rem; line-height: 1.1; }
+.risk-forecast-overview { background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; padding: .85rem 1rem; }
+.risk-forecast-overview-head span { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-overview-head h3 { color: #172b24; font-size: 1.05rem; margin: .1rem 0 .55rem; }
+.risk-forecast-overview .risk-forecast-facts { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.risk-forecast-facts { display: grid; gap: .45rem .9rem; margin: 0; }
+.risk-forecast-facts dt { color: #66756f; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.risk-forecast-facts dd { color: #172b24; font-size: .85rem; margin: 0; }
+.risk-forecast-note { color: #66756f; font-size: .78rem; margin: .6rem 0 0; }
+.risk-forecast-empty { background: #fff8e6; border: 1px solid #f2d48a; border-radius: 12px; color: #5c4a12; display: grid; gap: .15rem; font-size: .85rem; padding: .75rem 1rem; }
+/* The global loader defines these on .icl-overlay only; the map's own copy of its spinner needs them too. */
+.risk-map-spinner { --icl-green: var(--iclimate-primary-medium, #1F5A46); --icl-track: var(--iclimate-accent-light, #C9D8CE); --icl-grain: #C2912F; --icl-text: #1F3B30; --icl-size: 60px; align-items: center; background: rgba(255, 255, 255, .55); display: flex; inset: 0; justify-content: center; position: absolute; z-index: 950; }
+.risk-map-spinner[hidden] { display: none; }
+.risk-forecast-popup .risk-forecast-facts { gap: .35rem; margin-top: .2rem; }
+.risk-forecast-popup .risk-forecast-facts dd { font-size: .8rem; }
+.risk-map-details .risk-forecast-facts { flex: 1 1 100%; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.risk-forecast-strip { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: .35rem; }
+.risk-forecast-strip span { border: 1px solid #e3e9e5; border-left: 4px solid var(--risk-color); border-radius: 8px; color: #52645c; font-size: .75rem; padding: .25rem .5rem; }
+.risk-forecast-strip span.is-active { background: #f1f7f3; border-color: #1f5a46; border-left-color: var(--risk-color); color: #172b24; }
+.risk-mode-badge { background: #eef4f0; border: 1px solid #c9d8ce; border-radius: 999px; color: #1f5a46; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .04em; margin-right: .35rem; padding: .15rem .55rem; text-transform: uppercase; vertical-align: 1px; }
+.risk-mode-badge.is-forecast { background: #1f5a46; border-color: #1f5a46; color: #fff; }
+.risk-forecast-info { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+.risk-forecast-about { flex: 1 1 260px; }
+.risk-forecast-about summary { align-items: center; color: #1f5a46; cursor: pointer; display: inline-flex; font-size: .82rem; font-weight: 700; gap: .4rem; list-style: none; min-height: 32px; }
+.risk-forecast-about summary::-webkit-details-marker { display: none; }
+.risk-forecast-info-icon { align-items: center; border: 1.5px solid currentColor; border-radius: 50%; display: inline-flex; font-size: .68rem; font-weight: 800; height: 18px; justify-content: center; width: 18px; }
+.risk-forecast-about-body { background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; color: #34453d; font-size: .83rem; margin-top: .35rem; padding: .75rem .9rem; }
+.risk-forecast-about-body p { margin: 0 0 .55rem; }
+.risk-forecast-about-body .risk-forecast-facts { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin-bottom: .55rem; }
+.risk-forecast-section + .risk-forecast-section { border-top: 1px solid #e3e9e5; margin-top: .5rem; padding-top: .5rem; }
+.risk-forecast-section h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: .06em; margin: 0 0 .3rem; text-transform: uppercase; }
+.risk-forecast-section p { color: #172b24; font-size: .82rem; margin: 0; }
+.risk-forecast-section .risk-forecast-lead { font-weight: 700; margin-bottom: .15rem; }
+.risk-forecast-section .risk-forecast-section-note { color: #66756f; font-size: .72rem; margin-top: .3rem; }
+.risk-map-details .risk-forecast-sections { display: grid; flex: 1 1 100%; gap: .5rem 1.25rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.risk-map-details .risk-forecast-sections .risk-forecast-section { border-top: 0; margin-top: 0; padding-top: 0; }
+/* Forecast month toolbar directly above the map (one selector for the page). */
+.risk-forecast-info--map { margin: -.4rem 0 .6rem; }
+.risk-forecast-toolbar { align-items: center; background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; justify-content: space-between; margin-bottom: .6rem; min-height: 60px; padding: .5rem .75rem; }
+.risk-forecast-toolbar-context { align-items: center; display: flex; flex-wrap: wrap; gap: .1rem .6rem; min-width: 0; }
+.risk-forecast-toolbar-label { color: #1f5a46; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-toolbar .risk-forecast-for { font-size: .85rem; }
+.risk-forecast-toolbar-controls { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem .75rem; min-width: 0; }
+.risk-forecast-toolbar .risk-forecast-timeline { flex-wrap: nowrap; }
+.risk-forecast-toolbar .risk-forecast-select { min-width: 190px; }
+.risk-forecast-toolbar .risk-forecast-select .form-select { min-height: 40px; }
+/* Shown on small screens only; on desktop the dropdown keeps the label for screen readers. */
+.risk-forecast-toolbar .risk-forecast-select label { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px; }
+/* The selected month is marked by a tick as well as colour. */
+.risk-forecast-timeline button[aria-pressed="true"]::before { content: "\2713"; margin-right: .25rem; }
+.risk-forecast-timeline button:focus-visible { outline: 3px solid rgba(31, 90, 70, .35); outline-offset: 2px; }
+/* Keeps Leaflet's own layers (z-index up to 1000) inside the map, so the sticky toolbar can sit above them. */
+.risk-map-card .risk-map-shell { isolation: isolate; }
+@media (min-width: 992px) {
+    /* Stays reachable while the map is on screen; the stage ends with the map, so it never follows the page further.
+       100px clears the app's sticky top bar (91px). */
+    .risk-forecast-toolbar { position: sticky; top: var(--risk-forecast-toolbar-top, 100px); z-index: 20; }
+}
+@media (min-width: 1200px) {
+    /* One compact row: context on the left (it may wrap), months and dropdown on the right. */
+    .risk-forecast-toolbar { flex-wrap: nowrap; }
+    .risk-forecast-toolbar-context { flex: 1 1 auto; }
+    .risk-forecast-toolbar-controls { flex: 0 0 auto; flex-wrap: nowrap; }
+    .risk-forecast-toolbar .risk-forecast-timeline { gap: .3rem; }
+    .risk-forecast-toolbar .risk-forecast-timeline button { min-height: 38px; min-width: 46px; padding: .35rem .6rem; }
+    .risk-forecast-toolbar .risk-forecast-select { min-width: 0; width: 200px; }
+}
+@media (max-width: 991.98px) {
+    .risk-forecast-toolbar { align-items: stretch; display: grid; }
+    .risk-forecast-toolbar-controls { display: grid; gap: .5rem; }
+    .risk-forecast-toolbar .risk-forecast-select { min-width: 0; order: -1; }
+    .risk-forecast-toolbar .risk-forecast-select label { clip: auto; color: #1f5a46; font-size: .7rem; font-weight: 800; height: auto; letter-spacing: .1em; margin: 0; position: static; text-transform: uppercase; width: auto; }
+    .risk-forecast-toolbar .risk-forecast-timeline { overflow-x: auto; padding-bottom: .2rem; scrollbar-width: thin; }
+    .risk-forecast-toolbar .risk-forecast-timeline button { flex: 0 0 auto; }
+}
+@media (max-width: 768px) {
+    .risk-forecast-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .risk-forecast-select { min-width: 0; width: 100%; }
+}

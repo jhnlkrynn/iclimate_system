@@ -668,7 +668,7 @@ class BarangayRiskMapService
      *
      * @return array<string, RiceProduction>
      */
-    private function latestYieldsByBarangay(): array
+    public function latestYieldsByBarangay(): array
     {
         try {
             $rows = \App\Support\SampleData::without(RiceProduction::query(), 'rice_productions')
@@ -694,7 +694,7 @@ class BarangayRiskMapService
      *
      * @return array<string, string>
      */
-    private function dominantFarmTypes(): array
+    public function dominantFarmTypes(): array
     {
         try {
             $rows = FarmerProfile::query()

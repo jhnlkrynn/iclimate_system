@@ -102,6 +102,57 @@ class PredictionOrchestrator
     }
 
     /**
+     * Read-only batch read for several months in one query (the heat map's six forecast months).
+     * Fresh forecasts come from the cache or the table exactly as cachedMonthlyWeatherForecast()
+     * returns them; a ready row past its freshness window is still returned, the same numbers
+     * preparedOnly() would serve, but no refresh is queued here: the scheduled
+     * iclimate:refresh-predictions keeps rows fresh. Months without a ready row are absent.
+     * Never trains a model.
+     *
+     * @param  list<CarbonImmutable>  $months
+     * @return array<string, array> payloads keyed by 'Y-m', oldest first
+     */
+    public function preparedMonthlyWeatherForecasts(array $months): array
+    {
+        $result = [];
+        $missing = [];
+        foreach ($months as $month) {
+            $month = $month->startOfMonth();
+            $cached = Cache::get($this->cacheKey($month));
+            if (is_array($cached)) {
+                $result[$month->format('Y-m')] = $cached;
+            } else {
+                $missing[$month->format('Y-m')] = $month;
+            }
+        }
+
+        if ($missing !== []) {
+            $rows = MonthlyWeatherPrediction::query()
+                ->where('weather_model', MonthlyWeatherRandomForest::MODEL_VERSION)
+                ->where('status', MonthlyWeatherPrediction::STATUS_READY)
+                ->where(function ($query) use ($missing) {
+                    foreach ($missing as $month) {
+                        $query->orWhere(fn ($match) => $match->where('prediction_year', $month->year)->where('prediction_month', $month->month));
+                    }
+                })
+                ->get();
+
+            foreach ($rows as $row) {
+                $month = CarbonImmutable::create($row->prediction_year, $row->prediction_month, 1);
+                $payload = $this->payloadFromRow($row);
+                $result[$month->format('Y-m')] = $payload;
+                if ($this->isFresh($row)) {
+                    Cache::put($this->cacheKey($month), $payload, $this->ttl());
+                }
+            }
+        }
+
+        ksort($result);
+
+        return $result;
+    }
+
+    /**
      * Whether a fresh forecast for $month is already prepared (read-only).
      */
     public function hasPreparedMonthlyWeatherForecast(CarbonImmutable $month): bool
@@ -208,8 +259,13 @@ class PredictionOrchestrator
             })
             ->first();
 
-        if (! $row) {
-            return null;
+        return $row && $this->isFresh($row) ? $row : null;
+    }
+
+    private function isFresh(MonthlyWeatherPrediction $row): bool
+    {
+        if ($row->expires_at !== null && $row->expires_at->lte(now())) {
+            return false;
         }
 
         // The row is also considered stale (and regenerated) if the
@@ -218,11 +274,8 @@ class PredictionOrchestrator
         // for unrelated application data changes: AmbulongHistoricalClimateDataset::version()
         // only reflects the source CSV file itself.
         $storedDatasetVersion = data_get($row->metadata, 'dataset_version');
-        if ($storedDatasetVersion !== null && $storedDatasetVersion !== $this->weatherModel->datasetVersion()) {
-            return null;
-        }
 
-        return $row;
+        return $storedDatasetVersion === null || $storedDatasetVersion === $this->weatherModel->datasetVersion();
     }
 
     private function persistResult(CarbonImmutable $month, array $result): MonthlyWeatherPrediction
