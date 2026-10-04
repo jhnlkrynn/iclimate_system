@@ -1,18 +1,6 @@
 @php $season = $f['season']; @endphp
-@if ($season['state'] === 'empty')
-    {{-- The one and only prompt to add a planting date. --}}
-    <section class="mfd-card" aria-labelledby="mfdSeasonTitle" data-mfd-season>
-        <div class="mfd-card-head"><h2 id="mfdSeasonTitle">{{ __('farmer.season.title') }}</h2></div>
-        <div class="mfd-empty">
-            @include('dashboards.mao.icon', ['name' => 'calendar'])
-            <div>
-                <p><strong>{{ __('farmer.season.empty_title') }}</strong></p>
-                <p class="mfd-muted">{{ __('farmer.season.empty_reason') }}</p>
-            </div>
-            <a class="mfd-btn" href="{{ route('farmer.planting-schedules.create') }}">@include('dashboards.mao.icon', ['name' => 'plus']){{ __('farmer.season.add') }}</a>
-        </div>
-    </section>
-@else
+{{-- With no planting date this card is left out: the Planting Status tile in "My Farm at a Glance" asks for it. --}}
+@if ($season['state'] !== 'empty')
     @php $multi = count($season['plots']) + $season['more'] > 1; @endphp
     <section class="mfd-card" aria-labelledby="mfdSeasonTitle" data-mfd-season>
         <div class="mfd-card-head">

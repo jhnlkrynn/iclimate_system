@@ -66,6 +66,7 @@
             </div>
             @if($records->count())
                 <div class="frec-table-wrap">
+                    {{-- Wide screens only; below 900px of page width the same records are the cards under this table. --}}
                     <table class="frec-table">
                         <thead>
                             <tr>
@@ -89,7 +90,7 @@
                                     <td class="is-num">{{ $num($record->wind_speed, 2) }}</td>
                                     <td>@if($record->season)<span class="fad-badge {{ $record->season === 'Wet' ? 'is-info' : 'is-watch' }}">{{ $record->season }}</span>@else — @endif</td>
                                     <td>{{ $record->source ?: '—' }}</td>
-                                    <td class="is-end"><a class="fad-btn is-quiet is-compact" href="{{ route('climate-records.show', $record) }}" aria-label="View record for {{ $day($record->record_date) }}">View</a></td>
+                                    <td class="is-end"><a class="fad-btn is-quiet is-compact" href="{{ route('climate-records.show', $record) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog" aria-label="View record for {{ $day($record->record_date) }}">View</a></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -109,7 +110,7 @@
                                 <div><dt>Wind speed*</dt><dd>{{ $num($record->wind_speed, 2) }}</dd></div>
                                 <div><dt>Source</dt><dd>{{ $record->source ?: '—' }}</dd></div>
                             </dl>
-                            <a class="fad-btn is-quiet" href="{{ route('climate-records.show', $record) }}">View Record</a>
+                            <a class="fad-btn is-quiet" href="{{ route('climate-records.show', $record) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog" aria-label="View record for {{ $day($record->record_date) }}">View Record</a>
                         </li>
                     @endforeach
                 </ul>
@@ -129,4 +130,8 @@
             <p class="fad-support">* Wind speed is shown as recorded; the records do not state its unit.</p>
         </section>
     </div>
+
+    {{-- "View" opens the record here, in the same pop-up as the Advisories page (farmer-advisories.js); the list, its
+         filters and the scroll position stay as they are. Without JavaScript the link opens the record's own page. --}}
+    @include('partials.fad-modal-shell', ['label' => 'Climate Record', 'thing' => 'climate record'])
 </x-app-layout>

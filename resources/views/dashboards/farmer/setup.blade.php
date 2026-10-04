@@ -1,4 +1,8 @@
-@php $setup = $f['setup']; @endphp
+@php
+    $setup = $f['setup'];
+    // The pop-up each item's button opens on the dashboard; an item without one (recording a harvest) goes to its page.
+    $popups = ['barangay' => 'profile', 'farm_type' => 'profile', 'farm_area' => 'farm-size', 'boundary' => 'farm-map'];
+@endphp
 @if ($setup)
     <section class="mfd-card" aria-labelledby="mfdSetupTitle" data-mfd-setup>
         <div class="mfd-card-head">
@@ -10,7 +14,7 @@
             @foreach ($setup['items'] as $item)
                 <li>
                     <div><strong>{{ $item['title'] }}</strong> <span class="mfd-muted">{{ $item['benefit'] }}</span></div>
-                    <a class="mfd-btn is-quiet" href="{{ $item['href'] }}">{{ $item['cta'] }}</a>
+                    <a class="mfd-btn is-quiet" href="{{ $item['href'] }}" @isset($popups[$item['key']]) data-mfd-popup="{{ $popups[$item['key']] }}" aria-haspopup="dialog" data-fast-nav-bound="true" @endisset>{{ $item['cta'] }}</a>
                 </li>
             @endforeach
         </ul>

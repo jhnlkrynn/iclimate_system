@@ -64,18 +64,23 @@ class DashboardController extends Controller
     private const IT_TABS = ['overview', 'security', 'users', 'resources', 'activity'];
 
     /** Sections the Farmer refresh button re-renders (partials under dashboards/farmer). */
-    private const FARMER_LIVE_SLOTS = ['header', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'advisories'];
+    private const FARMER_LIVE_SLOTS = ['header', 'farm', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'advisories', 'quick'];
 
     /**
      * A card's own "Try again" button: what to rebuild from its source, and which sections that changes.
-     * Weather feeds the header, the weather card, the numbers and the week; the other cards stand alone.
+     * Weather feeds the header, the farm tiles, the weather card, the numbers and the week; the other cards stand alone.
      */
     private const FARMER_RETRY = [
-        'today' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'kpis', 'week', 'season']],
-        'week' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'kpis', 'week', 'season']],
+        'today' => ['refresh' => ['weather'], 'slots' => ['header', 'farm', 'today', 'kpis', 'week', 'season']],
+        'week' => ['refresh' => ['weather'], 'slots' => ['header', 'farm', 'today', 'kpis', 'week', 'season']],
         'harvest' => ['refresh' => ['harvest'], 'slots' => ['harvest']],
-        'risk' => ['refresh' => ['risk'], 'slots' => ['risk', 'today']],
+        'risk' => ['refresh' => ['risk'], 'slots' => ['risk', 'today', 'farm']],
         'rain' => ['refresh' => ['rain'], 'slots' => ['rain', 'kpis']],
+        // After a dashboard pop-up saves: the sections that read what it changed. The profile and map ones leave the slow
+        // harvest card out (the page asks for it separately when the profile changed).
+        'planting' => ['refresh' => ['harvest'], 'slots' => ['farm', 'season', 'harvest', 'setup', 'quick']],
+        'profile' => ['refresh' => ['risk'], 'slots' => ['header', 'farm', 'today', 'risk', 'setup', 'advisories', 'quick'], 'defer_harvest' => true],
+        'map' => ['refresh' => [], 'slots' => ['farm', 'setup', 'quick'], 'defer_harvest' => true],
         'all' => ['refresh' => ['weather', 'rain'], 'slots' => self::FARMER_LIVE_SLOTS],
     ];
 
@@ -166,7 +171,7 @@ class DashboardController extends Controller
             forceWeather: $forceAll,
             refresh: $retry['refresh'] ?? [],
             // The page's own timed refresh must not stall on the harvest model; an explicit refresh or retry may.
-            deferHarvest: ! $forceAll && $retry === null,
+            deferHarvest: ! $forceAll && ($retry === null || ($retry['defer_harvest'] ?? false)),
         );
         // A timed refresh that deferred the harvest must not overwrite a finished card in the stored copy with a placeholder.
         if (($payload['harvest']['state'] ?? null) !== 'loading') {

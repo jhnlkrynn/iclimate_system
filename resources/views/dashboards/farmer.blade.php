@@ -18,11 +18,22 @@
             <button type="button" class="mfd-btn is-quiet" data-mfd-retry="all">{{ __('farmer.state.retry') }}</button>
         </div>
 
-        {{-- Page order is reading order for everyone (screen readers and keyboard included): what to do today comes before the numbers. --}}
-        @foreach (['header', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk'] as $name)
+        {{-- Page order is reading order for everyone (screen readers and keyboard included): the farm, today, the week,
+             the yield forecast and the latest advice come first; the detail a farmer asks for less often is folded away. --}}
+        @foreach (['header', 'farm', 'today', 'week', 'harvest', 'advisories', 'season', 'setup', 'quick'] as $name)
             @php $html = $renderSection($name); @endphp
             <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
         @endforeach
+
+        <details class="mfd-map mfd-extra">
+            <summary>{{ __('farmer.more.summary') }}</summary>
+            <div class="mfd-map-body mfd-extra-body">
+                @foreach (['kpis', 'rain', 'risk'] as $name)
+                    @php $html = $renderSection($name); @endphp
+                    <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
+                @endforeach
+            </div>
+        </details>
 
         <details class="mfd-map" id="farmRiskMap">
             <summary>{{ __('farmer.risk.map_summary') }}</summary>
@@ -37,20 +48,7 @@
             </div>
         </details>
 
-        @foreach (['setup', 'advisories'] as $name)
-            @php $html = $renderSection($name); @endphp
-            <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
-        @endforeach
-
-        <section class="mfd-card mfd-quickwrap" aria-labelledby="mfdQuickTitle">
-            <div class="mfd-card-head"><h2 id="mfdQuickTitle">{{ __('farmer.quick.title') }}</h2></div>
-            <div class="mfd-quick">
-                <a href="{{ route('planting-advisories.index') }}">@include('dashboards.mao.icon', ['name' => 'advisory']){{ __('farmer.quick.advisories') }}</a>
-                <a href="{{ route('calendar.index') }}">@include('dashboards.mao.icon', ['name' => 'calendar']){{ __('farmer.quick.calendar') }}</a>
-                <a href="{{ route('weather-predictions.index', ['tab' => 'rice-yield']) }}">@include('dashboards.mao.icon', ['name' => 'yield']){{ __('farmer.quick.prediction') }}</a>
-                <a href="{{ route('notifications.index') }}">@include('dashboards.mao.icon', ['name' => 'bell']){{ __('farmer.quick.notifications') }} @if ($f['unread'] > 0)<span class="mfd-badge" aria-label="{{ trans_choice('farmer.quick.unread', $f['unread'], ['count' => $f['unread']]) }}">{{ $f['unread'] }}</span>@endif</a>
-            </div>
-        </section>
+        @include('dashboards.farmer.popups')
 
         <details class="mfd-info">
             <summary>@include('dashboards.mao.icon', ['name' => 'info']){{ __('farmer.about.title') }}</summary>
@@ -63,4 +61,7 @@
             </div>
         </details>
     </div>
+
+    {{-- "View Advisory" opens the advisory here, in the same pop-up as the Advisories page. --}}
+    @include('partials.fad-modal-shell')
 </x-app-layout>

@@ -146,7 +146,7 @@
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $href = $anchor ? route($route).'#'.$anchor : route($route);
-                $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'">';
+                $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'"'.($active ? ' aria-current="page"' : '').'>';
                 $html .= '<span class="d-flex align-items-center gap-2"><span class="sidebar-icon">'.$sidebarIcon($iconKey).'</span><span>'.e($label).'</span></span>';
                 $html .= '<span class="d-flex align-items-center gap-2">';
                 if (! empty($badge)) {
@@ -170,7 +170,9 @@
     };
 @endphp
 
-<aside class="sidebar-fixed d-none d-lg-flex flex-column">
+{{-- The one sidebar of the application shell (layouts/app.blade.php): the same place, width, icons and colours on every
+     page; only the menu items differ by role. On phones and tablets the same menu is the slide-in drawer below. --}}
+<aside class="sidebar-fixed d-none d-lg-flex flex-column" aria-label="Main menu">
     @include('layouts.partials.sidebar-brand')
     <div class="px-3 flex-grow-1 sidebar-nav-scroll">
         {!! $renderSidebarNav() !!}
@@ -181,12 +183,12 @@
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
     <div class="offcanvas-header" style="border-bottom: 1px solid rgba(255,255,255,.14);">
-        <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: #fff;">iClimate</h5>
+        <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: #fff;">Menu</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body p-0 d-flex flex-column">
         @include('layouts.partials.sidebar-brand')
-        <div class="px-3 flex-grow-1 overflow-auto">
+        <div class="px-3 flex-grow-1 overflow-auto sidebar-nav-scroll" style="justify-content: flex-start;">
             {!! $renderSidebarNav() !!}
         </div>
         {!! $renderAiCard() !!}

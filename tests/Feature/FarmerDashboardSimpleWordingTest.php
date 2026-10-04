@@ -66,7 +66,7 @@ class FarmerDashboardSimpleWordingTest extends TestCase
             $this->assertStringNotContainsStringIgnoringCase($term, $text, "Farmer dashboard should not show \"{$term}\".");
         }
 
-        foreach (['Weather Now', 'My Farm at a Glance', 'What to Do Today', 'My Crop Season', 'Quick Actions'] as $heading) {
+        foreach (["Today's Farm Conditions", 'My Farm at a Glance', 'What You Should Know Today', 'Weather This Week', 'Quick Actions'] as $heading) {
             $this->assertStringContainsString($heading, $text);
         }
         $response->assertSee(route('weather-predictions.index', ['tab' => 'weather-forecast']), false);

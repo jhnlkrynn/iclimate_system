@@ -23,6 +23,7 @@ body.is-it-dashboard *:not(svg):not(svg *) {
 }
 body.is-farmer-dashboard .mfd h1,
 body.is-farmer-dashboard .mfd h2,
+body.is-farmer-dashboard .mfd-pm h2,
 body.is-it-dashboard .mfd h1,
 body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-variant-numeric: lining-nums; }
 
@@ -147,6 +148,14 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-metrics li:nth-child(n+3) { border-top: 1px solid var(--line); }
 .mfd-metrics strong { font-size: 1.375rem; font-weight: 700; line-height: 1.2; }
 .mfd-metric-note { font-size: .875rem; font-weight: 400; color: var(--muted); }
+/* Today's Farm Conditions: three numbers, each with one plain word under it. */
+.mfd-conditions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 4px; }
+.mfd-conditions li { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 16px; }
+.mfd-conditions li + li { border-left: 1px solid var(--line); }
+.mfd-conditions .mfd-metric-label { display: inline-flex; align-items: center; gap: 6px; }
+.mfd-conditions .mfd-metric-label .mtd-svg { width: 16px; height: 16px; color: var(--brand); }
+.mfd-conditions strong { font-size: 1.625rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.mfd-condition-level { font-size: .9375rem; font-weight: 600; color: var(--muted); }
 .mfd-now .mfd-foot { margin-top: auto; }
 .mfd-now > .mfd-link { margin-top: -8px; }
 
@@ -168,7 +177,6 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 
 /* ---------------------------------------------------------------- KPI row */
 .mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 768px) { .mfd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .mfd-kpi {
     display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 20px var(--gap); min-height: 44px;
     background: var(--card); border: 1px solid var(--rule); border-top: 3px solid var(--brand); border-radius: var(--radius);
@@ -225,6 +233,12 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-figure figcaption { margin-bottom: 12px; }
 .mfd-figure figcaption h3 { font-size: 1rem; }
 .mfd-figure figcaption p { margin-top: 4px; font-size: .9375rem; font-weight: 400; color: var(--muted); }
+.mfd-figure-reading { display: grid; gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mfd-figure-reading p { font-size: 1rem; font-weight: 600; color: var(--ink); }
+.mfd-figure-reading p + p { font-weight: 400; color: var(--muted); }
+.mfd-daily { margin-top: 16px; }
+.mfd-daily > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-size: .9375rem; font-weight: 600; color: var(--brand); }
+.mfd-daily[open] > summary { margin-bottom: 8px; }
 .mfd-chart { position: relative; height: 280px; }
 .mfd-chart.is-small { height: 280px; }
 @media (max-width: 640px) { .mfd-chart, .mfd-chart.is-small { height: 260px; } }
@@ -260,11 +274,13 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-harvest-number { display: flex; flex-direction: column; gap: 4px; padding-right: var(--gap); border-right: 1px solid var(--line); }
 .mfd-harvest-number .mfd-kpi-value { font-size: 1.75rem; }
 .mfd-range { font-size: .9375rem; font-weight: 600; color: var(--ink); }
+.mfd-harvest-reading { display: grid; gap: 6px; flex: 1 1 260px; min-width: 0; }
+.mfd-harvest-typical { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-weight: 600; }
 .mfd-total { display: flex; gap: 8px; align-items: flex-start; margin-top: 16px; padding: 12px 16px; border-left: 4px solid var(--good); border-radius: 4px; background: var(--good-bg); font-weight: 600; }
 .mfd-total.is-hint { border-left-color: var(--info); background: var(--info-bg); font-weight: 400; }
 .mfd-compare { margin-top: var(--gap); padding-top: var(--gap); border-top: 1px solid var(--line); }
 .mfd-compare h3 { margin-bottom: 8px; }
-.mfd-compare .mfd-takeaway { margin-bottom: 16px; }
+.mfd-compare .mfd-takeaway { margin: 0; }
 .mfd-bar-row { margin-bottom: 16px; }
 .mfd-bar-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: .9375rem; font-weight: 600; }
 .mfd-bar-label span { font-weight: 400; color: var(--muted); }
@@ -289,15 +305,32 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-setup li:first-child { border-top: 0; }
 .mfd-setup li > div { flex: 1 1 260px; min-width: 0; }
 .mfd-adv-list { display: grid; gap: 0; border-top: 1px solid var(--line); }
-.mfd-adv-list li { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.mfd-adv-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.mfd-adv-text { flex: 1 1 280px; min-width: 0; }
 .mfd-adv-list li:last-child { border-bottom: 0; padding-bottom: 0; }
-.mfd-adv-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.mfd-adv-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.mfd-adv-head strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
+.mfd-adv-head .mfd-muted { white-space: nowrap; }
 .mfd-adv-list p { margin: 4px 0; color: var(--muted); font-weight: 400; font-size: .9375rem; }
-.mfd-adv-list .mfd-link { min-height: 32px; }
-.mfd-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-.mfd-quick a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 16px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); font-size: .9375rem; font-weight: 600; text-decoration: none; }
-.mfd-quick a:hover { border-color: var(--brand); background: var(--good-bg); }
-.mfd-quick .mtd-svg { color: var(--brand); }
+.mfd-adv-list p:last-child { margin-bottom: 0; }
+.mfd-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.mfd-quick li { display: flex; min-width: 0; }
+.mfd-quick-card {
+    position: relative; display: flex; align-items: flex-start; gap: 12px; flex: 1 1 auto; min-width: 0; min-height: 72px; padding: 14px 16px;
+    border: 1px solid var(--rule); border-radius: 6px; background: #fff; color: var(--ink); text-decoration: none;
+    transition: border-color .15s, background-color .15s, box-shadow .15s;
+}
+.mfd-quick-card:hover { border-color: var(--brand); background: var(--subtle); box-shadow: 0 2px 8px rgba(15, 81, 50, .10); }
+.mfd-quick-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 6px; background: var(--good-bg); color: var(--brand); }
+.mfd-quick-icon .mtd-svg { width: 20px; height: 20px; }
+.mfd-quick-text { display: grid; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.mfd-quick-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.mfd-quick-text strong { font-size: 1rem; font-weight: 600; line-height: 1.3; color: var(--ink); }
+.mfd-quick-card:hover .mfd-quick-text strong { color: var(--brand); }
+.mfd-quick-desc { font-size: .875rem; font-weight: 400; line-height: 1.45; color: var(--muted); }
+.mfd-quick-state { flex: none; padding: 1px 8px; border: 1px solid var(--watch-line, #ecd9a0); border-radius: 999px; background: var(--watch-bg, #fdf5dc); font-size: .75rem; font-weight: 600; line-height: 1.4; white-space: nowrap; color: var(--watch-ink, #7a5600); }
+@media (max-width: 1100px) { .mfd-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .mfd-quick { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
 .mfd-badge { min-width: 24px; padding: 0 8px; border-radius: 999px; text-align: center; font-size: .75rem; font-weight: 600; background: var(--danger); color: #fff; }
 .mfd-info summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-size: .9375rem; font-weight: 600; color: var(--brand); }
 .mfd-info-panel { margin-top: 8px; padding: var(--gap); background: #fff; border: 1px solid var(--rule); border-radius: var(--radius); }
@@ -319,10 +352,10 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 @media (min-width: 1400px) {
     .mfd { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
     .mfd > * { grid-column: 1 / -1; }
-    .mfd > .mfd-slot[data-slot="season"], .mfd > .mfd-slot[data-slot="harvest"],
-    .mfd > .mfd-slot[data-slot="setup"], .mfd > .mfd-slot[data-slot="advisories"] { grid-column: auto; }
-    .mfd > .mfd-slot[data-slot="season"]:has(+ .mfd-slot[hidden]), .mfd > .mfd-slot[hidden] + .mfd-slot[data-slot="harvest"],
-    .mfd > .mfd-slot[data-slot="setup"]:has(+ .mfd-slot[hidden]), .mfd > .mfd-slot[hidden] + .mfd-slot[data-slot="advisories"] { grid-column: 1 / -1; }
+    .mfd > .mfd-slot[data-slot="harvest"], .mfd > .mfd-slot[data-slot="advisories"],
+    .mfd > .mfd-slot[data-slot="season"], .mfd > .mfd-slot[data-slot="setup"] { grid-column: auto; }
+    .mfd > .mfd-slot[data-slot="harvest"]:has(+ .mfd-slot[hidden]),
+    .mfd > .mfd-slot[data-slot="season"]:has(+ .mfd-slot[hidden]), .mfd > .mfd-slot[hidden] + .mfd-slot[data-slot="setup"] { grid-column: 1 / -1; }
     .mfd > .mfd-slot > .mfd-card { height: 100%; }
 
     /* header: one compact band */
@@ -334,9 +367,9 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     /* crop stages fit a half-width card */
     .mfd-stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-/* KPIs: all six in one row once each card has room (~200px) */
-@media (min-width: 1600px) {
-    .mfd-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+/* The four number cards share one row once each has room (~200px) */
+@media (min-width: 1200px) {
+    .mfd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
     .mfd-kpi { padding: 16px 18px; }
 }
 
@@ -355,7 +388,134 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     .mfd-metrics { grid-template-columns: minmax(0, 1fr); }
     .mfd-metrics li:nth-child(odd) { border-right: 0; }
     .mfd-metrics li:nth-child(n+2) { border-top: 1px solid var(--line); }
+    .mfd-conditions li { padding: 12px; }
+    .mfd-conditions strong { font-size: 1.375rem; }
+    .mfd-adv-list .mfd-btn, .mfd-empty-actions .mfd-btn { flex: 1 1 auto; }
     .mfd-figure { padding: 12px; }
     .mfd-map summary { padding: 8px 16px; }
 }
+/* Very narrow phones: the three conditions become rows (name on the left, number and word on the right). */
+@media (max-width: 400px) {
+    .mfd-conditions { grid-template-columns: minmax(0, 1fr); }
+    .mfd-conditions li { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+    .mfd-conditions li + li { border-left: 0; border-top: 1px solid var(--line); }
+    .mfd-conditions .mfd-metric-label { flex: 1 1 100%; }
+}
 @media (prefers-reduced-motion: reduce) { .mfd *, .mfd *::before, .mfd *::after { transition: none !important; animation: none !important; } }
+
+/* ---------------------------------------------------------------- my farm at a glance */
+/* dashboards/farmer/farm.blade.php: four tiles (4 across, 2 on tablets, 1 on phones). A value not saved or not available
+   yet is grey, with its one button. The Farm Condition tile takes its status colour, always with an icon and words. */
+.mfd-farm { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.mfd-farm-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; padding: 16px; border: 1px solid var(--rule); border-top: 3px solid var(--brand); border-radius: var(--radius); background: var(--card); }
+.mfd-farm-tile.is-missing { border-top-color: var(--rule); background: var(--subtle); }
+.mfd-farm-label { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.mfd-farm-label .mtd-svg { width: 16px; height: 16px; color: var(--brand); }
+.mfd-farm-value { display: flex; align-items: center; gap: 8px; font-size: 1.625rem; font-weight: 700; line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; }
+.mfd-farm-value .mtd-svg { width: 24px; height: 24px; }
+.mfd-farm-detail { font-size: 1rem; font-weight: 600; color: var(--ink); }
+.mfd-farm-tile.is-good { border-top-color: var(--good); }
+.mfd-farm-tile.is-good .mfd-farm-value .mtd-svg { color: var(--good); }
+.mfd-farm-tile.is-watch { border-top-color: var(--watch); background: #fffcf4; }
+.mfd-farm-tile.is-watch .mfd-farm-value { color: var(--watch-ink); }
+.mfd-farm-tile.is-danger { border-top-color: var(--danger); background: #fff7f6; }
+.mfd-farm-tile.is-danger .mfd-farm-value { color: var(--danger-ink); }
+.mfd-farm-tile.is-missing .mfd-farm-value { font-size: 1.375rem; }
+.mfd-farm-tile.is-missing .mfd-farm-value { color: var(--muted); }
+.mfd-farm-note { font-size: .875rem; line-height: 1.45; color: var(--muted); }
+.mfd-farm-tile .mfd-btn { margin-top: auto; min-height: 40px; padding: 6px 16px; font-size: .875rem; }
+.mfd-farm-tile .mfd-pill { margin-top: auto; }
+@media (max-width: 1100px) { .mfd-farm { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .mfd-farm { grid-template-columns: minmax(0, 1fr); gap: 12px; } .mfd-farm-tile { padding: 14px 16px; } }
+.mfd-charts.is-single { grid-template-columns: minmax(0, 1fr); }
+.mfd-more > .mfd-map-body { display: grid; gap: 16px; }
+/* "More rain and risk details": the numbers, the monthly rain record and the barangay rating, closed until asked for. */
+.mfd-extra-body { display: grid; gap: var(--gap); background: var(--bg); }
+.mfd-extra-body > .mfd-slot[hidden] { display: none; }
+
+/* ---------------------------------------------------------------- dashboard pop-ups */
+/* components/farmer-popup.blade.php + dashboards/farmer/popups.blade.php. The pop-up itself is the shared .fad-modal
+   (farmer-advisories.css); only its sizes and its form parts are set here. It lives on <body>, outside .mfd, so nothing
+   here relies on .mfd. Widths: is-sm a single field or two, is-md the profile form, is-lg the map. */
+.mfd-pm .fad-modal-dialog { width: min(560px, calc(100vw - 32px)); }
+.mfd-pm.is-md .fad-modal-dialog { width: min(680px, calc(100vw - 32px)); }
+.mfd-pm.is-lg .fad-modal-dialog { width: min(860px, calc(100vw - 32px)); }
+.mfd-pm .fad-m-head { justify-content: flex-start; }
+.mfd-pm .fad-m-head-text { flex: 1 1 auto; }
+.mfd-pm .fad-m-head h2 { font-size: 1.5rem; }
+.mfd-pm-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1px solid var(--rule); border-radius: 6px; background: var(--good-bg); color: var(--brand); }
+.mfd-pm-icon .mtd-svg { width: 22px; height: 22px; }
+.mfd-pm form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 0; }
+.mfd-pm .fad-m-scroll { gap: 20px; }
+.mfd-pm-intro { font-size: .9375rem; line-height: 1.5; color: var(--muted); }
+.mfd-pm-label { font-size: .875rem; font-weight: 600; line-height: 1.3; color: var(--ink); }
+.mfd-pm-req { color: var(--danger-ink); }
+.mfd-pm-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.mfd-pm .fad-input { font-size: 1rem; }
+.mfd-pm .fad-input[aria-invalid="true"] { border-color: var(--danger); }
+.mfd-pm-unit { display: flex; align-items: center; gap: 12px; }
+.mfd-pm-unit .fad-input { flex: 1 1 auto; min-width: 0; }
+.mfd-pm-unit span { flex: none; font-size: .9375rem; font-weight: 600; color: var(--head); }
+.mfd-pm-help { font-size: .875rem; color: var(--muted); }
+.mfd-pm-error { font-size: .875rem; font-weight: 600; color: var(--danger-ink); }
+.mfd-pm-alert { padding: 12px 16px; border-left: 4px solid var(--danger); border-radius: 6px; background: var(--danger-bg); font-size: .9375rem; font-weight: 600; color: var(--danger-ink); }
+.mfd-pm [hidden] { display: none !important; }
+/* A field that belongs to one way of opening a pop-up: the farm type, when the farm size pop-up is opened as "Farm Information". */
+.mfd-pm:not([data-variant="info"]) .mfd-pm-info { display: none; }
+/* profile: two groups of fields, two columns where there is room */
+.mfd-pm-group { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.mfd-pm-group legend { float: none; width: 100%; margin: 0 0 2px; padding: 0 0 8px; border-bottom: 1px solid var(--line); font-size: .8125rem; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--brand); }
+.mfd-pm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.mfd-pm-grid .is-full { grid-column: 1 / -1; }
+/* map */
+.mfd-pm-instruction { font-size: .9375rem; line-height: 1.5; color: var(--ink); }
+.mfd-pm-map { height: min(420px, 48vh); min-height: 260px; border: 1px solid var(--field); border-radius: 6px; overflow: hidden; background: var(--subtle); }
+.mfd-pm-map[aria-invalid="true"] { border-color: var(--danger); }
+.mfd-pm-map.is-unavailable { display: grid; place-items: center; padding: 24px; text-align: center; font-size: .9375rem; color: var(--muted); }
+.mfd-pm-pin { border: 3px solid #fff; border-radius: 50%; background: #0f5132; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+.mfd-pm-pin.is-out { background: #c0392b; }
+.mfd-pm-popup { font-size: .875rem; line-height: 1.45; color: #1b1f1d; }
+/* "Selected Farm Location": green once the farm is inside Lian, red while any of it is outside */
+.mfd-pm-place { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-left: 4px solid var(--rule); border-radius: 6px; background: var(--subtle); }
+.mfd-pm-place[data-state="ok"] { border-color: #b7dcc6; border-left-color: var(--good); background: var(--good-bg); }
+.mfd-pm-place[data-state="invalid"] { border-color: var(--danger-line); border-left-color: var(--danger); background: var(--danger-bg); }
+.mfd-pm-place-title { font-size: .8125rem; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--head); }
+.mfd-pm-place dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin: 0; }
+.mfd-pm-place dt { font-size: .8125rem; font-weight: 400; color: var(--muted); }
+.mfd-pm-place dd { margin: 0; font-size: 1rem; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.mfd-pm-place[data-state="ok"] dd[data-mfd-map-status] { color: var(--good-ink, #0f5132); }
+.mfd-pm-place[data-state="invalid"] dd[data-mfd-map-barangay], .mfd-pm-place[data-state="invalid"] dd[data-mfd-map-status] { color: var(--danger-ink); }
+.mfd-pm-place-note { font-size: .9375rem; line-height: 1.5; color: var(--ink); }
+.mfd-pm-place[data-state="invalid"] .mfd-pm-place-note { color: var(--danger-ink); }
+.mfd-pm .fad-btn:disabled { cursor: not-allowed; }
+.mfd-pm-maptools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.mfd-pm-mapstats { display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 0; }
+.mfd-pm-mapstats > div { display: flex; align-items: baseline; gap: 8px; }
+.mfd-pm-mapstats dt { font-size: .875rem; font-weight: 400; color: var(--muted); }
+.mfd-pm-mapstats dd { margin: 0; font-size: .9375rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mfd-pm-mapbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+    /* Short forms stay a centred card on phones instead of the full-screen sheet the long pop-ups use. */
+    .fad-modal.mfd-pm { padding: 12px; }
+    .mfd-pm .fad-modal-dialog, .mfd-pm.is-md .fad-modal-dialog, .mfd-pm.is-lg .fad-modal-dialog {
+        width: calc(100vw - 24px); height: auto; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+        border: 1px solid var(--rule); border-top: 4px solid var(--brand); border-radius: 8px;
+    }
+    .mfd-pm .fad-m-head { gap: 12px; }
+    .mfd-pm-icon { width: 36px; height: 36px; }
+    .mfd-pm-grid { grid-template-columns: minmax(0, 1fr); }
+    .mfd-pm-map { height: min(320px, 42vh); min-height: 220px; }
+    .mfd-pm-place dl { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .mfd-pm-place dl > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+    .mfd-pm .fad-m-foot .fad-btn { flex: 1 1 0; white-space: normal; }
+    .mfd-pm-mapbtns .fad-btn { flex: 1 1 auto; }
+}
+
+/* Confirmation shown after the pop-up saves (the page is not reloaded, so the server's flash message cannot be used). */
+.mfd-toast {
+    position: fixed; top: 16px; right: 16px; z-index: 10002; display: flex; align-items: center; gap: 10px; max-width: min(380px, calc(100vw - 32px));
+    padding: 12px 16px; border: 1px solid #b7dcc6; border-left: 4px solid #198754; border-radius: 6px; background: #fff; color: #1b1f1d;
+    font-family: var(--mfd-sans); font-size: .9375rem; font-weight: 600; line-height: 1.4; box-shadow: 0 12px 32px rgba(10, 30, 20, .18);
+}
+.mfd-toast::before { content: "✓"; display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #198754; color: #fff; font-size: .875rem; }
+@media (max-width: 480px) { .mfd-toast { left: 16px; } }

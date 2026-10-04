@@ -96,6 +96,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'role:'.User::ROLE_FARMER
     )->group(function () {
 
+        // The farmer dashboard's pop-ups (planting date, farm size, profile, farm map): each saves for the signed-in farmer and answers in JSON.
+        Route::middleware('throttle:20,1')->group(function () {
+            Route::post('/farmer/dashboard/planting-info', [FarmerPlantingScheduleController::class, 'applyFromDashboard'])->name('farmer.dashboard.planting-info');
+            Route::post('/farmer/dashboard/farm-size', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'farmSize'])->name('farmer.dashboard.farm-size');
+            Route::post('/farmer/dashboard/profile', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'profile'])->name('farmer.dashboard.profile');
+            Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->name('farmer.dashboard.farm-map');
+        });
+
         Route::get(
             '/farmer/planting-schedules/create',
             [FarmerPlantingScheduleController::class, 'create']

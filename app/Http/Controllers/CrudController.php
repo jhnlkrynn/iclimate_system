@@ -134,7 +134,15 @@ abstract class CrudController extends Controller
         $this->authorizeView($request);
         $record = $this->findRecord($request, $id);
 
-        return view($this->usesFarmerPages($request) ? 'farmer-records.show' : 'crud.show', [
+        // A farmer record page can open a record in its "View" pop-up (?modal=1): the same record without the page layout.
+        $popup = 'farmer-records._modal-'.$this->routeName;
+        $view = match (true) {
+            ! $this->usesFarmerPages($request) => 'crud.show',
+            $request->boolean('modal') && view()->exists($popup) => $popup,
+            default => 'farmer-records.show',
+        };
+
+        return view($view, [
             'title' => $this->title,
             'routeName' => $this->routeName,
             'record' => $record,

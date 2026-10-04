@@ -1,3 +1,5 @@
+{{-- "Latest Farming Advice": the title and one short line of each advisory. The full advisory opens in the same pop-up the
+     Advisories page uses (farmer-advisories.js), so the farmer stays on the dashboard. --}}
 @php
     $items = $f['advisories'];
     $today = \Carbon\CarbonImmutable::now('Asia/Manila')->startOfDay();
@@ -16,9 +18,11 @@
         <ul class="mfd-adv-list">
             @foreach ($items as $adv)
                 <li>
-                    <div class="mfd-adv-head"><strong>{{ $adv['title'] }}</strong><span class="mfd-muted">{{ $label($adv['when']) }}</span></div>
-                    @if ($adv['summary'])<p>{{ $adv['summary'] }}</p>@endif
-                    <a class="mfd-link" href="{{ $adv['href'] }}">{{ __('farmer.advisories.read') }}</a>
+                    <div class="mfd-adv-text">
+                        <div class="mfd-adv-head"><strong>{{ $adv['title'] }}</strong><span class="mfd-muted">{{ $label($adv['when']) }}</span></div>
+                        @if ($adv['summary'])<p>{{ $adv['summary'] }}</p>@endif
+                    </div>
+                    <a class="mfd-btn is-quiet" href="{{ $adv['href'] }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog" aria-label="{{ __('farmer.advisories.read_label', ['title' => $adv['title']]) }}">{{ __('farmer.advisories.read') }}</a>
                 </li>
             @endforeach
         </ul>

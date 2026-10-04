@@ -84,13 +84,14 @@
     .topbar-btn-logout:hover { background: rgba(184,74,74,.2); border-color: rgba(184,74,74,.45); }
     @media (max-width: 575.98px) {
         .topbar-name { max-width: 52vw; }
-        .topbar-btn span { display: none; }
-        .topbar-btn { padding: .5rem .6rem; }
+        .topbar-btn span:not(.sidebar-badge) { display: none; }
+        .topbar-btn { padding: .5rem .6rem; min-width: 40px; min-height: 40px; justify-content: center; }
+        .topbar-actions { gap: .35rem; }
     }
 </style>
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
     <div class="container-fluid px-0 gap-3 topbar-inner flex-wrap">
-        <button class="btn btn-outline-primary d-lg-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Open navigation menu">
+        <button class="btn btn-outline-primary d-lg-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open navigation menu">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             <span>Menu</span>
         </button>
@@ -121,7 +122,7 @@
                 </a>
             @endif
             @if (true)
-                <a class="topbar-btn d-none d-sm-inline-flex" href="{{ route('profile.edit') }}">
+                <a class="topbar-btn" href="{{ route('profile.edit') }}" aria-label="Profile">
                     <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     <span>Profile</span>
                 </a>
