@@ -165,6 +165,8 @@ class DashboardController extends Controller
 
         return view('heat-map.index', [
             'highlightBarangay' => $barangay ? LianBarangays::canonicalName($barangay) : null,
+            // Farmers get the short, plain-language forecast panel; MAO/IT keep the detailed one.
+            'forecastAudience' => $user?->role === User::ROLE_FARMER ? 'farmer' : 'staff',
         ]);
     }
 

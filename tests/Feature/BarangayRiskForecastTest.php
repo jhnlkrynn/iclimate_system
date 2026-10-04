@@ -160,6 +160,22 @@ class BarangayRiskForecastTest extends TestCase
             ->assertDontSee('Barangay Weather Forecast');
     }
 
+    public function test_farmers_get_the_simple_forecast_panel_and_staff_keep_the_detailed_one(): void
+    {
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+
+        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
+        $this->actingAs($farmer)->get(route('heat-map.index'))
+            ->assertOk()
+            ->assertSee('data-forecast-audience="farmer"', false);
+
+        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))->get(route('heat-map.index'))
+                ->assertOk()
+                ->assertSee('data-forecast-audience="staff"', false);
+        }
+    }
+
     public function test_heat_map_page_shows_forecast_controls_but_dashboard_maps_do_not(): void
     {
         Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);

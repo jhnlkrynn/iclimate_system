@@ -85,6 +85,103 @@ function forecastDetailMarkup(name, entry, month) {
     return `<div class="risk-map-detail-content"><div><span class="risk-map-detail-kicker">Selected barangay · monthly forecast</span><h3>${escapeHtml(displayName(name))}</h3></div><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">BARANGAY RISK: ${escapeHtml(level === 'No Data' ? 'INSUFFICIENT DATA' : level.toUpperCase())}</span><div class="risk-forecast-sections">${sectionsMarkup(forecastSections(entry, month))}</div>${strip ? `<div class="risk-forecast-strip" aria-label="Barangay risk by forecast month">${strip}</div>` : ''}<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
 }
 
+// ---- Farmer view: the same forecast and advice, in short plain words. ----
+// Translations of the risk engine's own sentences (DecisionSupportService / BarangayRiskForecastService).
+// The advice is unchanged; a sentence not listed here is shown as the engine wrote it.
+const PLAIN_EFFECT = {
+    'Very little rain is expected': 'Low rainfall may cause a water shortage in rice fields.',
+    'Less rain than rice usually needs': 'Rice fields may need more water because rainfall is low.',
+    'Heavy rainfall may occur': 'Heavy rain may flood rice fields, especially in low areas.',
+    'More rain than ideal': 'Rice fields may stay too wet.',
+    'Strong winds are possible': 'Strong wind may knock down rice plants.',
+    'Very humid weather': 'Humid weather may bring more pests and rice diseases.',
+    'Dry season on rainfed farms': 'Farms without irrigation may run short of water.',
+    'Low recorded harvest': 'Past harvests here were low.',
+    'Average recorded harvest': 'Past harvests here were average.',
+    'No major weather concern': 'No major weather problem is expected for rice.',
+};
+const PLAIN_ACTION = {
+    'Increase irrigation or provide supplemental water support.': 'Give the rice field enough water.',
+    'Monitor soil moisture closely.': 'Check often that the soil stays moist.',
+    'Irrigation is not necessary right now.': 'No need to irrigate for now.',
+    'Reduce irrigation to avoid waterlogging.': 'Use less irrigation water so the field does not flood.',
+    'Maintain the irrigation schedule.': 'Keep your usual irrigation schedule.',
+    'Maintain normal irrigation monitoring.': 'Keep checking your irrigation as usual.',
+    'Ideal planting period.': 'This is a good time to plant.',
+    'Plant with caution and monitor field drainage.': 'You can plant, but keep drainage canals clear.',
+    'Delay planting due to flood risk.': 'Wait to plant because the field may flood.',
+    'Wait for sufficient rainfall before planting.': 'If rainfall stays low, consider delaying planting.',
+    'Delay planting during dry season until rainfall improves.': 'If rainfall stays low, consider delaying planting.',
+    'Consider adjusting the planting schedule because expected yield is low.': 'Consider changing your planting schedule.',
+    'Continue normal farm work and watch PAGASA/local weather advisories.': 'Continue normal farm work and watch for weather advisories.',
+};
+const CONFIDENCE_HINT = { Low: 'A rough guide only; it may change.', Moderate: 'Useful, but may still change.', High: 'Fairly reliable, but may still change.' };
+const LEVEL_HINT = { Low: 'Conditions are generally okay.', Moderate: 'Keep monitoring the weather.', High: 'Weather may affect rice farming.', Severe: 'Take extra care and follow advisories.' };
+
+const plainActions = (action) => [...new Set(String(action || '').split(/(?<=\.)\s+/).map((sentence) => sentence.trim()).filter(Boolean).map((sentence) => PLAIN_ACTION[sentence] || sentence))];
+
+// "Same as January" / "Higher than January ↑" / "Lower than January ↓", against the previous forecast month.
+function riskChange(entry, month, months) {
+    const index = (months || []).findIndex((candidate) => candidate.month === month?.month);
+    if (index < 1 || !entry?.trend) return null;
+    const previous = months[index - 1].label.split(' ')[0];
+    return { stable: `Same as ${previous}`, increasing: `Higher than ${previous} ↑`, decreasing: `Lower than ${previous} ↓` }[entry.trend] || null;
+}
+
+function farmerParts(entry, month, months) {
+    const level = riskLevel(entry);
+    const weather = month?.weather || {};
+    const factors = entry?.factors || {};
+    return {
+        level,
+        badge: level === 'No Data' ? 'NO FORECAST DATA' : `${level.toUpperCase()} RISK`,
+        weather: [
+            ['Rainfall', weather.rainfall_mm != null ? `About ${weather.rainfall_mm} mm` : null],
+            ['Temperature', weather.temperature_c != null ? `${Math.round(weather.temperature_c)}°C` : null],
+            ['Humidity', weather.humidity_percent != null ? `${weather.humidity_percent}%` : null],
+        ].filter(([, value]) => value),
+        effect: entry?.main_concern && entry.main_concern !== 'Insufficient Forecast Data' ? (PLAIN_EFFECT[entry.main_concern] || entry.impact) : null,
+        actions: plainActions(entry?.action),
+        change: riskChange(entry, month, months),
+        confidence: month?.confidence_level ? `${month.confidence_level}${CONFIDENCE_HINT[month.confidence_level] ? ` · ${CONFIDENCE_HINT[month.confidence_level]}` : ''}` : null,
+        farmType: factors.farm_type ? (factors.farm_type_from_records ? factors.farm_type : 'Farm type not yet confirmed.') : null,
+        production: factors.yield_record ? `${factors.yield_record.value} t/ha (${factors.yield_record.year})` : null,
+    };
+}
+
+const farmerBadge = (parts) => `<span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[parts.level]}" title="${escapeHtml(LEVEL_HINT[parts.level] || '')}">${escapeHtml(parts.badge)}</span>`;
+const farmerWeather = (parts) => (parts.weather.length ? `<div class="rf-weather">${parts.weather.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>` : '');
+// One short line for the popup: the label itself says the forecast is for Lian, so no extra note is needed there.
+const farmerPopupWeather = (parts) => {
+    const values = { Rainfall: (v) => `${v} rain`, Temperature: (v) => v, Humidity: (v) => `${v} humidity` };
+    return parts.weather.length ? `<p class="rf-popup-weather"><span>Weather forecast for Lian</span>${escapeHtml(parts.weather.map(([label, value]) => values[label](value)).join(' · '))}</p>` : '';
+};
+const farmerBlock = (title, body) => (body ? `<section class="rf-block"><h4>${escapeHtml(title)}</h4>${body}</section>` : '');
+const farmerActions = (parts) => (parts.actions.length ? parts.actions.map((action) => `<p>${escapeHtml(action)}</p>`).join('') : '');
+
+function farmerPopupMarkup(name, entry, month, months) {
+    const parts = farmerParts(entry, month, months);
+    return `<div class="risk-map-popup rf-popup"><div class="rf-head"><strong>${escapeHtml(displayName(name))}</strong>${farmerBadge(parts)}</div><p class="rf-month">${escapeHtml(month?.label || '')}</p>${farmerPopupWeather(parts)}${farmerBlock('Possible Effect', parts.effect ? `<p>${escapeHtml(parts.effect)}</p>` : '')}${farmerBlock('What You Can Do', farmerActions(parts))}</div>`;
+}
+
+function farmerDetailMarkup(name, entry, month, months) {
+    const parts = farmerParts(entry, month, months);
+    const facts = [['Forecast Month', month?.label], ['Risk Change', parts.change]].filter(([, value]) => value);
+    const farm = [['Farm Type', parts.farmType], ['Rice Production Record', parts.production]].filter(([, value]) => value);
+    const strip = (entry?.timeline || []).map((point) => `<span class="${point.month === month?.short_label ? 'is-active' : ''}" style="--risk-color:${RISK_COLORS[riskLevel(point)]}"${point.month === month?.short_label ? ' aria-current="true"' : ''}>${escapeHtml(point.month)} <b>${escapeHtml(point.risk_level)}</b></span>`).join('');
+    return `<div class="rf-detail">`
+        + `<div class="rf-head"><h3>${escapeHtml(displayName(name))}</h3>${farmerBadge(parts)}</div>`
+        + `${facts.length ? rowsMarkup(facts).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts') : ''}`
+        + `<div class="rf-grid">`
+        + farmerBlock('Weather Forecast for Lian', `${farmerWeather(parts)}${parts.confidence ? `<p class="rf-small">Forecast confidence: ${escapeHtml(parts.confidence)}</p>` : ''}<p class="rf-note">Weather forecast applies to Lian, Batangas.</p>`)
+        + farmerBlock('Possible Effect', parts.effect ? `<p>${escapeHtml(parts.effect)}</p>` : '')
+        + farmerBlock('What You Can Do', farmerActions(parts))
+        + `</div>`
+        + (farm.length ? farmerBlock('Farm Information', rowsMarkup(farm)) : '')
+        + (strip ? farmerBlock('Next Months', `<div class="risk-forecast-strip">${strip}</div>`) : '')
+        + `<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+}
+
 function overviewMarkup(month) {
     const summary = month.summary || {};
     const weather = month.weather || {};
@@ -118,6 +215,7 @@ export function initBarangayRiskMap() {
     let selectedName = null;
     // Forecast mode (Heat Map page only): activeMonth null shows current conditions, otherwise a 'YYYY-MM' forecast month.
     const forecastBox = card?.querySelector('[data-risk-forecast]');
+    const farmerView = forecastBox?.dataset.forecastAudience === 'farmer';
     const spinner = shell?.querySelector('[data-risk-map-spinner]');
     const forecastEntries = new Map();
     let forecastData = null;
@@ -149,7 +247,9 @@ export function initBarangayRiskMap() {
     };
     const showDetails = (name) => {
         if (!details) return;
-        details.innerHTML = activeMonth ? forecastDetailMarkup(name, forecastEntries.get(name), activeForecast()) : detailMarkup(name, entries.get(name));
+        details.innerHTML = !activeMonth ? detailMarkup(name, entries.get(name))
+            : farmerView ? farmerDetailMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months)
+            : forecastDetailMarkup(name, forecastEntries.get(name), activeForecast());
         details.hidden = false;
         details.querySelector('[data-risk-map-detail-close]')?.addEventListener('click', () => { details.hidden = true; });
     };
@@ -294,7 +394,9 @@ export function initBarangayRiskMap() {
                     const own = name === highlightBarangay;
                     // Content is built when shown, so it always matches the selected month.
                     layer.bindTooltip(() => tooltipMarkup(name), { sticky: true, direction: 'top', className: own ? 'your-barangay-tooltip' : '' });
-                    layer.bindPopup(() => (activeMonth ? forecastPopupMarkup(name, forecastEntries.get(name), activeForecast()) : popupMarkup(name, entries.get(name))), { closeButton: true, maxWidth: 260, maxHeight: 320 });
+                    layer.bindPopup(() => (!activeMonth ? popupMarkup(name, entries.get(name))
+                        : farmerView ? farmerPopupMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months)
+                        : forecastPopupMarkup(name, forecastEntries.get(name), activeForecast())), { closeButton: true, maxWidth: 260, maxHeight: 320 });
                     layer.on({ mouseover: () => layer.setStyle(styleFor(name, name === selectedName, true)), mouseout: () => layer.setStyle(styleFor(name, name === selectedName)), click: () => { selectLayer(name, layer); layer.openPopup(); } });
                 },
             }).addTo(map);

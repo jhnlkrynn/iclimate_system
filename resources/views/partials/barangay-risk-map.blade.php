@@ -7,12 +7,14 @@
     $highlightBarangay = $highlightBarangay ?? null;
     // Monthly forecast controls (month selector, summary cards, overview). Only the Heat Map page turns them on.
     $forecast = $forecast ?? false;
+    // 'farmer' shows the short plain-language forecast panel; 'staff' (MAO/IT) keeps the detailed one.
+    $forecastAudience = $forecastAudience ?? 'staff';
 @endphp
 
 <section class="risk-map-card" data-risk-map-card aria-labelledby="riskMapTitle">
     @if($forecast)
         {{-- Forecast summary for the selected month; the month controls sit in the toolbar right above the map. --}}
-        <div class="risk-forecast" data-risk-forecast data-forecast-url="{{ url('/api/lian/risk-forecast') }}">
+        <div class="risk-forecast" data-risk-forecast data-forecast-url="{{ url('/api/lian/risk-forecast') }}" data-forecast-audience="{{ $forecastAudience }}">
             <div class="risk-forecast-cards" aria-live="polite">
                 <div class="risk-forecast-card"><span>Barangays Monitored</span><strong data-forecast-stat="monitored">–</strong></div>
                 <div class="risk-forecast-card" style="--risk-color: #2e7d32"><span>Low Risk</span><strong data-forecast-stat="low">–</strong></div>

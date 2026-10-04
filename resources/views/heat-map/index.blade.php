@@ -17,6 +17,7 @@
                 'showRefresh' => true,
                 'highlightBarangay' => $highlightBarangay,
                 'forecast' => true,
+                'forecastAudience' => $forecastAudience ?? 'staff',
             ])
         </section>
     </div>

@@ -1569,6 +1569,32 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-timeline button:focus-visible { outline: 3px solid rgba(31, 90, 70, .35); outline-offset: 2px; }
 /* Keeps Leaflet's own layers (z-index up to 1000) inside the map, so the sticky toolbar can sit above them. */
 .risk-map-card .risk-map-shell { isolation: isolate; }
+/* Farmer forecast panel and popup: where, what risk, when, what may happen, what to do. */
+.rf-head { align-items: center; display: flex; flex-wrap: wrap; gap: .4rem .75rem; justify-content: space-between; }
+.rf-head h3 { color: #172b24; font-size: 1.25rem; margin: 0; }
+.rf-detail { display: grid; gap: .9rem; }
+.rf-detail .rf-facts { grid-template-columns: repeat(auto-fit, minmax(150px, max-content)); gap: .3rem 2rem; }
+.rf-detail .rf-facts dd { font-size: .95rem; font-weight: 600; }
+.rf-grid { display: grid; gap: .9rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.rf-block h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: .08em; margin: 0 0 .35rem; text-transform: uppercase; }
+.rf-block p { color: #172b24; font-size: .9rem; line-height: 1.45; margin: 0 0 .2rem; }
+/* Tiles size to their text and wrap as whole tiles, so words never break mid-way. */
+.rf-weather { display: flex; flex-wrap: wrap; gap: .4rem; }
+.rf-weather div { background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 10px; display: grid; flex: 1 1 auto; gap: .05rem; padding: .4rem .6rem; }
+.rf-weather span, .rf-weather strong { white-space: nowrap; }
+.rf-weather span { color: #66756f; font-size: .7rem; font-weight: 700; }
+.rf-weather strong { color: #172b24; font-size: .95rem; }
+.rf-block .rf-note, .rf-note { color: #66756f; font-size: .74rem; margin: .35rem 0 0; }
+.rf-block .rf-small { color: #52645c; font-size: .78rem; margin-top: .35rem; }
+.rf-detail .risk-map-detail-close { justify-self: start; margin-left: 0; padding-left: 0; }
+.rf-popup { gap: .45rem; min-width: 200px; }
+.rf-popup .rf-head strong { font-size: 1rem; }
+.rf-popup .risk-map-detail-risk { font-size: .65rem; }
+.rf-popup .rf-month { color: #52645c; font-size: .8rem; font-weight: 600; margin: 0; }
+.rf-popup .rf-note { margin-top: 0; }
+.rf-popup .rf-block p { font-size: .82rem; }
+.rf-popup-weather { background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 10px; color: #172b24; display: grid; font-size: .82rem; font-weight: 600; gap: .1rem; margin: 0; padding: .4rem .6rem; }
+.rf-popup-weather span { color: #66756f; font-size: .7rem; font-weight: 700; }
 @media (min-width: 992px) {
     /* Stays reachable while the map is on screen; the stage ends with the map, so it never follows the page further.
        100px clears the app's sticky top bar (91px). */
