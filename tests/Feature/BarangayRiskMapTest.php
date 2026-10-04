@@ -23,9 +23,15 @@ class BarangayRiskMapTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** The process-wide time limit before this test, restored in tearDown(). */
+    private string|false $previousTimeLimit = false;
+
     protected function setUp(): void
     {
         parent::setUp();
+        // set_time_limit() in the console applies to the whole PHPUnit process, so it is restored
+        // after each test; otherwise every later test shares a 30-second budget.
+        $this->previousTimeLimit = ini_get('max_execution_time');
         set_time_limit(30);
 
         // A risk-map test must never silently wait on an unmatched provider
@@ -57,6 +63,13 @@ class BarangayRiskMapTest extends TestCase
             'status' => MonthlyWeatherPrediction::STATUS_READY,
             'metadata' => ['dataset_version' => app(MonthlyWeatherRandomForest::class)->datasetVersion()],
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        set_time_limit((int) $this->previousTimeLimit);
+
+        parent::tearDown();
     }
 
     private function forgetPreparedMonthlyForecast(): void

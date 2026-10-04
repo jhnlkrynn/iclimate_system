@@ -20,6 +20,7 @@ class PagasaAdvisoryService
         }
 
         $cacheKey = 'pagasa-advisories:last-fetch';
+        $previousSummary = Cache::get($cacheKey);
 
         if (! $force && Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
@@ -66,6 +67,10 @@ class PagasaAdvisoryService
         }
 
         $summary['message'] = "{$summary['advisories_created']} PAGASA online advisories created, {$summary['advisories_skipped_as_duplicates']} duplicates skipped.";
+        $summary['checked_at'] = now()->toIso8601String();
+        $summary['last_successful_check'] = count($summary['errors']) < $summary['sources_checked']
+            ? $summary['checked_at']
+            : (is_array($previousSummary) ? ($previousSummary['last_successful_check'] ?? null) : null);
 
         Cache::put($cacheKey, $summary, now()->addMinutes((int) config('services.pagasa.cache_minutes', 30)));
 
@@ -387,6 +392,8 @@ class PagasaAdvisoryService
             'sources_without_lian_batangas_match' => 0,
             'advisories_created' => 0,
             'advisories_skipped_as_duplicates' => 0,
+            'checked_at' => null,
+            'last_successful_check' => null,
             'errors' => [],
         ];
     }

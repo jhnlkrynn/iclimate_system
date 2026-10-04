@@ -47,6 +47,20 @@
             @endif
         </div>
 
+        @if ($user->role === \App\Models\User::ROLE_FARMER)
+            <div>
+                <x-input-label for="barangay" :value="__('Registered barangay')" />
+                <select id="barangay" name="barangay" class="mt-1 block w-full rounded-md border-gray-300" autocomplete="address-level3">
+                    <option value="">Select your exact barangay</option>
+                    @foreach (\App\Support\LianBarangays::options(false) as $barangay => $label)
+                        <option value="{{ $barangay }}" @selected(old('barangay', $user->registeredBarangay()) === $barangay)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-sm text-[#44604E]">Choose the exact barangay on your registration. Do not choose a general Poblacion label.</p>
+                <x-input-error class="mt-2" :messages="$errors->get('barangay')" />
+            </div>
+        @endif
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

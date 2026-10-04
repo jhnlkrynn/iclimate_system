@@ -2,7 +2,7 @@
     $user = auth()->user();
     $initials = collect(explode(' ', trim($user->name)))->filter()->map(fn ($part) => mb_strtoupper($part[0]))->take(2)->implode('');
     $isFarmerNav = $user->role === \App\Models\User::ROLE_FARMER;
-    $navBarangay = $isFarmerNav ? ($user->farmerProfile?->barangay ?? $user->barangay) : null;
+    $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
     // Same cached count as the sidebar badge, so the two always agree.
     $navUnread = $isFarmerNav
         ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())

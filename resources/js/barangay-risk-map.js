@@ -17,6 +17,59 @@ const displayName = (name) => DISPLAY_NAMES[name] || name;
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const riskLevel = (entry) => RISK_COLORS[entry?.risk_level] ? entry.risk_level : 'No Data';
 
+const RISK_MEANING_COPY = {
+    low: {
+        title: 'Low Risk',
+        meaning: 'Conditions are generally okay for rice farming.',
+        support: 'Continue normal farm activities and monitor weather updates.',
+    },
+    moderate: {
+        title: 'Moderate Risk',
+        meaning: 'Some weather conditions may affect the rice field.',
+        support: 'Keep monitoring the weather and your field.',
+    },
+    'high-severe': {
+        title: 'High / Severe Risk',
+        meaning: 'Weather may strongly affect rice farming.',
+        support: 'Prepare to take action and follow official advisories.',
+    },
+};
+
+function initRiskMeaningGuide() {
+    const trigger = document.querySelector('[data-risk-meaning-trigger]');
+    const root = trigger?.closest('.risk-map-meaning');
+    if (!root || root.dataset.initialized === 'true') return;
+    root.dataset.initialized = 'true';
+    const overlay = root.querySelector('[data-risk-meaning-overlay]');
+    const close = root.querySelector('[data-risk-meaning-close]');
+    const title = root.querySelector('[data-risk-meaning-title]');
+    const meaning = root.querySelector('[data-risk-meaning-text]');
+    const support = root.querySelector('[data-risk-meaning-support]');
+    let lastTrigger = null;
+
+    const closePopup = () => {
+        if (!overlay) return;
+        overlay.hidden = true;
+        lastTrigger?.focus();
+        lastTrigger = null;
+    };
+    const openPopup = (button) => {
+        const copy = RISK_MEANING_COPY[button.dataset.riskLevel];
+        if (!copy || !overlay || !title || !meaning || !support) return;
+        lastTrigger = button;
+        title.textContent = copy.title;
+        meaning.textContent = copy.meaning;
+        support.textContent = copy.support;
+        overlay.hidden = false;
+        close?.focus();
+    };
+
+    root.querySelectorAll('[data-risk-meaning-trigger]').forEach((button) => button.addEventListener('click', () => openPopup(button)));
+    close?.addEventListener('click', closePopup);
+    overlay?.addEventListener('click', (event) => { if (event.target === overlay) closePopup(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && overlay && !overlay.hidden) closePopup(); });
+}
+
 function popupMarkup(name, entry) {
     const level = riskLevel(entry);
     return `<div class="risk-map-popup"><strong>${escapeHtml(displayName(name))}</strong><span class="risk-map-popup-risk" style="--risk-color:${RISK_COLORS[level]}">FARM RISK: ${escapeHtml(level.toUpperCase())}</span><span class="risk-map-popup-hint">Click for details</span></div>`;
@@ -34,11 +87,11 @@ function detailMarkup(name, entry) {
 }
 
 const CURRENT_RISK_MEANING = {
-    Low: 'Conditions are generally okay for rice farming.',
-    Moderate: 'Some weather conditions may affect rice farming.',
-    High: 'Weather conditions may seriously affect rice farming.',
-    Severe: 'Weather conditions may severely affect rice farming.',
-    'No Data': 'The farm risk cannot be assessed because some current information is unavailable.',
+    Low: 'Conditions are generally okay.',
+    Moderate: 'Keep monitoring the weather and your rice field.',
+    High: 'Weather may affect your rice field. Prepare to take action.',
+    Severe: 'Conditions may seriously affect farming. Follow official advisories.',
+    'No Data': 'The current farm risk is not available yet.',
 };
 
 const numberValue = (value) => (value == null || value === '' || Number.isNaN(Number(value)) ? null : Number(value));
@@ -48,7 +101,7 @@ function philippineTime(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
     try {
-        return new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' }).format(date);
+        return new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', timeStyle: 'short' }).format(date);
     } catch (error) {
         return date.toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
     }
@@ -65,34 +118,42 @@ function currentWeatherParts(entry) {
     const stale = weather.status === 'stale' || entry?.status === 'stale';
     const rows = [];
 
-    if (rainfallStatus) rows.push(['Rainfall', rainfall != null ? `${rainfallStatus} (${rainfall} mm in the last 24 hours)` : rainfallStatus]);
-    else if (rainfall != null) rows.push(['Rainfall in the last 24 hours', `${rainfall} mm`]);
-    if (temperature != null) rows.push(['Temperature', `${temperature}°C`]);
-    if (humidity != null) rows.push(['Humidity', `${humidity}%`]);
-    if (wind != null && wind > 20) rows.push(['Wind', `${wind} km/h (strong)`]);
+    if (fresh) {
+        if (rainfallStatus) rows.push(['Rainfall', rainfallStatus.replace(/\s+rainfall/i, '')]);
+        else if (rainfall != null) rows.push(['Rainfall', `${rainfall} mm`]);
+        if (temperature != null) rows.push(['Temperature', `${temperature}°C`]);
+        if (humidity != null) rows.push(['Humidity', `${humidity}%`]);
+    }
 
-    let effect = 'No major weather problem is affecting rice farming right now.';
+    let effect = 'No major weather problem is affecting the rice field right now.';
     let action = 'Continue normal farm work and monitor weather updates.';
     if (rainfallStatus.toLowerCase().includes('high') || (rainfall != null && rainfall >= 80)) {
-        effect = 'Too much rain may cause water to collect in rice fields.';
-        action = 'Check drainage and do not let water stay too long in the field.';
+        effect = 'Too much water may collect in rice fields.';
+        action = 'Check drainage and monitor water levels.';
     } else if (rainfallStatus.toLowerCase().includes('low') || (rainfall != null && rainfall < 25)) {
         effect = 'Rice fields may need more water.';
-        action = 'Check field water levels and prepare irrigation if needed.';
+        action = 'Check water levels and prepare irrigation if needed.';
     } else if (temperature != null && temperature >= 35) {
-        effect = 'Very hot weather may affect rice plants.';
-        action = 'Check field water levels often and avoid letting the soil become too dry.';
+        effect = 'Hot weather may affect rice plants.';
+        action = 'Keep enough water in the field.';
     } else if (wind != null && wind > 20) {
         effect = 'Strong winds may damage rice plants.';
-        action = 'Monitor rice plants and secure loose farm materials.';
+        action = 'Check rice plants and secure loose farm materials.';
     }
     if (!rows.length && !stale) {
-        effect = 'Current weather information is unavailable, so the local effect cannot be confirmed.';
-        action = 'Check field conditions and wait for the next weather update before changing farm work.';
+        // The weather line already says it is unavailable; this line says what that means, without repeating it.
+        effect = 'The effect on your rice field will be checked again after the next update.';
+        action = 'Check your field conditions and wait for the next update.';
     }
 
     const observedAt = philippineTime(weather.observed_at || (fresh ? entry?.updated_at : null));
-    const updateLabel = stale ? 'Last successful update' : fresh ? 'Updated' : 'Update time';
+    const notice = fresh ? (observedAt ? `Updated: ${observedAt}` : 'Weather information has not been updated yet.') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.';
+    // One short line for the popup, e.g. "29°C · 78% humidity · Low rainfall".
+    const line = fresh ? [
+        temperature != null ? `${temperature}°C` : null,
+        humidity != null ? `${humidity}% humidity` : null,
+        rainfallStatus || (rainfall != null ? `${rainfall} mm rain` : null),
+    ].filter(Boolean).join(' · ') : '';
     return {
         rows,
         effect,
@@ -100,25 +161,38 @@ function currentWeatherParts(entry) {
         fresh,
         stale,
         observedAt,
-        updateText: observedAt ? `${updateLabel} Philippine time: ${observedAt}` : stale ? 'Weather data is stale and a new update is not available.' : 'Weather update is temporarily unavailable.',
+        notice,
+        line,
+        lastAvailable: !fresh && observedAt ? `Last update: ${observedAt}` : null,
     };
 }
 
-function farmerCurrentPopupMarkup(name, entry) {
+// Quick information card: name + risk, current weather, possible effect, what to do, update time.
+function farmerCurrentPopupMarkup(name, entry, fit) {
     const level = riskLevel(entry);
     const weather = currentWeatherParts(entry);
-    const weatherLine = weather.rows.length ? weather.rows.slice(0, 3).map(([, value]) => value).join(' · ') : weather.stale ? 'Weather data is stale' : 'Weather unavailable';
-    return `<div class="risk-map-popup rf-popup"><div class="rf-head"><strong>${escapeHtml(displayName(name))}</strong><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><p class="rf-popup-weather"><span>Current conditions</span>${escapeHtml(weatherLine)}</p><p>${escapeHtml(weather.effect)}</p><p class="rf-small">${escapeHtml(weather.updateText)}</p></div>`;
+    const updated = weather.fresh ? (weather.observedAt ? `Updated: ${weather.observedAt}` : null) : weather.lastAvailable;
+    return farmerPopupShell(name, level, ''
+        + farmerBlock('Current Weather', `<p>${escapeHtml(weather.line || weather.notice)}</p>`)
+        + farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)
+        + farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)
+        + (updated ? `<p class="rf-updated">${escapeHtml(updated)}</p>` : ''), fit);
+}
+
+// The name and risk badge stay on top; only the part below scrolls if the visible map is too short.
+function farmerPopupShell(name, level, body, fit) {
+    const badge = level === 'No Data' ? 'NO DATA' : `${level.toUpperCase()} RISK`;
+    return `<div class="risk-map-popup rf-popup"${fit?.bodyMax ? ` style="--rf-body-max:${Math.round(fit.bodyMax)}px"` : ''}><div class="rf-head"><strong>${escapeHtml(displayName(name))}</strong><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(badge)}</span></div><div class="rf-popup-body">${body}</div></div>`;
 }
 
 function farmerCurrentDetailMarkup(name, entry) {
     const level = riskLevel(entry);
     const weather = currentWeatherParts(entry);
     const conditions = weather.rows.length
-        ? rowsMarkup(weather.rows).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts')
-        : `<p>${escapeHtml(weather.stale ? 'Weather data is stale. A new reading is not available right now.' : 'Weather information is temporarily unavailable.')}</p>`;
+        ? `${rowsMarkup(weather.rows).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts')}<p class="rf-small">${escapeHtml(weather.notice)}</p>`
+        : `<p>${escapeHtml(weather.notice)}</p>${weather.lastAvailable ? `<p class="rf-small">${escapeHtml(weather.lastAvailable)}</p>` : ''}${!weather.stale ? `<p>The current farm risk is still: <strong>${escapeHtml(level.toUpperCase())}</strong></p>` : ''}`;
     const riskMeaning = CURRENT_RISK_MEANING[level] || CURRENT_RISK_MEANING['No Data'];
-    return `<div class="rf-detail"><div class="rf-head"><h3>${escapeHtml(displayName(name))}</h3><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><div class="rf-grid">${farmerBlock('Current Conditions', conditions)}${farmerBlock('Why This Risk', `<p>${escapeHtml(riskMeaning)}</p>`)}${farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)}${farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)}</div><p class="rf-small">${escapeHtml(weather.updateText)}</p><button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+    return `<div class="rf-detail"><div class="rf-head"><h3>${escapeHtml(displayName(name))}</h3><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><div class="rf-grid">${farmerBlock('Current Weather', conditions)}${farmerBlock('Risk Meaning', `<p>${escapeHtml(riskMeaning)}</p>`)}${farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)}${farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)}</div><button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
 }
 
 const TREND_TEXT = { increasing: '↑ Increasing risk', decreasing: '↓ Decreasing risk', stable: '→ Stable' };
@@ -240,16 +314,21 @@ function farmerParts(entry, month, months) {
 const farmerBadge = (parts) => `<span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[parts.level]}" title="${escapeHtml(LEVEL_HINT[parts.level] || '')}">${escapeHtml(parts.badge)}</span>`;
 const farmerWeather = (parts) => (parts.weather.length ? `<div class="rf-weather">${parts.weather.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>` : '');
 // One short line for the popup: the label itself says the forecast is for Lian, so no extra note is needed there.
+// One line, e.g. "About 74 mm rain · 27°C · 79% humidity"; the block title says it is the Lian forecast.
 const farmerPopupWeather = (parts) => {
     const values = { Rainfall: (v) => `${v} rain`, Temperature: (v) => v, Humidity: (v) => `${v} humidity` };
-    return parts.weather.length ? `<p class="rf-popup-weather"><span>Weather forecast for Lian</span>${escapeHtml(parts.weather.map(([label, value]) => values[label](value)).join(' · '))}</p>` : '';
+    return parts.weather.map(([label, value]) => values[label](value)).join(' · ');
 };
 const farmerBlock = (title, body) => (body ? `<section class="rf-block"><h4>${escapeHtml(title)}</h4>${body}</section>` : '');
 const farmerActions = (parts) => (parts.actions.length ? parts.actions.map((action) => `<p>${escapeHtml(action)}</p>`).join('') : '');
 
-function farmerPopupMarkup(name, entry, month, months) {
+function farmerPopupMarkup(name, entry, month, months, fit) {
     const parts = farmerParts(entry, month, months);
-    return `<div class="risk-map-popup rf-popup"><div class="rf-head"><strong>${escapeHtml(displayName(name))}</strong>${farmerBadge(parts)}</div><p class="rf-month">${escapeHtml(month?.label || '')}</p>${farmerPopupWeather(parts)}${farmerBlock('Possible Effect', parts.effect ? `<p>${escapeHtml(parts.effect)}</p>` : '')}${farmerBlock('What You Can Do', farmerActions(parts))}</div>`;
+    const weather = farmerPopupWeather(parts);
+    return farmerPopupShell(name, parts.level, ''
+        + farmerBlock(`Lian forecast · ${month?.label || ''}`, `<p>${escapeHtml(weather || 'Forecast weather is not available for this month.')}</p>`)
+        + farmerBlock('Possible Effect', parts.effect ? `<p>${escapeHtml(parts.effect)}</p>` : '')
+        + farmerBlock('What You Can Do', parts.actions.length ? `<p>${escapeHtml(parts.actions.join(' '))}</p>` : ''), fit);
 }
 
 function farmerDetailMarkup(name, entry, month, months) {
@@ -286,7 +365,9 @@ function overviewMarkup(month) {
 
 export function initBarangayRiskMap() {
     const mapElement = document.getElementById('barangayRiskMap');
-    if (!mapElement || !window.L || mapElement.dataset.initialized === 'true') return;
+    if (!mapElement) return;
+    initRiskMeaningGuide();
+    if (!window.L || mapElement.dataset.initialized === 'true') return;
     mapElement.dataset.initialized = 'true';
     const L = window.L;
     const shell = mapElement.closest('[data-risk-map-shell]');
@@ -304,6 +385,47 @@ export function initBarangayRiskMap() {
     // Forecast mode (Heat Map page only): activeMonth null shows current conditions, otherwise a 'YYYY-MM' forecast month.
     const forecastBox = card?.querySelector('[data-risk-forecast]');
     const farmerView = forecastBox?.dataset.forecastAudience === 'farmer';
+    // Where a farmer popup can sit fully visible: inside the map, below the sticky Forecast View toolbar and the
+    // app's top bar, and inside the window. Measured at click time because it depends on the scroll position.
+    const forecastToolbar = card?.querySelector('[data-risk-map-toolbar]');
+    let popupFit = null;
+    const measurePopupFit = () => {
+        const box = mapElement.getBoundingClientRect();
+        const covers = [forecastToolbar, document.querySelector('.topbar')].map((element) => element?.getBoundingClientRect().bottom ?? 0);
+        const visibleTop = Math.max(box.top, 0, ...covers);
+        const visibleBottom = Math.min(box.bottom, window.innerHeight);
+        // Leaflet's maxWidth is the content width; the card adds ~30px of margin and border around it.
+        // Content ≤250px keeps the card near 280px, and on phones at least 20px clear of each map edge.
+        const width = Math.max(180, Math.min(250, box.width - 72));
+        let top = Math.max(0, visibleTop - box.top) + 12;
+        let left = 16;
+        // Leaflet draws its zoom buttons above popups: keep the card beside them where the map is wide enough,
+        // otherwise (phones) below them.
+        const zoom = mapElement.querySelector('.leaflet-control-zoom')?.getBoundingClientRect();
+        if (zoom && zoom.height) {
+            const besideZoom = zoom.right - box.left + 8;
+            if (box.width - besideZoom - 16 >= width + 32) left = besideZoom;
+            else top = Math.max(top, zoom.bottom - box.top + 8);
+        }
+        return {
+            top,
+            left,
+            bottom: Math.max(0, box.bottom - visibleBottom) + 12,
+            width,
+            // Room for the scrolling part under the popup's name/risk row (~48px) and above its pointer (~20px).
+            bodyMax: Math.max(110, box.top + box.height - Math.max(visibleTop, box.top + top - 12) - (Math.max(0, box.bottom - visibleBottom)) - 24 - 48 - 20),
+        };
+    };
+    const fitPopup = (layer) => {
+        if (!farmerView || !layer.getPopup()) return;
+        popupFit = measurePopupFit();
+        Object.assign(layer.getPopup().options, {
+            autoPanPaddingTopLeft: [popupFit.left, popupFit.top],
+            autoPanPaddingBottomRight: [16, popupFit.bottom],
+            maxWidth: popupFit.width,
+            minWidth: Math.min(220, popupFit.width),
+        });
+    };
     const spinner = shell?.querySelector('[data-risk-map-spinner]');
     const forecastEntries = new Map();
     let forecastData = null;
@@ -482,10 +604,13 @@ export function initBarangayRiskMap() {
                     const own = name === highlightBarangay;
                     // Content is built when shown, so it always matches the selected month.
                     layer.bindTooltip(() => tooltipMarkup(name), { sticky: true, direction: 'top', className: own ? 'your-barangay-tooltip' : '' });
-                    layer.bindPopup(() => (!activeMonth ? (farmerView ? farmerCurrentPopupMarkup(name, entries.get(name)) : popupMarkup(name, entries.get(name)))
-                        : farmerView ? farmerPopupMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months)
-                        : forecastPopupMarkup(name, forecastEntries.get(name), activeForecast())), { closeButton: true, maxWidth: 260, maxHeight: 320 });
-                    layer.on({ mouseover: () => layer.setStyle(styleFor(name, name === selectedName, true)), mouseout: () => layer.setStyle(styleFor(name, name === selectedName)), click: () => { selectLayer(name, layer); layer.openPopup(); } });
+                    layer.bindPopup(() => (!activeMonth ? (farmerView ? farmerCurrentPopupMarkup(name, entries.get(name), popupFit) : popupMarkup(name, entries.get(name)))
+                        : farmerView ? farmerPopupMarkup(name, forecastEntries.get(name), activeForecast(), forecastData?.months, popupFit)
+                        : forecastPopupMarkup(name, forecastEntries.get(name), activeForecast())), farmerView
+                        // Farmer popup: pans fully into the visible part of the map and stays there; its body scrolls instead of the whole card.
+                        ? { closeButton: true, maxWidth: 250, autoPan: true, keepInView: true, className: 'rf-leaflet-popup' }
+                        : { closeButton: true, maxWidth: 260, maxHeight: 320 });
+                    layer.on({ mouseover: () => layer.setStyle(styleFor(name, name === selectedName, true)), mouseout: () => layer.setStyle(styleFor(name, name === selectedName)), mousedown: () => fitPopup(layer), click: () => { fitPopup(layer); selectLayer(name, layer); layer.openPopup(); if (farmerView) layer.getPopup().update(); } });
                 },
             }).addTo(map);
             updateCounts();

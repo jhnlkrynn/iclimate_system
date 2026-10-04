@@ -609,13 +609,12 @@ class PagePerformanceTest extends TestCase
         $this->assertSame(2, $missing, 'a missing table is checked every time, so migrating it takes effect at once');
     }
 
-    public function test_the_database_connection_is_reused_and_takes_the_schema_at_connect_time(): void
+    public function test_persistent_connections_are_opt_in_and_the_schema_is_sent_at_connect_time(): void
     {
         $config = config('database.connections.pgsql');
 
-        if (extension_loaded('pdo_pgsql')) {
-            $this->assertTrue($config['options'][\PDO::ATTR_PERSISTENT] ?? false, 'connections are reused between requests');
-        }
+        // Off unless DB_PERSISTENT=true (one authoritative pgsql options definition; see config/database.php).
+        $this->assertFalse($config['options'][\PDO::ATTR_PERSISTENT] ?? false, 'persistent connections are opt-in');
 
         $this->assertTrue($config['startup_search_path']);
         $this->assertInstanceOf(StartupSearchPathPostgresConnector::class, app('db.connector.pgsql'));
