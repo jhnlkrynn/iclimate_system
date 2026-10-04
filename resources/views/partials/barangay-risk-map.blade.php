@@ -39,23 +39,22 @@
     @if($forecast)
         <div class="risk-forecast-info risk-forecast-info--map">
             <details class="risk-forecast-about" data-forecast-about>
-                <summary><span class="risk-forecast-info-icon" aria-hidden="true">i</span>About this forecast</summary>
+                <summary><span class="risk-forecast-info-icon" aria-hidden="true">i</span>ABOUT THIS FORECAST</summary>
                 <div class="risk-forecast-about-body">
-                    <p>Weather forecasts are made for Lian, Batangas as a whole using iClimate's existing Random Forest forecast model. Barangay colors show the estimated rice-farming risk when that Lian forecast is combined with the information available for each barangay.</p>
+                    <p>iClimate creates one monthly weather forecast for Lian, Batangas. Barangay colors show how the weather may affect rice farming in each area.</p>
                     <dl class="risk-forecast-facts">
-                        <div><dt>Weather forecast source</dt><dd>iClimate Random Forest monthly forecast model</dd></div>
-                        <div><dt>Historical weather source</dt><dd>Ambulong weather station records used by iClimate</dd></div>
-                        <div><dt>Forecast coverage</dt><dd>Lian, Batangas (whole municipality)</dd></div>
-                        <div><dt>Forecast confidence</dt><dd data-forecast-about-confidence>Shown when a forecast month is selected</dd></div>
-                        <div><dt>Barangay risk assessment</dt><dd>Existing iClimate barangay risk engine</dd></div>
+                        <div><dt>Forecast Source</dt><dd>iClimate</dd></div>
+                        <div><dt>Coverage</dt><dd>Lian, Batangas</dd></div>
+                        <div><dt>Confidence</dt><dd data-forecast-about-confidence>Shown when a forecast month is selected</dd></div>
                     </dl>
-                    <p class="risk-forecast-note">This is not a PAGASA forecast. For official advisories, follow PAGASA and the Municipal Agriculture Office.</p>
+                    <p class="risk-forecast-note">For official warnings, follow PAGASA and the Municipal Agriculture Office.</p>
                 </div>
             </details>
             <details class="risk-forecast-about">
-                <summary><span class="risk-forecast-info-icon" aria-hidden="true">?</span>Why are barangay risks different?</summary>
+                <summary><span class="risk-forecast-info-icon" aria-hidden="true">?</span>WHY ARE BARANGAY RISKS DIFFERENT?</summary>
                 <div class="risk-forecast-about-body">
-                    <p>Every barangay gets the same Lian weather forecast. That forecast is then checked against what is known about farming in each barangay. For example, irrigated and rainfed areas respond differently to low rainfall.</p>
+                    <p>All barangays use the same Lian weather forecast.</p>
+                    <p>Risk may differ because farming conditions are different, such as irrigated and rainfed farms.</p>
                 </div>
             </details>
         </div>
@@ -127,6 +126,31 @@
             <span class="risk-map-legend-item"><span class="risk-map-legend-dot" style="--risk-color: #0d47a1"></span><span>Your Barangay (blue pin)</span></span>
         @endif
     </div>
+
+    @if($forecast && $forecastAudience === 'farmer')
+        <section class="risk-map-meaning" aria-labelledby="riskMeaningTitle">
+            <h3 id="riskMeaningTitle">Risk Meaning</h3>
+            <div class="risk-map-meaning-grid">
+                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="low" aria-label="Show meaning of Low risk">
+                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #2e7d32"></span><strong>Low</strong></span>
+                </button>
+                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="moderate" aria-label="Show meaning of Moderate risk">
+                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #f2b134"></span><strong>Moderate</strong></span>
+                </button>
+                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="high-severe" aria-label="Show meaning of High or Severe risk">
+                    <span class="risk-map-meaning-label"><span class="risk-map-meaning-dots"><span class="risk-map-meaning-dot" style="--risk-color: #e05a2b"></span><span class="risk-map-meaning-dot" style="--risk-color: #8b0000"></span></span><strong>High / Severe</strong></span>
+                </button>
+            </div>
+            <div class="risk-map-meaning-overlay" data-risk-meaning-overlay hidden>
+                <section class="risk-map-meaning-popup" role="dialog" aria-modal="true" aria-labelledby="riskMeaningPopupTitle" aria-describedby="riskMeaningPopupText">
+                    <button type="button" class="risk-map-meaning-close" data-risk-meaning-close aria-label="Close risk meaning">&times;</button>
+                    <h4 id="riskMeaningPopupTitle" data-risk-meaning-title></h4>
+                    <p class="risk-map-meaning-popup-text" data-risk-meaning-text></p>
+                    <p class="risk-map-meaning-popup-support" data-risk-meaning-support></p>
+                </section>
+            </div>
+        </section>
+    @endif
 
     <div class="risk-map-details" data-risk-map-details hidden aria-live="polite"></div>
 </section>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use App\Support\LianBarangays;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -56,6 +57,20 @@ class User extends Authenticatable
     public function farmerProfile(): HasOne
     {
         return $this->hasOne(FarmerProfile::class);
+    }
+
+    /** Resolve the exact registered Lian barangay without guessing ambiguous values. */
+    public function registeredBarangay(): ?string
+    {
+        $profileValue = $this->farmerProfile?->barangay;
+        if (is_string($profileValue) && trim($profileValue) !== '') {
+            // A present but ambiguous profile value is a genuine data-quality
+            // gap; never fall back to a different account value and silently
+            // highlight the wrong barangay.
+            return LianBarangays::canonicalName($profileValue);
+        }
+
+        return LianBarangays::canonicalName($this->barangay);
     }
 
     public function plantingSchedules(): HasMany

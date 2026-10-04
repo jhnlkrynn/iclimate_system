@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -60,22 +61,56 @@ class PlantingAdvisoryController extends Controller
     {
         $pagasaSummary = ['advisories_created' => 0, 'errors' => []];
         $isFarmer = $request->user()->role === User::ROLE_FARMER;
-        // A farmer sees what is active for their barangay, newest forecast run only (older runs of the same rule stay in the table).
-        $farmerScope = fn ($query) => $query->active()->forBarangay($request->user()->barangay)->latestRuns();
-        $query = $this->filteredQuery($request)->when($isFarmer, $farmerScope);
+        $farmerBarangay = $isFarmer ? $request->user()->registeredBarangay() : null;
+        // Farmers get two short lists: their own barangay first, then municipality-wide advice.
+        // Keep only active advice and the newest generated run; older runs remain stored for audit/history.
+        $farmerScope = fn ($query) => $query->active()->forBarangay($farmerBarangay)->latestRuns();
+        $myBarangayAdvisories = collect();
+        $lianWideAdvisories = collect();
+        $query = $this->filteredQuery($request);
+
+        if ($isFarmer) {
+            $farmerQuery = $farmerScope($query);
+            $myBarangayAdvisories = (clone $farmerQuery)
+                ->when($farmerBarangay, fn ($builder) => $builder->where('target_barangay', $farmerBarangay))
+                ->latest('valid_from')->latest('created_at')->get();
+            $lianWideAdvisories = (clone $farmerQuery)
+                ->where(function ($builder) {
+                    $builder->whereNull('target_barangay')
+                        ->orWhere('target_barangay', '')
+                        ->orWhere('target_scope', 'municipality');
+                })
+                ->latest('valid_from')->latest('created_at')->get();
+        }
         $activeTyphoonSafetyEvent = $isFarmer
             ? $typhoonSafety->activeEvent()
             : null;
         $summary = Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']);
+        $pagasaCheck = Cache::get('pagasa-advisories:last-fetch');
+        $weatherCheckedAt = $summary['lastWeather']?->fetched_at;
+        $pagasaCheckedAt = is_array($pagasaCheck) ? ($pagasaCheck['checked_at'] ?? null) : null;
+        $checkedAt = collect([$weatherCheckedAt, $pagasaCheckedAt])
+            ->filter()
+            ->map(fn ($value) => Carbon::parse($value))
+            ->sortDesc()
+            ->first();
+        $pagasaFailed = is_array($pagasaCheck)
+            && ($pagasaCheck['sources_checked'] ?? 0) > 0
+            && count($pagasaCheck['errors'] ?? []) >= $pagasaCheck['sources_checked'];
 
         if ($isFarmer) {
             // The farmer's own count, so the card matches the list below it.
-            $summary['activeCount'] = $farmerScope(PlantingAdvisory::query())->count();
-            $summary['pagasaAdvisoryCount'] = $farmerScope(PlantingAdvisory::query())->fromPagasaOnline()->count();
+            $summary['activeCount'] = $myBarangayAdvisories->count() + $lianWideAdvisories->count();
+            $summary['pagasaAdvisoryCount'] = $myBarangayAdvisories->concat($lianWideAdvisories)
+                ->filter(fn (PlantingAdvisory $advisory) => in_array($advisory->source, PlantingAdvisory::pagasaOnlineSources(), true))
+                ->count();
         }
 
         return [
-            'advisories' => $query->latest('valid_from')->paginate(10)->withQueryString(),
+            'advisories' => $isFarmer ? collect() : $query->latest('valid_from')->paginate(10)->withQueryString(),
+            'myBarangayAdvisories' => $myBarangayAdvisories,
+            'lianWideAdvisories' => $lianWideAdvisories,
+            'farmerBarangay' => $farmerBarangay,
             ...$summary,
             'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
             'typhoonSafetyResponse' => \App\Support\SchemaCache::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
@@ -91,6 +126,13 @@ class PlantingAdvisoryController extends Controller
             'barangays' => LianBarangays::all(),
             'canManage' => $this->canManage($request),
             'pagasaSummary' => $pagasaSummary,
+            'advisoryCheck' => [
+                'checked_at' => $checkedAt,
+                'last_successful_check' => is_array($pagasaCheck) && ! empty($pagasaCheck['last_successful_check'])
+                    ? Carbon::parse($pagasaCheck['last_successful_check'])
+                    : ($summary['lastWeather']?->fetched_at),
+                'unavailable' => $pagasaFailed,
+            ],
             'analyticsRun' => $this->requestedAnalyticsRun($request),
         ];
     }
@@ -402,8 +444,16 @@ class PlantingAdvisoryController extends Controller
         $summary = $pagasa->fetchAndStore($this->canManage($request));
 
         if (! empty($summary['errors']) && $summary['sources_checked'] === count($summary['errors'])) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Could not reach PAGASA right now. Please try again later.'], 503);
+            }
+
             return redirect()->route('planting-advisories.index')
                 ->with('error', 'Could not reach PAGASA right now. Please try again later.');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Advisories refreshed.', 'summary' => $summary]);
         }
 
         return redirect()->route('planting-advisories.index')

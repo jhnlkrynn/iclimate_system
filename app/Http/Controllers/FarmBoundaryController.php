@@ -106,7 +106,7 @@ class FarmBoundaryController extends Controller
             'full_name' => $user->name,
             'contact_number' => $user->contact_number,
             'address' => $user->address,
-            'barangay' => $user->barangay ?: 'Poblacion',
+            'barangay' => $user->registeredBarangay(),
             'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
         ]);
     }

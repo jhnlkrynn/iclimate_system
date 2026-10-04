@@ -160,7 +160,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $barangay = $user?->role === User::ROLE_FARMER
-            ? ($user->farmerProfile?->barangay ?? $user->barangay)
+            ? $user->registeredBarangay()
             : null;
 
         return view('heat-map.index', [

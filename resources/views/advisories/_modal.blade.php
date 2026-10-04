@@ -13,6 +13,7 @@
     $validUntil = $local($advisory->valid_until);
     $alert = $view->alertLevel();
     $officialUrl = $view->officialUrl();
+    $displayArea = $isFarmer ? $view->farmerArea() : $view->area();
     $summary = $view->quickSummary();
     $effects = $view->farmEffects();
     $actions = $view->actions();
@@ -26,7 +27,7 @@
         <h2 id="fadModalTitle" tabindex="-1">{{ $advisory->title }}</h2>
         <p class="fad-m-meta">
             @if ($issued)<span>Issued: {{ $issued->format('F j, Y') }}</span>@endif
-            <span>For: {{ $view->area() }}</span>
+            <span>For: {{ $displayArea }}</span>
         </p>
         @if ($alert)
             <p class="fad-m-alert is-{{ $alert['tone'] }}">@include('dashboards.mao.icon', ['name' => 'alert'])<span>{{ $alert['label'] }}</span></p>
@@ -88,13 +89,16 @@
                 <p class="fad-m-small">{{ $note }}</p>
             @endforeach
             <p class="fad-m-small">Weather source: Open-Meteo</p>
+            @if($isFarmer && $advisory->target_barangay)
+                <p class="fad-m-small">Weather information is based on the nearest available forecast data.</p>
+            @endif
         @endif
     </section>
 
     <section class="fad-m-section" aria-labelledby="fadDetailsTitle">
         <h3 id="fadDetailsTitle">Advisory Details</h3>
         <dl class="fad-m-details">
-            <div><dt>Area</dt><dd>{{ $view->area() }}</dd></div>
+            <div><dt>Area</dt><dd>{{ $displayArea }}</dd></div>
             <div><dt>Issued</dt><dd>{{ $issued?->format('F j, Y · g:i A') ?? 'Not available' }}</dd></div>
             @if ($validFrom && $validFrom->isFuture())
                 <div><dt>Starts</dt><dd>{{ $validFrom->format('F j, Y · g:i A') }}</dd></div>

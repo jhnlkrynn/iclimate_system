@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\FarmerProfile;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +35,15 @@ class ProfileController extends Controller
         }
 
         $request->user()->save();
+
+        if ($request->user()->role === User::ROLE_FARMER && $request->has('barangay')) {
+            $profile = $request->user()->farmerProfile()->firstOrCreate([], [
+                'full_name' => $request->user()->name,
+                'contact_number' => $request->user()->contact_number,
+                'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
+            ]);
+            $profile->update(['barangay' => $request->validated('barangay') ?: null]);
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

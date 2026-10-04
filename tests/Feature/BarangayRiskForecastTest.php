@@ -147,12 +147,14 @@ class BarangayRiskForecastTest extends TestCase
             ->assertSee('Barangay Climate Risk Map')
             ->assertSee('Current and monthly rice-farming risk conditions across Lian, Batangas.')
             ->assertSee('Monthly weather forecasts apply to Lian, Batangas as a whole.')
-            ->assertSee('About this forecast')
-            ->assertSee('iClimate Random Forest monthly forecast model')
-            ->assertSee('Ambulong weather station records used by iClimate')
-            ->assertSee('Lian, Batangas (whole municipality)')
-            ->assertSee('This is not a PAGASA forecast.')
-            ->assertSee('Why are barangay risks different?')
+            ->assertSee('ABOUT THIS FORECAST')
+            ->assertSee('Forecast Source')
+            ->assertSee('iClimate')
+            ->assertSee('Coverage')
+            ->assertSee('Lian, Batangas')
+            ->assertSee('For official warnings, follow PAGASA and the Municipal Agriculture Office.')
+            ->assertSee('WHY ARE BARANGAY RISKS DIFFERENT?')
+            ->assertSee('All barangays use the same Lian weather forecast.')
             ->assertSee('Current Conditions')
             // The placeholder exposure rating is never presented as a validated hazard figure.
             ->assertDontSee('Hazard Score')
@@ -167,12 +169,19 @@ class BarangayRiskForecastTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
         $this->actingAs($farmer)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertSee('data-forecast-audience="farmer"', false);
+            ->assertSee('data-forecast-audience="farmer"', false)
+            ->assertSee('Risk Meaning')
+            ->assertSee('data-risk-meaning-trigger', false)
+            ->assertSee('data-risk-level="low"', false)
+            ->assertSee('data-risk-level="moderate"', false)
+            ->assertSee('data-risk-level="high-severe"', false)
+            ->assertSee('data-risk-meaning-overlay', false);
 
         foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))->get(route('heat-map.index'))
                 ->assertOk()
-                ->assertSee('data-forecast-audience="staff"', false);
+                ->assertSee('data-forecast-audience="staff"', false)
+                ->assertDontSee('Conditions are generally okay for rice farming.');
         }
     }
 

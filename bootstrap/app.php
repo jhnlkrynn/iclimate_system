@@ -38,9 +38,23 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $exception, Request $request) {
             // A database outage must not turn every database-backed page into the generic 500 screen.
+            // Only an unreachable or dropped connection counts as an outage: any other database error
+            // (bad SQL, missing table) is a bug and goes through the normal 500 path, so it is not
+            // disguised as "Data Service Unavailable". With APP_DEBUG on, Laravel shows the real exception.
+            if (config('app.debug')) {
+                return null;
+            }
+
+            $lostConnection = app(\Illuminate\Contracts\Database\LostConnectionDetector::class);
+
             // Walk the exception chain because Laravel commonly wraps PDOException in QueryException.
             for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
-                if (! $current instanceof ConnectionException && ! $current instanceof \PDOException) {
+                $unavailable = $current instanceof ConnectionException
+                    || $current instanceof \Illuminate\Database\LostConnectionException
+                    // SQLSTATE class 08 = connection exception (e.g. 08006 could not connect).
+                    || ($current instanceof \PDOException && (str_starts_with((string) $current->getCode(), '08') || $lostConnection->causedByLostConnection($current)));
+
+                if (! $unavailable) {
                     continue;
                 }
 

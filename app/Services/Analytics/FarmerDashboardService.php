@@ -91,7 +91,7 @@ final class FarmerDashboardService
     {
         $now = CarbonImmutable::now(self::TIMEZONE);
         $profile = $user->farmerProfile;
-        $barangay = $profile?->barangay ?? $user->barangay;
+        $barangay = $user->registeredBarangay();
         $forceWeather = $forceWeather || in_array('weather', $refresh, true);
 
         $weather = $this->weather($forceWeather, $now);
