@@ -44,7 +44,7 @@ class ItDashboardTabsTest extends TestCase
     public function test_each_tab_is_selected_from_the_url_and_defaults_to_overview(): void
     {
         $it = $this->it();
-        foreach (['overview' => 'Overview', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'] as $key => $label) {
+        foreach (['overview' => 'Overview', 'heatmap' => 'Heat Map', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'] as $key => $label) {
             $html = $this->actingAs($it)->get(route('admin.dashboard', ['tab' => $key]))->assertOk()->assertViewHas('tab', $key)->getContent();
 
             $this->assertMatchesRegularExpression('/data-tab="'.$key.'"[^>]*aria-selected="true"/', $html, $key);

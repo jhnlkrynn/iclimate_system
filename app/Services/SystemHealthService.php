@@ -8,6 +8,7 @@ use App\Models\BackupVerification;
 use App\Models\MlModel;
 use App\Models\MonthlyWeatherPrediction;
 use App\Services\MachineLearning\RuntimeModelClient;
+use App\Support\PythonRuntime;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -553,18 +554,8 @@ class SystemHealthService
      */
     private function pythonBinaryExists(): bool
     {
-        $configured = trim((string) config('iclimate.python_binary', ''), " \t\n\r\0\x0B\"'");
+        $python = PythonRuntime::executable();
 
-        $candidates = $configured !== ''
-            ? [$configured]
-            : [base_path('.venv/Scripts/python.exe'), base_path('.venv/bin/python')];
-
-        foreach ($candidates as $candidate) {
-            if (is_file($candidate)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $python !== null && is_file($python);
     }
 }

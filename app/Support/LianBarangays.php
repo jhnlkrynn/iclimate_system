@@ -102,7 +102,13 @@ class LianBarangays
             }
         }
 
-        return null;
+        // Keep local Poblacion aliases at the system boundary while all map
+        // and risk logic uses one stable canonical name.
+        return match ($needle) {
+            '1 bonbon', 'bonbon', '1 bonbon poblacion' => 'Barangay 1 (Pob.)',
+            '5 tabok city', 'tabok city', '5 tabok city poblacion' => 'Barangay 5 (Pob.)',
+            default => null,
+        };
     }
 
     private static function normalize(string $barangay): string

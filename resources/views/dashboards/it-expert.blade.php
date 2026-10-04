@@ -2,7 +2,7 @@
     @php
         $glyph = ['ok' => '✓', 'warn' => '▲', 'crit' => '✕', 'unk' => '?'];
         $overall = $it['overall'];
-        $tabs = ['overview' => 'Overview', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'];
+        $tabs = ['overview' => 'Overview', 'heatmap' => 'Heat Map', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'];
         // Section cards get a 3px top border in their status colour.
         $worstPipeline = collect($it['pipeline'])->contains('level', 'crit') ? 'crit' : (collect($it['pipeline'])->contains('level', 'warn') ? 'warn' : 'ok');
     @endphp
@@ -267,6 +267,27 @@
                             <div class="itd-chart-state is-skeleton" data-activity-state role="status">Loading system activity...</div>
                         </div>
                         <p class="itd-foot">Errors are failed logins, failed processing runs and failed jobs. Each line is a different kind of event, so read them by label, not only by colour.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        {{-- Heat Map --}}
+        <div role="tabpanel" id="itd-panel-heatmap" data-panel="heatmap" aria-labelledby="itd-tab-heatmap" @if ($tab !== 'heatmap') hidden @endif>
+            <div class="itd-row">
+                <div class="itd-cell">
+                    <section class="itd-card" aria-labelledby="itdHeatMapTitle">
+                        <div class="itd-card-head">
+                            <div>
+                                <h2 id="itdHeatMapTitle">Lian Municipality Risk Map</h2>
+                                <p class="itd-sub">All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.</p>
+                            </div>
+                        </div>
+                        @include('partials.barangay-risk-map', [
+                            'heading' => 'Lian Municipality Risk Map',
+                            'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
+                            'showRefresh' => true,
+                        ])
                     </section>
                 </div>
             </div>

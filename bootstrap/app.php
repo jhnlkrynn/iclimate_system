@@ -7,6 +7,7 @@ use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Database\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -36,6 +37,33 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $exception, Request $request) {
+            // A database outage must not turn every database-backed page into the generic 500 screen.
+            // Walk the exception chain because Laravel commonly wraps PDOException in QueryException.
+            for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
+                if (! $current instanceof ConnectionException && ! $current instanceof \PDOException) {
+                    continue;
+                }
+
+                Log::error('Database unavailable while handling a request.', [
+                    'url' => $request->fullUrl(),
+                    'method' => $request->method(),
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'The data service is temporarily unavailable. Please try again shortly.',
+                    ], 503);
+                }
+
+                return response()->view('errors.503', [
+                    'exception' => $exception,
+                    'title' => 'Data Service Unavailable',
+                    'message' => 'The data service is temporarily unavailable. Please try again shortly.',
+                ], 503);
+            }
+
             if (! $exception instanceof HttpExceptionInterface || $exception->getStatusCode() !== 505) {
                 return null;
             }

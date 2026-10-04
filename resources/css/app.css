@@ -1458,3 +1458,47 @@ body[data-user-role="Farmer"],
 body[data-user-role="Farmer"] * {
     font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif;
 }
+
+/* Fresh Leaflet risk-map surface. The older selectors above remain available
+   to unrelated legacy cards, while these scoped rules define the new map UI. */
+.risk-map-card { background: #fff; border: 1px solid #e3e9e5; border-radius: 18px; padding: clamp(1rem, 2vw, 1.5rem); box-shadow: 0 10px 28px rgba(31, 57, 46, .08); }
+.risk-map-card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.1rem; }
+.risk-map-section-label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .13em; margin-bottom: .35rem; }
+.risk-map-card .risk-map-title { color: #172b24; font-size: clamp(1.2rem, 2vw, 1.55rem); margin: 0; }
+.risk-map-card .risk-map-subtitle { color: #66756f; font-size: .92rem; line-height: 1.55; max-width: 780px; margin: .35rem 0 0; }
+.risk-map-refresh { border: 1px solid #b9cec3; border-radius: 999px; background: #f7fbf8; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; padding: .55rem .85rem; white-space: nowrap; }
+.risk-map-refresh:disabled { cursor: wait; opacity: .55; }
+.risk-map-card .risk-map-shell { position: relative; overflow: hidden; border-radius: 14px; background: #dfeae4; }
+.risk-map-card .risk-map-canvas { height: clamp(390px, 58vw, 600px); min-height: 350px; width: 100%; border-radius: 14px; overflow: hidden; }
+.risk-map-card .leaflet-container { font: inherit; background: #dfeae4; }
+/* The global img/svg reset (max-width: 100%) caps Leaflet's vector SVG to the
+   width of its pane, and Leaflet panes are 0x0 boxes, so the 19 GeoJSON paths
+   rendered into a 0x0 viewport. Leaflet only lifts that cap inside
+   .leaflet-overlay-pane, not in the custom riskPolygons pane, so lift it here
+   and leave width/height to the size Leaflet's renderer sets on the SVG. */
+.risk-map-card .leaflet-pane > svg { max-width: none !important; max-height: none !important; }
+.risk-map-loading, .risk-map-error { position: absolute; left: 50%; top: 1rem; z-index: 900; transform: translateX(-50%); border-radius: 999px; background: rgba(255,255,255,.94); box-shadow: 0 3px 12px rgba(0,0,0,.12); color: #26352f; font-size: .8rem; font-weight: 700; padding: .55rem .85rem; }
+.risk-map-error { color: #8b0000; }
+.risk-map-card .risk-map-legend { align-items: center; background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; display: flex; flex-wrap: wrap; gap: .7rem 1.1rem; margin: .85rem 0 0; padding: .75rem 1rem; }
+.risk-map-legend-title { color: #52645c; font-size: .78rem; font-weight: 800; margin-right: .2rem; }
+.risk-map-legend-item { align-items: center; color: #34453d; display: inline-flex; font-size: .8rem; gap: .35rem; }
+.risk-map-legend-item strong { color: #172b24; font-size: .75rem; }
+.risk-map-legend-dot { background: var(--risk-color); border: 1px solid rgba(38,53,47,.35); border-radius: 3px; display: inline-block; height: .8rem; width: 1.15rem; }
+.risk-map-card .leaflet-interactive { transition: fill-opacity .15s ease, stroke-width .15s ease; }
+.risk-map-card .leaflet-tooltip { border: 0; border-radius: 7px; box-shadow: 0 3px 12px rgba(0,0,0,.18); color: #1f3029; font-size: .78rem; }
+.risk-map-popup { display: grid; gap: .35rem; min-width: 130px; }
+.risk-map-popup strong { color: #172b24; font-size: .95rem; }
+.risk-map-popup-risk, .risk-map-detail-risk { background: var(--risk-color); border-radius: 5px; color: #fff; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .04em; padding: .3rem .45rem; }
+.risk-map-popup-hint { color: #687970; font-size: .72rem; }
+.risk-map-details { border-top: 1px solid #e3e9e5; margin-top: 1rem; padding-top: 1rem; }
+.risk-map-detail-content { align-items: center; display: flex; flex-wrap: wrap; gap: .65rem 1rem; }
+.risk-map-detail-content h3 { color: #172b24; font-size: 1.15rem; margin: .15rem 0 0; }
+.risk-map-detail-kicker { color: #66756f; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.risk-map-detail-content p { color: #66756f; flex: 1 1 100%; font-size: .83rem; margin: 0; }
+.risk-map-detail-close { background: transparent; border: 0; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; margin-left: auto; padding: .3rem; }
+@media (max-width: 600px) {
+    .risk-map-card-heading { display: block; }
+    .risk-map-refresh { margin-top: .8rem; }
+    .risk-map-card .risk-map-canvas { height: min(72vh, 470px); min-height: 330px; }
+    .risk-map-card .risk-map-legend { gap: .6rem .8rem; }
+}

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Support\PythonRuntime;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -756,20 +757,10 @@ class CandidatePredictionController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $pythonBinary =
-            (config('iclimate.python_binary') ?: base_path(
-                    '.venv/Scripts/python.exe'
-                ));
-
-        $pythonBinary =
-            trim(
-                (string)
-                $pythonBinary,
-                " \t\n\r\0\x0B\"'"
-            );
+        $pythonBinary = PythonRuntime::executable();
 
         if (
-            ! File::exists(
+            $pythonBinary === null || ! File::exists(
                 $pythonBinary
             )
         ) {

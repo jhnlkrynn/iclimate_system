@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use App\Support\LianBarangays;
 
 class LianBoundaryController extends Controller
 {
@@ -53,6 +54,17 @@ class LianBoundaryController extends Controller
             return [$this->localBoundaryGeojson(), 'Bundled iClimate fallback GeoJSON'];
         });
 
+        // Normalize and validate the source so every frontend receives one
+        // feature for each of Lian's 19 canonical barangays. An incomplete or
+        // duplicated provider response must never alter the mapped total.
+        $normalized = $this->normalizeBoundaryGeojson($geojson);
+        if ($normalized === null) {
+            $geojson = $this->localBoundaryGeojson();
+            $normalized = $this->normalizeBoundaryGeojson($geojson) ?? [];
+            $source = 'Bundled iClimate fallback GeoJSON';
+        }
+        $geojson['features'] = $normalized;
+
         $geojson['source'] = $source;
         $geojson['source_credit'] = $source === 'GeoRisk ArcGIS PSA Barangay Boundary API'
             ? 'Barangay boundary data retrieved online from the GeoRisk ArcGIS PSA Barangay Boundary API.'
@@ -76,5 +88,36 @@ class LianBoundaryController extends Controller
         $geojson = json_decode(file_get_contents($path) ?: '', true);
 
         return is_array($geojson) ? $geojson : ['type' => 'FeatureCollection', 'features' => []];
+    }
+
+    /** Return a complete, unique, canonical 19-feature collection. */
+    private function normalizeBoundaryGeojson(array $geojson): ?array
+    {
+        $features = [];
+        $seen = [];
+
+        foreach ($geojson['features'] ?? [] as $feature) {
+            if (! is_array($feature)) {
+                continue;
+            }
+
+            $properties = $feature['properties'] ?? [];
+            $canonical = LianBarangays::canonicalName($properties['brgy_name'] ?? null);
+            if ($canonical === null || isset($seen[$canonical])) {
+                continue;
+            }
+
+            $properties['brgy_name'] = $canonical;
+            $feature['properties'] = $properties;
+            $features[] = $feature;
+            $seen[$canonical] = true;
+        }
+
+        if (count($features) !== count(LianBarangays::all())
+            || array_diff(LianBarangays::all(), array_keys($seen)) !== []) {
+            return null;
+        }
+
+        return $features;
     }
 }

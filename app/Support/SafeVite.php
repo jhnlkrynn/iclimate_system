@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Foundation\Vite;
-use Illuminate\Foundation\ViteManifestNotFoundException;
+use Illuminate\Foundation\ViteException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 
@@ -19,7 +19,7 @@ class SafeVite extends Vite
     {
         try {
             return parent::__invoke($entrypoints, $buildDirectory);
-        } catch (ViteManifestNotFoundException $e) {
+        } catch (ViteException $e) {
             if (! $this->warned) {
                 $this->warned = true;
                 Log::warning($e->getMessage().' — run "npm install && npm run build" to compile the CSS/JS assets.');

@@ -11,6 +11,31 @@
         data-text-failed="{{ __('farmer.state.refresh_failed') }}" data-text-offline="{{ __('farmer.state.offline') }}" data-text-seeing="{{ __('farmer.state.seeing_from') }}"
         data-text-updated="{{ __('farmer.state.updated_announce') }}" data-text-old="{{ __('farmer.header.old_data') }}"
         data-font="Inter">
+
+        <nav class="mfd-tabs" aria-label="Farmer dashboard sections">
+            <a class="mfd-tab @if (($tab ?? 'overview') === 'overview') is-active @endif"
+                href="{{ route('farmer.dashboard', ['tab' => 'overview']) }}"
+                @if (($tab ?? 'overview') === 'overview') aria-current="page" @endif>Overview</a>
+            <a class="mfd-tab @if (($tab ?? 'overview') === 'heatmap') is-active @endif"
+                href="{{ route('farmer.dashboard', ['tab' => 'heatmap']) }}"
+                @if (($tab ?? 'overview') === 'heatmap') aria-current="page" @endif>Heat Map</a>
+        </nav>
+
+        @if (($tab ?? 'overview') === 'heatmap')
+            <section class="mfd-card mfd-map-page" aria-labelledby="farmerHeatMapTitle">
+                <div class="mfd-card-head">
+                    <div>
+                        <h1 id="farmerHeatMapTitle" class="mfd-map-section-label">LIAN MUNICIPALITY RISK MAP</h1>
+                    </div>
+                </div>
+                @include('partials.barangay-risk-map', [
+                    'heading' => 'Lian Municipality Risk Map',
+                    'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
+                    'showRefresh' => false,
+                    'highlightBarangay' => $f['barangay'] ? \App\Support\LianBarangays::canonicalName($f['barangay']) : null,
+                ])
+            </section>
+        @else
         {{-- Read out by screen readers after a refresh; the sections themselves are not live, so a refresh does not re-read the page. --}}
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden>
@@ -29,8 +54,8 @@
             <div class="mfd-map-body">
                 <p class="mfd-foot" style="margin-top:0">{{ __('farmer.risk.map_note') }}</p>
                 @include('partials.barangay-risk-map', [
-                    'heading' => __('farmer.risk.map_heading'),
-                    'subheading' => __('farmer.risk.map_subheading'),
+                    'heading' => 'Lian Municipality Risk Map',
+                    'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
                     'showRefresh' => false,
                     'highlightBarangay' => $f['barangay'] ? \App\Support\LianBarangays::canonicalName($f['barangay']) : null,
                 ])
@@ -62,5 +87,6 @@
                 </ul>
             </div>
         </details>
+        @endif
     </div>
 </x-app-layout>

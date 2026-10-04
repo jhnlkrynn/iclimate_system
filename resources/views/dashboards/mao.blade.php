@@ -308,8 +308,8 @@
                 <div class="mtd-cell">
                     <section class="mtd-card" id="mtdRiskMap" aria-label="Barangay risk map">
                         @include('partials.barangay-risk-map', [
-                            'heading' => 'Barangay Agricultural Risk Map',
-                            'subheading' => 'All 19 Lian barangays, from live weather and recorded rice yield. Click a barangay for details.',
+                            'heading' => 'Lian Municipality Risk Map',
+                            'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
                             'showRefresh' => true,
                         ])
                     </section>

@@ -412,7 +412,7 @@ class BarangayRiskMapTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('Barangay Agricultural Risk Map');
+        $response->assertSee('Lian Municipality Risk Map');
     }
 
     /**
@@ -516,7 +516,41 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('data-risk-map-refresh', false);
     }
 
-    public function test_admin_dashboard_no_longer_embeds_the_risk_map_but_mao_still_does(): void
+    public function test_farmer_can_open_the_heat_map_tab(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+
+        $user = User::factory()->create([
+            'role' => User::ROLE_FARMER,
+            'barangay' => 'Malaruhatan',
+        ]);
+
+        $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']))
+            ->assertOk()
+            ->assertViewHas('tab', 'heatmap')
+            ->assertSee('aria-current="page"', false)
+            ->assertSee('Lian Municipality Risk Map')
+            ->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
+            ->assertSee('data-highlight-barangay="Malaruhatan"', false);
+    }
+
+    public function test_shared_heat_map_page_is_available_to_every_account_role(): void
+    {
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($user)->get(route('heat-map.index'))
+                ->assertOk()
+                ->assertSee('Lian Municipality Risk Map')
+                ->assertSee('id="barangayRiskMap"', false)
+                ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
+                ->assertSee('href="'.route('heat-map.index').'"', false);
+        }
+    }
+
+    public function test_admin_dashboard_has_a_heat_map_tab_and_mao_still_does(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
@@ -525,8 +559,10 @@ class BarangayRiskMapTest extends TestCase
 
         $this->actingAs($itExpert)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertDontSee('id="barangayRiskMap"', false)
-            ->assertDontSee('Lian Municipality Risk Map');
+            ->assertSee('Heat Map')
+            ->assertSee('id="itd-panel-heatmap"', false)
+            ->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
@@ -702,6 +738,33 @@ class BarangayRiskMapTest extends TestCase
             $this->assertArrayNotHasKey('icon', $entry['weather']);
             $this->assertArrayNotHasKey('condition', $entry['weather']);
         }
+    }
+
+    public function test_live_outage_keeps_last_verified_colored_risk_instead_of_erasing_the_map(): void
+    {
+        Cache::flush();
+        Cache::forever(BarangayRiskMapService::LATEST_KEY, [
+            'generated_at' => now()->subMinutes(8)->toIso8601String(),
+            'source_note' => 'Verified test map.',
+            'barangays' => [[
+                'barangay' => 'Bagong Pook',
+                'risk_level' => 'High',
+                'risk_score' => 0.72,
+                'color' => 'orange',
+                'status' => 'ok',
+                'updated_at' => now()->subMinutes(8)->toIso8601String(),
+                'weather' => ['status' => 'fresh', 'temperature_c' => 29],
+            ]],
+        ]);
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+
+        $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
+
+        $this->assertSame('High', $entry['risk_level']);
+        $this->assertSame('stale', $entry['status']);
+        $this->assertTrue($map['stale']);
+        $this->assertSame(1, $map['stale_count']);
     }
 
     public function test_farmer_summary_card_shows_the_weather_icon_when_fresh_weather_is_available(): void

@@ -63,6 +63,9 @@ Route::get(
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    Route::get('/heat-map', [DashboardController::class, 'heatMap'])
+        ->name('heat-map.index');
+
     /*
     |--------------------------------------------------------------------------
     | Farmer Dashboard

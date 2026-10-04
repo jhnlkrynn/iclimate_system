@@ -25,6 +25,7 @@ use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
 use App\Support\DashboardData;
+use App\Support\LianBarangays;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\MachineLearning\ModelEvaluationService;
 use App\Services\Prediction\RiceYieldPredictionService;
@@ -61,7 +62,7 @@ class DashboardController extends Controller
     private const IT_LIVE_SLOTS = ['summary', 'kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
 
     /** Tabs of the IT dashboard (?tab=...). */
-    private const IT_TABS = ['overview', 'security', 'users', 'resources', 'activity'];
+    private const IT_TABS = ['overview', 'heatmap', 'security', 'users', 'resources', 'activity'];
 
     /** Sections the Farmer refresh button re-renders (partials under dashboards/farmer). */
     private const FARMER_LIVE_SLOTS = ['header', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'advisories'];
@@ -140,6 +141,9 @@ class DashboardController extends Controller
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $user = $request->user();
+        $tab = in_array($request->query('tab'), ['overview', 'heatmap'], true)
+            ? $request->query('tab')
+            : 'overview';
         $key = FarmerDashboardService::cacheKey($user);
         $payload = Cache::get($key);
         if (! is_array($payload)) {
@@ -148,7 +152,20 @@ class DashboardController extends Controller
             Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
-        return view('dashboards.farmer', ['f' => $payload]);
+        return view('dashboards.farmer', ['f' => $payload, 'tab' => $tab]);
+    }
+
+    /** Shared barangay heat map available from every authenticated account. */
+    public function heatMap(Request $request): View
+    {
+        $user = $request->user();
+        $barangay = $user?->role === User::ROLE_FARMER
+            ? ($user->farmerProfile?->barangay ?? $user->barangay)
+            : null;
+
+        return view('heat-map.index', [
+            'highlightBarangay' => $barangay ? LianBarangays::canonicalName($barangay) : null,
+        ]);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\MlModel;
+use App\Support\PythonRuntime;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use Throwable;
@@ -130,18 +131,6 @@ class RegisterExistingMlModels extends Command
 
     private function pythonBinary(): string
     {
-        $configured = trim((string) config('iclimate.python_binary', ''), " \t\n\r\0\x0B\"'");
-
-        if ($configured !== '') {
-            return $configured;
-        }
-
-        foreach ([base_path('.venv/Scripts/python.exe'), base_path('.venv/bin/python')] as $candidate) {
-            if (is_file($candidate)) {
-                return $candidate;
-            }
-        }
-
-        return 'python';
+        return PythonRuntime::executable() ?? 'python';
     }
 }
