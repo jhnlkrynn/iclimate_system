@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="container-fluid py-3">
         <section class="page-hero">
-            <div class="eyebrow mb-2">Climora AI</div>
+            <div class="eyebrow mb-2 d-flex align-items-center gap-2"><img src="{{ asset('images/climora-ai-icon.png') }}" alt="" width="28" height="28" style="border-radius:6px;background:#fff;">Climora AI</div>
             <h1 class="h3 mb-1">Chatbot knowledge and language filter</h1>
             <p class="mb-0">Manage what Climora understands about rice farming and weather, and which language it refuses. Changes apply to the next chat message. Farmers cannot see or change any of this.</p>
         </section>

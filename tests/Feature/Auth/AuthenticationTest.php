@@ -220,6 +220,48 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_failed_login_shows_inline_alert_without_revealing_which_field_was_wrong(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->from('/login')->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+
+        $this->assertGuest();
+        $this->followRedirects($response)
+            ->assertSee('Unable to sign in. Please check your email and password.')
+            ->assertSee('value="'.$user->email.'"', false);
+    }
+
+    public function test_inactive_account_can_not_sign_in(): void
+    {
+        $user = User::factory()->create(['status' => User::STATUS_INACTIVE]);
+
+        $response = $this->from('/login')->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $this->followRedirects($response)
+            ->assertSee('This account is inactive. Please contact the administrator.');
+    }
+
+    public function test_remember_me_sets_the_remember_cookie_only_when_checked(): void
+    {
+        $user = User::factory()->create();
+        $recaller = Auth::guard('web')->getRecallerName();
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password', 'remember' => 'on'])
+            ->assertCookie($recaller);
+        Auth::logout();
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertCookieMissing($recaller);
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

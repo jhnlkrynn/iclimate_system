@@ -96,6 +96,29 @@ class CalendarPageTest extends TestCase
         }
     }
 
+    public function test_add_my_planting_plan_opens_the_plan_form_as_a_pop_up(): void
+    {
+        $farmer = $this->farmer();
+        $html = $this->actingAs($farmer)->get(route('calendar.index'))->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, ' data-plan-open aria-haspopup="dialog"'));                               // the one Add button opens the pop-up
+        $this->assertStringContainsString('<div class="fad-modal" id="plantingPlanModal" data-open-on-load="false" hidden>', $html);   // same pop-up parts as Advisories, closed until asked for
+        $this->assertStringContainsString('<button class="fad-btn is-primary" type="submit">Save Schedule</button>', $html);
+        $this->assertStringContainsString('action="'.route('farmer.planting-schedules.store').'"', $html);
+        $this->assertStringContainsString('<option value="Prenza" selected>', $html);              // prefilled from the farmer's barangay
+
+        // A plan with mistakes comes back to the calendar with the pop-up reopened and the entries kept.
+        $response = $this->actingAs($farmer)->from(route('calendar.index'))
+            ->post(route('farmer.planting-schedules.store'), ['planting_date' => '2026-10-20', 'season' => 'Dry']);
+        $response->assertRedirect(route('calendar.index'))->assertSessionHasErrors(['farm_type', 'scheduled_harvest_date']);
+
+        $html = $this->followRedirects($response)->getContent();
+        $this->assertStringContainsString('id="plantingPlanModal" data-open-on-load="true" hidden>', $html);
+        $this->assertStringContainsString('Please check the highlighted information.', $html);
+        $this->assertStringContainsString('<div class="fcal-plan-error">The farm type field is required.</div>', $html);   // beside the field
+        $this->assertStringContainsString('value="2026-10-20"', $html);
+    }
+
     public function test_a_farmers_own_records_show_on_the_calendar_in_upcoming_and_in_the_records_list(): void
     {
         $farmer = $this->farmer();
