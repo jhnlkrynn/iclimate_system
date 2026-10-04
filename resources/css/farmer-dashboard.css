@@ -6,19 +6,25 @@
  * status colours always paired with an icon and a word.
  */
 
-/* The whole page (sidebar, top bar, Climora chat included) uses the same family while this page is open. */
-body.is-farmer-dashboard {
+/* The whole page (sidebar, top bar, Climora chat included) uses the same family while this page is open.
+ * The IT Personnel dashboard (it-dashboard.css) is built on this same system, so it shares these page-level rules. */
+body.is-farmer-dashboard,
+body.is-it-dashboard {
     --ic-sidebar-bg: #0f5132;
     --mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mfd-serif: Georgia, "Times New Roman", Times, serif;
 }
 body.is-farmer-dashboard,
-body.is-farmer-dashboard *:not(svg):not(svg *) {
+body.is-farmer-dashboard *:not(svg):not(svg *),
+body.is-it-dashboard,
+body.is-it-dashboard *:not(svg):not(svg *) {
     font-family: var(--mfd-sans) !important;
     font-variant-numeric: tabular-nums;
 }
 body.is-farmer-dashboard .mfd h1,
-body.is-farmer-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-variant-numeric: lining-nums; }
+body.is-farmer-dashboard .mfd h2,
+body.is-it-dashboard .mfd h1,
+body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-variant-numeric: lining-nums; }
 
 .mfd {
     --brand: #0f5132; --accent: #198754; --bg: #f5f7f6; --card: #ffffff; --line: #e3e8e5; --rule: #d3dbd6;

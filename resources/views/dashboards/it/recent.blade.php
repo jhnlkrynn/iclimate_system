@@ -1,7 +1,7 @@
-<section class="itd-card" aria-labelledby="itdRecentTitle" data-it-recent>
-    <div class="itd-card-head">
-        <div><h2 id="itdRecentTitle">Recent System Activity</h2><p class="itd-sub">Latest 10 audit entries; failed logins and privileged actions are highlighted</p>@include('dashboards.it._updated', ['at' => $it['stamps']['now'] ?? $it['stamps']['now']])</div>
-        <a class="itd-btn is-quiet" href="{{ route('system-logs.index') }}">View All Logs</a>
+<section class="mfd-card itd-card" aria-labelledby="itdRecentTitle" data-it-recent>
+    <div class="mfd-card-head">
+        <div><h2 id="itdRecentTitle">Recent System Activity</h2><p class="itd-sub">Latest 10 audit entries; failed logins and privileged actions are highlighted</p>@include('dashboards.it._updated', ['at' => $it['stamps']['now']])</div>
+        <a class="mfd-btn is-quiet" href="{{ route('system-logs.index') }}">@include('dashboards.mao.icon', ['name' => 'report'])View All Logs</a>
     </div>
     <form class="itd-filters" data-recent-filters aria-label="Filter recent activity">
         <label>Role

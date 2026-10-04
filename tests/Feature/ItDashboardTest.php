@@ -124,7 +124,7 @@ class ItDashboardTest extends TestCase
     public function test_page_follows_the_layout_in_order_and_has_no_removed_sections(): void
     {
         $html = $this->page()->getContent();
-        $order = ['IT Dashboard', 'data-it-summary', 'data-it-kpis', 'data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-activity',
+        $order = ['IT Personnel Dashboard', 'data-it-summary', 'data-it-kpis', 'data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-activity',
             'data-it-security', 'data-it-roles', 'data-it-ai', 'data-it-usage', 'data-it-resources', 'data-it-integrity', 'data-it-ops', 'data-it-recent'];
 
         $last = -1;
@@ -189,9 +189,50 @@ class ItDashboardTest extends TestCase
         $html = $this->page()->getContent();
 
         $this->assertStringContainsString('data-it-roles', $html);
-        foreach (['Farmer', 'MAO Personnel', 'IT Expert', 'Total accounts', 'Active (30 days)', 'Active %'] as $text) {
+        foreach (['Farmer', 'MAO Personnel', 'IT Expert', 'Total accounts', 'Active (30 days)', 'Active %', 'Enabled', 'Disabled'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
+    }
+
+    public function test_users_by_role_counts_enabled_and_disabled_accounts_from_the_account_status(): void
+    {
+        $it = $this->it();
+        User::factory()->count(2)->create(['role' => User::ROLE_FARMER, 'status' => User::STATUS_ACTIVE]);
+        User::factory()->create(['role' => User::ROLE_FARMER, 'status' => User::STATUS_INACTIVE]);
+
+        $roles = $this->payload($it)['roles'];
+        $farmers = collect($roles['rows'])->firstWhere('role', User::ROLE_FARMER);
+
+        $this->assertSame([3, 2, 1], [$farmers['total'], $farmers['enabled'], $farmers['disabled']]);
+        $this->assertSame([4, 3, 1], [$roles['total'], $roles['enabled'], $roles['disabled']]);     // the IT account is enabled too
+    }
+
+    public function test_page_uses_the_farmer_dashboard_design_system(): void
+    {
+        $html = $this->page()->getContent();
+        $css = file_get_contents(resource_path('css/it-dashboard.css'));
+
+        $this->assertStringContainsString('class="is-it-dashboard"', $html);                     // same sidebar colour and Georgia + Inter as the farmer page
+        $this->assertStringContainsString('class="mfd itd"', $html);
+        foreach (['mfd-header', 'mfd-kicker', 'mfd-kpis', 'mfd-kpi-value', 'mfd-card-head', 'mfd-pill is-', 'mfd-btn is-quiet', 'mfd-section-title'] as $shared) {
+            $this->assertStringContainsString($shared, $html, $shared);
+        }
+        $this->assertStringNotContainsString('--itd-ink', $html);                                // no page-only palette any more
+        $this->assertDoesNotMatchRegularExpression('/font-family/', preg_replace('#/\*.*?\*/#s', '', $css));   // families come from the shared system
+        $this->assertStringNotContainsString('backdrop-filter', $css);
+        preg_match_all('/font-size: ([\d.]+)rem/', $css, $sizes);
+        foreach ($sizes[1] as $rem) {
+            $this->assertGreaterThanOrEqual(0.75, (float) $rem, 'no text under 12px');
+        }
+    }
+
+    public function test_it_personnel_get_the_notification_bell_with_their_own_unread_count(): void
+    {
+        $it = $this->it();
+        \App\Models\Notification::query()->create(['user_id' => $it->id, 'title' => 'Maintenance window', 'message' => 'Tonight at 10 PM.', 'type' => 'Announcement', 'is_read' => false]);
+
+        $this->page($it)->assertSee('aria-label="Notifications, 1 unread"', false);
+        $this->actingAs($it)->get(route('notifications.index'))->assertOk()->assertSee('Maintenance window');
     }
 
     public function test_farmer_account_and_profile_gap_is_a_data_integrity_warning(): void
@@ -448,7 +489,7 @@ class ItDashboardTest extends TestCase
     public function test_sidebar_groups_it_navigation_and_lists_each_page_once(): void
     {
         $html = $this->page()->getContent();
-        $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Dashboard') - strpos($html, 'sidebar-group'));
+        $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
 
         foreach (['>Main<', '>Management<', '>Data<', '>System<', '>Content<', '>Support<'] as $section) {
             $this->assertStringContainsString($section, $html);

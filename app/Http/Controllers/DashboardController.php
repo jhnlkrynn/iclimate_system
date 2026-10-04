@@ -130,7 +130,7 @@ class DashboardController extends Controller
 
     private function adminCacheKey(): string
     {
-        return 'dashboard:it:overview:v'.DashboardData::version();
+        return 'dashboard:it:overview:2:v'.DashboardData::version();
     }
 
     /**

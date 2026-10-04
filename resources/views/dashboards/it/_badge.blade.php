@@ -1,6 +1,6 @@
-{{-- Status pill: a dot carrying a shape (✓ ▲ ✕ ?) plus a text label, so colour is never the only signal. --}}
+{{-- Status pill in the shared farmer style: an icon plus a text label, so colour is never the only signal. $level = ok | warn | crit | unk. --}}
 @php
-    $glyph = ['ok' => '✓', 'warn' => '▲', 'crit' => '✕', 'unk' => '?'];
     $lvl = $level ?? 'unk';
+    [$tone, $glyph] = ['ok' => ['good', 'check'], 'warn' => ['watch', 'alert'], 'crit' => ['danger', 'danger'], 'unk' => ['unk', 'info']][$lvl] ?? ['unk', 'info'];
 @endphp
-<span class="itd-badge is-{{ $lvl }}"><span class="itd-dot" aria-hidden="true">{{ $glyph[$lvl] }}</span>{{ $text ?? \App\Services\Analytics\ItDashboardService::LEVELS[$lvl] }}</span>
+<span class="mfd-pill is-{{ $tone }}">@include('dashboards.mao.icon', ['name' => $glyph])<span>{{ $text ?? \App\Services\Analytics\ItDashboardService::LEVELS[$lvl] }}</span></span>
