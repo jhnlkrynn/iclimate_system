@@ -1,20 +1,22 @@
 /*
- * IT Personnel pages. One visual system for every page an IT account opens, built on the IT dashboard's own parts:
- * the .mfd / .itd design system in farmer-dashboard.css and it-dashboard.css. Nothing here changes Farmer or MAO pages:
- * every rule is scoped to body[data-user-role="IT Expert"] (the role attribute layouts/app.blade.php puts on <body>).
+ * Staff pages (IT Personnel and MAO Personnel). One visual system for every page a staff account opens, built on the
+ * IT dashboard's own parts: the .mfd / .itd design system in farmer-dashboard.css and it-dashboard.css. Farmer pages are
+ * not affected: every rule is scoped to the IT and MAO values of the role attribute layouts/app.blade.php puts on <body>.
  *
  * Two families only: Georgia Bold for page, section, subsection, chart and pop-up titles; Inter for everything else.
  * Type scale: page title 32px, section title 24px, subsection 20px, card title 17px, KPI value 28px, data value 20px,
  * body 16px, supporting 14-15px, labels / badges / dates 12-13px. Nothing under 12px.
  *
- * 1. Role-wide baseline (typography, sidebar, top bar) for every IT page.
- * 2. .itp: the page wrapper (.mfd.itd.itp) used by Account, Predictions, System Health, Community Feed and Messages,
+ * 1. Role-wide baseline (typography, sidebar, top bar, common controls) for every staff page. The MAO dashboard (.mtd,
+ *    mao-dashboard.css) keeps its own heading scale; only its out-of-range sizes are corrected in section 4.
+ * 2. .itp: the page wrapper (.mfd.itd.itp) used by Account, Predictions, System Health (IT only), Community Feed and Messages,
  *    with the shared components those pages are made of.
  * 3. Page-specific parts.
+ * 4. Corrections to shared parts: risk map, MAO dashboard, record pages.
  */
 
 /* ================================================================ 1. role-wide baseline */
-body[data-user-role="IT Expert"] {
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) {
     --ic-sidebar-bg: #0f5132;
     --mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mfd-serif: Georgia, "Times New Roman", Times, serif;
@@ -22,51 +24,51 @@ body[data-user-role="IT Expert"] {
     --ic-readable-small: .875rem;
     --ic-readable-label: .8125rem;
 }
-body[data-user-role="IT Expert"],
-body[data-user-role="IT Expert"] *:not(svg):not(svg *) { font-family: var(--mfd-sans) !important; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]),
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) *:not(svg):not(svg *) { font-family: var(--mfd-sans) !important; }
 
 /* Georgia Bold: headings only. */
-body[data-user-role="IT Expert"] .page-shell :is(h1, h2, h3),
-body[data-user-role="IT Expert"] :is(.modal-title, .ic-logout-title, .unsend-title, .wp-calendar-month) {
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(h1, h2, h3):not(.mtd *),
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) :is(.modal-title, .ic-logout-title, .unsend-title, .wp-calendar-month) {
     font-family: var(--mfd-serif) !important; font-weight: 700 !important; letter-spacing: 0 !important;
     font-variant-numeric: lining-nums; text-transform: none;
 }
-body[data-user-role="IT Expert"] .page-shell h1 { font-size: 2rem !important; line-height: 1.2; }
-body[data-user-role="IT Expert"] .page-shell h2 { font-size: 1.5rem !important; line-height: 1.25; }
-body[data-user-role="IT Expert"] .page-shell h3 { font-size: 1.25rem !important; line-height: 1.3; }
-body[data-user-role="IT Expert"] .page-shell :is(h4, h5, h6) { font-size: 1.0625rem; font-weight: 600; line-height: 1.35; letter-spacing: 0; }
-body[data-user-role="IT Expert"] :is(.modal-title, .ic-logout-title, .unsend-title) { font-size: 1.5rem !important; line-height: 1.25; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell h1:not(.mtd *) { font-size: 2rem !important; line-height: 1.2; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell h2:not(.mtd *) { font-size: 1.5rem !important; line-height: 1.25; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell h3:not(.mtd *) { font-size: 1.25rem !important; line-height: 1.3; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(h4, h5, h6):not(.mtd *) { font-size: 1.0625rem; font-weight: 600; line-height: 1.35; letter-spacing: 0; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) :is(.modal-title, .ic-logout-title, .unsend-title) { font-size: 1.5rem !important; line-height: 1.25; }
 /* Subsection-level headings that are marked up as h2: notices, empty states, narrow side panels. */
-body[data-user-role="IT Expert"] .page-shell :is(.itd-summary, .wp-state, .msg-empty, .side-panel, .mfd-empty) h2 { font-size: 1.25rem !important; line-height: 1.3; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(.itd-summary, .wp-state, .msg-empty, .side-panel, .mfd-empty) h2 { font-size: 1.25rem !important; line-height: 1.3; }
 /* Card titles are Inter even when the element is a heading (a person's name, a service name). */
-body[data-user-role="IT Expert"] .page-shell :is(.itp-card-title, .feed-title, .msg-head h2) {
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(.itp-card-title, .feed-title, .msg-head h2) {
     font-family: var(--mfd-sans) !important; font-size: 1.0625rem !important; font-weight: 600 !important; line-height: 1.35;
 }
 
 /* Sidebar: 15px Medium, the open page in Bold. */
-body[data-user-role="IT Expert"] .sidebar-link { font-size: .9375rem !important; font-weight: 500; }
-body[data-user-role="IT Expert"] .sidebar-link.active { font-weight: 700; }
-body[data-user-role="IT Expert"] .sidebar-section { font-size: .8125rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
-body[data-user-role="IT Expert"] .sidebar-location { font-size: .75rem; }
-body[data-user-role="IT Expert"] .sidebar-tagline { font-size: .8125rem; }
-body[data-user-role="IT Expert"] .sidebar-badge { font-size: .75rem; font-weight: 600; }
-body[data-user-role="IT Expert"] .sidebar-ai-title { font-size: .9375rem; font-weight: 600; }
-body[data-user-role="IT Expert"] .sidebar-ai-sub { font-size: .8125rem; }
-body[data-user-role="IT Expert"] .sidebar-foot { font-size: .75rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-link { font-size: .9375rem !important; font-weight: 500; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-link.active { font-weight: 700; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-section { font-size: .8125rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-location { font-size: .75rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-tagline { font-size: .8125rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-badge { font-size: .75rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-ai-title { font-size: .9375rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-ai-sub { font-size: .8125rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .sidebar-foot { font-size: .75rem; }
 
 /* Top bar */
-body[data-user-role="IT Expert"] .topbar-eyebrow { font-size: .75rem; letter-spacing: .5px; }
-body[data-user-role="IT Expert"] .topbar-name { font-size: .9375rem; font-weight: 600; letter-spacing: 0; }
-body[data-user-role="IT Expert"] .topbar-role-badge { font-size: .75rem; font-weight: 600; }
-body[data-user-role="IT Expert"] .topbar-btn { font-size: .875rem; font-weight: 600; }
-body[data-user-role="IT Expert"] .topbar-btn.is-current { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .5); color: #fff; font-weight: 700; }
-body[data-user-role="IT Expert"] .topbar-avatar { font-size: .8125rem; font-weight: 700; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-eyebrow { font-size: .75rem; letter-spacing: .5px; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-name { font-size: .9375rem; font-weight: 600; letter-spacing: 0; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-role-badge { font-size: .75rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-btn { font-size: .875rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-btn.is-current { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .5); color: #fff; font-weight: 700; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .topbar-avatar { font-size: .8125rem; font-weight: 700; }
 
 /* Dashboard tables: 0.5px tracking on the uppercase header row. */
-body[data-user-role="IT Expert"] .itd-table th { letter-spacing: .5px; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .itd-table th { letter-spacing: .5px; }
 
 /* Pop-ups opened from an IT page */
-body[data-user-role="IT Expert"] .modal-body, body[data-user-role="IT Expert"] .ic-logout-message { font-size: 1rem; font-weight: 400; line-height: 1.5; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .modal-body, body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .ic-logout-message { font-size: 1rem; font-weight: 400; line-height: 1.5; }
 
 /* ================================================================ 2. the page wrapper and its shared components */
 .itp { --it-field-h: 44px; }
@@ -358,5 +360,34 @@ body[data-user-role="IT Expert"] .modal-body, body[data-user-role="IT Expert"] .
 }
 
 /* ================================================================ risk map (dashboard Heat Map tab and Heat Map page): nothing under 12px */
-body[data-user-role="IT Expert"] :is(.risk-map-section-label, .risk-forecast-info-icon, .risk-forecast-toolbar-label, .risk-mode-badge) { font-size: .75rem; }
-body[data-user-role="IT Expert"] :is([class^="risk-"], [class*=" risk-"]) dt { font-size: .75rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) :is(.risk-map-section-label, .risk-forecast-info-icon, .risk-forecast-toolbar-label, .risk-mode-badge) { font-size: .75rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) :is([class^="risk-"], [class*=" risk-"]) dt { font-size: .75rem; }
+
+/* ================================================================ 4. corrections to shared parts
+ * Pages that are not built on .itp (record lists, Reports, Chatbot Knowledge, Heat Map, Calendar, the MAO dashboard)
+ * keep their layout; these rules only bring their controls onto the type scale. */
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .btn:not(.mfd *):not(.mtd *) { font-size: .9375rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .btn.btn-sm:not(.mfd *):not(.mtd *) { font-size: .875rem; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(.form-label, label):not(.mfd *):not(.mtd *):not(.btn) { font-size: .875rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(.form-control, .form-select):not(.mfd *):not(.mtd *) { font-size: .9375rem; font-weight: 400; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .table thead th { font-size: .8125rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .table td { font-size: .875rem; font-weight: 400; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .badge { font-size: .75rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell .eyebrow { font-size: .8125rem; font-weight: 600; letter-spacing: 1px; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .page-shell :is(.card-header .fw-semibold, .card-header .fw-bold) { font-size: 1.0625rem; font-weight: 600 !important; letter-spacing: 0; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .ic-collapse-count { font-size: .75rem; font-weight: 600; }
+
+/* risk map and overview (Heat Map page, dashboard Heat Map tab, MAO dashboard) */
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .risk-map-title { font-family: var(--mfd-serif) !important; font-size: 1.5rem !important; font-weight: 700; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .risk-overview-title { font-family: var(--mfd-serif) !important; font-size: 1.25rem !important; font-weight: 700; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) :is(.risk-map-refresh, .risk-forecast-timeline button) { font-size: .875rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .risk-forecast-select label { font-size: .875rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .risk-forecast-select .form-select { font-size: .9375rem; font-weight: 400; }
+
+/* MAO dashboard (.mtd) */
+body[data-user-role="MAO Personnel"] .mtd-table th { font-size: .8125rem; }
+body[data-user-role="MAO Personnel"] .mtd-attn h3 { font-weight: 600; }
+
+/* chart "Learn More" buttons and the stacked table cards on phones */
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .ic-info-btn { font-size: .875rem; font-weight: 600; }
+body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .ic-table-card-label { font-size: .75rem; font-weight: 600; }

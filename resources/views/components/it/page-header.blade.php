@@ -1,6 +1,6 @@
 @props(['title', 'kicker' => null, 'lede' => null])
 
-{{-- The header band of every IT page: the same .mfd-header the IT dashboard uses (farmer-dashboard.css, it-dashboard.css).
+{{-- The header band of every staff (IT and MAO) page: the same .mfd-header the IT dashboard uses (farmer-dashboard.css, it-dashboard.css).
      Kicker, Georgia page title, one-line description; status pills and buttons go in the slot. --}}
 <header class="mfd-header">
     <div class="mfd-header-main">

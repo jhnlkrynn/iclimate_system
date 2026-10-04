@@ -1,15 +1,15 @@
 @php
     $account = auth()->user();
-    $isItAccount = $account->role === \App\Models\User::ROLE_IT_EXPERT;
+    $isStaffAccount = $account->role !== \App\Models\User::ROLE_FARMER;
 @endphp
 
 <x-app-layout>
-    @if ($isItAccount)
+    @if ($isStaffAccount)
         @php
             $initials = collect(explode(' ', trim($account->name)))->filter()->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->take(2)->implode('');
             $isActive = $account->status === \App\Models\User::STATUS_ACTIVE;
         @endphp
-        {{-- IT accounts: the IT dashboard design system (.mfd / .itd parts, IT page parts in it-pages.css).
+        {{-- Staff accounts (IT and MAO): the IT dashboard design system (.mfd / .itd parts, IT page parts in it-pages.css).
              The three forms are the same partials every role uses. --}}
         <div class="mfd itd itp itp-form">
             <x-it.page-header kicker="Account Center" title="Account" lede="Manage your account information, password, and account access." />
