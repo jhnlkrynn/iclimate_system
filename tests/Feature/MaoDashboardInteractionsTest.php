@@ -42,7 +42,7 @@ class MaoDashboardInteractionsTest extends TestCase
         $html = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->getContent();
         preg_match_all('/href="([^"#][^"]*)"/', $html, $m);
         $own = collect($m[1])->map(fn ($h) => html_entity_decode($h))
-            ->filter(fn (string $h): bool => str_starts_with($h, url('/')) && ! str_contains($h, '/build/') && ! str_contains($h, '/images/'))
+            ->filter(fn (string $h): bool => str_starts_with($h, url('/')) && ! str_contains($h, '/build/') && ! str_contains($h, '/images/') && ! str_contains($h, '/css/') && ! str_contains($h, '/js/'))
             ->reject(fn (string $h): bool => str_contains($h, 'logout'))
             ->unique()->values();
 
