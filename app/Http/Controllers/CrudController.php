@@ -136,7 +136,9 @@ abstract class CrudController extends Controller
 
         // A farmer record page can open a record in its "View" pop-up (?modal=1): the same record without the page layout.
         $popup = 'farmer-records._modal-'.$this->routeName;
+        // Staff lists open a record in the shared information pop-up (resources/js/info-modal.js) the same way.
         $view = match (true) {
+            ! $this->usesFarmerPages($request) && $request->boolean('modal') => 'crud._modal',
             ! $this->usesFarmerPages($request) => 'crud.show',
             $request->boolean('modal') && view()->exists($popup) => $popup,
             default => 'farmer-records.show',

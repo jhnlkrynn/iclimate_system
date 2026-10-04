@@ -212,7 +212,8 @@ class ItDashboardTabsTest extends TestCase
         DB::table('failed_jobs')->insert(['uuid' => (string) Str::uuid(), 'connection' => 'database', 'queue' => 'default', 'payload' => json_encode(['displayName' => 'App\\Jobs\\SyncThing']), 'exception' => 'x', 'failed_at' => now()]);
 
         $html = $this->actingAs($it)->get(route('admin.dashboard'))->getContent();
-        $this->assertStringContainsString('data-confirm="Retry 1 failed job of class App\\Jobs\\SyncThing?', $html);
+        // Asked in the shared confirmation pop-up (resources/js/info-modal.js).
+        $this->assertStringContainsString('data-ic-confirm="Retry 1 failed job of class App\\Jobs\\SyncThing?', $html);
         $this->assertStringContainsString('name="_token"', $html);
 
         $this->actingAs($it)->post(route('admin.dashboard.retry-failed'), ['class' => 'App\\Jobs\\SyncThing'])->assertRedirect(route('admin.dashboard'));

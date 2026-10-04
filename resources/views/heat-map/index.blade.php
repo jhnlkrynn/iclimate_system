@@ -1,16 +1,20 @@
 <x-app-layout>
-    <div class="container-fluid py-3">
-        <div class="page-hero mb-4">
-            <div>
-                <div class="eyebrow">LIAN MUNICIPALITY RISK MAP</div>
+    {{-- Same header and panel as the other farmer-style pages (.fad-* in farmer-advisories.css), for every role.
+         The Municipal Risk Overview and the map below are filled by resources/js/barangay-risk-map.js. --}}
+    <div class="fad heatmap-page">
+        <header class="fad-hero">
+            <div class="fad-hero-text">
+                <span class="fad-kicker">Lian Municipality Risk Map</span>
                 <h1>Barangay Climate Risk Map</h1>
-                <p class="mb-0">Current and monthly rice-farming risk conditions across Lian, Batangas.</p>
+                <p>Current and monthly rice-farming risk conditions across Lian, Batangas.</p>
             </div>
-        </div>
+        </header>
 
-        <section class="card border-0 shadow-sm p-3 p-lg-4" aria-labelledby="sharedHeatMapTitle">
-            <h2 id="sharedHeatMapTitle" class="h4 mb-1">Lian Monthly Climate Forecast with Barangay Risk Assessment</h2>
-            <p class="text-muted mb-4" data-forecast-scope>Monthly weather forecasts apply to Lian, Batangas as a whole. Barangay colors show how the forecast conditions may affect each area based on available local risk factors.</p>
+        <section class="fad-card heatmap-panel" aria-labelledby="sharedHeatMapTitle">
+            <div class="fad-list-head">
+                <h2 id="sharedHeatMapTitle">Lian Monthly Climate Forecast with Barangay Risk Assessment</h2>
+            </div>
+            <p class="fad-support" data-forecast-scope>Monthly weather forecasts apply to Lian, Batangas as a whole. Barangay colors show how the forecast conditions may affect each area based on available local risk factors.</p>
             @include('partials.barangay-risk-map', [
                 'heading' => 'Lian Municipality Risk Map',
                 'subheading' => 'All 19 barangays at a glance. Click any barangay for details.',

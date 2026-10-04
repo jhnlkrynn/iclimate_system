@@ -483,6 +483,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         |--------------------------------------------------------------------------
         */
 
+        // The header bell's pop-up list; registered before the resource so "feed" is never read as an id.
+        Route::get(
+            'notifications/feed',
+            [NotificationController::class, 'feed']
+        )->name(
+            'notifications.feed'
+        );
+
+
         Route::post(
             'notifications/mark-all-read',
             [NotificationController::class, 'markAllRead']

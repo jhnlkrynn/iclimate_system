@@ -107,7 +107,7 @@
 @media (min-width: 1200px) { .itd .mfd-kpis.is-four { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
 
 /* tooltips: hidden with display:none (not just transparent) so they never widen the page */
-.itd-info { position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: .75rem; font-weight: 700; line-height: 1; cursor: help; text-transform: none; letter-spacing: 0; }
+.itd-info { z-index: 2; padding: 0; background: #fff; font: inherit; font-size: .75rem; cursor: pointer; position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: .75rem; font-weight: 700; line-height: 1; cursor: help; text-transform: none; letter-spacing: 0; }
 .itd-info::after {
     content: attr(data-tip); position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); width: max-content; max-width: min(270px, 70vw);
     padding: 8px 12px; border-radius: 4px; background: var(--ink); color: #fff; font-size: .8125rem; font-weight: 400; line-height: 1.45;

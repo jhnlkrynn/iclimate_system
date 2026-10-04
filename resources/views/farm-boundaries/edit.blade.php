@@ -65,7 +65,7 @@
             </form>
 
             @if ($boundary)
-                <form method="POST" action="{{ route('farmer.boundary.destroy') }}" id="deleteBoundaryForm" class="d-none">
+                <form method="POST" action="{{ route('farmer.boundary.destroy') }}" id="deleteBoundaryForm" class="d-none" data-ic-confirm="Delete your saved farm map?">
                     @csrf
                     @method('DELETE')
                 </form>
@@ -182,10 +182,6 @@
                     event.preventDefault();
                     window.alert('Add at least three points around your field before saving.');
                 }
-            });
-
-            document.getElementById('deleteBoundaryForm')?.addEventListener('submit', (event) => {
-                if (!window.confirm('Delete your saved farm map?')) event.preventDefault();
             });
         });
     </script>

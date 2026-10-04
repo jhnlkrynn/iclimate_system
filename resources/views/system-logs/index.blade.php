@@ -44,33 +44,17 @@
             .sl-table td.sl-td-action::before { content: none; }
         }
 
-        .sl-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-        .sl-modal[hidden] { display: none; }
-        .sl-modal-bg { position: absolute; inset: 0; background: rgba(8,25,19,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-        .sl-modal-panel { position: relative; width: min(620px, 100%); max-height: 90vh; display: flex; flex-direction: column; border-radius: 20px; color: #14261f; background: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.6); box-shadow: 0 24px 60px rgba(8,25,19,.35); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); overflow: hidden; }
-        .sl-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(20,38,31,.1); }
-        .sl-modal-head h2 { margin: 0; font-size: 1.2rem; font-weight: 700; }
-        .sl-modal-body { padding: 1rem 1.25rem; overflow-y: auto; overflow-x: hidden; overflow-wrap: anywhere; font-size: 1rem; }
-        .sl-modal-foot { padding: .8rem 1.25rem; border-top: 1px solid rgba(20,38,31,.1); text-align: right; }
-        .sl-field { margin-bottom: .8rem; }
-        .sl-field dt { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #2f7d5b; }
-        .sl-field dd { margin: 0; font-size: 1.05rem; }
-        .sl-tech { margin-top: .5rem; border: 1px solid rgba(20,38,31,.12); border-radius: 12px; background: rgba(20,38,31,.04); }
-        .sl-tech summary { padding: .65rem .9rem; font-weight: 600; cursor: pointer; }
-        .sl-tech-body { padding: 0 .9rem .8rem; }
-        .sl-tech pre { margin: .3rem 0 0; padding: .7rem; max-height: 220px; overflow: auto; font-size: .8rem; white-space: pre-wrap; word-break: break-all; background: rgba(20,38,31,.07); border-radius: 8px; }
+        .sl-raw { max-height: 280px; overflow: auto; padding: 12px; border-radius: 6px; background: #f8faf9; border: 1px solid #e3e8e5; font-size: .8125rem; white-space: pre-wrap; overflow-wrap: anywhere; }
         @media (prefers-color-scheme: dark) {
             :root:not([data-theme="light"]) .sl-card { background: rgba(15,44,35,.6); }
             :root:not([data-theme="light"]) .sl-card .sl-num { color: #7fd6b5; }
             :root:not([data-theme="light"]) .sl-card .sl-lbl { color: #e3ece7; }
             :root:not([data-theme="light"]) .sl-card .sl-sub { color: #b9cbc2; }
-            :root:not([data-theme="light"]) .sl-modal-panel { color: #e7f2ec; background: rgba(15,44,35,.86); }
         }
         :root[data-theme="dark"] .sl-card { background: rgba(15,44,35,.6); }
         :root[data-theme="dark"] .sl-card .sl-num { color: #7fd6b5; }
         :root[data-theme="dark"] .sl-card .sl-lbl { color: #e3ece7; }
         :root[data-theme="dark"] .sl-card .sl-sub { color: #b9cbc2; }
-        :root[data-theme="dark"] .sl-modal-panel { color: #e7f2ec; background: rgba(15,44,35,.86); }
     </style>
 
     <section class="page-hero">
@@ -169,81 +153,41 @@
         @endif
     </div>
 
-    <div class="sl-modal" id="slModal" hidden>
-        <div class="sl-modal-bg" data-sl-close></div>
-        <div class="sl-modal-panel" role="dialog" aria-modal="true" aria-labelledby="slModalTitle" tabindex="-1">
-            <div class="sl-modal-head">
-                <h2 id="slModalTitle">Activity Details</h2>
-                <button type="button" class="btn-close" data-sl-close aria-label="Close"></button>
-            </div>
-            <div class="sl-modal-body">
-                <dl class="mb-0">
-                    <div class="sl-field"><dt>Activity</dt><dd data-f="action"></dd></div>
-                    <div class="sl-field"><dt>User</dt><dd data-f="user"></dd></div>
-                    <div class="sl-field"><dt>Role</dt><dd data-f="role"></dd></div>
-                    <div class="sl-field"><dt>Date &amp; Time</dt><dd data-f="long"></dd></div>
-                    <div class="sl-field"><dt>Status</dt><dd><span data-f="status"></span><div class="small text-muted" data-f="statusNote"></div></dd></div>
-                    <div class="sl-field"><dt>Additional Information</dt><dd data-f="description"></dd></div>
-                </dl>
-                <details class="sl-tech">
-                    <summary>Technical Details</summary>
-                    <div class="sl-tech-body">
-                        <dl class="mb-2" data-f="technical"></dl>
-                        <dt class="small fw-bold text-uppercase" style="color:#2f7d5b;">Raw log data</dt>
-                        <pre data-f="raw"></pre>
-                    </div>
-                </details>
-            </div>
-            <div class="sl-modal-foot"><button type="button" class="btn btn-primary" data-sl-close>Close</button></div>
-        </div>
-    </div>
-
     <script type="application/json" id="slData">@json($rows->values())</script>
     <script>
+        // "View" opens the activity in the shared iClimate information pop-up (resources/js/info-modal.js).
         (function () {
-            const modal = document.getElementById('slModal');
             const rows = JSON.parse(document.getElementById('slData').textContent);
-            const panel = modal.querySelector('.sl-modal-panel');
-            let opener = null;
-            const set = (key, text) => { modal.querySelector(`[data-f="${key}"]`).textContent = text; };
-
-            function open(index, trigger) {
-                const r = rows[index];
-                if (!r) return;
-                opener = trigger;
-                ['action', 'user', 'role', 'long', 'status', 'description', 'raw'].forEach((k) => set(k, r[k] ?? ''));
-                set('statusNote', r.status === 'Failed'
+            const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-sl-view]');
+                const r = button && rows[Number(button.dataset.slView)];
+                if (!r || !window.iClimateModal) return;
+                const statusNote = r.status === 'Failed'
                     ? 'This log explicitly records a failure, error or denied request.'
-                    : 'Recorded means iClimate logged this activity. It does not confirm the outcome.');
-                const tech = modal.querySelector('[data-f="technical"]');
-                tech.replaceChildren();
-                Object.entries(r.technical).forEach(([k, v]) => {
-                    const dt = document.createElement('dt'); dt.textContent = k; dt.className = 'small fw-bold';
-                    const dd = document.createElement('dd'); dd.textContent = v; dd.className = 'mb-1';
-                    tech.append(dt, dd);
+                    : 'Recorded means iClimate logged this activity. It does not confirm the outcome.';
+                const technical = Object.entries(r.technical || {}).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+                window.iClimateModal.open({
+                    title: 'Activity Details',
+                    kicker: 'System Logs',
+                    description: r.action || '',
+                    icon: r.status === 'Failed' ? 'danger' : 'report',
+                    tone: r.status === 'Failed' ? 'danger' : '',
+                    trigger: button,
+                    body: `<section class="fad-m-section"><dl class="fad-m-details">
+                            <div><dt>Activity</dt><dd>${esc(r.action)}</dd></div>
+                            <div><dt>User</dt><dd>${esc(r.user)}</dd></div>
+                            <div><dt>Role</dt><dd>${esc(r.role)}</dd></div>
+                            <div><dt>Date &amp; Time</dt><dd>${esc(r.long)}</dd></div>
+                            <div><dt>Status</dt><dd>${esc(r.status)}<br><span class="fad-m-small">${esc(statusNote)}</span></dd></div>
+                            <div><dt>Additional Information</dt><dd>${esc(r.description) || '—'}</dd></div>
+                        </dl></section>
+                        <details class="fad-details"><summary>Technical Details</summary>
+                            <dl class="fad-m-details">${technical}</dl>
+                            <p class="fad-label" style="margin-top:12px">Raw log data</p>
+                            <pre class="sl-raw">${esc(r.raw)}</pre>
+                        </details>`,
                 });
-                modal.querySelector('.sl-tech').open = false;
-                modal.hidden = false;
-                document.documentElement.style.overflow = 'hidden';
-                panel.focus();
-            }
-            function close() {
-                modal.hidden = true;
-                document.documentElement.style.overflow = '';
-                if (opener) opener.focus();
-            }
-            document.querySelectorAll('[data-sl-view]').forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.slView), b)));
-            modal.addEventListener('click', (e) => { if (e.target.closest('[data-sl-close]')) close(); });
-            document.addEventListener('keydown', (e) => {
-                if (modal.hidden) return;
-                if (e.key === 'Escape') { close(); return; }
-                if (e.key === 'Tab') {
-                    const f = [...modal.querySelectorAll('button, summary, [href]')].filter((n) => n.offsetParent !== null);
-                    if (!f.length) return;
-                    const first = f[0]; const last = f[f.length - 1];
-                    if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
-                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-                }
             });
         })();
     </script>

@@ -6,7 +6,7 @@
     <section class="mtd-card" aria-labelledby="mtdActivityTitle" data-mao-activity>
         <div class="mtd-card-head">
             <h2 id="mtdActivityTitle">Recent MAO Activity</h2>
-            <a class="mtd-btn is-quiet" href="{{ route('mao.operations') }}#activity-log">View All Activity</a>
+            <a class="mtd-btn is-quiet" href="{{ route('mao.operations') }}#activity-log" data-ic-view data-ic-select="#activity-log" data-ic-title="MAO Activity" aria-haspopup="dialog">View All Activity</a>
         </div>
         <div class="mtd-table-wrap">
             <table class="mtd-table mtd-table-cards">

@@ -1,0 +1,113 @@
+/*
+ * The shared iClimate information pop-up (resources/js/info-modal.js). The frame is the Farmer Advisories "View"
+ * pop-up (.fad-modal / .fad-m-* in farmer-advisories.css); this file only adds what other content needs:
+ * a wide size for detailed information, the header icon, the notification list, page content shown inside the
+ * pop-up, and the risk-category details.
+ */
+
+/* ------------------------------------------------------------ sizes */
+/* Detailed information: ~90% of the window, inner scrolling. */
+.ic-modal.is-wide .fad-modal-dialog { width: min(1240px, 90vw); height: min(88vh, 1100px); height: min(88dvh, 1100px); max-height: none; }
+.ic-modal.is-compact .fad-modal-dialog { width: min(520px, calc(100vw - 64px)); }
+.ic-modal .fad-modal-dialog { width: min(760px, calc(100vw - 64px)); }
+.ic-modal.is-wide .fad-modal-dialog { width: min(1240px, 90vw); }
+@media (max-width: 640px) {
+    .ic-modal .fad-modal-dialog, .ic-modal.is-wide .fad-modal-dialog, .ic-modal.is-compact .fad-modal-dialog { width: 100%; height: 100%; max-height: 100dvh; }
+}
+
+/* ------------------------------------------------------------ header + footer */
+.ic-m-head { align-items: center; }
+.ic-m-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1px solid var(--rule); border-radius: 6px; background: var(--good-bg); color: var(--brand); }
+.ic-m-icon .mtd-svg { width: 22px; height: 22px; }
+.ic-m-icon.is-watch { background: var(--watch-bg); color: var(--watch-ink); border-color: var(--watch-line); }
+.ic-m-icon.is-danger { background: var(--danger-bg); color: var(--danger-ink); border-color: var(--danger-line); }
+.ic-m-icon.is-info { background: var(--info-bg); color: var(--info-ink); border-color: var(--info-line); }
+.ic-m-head .fad-m-head-text { flex: 1 1 auto; }
+.ic-m-desc { font-size: .9375rem; line-height: 1.5; color: var(--muted); }
+.ic-m-foot { align-items: center; }
+.ic-m-note { flex: 1 1 260px; margin: 0; font-size: .8125rem; line-height: 1.45; color: var(--muted); }
+.ic-m-note[hidden] { display: none; }
+.ic-m-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ic-m-actions:empty { display: none; }
+.ic-modal .fad-btn.is-destructive { background: var(--danger); border-color: var(--danger); color: #fff; }
+.ic-modal .fad-btn.is-destructive:hover { background: var(--danger-ink); border-color: var(--danger-ink); color: #fff; }
+.ic-m-loading { display: grid; gap: 12px; }
+.ic-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.fad-m-note .fad-btn { justify-self: start; margin-top: 8px; }
+@media (max-width: 640px) {
+    .ic-m-icon { width: 36px; height: 36px; }
+    .ic-m-foot .fad-btn { flex: 1 1 auto; }
+    .ic-m-note { flex-basis: 100%; }
+}
+
+/* ------------------------------------------------------------ a page shown inside the pop-up (data-ic-view) */
+.ic-m-page { display: block; }
+.ic-m-page > * + * { margin-top: 20px; }
+.ic-m-page .page-hero, .ic-m-page .action-cluster, .ic-m-page .ic-skip { display: none !important; }
+.ic-m-page .card { border: 1px solid var(--rule); border-radius: 6px; box-shadow: none; }
+.ic-m-page .table-responsive { overflow-x: auto; }
+.ic-m-page .fad, .ic-m-page .mfd { padding: 0; background: none; }
+
+/* The record pop-up of the staff lists (crud/_modal.blade.php). */
+.ic-record-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ------------------------------------------------------------ notifications */
+[data-ic-notif-badge][hidden] { display: none !important; }
+.ic-notif-tabs { display: flex; gap: 8px; padding: 4px; border-radius: 8px; background: #e8efeb; width: fit-content; }
+.ic-notif-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 16px; border: 0; border-radius: 6px; background: transparent; color: var(--brand); font-size: .9375rem; font-weight: 600; cursor: pointer; }
+.ic-notif-tab[aria-selected="true"] { background: #fff; box-shadow: 0 1px 3px rgba(15, 40, 28, .12); }
+.ic-notif-tab-count { min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--brand); color: #fff; font-size: .75rem; line-height: 1.6; text-align: center; }
+.ic-notif-tab:not([aria-selected="true"]) .ic-notif-tab-count { background: var(--muted); }
+.ic-notif-list { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.ic-notif-list li + li { border-top: 1px solid var(--line); }
+.ic-notif-item {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 14px; width: 100%;
+    padding: 14px 16px; border: 0; background: #fff; color: var(--ink); text-align: left; cursor: pointer; font: inherit;
+}
+.ic-notif-item:hover { background: var(--subtle); }
+.ic-notif-item:focus-visible { outline: 3px solid var(--info); outline-offset: -3px; }
+.ic-notif-item.is-unread { background: #f3faf6; }
+.ic-notif-item.is-unread:hover { background: var(--good-bg); }
+.ic-notif-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; background: var(--subtle); border: 1px solid var(--line); color: var(--muted); }
+.ic-notif-icon[data-type="advisory"] { background: var(--info-bg); color: var(--info-ink); }
+.ic-notif-icon[data-type="warning"] { background: var(--watch-bg); color: var(--watch-ink); }
+.ic-notif-main { display: grid; gap: 4px; min-width: 0; }
+.ic-notif-title { font-size: 1rem; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; }
+.ic-notif-item.is-unread .ic-notif-title { font-weight: 700; }
+.ic-notif-text { font-size: .9375rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ic-notif-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .8125rem; color: var(--muted); }
+.ic-notif-dot { width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px var(--good-bg); }
+.ic-notif-state { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.ic-notif-back { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 40px; padding: 4px 8px 4px 0; border: 0; background: none; color: var(--brand); font-size: .9375rem; font-weight: 600; cursor: pointer; }
+.ic-notif-back .mtd-svg { width: 18px; height: 18px; }
+.ic-notif-detail { display: grid; gap: 10px; }
+.ic-notif-detail-tags { display: flex; gap: 8px; }
+.ic-notif-message { overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------ risk category details (barangay-risk-map.js) */
+.ic-risk-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; padding: 18px 20px; border: 1px solid var(--rule); border-left: 4px solid var(--risk-color, var(--brand)); border-radius: 6px; background: var(--subtle); }
+.ic-risk-count strong { font-size: 2.25rem; font-weight: 700; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ic-risk-count span { font-size: 1rem; color: var(--muted); }
+.ic-risk-count .ic-risk-share { margin-left: auto; font-size: .9375rem; font-weight: 600; color: var(--ink); }
+.ic-risk-grid { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .ic-modal.is-wide .ic-risk-grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; } }
+.ic-risk-side { display: grid; gap: 24px; }
+.ic-risk-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+.ic-risk-table th { padding: 8px 10px; text-align: left; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); border-bottom: 2px solid var(--rule); white-space: nowrap; }
+.ic-risk-table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ic-risk-table tr:last-child td { border-bottom: 0; }
+.ic-risk-table td:first-child { font-weight: 600; }
+.ic-risk-level { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--rule); background: #fff; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.ic-risk-level::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--risk-color, var(--muted)); }
+.ic-risk-table-wrap { border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+@media (max-width: 640px) {
+    .ic-risk-table thead { display: none; }
+    .ic-risk-table, .ic-risk-table tbody, .ic-risk-table tr, .ic-risk-table td { display: block; width: 100%; }
+    .ic-risk-table tr { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .ic-risk-table tr:last-child { border-bottom: 0; }
+    .ic-risk-table td { padding: 2px 0; border: 0; }
+    .ic-risk-table td[data-label]:not(:first-child)::before { content: attr(data-label) ": "; color: var(--muted); }
+}
+
+/* Pop-up titles keep the Georgia title face on every page, including dashboards that set Inter page-wide. */
+html body .fad-modal .fad-m-head h2, html body .fad-modal .fad-m-scroll h3 { font-family: Georgia, "Times New Roman", Times, serif !important; }

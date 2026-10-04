@@ -1,7 +1,7 @@
 @php $items = $mao['attention']; @endphp
 @if (count($items) === 0)
     <section class="mtd-card mtd-attention is-clear" aria-label="MAO Attention Center" data-mao-attention>
-        <p class="mtd-allgood"><span aria-hidden="true">✓</span> No urgent agricultural actions at this time.</p>
+        <p class="mtd-allgood">@include('dashboards.mao.icon', ['name' => 'check']) No urgent agricultural actions at this time.</p>
     </section>
 @else
     <section class="mtd-card mtd-attention" aria-labelledby="mtdAttentionTitle" data-mao-attention>

@@ -41,11 +41,14 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('@media (max-width: 640px)', $itCss);
         $this->assertStringNotContainsString('<style>', $itDashboard);
         $this->assertStringContainsString('height: min(52vh, 320px)', $maoDashboard);
-        // MAO overview: 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
-        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoOverview);
-        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }', $maoOverview);
-        $this->assertStringContainsString('repeat(var(--mtd-kpi-count, 5), minmax(0, 1fr))', $maoOverview);
-        $this->assertStringContainsString('.mtd-table-cards thead { display: none; }', $maoOverview);
+        // MAO overview: built on the farmer dashboard system; its styles live in resources/css/mao-dashboard.css.
+        // 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
+        $maoCss = file_get_contents(resource_path('css/mao-dashboard.css'));
+        $this->assertStringNotContainsString('<style>', $maoOverview);
+        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoCss);
+        $this->assertStringContainsString('.mtd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }', $maoCss);
+        $this->assertStringContainsString('repeat(var(--mtd-kpi-count, 5), minmax(0, 1fr))', $maoCss);
+        $this->assertStringContainsString('.mtd-table-cards thead { display: none; }', $maoCss);
     }
 
     public function test_rendered_blade_sources_do_not_contain_merge_conflict_markers(): void

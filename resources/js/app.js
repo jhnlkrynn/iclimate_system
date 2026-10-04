@@ -11,6 +11,8 @@ import { registerChartExplainer } from './chart-explainer';
 import '../css/chart-explainer.css';
 import { initFarmerDashboard } from './farmer-dashboard';
 import { initAdvisoryModal } from './farmer-advisories';
+import { initInfoModal } from './info-modal';
+import { initNotificationsPopup } from './notifications-popup';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -178,6 +180,8 @@ function initApp() {
     initUiEnhancements(document);
     initFarmerDashboard();
     initAdvisoryModal();
+    initInfoModal();
+    initNotificationsPopup();
     bindSidebarDrawer();
     bindResponsiveTables();
 }

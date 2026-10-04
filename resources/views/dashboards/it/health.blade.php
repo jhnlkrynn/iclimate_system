@@ -36,7 +36,7 @@
                             <td class="itd-num">{{ number_format($j['count']) }}</td>
                             <td class="itd-mono itd-nowrap">{{ $j['latest']?->format('M j, g:i A') }}</td>
                             <td>
-                                <form method="POST" action="{{ route('admin.dashboard.retry-failed') }}" data-confirm="Retry {{ $j['count'] }} failed {{ $j['count'] === 1 ? 'job' : 'jobs' }} of class {{ $j['class'] }}? They will be put back on the queue and the retry will be recorded in the system log.">@csrf
+                                <form method="POST" action="{{ route('admin.dashboard.retry-failed') }}" data-ic-confirm="Retry {{ $j['count'] }} failed {{ $j['count'] === 1 ? 'job' : 'jobs' }} of class {{ $j['class'] }}? They will be put back on the queue and the retry will be recorded in the system log.">@csrf
                                     <input type="hidden" name="class" value="{{ $j['class'] }}">
                                     <button type="submit" class="mfd-btn is-quiet is-small">Retry</button>
                                 </form>

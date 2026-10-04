@@ -171,11 +171,12 @@ class BarangayRiskForecastTest extends TestCase
             ->assertOk()
             ->assertSee('data-forecast-audience="farmer"', false)
             ->assertSee('Risk Meaning')
-            ->assertSee('data-risk-meaning-trigger', false)
-            ->assertSee('data-risk-level="low"', false)
-            ->assertSee('data-risk-level="moderate"', false)
-            ->assertSee('data-risk-level="high-severe"', false)
-            ->assertSee('data-risk-meaning-overlay', false);
+            // Each meaning button opens the shared information pop-up for its category (barangay-risk-map.js).
+            ->assertSee('data-risk-category="low"', false)
+            ->assertSee('data-risk-category="moderate"', false)
+            ->assertSee('data-risk-category="high"', false)
+            ->assertSee('data-risk-overview data-audience="farmer"', false)
+            ->assertDontSee('data-risk-meaning-overlay', false);
 
         foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))->get(route('heat-map.index'))

@@ -8,6 +8,7 @@ use App\Services\SystemAuditLogger;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -134,18 +135,56 @@ class NotificationController extends CrudController
         return $view;
     }
 
-    public function markRead(Request $request, int $notification): RedirectResponse
+    /**
+     * The header bell's pop-up (resources/js/notifications-popup.js): the signed-in user's latest notifications and
+     * the same unread count as the badge, for every role. ?filter=unread lists unread ones only.
+     */
+    public function feed(Request $request): JsonResponse
+    {
+        $all = $this->baseQuery($request);
+        $tz = \App\Support\BusinessClock::timezone();
+        $items = (clone $all)
+            ->when($request->query('filter') === 'unread', fn (Builder $query) => $query->where('is_read', false))
+            ->latest('created_at')->latest('id')
+            ->limit(30)
+            ->get();
+
+        return response()->json([
+            'ok' => true,
+            'unread' => (clone $all)->where('is_read', false)->count(),
+            'total' => (clone $all)->count(),
+            'items' => $items->map(fn (UserNotification $note): array => [
+                'id' => $note->id,
+                'title' => $note->title,
+                'message' => $note->message,
+                'type' => $note->type,
+                'is_read' => (bool) $note->is_read,
+                'created_at' => $note->created_at?->toIso8601String(),
+                'time' => $note->created_at?->copy()->timezone($tz)->format('M j, Y · g:i A'),
+                'ago' => $note->created_at?->diffForHumans(),
+                'mark_read_url' => route('notifications.mark-read', $note),
+            ])->values(),
+        ]);
+    }
+
+    public function markRead(Request $request, int $notification): RedirectResponse|JsonResponse
     {
         $record = $this->baseQuery($request)->findOrFail($notification);
 
-        $record->update(['is_read' => true]);
-        SystemAuditLogger::forModel('marked read', $record, $request);
+        if (! $record->is_read) {
+            $record->update(['is_read' => true]);
+            SystemAuditLogger::forModel('marked read', $record, $request);
+        }
         $this->forgetUnreadCaches($request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'unread' => $this->unreadCount($request)]);
+        }
 
         return back()->with('success', 'Notification marked as read.');
     }
 
-    public function markAllRead(Request $request): RedirectResponse
+    public function markAllRead(Request $request): RedirectResponse|JsonResponse
     {
         $updated = $this->baseQuery($request)
             ->where('is_read', false)
@@ -155,7 +194,16 @@ class NotificationController extends CrudController
         ]);
         $this->forgetUnreadCaches($request->user());
 
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'updated' => $updated, 'unread' => $this->unreadCount($request)]);
+        }
+
         return back()->with('success', 'All notifications marked as read.');
+    }
+
+    private function unreadCount(Request $request): int
+    {
+        return $this->baseQuery($request)->where('is_read', false)->count();
     }
 
     /** The sidebar badge and the farmer overview both count unread notifications; drop their caches so they update at once. */
