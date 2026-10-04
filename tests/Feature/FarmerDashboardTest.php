@@ -1567,9 +1567,12 @@ class FarmerDashboardTest extends TestCase
         $html = $this->page($this->farmer())->getContent();
 
         $this->assertStringContainsString('>My Farm<', $html);
-        foreach (['Dashboard', 'Advisories', 'Calendar', 'Community', 'Messages', 'Notifications', 'Climate Records', 'Predictions', 'Rice Production'] as $link) {
+        foreach (['Dashboard', 'Advisories', 'Calendar', 'Community', 'Messages', 'Climate Records', 'Predictions', 'Rice Production'] as $link) {
             $this->assertStringContainsString($link, $html, $link);
         }
+        // Notifications are reached from the top bar bell only, so the sidebar does not repeat them.
+        $this->assertStringContainsString('data-ic-notifications', $html);
+        $this->assertDoesNotMatchRegularExpression('/class="sidebar-link[^"]*" href="'.preg_quote(route('notifications.index'), '/').'"/', $html);
     }
 
     public function test_georgia_titles_and_inter_text_are_the_only_families_on_the_page(): void

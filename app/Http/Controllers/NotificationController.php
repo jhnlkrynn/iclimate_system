@@ -64,7 +64,7 @@ class NotificationController extends CrudController
         return ['category' => ($data['category'] ?? null) === UserNotification::CATEGORY_WEATHER ? UserNotification::CATEGORY_WEATHER : null];
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeManage($request);
         $data = $this->validated($request);
@@ -92,10 +92,18 @@ class NotificationController extends CrudController
             'recipient_count' => $recipients->count(),
         ]);
 
-        return redirect()->route('notifications.index')->with('success', 'Notification sent to '.$recipients->count().' recipient(s).');
+        $this->forgetUnreadCaches($request->user());
+        $message = 'Notification sent to '.$recipients->count().' recipient(s).';
+
+        // The notifications pop-up (resources/js/notifications-popup.js) saves without leaving the page.
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message]);
+        }
+
+        return redirect()->route('notifications.index')->with('success', $message);
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse|JsonResponse
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
@@ -112,7 +120,28 @@ class NotificationController extends CrudController
             'type' => $record->type,
         ]);
 
+        $this->forgetUnreadCaches($request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Notification updated successfully.']);
+        }
+
         return redirect()->route('notifications.show', $record)->with('success', 'Notification updated successfully.');
+    }
+
+    public function destroy(Request $request, int $id): RedirectResponse|JsonResponse
+    {
+        $response = parent::destroy($request, $id);
+        $this->forgetUnreadCaches($request->user());
+
+        if ($request->expectsJson()) {
+            // The deletion is done; the success message parent::destroy() flashed is not needed by the pop-up.
+            $request->session()->forget('success');
+
+            return response()->json(['ok' => true, 'message' => 'Notification deleted successfully.']);
+        }
+
+        return $response;
     }
 
     protected function baseQuery(Request $request): Builder
@@ -138,22 +167,47 @@ class NotificationController extends CrudController
     /**
      * The header bell's pop-up (resources/js/notifications-popup.js): the signed-in user's latest notifications and
      * the same unread count as the badge, for every role. ?filter=unread lists unread ones only.
+     *
+     * "View all" in that pop-up uses the same feed as the Notifications page does its list: ?filter=unread|read,
+     * ?search= (title, message, type), ?type=, ?page= and ?per_page= (5-30). ?form=1 adds the send/edit form fields
+     * for accounts that may manage notifications.
      */
     public function feed(Request $request): JsonResponse
     {
         $all = $this->baseQuery($request);
         $tz = \App\Support\BusinessClock::timezone();
-        $items = (clone $all)
-            ->when($request->query('filter') === 'unread', fn (Builder $query) => $query->where('is_read', false))
+        $canManage = $this->canManage($request);
+        $search = trim((string) $request->query('search', ''));
+        $type = (string) $request->query('type', '');
+        $filter = (string) $request->query('filter', '');
+        $perPage = min(30, max(5, (int) $request->query('per_page', 30)));
+
+        $page = (clone $all)
+            ->when($filter === 'unread', fn (Builder $query) => $query->where('is_read', false))
+            ->when($filter === 'read', fn (Builder $query) => $query->where('is_read', true))
+            ->when(in_array($type, $this->filterable['type'], true), fn (Builder $query) => $query->where('type', $type))
+            ->when($search !== '', fn (Builder $query) => $query->where(function (Builder $builder) use ($search): void {
+                foreach ($this->searchable as $field) {
+                    $builder->orWhere($field, 'like', "%{$search}%");
+                }
+            }))
             ->latest('created_at')->latest('id')
-            ->limit(30)
-            ->get();
+            ->paginate($perPage, ['*'], 'page', max(1, (int) $request->query('page', 1)));
 
         return response()->json([
             'ok' => true,
             'unread' => (clone $all)->where('is_read', false)->count(),
             'total' => (clone $all)->count(),
-            'items' => $items->map(fn (UserNotification $note): array => [
+            'filtered' => $page->total(),
+            'page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'from' => $page->firstItem() ?? 0,
+            'to' => $page->lastItem() ?? 0,
+            'types' => $this->filterable['type'],
+            'can_manage' => $canManage,
+            'store_url' => $canManage ? route('notifications.store') : null,
+            'form' => $canManage && $request->boolean('form') ? $this->fields : null,
+            'items' => collect($page->items())->map(fn (UserNotification $note): array => [
                 'id' => $note->id,
                 'title' => $note->title,
                 'message' => $note->message,
@@ -163,7 +217,12 @@ class NotificationController extends CrudController
                 'time' => $note->created_at?->copy()->timezone($tz)->format('M j, Y · g:i A'),
                 'ago' => $note->created_at?->diffForHumans(),
                 'mark_read_url' => route('notifications.mark-read', $note),
-            ])->values(),
+            ] + ($canManage ? [
+                'user_id' => $note->user_id,
+                'category' => $note->category ?? 'general',
+                'update_url' => route('notifications.update', $note),
+                'destroy_url' => route('notifications.destroy', $note),
+            ] : []))->values(),
         ]);
     }
 

@@ -111,3 +111,39 @@
 
 /* Pop-up titles keep the Georgia title face on every page, including dashboards that set Inter page-wide. */
 html body .fad-modal .fad-m-head h2, html body .fad-modal .fad-m-scroll h3 { font-family: Georgia, "Times New Roman", Times, serif !important; }
+
+/* "View all" inside the same pop-up (notifications-popup.js): the full list with search, type filter, pages and,
+ * for accounts that may manage notifications, send / edit / delete. */
+@media (min-width: 641px) { .ic-modal.is-notif-all .fad-modal-dialog { width: min(920px, calc(100vw - 64px)); height: min(86vh, 980px); height: min(86dvh, 980px); max-height: none; } }
+/* The list is as tall as its rows and the pop-up body scrolls; without this the rows are squeezed and clipped. */
+.ic-modal .fad-m-scroll:has(> .ic-notif-tabs) { grid-auto-rows: max-content; gap: 16px; }
+.ic-notif-tabs { max-width: 100%; overflow-x: auto; }
+.ic-notif-tools { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; align-items: end; gap: 12px; padding: 12px 16px; border: 1px solid var(--rule); border-radius: 6px; background: var(--subtle); }
+.ic-notif-tools-actions { display: flex; gap: 8px; }
+.ic-notif-list.is-full .ic-notif-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; background: #fff; }
+.ic-notif-list.is-full .ic-notif-row:has(.ic-notif-item.is-unread) { background: #f3faf6; }
+.ic-notif-list.is-full .ic-notif-item { background: transparent; }
+.ic-notif-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 8px 16px 8px 0; }
+.ic-notif-row.is-confirm { padding: 14px 16px; border-left: 4px solid var(--danger); background: var(--danger-bg) !important; }
+.ic-notif-row.is-confirm p { margin: 0; font-size: .9375rem; color: var(--ink); overflow-wrap: anywhere; }
+.ic-notif-row.is-confirm .ic-notif-row-actions { padding: 0; }
+.ic-modal .fad-btn.is-danger-text { border-color: #f0c2bc; color: var(--danger-ink); }
+.ic-modal .fad-btn.is-danger-text:hover { background: var(--danger-bg); }
+.ic-notif-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.ic-notif-pager p { margin: 0; }
+.ic-notif-pager-buttons { display: flex; align-items: center; gap: 10px; }
+.ic-notif-pager .fad-btn:disabled { opacity: .5; cursor: not-allowed; }
+.ic-notif-form { display: grid; gap: 16px; }
+.ic-notif-form [hidden] { display: none !important; }
+.ic-notif-field-error { margin: 0; font-size: .875rem; color: var(--danger-ink); }
+.ic-notif-check { display: flex; align-items: center; gap: 10px; font-size: .9375rem; color: var(--ink); cursor: pointer; }
+.ic-notif-check input { width: 18px; height: 18px; accent-color: var(--brand); }
+@media (max-width: 640px) {
+    .ic-notif-tools { grid-template-columns: minmax(0, 1fr); }
+    .ic-notif-tabs { width: 100%; }
+    .ic-notif-tab { flex: 1 1 auto; justify-content: center; padding-inline: 8px; }
+    .ic-notif-tools-actions .fad-btn { flex: 1 1 auto; }
+    .ic-notif-list.is-full .ic-notif-row { grid-template-columns: minmax(0, 1fr); }
+    .ic-notif-row-actions { justify-content: flex-start; padding: 0 16px 12px; }
+    .ic-notif-pager { justify-content: center; }
+}
