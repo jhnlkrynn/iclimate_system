@@ -714,6 +714,7 @@ class AIOrchestratorService
         // No specific barangay named: rank across whatever rows are CURRENT
         // right now, never mixing in stale rows unqualified.
         $current = HeatmapArea::query()
+            ->computed()
             ->orderByDesc('risk_score')
             ->take(20)
             ->get()
@@ -738,7 +739,7 @@ class AIOrchestratorService
             ])->all(),
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if (! $tool['success']) {
                 return $this->translate($language, 'I could not find any current heat-map risk records right now.', 'Wala akong makitang current heat-map risk records ngayon.');
             }
@@ -776,7 +777,13 @@ class AIOrchestratorService
      */
     private function climateRiskForBarangay(User $user, string $question, string $language, array $memory, string $barangay): array
     {
-        $row = HeatmapArea::query()->where('barangay', 'like', '%'.$barangay.'%')->orderByDesc('risk_score')->first();
+        // The computed scope is the single source of truth for excluding the
+        // migration's seed/demo placeholders from Climora answers.
+        $row = HeatmapArea::query()
+            ->computed()
+            ->where('barangay', 'like', '%'.$barangay.'%')
+            ->orderByDesc('risk_score')
+            ->first();
 
         $liveDetail = null;
         try {
@@ -791,7 +798,7 @@ class AIOrchestratorService
 
         $status = match (true) {
             $row === null => 'no_data',
-            $liveReportsNoData => 'stale', // a row exists but the live pipeline currently disagrees / has no data
+            $liveReportsNoData => 'no_data',
             $row->isCurrentlyComputed() => 'current',
             default => 'stale',
         };
@@ -818,8 +825,8 @@ class AIOrchestratorService
             if ($status === 'no_data' || $row === null) {
                 return $this->translate(
                     $language,
-                    'Current risk information is not available for that barangay right now.',
-                    'Wala pang current na risk information para sa barangay na iyon ngayon.'
+                    'No calculated farm-risk rating is available for this barangay yet. Check the latest weather and advisories.',
+                    'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
                 );
             }
 

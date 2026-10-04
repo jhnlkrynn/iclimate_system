@@ -203,6 +203,7 @@ class AIHybridOrchestratorTest extends TestCase
             'rainfall_status' => 'Low rainfall',
             'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
             'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
+            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
         ]);
 
         $response = $this->actingAs($user)->postJson(route('ai-chat.message'), [
@@ -249,6 +250,7 @@ class AIHybridOrchestratorTest extends TestCase
             'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
             'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
             'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
+            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
         ]);
         $this->assertTrue($row->fresh()->isCurrentlyComputed());
         $this->assertSame(1, HeatmapArea::query()->where('barangay', 'Malaruhatan')->count());
@@ -278,6 +280,7 @@ class AIHybridOrchestratorTest extends TestCase
             'rainfall_status' => 'Low rainfall',
             'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
             'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
+            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
         ]);
         // Bypass the model's saving hook (which stamps risk_computed_at =
         // now()) with a direct query update, simulating a row computed well
@@ -310,7 +313,7 @@ class AIHybridOrchestratorTest extends TestCase
         ]);
 
         $response->assertOk()->assertJsonPath('chat.prediction_result.status', 'no_data');
-        $this->assertStringContainsString('not available', (string) $response->json('chat.answer'));
+        $this->assertStringContainsString('No calculated farm-risk rating', (string) $response->json('chat.answer'));
     }
 
     private function seedClimateRecords(): void
