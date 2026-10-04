@@ -69,6 +69,16 @@ class HeatmapArea extends Model
     }
 
     /**
+     * The 2026_06_30 install migration filled every barangay with a "Moderate / Pending climate update" placeholder.
+     * Until the risk map has computed that barangay, the row is not a rating and must not be shown as one.
+     * BarangayRiskMapService::persist() always rewrites rainfall_status, so a computed row never matches.
+     */
+    public function isSeedPlaceholder(): bool
+    {
+        return $this->rainfall_status === 'Pending climate update';
+    }
+
+    /**
      * True when risk_computed_at is within self::CURRENT_WINDOW_HOURS of now.
      * A row with no risk_computed_at at all is never treated as current.
      */
