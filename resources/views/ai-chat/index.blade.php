@@ -289,6 +289,8 @@
             const escapeHtml = (value) => value.replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
             const resultCard = (label, value, extra = '') => `<div class="ai-result-card ${extra}"><div class="ai-result-label">${label}</div><div class="ai-result-value">${escapeHtml(String(value || 'N/A'))}</div></div>`;
             const relevantPredictionCards = (chat) => {
+                // A short farmer answer already says what to do; the raw result cards would repeat it in engine wording.
+                if (chat.memory?.brief) return [];
                 switch (chat.intent) {
                     case 'Weather Prediction': return ['weather'];
                     case 'Rice Yield Prediction': return ['yield'];
@@ -338,7 +340,7 @@
                 if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
                 if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation, 'ai-irrigation'));
                 const resultGrid = cards.length ? `<div class="ai-result-grid">${cards.join('')}</div>` : '';
-                chatWindow.insertAdjacentHTML('beforeend', `<div class="ai-message assistant"><div class="ai-bubble">${escapeHtml(chat.answer)}
+                chatWindow.insertAdjacentHTML('beforeend', `<div class="ai-message assistant"><div class="ai-bubble">${chat.memory?.brief ? (([first, ...rest]) => `<strong>${escapeHtml(first)}</strong>${rest.length ? '\n' + escapeHtml(rest.join('\n')) : ''}`)(String(chat.answer ?? '').split('\n')) : escapeHtml(chat.answer)}
                     ${resultGrid}
                 </div></div>`);
                 scrollToBottom();

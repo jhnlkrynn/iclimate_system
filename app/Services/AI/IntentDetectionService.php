@@ -147,8 +147,16 @@ class IntentDetectionService
         return str($text)->contains(['will it rain', 'should i irrigate', 'should i plant', 'when should i plant', 'risk assessment', 'yield explanation', 'climate recommendation']);
     }
 
-    public function detectLanguage(string $question, array $memory = []): string
+    public function detectLanguage(string $question, array $memory = [], ?string $preferredLanguage = null): string
     {
+        if (in_array($preferredLanguage, ['en', 'English'], true)) {
+            return 'English';
+        }
+
+        if (in_array($preferredLanguage, ['tl', 'Tagalog'], true)) {
+            return 'Tagalog';
+        }
+
         $text = str($question)->lower()->toString();
 
         if ($explicitLanguage = $this->explicitLanguageRequest($text)) {

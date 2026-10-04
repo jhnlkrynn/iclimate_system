@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AIChat;
+use App\Models\User;
 use App\Services\AI\AIOrchestratorService;
 use App\Services\AI\AiTimings;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,12 @@ class AIChatController extends Controller
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:1000'],
             'save_conversation' => ['sometimes', 'boolean'],
+            'language' => ['sometimes', 'nullable', 'in:en,tl'],
         ]);
+
+        if ($request->user()->role === User::ROLE_FARMER && filled($validated['language'] ?? null)) {
+            $request->user()->forceFill(['ai_language' => $validated['language']])->save();
+        }
 
         // A chat answer must finish well inside the browser's wait; if anything stalls, PHP stops it.
         // Web requests only: in the console (tests, queue) set_time_limit() would stay in force for
@@ -67,6 +73,19 @@ class AIChatController extends Controller
             'chat' => $chat,
             'saved' => $shouldSave,
         ]);
+    }
+
+    public function setLanguage(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->role === User::ROLE_FARMER, 403);
+
+        $validated = $request->validate([
+            'language' => ['required', 'in:en,tl'],
+        ]);
+
+        $request->user()->forceFill(['ai_language' => $validated['language']])->save();
+
+        return response()->json(['language' => $validated['language']]);
     }
 
     public function clear(Request $request): RedirectResponse

@@ -715,6 +715,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'ai-chat.message'
             );
 
+        Route::patch(
+            'ai-farming-assistant/language',
+            [AIChatController::class, 'setLanguage']
+        )
+            ->middleware('role:'.User::ROLE_FARMER)
+            ->name(
+                'ai-chat.language'
+            );
+
 
         Route::delete(
             'ai-farming-assistant',

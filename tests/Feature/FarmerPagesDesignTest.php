@@ -24,11 +24,20 @@ class FarmerPagesDesignTest extends TestCase
             ClimateRecord::query()->create(['record_date' => $date, 'rainfall' => $rain, 'temperature' => $temp, 'humidity' => $humidity, 'wind_speed' => 5, 'season' => 'Dry', 'source' => 'PAGASA']);
         }
 
+        // Only the entered rows here: the Ambulong station record is checked in ClimateRecordsFarmerTest.
+        $this->app->instance(\App\Services\Climate\AmbulongHistoricalClimateDataset::class, new class extends \App\Services\Climate\AmbulongHistoricalClimateDataset
+        {
+            public function load(): array
+            {
+                return ['available' => true, 'message' => null, 'observations' => collect(), 'excluded_sentinel_count' => 0, 'invalid_row_count' => 0, 'duplicate_count' => 0];
+            }
+        });
+
         $html = $this->actingAs($this->farmer())->get(route('climate-records.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('<h1>Climate Records</h1>', $html);
+        $this->assertStringContainsString('<h1>Climate Records for Lian, Batangas</h1>', $html);
         $this->assertStringContainsString('32.0<small>°C</small>', $html);            // average of 30 and 34
         $this->assertStringContainsString('60.0<small>mm</small>', $html);            // 20 + 40
-        $this->assertStringContainsString('75.0<small>%</small>', $html);
+        $this->assertStringContainsString('75<small>%</small>', $html);               // humidity shown as a whole percent
         $this->assertStringContainsString('The wettest record is Feb 5, 2026, with 40.0 mm of rain.', $html);
         $this->assertStringContainsString('Feb 5, 2026', $html);
         $this->assertStringNotContainsString('2026-02-05 00:00:00', $html);           // dates are readable
