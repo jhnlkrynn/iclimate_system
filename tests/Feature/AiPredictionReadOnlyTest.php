@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exceptions\PredictionNotReady;
 use App\Jobs\GenerateMonthlyWeatherForecast;
 use App\Models\MonthlyWeatherPrediction;
+use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\AI\AiTimings;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
@@ -257,6 +258,8 @@ class AiPredictionReadOnlyTest extends TestCase
     {
         Queue::fake();
         $this->fakePython();
+        // The municipal yield pass runs on the recorded average farm area; there is no default area.
+        RiceProduction::factory()->create(['area_hectares' => 2.5]);
         $calls = 0;
         $this->mockForest(function (MockInterface $mock) use (&$calls): void {
             $mock->shouldReceive('predict')->andReturnUsing(function () use (&$calls): array {
@@ -277,6 +280,20 @@ class AiPredictionReadOnlyTest extends TestCase
         $this->assertSame([], $state['months_missing']);
         $this->assertGreaterThan(0, $state['yield_results']);
         $this->assertGreaterThan(0, $this->pythonRequests(), 'the yield engine was run on the prepared forecasts');
+    }
+
+    public function test_warming_without_recorded_farm_areas_reports_no_yield_results_instead_of_counting_them(): void
+    {
+        Queue::fake();
+        $this->fakePython();
+        $this->mockForest(fn (MockInterface $mock) => $mock->shouldReceive('predict')->andReturn($this->readyForest()));
+
+        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 4])
+            ->expectsOutputToContain('Yield results not produced: Not enough verified input data to run the rice-yield model (missing: area).')
+            ->assertExitCode(0);
+
+        $this->assertSame(0, Cache::get('predictions:cache_state')['yield_results']);
+        $this->assertSame(0, $this->pythonRequests(), 'the model is not run on a made-up farm area');
     }
 
     public function test_after_warming_a_chat_yield_question_is_answered_without_any_training(): void

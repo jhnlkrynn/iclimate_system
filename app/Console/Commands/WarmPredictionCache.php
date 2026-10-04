@@ -115,20 +115,33 @@ class WarmPredictionCache extends Command
     /**
      * One pass of the shared yield engine per farm type and month, from the
      * prepared forecasts. Failures are ignored: warming must never fail the run.
+     * Only a pass that produced a yield is counted; one the engine declined
+     * (e.g. no recorded farm area to run on) is reported, not counted.
      */
     private function warmYield(PredictionEngine $engine, CarbonImmutable $start): int
     {
         $warmed = 0;
+        $reasons = [];
 
         for ($i = 0; $i < self::YIELD_WARM_MONTHS; $i++) {
             foreach ([FarmerProfile::FARM_TYPE_RAINFED, FarmerProfile::FARM_TYPE_IRRIGATED] as $farmType) {
                 try {
-                    $engine->predict($start->addMonthsNoOverflow($i), $farmType);
-                    $warmed++;
+                    $result = $engine->predict($start->addMonthsNoOverflow($i), $farmType);
                 } catch (Throwable) {
                     // The month's forecast may be genuinely unavailable; that is reported above.
+                    continue;
+                }
+
+                if (is_numeric($result['yield']['predicted_yield'] ?? null)) {
+                    $warmed++;
+                } elseif (filled($result['api_error'] ?? null)) {
+                    $reasons[] = (string) $result['api_error'];
                 }
             }
+        }
+
+        if ($reasons !== []) {
+            $this->warn('Yield results not produced: '.implode(' | ', array_unique($reasons)));
         }
 
         return $warmed;
