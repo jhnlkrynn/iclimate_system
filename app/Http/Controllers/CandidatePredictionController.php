@@ -778,136 +778,21 @@ class CandidatePredictionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Clean Windows / Python Environment
+        | Python Environment
         |--------------------------------------------------------------------------
+        |
+        | One cross-platform environment for every ML script (Windows, macOS,
+        | Linux VPS): App\Support\PythonRuntime::environment().
+        |
         */
 
         $projectRoot =
             base_path();
 
-        $venvRoot =
-            $projectRoot
-            .DIRECTORY_SEPARATOR
-            .'.venv';
-
-        $venvScripts =
-            $venvRoot
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $pythonBase =
-            'C:\Users\Luke\AppData\Local\Programs\Python\Python312';
-
-        $pythonScripts =
-            $pythonBase
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $windowsRoot =
-            getenv(
-                'SystemRoot'
-            )
-            ?: 'C:\Windows';
-
-        $system32 =
-            $windowsRoot
-            .DIRECTORY_SEPARATOR
-            .'System32';
-
-        $cleanPath =
-            implode(
-                PATH_SEPARATOR,
-                [
-                    $venvScripts,
-                    $pythonBase,
-                    $pythonScripts,
-                    $system32,
-                    $windowsRoot,
-                ]
+        $environment =
+            PythonRuntime::environment(
+                $pythonBinary
             );
-
-        $environment = [
-            'PATH' =>
-                $cleanPath,
-
-            'Path' =>
-                $cleanPath,
-
-            'SYSTEMROOT' =>
-                $windowsRoot,
-
-            'SystemRoot' =>
-                $windowsRoot,
-
-            'WINDIR' =>
-                $windowsRoot,
-
-            'VIRTUAL_ENV' =>
-                $venvRoot,
-
-            'PYTHONHOME' =>
-                false,
-
-            'PYTHONPATH' =>
-                false,
-
-            'PYTHONNOUSERSITE' =>
-                '1',
-
-            'PYTHONUTF8' =>
-                '1',
-
-            'PYTHONIOENCODING' =>
-                'utf-8',
-
-            'JOBLIB_MULTIPROCESSING' =>
-                '0',
-
-            'LOKY_MAX_CPU_COUNT' =>
-                '1',
-
-            'OMP_NUM_THREADS' =>
-                '1',
-
-            'OPENBLAS_NUM_THREADS' =>
-                '1',
-
-            'MKL_NUM_THREADS' =>
-                '1',
-
-            'NUMEXPR_NUM_THREADS' =>
-                '1',
-
-            'USERPROFILE' =>
-                getenv(
-                    'USERPROFILE'
-                )
-                ?: 'C:\Users\Luke',
-
-            'LOCALAPPDATA' =>
-                getenv(
-                    'LOCALAPPDATA'
-                )
-                ?: 'C:\Users\Luke\AppData\Local',
-
-            'APPDATA' =>
-                getenv(
-                    'APPDATA'
-                )
-                ?: 'C:\Users\Luke\AppData\Roaming',
-
-            'TEMP' =>
-                getenv(
-                    'TEMP'
-                )
-                ?: sys_get_temp_dir(),
-
-            'TMP' =>
-                getenv(
-                    'TMP'
-                )
-                ?: sys_get_temp_dir(),
-        ];
 
         /*
         |--------------------------------------------------------------------------

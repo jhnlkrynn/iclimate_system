@@ -17,10 +17,12 @@ use App\Support\LianBarangays;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\ComputesRiskRatings;
 use Tests\TestCase;
 
 class BarangayRiskMapTest extends TestCase
 {
+    use ComputesRiskRatings;
     use RefreshDatabase;
 
     /** The process-wide time limit before this test, restored in tearDown(). */
@@ -468,6 +470,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_mao_dashboard_loads_with_risk_map_section(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
@@ -617,6 +620,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_admin_dashboard_has_a_heat_map_tab_and_mao_still_does(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
@@ -699,6 +703,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_farmer_and_mao_render_the_same_shared_risk_map_component(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);

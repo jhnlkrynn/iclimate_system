@@ -4,14 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ComputesRiskRatings;
 use Tests\TestCase;
 
 class MaoDashboardSimpleWordingTest extends TestCase
 {
+    use ComputesRiskRatings;
     use RefreshDatabase;
 
     private function maoHtml(): string
     {
+        $this->computedRiskRating();   // the risk card and map show once a barangay has a computed rating
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $html = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->getContent();
 

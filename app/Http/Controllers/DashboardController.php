@@ -553,6 +553,7 @@ class DashboardController extends Controller
     private function highRiskAreas(): Collection
     {
         return Cache::remember('dashboard:high-risk-areas', now()->addSeconds(15), fn (): Collection => HeatmapArea::query()
+            ->computed()                                              // install placeholders are not ratings
             ->whereIn('risk_level', ['High', 'Severe'])
             ->orderByDesc('risk_score')
             ->take(8)
@@ -868,7 +869,7 @@ class DashboardController extends Controller
         );
         $rainfed = $latestPerBarangay->diff($irrigated);
 
-        $estimatedYield = HeatmapArea::query()->whereNotNull('predicted_yield')->avg('predicted_yield');
+        $estimatedYield = HeatmapArea::query()->computed()->whereNotNull('predicted_yield')->avg('predicted_yield');
         $latestArea = (float) $latestPerBarangay->sum('area_hectares');
         $actualYield = $latestArea > 0 ? (float) $latestPerBarangay->sum('total_production') / $latestArea : null;
 
@@ -908,9 +909,10 @@ class DashboardController extends Controller
                     'area_hectares' => $row ? (float) $row->area_hectares : null,
                     'production_volume' => $row ? (float) $row->production_volume : null,
                     'avg_yield' => $row && $row->avg_yield !== null ? (float) $row->avg_yield : null,
-                    'risk_level' => $area->risk_level,
-                    'risk_type' => $area->risk_type,
-                    'last_monitored' => $area->updated_at,
+                    // A barangay with only an install placeholder shows "No Data" (the table's own wording), never a level.
+                    'risk_level' => $area->isSeedPlaceholder() ? null : $area->risk_level,
+                    'risk_type' => $area->isSeedPlaceholder() ? null : $area->risk_type,
+                    'last_monitored' => $area->isSeedPlaceholder() ? null : $area->updated_at,
                 ];
             })
             ->values();

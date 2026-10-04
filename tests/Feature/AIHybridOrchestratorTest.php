@@ -248,6 +248,7 @@ class AIHybridOrchestratorTest extends TestCase
             'rainfall_status' => 'Low rainfall',
             'planting_advisory' => 'Delay planting or use drought-tolerant practices.',
             'irrigation_recommendation' => 'Prioritize irrigation support within 7 days.',
+            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
         ]);
         $this->assertTrue($row->fresh()->isCurrentlyComputed());
         $this->assertSame(1, HeatmapArea::query()->where('barangay', 'Malaruhatan')->count());

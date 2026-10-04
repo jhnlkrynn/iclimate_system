@@ -32,52 +32,7 @@ trait RunsProjectPython
     /** @return array<string, string|false> */
     protected function pythonEnvironment(string $python): array
     {
-        $binDir = dirname($python);
-        $inVenv = str_starts_with($python, base_path('.venv').DIRECTORY_SEPARATOR);
-
-        $environment = [
-            'PYTHONHOME' => false,
-            'PYTHONPATH' => false,
-            'PYTHONUTF8' => '1',
-            'PYTHONIOENCODING' => 'utf-8',
-            // Keep prediction single-process.
-            'JOBLIB_MULTIPROCESSING' => '0',
-            'LOKY_MAX_CPU_COUNT' => '1',
-            'OMP_NUM_THREADS' => '1',
-            'OPENBLAS_NUM_THREADS' => '1',
-            'MKL_NUM_THREADS' => '1',
-            'NUMEXPR_NUM_THREADS' => '1',
-        ];
-
-        if ($inVenv) {
-            $environment['VIRTUAL_ENV'] = base_path('.venv');
-            $environment['PYTHONNOUSERSITE'] = '1';
-        }
-
-        if (PHP_OS_FAMILY === 'Windows') {
-            // A short, explicit PATH avoids the XAMPP DLL clashes (WinError 10106) the candidate controller works around.
-            $windowsRoot = getenv('SystemRoot') ?: 'C:\Windows';
-            $home = $this->venvHome();
-            $path = implode(PATH_SEPARATOR, array_filter([
-                $binDir,
-                $home,
-                $home ? $home.DIRECTORY_SEPARATOR.'Scripts' : null,
-                $windowsRoot.DIRECTORY_SEPARATOR.'System32',
-                $windowsRoot,
-            ]));
-
-            return $environment + [
-                'PATH' => $path,
-                'Path' => $path,
-                'SYSTEMROOT' => $windowsRoot,
-                'SystemRoot' => $windowsRoot,
-                'WINDIR' => $windowsRoot,
-                'TEMP' => getenv('TEMP') ?: sys_get_temp_dir(),
-                'TMP' => getenv('TMP') ?: sys_get_temp_dir(),
-            ];
-        }
-
-        return $environment + ['PATH' => $binDir.PATH_SEPARATOR.(getenv('PATH') ?: '/usr/bin:/bin')];
+        return PythonRuntime::environment($python);
     }
 
     /** @return array{python: ?string, reason: string} */
@@ -113,16 +68,5 @@ trait RunsProjectPython
             'reason' => 'No usable Python environment for the rice-yield ML integration test. Tried: '.implode('; ', $tried)
                 .'. Create .venv and run `pip install -r requirements.txt` to run it.',
         ];
-    }
-
-    /** The base interpreter a Windows venv was created from (pyvenv.cfg "home"), for its DLLs. */
-    private function venvHome(): ?string
-    {
-        $cfg = base_path('.venv/pyvenv.cfg');
-        if (! is_file($cfg)) {
-            return null;
-        }
-
-        return preg_match('/^home\s*=\s*(.+)$/mi', (string) file_get_contents($cfg), $m) ? trim($m[1]) : null;
     }
 }

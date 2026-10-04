@@ -68,14 +68,29 @@ class HeatmapArea extends Model
         });
     }
 
+    /** rainfall_status of the install migration's "Moderate" placeholders. */
+    public const SEED_RAINFALL_STATUS = 'Pending climate update';
+
+    /** description the 2026_06_30 install migration gave every row it seeded (placeholders and hand-written demo levels). */
+    public const SEED_DESCRIPTION = 'Barangay agricultural risk score generated from rainfall, temperature, season, and yield indicators.';
+
     /**
-     * The 2026_06_30 install migration filled every barangay with a "Moderate / Pending climate update" placeholder.
-     * Until the risk map has computed that barangay, the row is not a rating and must not be shown as one.
-     * BarangayRiskMapService::persist() always rewrites rainfall_status, so a computed row never matches.
+     * The 2026_06_30 install migration seeded every barangay with a rating nobody computed: "Moderate / Pending climate
+     * update" placeholders and a few hand-written demo levels. Until the risk map has computed that barangay, the row
+     * is not a rating and must not be shown or counted as one. BarangayRiskMapService::persist() always rewrites
+     * rainfall_status and description, so a computed row never matches.
      */
     public function isSeedPlaceholder(): bool
     {
-        return $this->rainfall_status === 'Pending climate update';
+        return $this->rainfall_status === self::SEED_RAINFALL_STATUS || $this->description === self::SEED_DESCRIPTION;
+    }
+
+    /** Rows holding a real computed rating: the query form of ! isSeedPlaceholder(). */
+    public function scopeComputed(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query
+            ->where(fn ($q) => $q->whereNull('rainfall_status')->orWhere('rainfall_status', '!=', self::SEED_RAINFALL_STATUS))
+            ->where(fn ($q) => $q->whereNull('description')->orWhere('description', '!=', self::SEED_DESCRIPTION));
     }
 
     /**
