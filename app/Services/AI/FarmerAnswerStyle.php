@@ -53,12 +53,108 @@ class FarmerAnswerStyle
     /** Monthly weather estimate for the farmer: rainfall, what it means, and what to do. No model name. */
     public static function monthlyWeather(string $month, mixed $rainfall, mixed $temperature, mixed $humidity, bool $tagalog): string
     {
-        $answer = is_numeric($rainfall)
-            ? ($tagalog ? "Sa {$month}, asahan ang mga ".round((float) $rainfall).' mm na ulan.' : "In {$month}, expect about ".round((float) $rainfall).' mm of rain.')
-            : ($tagalog ? "Walang sapat na forecast ng ulan para sa {$month}." : "There is not enough rainfall forecast for {$month}.");
+        $month = self::month($month, $tagalog);
+        $temp = is_numeric($temperature) ? self::number($temperature).'°C' : null;
+        $answer = match (true) {
+            is_numeric($rainfall) && $temp !== null => $tagalog
+                ? "Sa {$month}, inaasahan ang ".self::number($rainfall)." mm na ulan at {$temp} na temperatura."
+                : "In {$month}, expect ".self::number($rainfall)." mm of rain and a temperature of {$temp}.",
+            is_numeric($rainfall) => $tagalog ? "Sa {$month}, inaasahan ang ".self::number($rainfall).' mm na ulan.' : "In {$month}, expect ".self::number($rainfall).' mm of rain.',
+            default => $tagalog ? "Walang sapat na forecast ng ulan para sa {$month}." : "There is not enough rainfall forecast for {$month}.",
+        };
         [$reason, $action] = self::rainMeaning(is_numeric($rainfall) ? (float) $rainfall : null, $tagalog);
 
         return self::format([$answer, $reason, $action], $tagalog);
+    }
+
+    /**
+     * A source figure as the source gave it (29.4 stays 29.4, 3.2 stays 3.2): only float noise past two decimals and
+     * trailing zeros are dropped. Simpler answers come from the wording, never from rounding the data.
+     */
+    public static function number(mixed $value): string
+    {
+        $text = rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+
+        return $text === '-0' ? '0' : $text;
+    }
+
+    /**
+     * A weather condition (WeatherConditionLabel / the providers' fixed labels) in the farmer's language.
+     * $form "noun" fits "Current weather in Lian: light rain"; "sentence" follows a day: "Tomorrow may have light rain."
+     */
+    public static function condition(?string $condition, bool $tagalog, string $form = 'noun'): string
+    {
+        $key = strtolower(trim((string) $condition));
+        // [English noun, Tagalog noun, English after a day, Tagalog after "<day> ay"]
+        $known = [
+            'thunderstorm' => ['thunderstorms', 'may kulog at kidlat', 'may have thunderstorms', 'may kulog at kidlat'],
+            'heavy rain' => ['heavy rain', 'malakas na ulan', 'may have heavy rain', 'may malakas na ulan'],
+            'moderate rain' => ['moderate rain', 'katamtamang ulan', 'may have moderate rain', 'may katamtamang ulan'],
+            'light rain' => ['light rain', 'mahinang ulan', 'may have light rain', 'may mahinang ulan'],
+            'rain showers' => ['rain showers', 'pabugso-bugsong ulan', 'may have rain showers', 'may pabugso-bugsong ulan'],
+            'rain' => ['rain', 'ulan', 'may have rain', 'may ulan'],
+            'foggy' => ['foggy', 'mahamog', 'may be foggy', 'mahamog'],
+            'overcast' => ['overcast', 'makulimlim', 'will be overcast', 'makulimlim'],
+            'partly cloudy' => ['partly cloudy', 'bahagyang maulap', 'will be partly cloudy', 'bahagyang maulap'],
+            'cloudy' => ['cloudy', 'maulap', 'will be cloudy', 'maulap'],
+            'clear' => ['clear', 'maaliwalas', 'will be clear', 'maaliwalas'],
+            'clear night' => ['clear', 'maaliwalas', 'will be clear', 'maaliwalas'],
+            'sunny' => ['sunny', 'maaraw', 'will be sunny', 'maaraw'],
+        ];
+        $match = $known[$key] ?? collect($known)->first(fn ($words, $label) => str_contains($key, $label));
+
+        if ($match === null) {
+            // Not a label we know: say it plainly rather than guess a translation.
+            return match (true) {
+                $key === '' => $tagalog ? 'hindi tiyak ang panahon' : ($form === 'sentence' ? 'has an uncertain forecast' : 'uncertain'),
+                $tagalog => 'may kondisyong "'.trim((string) $condition).'"',
+                default => $form === 'sentence' ? 'will be '.$key : $key,
+            };
+        }
+
+        return $match[($tagalog ? 1 : 0) + ($form === 'sentence' ? 2 : 0)];
+    }
+
+    /** A forecast day ("Today", "Tomorrow", "Mon", or a date) as the farmer says it: Bukas, Lunes, Tomorrow, Monday. */
+    public static function day(array $day, bool $tagalog): string
+    {
+        $en = ['Today', 'Tomorrow', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $tl = ['Ngayong araw', 'Bukas', 'Lunes', 'Martes', 'Miyerkules', 'Huwebes', 'Biyernes', 'Sabado', 'Linggo'];
+        $label = null;
+
+        try {
+            if (filled($day['date'] ?? null)) {
+                $date = \Carbon\CarbonImmutable::parse((string) $day['date'])->startOfDay();
+                $ahead = (int) \App\Support\BusinessClock::today()->diffInDays($date, false);
+                $label = $ahead === 0 ? 'Today' : ($ahead === 1 ? 'Tomorrow' : $date->format('l'));
+            }
+        } catch (\Throwable) {
+            $label = null;
+        }
+
+        if ($label === null) {
+            $given = trim((string) ($day['day'] ?? ''));
+            $label = collect($en)->first(fn ($name) => strcasecmp($given, $name) === 0 || (strlen($given) === 3 && stripos($name, $given) === 0));
+            if ($label === null) {
+                return $given !== '' ? $given : ($tagalog ? 'Sa susunod na araw' : 'The next day');
+            }
+        }
+
+        return $tagalog ? $tl[array_search($label, $en, true)] : $label;
+    }
+
+    /** "October 2026" → "Oktubre 2026" in Tagalog. */
+    private static function month(string $month, bool $tagalog): string
+    {
+        if (! $tagalog) {
+            return $month;
+        }
+
+        return str_ireplace(
+            ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            ['Enero', 'Pebrero', 'Marso', 'Abril', 'Mayo', 'Hunyo', 'Hulyo', 'Agosto', 'Setyembre', 'Oktubre', 'Nobyembre', 'Disyembre'],
+            $month
+        );
     }
 
     /** @return list<string> */
@@ -160,7 +256,7 @@ class FarmerAnswerStyle
         }
         [$reason, $action] = self::rainMeaning($rainfall, $tagalog);
 
-        return [$tagalog ? 'Mga '.round($rainfall).' mm na ulan ang inaasahan ngayong buwan.' : 'About '.round($rainfall).' mm of rain is expected this month.', $reason, $action];
+        return [$tagalog ? self::number($rainfall).' mm na ulan ang inaasahan ngayong buwan.' : self::number($rainfall).' mm of rain is expected this month.', $reason, $action];
     }
 
     /** @return list<string> */

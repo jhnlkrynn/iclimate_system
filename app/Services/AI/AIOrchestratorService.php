@@ -495,13 +495,16 @@ class AIOrchestratorService
             $data = $tool['data'];
 
             if ($user->role === User::ROLE_FARMER) {
-                $condition = (string) ($data['condition'] ?: 'uncertain');
-                $temperature = is_numeric($data['temperature_c'] ?? null) ? number_format((float) $data['temperature_c'], 1, '.', '').'°C' : null;
+                // The provider's own figures, unrounded; wind is live (km/h is the provider's confirmed unit).
+                $temperature = is_numeric($data['temperature_c'] ?? null) ? FarmerAnswerStyle::number($data['temperature_c']).'°C' : null;
+                $wind = is_numeric($data['wind_kph'] ?? null) ? FarmerAnswerStyle::number($data['wind_kph']).' km/h' : null;
+                $en = array_filter([FarmerAnswerStyle::condition($data['condition'], false), $temperature, $wind ? 'wind '.$wind : null]);
+                $tl = array_filter([FarmerAnswerStyle::condition($data['condition'], true), $temperature, $wind ? 'hangin na '.$wind : null]);
 
                 return $this->translate(
                     $language,
-                    'It is '.$condition.' in Lian today.'.($temperature ? ' It is about '.$temperature.'.' : '').' Check the weather before working in the field.',
-                    $condition.' ang panahon sa Lian ngayon.'.($temperature ? ' Mga '.$temperature.' ang temperatura.' : '').' Tingnan ang panahon bago magtrabaho sa bukid.'
+                    'Current weather in Lian: '.implode(', ', $en).'. Check the weather before working in the field.',
+                    'Kasalukuyang panahon sa Lian: '.implode(', ', $tl).'. Bantayan ang panahon bago magtrabaho sa bukid.'
                 );
             }
 
@@ -547,14 +550,31 @@ class AIOrchestratorService
             $first = $tool['data'][0] ?? [];
 
             if ($user->role === User::ROLE_FARMER) {
-                $rain = is_numeric($first['rainfall'] ?? null) ? ' About '.number_format((float) $first['rainfall'], 1, '.', '').' mm of rain may fall.' : '';
-                $chance = is_numeric($first['precipitation_probability'] ?? null) ? ' Rain chance is '.number_format((float) $first['precipitation_probability'], 0, '.', '').'%.' : '';
+                // Day and condition in the farmer's language; every figure exactly as the forecast gives it.
+                $rain = is_numeric($first['rainfall'] ?? null) ? FarmerAnswerStyle::number($first['rainfall']).' mm' : null;
+                $high = is_numeric($first['temperature_max'] ?? null) ? FarmerAnswerStyle::number($first['temperature_max']).'°C' : null;
+                $chance = is_numeric($first['precipitation_probability'] ?? null) ? FarmerAnswerStyle::number($first['precipitation_probability']).'%' : null;
 
-                return $this->translate(
-                    $language,
-                    ($first['day'] ?? 'The next forecast period').' will be '.($first['condition'] ?? 'uncertain').'.'.$rain.$chance.' Check the weather before field work.',
-                    'Sa '.($first['day'] ?? 'susunod na forecast').' ay '.($first['condition'] ?? 'hindi tiyak').'.'.(is_numeric($first['rainfall'] ?? null) ? ' Mga '.number_format((float) $first['rainfall'], 1, '.', '').' mm ang posibleng ulan.' : '').(is_numeric($first['precipitation_probability'] ?? null) ? ' '.$chance.' ' : '').'Tingnan ang panahon bago magtrabaho sa bukid.'
-                );
+                $en = FarmerAnswerStyle::day($first, false).' '.FarmerAnswerStyle::condition($first['condition'] ?? null, false, 'sentence').'.'
+                    .match (true) {
+                        $high && $rain => " Expected temperature is up to {$high} with {$rain} of rain.",
+                        (bool) $rain => " Expected rain is {$rain}.",
+                        (bool) $high => " Expected temperature is up to {$high}.",
+                        default => '',
+                    }
+                    .($chance ? " Rain chance is {$chance}." : '')
+                    .' Check the weather before field work.';
+                $tl = FarmerAnswerStyle::day($first, true).' ay '.FarmerAnswerStyle::condition($first['condition'] ?? null, true, 'sentence').'.'
+                    .match (true) {
+                        $high && $rain => " Inaasahang temperatura ay hanggang {$high} at ulan ay {$rain}.",
+                        (bool) $rain => " Inaasahang ulan ay {$rain}.",
+                        (bool) $high => " Inaasahang temperatura ay hanggang {$high}.",
+                        default => '',
+                    }
+                    .($chance ? " May {$chance} na tsansa ng ulan." : '')
+                    .' Bantayan ang panahon bago magtrabaho sa bukid.';
+
+                return $this->translate($language, $en, $tl);
             }
 
             return $this->translate(

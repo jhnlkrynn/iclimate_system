@@ -316,7 +316,7 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.source_type', 'Machine Learning + Generative AI')
             ->assertJsonPath('chat.prediction_result.generative_ai.provider', 'Groq');
 
-        $this->assertStringContainsString('About 20 mm of rain is expected this month', $response->json('chat.answer'));
+        $this->assertStringContainsString('20 mm of rain is expected this month', $response->json('chat.answer'));   // the figure as given, not "about"
         $this->assertStringNotContainsString('trained Python model', $response->json('chat.answer'));
         $this->assertStringNotContainsString('fallback', strtolower($response->json('chat.answer')));
         $this->assertNull($response->json('chat.rice_yield_prediction.predicted_yield'));     // advice from the weather rules; no invented yield
