@@ -8,11 +8,11 @@
                 <p class="mb-0" style="color: var(--ic-ink-mid);">Review advisories, update the weather, and publish guidance for farmers.</p>
             </div>
             <div class="d-flex flex-wrap gap-2 action-cluster">
-                <form method="POST" action="{{ route('management.advisories.refresh-weather') }}" data-loading="true" onsubmit="return confirm('Get the latest weather forecast now?');">
+                <form method="POST" action="{{ route('management.advisories.refresh-weather') }}" data-loading="true" data-ic-confirm="Get the latest weather forecast now?">
                     @csrf
                     <button class="btn btn-light" data-loading-text="Refreshing..." type="submit">Update Weather</button>
                 </form>
-                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" onsubmit="return confirm('Get the latest Lian, Batangas weather and create new advisories now?');">
+                <form method="POST" action="{{ route('management.advisories.regenerate') }}" data-loading="true" data-ic-confirm="Get the latest Lian, Batangas weather and create new advisories now?">
                     @csrf
                     <button class="btn btn-outline-light" data-loading-text="Generating..." type="submit">Create New Advisories</button>
                 </form>
@@ -70,14 +70,14 @@
                                 <td><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></td>
                                 <td>{{ $advisory->valid_until?->shortDateTime() }}</td>
                                 <td class="text-end text-nowrap">
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}" data-ic-view aria-haspopup="dialog">View</a>
                                     <a class="btn btn-sm btn-outline-primary" href="{{ route('planting-advisories.edit', $advisory) }}">Edit</a>
                                     @if($advisory->status === 'pending_review')
-                                        <form class="d-inline" method="POST" action="{{ route('management.advisories.approve', $advisory) }}" data-loading="true" onsubmit="return confirm('Publish this advisory?');">@csrf<button class="btn btn-sm btn-outline-success" data-loading-text="Publishing...">Approve</button></form>
+                                        <form class="d-inline" method="POST" action="{{ route('management.advisories.approve', $advisory) }}" data-loading="true" data-ic-confirm="Publish this advisory?">@csrf<button class="btn btn-sm btn-outline-success" data-loading-text="Publishing...">Approve</button></form>
                                         <form class="d-inline" method="POST" action="{{ route('management.advisories.reject', $advisory) }}" data-loading="true" onsubmit="const reason = prompt('Reason for rejection?'); if (!reason) return false; this.querySelector('[name=rejection_reason]').value = reason; return true;">@csrf<input type="hidden" name="rejection_reason"><button class="btn btn-sm btn-outline-danger" data-loading-text="Rejecting...">Reject</button></form>
                                     @endif
                                     @if(! in_array($advisory->status, ['archived', 'expired'], true))
-                                        <form class="d-inline" method="POST" action="{{ route('management.advisories.archive', $advisory) }}" data-loading="true" onsubmit="return confirm('Archive this advisory?');">@csrf<button class="btn btn-sm btn-outline-dark" data-loading-text="Archiving...">Archive</button></form>
+                                        <form class="d-inline" method="POST" action="{{ route('management.advisories.archive', $advisory) }}" data-loading="true" data-ic-confirm="Archive this advisory?">@csrf<button class="btn btn-sm btn-outline-dark" data-loading-text="Archiving...">Archive</button></form>
                                     @endif
                                 </td>
                             </tr>
@@ -96,14 +96,14 @@
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Status</div><div class="ic-table-card-value"><span class="badge {{ $advisory->statusBadgeClass() }}">{{ $advisory->statusLabel() }}</span></div></div>
                         <div class="ic-table-card-row"><div class="ic-table-card-label">Valid Until</div><div class="ic-table-card-value">{{ $advisory->valid_until?->format('M d, Y g:i A') }}</div></div>
                         <div class="ic-table-card-actions">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}">View</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route('planting-advisories.show', $advisory) }}" data-ic-view aria-haspopup="dialog">View</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('planting-advisories.edit', $advisory) }}">Edit</a>
                             @if($advisory->status === 'pending_review')
-                                <form method="POST" action="{{ route('management.advisories.approve', $advisory) }}" data-loading="true" onsubmit="return confirm('Publish this advisory?');">@csrf<button class="btn btn-sm btn-outline-success" data-loading-text="Publishing...">Approve</button></form>
+                                <form method="POST" action="{{ route('management.advisories.approve', $advisory) }}" data-loading="true" data-ic-confirm="Publish this advisory?">@csrf<button class="btn btn-sm btn-outline-success" data-loading-text="Publishing...">Approve</button></form>
                                 <form method="POST" action="{{ route('management.advisories.reject', $advisory) }}" data-loading="true" onsubmit="const reason = prompt('Reason for rejection?'); if (!reason) return false; this.querySelector('[name=rejection_reason]').value = reason; return true;">@csrf<input type="hidden" name="rejection_reason"><button class="btn btn-sm btn-outline-danger" data-loading-text="Rejecting...">Reject</button></form>
                             @endif
                             @if(! in_array($advisory->status, ['archived', 'expired'], true))
-                                <form method="POST" action="{{ route('management.advisories.archive', $advisory) }}" data-loading="true" onsubmit="return confirm('Archive this advisory?');">@csrf<button class="btn btn-sm btn-outline-dark" data-loading-text="Archiving...">Archive</button></form>
+                                <form method="POST" action="{{ route('management.advisories.archive', $advisory) }}" data-loading="true" data-ic-confirm="Archive this advisory?">@csrf<button class="btn btn-sm btn-outline-dark" data-loading-text="Archiving...">Archive</button></form>
                             @endif
                         </div>
                     </div>

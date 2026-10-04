@@ -9,18 +9,19 @@
     $forecast = $forecast ?? false;
     // 'farmer' shows the short plain-language forecast panel; 'staff' (MAO/IT) keeps the detailed one.
     $forecastAudience = $forecastAudience ?? 'staff';
+    // Municipal Risk Overview (donut + clickable categories) above the map: always with the forecast controls,
+    // and on the MAO dashboard.
+    $overview = $overview ?? $forecast;
 @endphp
 
 <section class="risk-map-card" data-risk-map-card aria-labelledby="riskMapTitle">
+    @if($overview)
+        {{-- Municipal Risk Overview first, the map below: the municipality-wide picture, then the places. --}}
+        @include('partials.risk-overview', ['overviewAudience' => $forecastAudience])
+    @endif
     @if($forecast)
         {{-- Forecast summary for the selected month; the month controls sit in the toolbar right above the map. --}}
         <div class="risk-forecast" data-risk-forecast data-forecast-url="{{ url('/api/lian/risk-forecast') }}" data-forecast-audience="{{ $forecastAudience }}">
-            <div class="risk-forecast-cards" aria-live="polite">
-                <div class="risk-forecast-card"><span>Barangays Monitored</span><strong data-forecast-stat="monitored">–</strong></div>
-                <div class="risk-forecast-card" style="--risk-color: #2e7d32"><span>Low Risk</span><strong data-forecast-stat="low">–</strong></div>
-                <div class="risk-forecast-card" style="--risk-color: #f2b134"><span>Moderate Risk</span><strong data-forecast-stat="moderate">–</strong></div>
-                <div class="risk-forecast-card" style="--risk-color: #e05a2b"><span>High / Severe Risk</span><strong data-forecast-stat="attention">–</strong></div>
-            </div>
             <div class="risk-forecast-overview" data-risk-forecast-overview hidden aria-live="polite"></div>
         </div>
     @endif
@@ -131,23 +132,16 @@
         <section class="risk-map-meaning" aria-labelledby="riskMeaningTitle">
             <h3 id="riskMeaningTitle">Risk Meaning</h3>
             <div class="risk-map-meaning-grid">
-                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="low" aria-label="Show meaning of Low risk">
+                {{-- Each opens the shared information pop-up, the same one as the Municipal Risk Overview rows. --}}
+                <button type="button" class="risk-map-meaning-item" data-risk-category="low" aria-haspopup="dialog" aria-label="Show meaning of Low risk">
                     <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #2e7d32"></span><strong>Low</strong></span>
                 </button>
-                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="moderate" aria-label="Show meaning of Moderate risk">
+                <button type="button" class="risk-map-meaning-item" data-risk-category="moderate" aria-haspopup="dialog" aria-label="Show meaning of Moderate risk">
                     <span class="risk-map-meaning-label"><span class="risk-map-meaning-dot" style="--risk-color: #f2b134"></span><strong>Moderate</strong></span>
                 </button>
-                <button type="button" class="risk-map-meaning-item" data-risk-meaning-trigger data-risk-level="high-severe" aria-label="Show meaning of High or Severe risk">
+                <button type="button" class="risk-map-meaning-item" data-risk-category="high" aria-haspopup="dialog" aria-label="Show meaning of High or Severe risk">
                     <span class="risk-map-meaning-label"><span class="risk-map-meaning-dots"><span class="risk-map-meaning-dot" style="--risk-color: #e05a2b"></span><span class="risk-map-meaning-dot" style="--risk-color: #8b0000"></span></span><strong>High / Severe</strong></span>
                 </button>
-            </div>
-            <div class="risk-map-meaning-overlay" data-risk-meaning-overlay hidden>
-                <section class="risk-map-meaning-popup" role="dialog" aria-modal="true" aria-labelledby="riskMeaningPopupTitle" aria-describedby="riskMeaningPopupText">
-                    <button type="button" class="risk-map-meaning-close" data-risk-meaning-close aria-label="Close risk meaning">&times;</button>
-                    <h4 id="riskMeaningPopupTitle" data-risk-meaning-title></h4>
-                    <p class="risk-map-meaning-popup-text" data-risk-meaning-text></p>
-                    <p class="risk-map-meaning-popup-support" data-risk-meaning-support></p>
-                </section>
             </div>
         </section>
     @endif

@@ -141,7 +141,7 @@
                                     </td>
                                 @endforeach
                                 <td class="text-end text-nowrap">
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}">View</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
                                     @if ($routeName === 'notifications' && ! $record->is_read)
                                         <form class="d-inline" method="POST" action="{{ route('notifications.mark-read', $record) }}" data-loading="true">
                                             @csrf
@@ -151,7 +151,7 @@
                                     @endif
                                     @if ($canManage)
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
-                                        <form class="d-inline" method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" onsubmit="return confirm('Delete this record? This action cannot be undone.');">
+                                        <form class="d-inline" method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Deleting...">Delete</button>
@@ -181,7 +181,7 @@
                             </div>
                         @endforeach
                         <div class="ic-table-card-actions">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}">View</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
                             @if ($routeName === 'notifications' && ! $record->is_read)
                                 <form method="POST" action="{{ route('notifications.mark-read', $record) }}" data-loading="true">
                                     @csrf
@@ -191,7 +191,7 @@
                             @endif
                             @if ($canManage)
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
-                                <form method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" onsubmit="return confirm('Delete this record? This action cannot be undone.');">
+                                <form method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Deleting...">Delete</button>

@@ -391,7 +391,7 @@
         </style>
         @include('partials.global-loader')
     </head>
-    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard')])>
+    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>
         @include('layouts.sidebar')
         <div class="app-main">
             @include('layouts.navigation')

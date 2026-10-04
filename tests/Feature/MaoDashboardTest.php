@@ -162,8 +162,9 @@ class MaoDashboardTest extends TestCase
         $this->rating('Prenza', 'Low', 0.2);
         $html = $this->page()->getContent();
 
-        $order = ['MAO Dashboard', 'data-mao-kpis', 'data-mao-attention', 'data-mao-conditions', 'data-mao-yield', 'data-mao-risk',
-            'data-mao-climate', 'data-mao-coverage', 'data-mao-forecast', 'data-mao-watch', 'id="mtdRiskMap"', 'data-mao-activity'];
+        // Summary, today's conditions, then the Municipal Risk Overview directly above the map, then the trends.
+        $order = ['MAO Dashboard', 'data-mao-kpis', 'data-mao-attention', 'data-mao-conditions', 'data-mao-forecast', 'data-mao-risk>',
+            'data-risk-overview', 'id="barangayRiskMap"', 'data-mao-watch', 'data-mao-yield', 'data-mao-climate', 'data-mao-coverage', 'data-mao-activity'];
         $last = -1;
         foreach ($order as $marker) {
             $pos = strpos($html, $marker);
@@ -335,9 +336,12 @@ class MaoDashboardTest extends TestCase
 
         $data = $this->data();
 
+        // Monitored = every official barangay in the risk-map dataset (the 19 polygons); unrated ones are "awaiting data".
         $b = $this->kpi($data, 'barangays');
-        $this->assertSame('2', $b['value']);
+        $this->assertSame('19', $b['value']);
         $this->assertSame('of 19', $b['unit']);
+        $this->assertSame('2 rated · 17 awaiting data', $b['context']);
+        $this->assertSame('monitored', $b['risk_category']);                                     // opens the Municipal Risk Overview pop-up
         $a = $this->kpi($data, 'advisories');
         $this->assertSame('2', $a['value']);                                                    // published only; pending and archived are separate
         $this->assertSame('1 pending review', $a['context']);
@@ -351,15 +355,20 @@ class MaoDashboardTest extends TestCase
         $this->assertNull($this->kpi($data, 'barangays'));
     }
 
-    public function test_kpi_cards_carry_an_icon_a_tooltip_and_no_paragraphs(): void
+    public function test_kpi_cards_carry_an_icon_open_a_detail_pop_up_and_have_no_paragraphs(): void
     {
         $this->rating('San Diego', 'Low', 0.2);
         $html = $this->page()->getContent();
         $section = substr($html, strpos($html, 'data-mao-kpis'), strpos($html, 'data-mao-attention') - strpos($html, 'data-mao-kpis'));
+        $cards = substr_count($section, 'mtd-kpi-icon');
 
-        $this->assertGreaterThanOrEqual(2, substr_count($section, 'mtd-kpi-icon'));
-        $this->assertSame(substr_count($section, 'mtd-kpi-icon'), substr_count($section, 'class="mtd-info"'));
-        $this->assertDoesNotMatchRegularExpression('/<p[\s>]/', $section);
+        $this->assertGreaterThanOrEqual(2, $cards);
+        // Every card is a button that opens the shared pop-up: its own details, or the risk overview for Barangays Monitored.
+        $this->assertSame($cards, substr_count($section, '<button type="button" class="mtd-kpi"'));
+        $this->assertSame($cards, substr_count($section, 'data-ic-template="mtdKpiInfo-') + substr_count($section, 'data-mao-risk-open='));
+        $this->assertSame($cards, substr_count($section, 'class="mtd-kpi-more"'));
+        // The cards themselves stay compact; explanations live in the pop-up templates.
+        $this->assertDoesNotMatchRegularExpression('/<p[\s>]/', preg_replace('/<template\b.*?<\/template>/s', '', $section));
     }
 
     // ------------------------------------------------------------ attention center
@@ -463,12 +472,18 @@ class MaoDashboardTest extends TestCase
         $data = $this->data();
 
         $this->assertSame(['Low' => 1, 'Moderate' => 1, 'High' => 1, 'Severe' => 1], $data['risk']['counts']);
-        $this->assertSame($data['risk']['total'], array_sum($data['risk']['counts']));
+        // Every monitored barangay is either rated or No Data: the categories always add up to the monitored total.
+        $this->assertSame($data['risk']['total'], array_sum($data['risk']['counts']) + $data['risk']['no_data']);
+        $this->assertSame(4, $data['risk']['rated']);
+        $this->assertCount($data['risk']['total'], $data['risk']['barangays']);
         $this->assertSame(['San Diego', 'Matabungkay'], array_column($data['watch']['items'], 'barangay'));   // most severe first
         $html = $this->page()->getContent();
-        $this->assertStringContainsString('BARANGAYS', $html);
-        $this->assertStringContainsString('Farm risk is a planning indicator based on available weather and agricultural data.', $html);
-        $this->assertStringContainsString('data-chart-note=', $html);                            // the methodology caveat travels with the chart
+        // The Municipal Risk Overview (filled from the map's own ratings) sits above the map, with clickable categories.
+        $this->assertStringContainsString('data-risk-overview', $html);
+        foreach (['monitored', 'low', 'moderate', 'high'] as $category) {
+            $this->assertStringContainsString('data-risk-category="'.$category.'"', $html);
+        }
+        $this->assertLessThan(strpos($html, 'id="barangayRiskMap"'), strpos($html, 'data-risk-overview'));
     }
 
     public function test_no_high_risk_barangays_gives_a_small_positive_card_not_an_empty_panel(): void
@@ -564,9 +579,11 @@ class MaoDashboardTest extends TestCase
 
         $risk = $this->data()['risk'];
 
-        $this->assertSame(1, $risk['total']);
-        $this->assertSame(1, $risk['counts']['Low']);
+        $this->assertSame(19, $risk['total']);                                                    // the 19 official barangays, never Atlantis
+        $this->assertSame(1, $risk['rated']);
+        $this->assertSame(1, $risk['counts']['Low']);                                             // the newer Prenza rating wins
         $this->assertSame(0, $risk['counts']['Severe']);
+        $this->assertSame(18, $risk['no_data']);
     }
 
     public function test_production_uses_only_the_latest_harvest_year(): void
@@ -619,35 +636,36 @@ class MaoDashboardTest extends TestCase
     {
         $this->rating('San Diego', 'Low', 0.2);
         $html = $this->page()->getContent();
-        $panel = substr($html, strpos($html, 'class="mtd-sources-panel"'), 2800);
+        // Data Sources opens in the shared pop-up; its content is the <template id="mtdDataSources">.
+        $this->assertStringContainsString('data-ic-template="mtdDataSources"', $html);
+        $this->assertStringContainsString('Last synchronized:', $html);
+        $panel = substr($html, strpos($html, '<template id="mtdDataSources">'), 2800);
 
-        foreach (['LIVE', 'FORECAST', 'CALCULATED', 'Last synchronized:'] as $label) {
+        foreach (['LIVE', 'FORECAST', 'CALCULATED'] as $label) {
             $this->assertStringContainsString($label, $panel, $label);
         }
         $this->assertStringNotContainsString('RECORDED', $panel);                                  // no farmer profiles here, so no such source
     }
 
-    public function test_the_page_uses_one_font_family_and_the_specified_type_scale(): void
+    public function test_the_page_follows_the_farmer_dashboard_type_system(): void
     {
+        // Same system as farmer-dashboard.css: Georgia for page and section titles, Inter for everything else.
         $html = $this->page()->getContent();
-        $css = substr($html, strpos($html, '.mtd {'), strpos($html, '</style>', strpos($html, '.mtd {')) - strpos($html, '.mtd {'));
+        $css = file_get_contents(resource_path('css/mao-dashboard.css'));
 
-        $this->assertStringContainsString("--mtd-font: Georgia, 'Times New Roman', 'Noto Serif', serif", $css);
-        $this->assertStringContainsString('font-family: var(--mtd-font)', $css);
-        $this->assertStringNotContainsString('Inter', $css);
+        $this->assertStringContainsString('is-mao-dashboard', $html);                               // the page-level font rule applies
+        $this->assertStringNotContainsString('<style>', substr($html, strpos($html, 'data-mao-dashboard') - 2000, 2000));  // no page-local stylesheet
+        $this->assertMatchesRegularExpression('/body\.is-mao-dashboard, body\.is-mao-dashboard \*:not\(svg\):not\(svg \*\) \{ font-family: "Inter"/', $css);
+        $this->assertMatchesRegularExpression('/body\.is-mao-dashboard \.mtd h1, body\.is-mao-dashboard \.mtd h2[^{]*\{\s*font-family: Georgia/', $css);
+        $this->assertMatchesRegularExpression('/\.mtd \.mtd-header h1 \{[^}]*font-size: 2rem; font-weight: 700/', $css);                 // page title 32px, as .mfd h1
+        $this->assertMatchesRegularExpression('/\.mtd \.mtd-section-title \{[^}]*font-size: 1\.5rem; font-weight: 700/', $css);         // section title 24px, as .mfd h2
+        $this->assertMatchesRegularExpression('/\.mtd-kpi-value \{[^}]*font-size: 1\.75rem; font-weight: 700/', $css);                   // KPI value 28px, as .mfd-kpi-value
+        $this->assertMatchesRegularExpression('/\.mtd-kpi-label \{[^}]*font-size: \.8125rem; font-weight: 600[^}]*text-transform: uppercase/', $css);  // label 13px, as .mfd-kpi-label
+        $this->assertStringContainsString('min-height: 44px', $css);                                // touch targets
         $this->assertStringNotContainsString('DM Mono', $css);
-        $this->assertMatchesRegularExpression('/\.mtd-header h1 \{[^}]*font-size: 1\.75rem; font-weight: 700; line-height: 1\.2/', $css);       // page title 28px / 700
-        $this->assertMatchesRegularExpression('/\.mtd-kpi-value \{[^}]*font-size: 2rem; font-weight: 400/', $css);                                // KPI value 32px / 700
-        $this->assertMatchesRegularExpression('/\.mtd-kpi-label \{[^}]*font-size: \.75rem; font-weight: 400; text-transform: uppercase/', $css);  // KPI label 12px, regular
-        $this->assertMatchesRegularExpression('/\.mtd-card-head h2 \{[^}]*font-size: 1\.125rem; font-weight: 700/', $css);                        // section title 18px / 600
-        $this->assertMatchesRegularExpression('/\.mtd h1, \.mtd h2, \.mtd h3, \.mtd th[^{]*\{[^}]*font-weight: 700/', $css);                          // every heading is Georgia Bold
-        preg_match_all('/font-weight: (\d+)/', $css, $weights);
-        foreach (array_unique($weights[1]) as $w) {
-            $this->assertContains($w, ['400', '700'], 'only regular and bold are used');
-        }
         preg_match_all('/font-size: ([\d.]+)rem/', $css, $sizes);
         foreach ($sizes[1] as $rem) {
-            $this->assertGreaterThanOrEqual(0.68, (float) $rem);                                     // nothing important below ~11px
+            $this->assertGreaterThanOrEqual(0.75, (float) $rem);                                     // nothing below 12px
         }
     }
 
@@ -656,7 +674,8 @@ class MaoDashboardTest extends TestCase
         $this->rating('San Diego', 'High', 0.7, 'Heavy rainfall exposure');
         $json = $this->actingAs($this->mao())->getJson(route('mao.dashboard.live', ['refresh' => 1]))->assertOk()->json();
 
-        $this->assertEqualsCanonicalizing(['kpis', 'attention', 'conditions', 'risk', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'], array_keys($json['slots']));
+        // The risk overview and map are not a slot: re-inserting them would rebuild the map, so they reload their own data.
+        $this->assertEqualsCanonicalizing(['kpis', 'attention', 'conditions', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'], array_keys($json['slots']));
         $this->assertStringContainsString('data-kpi="weather"', $json['slots']['kpis']);
         $this->assertStringContainsString('Current Farm Conditions', $json['slots']['conditions']);
         $this->assertSame('', trim($json['slots']['production']));                                  // nothing to show: the section disappears

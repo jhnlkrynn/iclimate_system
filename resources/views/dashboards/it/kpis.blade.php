@@ -7,7 +7,7 @@
                     <div class="mfd-kpi is-{{ $k['level'] }}" data-kpi="{{ $k['key'] }}">
                         <div class="itd-kpi-top">
                             <span class="mfd-kpi-label">{{ $k['label'] }}</span>
-                            <span class="itd-info" tabindex="0" role="note" aria-label="{{ $k['tip'] }}" data-tip="{{ $k['tip'] }}">i</span>
+                            <button type="button" class="itd-info" data-ic-info="{{ $k['tip'] }}" data-ic-title="{{ $k['label'] }}" data-ic-kicker="IT Personnel Dashboard" aria-haspopup="dialog" aria-label="About {{ $k['label'] }}" data-tip="{{ $k['tip'] }}">i</button>
                         </div>
                         <div class="mfd-kpi-value {{ preg_match('/^[\d.,\s—%]+$/u', $k['value']) ? '' : 'is-text' }}"><span>{{ $k['value'] }}</span>@if ($k['unit'])<small>{{ $k['unit'] }}</small>@endif</div>
                         @include('dashboards.it._badge', ['level' => $k['level']])

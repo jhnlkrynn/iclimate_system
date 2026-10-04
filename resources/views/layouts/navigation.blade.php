@@ -3,8 +3,8 @@
     $initials = collect(explode(' ', trim($user->name)))->filter()->map(fn ($part) => mb_strtoupper($part[0]))->take(2)->implode('');
     $isFarmerNav = $user->role === \App\Models\User::ROLE_FARMER;
     $navBarangay = $isFarmerNav ? ($user->farmerProfile?->barangay ?? $user->barangay) : null;
-    // IT Personnel get the same notification bell as farmers (their own notifications, same list page).
-    $showNavBell = $isFarmerNav || $user->role === \App\Models\User::ROLE_IT_EXPERT;
+    // Every role gets the same bell: it opens their own notifications in the shared pop-up (resources/js/notifications-popup.js).
+    $showNavBell = true;
     $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
     // Same cached count as the sidebar badge, so the two always agree.
     $navUnread = $showNavBell
@@ -82,6 +82,8 @@
     }
     .topbar-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.32); color: #fff; transform: translateY(-1px); }
     .topbar-btn:active { transform: translateY(0); }
+    .topbar-bell-badge { position: absolute; top: -6px; right: -6px; }
+    .topbar-bell-badge[hidden] { display: none !important; }
     .topbar-btn-logout:hover { background: rgba(184,74,74,.2); border-color: rgba(184,74,74,.45); }
     @media (max-width: 575.98px) {
         .topbar-name { max-width: 52vw; }
@@ -117,9 +119,11 @@
         @endunless
         <div class="topbar-actions">
             @if ($showNavBell)
-                <a class="topbar-btn position-relative" href="{{ route('notifications.index') }}" aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
+                <a class="topbar-btn position-relative" href="{{ route('notifications.index') }}" data-ic-notifications aria-haspopup="dialog"
+                    data-feed-url="{{ route('notifications.feed') }}" data-index-url="{{ route('notifications.index') }}" data-mark-all-url="{{ route('notifications.mark-all-read') }}"
+                    data-fast-nav-bound="true" data-no-loader aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    @if ($navUnread > 0)<span class="sidebar-badge" style="position:absolute;top:-6px;right:-6px">{{ $navUnread }}</span>@endif
+                    <span class="sidebar-badge topbar-bell-badge" data-ic-notif-badge @if ($navUnread <= 0) hidden @endif>{{ $navUnread > 99 ? '99+' : $navUnread }}</span>
                 </a>
             @endif
             @if (true)

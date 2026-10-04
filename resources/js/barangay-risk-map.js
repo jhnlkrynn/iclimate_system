@@ -2,6 +2,9 @@
 // Data and risk calculations remain server-owned; this module only renders
 // the existing API response and GeoJSON boundary data.
 
+import { renderOverview, openRiskCategory } from './risk-overview';
+import { open as openModal } from './info-modal';
+
 const RISK_COLORS = { Low: '#2e7d32', Moderate: '#f2b134', High: '#e05a2b', Severe: '#8b0000', 'No Data': '#8a939b' };
 const EXPECTED_BARANGAYS = 19;
 const DISPLAY_NAMES = { 'Barangay 1 (Pob.)': 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)': 'Barangay 5 / Tabok City (Poblacion)' };
@@ -16,59 +19,6 @@ const canonicalName = (name) => {
 const displayName = (name) => DISPLAY_NAMES[name] || name;
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const riskLevel = (entry) => RISK_COLORS[entry?.risk_level] ? entry.risk_level : 'No Data';
-
-const RISK_MEANING_COPY = {
-    low: {
-        title: 'Low Risk',
-        meaning: 'Conditions are generally okay for rice farming.',
-        support: 'Continue normal farm activities and monitor weather updates.',
-    },
-    moderate: {
-        title: 'Moderate Risk',
-        meaning: 'Some weather conditions may affect the rice field.',
-        support: 'Keep monitoring the weather and your field.',
-    },
-    'high-severe': {
-        title: 'High / Severe Risk',
-        meaning: 'Weather may strongly affect rice farming.',
-        support: 'Prepare to take action and follow official advisories.',
-    },
-};
-
-function initRiskMeaningGuide() {
-    const trigger = document.querySelector('[data-risk-meaning-trigger]');
-    const root = trigger?.closest('.risk-map-meaning');
-    if (!root || root.dataset.initialized === 'true') return;
-    root.dataset.initialized = 'true';
-    const overlay = root.querySelector('[data-risk-meaning-overlay]');
-    const close = root.querySelector('[data-risk-meaning-close]');
-    const title = root.querySelector('[data-risk-meaning-title]');
-    const meaning = root.querySelector('[data-risk-meaning-text]');
-    const support = root.querySelector('[data-risk-meaning-support]');
-    let lastTrigger = null;
-
-    const closePopup = () => {
-        if (!overlay) return;
-        overlay.hidden = true;
-        lastTrigger?.focus();
-        lastTrigger = null;
-    };
-    const openPopup = (button) => {
-        const copy = RISK_MEANING_COPY[button.dataset.riskLevel];
-        if (!copy || !overlay || !title || !meaning || !support) return;
-        lastTrigger = button;
-        title.textContent = copy.title;
-        meaning.textContent = copy.meaning;
-        support.textContent = copy.support;
-        overlay.hidden = false;
-        close?.focus();
-    };
-
-    root.querySelectorAll('[data-risk-meaning-trigger]').forEach((button) => button.addEventListener('click', () => openPopup(button)));
-    close?.addEventListener('click', closePopup);
-    overlay?.addEventListener('click', (event) => { if (event.target === overlay) closePopup(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && overlay && !overlay.hidden) closePopup(); });
-}
 
 function popupMarkup(name, entry) {
     const level = riskLevel(entry);
@@ -105,6 +55,13 @@ function philippineTime(value) {
     } catch (error) {
         return date.toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
     }
+}
+
+function philippineDateTime(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
 }
 
 function currentWeatherParts(entry) {
@@ -366,7 +323,6 @@ function overviewMarkup(month) {
 export function initBarangayRiskMap() {
     const mapElement = document.getElementById('barangayRiskMap');
     if (!mapElement) return;
-    initRiskMeaningGuide();
     if (!window.L || mapElement.dataset.initialized === 'true') return;
     mapElement.dataset.initialized = 'true';
     const L = window.L;
@@ -470,12 +426,63 @@ export function initBarangayRiskMap() {
         layer.bringToFront();
         showDetails(name);
     };
+    // Municipal Risk Overview (donut + categories) and its pop-ups use exactly these counts: one tally for the
+    // legend, the overview and every pop-up, recounted whenever the data or the forecast month changes.
+    const overviewRoot = card?.querySelector('[data-risk-overview]');
+    const audience = overviewRoot?.dataset.audience === 'farmer' || farmerView ? 'farmer' : 'staff';
+    let generatedText = null;
+    let sourceNote = '';
+    let refreshQueued = false;
+    const renderedNames = () => OFFICIAL_NAMES.filter((name) => layers.has(name));
     const updateCounts = () => {
         const counts = { Low: 0, Moderate: 0, High: 0, Severe: 0, 'No Data': 0 };
         layers.forEach((_, name) => { counts[riskLevel(activeEntries().get(name))] += 1; });
         Object.entries(counts).forEach(([level, count]) => { const target = card?.querySelector(`[data-risk-count="${level}"]`); if (target) target.textContent = count; });
+        const month = activeForecast();
+        renderOverview(overviewRoot, {
+            counts,
+            monitored: layers.size,
+            forLine: month
+                ? `Monthly forecast · ${month.label}`
+                : `Current conditions · ratings updated ${generatedText || 'recently'}${refreshQueued ? ' · a refresh is running in the background' : ''}`,
+        });
+        document.dispatchEvent(new CustomEvent('iclimate:risk-counts', { detail: { counts, monitored: layers.size, month: month?.month || null, generatedAt: generatedText } }));
         updateForecastPanel(counts);
     };
+    const categoryContext = () => ({
+        audience,
+        names: renderedNames(),
+        entryFor: (name) => activeEntries().get(name),
+        levelOf: riskLevel,
+        displayName,
+        weatherFor: currentWeatherParts,
+        updatedFor: (entry) => philippineDateTime(entry?.updated_at),
+        month: activeForecast(),
+        generatedAt: generatedText,
+        sourceNote,
+        mapAnchor: true,
+    });
+    const openCategory = (category, trigger) => {
+        if (!layers.size) {
+            openModal({ title: 'Risk data is loading', icon: 'clock', trigger, size: 'compact', body: '<p class="fad-m-body">The barangay ratings are still loading. Please try again in a moment.</p>' });
+            return;
+        }
+        openRiskCategory(category, trigger, categoryContext());
+    };
+    card?.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-risk-category]');
+        if (!trigger) return;
+        event.preventDefault();
+        // A donut arc is not focusable; focus returns to its matching row when the pop-up closes.
+        const focusBack = trigger instanceof SVGElement ? card.querySelector(`.risk-overview-item[data-risk-category="${trigger.dataset.riskCategory}"]`) : trigger;
+        openCategory(trigger.dataset.riskCategory, focusBack);
+    });
+    // Other parts of the page (the MAO "Barangays Monitored" card) open the same pop-ups.
+    document.addEventListener('iclimate:open-risk-category', (event) => openCategory(event.detail?.category || 'monitored', event.detail?.trigger));
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('[data-risk-goto-map]')) return;
+        window.setTimeout(() => { mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+    });
     const tooltipMarkup = (name) => {
         const month = activeForecast();
         const level = riskLevel(activeEntries().get(name));
@@ -494,11 +501,6 @@ export function initBarangayRiskMap() {
     // Summary cards, "Forecast for" line, overview and legend title all follow the active month.
     function updateForecastPanel(counts) {
         if (!forecastBox) return;
-        const stat = (key, value) => { const target = forecastBox.querySelector(`[data-forecast-stat="${key}"]`); if (target) target.textContent = value; };
-        stat('monitored', layers.size);
-        stat('low', counts.Low);
-        stat('moderate', counts.Moderate);
-        stat('attention', counts.High + counts.Severe);
         const month = activeForecast();
         if (forLabel) forLabel.innerHTML = month
             ? `<span class="risk-mode-badge is-forecast">Monthly Forecast</span> Forecast for: <strong>${escapeHtml(month.label)}</strong>`
@@ -558,6 +560,7 @@ export function initBarangayRiskMap() {
     timeline?.addEventListener('click', (event) => { const button = event.target.closest('[data-month]'); if (button) setMonth(button.dataset.month); });
     loadForecast();
     const render = async (forceRefresh = false) => {
+        let ok = false;
         loading?.removeAttribute('hidden');
         if (error) error.hidden = true;
         if (refresh) refresh.disabled = true;
@@ -571,6 +574,9 @@ export function initBarangayRiskMap() {
             const boundary = await boundaryResponse.json();
             const risk = await riskResponse.json();
             if (risk.status !== 'ok' || !Array.isArray(boundary.features)) throw new Error('Risk map data is unavailable');
+            generatedText = philippineDateTime(risk.generated_at);
+            sourceNote = risk.source_note || '';
+            refreshQueued = Boolean(risk.refresh_queued);
             entries.clear();
             // Coverage problems are reported, never silently dropped: an unmatched name would otherwise
             // vanish from the map (boundary) or show as No Data (risk record).
@@ -642,15 +648,21 @@ export function initBarangayRiskMap() {
             if (layers.size !== EXPECTED_BARANGAYS || problems.length) console.warn(`Lian risk map: ${layers.size} of ${EXPECTED_BARANGAYS} barangays rendered.`, problems);
             const bounds = geoLayer.getBounds();
             if (bounds.isValid() && !mapElement.dataset.fitted) { map.fitBounds(bounds, { padding: [20, 20] }); mapElement.dataset.fitted = 'true'; }
+            ok = true;
         } catch (requestError) {
             console.error('iClimate could not load the Lian risk map.', requestError);
             if (error) { error.textContent = 'The risk map could not be loaded. Please try again.'; error.hidden = false; }
+            const forLine = overviewRoot?.querySelector('[data-risk-overview-for]');
+            if (forLine) forLine.textContent = 'The latest ratings could not be loaded. Showing the last loaded values, if any.';
         } finally {
+            document.dispatchEvent(new CustomEvent('iclimate:risk-map-rendered', { detail: { ok, refreshQueued } }));
             loading?.setAttribute('hidden', 'hidden');
             if (refresh) refresh.disabled = false;
             window.setTimeout(() => map.invalidateSize(), 0);
         }
     };
     refresh?.addEventListener('click', () => render(true));
+    // The page's own Refresh Data button (MAO dashboard) refreshes the map, overview and counts together.
+    document.addEventListener('iclimate:risk-map-refresh', () => render(true));
     render();
 }

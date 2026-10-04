@@ -96,10 +96,10 @@
                                     <td class="is-num">{{ $num($record->yield_per_hectare) }}</td>
                                     <td class="is-num">{{ $num($record->total_production) }}</td>
                                     <td class="is-end">
-                                        <a class="fad-btn is-quiet is-compact" href="{{ route('rice-productions.show', $record) }}" aria-label="View {{ $record->barangay }} {{ $record->year }} {{ $record->season }} record">View</a>
+                                        <a class="fad-btn is-quiet is-compact" href="{{ route('rice-productions.show', $record) }}" data-ic-view data-ic-size="normal" aria-haspopup="dialog" aria-label="View {{ $record->barangay }} {{ $record->year }} {{ $record->season }} record">View</a>
                                         @if($canManage)
                                             <a class="fad-btn is-quiet is-compact" href="{{ route('rice-productions.edit', $record) }}">Edit</a>
-                                            <form class="d-inline" method="POST" action="{{ route('rice-productions.destroy', $record) }}" data-loading="true" onsubmit="return confirm('Delete this record? This action cannot be undone.');">
+                                            <form class="d-inline" method="POST" action="{{ route('rice-productions.destroy', $record) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                                 @csrf @method('DELETE')
                                                 <button class="fad-btn is-quiet is-compact is-danger" type="submit" data-loading-text="Deleting...">Delete</button>
                                             </form>
@@ -125,7 +125,7 @@
                                 <div><dt>Yield</dt><dd>{{ $num($record->yield_per_hectare) }} t/ha</dd></div>
                                 <div><dt>Production</dt><dd>{{ $num($record->total_production) }} t</dd></div>
                             </dl>
-                            <a class="fad-btn is-quiet" href="{{ route('rice-productions.show', $record) }}">View Record</a>
+                            <a class="fad-btn is-quiet" href="{{ route('rice-productions.show', $record) }}" data-ic-view data-ic-size="normal" aria-haspopup="dialog">View Record</a>
                         </li>
                     @endforeach
                 </ul>

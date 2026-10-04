@@ -144,6 +144,21 @@ class BarangayRiskMapService
     }
 
     /**
+     * The map exactly as /api/lian/risk-map serves it now, without ever computing it. Dashboards build their
+     * risk counts from this so the KPI, the Municipal Risk Overview and the map colours are one set of ratings.
+     */
+    public function snapshot(): array
+    {
+        $cached = Cache::get(self::CACHE_KEY);
+
+        if (is_array($cached) && count($cached['barangays'] ?? []) === count(LianBarangays::all())) {
+            return $cached;
+        }
+
+        return $this->lastKnownMap();
+    }
+
+    /**
      * Queue the slow 19-barangay refresh without making a web request wait for
      * 19 external weather calls. The current cached/stored map remains the
      * response until the queue worker swaps in the refreshed result.
@@ -720,8 +735,11 @@ class BarangayRiskMapService
     private function existingAreas(): array
     {
         try {
+            // Several rows for one barangay: the most recently computed one wins (later keys overwrite earlier ones),
+            // the same rule DashboardData::currentRiskRatings() uses, so the map and the dashboards never disagree.
             return HeatmapArea::query()->get()
                 ->filter(fn (HeatmapArea $area): bool => LianBarangays::canonicalName($area->barangay) !== null)
+                ->sortBy(fn (HeatmapArea $area): string => ($area->risk_computed_at?->format('YmdHis') ?? '0').str_pad((string) $area->id, 12, '0', STR_PAD_LEFT))
                 ->mapWithKeys(fn (HeatmapArea $area): array => [LianBarangays::canonicalName($area->barangay) => $area])
                 ->all();
         } catch (Throwable) {

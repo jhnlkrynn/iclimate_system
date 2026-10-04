@@ -95,7 +95,7 @@
                                     @endif
                                     @if (in_array($model->status, ['validated', 'retired'], true) && $model->mae !== null)
                                         <form method="POST" action="{{ route('model-registry.activate', $model) }}" class="d-inline"
-                                              onsubmit="return confirm('Make version {{ $model->version }} the active model? The current one will be retired.')">
+                                              data-ic-confirm="Make version {{ $model->version }} the active model? The current one will be retired.">
                                             @csrf
                                             <button class="btn btn-success btn-sm">Activate</button>
                                         </form>

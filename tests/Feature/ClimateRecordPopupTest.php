@@ -82,6 +82,9 @@ class ClimateRecordPopupTest extends TestCase
         $this->actingAs($this->farmer())->get(route('climate-records.show', $record))->assertOk()->assertSee('Back to Climate Records');
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('climate-records.show', ['climate_record' => $record, 'modal' => 1]))->assertOk()->assertSee('<html', false);
+        // Staff get their own record pop-up (crud._modal): the record's fields without the page layout.
+        $this->actingAs($mao)->get(route('climate-records.show', ['climate_record' => $record, 'modal' => 1]))->assertOk()
+            ->assertDontSee('<html', false)->assertSee('Climate Record Details')->assertSee('data-ic-close', false);
+        $this->actingAs($mao)->get(route('climate-records.show', $record))->assertOk()->assertSee('<html', false);
     }
 }

@@ -13,6 +13,7 @@ use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\FarmerOrganizationSummaryService;
+use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\WeatherFeedbackSummaryService;
@@ -69,7 +70,11 @@ final class MaoDashboardService
         private readonly DashboardData $data,
         private readonly TyphoonSafetyService $typhoon,
         private readonly WeatherFeedbackSummaryService $feedback,
+        private readonly BarangayRiskMapService $riskMap,
     ) {}
+
+    /** The four rated farm-risk levels, lowest first. */
+    private const RISK_LEVELS = ['Low', 'Moderate', 'High', 'Severe'];
 
     // ------------------------------------------------------------------ payload
 
@@ -150,7 +155,9 @@ final class MaoDashboardService
     private function unreadNotifications(User $user): int
     {
         try {
-            return SampleData::without(Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count();
+            // The very cache entry the header bell and sidebar badge read, so all three always show one number.
+            return (int) \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20),
+                fn () => SampleData::without(Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count());
         } catch (Throwable) {
             return 0;
         }
@@ -230,29 +237,53 @@ final class MaoDashboardService
 
     // ------------------------------------------------------------------ farm risk
 
-    /** @return array<string, mixed> */
+    /**
+     * Farm risk from the one source the Lian Municipality Risk Map draws (BarangayRiskMapService::snapshot(), the
+     * same ratings /api/lian/risk-map serves), so the KPI, the Municipal Risk Overview and the map colours can never
+     * show different counts. "Monitored" is every barangay in that dataset; a barangay still without a rating is
+     * counted as No Data, never left out.
+     *
+     * @return array<string, mixed>
+     */
     private function risk(): array
     {
         try {
-            $areas = $this->data->currentRiskRatings();
+            $map = $this->riskMap->snapshot();
         } catch (Throwable) {
             return ['state' => 'error'];
         }
-        if ($areas->isEmpty()) {
+        $rows = collect($map['barangays'] ?? []);
+        $rated = $rows->whereIn('risk_level', self::RISK_LEVELS);
+        if ($rated->isEmpty()) {
             return ['state' => 'empty'];
         }
 
-        $counts = [];
-        foreach (['Low', 'Moderate', 'High', 'Severe'] as $level) {
-            $counts[$level] = $areas->where('risk_level', $level)->count();
+        // Plain-language reasons are stored with the ratings, not in the map payload.
+        try {
+            $reasons = $this->data->currentRiskRatings()
+                ->mapWithKeys(fn (HeatmapArea $a): array => [(string) LianBarangays::canonicalName($a->barangay) => (string) $a->main_risk_reason]);
+        } catch (Throwable) {
+            $reasons = collect();
         }
-        $computed = $areas->pluck('risk_computed_at')->filter()->max();
+
+        $counts = [];
+        foreach (self::RISK_LEVELS as $level) {
+            $counts[$level] = $rated->where('risk_level', $level)->count();
+        }
+        $computed = $rated->pluck('updated_at')->filter()->max();
 
         return [
             'state' => 'ok',
-            'total' => $areas->count(),
+            'total' => $rows->count(),
+            'rated' => $rated->count(),
+            'no_data' => $rows->count() - $rated->count(),
             'counts' => $counts,
-            'areas' => $areas,
+            'barangays' => $rows->map(fn (array $row): array => [
+                'barangay' => $row['barangay'],
+                'level' => in_array($row['risk_level'] ?? null, self::RISK_LEVELS, true) ? $row['risk_level'] : 'No Data',
+                'score' => $row['risk_score'] ?? null,
+                'reason' => $this->plainReason((string) ($reasons[$row['barangay']] ?? '')),
+            ])->values()->all(),
             'computed_at' => $computed ? CarbonImmutable::parse($computed)->timezone(self::TIMEZONE) : null,
             'barangays_total' => count(LianBarangays::all()),
         ];
@@ -269,12 +300,9 @@ final class MaoDashboardService
             return ['state' => 'hidden', 'items' => []];
         }
 
-        $items = $risk['areas']->whereIn('risk_level', ['High', 'Severe'])->sortByDesc('risk_score')->take(6)
-            ->map(fn (HeatmapArea $a): array => [
-                'barangay' => $a->barangay,
-                'level' => $a->risk_level,
-                'reason' => $this->plainReason((string) $a->main_risk_reason),
-            ])->values()->all();
+        $items = collect($risk['barangays'])->whereIn('level', ['High', 'Severe'])->sortByDesc('score')->take(6)
+            ->map(fn (array $b): array => ['barangay' => $b['barangay'], 'level' => $b['level'], 'reason' => $b['reason']])
+            ->values()->all();
 
         return ['state' => $items === [] ? 'clear' : 'watch', 'items' => $items];
     }
@@ -493,9 +521,11 @@ final class MaoDashboardService
             $cards[] = [
                 'key' => 'barangays', 'icon' => 'map', 'label' => 'Barangays Monitored', 'unit' => 'of '.$risk['barangays_total'],
                 'value' => number_format($risk['total']),
-                'context' => 'Municipality-wide farm risk monitoring',
-                'trend' => null, 'href' => '#mtdRiskMap',
-                'tip' => 'Barangays that currently have a calculated farm-risk rating.',
+                'context' => $risk['no_data'] > 0
+                    ? number_format($risk['rated']).' rated · '.number_format($risk['no_data']).' awaiting data'
+                    : 'Municipality-wide farm risk monitoring',
+                'trend' => null, 'href' => '#mtdRiskMap', 'risk_category' => 'monitored',
+                'tip' => 'Official Lian barangays in the municipal farm-risk dataset. The same ratings colour the Lian Municipality Risk Map.',
             ];
         }
 

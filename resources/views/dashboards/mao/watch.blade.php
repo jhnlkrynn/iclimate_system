@@ -20,7 +20,7 @@
 @elseif ($watch['state'] === 'clear')
     <section class="mtd-card mtd-clear" aria-label="Barangays to watch" data-mao-watch>
         <div class="mtd-clear-body">
-            <p class="mtd-allgood"><span aria-hidden="true">✓</span> No high-risk barangays detected</p>
+            <p class="mtd-allgood">@include('dashboards.mao.icon', ['name' => 'check']) No high-risk barangays detected</p>
             <small>All monitored barangays are currently below the high-risk threshold.</small>
         </div>
         <a class="mtd-btn is-quiet" href="#mtdRiskMap">View Risk Map</a>

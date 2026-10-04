@@ -1,7 +1,7 @@
 @php $fb = $mao['feedback']; $labels = ['accurate' => 'Accurate', 'partly' => 'Partly accurate', 'different' => 'Different']; @endphp
 @if ($fb)
     <section class="mtd-card" aria-labelledby="mtdFeedbackTitle" data-mao-feedback>
-        <div class="mtd-card-head"><h2 id="mtdFeedbackTitle">Farmer Weather Feedback</h2><a class="mtd-link" href="{{ route('mao.operations') }}#farmer-weather-feedback">Details</a></div>
+        <div class="mtd-card-head"><h2 id="mtdFeedbackTitle">Farmer Weather Feedback</h2><a class="mtd-link" href="{{ route('mao.operations') }}#farmer-weather-feedback" data-ic-view data-ic-select="#farmer-weather-feedback" data-ic-title="Farmer Weather Feedback" aria-haspopup="dialog">Details</a></div>
         <div class="mtd-tiles">
             @foreach ($labels as $key => $label)
                 <div class="mtd-tile"><span class="mtd-tile-label">{{ $label }}</span><strong>{{ $fb['percentages'][$key] ?? 0 }}<small>%</small></strong></div>

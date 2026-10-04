@@ -154,7 +154,10 @@
                 $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'"'.($active ? ' aria-current="page"' : '').'>';
                 $html .= '<span class="d-flex align-items-center gap-2"><span class="sidebar-icon">'.$sidebarIcon($iconKey).'</span><span>'.e($label).'</span></span>';
                 $html .= '<span class="d-flex align-items-center gap-2">';
-                if (! empty($badge)) {
+                if ($iconKey === 'notifications') {
+                    // Kept in step with the header bell by resources/js/notifications-popup.js.
+                    $html .= '<span class="sidebar-badge" data-ic-notif-badge'.(empty($badge) ? ' hidden' : '').'>'.(int) $badge.'</span>';
+                } elseif (! empty($badge)) {
                     $html .= '<span class="sidebar-badge">'.(int) $badge.'</span>';
                 }
                 $html .= '<svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';

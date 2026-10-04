@@ -167,7 +167,7 @@
                         </div>
                         <div class="fcal-record-actions">
                             <a class="fad-btn is-quiet" href="{{ route('farmer.planting-schedules.edit', $schedule) }}">Edit</a>
-                            <form method="POST" action="{{ route('farmer.planting-schedules.destroy', $schedule) }}" onsubmit="return confirm('Delete this schedule?')">
+                            <form method="POST" action="{{ route('farmer.planting-schedules.destroy', $schedule) }}" data-ic-confirm="Delete this schedule?">
                                 @csrf @method('DELETE')
                                 <button class="fad-btn is-quiet is-danger" type="submit">Delete</button>
                             </form>

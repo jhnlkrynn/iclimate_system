@@ -1299,13 +1299,13 @@
                                     </div>
                                 </details>
                                 @if(! $isArchived)
-                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" data-loading="true" onsubmit="return confirm('Archive this post? Farmers will no longer see it.');">
+                                    <form method="POST" action="{{ route('community-feed.archive', $post) }}" data-loading="true" data-ic-confirm="Archive this post? Farmers will no longer see it.">
                                         @csrf
                                         @method('PATCH')
                                         <button class="btn btn-outline-secondary fw-bold" type="submit" data-loading-text="Archiving...">Archive</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" data-loading="true" onsubmit="return confirm('Delete this post permanently?');">
+                                <form method="POST" action="{{ route('community-feed.destroy', $post) }}" data-loading="true" data-ic-confirm="Delete this post permanently?">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn btn-outline-danger fw-bold" type="submit" data-loading-text="Deleting...">Delete</button>

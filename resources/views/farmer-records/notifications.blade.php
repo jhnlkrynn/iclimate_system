@@ -46,19 +46,19 @@
                 <ul class="frec-notes">
                     @foreach($records as $note)
                         @php $when = $note->created_at?->copy()->timezone($tz); @endphp
-                        <li @class(['frec-noteitem', 'is-unread' => ! $note->is_read])>
+                        <li @class(['frec-noteitem', 'is-unread' => ! $note->is_read]) data-ic-notif-row>
                             <span class="frec-note-icon" data-type="{{ strtolower((string) $note->type) }}">@include('dashboards.mao.icon', ['name' => $typeIcon[$note->type] ?? 'bell'])</span>
                             <div class="frec-note-body">
                                 <div class="frec-note-tags">
                                     @if(! $note->is_read)<span class="fad-badge is-good">@include('dashboards.mao.icon', ['name' => 'info'])<span>New</span></span>@else<span class="fad-badge is-muted">Read</span>@endif
                                     @if($note->type)<span class="fad-badge {{ $typeTone[$note->type] ?? 'is-muted' }}">{{ $note->type }}</span>@endif
                                 </div>
-                                <h3 class="frec-note-title"><a href="{{ route('notifications.show', $note) }}">{{ $note->title }}</a></h3>
+                                <h3 class="frec-note-title"><a href="{{ route('notifications.show', $note) }}" data-ic-view data-ic-size="normal" data-ic-notif-item aria-haspopup="dialog">{{ $note->title }}</a></h3>
                                 @if($note->message)<p class="frec-note-text">{{ \Illuminate\Support\Str::limit($note->message, 180) }}</p>@endif
                                 @if($when)<p class="fad-meta"><time datetime="{{ $note->created_at->toIso8601String() }}">{{ $when->format('M j, Y · g:i A') }}</time> · {{ $when->diffForHumans() }}</p>@endif
                             </div>
                             <div class="frec-note-actions">
-                                <a class="fad-btn is-quiet is-compact" href="{{ route('notifications.show', $note) }}">Open</a>
+                                <a class="fad-btn is-quiet is-compact" href="{{ route('notifications.show', $note) }}" data-ic-view data-ic-size="normal" data-ic-notif-item aria-haspopup="dialog">Open</a>
                                 @if(! $note->is_read)
                                     <form method="POST" action="{{ route('notifications.mark-read', $note) }}" data-loading="true">
                                         @csrf @method('PATCH')
