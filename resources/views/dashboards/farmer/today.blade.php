@@ -28,7 +28,7 @@
                     </li>
                 @endforeach
             </ul>
-            <p class="mfd-now-summary">{{ $w['now_summary'] }}</p>
+            <p class="mfd-now-summary" role="img" aria-label="{{ $w['now_summary'] }}">{{ $w['now_summary'] }}</p>
             <p class="mfd-foot">{{ __('farmer.now.source', ['source' => __('farmer.source.weather'), 'time' => $w['updated_label'] ?? '—']) }}</p>
             <a class="mfd-link" href="{{ route('weather-predictions.index', ['tab' => 'weather-forecast']) }}">{{ __('farmer.now.see_full') }}</a>
         </section>
