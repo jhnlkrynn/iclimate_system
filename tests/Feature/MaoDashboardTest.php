@@ -7,12 +7,10 @@ use App\Models\ConversationMessage;
 use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\PlantingAdvisory;
-use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\Analytics\DashboardOverviewService;
 use App\Services\Analytics\MaoDashboardService;
 use App\Services\TyphoonSafetyService;
-use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Support\DashboardData;
 use App\Support\ProjectYieldDataset;
 use Carbon\CarbonImmutable;
@@ -162,25 +160,26 @@ class MaoDashboardTest extends TestCase
         $this->rating('Prenza', 'Low', 0.2);
         $html = $this->page()->getContent();
 
-        // Summary, today's conditions, then the Municipal Risk Overview directly above the map, then the trends.
+        // Summary, today's weather, the Municipal Risk Overview directly above the map, the trends, then planting and farmers.
         $order = ['MAO Dashboard', 'data-mao-kpis', 'data-mao-attention', 'data-mao-conditions', 'data-mao-forecast', 'data-mao-risk>',
-            'data-risk-overview', 'id="barangayRiskMap"', 'data-mao-watch', 'data-mao-yield', 'data-mao-climate', 'data-mao-coverage', 'data-mao-activity'];
+            'data-risk-overview', 'id="barangayRiskMap"', 'data-mao-watch', 'data-mao-yield', 'data-mao-climate', 'data-mao-planting', 'data-mao-coverage'];
         $last = -1;
         foreach ($order as $marker) {
             $pos = strpos($html, $marker);
             if ($marker === 'data-mao-climate' && $pos === false) {
                 continue;                      // no Ambulong history in this environment
             }
-            if ($marker === 'data-mao-activity' && $pos === false) {
-                continue;                      // nothing but logins recorded: the section is hidden by design
-            }
             $this->assertNotFalse($pos, "Missing section: $marker");
             $this->assertGreaterThan($last, $pos, "Section out of order: $marker");
             $last = $pos;
         }
-        foreach (['Municipal Agriculture Monitoring — Lian, Batangas', 'Monitor farmers, weather conditions, farm risk, rice yield, and agricultural advisories.', 'Refresh', 'Create Advisory', 'Open Reports', 'Data Sources'] as $text) {
+        foreach (['Municipal Agriculture Monitoring — Lian, Batangas', "Today's weather, farm risk, rice yield and planting guidance for Lian's rice farmers.", 'Refresh', 'Create Advisory', 'Data Sources'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
+        // The header keeps two actions only; Reports stays one click away in the sidebar.
+        $header = substr($html, strpos($html, '<header class="mtd-header">'), strpos($html, '</header>', strpos($html, '<header class="mtd-header">')) - strpos($html, '<header class="mtd-header">'));
+        $this->assertSame(2, substr_count($header, 'class="mtd-btn'));
+        $this->assertStringNotContainsString('Open Reports', $header);
     }
 
     public function test_removed_and_empty_content_is_not_on_the_overview(): void
@@ -190,7 +189,7 @@ class MaoDashboardTest extends TestCase
 
         foreach (['Office Overview', 'MAO Operational Workflow', 'Predictions by Month', 'Average Yield by Month', 'Not recorded', 'N/A',
             'Season:', 'Planting &amp; Expected Yield', 'Hectares Planted', 'Farmer Weather Feedback', 'Not enough farmer reports', 'dashboard-tab',
-            'Climate Records', 'Learn More', 'Barangays to Watch'] as $removed) {
+            'Climate Records', 'Learn More', 'Barangays to Watch', 'Recent MAO Activity', 'MAO Attention Center'] as $removed) {
             $this->assertStringNotContainsString($removed, $body, $removed);
         }
         foreach (['Risk Map &amp; Forecast', 'Monitoring &amp; Production', 'Field Reports', 'Publishing &amp; Activity'] as $tab) {
@@ -238,17 +237,29 @@ class MaoDashboardTest extends TestCase
         $this->assertNull($this->kpi($this->data(), 'farmers'));
     }
 
-    public function test_weather_kpi_shows_the_live_reading_and_keeps_a_real_zero_rain(): void
+    public function test_the_weather_card_shows_the_live_reading_once_and_keeps_a_real_zero_rain(): void
     {
         $this->fakeWeather([1, 1, 1, 1, 1, 1, 1], currentRain: 0.0);
 
-        $k = $this->kpi($this->data(), 'weather');
+        $data = $this->data();
         $html = $this->page()->getContent();
+        $card = substr($html, strpos($html, 'data-mao-conditions'), 3500);
 
-        $this->assertSame('28.3', $k['value']);
-        $this->assertStringContainsString('82% humidity', $k['context']);
-        $this->assertStringContainsString('0.0 mm rain', $k['context']);                 // a genuine zero is displayed, not hidden
-        $this->assertStringContainsString('Current Rain', $html);
+        $this->assertNull($this->kpi($data, 'weather'));                                 // not repeated as a summary number
+        $this->assertSame(28.3, $data['weather']['temperature']);
+        $this->assertStringContainsString('28.3', $card);
+        $this->assertStringContainsString('Current Rain', $card);
+        $this->assertStringContainsString('0.0<small>mm</small>', $card);                // a genuine zero is displayed, not hidden
+    }
+
+    public function test_the_summary_has_at_most_four_numbers(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        FarmerProfile::factory()->create();
+        $this->rating('San Diego', 'Low', 0.2);
+        PlantingAdvisory::factory()->create(['status' => PlantingAdvisory::STATUS_PUBLISHED]);
+
+        $this->assertSame(['farmers', 'yield', 'barangays', 'advisories'], array_column($this->data()['kpis'], 'key'));
     }
 
     public function test_a_failed_weather_source_hides_live_values_instead_of_showing_zeros(): void
@@ -432,12 +443,12 @@ class MaoDashboardTest extends TestCase
 
     // ------------------------------------------------------------ current conditions + outlook
 
-    public function test_current_farm_conditions_show_four_readings_with_a_timestamp(): void
+    public function test_the_weather_card_shows_four_readings_with_a_timestamp(): void
     {
         $html = $this->page()->getContent();
         $section = substr($html, strpos($html, 'data-mao-conditions'), 3500);
 
-        foreach (['Current Farm Conditions', 'Live weather conditions for Lian, Batangas.', 'Current Rain', 'Temperature', 'Humidity', 'Wind Speed', 'Last updated:', 'View Weather Forecast'] as $text) {
+        foreach (['Weather Now', 'Live weather conditions for Lian, Batangas.', 'Current Rain', 'Temperature', 'Humidity', 'Wind Speed', 'Last updated:', 'View Weather Forecast'] as $text) {
             $this->assertStringContainsString($text, $section, $text);
         }
         $this->assertStringContainsString('28.3', $section);
@@ -528,7 +539,7 @@ class MaoDashboardTest extends TestCase
         $this->assertSame(2, $f['without_organization']);
         $this->assertEqualsWithDelta(5.0, $f['farm_area'], 0.001);
         $this->assertStringContainsString('2 / 19', $html);
-        $this->assertStringContainsString('View Farmer Analytics', $html);
+        $this->assertStringContainsString('View Farmer Profiles', $html);
     }
 
     public function test_the_climate_chart_reports_annual_rainfall_with_the_months_it_is_based_on(): void
@@ -543,17 +554,17 @@ class MaoDashboardTest extends TestCase
         }
         $this->assertStringContainsString('maoRainTempChart', $html);
         $this->assertStringContainsString('Rainfall &amp; Temperature — '.$snapshot['year'], $html);
-        $this->assertStringContainsString('Solid lines are historical records; dashed lines are model forecasts.', $html);
+        $this->assertStringContainsString('Lighter bars and dashed lines are forecasts, not records.', $html);
         $this->assertStringContainsString('total of '.$snapshot['rainfall_months'].' recorded', $html);
         if ($snapshot['rainfall_months'] < 12) {
             $this->assertStringContainsString('not a full year', $html);                          // a part-year is never called an annual total
         }
     }
 
-    public function test_planting_and_production_appears_only_when_real_production_records_exist(): void
+    public function test_rice_harvest_records_appear_only_when_real_production_records_exist(): void
     {
         $this->assertNull($this->data()['production']);
-        $this->assertStringNotContainsString('Planting &amp; Production', $this->page()->getContent());
+        $this->assertStringNotContainsString('Rice Harvest Records', $this->page()->getContent());
 
         $this->partialMock(DashboardData::class, function ($mock): void {
             $mock->shouldReceive('riceRows')->andReturn(collect([
@@ -568,7 +579,7 @@ class MaoDashboardTest extends TestCase
         $this->assertEqualsWithDelta(10.0, $p['irrigated'], 0.001);
         $this->assertEqualsWithDelta(5.0, $p['rainfed'], 0.001);
         $this->assertEqualsWithDelta(55 / 15, $p['recorded_yield'], 0.001);
-        $this->assertStringContainsString('Planting &amp; Production', $this->page()->getContent());
+        $this->assertStringContainsString('Rice Harvest Records', $this->page()->getContent());
     }
 
     public function test_risk_counts_use_the_latest_rating_of_each_official_barangay_only(): void
@@ -602,35 +613,52 @@ class MaoDashboardTest extends TestCase
         $this->assertEqualsWithDelta(4.0, $p['recorded_yield'], 0.001);
     }
 
-    public function test_farmer_feedback_appears_only_with_enough_reports(): void
+    // ------------------------------------------------------------ planting guide
+
+    public function test_the_planting_guide_counts_every_rated_barangay_once_and_a_high_rating_means_wait(): void
     {
-        $this->assertNull($this->data()['feedback']);                                              // default: not enough data, so no panel
+        $this->rating('San Diego', 'High', 0.7)->update(['planting_advisory' => 'Ideal planting period.']);
+        $this->rating('Prenza', 'Low', 0.2)->update(['planting_advisory' => 'Ideal planting period.']);
+        $this->rating('Cumba', 'Moderate', 0.5)->update(['planting_advisory' => 'Ideal planting period.']);
 
-        $this->mock(WeatherFeedbackSummaryService::class, function ($mock): void {
-            $mock->shouldReceive('summarize')->andReturn(['total' => 9, 'counts' => [], 'percentages' => ['accurate' => 60, 'partly' => 30, 'different' => 10],
-                'enough_data' => true, 'min_reports' => 5, 'message' => 'Most reports say the forecast was accurate.', 'groups' => [], 'barangays' => []]);
-        });
-        Cache::flush();
+        $data = $this->data();
+        $p = $data['planting'];
+        $html = $this->page()->getContent();
 
-        $this->assertSame(9, $this->data()['feedback']['total']);
-        $this->assertStringContainsString('Farmer Weather Feedback', $this->page()->getContent());
+        $this->assertSame(3, $p['rated']);
+        $this->assertSame(3, count($p['groups']['good']) + count($p['groups']['care']) + count($p['groups']['wait']));
+        $this->assertContains('San Diego', $p['groups']['wait']);                         // never "good time to plant" under High risk
+        $this->assertNotContains('Cumba', $p['groups']['good']);                          // nor under Moderate
+        $this->assertNull($p['schedules']);                                               // no farmer schedules: no zero rows
+        foreach (['data-mao-planting', 'Planting Guide', 'Good time to plant', 'Better to wait', 'Open Farm Calendar'] as $text) {
+            $this->assertStringContainsString($text, $html, $text);
+        }
+        $this->assertStringNotContainsString('Farmer planting schedules on record', $html);
     }
 
-    // ------------------------------------------------------------ activity, sources, refresh, typography
+    public function test_the_planting_guide_is_absent_without_ratings(): void
+    {
+        $this->assertNull($this->data()['planting']);
+        $this->assertStringNotContainsString('Planting Guide', $this->page()->getContent());
+    }
 
-    public function test_recent_activity_lists_agricultural_work_not_sign_ins(): void
+    // ------------------------------------------------------------ office housekeeping stays off the overview
+
+    public function test_activity_log_and_farmer_feedback_are_not_part_of_the_overview(): void
     {
         $mao = $this->mao();
-        SystemLog::create(['user_id' => $mao->id, 'action' => 'User Login', 'details' => '{}']);
-        $this->assertSame('empty', $this->data($mao)['activity']['state']);                        // only a sign-in: the section is hidden
-        $this->assertStringNotContainsString('data-mao-activity', $this->page($mao)->getContent());
+        \App\Models\SystemLog::create(['user_id' => $mao->id, 'action' => 'Published Advisory', 'details' => '{}']);
 
-        SystemLog::create(['user_id' => $mao->id, 'action' => 'Published Advisory', 'details' => json_encode(['context' => ['record_type' => 'PlantingAdvisory', 'record_id' => 7]])]);
-        $rows = $this->data($mao)['activity']['rows'];
+        $data = $this->data($mao);
+        $html = $this->page($mao)->getContent();
 
-        $this->assertSame(['Published Advisory'], array_column($rows, 'action'));
-        $this->assertStringContainsString('Recent MAO Activity', $this->page($mao)->getContent());
+        $this->assertArrayNotHasKey('activity', $data);
+        $this->assertArrayNotHasKey('feedback', $data);
+        $this->assertStringNotContainsString('data-mao-activity', $html);
+        $this->assertStringNotContainsString('Farmer Weather Feedback', $this->body($html));
     }
+
+    // ------------------------------------------------------------ sources, refresh, typography
 
     public function test_data_sources_label_each_kind_of_data_and_only_list_sources_in_use(): void
     {
@@ -675,9 +703,10 @@ class MaoDashboardTest extends TestCase
         $json = $this->actingAs($this->mao())->getJson(route('mao.dashboard.live', ['refresh' => 1]))->assertOk()->json();
 
         // The risk overview and map are not a slot: re-inserting them would rebuild the map, so they reload their own data.
-        $this->assertEqualsCanonicalizing(['kpis', 'attention', 'conditions', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'], array_keys($json['slots']));
-        $this->assertStringContainsString('data-kpi="weather"', $json['slots']['kpis']);
-        $this->assertStringContainsString('Current Farm Conditions', $json['slots']['conditions']);
+        $this->assertEqualsCanonicalizing(['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'], array_keys($json['slots']));
+        $this->assertStringContainsString('data-kpi="yield"', $json['slots']['kpis']);
+        $this->assertStringContainsString('Weather Now', $json['slots']['conditions']);
+        $this->assertStringContainsString('Planting Guide', $json['slots']['planting']);
         $this->assertSame('', trim($json['slots']['production']));                                  // nothing to show: the section disappears
         $this->assertArrayHasKey('refreshed_at', $json);
     }

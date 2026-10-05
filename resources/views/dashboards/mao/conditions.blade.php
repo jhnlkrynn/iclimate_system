@@ -2,7 +2,7 @@
 <section class="mtd-card" aria-labelledby="mtdConditionsTitle" data-mao-conditions data-mao-weather-root>
     <div class="mtd-card-head">
         <div>
-            <h2 id="mtdConditionsTitle">Current Farm Conditions</h2>
+            <h2 id="mtdConditionsTitle">Weather Now</h2>
             <p class="mtd-sub">Live weather conditions for {{ $w['state'] === 'ok' ? $w['location'] : 'Lian, Batangas' }}.</p>
         </div>
         <div class="mtd-head-actions">

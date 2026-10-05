@@ -20,6 +20,6 @@
                 </article>
             @endforeach
         </div>
-        <p class="mtd-foot">Days are highlighted only past these planning limits (not official PAGASA warnings): {{ number_format(\App\Services\Analytics\MaoDashboardService::HEAVY_RAIN_MM, 0) }} mm of rain, {{ number_format(\App\Services\Analytics\MaoDashboardService::STRONG_WIND_KMH, 0) }} km/h wind or a high of {{ number_format(\App\Services\Analytics\MaoDashboardService::VERY_HOT_C, 0) }}°C. Forecast: {{ $w['source'] }}.</p>
+        <p class="mtd-foot">Days are highlighted when the forecast reaches {{ number_format(\App\Services\Analytics\MaoDashboardService::HEAVY_RAIN_MM, 0) }} mm of rain, {{ number_format(\App\Services\Analytics\MaoDashboardService::STRONG_WIND_KMH, 0) }} km/h wind or {{ number_format(\App\Services\Analytics\MaoDashboardService::VERY_HOT_C, 0) }}°C. A planning guide, not an official PAGASA warning.</p>
     </section>
 @endif

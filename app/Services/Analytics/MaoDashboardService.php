@@ -4,33 +4,34 @@ namespace App\Services\Analytics;
 
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\FarmerPlantingSchedule;
 use App\Models\FarmerProfile;
 use App\Models\FieldReport;
 use App\Models\HeatmapArea;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
-use App\Models\SystemLog;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
-use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Services\WeatherApiService;
+use App\Support\BusinessClock;
 use App\Support\DashboardData;
 use App\Support\LianBarangays;
 use App\Support\ProjectYieldDataset;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
-use App\Support\SystemLogPresenter;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Throwable;
 
 /**
- * Everything the MAO overview shows, from ONE place: agriculture, weather, farmers, farm risk, yield and advisories.
+ * Everything the MAO overview shows, from ONE place: weather, farm risk, rice yield, planting, farmers and advisories.
+ * The page is deliberately short: what Lian's rice farmers and the municipality need to decide, nothing else. Office
+ * housekeeping (activity log, farmer weather feedback, field reports) lives on the MAO operations page.
  *
  * Rules that shape it:
  *   - every number is queried or computed here from a real source, never typed in;
@@ -69,7 +70,6 @@ final class MaoDashboardService
         private readonly ProjectYieldDataset $yields,
         private readonly DashboardData $data,
         private readonly TyphoonSafetyService $typhoon,
-        private readonly WeatherFeedbackSummaryService $feedback,
         private readonly BarangayRiskMapService $riskMap,
     ) {}
 
@@ -99,11 +99,10 @@ final class MaoDashboardService
             'farmers' => $farmers,
             'climate' => $climate,
             'production' => $this->production(),
-            'feedback' => $this->feedbackPanel(),
+            'planting' => $this->planting($risk),
             'watch' => $this->watchList($risk),
-            'activity' => $this->activity(),
             'attention' => $this->attention($weather, $risk, $advisories),
-            'kpis' => $this->kpis($weather, $yield, $risk, $advisories, $farmers),
+            'kpis' => $this->kpis($yield, $risk, $advisories, $farmers),
             'sources' => $this->sources($weather, $yield, $risk, $climate, $farmers, $now),
         ];
     }
@@ -258,13 +257,14 @@ final class MaoDashboardService
             return ['state' => 'empty'];
         }
 
-        // Plain-language reasons are stored with the ratings, not in the map payload.
+        // Plain-language reasons are stored with the ratings, not in the map payload; so is the planting advice, which
+        // the map payload leaves out while it is showing its last saved ratings.
         try {
-            $reasons = $this->data->currentRiskRatings()
-                ->mapWithKeys(fn (HeatmapArea $a): array => [(string) LianBarangays::canonicalName($a->barangay) => (string) $a->main_risk_reason]);
+            $stored = $this->data->currentRiskRatings()->keyBy(fn (HeatmapArea $a): string => (string) LianBarangays::canonicalName($a->barangay));
         } catch (Throwable) {
-            $reasons = collect();
+            $stored = collect();
         }
+        $reasons = $stored->map(fn (HeatmapArea $a): string => (string) $a->main_risk_reason);
 
         $counts = [];
         foreach (self::RISK_LEVELS as $level) {
@@ -282,6 +282,7 @@ final class MaoDashboardService
                 'barangay' => $row['barangay'],
                 'level' => in_array($row['risk_level'] ?? null, self::RISK_LEVELS, true) ? $row['risk_level'] : 'No Data',
                 'score' => $row['risk_score'] ?? null,
+                'planting' => (string) (data_get($row, 'advisory.planting') ?: $stored->get($row['barangay'])?->planting_advisory),
                 'reason' => $this->plainReason((string) ($reasons[$row['barangay']] ?? '')),
             ])->values()->all(),
             'computed_at' => $computed ? CarbonImmutable::parse($computed)->timezone(self::TIMEZONE) : null,
@@ -455,24 +456,75 @@ final class MaoDashboardService
         ];
     }
 
-    /** Farmer weather feedback: only once enough reports exist to say anything. @return array<string, mixed>|null */
-    private function feedbackPanel(): ?array
+    /**
+     * Planting guide for today: how many barangays fall under each plain answer to "can we plant now?".
+     *
+     * It reads the planting sentence the Heat Map shows for each barangay (DecisionSupportService, from this month's
+     * expected rain) together with that barangay's farm-risk rating, the way the farmer dashboard does: "Ideal planting
+     * period." counts as a good time only where the rating is Low, and a High or Severe rating always means wait.
+     * Farmers' own planting schedules are added only once some exist.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function planting(array $risk): ?array
     {
-        try {
-            $f = $this->feedback->summarize([]);
-        } catch (Throwable) {
+        if (($risk['state'] ?? null) !== 'ok') {
             return null;
         }
 
-        return ($f['enough_data'] ?? false)
-            ? ['total' => (int) $f['total'], 'percentages' => $f['percentages'], 'message' => (string) $f['message']]
-            : null;
+        $groups = ['good' => [], 'care' => [], 'wait' => []];
+        foreach ($risk['barangays'] as $b) {
+            $text = (string) ($b['planting'] ?? '');
+            if ($b['level'] === 'No Data' || $text === '') {
+                continue;
+            }
+            $key = match (true) {
+                in_array($b['level'], ['High', 'Severe'], true), str_contains($text, 'Delay planting'), str_contains($text, 'Wait for sufficient rainfall') => 'wait',
+                str_starts_with($text, 'Ideal planting') && $b['level'] === 'Low' => 'good',
+                default => 'care',
+            };
+            $groups[$key][] = $b['barangay'];
+        }
+        $rated = array_sum(array_map('count', $groups));
+        if ($rated === 0) {
+            return null;
+        }
+
+        return ['groups' => $groups, 'rated' => $rated, 'schedules' => $this->plantingSchedules()];
+    }
+
+    /** Farmers' recorded planting schedules; null when none exist or the count cannot be read. @return array<string, int>|null */
+    private function plantingSchedules(): ?array
+    {
+        try {
+            if (! SchemaCache::hasTable('farmer_planting_schedules')) {
+                return null;
+            }
+            $total = FarmerPlantingSchedule::query()->count();
+            if ($total === 0) {
+                return null;
+            }
+            $today = BusinessClock::today()->toDateString();
+            $soon = BusinessClock::today()->addDays(30)->toDateString();
+
+            return [
+                'total' => $total,
+                'planting_soon' => FarmerPlantingSchedule::query()->whereBetween('planting_date', [$today, $soon])->count(),
+                'harvest_soon' => FarmerPlantingSchedule::query()->whereNull('harvested_on')->whereBetween('scheduled_harvest_date', [$today, $soon])->count(),
+            ];
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     // ------------------------------------------------------------------ KPI cards
 
-    /** @return array<int, array<string, mixed>> */
-    private function kpis(array $weather, array $yield, array $risk, array $advisories, array $farmers): array
+    /**
+     * Four numbers only. Today's weather is not one of them: the weather card directly below shows the same reading.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function kpis(array $yield, array $risk, array $advisories, array $farmers): array
     {
         $cards = [];
 
@@ -484,20 +536,6 @@ final class MaoDashboardService
                     .($farmers['accounts'] !== null ? ' · '.number_format($farmers['accounts']).' farmer '.($farmers['accounts'] === 1 ? 'account' : 'accounts') : ''),
                 'trend' => null, 'href' => route('farmer-profiles.index'),
                 'tip' => 'Farmers whose farm profile (barangay, farm area, organization) is recorded in iClimate. Farmer accounts counts everyone who can sign in as a farmer, including those who have not completed a profile yet, so it can be higher.',
-            ];
-        }
-
-        if ($weather['state'] === 'ok') {
-            $bits = array_filter([
-                $weather['humidity'] !== null ? number_format($weather['humidity'], 0).'% humidity' : null,
-                $weather['rain'] !== null ? number_format($weather['rain'], 1).' mm rain' : null,
-            ]);
-            $cards[] = [
-                'key' => 'weather', 'icon' => 'weather', 'label' => 'Weather Today', 'unit' => '°C',
-                'value' => number_format($weather['temperature'], 1),
-                'context' => ($weather['stale'] ? 'Last saved reading' : implode(' • ', $bits)) ?: $weather['condition'],
-                'trend' => null, 'href' => route('weather-predictions.index'),
-                'tip' => 'Live reading for Lian from an online weather service. Not a forecast.',
             ];
         }
 
@@ -627,28 +665,6 @@ final class MaoDashboardService
         usort($items, fn ($a, $b) => ($rank[$a['severity']] ?? 2) <=> ($rank[$b['severity']] ?? 2));
 
         return $items;
-    }
-
-    // ------------------------------------------------------------------ recent activity
-
-    /** Recent work recorded by MAO personnel (advisories, records, reports), not sign-ins. @return array<string, mixed> */
-    private function activity(): array
-    {
-        try {
-            $rows = SystemLog::query()->with('user:id,name,role')
-                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_MAO))
-                ->whereRaw('lower(action) not in (?, ?, ?, ?)', ['user login', 'user logout', 'login', 'logout'])
-                ->latest('id')->take(8)->get()
-                ->map(function (SystemLog $log): array {
-                    $p = SystemLogPresenter::present($log);
-
-                    return ['at' => $log->created_at, 'user' => $p['user'], 'role' => $p['role'], 'action' => $p['action'], 'detail' => $p['description']];
-                });
-        } catch (Throwable) {
-            return ['state' => 'error', 'rows' => []];
-        }
-
-        return ['state' => $rows->isEmpty() ? 'empty' : 'ok', 'rows' => $rows->all()];
     }
 
     // ------------------------------------------------------------------ data sources

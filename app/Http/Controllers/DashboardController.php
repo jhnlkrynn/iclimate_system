@@ -65,7 +65,7 @@ class DashboardController extends Controller
     private const IT_MAX_STALE_SECONDS = 3600;
 
     /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
-    private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'coverage', 'production', 'feedback', 'activity'];
+    private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
 
     /** Sections the IT refresh button re-renders (partials under dashboards/it). */
     private const IT_LIVE_SLOTS = ['summary', 'kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];

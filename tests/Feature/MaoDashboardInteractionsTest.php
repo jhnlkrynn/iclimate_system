@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
-use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -77,17 +76,5 @@ class MaoDashboardInteractionsTest extends TestCase
 
         $this->assertTrue($note->fresh()->is_read);
         $this->assertSame(0, $this->actingAs($mao)->get(route('mao.dashboard'))->viewData('mao')['unread_notifications']);
-    }
-
-    public function test_recent_activity_shows_only_actions_recorded_by_mao_personnel(): void
-    {
-        $mao = $this->mao();
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        SystemLog::create(['user_id' => $mao->id, 'action' => 'Published Advisory', 'details' => '{}']);
-        SystemLog::create(['user_id' => $farmer->id, 'action' => 'Submitted Weather Feedback', 'details' => '{}']);
-
-        $rows = $this->actingAs($mao)->get(route('mao.dashboard'))->viewData('mao')['activity']['rows'];
-
-        $this->assertSame(['Published Advisory'], array_column($rows, 'action'));
     }
 }

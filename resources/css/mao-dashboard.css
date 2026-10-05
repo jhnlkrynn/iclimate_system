@@ -114,6 +114,8 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-kpi-value { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; font-size: 1.75rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
 .mtd-kpi-value small { font-size: .9375rem; font-weight: 600; color: var(--muted); }
 .mtd-kpi-context { font-size: .9375rem; color: var(--ink-2); }
+/* Four cards never leave one alone on a row: two by two until there is room for all four. */
+@media (min-width: 900px) and (max-width: 1279.98px) { .mtd-kpis[style*="count: 4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .mtd-trend { font-size: .875rem; color: var(--muted); }
 .mtd-trend.is-up strong { color: var(--ok-ink); } .mtd-trend.is-down strong { color: var(--crit-ink); }
 .mtd-basis { font-size: .8125rem; color: var(--muted); }
@@ -144,6 +146,8 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 
 /* ---------------------------------------------------------------- charts */
 .mtd-chart { position: relative; height: 300px; }
+/* The chart's information icon sits above the canvas and pushes it past the box: keep the note clear of the axis. */
+.mtd-chart + .mtd-foot { margin-top: 44px !important; }
 .mtd-range { display: inline-flex; padding: 4px; gap: 4px; border-radius: 8px; background: #e8efeb; }
 .mtd-range button { min-height: 36px; padding: 4px 14px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-ink, var(--brand)); font-size: .875rem; font-weight: 600; cursor: pointer; }
 .mtd-range button[aria-pressed="true"] { background: #fff; box-shadow: 0 1px 3px rgba(15, 40, 28, .12); }
@@ -171,6 +175,17 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-clear { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; }
 .mtd-clear-body small { display: block; margin-top: 2px; }
 
+/* ---------------------------------------------------------------- planting guide: a count and a plain answer per row */
+.mtd-guide { display: grid; gap: 12px; }
+.mtd-guide-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px 16px; border: 1px solid var(--line); border-left: 4px solid var(--ok); border-radius: 4px; background: var(--subtle); }
+.mtd-guide-row.is-care { border-left-color: var(--warn); }
+.mtd-guide-row.is-wait { border-left-color: var(--crit); }
+.mtd-guide-count { min-width: 44px; text-align: center; font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+.mtd-guide-body { display: grid; gap: 2px; min-width: 0; }
+.mtd-guide-body strong { font-size: 1rem; font-weight: 700; }
+.mtd-guide-body span { font-size: .9375rem; color: var(--ink-2); }
+.mtd-guide + .mtd-rows { margin-top: 16px; margin-bottom: 0; }
+
 .mtd-table-wrap { overflow-x: auto; }
 .mtd-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .mtd-table th { padding: 8px 10px; text-align: left; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); border-bottom: 2px solid var(--rule); white-space: nowrap; }
@@ -191,7 +206,9 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 
 /* ---------------------------------------------------------------- loading, small screens */
 .mtd.is-loading [data-slot] { opacity: .55; transition: opacity .15s; }
-.mtd-more { text-align: center; }
+.mtd-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 32px; text-align: center; }
+/* Room to breathe between the page's sections (cards inside a section keep the normal gap). */
+.mtd > .mtd-section + .mtd-section, .mtd > .mtd-more { margin-top: 16px; }
 @media (max-width: 767.98px) {
     .mtd { --gap: 16px; padding: 16px; padding-bottom: calc(62px + 24px + 24px); border-radius: 0; }
     .mtd-header { padding: 20px; }
