@@ -29,18 +29,6 @@
         @endforeach
 
         @include('dashboards.farmer.popups')
-        @endif
-
-        <details class="mfd-info">
-            <summary>@include('dashboards.mao.icon', ['name' => 'info']){{ __('farmer.about.title') }}</summary>
-            <div class="mfd-info-panel">
-                <ul>
-                    @foreach (['weather', 'coming', 'rain', 'harvest', 'advisories'] as $item)
-                        <li><strong>{{ __('farmer.about.'.$item.'.label') }}</strong> {{ __('farmer.about.'.$item.'.text') }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </details>
     </div>
 
     {{-- "View Advisory" opens the advisory here, in the same pop-up as the Advisories page. --}}

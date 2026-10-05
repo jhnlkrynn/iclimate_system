@@ -154,14 +154,18 @@ class DashboardKpiTest extends TestCase
         $this->rice('Binubusan', 2024, 10, 50);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))
+        // The redesigned "My Farm Today" strip: six numbers a rice farmer checks first, each from its own source.
+        Http::fake(['*' => Http::response([], 500)]);
+        $page = $this->actingAs($farmer)->get(route('farmer.dashboard'))
             ->assertOk()
-            ->assertSee('My Farm at a Glance')
-            ->assertSee('data-kpi="alerts"', false)
-            ->assertSee('data-kpi="rain_past"', false)
+            ->assertSee('My Farm Today')
+            ->assertSeeInOrder(['data-kpi="weather"', 'data-kpi="rain"', 'data-kpi="condition"', 'data-kpi="planting"', 'data-kpi="risk"', 'data-kpi="yield"'], false)
             ->assertDontSee('data-kpi="historical-yield"', false)        // municipal history is not a farmer KPI
-            ->assertDontSee('My Farm Today')
+            ->assertDontSee('My Farm at a Glance')
             ->assertDontSee('data-kpi="users"', false);
+        // With the weather source down the weather number is a "Not Available" state, never a made-up 0.
+        $page->assertSee('class="mfd-kpi is-missing" data-kpi="weather"', false)
+            ->assertSee(__('farmer.today.not_available'));
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))

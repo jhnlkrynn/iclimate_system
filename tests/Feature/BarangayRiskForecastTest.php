@@ -200,14 +200,14 @@ class BarangayRiskForecastTest extends TestCase
             ->assertSee('Forecast Month')
             ->assertSee('data-highlight-barangay="San Diego"', false);
 
-        // The overview only summarizes the barangay's rating; the map itself is on the Heat Map tab and page.
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))
-            ->assertOk()
-            ->assertDontSee('id="barangayRiskMap"', false)
-            ->assertSee('href="'.route('heat-map.index').'"', false);
-        $this->actingAs($farmer)->get(route('farmer.dashboard', ['tab' => 'heatmap']))
-            ->assertOk()
-            ->assertSee('id="barangayRiskMap"', false)
-            ->assertDontSee('data-risk-forecast', false);
+        // The redesigned dashboard only summarizes the barangay's rating and links to the Heat Map page, which is
+        // the one place with the map and the forecast controls. An old ?tab=heatmap link opens the same overview.
+        foreach ([[], ['tab' => 'heatmap']] as $query) {
+            $this->actingAs($farmer)->get(route('farmer.dashboard', $query))
+                ->assertOk()
+                ->assertDontSee('id="barangayRiskMap"', false)
+                ->assertDontSee('data-risk-forecast', false)
+                ->assertSee('href="'.route('heat-map.index').'"', false);
+        }
     }
 }

@@ -80,8 +80,10 @@ class SystemPageSmokeTest extends TestCase
 
     public function test_every_farmer_page_opens_with_optional_services_down(): void
     {
-        $this->assertPagesOpen($this->user(User::ROLE_FARMER), [
-            '/farmer/dashboard' => 'Farm Risk in Your Barangay',
+        $farmer = $this->user(User::ROLE_FARMER);
+        $this->assertPagesOpen($farmer, $pages = [
+            // The redesigned Farmer Dashboard's barangay risk card.
+            '/farmer/dashboard' => 'Farm Condition in Your Barangay',
             '/heat-map' => 'Risk Map',
             '/planting-advisories' => 'Advisories',
             '/calendar' => 'Calendar',
@@ -97,6 +99,16 @@ class SystemPageSmokeTest extends TestCase
             '/profile' => 'Profile',
             '/ai-farming-assistant' => '',
         ]);
+
+        // A missing translation must never reach a farmer as a raw key such as "farmer.about.title".
+        $rawKeys = [];
+        foreach (array_keys($pages) as $path) {
+            $text = html_entity_decode(strip_tags((string) $this->actingAs($farmer)->get($path)->getContent()));
+            if (preg_match_all('/\bfarmer\.[a-z_]+\.[a-z_.]+\b/', $text, $matches)) {
+                $rawKeys[$path] = array_values(array_unique($matches[0]));
+            }
+        }
+        $this->assertSame([], $rawKeys, 'Farmer pages showing untranslated keys');
     }
 
     public function test_every_mao_page_opens_with_optional_services_down(): void

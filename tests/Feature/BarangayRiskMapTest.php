@@ -564,7 +564,7 @@ class BarangayRiskMapTest extends TestCase
      * every role's map is backed by the exact same BarangayRiskMapService
      * data — never a per-role filtered or separately-computed view.
      */
-    public function test_farmer_dashboard_shows_the_full_19_barangay_map_not_just_own_barangay(): void
+    public function test_farmer_heat_map_shows_the_full_19_barangay_map_not_just_own_barangay(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
@@ -572,7 +572,8 @@ class BarangayRiskMapTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
+        // The redesigned Farmer Dashboard links to the dedicated Heat Map instead of embedding the map.
+        $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
@@ -584,9 +585,10 @@ class BarangayRiskMapTest extends TestCase
         // separate, farmer-only, single-barangay map data source.
         $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // View-only: the farmer page must not expose the management-style
-        // manual refresh control.
-        $response->assertDontSee('data-risk-map-refresh', false);
+        // Farmers get the plain-language panel. Their only refresh control fetches the latest weather; risk
+        // ratings are recomputed by the scheduler, never from a farmer's click.
+        $response->assertSee('data-forecast-audience="farmer"', false);
+        $response->assertSee('Refresh weather');
     }
 
     public function test_farmer_dashboard_always_opens_overview_without_a_tab_selector(): void
@@ -602,7 +604,9 @@ class BarangayRiskMapTest extends TestCase
         foreach ([[], ['tab' => 'overview'], ['tab' => 'heatmap']] as $query) {
             $this->actingAs($user)->get(route('farmer.dashboard', $query))
                 ->assertOk()
-                ->assertSeeInOrder(['data-slot="header"', 'data-slot="farm"', 'data-slot="today"'], false)
+                // The redesign's reading order: header, today, highlights, …, barangay risk, …, my farm.
+                ->assertSeeInOrder(['data-slot="header"', 'data-slot="today"', 'data-slot="highlights"', 'data-slot="risk"', 'data-slot="farm"'], false)
+                ->assertDontSee('id="barangayRiskMap"', false)
                 ->assertDontSee('mfd-tabs', false)
                 ->assertDontSee('mfd-tab', false)
                 ->assertDontSee('farmerHeatMapTitle', false)
@@ -670,7 +674,7 @@ class BarangayRiskMapTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Cumba']);
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
+        $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
         $response->assertSee('data-highlight-barangay="Cumba"', false);
@@ -693,7 +697,7 @@ class BarangayRiskMapTest extends TestCase
 
         $this->assertSame('Barangay 1 (Pob.)', LianBarangays::canonicalName('Brgy. 1'));
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
+        $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
         $response->assertSee('data-highlight-barangay="Barangay 1 (Pob.)"', false);
@@ -713,7 +717,7 @@ class BarangayRiskMapTest extends TestCase
 
         $this->assertNull(LianBarangays::canonicalName('Poblacion'));
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
+        $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
@@ -730,7 +734,7 @@ class BarangayRiskMapTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $farmerResponse = $this->actingAs($farmer)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
+        $farmerResponse = $this->actingAs($farmer)->get(route('heat-map.index'));
         $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
 
         foreach ([$farmerResponse, $maoResponse] as $response) {

@@ -80,14 +80,25 @@ class FarmerDashboardSimpleWordingTest extends TestCase
     public function test_risk_panel_keeps_planning_guide_note(): void
     {
         $this->fakeWeather();
+        // The redesigned risk card carries the note with a real rating (without one it says there is no rating yet).
+        $this->computedRating('Moderate');
 
         $response = $this->actingAs($this->farmer())->get(route('farmer.dashboard'));
         $response->assertOk();
 
         $this->assertStringContainsString(
-            'planning guide',
+            'A planning guide, not an official hazard warning.',
             $this->visibleText($response->getContent())
         );
+    }
+
+    /** A rating as BarangayRiskMapService::persist() leaves it after a real run; saving stamps risk_computed_at. */
+    private function computedRating(string $level): void
+    {
+        HeatmapArea::query()->where('barangay', 'Bagong Pook')->firstOrFail()->update([
+            'risk_level' => $level, 'risk_type' => 'Flood', 'risk_score' => 0.81, 'rainfall_status' => 'Heavy rain expected',
+            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
+        ]);
     }
 
     public function test_no_data_risk_is_never_shown_as_low(): void
@@ -112,19 +123,17 @@ class FarmerDashboardSimpleWordingTest extends TestCase
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => Http::response([], 500)]);
-        // As BarangayRiskMapService::persist() leaves it after a real run; saving stamps risk_computed_at.
         $this->travelTo(now()->setDate(2026, 10, 3)->setTime(14, 5));
-        HeatmapArea::query()->where('barangay', 'Bagong Pook')->firstOrFail()->update([
-            'risk_level' => 'High', 'risk_type' => 'Flood', 'risk_score' => 0.81, 'rainfall_status' => 'Heavy rain expected',
-            'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
-        ]);
+        $this->computedRating('High');
         $this->travelBack();
+        $this->travelTo(now()->setDate(2026, 10, 5)->setTime(9, 0));
 
         $text = preg_replace('/\s+/', ' ', $this->visibleText($this->actingAs($this->farmer())->get(route('farmer.dashboard'))->assertOk()->getContent()));
 
-        $this->assertStringContainsString('High risk', $text);
-        $this->assertStringContainsString('Checked on Oct 3, 2026', $text);              // its own time, not "now"
-        $this->assertStringNotContainsString('We do not have a risk rating for your barangay yet.', $text);
+        $this->assertStringContainsString('High Risk', $text);
+        $this->assertStringContainsString('Last checked: Oct 3 •', $text);               // its own time, not "now" (Oct 5)
+        $this->assertStringNotContainsString('Last checked: Oct 5', $text);
+        $this->assertStringNotContainsString(__('farmer.risk.no_rating'), $text);
     }
 
     public function test_dashboard_renders_with_and_without_barangay(): void
