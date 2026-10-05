@@ -163,10 +163,12 @@ html[data-theme="dark"] body .feed-post-card .comment .avatar { background: var(
 html[data-theme="dark"] body .feed-post-card .comment-bubble { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-ink); }
 html[data-theme="dark"] body .feed-wrap .side-panel { background: var(--dk-surface-2); }
 
-/* ---- views/components/ai-chat-widget.blade.php (19) */
+/* ---- views/components/ai-chat-widget.blade.php (21) */
 html[data-theme="dark"] body .ic-ai-widget { --ai-ink: var(--dk-ink); --ai-muted: var(--dk-muted); --ai-line: var(--dk-border-strong); --ai-panel: var(--dk-surface-2); --ai-green: #9fe4c4; }
 html[data-theme="dark"] body .ic-ai-header { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .ic-ai-logo { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .ic-ai-language select { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
+html[data-theme="dark"] body .ic-ai-language-notice { border-color: color-mix(in srgb, #cc9733 30%, var(--dk-border)); background: color-mix(in srgb, #bd9028 18%, var(--dk-surface)); color: #e7d09d; }
 html[data-theme="dark"] body .ic-ai-minimize,
 html[data-theme="dark"] body .ic-ai-close { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
 html[data-theme="dark"] body .ic-ai-minimize:hover,
@@ -606,7 +608,7 @@ html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calenda
 html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calendar-condition { color: var(--dk-muted); }
 html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calendar-daynum { color: var(--dk-muted); }
 
-/* ---- css/app.css (76) */
+/* ---- css/app.css (72) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
 html[data-theme="dark"] body .ic-skeleton { background-color: var(--dk-surface-2); }
@@ -647,10 +649,6 @@ html[data-theme="dark"] body .risk-map-card .risk-map-legend { background: var(-
 html[data-theme="dark"] body .risk-map-legend-title { color: var(--dk-muted); }
 html[data-theme="dark"] body .risk-map-legend-item { color: var(--dk-ink-mid); }
 html[data-theme="dark"] body .risk-map-legend-item strong { color: var(--dk-ink); }
-html[data-theme="dark"] body .risk-map-meaning { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .risk-map-meaning h3 { color: #a4e0cb; }
-html[data-theme="dark"] body .risk-map-meaning-item { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-ink); }
-html[data-theme="dark"] body .risk-map-meaning-label { color: var(--dk-ink); }
 html[data-theme="dark"] body .risk-map-card .leaflet-tooltip { color: var(--dk-ink); }
 html[data-theme="dark"] body .risk-map-popup strong { color: var(--dk-ink); }
 html[data-theme="dark"] body .risk-map-popup-hint { color: var(--dk-muted); }

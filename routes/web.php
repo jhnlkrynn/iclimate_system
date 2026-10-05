@@ -675,10 +675,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         |--------------------------------------------------------------------------
         */
 
+        // Internal MAO operations reports: staff only. Farmers do not see them (typing the URL returns 403).
         Route::resource(
             'field-reports',
             FieldReportController::class
-        );
+        )->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT);
 
 
         /*

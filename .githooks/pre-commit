@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Blocks a commit that contains conflict markers, a PHP syntax error or a Blade template that does not compile.
+# Read-only: it never changes files. Opt in once per clone with `composer hooks` (git config core.hooksPath .githooks).
+# Uses `php` on PATH, or the PHP environment variable (e.g. PHP=/path/to/php). Skip once with --no-verify.
+exec bash "$(git rev-parse --show-toplevel)/scripts/check-code.sh" --staged

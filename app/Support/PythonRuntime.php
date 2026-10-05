@@ -20,7 +20,7 @@ final class PythonRuntime
 
             // Ignore an incompatible Windows path on Unix, but preserve other
             // explicit paths so health checks can report them accurately.
-            if (! preg_match('/^[A-Za-z]:[\\\\\/]/', $configured)) {
+            if (self::isWindows() || ! preg_match('/^[A-Za-z]:[\\\\\/]/', $configured)) {
                 return $configured;
             }
         }
@@ -62,8 +62,10 @@ final class PythonRuntime
             'NUMEXPR_NUM_THREADS' => '1',
         ];
 
-        // Only an interpreter inside the project's virtualenv is isolated from user site-packages.
-        if (str_starts_with($python, $venv.DIRECTORY_SEPARATOR)) {
+        // Only an interpreter inside the project's virtualenv is isolated from user site-packages. Compared with one
+        // separator: base_path('.venv/Scripts/python.exe') is "C:\...\.venv/Scripts/python.exe" on Windows.
+        $slashes = fn (string $path): string => str_replace('\\', '/', $path);
+        if (str_starts_with($slashes($python), $slashes($venv).'/')) {
             $environment['VIRTUAL_ENV'] = $venv;
             $environment['PYTHONNOUSERSITE'] = '1';
         }

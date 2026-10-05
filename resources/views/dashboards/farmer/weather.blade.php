@@ -60,6 +60,21 @@
             <div class="mfd-empty">@include('dashboards.mao.icon', ['name' => 'info'])<p>{{ __('farmer.weather_card.empty') }}</p></div>
         @endif
 
+        {{-- This month in Lian: the Predictions page's monthly estimate, compared with past years by the same rule. --}}
+        @if ($c = $f['climate'] ?? null)
+            <div class="mfd-climate" data-mfd-climate>
+                <h3 class="mfd-sub mfd-climate-head">{{ __('farmer.climate.title') }}</h3>
+                <p><strong>{{ __('farmer.climate.rain', ['month' => $c['month'], 'mm' => number_format($c['rain'], 0)]) }}.</strong>
+                    @if ($c['rain_status']){{ __('farmer.climate.status.'.$c['rain_status'], ['month' => $c['month'], 'usual' => number_format($c['usual_rain'], 0)]) }}@endif
+                    {{ __('farmer.climate.todo.'.($c['rain_status'] ?? 'none')) }}</p>
+                <p class="mfd-muted">
+                    @if ($c['low'] !== null && $c['high'] !== null){{ __('farmer.climate.temp', ['low' => number_format($c['low'], 0), 'high' => number_format($c['high'], 0)]) }}@endif
+                    @if ($c['season']){{ __('farmer.climate.season.'.$c['season']) }}@endif
+                </p>
+                <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'info'])<span>{{ $c['rain_status'] ? __('farmer.climate.basis', ['month' => $c['month'], 'span' => $c['span']]) : __('farmer.climate.basis_plain') }}</span></p>
+            </div>
+        @endif
+
         <div class="mfd-card-foot">
             <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'info'])<span>{{ __('farmer.weather_card.scope') }} {{ __('farmer.weather_card.source', ['source' => $w['provider'], 'time' => $w['updated_label'] ?? '—']) }}</span></p>
             <a class="mfd-btn is-quiet" href="{{ $href }}">{{ __('farmer.weather_card.view_full') }}</a>

@@ -20,8 +20,15 @@ class PagasaAdvisoryService
 
     public function __construct(private readonly PagasaBulletinParser $parser) {}
 
-    public function fetchAndStore(bool $force = false): array
+    /**
+     * @param  int|null  $budgetSeconds  Total time the PAGASA requests may take (a web request passes one so it ends
+     *                                   before PHP's max_execution_time; null = no limit, e.g. the scheduled command).
+     *                                   Sources not reached in time are skipped and listed in 'errors'.
+     */
+    public function fetchAndStore(bool $force = false, ?int $budgetSeconds = null): array
     {
+        $deadline = $budgetSeconds !== null ? microtime(true) + $budgetSeconds : null;
+        $remaining = fn (): float => $deadline === null ? INF : $deadline - microtime(true);
         $cached = Cache::get(self::CHECK_KEY);
         $previous = $cached ?? Cache::get('pagasa-advisories:status');
         if (! $force && is_array($cached)) {
@@ -45,11 +52,19 @@ class PagasaAdvisoryService
             }
             try {
                 foreach ($this->sources() as $source) {
+                    // Not enough time left for a useful request: report the source instead of running out of time.
+                    if ($remaining() < 3) {
+                        $summary['errors'][] = 'PAGASA '.$source['url'].' was not checked this time (time limit reached).';
+
+                        continue;
+                    }
                     $summary['sources_checked']++;
                     try {
-                        $response = Http::connectTimeout(5)
-                            ->timeout((int) config('services.pagasa.timeout', 12))
-                            ->retry(2, 800, throw: false)
+                        $timeout = (int) max(1, min((int) config('services.pagasa.timeout', 12), floor($remaining() - 1)));
+                        $response = Http::connectTimeout(min(5, $timeout))
+                            ->timeout($timeout)
+                            // A retry only when it can still finish inside the budget.
+                            ->retry(2, 800, fn () => $remaining() > $timeout + 2, throw: false)
                             ->withUserAgent('iClimate/1.0 (agricultural advisory reader)')
                             ->accept('text/html')->get($source['url']);
                         if (! $response->successful()) {

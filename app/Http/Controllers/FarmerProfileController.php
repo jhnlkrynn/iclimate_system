@@ -29,7 +29,8 @@ class FarmerProfileController extends CrudController
     public function __construct()
     {
         $this->filterable = [
-            'barangay' => ['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'San Diego'],
+            // All official names: MAO can set any of the 19 on the form below, so each must be filterable.
+            'barangay' => LianBarangays::all(),
             'farm_type' => ['Rainfed', 'Irrigated'],
             'farmer_organization_id' => $this->farmerOrganizationOptions(),
         ];

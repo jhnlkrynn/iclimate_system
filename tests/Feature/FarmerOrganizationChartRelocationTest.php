@@ -44,12 +44,35 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $response = $this->actingAs($mao)
             ->get(route('mao.dashboard'))
             ->assertOk()
-            ->assertSee('Registered Farmers')
+            ->assertSee('Farmers with Profiles')
             ->assertSee(FarmerOrganization::count().' Farmer Organizations')
             ->assertSee('href="'.route('farmer-profiles.index').'"', false);
 
         $farmers = collect($response->viewData('mao')['kpis'])->firstWhere('key', 'farmers');
         $this->assertSame('1', $farmers['value']);
+    }
+
+    public function test_mao_labels_farmer_profiles_and_farmer_accounts_separately_with_the_same_counts_as_it(): void
+    {
+        // Two farmer accounts; only one has a farm profile.
+        $withProfile = User::factory()->create(['role' => User::ROLE_FARMER]);
+        FarmerProfile::factory()->create(['user_id' => $withProfile->id]);
+        User::factory()->create(['role' => User::ROLE_FARMER]);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $response = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk();
+        $kpi = collect($response->viewData('mao')['kpis'])->firstWhere('key', 'farmers');
+
+        $this->assertSame('Farmers with Profiles', $kpi['label']);
+        $this->assertSame((string) FarmerProfile::count(), $kpi['value']);
+        $this->assertStringContainsString(User::where('role', User::ROLE_FARMER)->count().' farmer accounts', $kpi['context']);
+        $this->assertStringContainsString('Farmer accounts counts everyone who can sign in as a farmer', $kpi['tip']);
+        $response->assertSee('Farmer Accounts')->assertDontSee('Registered Farmers');
+
+        // The IT dashboard counts the same farmer accounts.
+        $integrity = app(\App\Services\Analytics\ItDashboardService::class)->payload()['integrity'];
+        $this->assertSame(User::where('role', User::ROLE_FARMER)->count(), $integrity['farmer_accounts']);
+        $this->assertSame(FarmerProfile::count(), $integrity['farmer_profiles']);
     }
 
     public function test_farmer_profiles_page_shows_a_compact_organization_chart_to_mao(): void

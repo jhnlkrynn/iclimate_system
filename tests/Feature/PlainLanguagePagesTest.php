@@ -10,7 +10,8 @@ class PlainLanguagePagesTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const FORBIDDEN = ['Random Forest', 'Python', 'Open-Meteo', 'analytics run', 'Traceback', '.pkl'];
+    // "Open-Meteo" is allowed: farmers are shown the weather source on purpose ("Source: Open-Meteo"), as on the dashboard.
+    private const FORBIDDEN = ['Random Forest', 'Python', 'analytics run', 'Traceback', '.pkl'];
 
     /**
      * Farmer explanations stay in simple words, but the weather provider may be named where the page says where

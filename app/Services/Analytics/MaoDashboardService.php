@@ -407,6 +407,7 @@ final class MaoDashboardService
         return [
             'state' => $s['totalFarmers'] === 0 ? 'empty' : 'ok',
             'farmers' => $s['totalFarmers'],
+            'accounts' => $s['totalFarmerAccounts'] ?? null,
             'organizations' => $s['totalOrganizations'],
             'without_organization' => $s['farmersWithoutOrganization'],
             'farm_area' => $s['totalFarmArea'],
@@ -477,11 +478,12 @@ final class MaoDashboardService
 
         if (($farmers['state'] ?? null) === 'ok') {
             $cards[] = [
-                'key' => 'farmers', 'icon' => 'farmers', 'label' => 'Registered Farmers', 'unit' => null,
+                'key' => 'farmers', 'icon' => 'farmers', 'label' => 'Farmers with Profiles', 'unit' => null,
                 'value' => number_format($farmers['farmers']),
-                'context' => number_format($farmers['organizations']).' Farmer '.($farmers['organizations'] === 1 ? 'Organization' : 'Organizations'),
+                'context' => number_format($farmers['organizations']).' Farmer '.($farmers['organizations'] === 1 ? 'Organization' : 'Organizations')
+                    .($farmers['accounts'] !== null ? ' · '.number_format($farmers['accounts']).' farmer '.($farmers['accounts'] === 1 ? 'account' : 'accounts') : ''),
                 'trend' => null, 'href' => route('farmer-profiles.index'),
-                'tip' => 'Farmers with a registered profile in iClimate, and the farmer organizations they belong to.',
+                'tip' => 'Farmers whose farm profile (barangay, farm area, organization) is recorded in iClimate. Farmer accounts counts everyone who can sign in as a farmer, including those who have not completed a profile yet, so it can be higher.',
             ];
         }
 

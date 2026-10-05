@@ -265,10 +265,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * MAO Operations page. Each part of the page is prepared by its own method below (weather chart, typhoon check-in,
-     * field reports, planting schedules, weather feedback); this method only puts them together for the view.
-     */
     public function maoOperations(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, DashboardKpiService $kpis): View
     {
         $recent = $this->recentOperationalData();
@@ -389,7 +385,7 @@ class DashboardController extends Controller
     {
         return [
             'labels' => $records->map(fn (ClimateRecord $record) => $record->record_date?->format('M d') ?? 'N/A')->all(),
-            // A missing reading stays null (a gap in the chart), never 0 mm / 0 °C / 0 %.
+            // A missing reading stays null (a gap in the chart), never 0 mm / 0 �C / 0 %.
             'rainfall' => $records->map(fn (ClimateRecord $record) => $record->rainfall !== null ? (float) $record->rainfall : null)->all(),
             'temperature' => $records->map(fn (ClimateRecord $record) => $record->temperature !== null ? (float) $record->temperature : null)->all(),
             'humidity' => $records->map(fn (ClimateRecord $record) => $record->humidity !== null ? (float) $record->humidity : null)->all(),
@@ -576,7 +572,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * "Needs Your Attention" summary for the MAO dashboard — things that
+     * "Needs Your Attention" summary for the MAO dashboard � things that
      * require MAO action, not just informational counts. Short TTL since
      * these are action queues, not slow-moving aggregates.
      */
@@ -616,7 +612,7 @@ class DashboardController extends Controller
                 'severity' => 'warning',
                 'weight' => 2,
                 'title' => 'Heatmap risk data has never been refreshed',
-                'message' => 'No scheduled job runs the heatmap refresh — it only fires when someone opens the Heat Map page.',
+                'message' => 'No scheduled job runs the heatmap refresh � it only fires when someone opens the Heat Map page.',
             ];
         } elseif (Carbon::parse($heatmapLastRefresh)->lt(now()->subDay())) {
             $highlights[] = [
@@ -664,7 +660,7 @@ class DashboardController extends Controller
 
     /**
      * Flags today as anomalous when report generation is well above the
-     * trailing week's daily average — a plain volume check, not a
+     * trailing week's daily average � a plain volume check, not a
      * statistical model.
      */
     private function reportExportAnomaly(): ?array
@@ -692,8 +688,8 @@ class DashboardController extends Controller
     }
 
     /**
-     * Rice figures are for the latest year on record only — summing every
-     * year would count the same hectares several times — and yield is
+     * Rice figures are for the latest year on record only � summing every
+     * year would count the same hectares several times � and yield is
      * area-weighted (total tons / total hectares).
      */
     private function maoAggregates(DashboardKpiService $kpis): array
@@ -774,7 +770,7 @@ class DashboardController extends Controller
                 'severity' => 'critical',
                 'weight' => 3,
                 'title' => $typhoonSafetyNeedsHelpCount.' '.str('farmer')->plural($typhoonSafetyNeedsHelpCount).' reported needing help',
-                'message' => 'During "'.$activeTyphoonSafetyEvent['title'].'" — see Typhoon Safety Check-In below.',
+                'message' => 'During "'.$activeTyphoonSafetyEvent['title'].'" � see Typhoon Safety Check-In below.',
             ];
         }
 
@@ -784,7 +780,7 @@ class DashboardController extends Controller
                 'severity' => $topRiskArea->risk_level === 'Severe' ? 'critical' : 'warning',
                 'weight' => $topRiskArea->risk_level === 'Severe' ? 3 : 2,
                 'title' => $topRiskArea->barangay.' is at '.$topRiskArea->risk_level.' risk',
-                'message' => 'Risk score '.number_format((float) $topRiskArea->risk_score, 2).'/1.00 — '.($topRiskArea->risk_type ?: 'Climate').' risk.',
+                'message' => 'Risk score '.number_format((float) $topRiskArea->risk_score, 2).'/1.00 � '.($topRiskArea->risk_type ?: 'Climate').' risk.',
             ];
         }
 
@@ -811,7 +807,7 @@ class DashboardController extends Controller
                 'severity' => 'warning',
                 'weight' => 2,
                 'title' => $fieldReportsPendingCount.' field '.str('report')->plural($fieldReportsPendingCount).' need review',
-                'message' => 'Pending or unverified issues — see Active Alerts & Field Reports below.',
+                'message' => 'Pending or unverified issues � see Active Alerts & Field Reports below.',
             ];
         }
 
@@ -832,7 +828,7 @@ class DashboardController extends Controller
 
     /**
      * Compares the live forecast's average daily rainfall against the
-     * historical average daily rainfall recorded for the same season —
+     * historical average daily rainfall recorded for the same season �
      * both are same-unit (mm/day) figures, so this is a like-for-like
      * anomaly check, not a fabricated statistic.
      */
@@ -867,7 +863,7 @@ class DashboardController extends Controller
 
     /**
      * Crop-status figures buildable from existing RiceProduction/HeatmapArea
-     * data. Planting/harvesting progress is intentionally left out — the
+     * data. Planting/harvesting progress is intentionally left out � the
      * app has no planting-stage field anywhere, and fabricating one would
      * misrepresent real field conditions.
      */
@@ -901,7 +897,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Per-barangay table combining RiceProduction and HeatmapArea — the
+     * Per-barangay table combining RiceProduction and HeatmapArea � the
      * data-table alternative to a heat-map-only view.
      */
     private function barangayMonitoringTable(): Collection

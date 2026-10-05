@@ -55,6 +55,14 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "check": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/check-code.sh",
+            "@php artisan test --filter=\"SmokeTest|FieldReportAuthorizationTest|BarangayListConsistencyTest\""
+        ],
+        "hooks": [
+            "git config core.hooksPath .githooks"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

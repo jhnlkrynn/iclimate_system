@@ -425,4 +425,79 @@ class AiKnowledgeTest extends TestCase
         $this->assertFalse((bool) AiKnowledgeTopic::where('slug', 'planting')->value('is_active'));
         $this->assertSame(1, AiKnowledgeTopic::where('slug', 'harvest')->count());
     }
+
+    /** Regression: weatherBarangay()/barangayWeather() were called but never defined, so every weather question failed. */
+    public function test_a_weather_question_naming_a_barangay_answers_with_that_barangays_own_reading(): void
+    {
+        $this->mock(\App\Services\Weather\LianBarangayWeatherService::class, fn ($mock) => $mock->shouldReceive('refreshIfDue')->andReturn(false)->getMock()->shouldReceive('getCurrentWeather')->with('Binubusan')->andReturn([
+            'provider' => 'Open-Meteo', 'status' => 'fresh', 'stale' => false, 'condition' => 'Light Rain',
+            'temperature_c' => 27.4, 'humidity_percent' => 88, 'rainfall_24h_mm' => 6.2, 'rain_probability_percent' => 70,
+            'wind_speed_kmh' => 9.1, 'fetched_at' => now()->toIso8601String(),
+        ]));
+        $this->weatherService(['success' => true, 'current' => ['condition' => 'Sunny', 'temperature' => 33.0]]);   // Lian-wide: must not be used
+
+        $chat = $this->ask('What is the weather in Binubusan now?');
+
+        $this->assertSame('Live Weather', $chat['source_type']);
+        $this->assertStringContainsString('Binubusan', $chat['answer']);
+        $this->assertStringContainsString('27.4°C', $chat['answer']);
+        $this->assertStringNotContainsString('33', $chat['answer']);
+    }
+
+    /** Plain weather and "is it safe to work today" questions are about today's real weather, not a model or a typhoon guide. */
+    public function test_everyday_weather_and_field_safety_questions_route_to_current_weather(): void
+    {
+        $classifier = app(\App\Services\AI\IntentClassifierService::class);
+        $routes = [
+            'What is the weather in Binubusan?' => 'current_weather',
+            'Ano ang panahon sa Binubusan?' => 'current_weather',
+            'What is the weather in my barangay?' => 'current_weather',
+            'Is it safe to work on my farm today?' => 'current_weather',
+            'Ligtas bang magtrabaho sa bukid ngayon?' => 'current_weather',
+            'What is the weather tomorrow?' => 'weather_forecast',   // a later day stays a forecast
+            'Kailan dapat magtanim?' => null,                        // "ani" inside "magtanim" is not a harvest question
+        ];
+
+        foreach ($routes as $question => $expected) {
+            $intent = $classifier->classifyLocal($question)['intent'];
+            $expected === null
+                ? $this->assertNotSame('rice_yield_prediction', $intent, $question)
+                : $this->assertSame($expected, $intent, $question);
+        }
+    }
+
+    public function test_my_barangay_and_my_farm_use_the_farmers_own_registered_barangay(): void
+    {
+        \App\Models\FarmerProfile::factory()->create(['user_id' => $this->farmer->id, 'barangay' => 'Binubusan']);
+        $this->mock(\App\Services\Weather\LianBarangayWeatherService::class, fn ($mock) => $mock->shouldReceive('refreshIfDue')->andReturn(false)->getMock()->shouldReceive('getCurrentWeather')->with('Binubusan')->andReturn([
+            'provider' => 'Open-Meteo', 'status' => 'fresh', 'stale' => false, 'condition' => 'Partly Cloudy',
+            'temperature_c' => 26.1, 'rainfall_24h_mm' => 2.0, 'rain_probability_percent' => 40, 'fetched_at' => now()->toIso8601String(),
+        ]));
+        $this->weatherService(['success' => true, 'current' => ['condition' => 'Sunny', 'temperature' => 33.0]]);
+
+        foreach (['Is it safe to work on my farm today?', 'What is the weather in my barangay?'] as $question) {
+            $chat = $this->ask($question);
+
+            $this->assertSame('Live Weather', $chat['source_type'], $question);
+            $this->assertStringContainsString('Binubusan', $chat['answer'], $question);
+            $this->assertStringContainsString('26.1°C', $chat['answer'], $question);
+            $this->assertStringNotContainsStringIgnoringCase('typhoon', $chat['answer'], $question);
+        }
+    }
+
+    public function test_an_unavailable_barangay_reading_is_reported_not_replaced_by_lian_figures(): void
+    {
+        $this->mock(\App\Services\Weather\LianBarangayWeatherService::class, function ($mock) {
+            $mock->shouldReceive('getCurrentWeather')->andReturn(null);                       // no reading at all: fetched now
+            $mock->shouldReceive('refreshIfDue')->andReturn(false);
+            $mock->shouldReceive('latestForBarangay')->andReturn(['provider' => 'Open-Meteo', 'status' => 'unavailable', 'stale' => true, 'temperature_c' => null]);
+        });
+        $this->weatherService(['success' => true, 'current' => ['condition' => 'Sunny', 'temperature' => 33.0]]);
+
+        $chat = $this->ask('What is the weather in Binubusan now?');
+
+        $this->assertStringContainsString('Binubusan', $chat['answer']);
+        $this->assertStringContainsString('temporarily unavailable', $chat['answer']);
+        $this->assertDoesNotMatchRegularExpression('/\d/', $chat['answer'], 'no weather figure may appear without data');
+    }
 }

@@ -94,6 +94,46 @@ class PlantingAdvisoriesReliabilityTest extends TestCase
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk();
     }
 
+    /**
+     * Regression for the /planting-advisories/refresh-pagasa 500 "Maximum execution time of 30 seconds exceeded":
+     * four PAGASA pages, each with a 12 s timeout and a retry, could take minutes inside one web request.
+     */
+    public function test_pagasa_sources_left_when_the_time_budget_runs_out_are_skipped_not_fetched(): void
+    {
+        Http::fake();
+        $sources = count(config('services.pagasa.regional_forecast_urls')) + 1;   // + the weekly outlook
+
+        $summary = app(\App\Services\Advisories\PagasaAdvisoryService::class)->fetchAndStore(true, 0);
+
+        Http::assertNothingSent();
+        $this->assertFalse($summary['ok']);
+        $this->assertSame(0, $summary['sources_checked']);
+        $this->assertCount($sources, $summary['errors']);
+        $this->assertStringContainsString('was not checked this time (time limit reached)', $summary['errors'][0]);
+    }
+
+    public function test_the_page_refresh_gives_pagasa_the_configured_time_budget(): void
+    {
+        Http::fake();
+        config(['services.pagasa.request_budget' => 0]);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($mao)->postJson(route('planting-advisories.refresh-pagasa'))->assertStatus(503);   // nothing reachable: the soft failure
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'pagasa.dost.gov.ph'));
+    }
+
+    public function test_the_scheduled_pagasa_fetch_has_no_time_budget_and_checks_every_source(): void
+    {
+        Http::fake(['*pagasa.dost.gov.ph*' => Http::response('<html><body></body></html>')]);
+        $sources = count(config('services.pagasa.regional_forecast_urls')) + 1;
+
+        $summary = app(\App\Services\Advisories\PagasaAdvisoryService::class)->fetchAndStore(true);
+
+        $this->assertSame($sources, $summary['sources_checked']);
+        Http::assertSentCount($sources);
+    }
+
     public function test_a_malformed_stored_advisory_does_not_break_the_page(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);

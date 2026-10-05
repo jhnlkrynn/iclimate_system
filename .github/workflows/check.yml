@@ -1,0 +1,41 @@
+name: Check
+
+# Every pull request and every push to main must open the pages without a 500 error. This is what stops a merge that
+# kept both sides of a conflict (syntax error, stray @endif, undefined variable) from reaching main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, gd, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        # No secrets needed: the tests use their own in-memory SQLite database and fake every outside service.
+        run: |
+          cp .env.example .env
+          composer install --no-interaction --no-progress --prefer-dist
+          php artisan key:generate
+          npm ci
+          npm run build
+
+      - name: Conflict markers, PHP syntax, Blade templates
+        run: bash scripts/check-code.sh
+
+      - name: Every page opens, role access, official barangay list
+        run: php artisan test --filter='SmokeTest|FieldReportAuthorizationTest|BarangayListConsistencyTest'

@@ -23,26 +23,31 @@
         </div>
 
         @if ($h['state'] === 'error')
-            <div class="mfd-empty" role="status">
-                @include('dashboards.mao.icon', ['name' => 'info'])
-                <div>
-                    <p><strong>{{ __('farmer.harvest.not_ready') }}</strong></p>
-                    @if ($h['missing'] !== [])
-                        <p class="mfd-muted">{{ __('farmer.harvest.still_need') }}</p>
-                        <ul class="mfd-bullets">@foreach ($h['missing'] as $need)<li>{{ __('farmer.harvest.need.'.$need) }}</li>@endforeach</ul>
-                    @else
-                        <p class="mfd-muted">{{ $h['reason'] }}</p>
-                    @endif
-                </div>
-                <div class="mfd-empty-actions">
+            {{-- No estimate this season yet: say plainly what it waits for, and show the real harvest records meanwhile
+                 (the barangay's latest record and Lian's usual yield for this month), each labelled as a record. --}}
+            @php
+                $usual = $f['usual_yield'] ?? null;
+                $service = $h['missing'] === [] && ($h['cause'] ?? 'service') === 'service';
+            @endphp
+            <p class="mfd-note" role="status">@include('dashboards.mao.icon', ['name' => 'info'])<span><strong>{{ __('farmer.harvest.soon') }}.</strong> {{ $h['reason'] }}</span></p>
+            @if ($p || $usual)
+                <p class="mfd-muted mfd-yield-records">{{ __('farmer.harvest.meanwhile') }}</p>
+                <dl class="mfd-facts">
+                    @if ($p)<div><dt>{{ __('farmer.harvest.past', ['barangay' => $f['barangay']]) }}</dt><dd>{{ number_format($p['yield'], 2) }} {{ __('farmer.harvest.unit') }} <span class="mfd-muted">• {{ $p['when'] }}{{ $p['season'] ?? '' }}</span></dd></div>@endif
+                    @if ($usual)<div><dt>{{ $usual['same_month'] ? __('farmer.harvest.usual', ['month' => $usual['month_name']]) : __('farmer.harvest.usual_all') }}</dt><dd>{{ number_format($usual['historical'], 2) }} {{ __('farmer.harvest.unit') }} <span class="mfd-muted">• {{ __('farmer.harvest.usual_years', ['from' => $usual['from'], 'to' => $usual['to']]) }}</span></dd></div>@endif
+                </dl>
+            @endif
+            @if (in_array('area', $h['missing'], true) || $service)
+                <div class="mfd-card-foot">
                     @if (in_array('area', $h['missing'], true))
-                        <a class="mfd-btn" href="{{ route('profile.edit') }}" aria-haspopup="dialog" data-fast-nav-bound="true" @foreach ($farmInfo as $attr => $value) {{ $attr }}="{{ $value }}" @endforeach>{{ __('farmer.harvest.complete') }}</a>
-                    @elseif (in_array('planting', $h['missing'], true))
-                        <a class="mfd-btn" href="{{ route('farmer.planting-schedules.create') }}" data-mfd-popup="planting" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.harvest.complete') }}</a>
+                        <a class="mfd-btn" href="{{ route('profile.edit') }}" aria-haspopup="dialog" data-fast-nav-bound="true" @foreach ($farmInfo as $attr => $value) {{ $attr }}="{{ $value }}" @endforeach>{{ __('farmer.harvest.add_area') }}</a>
                     @endif
-                    <button type="button" class="mfd-btn is-quiet" data-mfd-retry="harvest">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
+                    @if ($service)
+                        <button type="button" class="mfd-btn is-quiet" data-mfd-retry="harvest">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
+                    @endif
                 </div>
-            </div>
+            @endif
+            @if ($p)<p class="mfd-foot">{{ __('farmer.production.note') }} <a class="mfd-link" href="{{ route('rice-productions.index') }}">{{ __('farmer.production.view') }}</a></p>@endif
         @else
             @php
                 $o = $h['outlook'];
@@ -70,7 +75,7 @@
         @endif
 
         {{-- A past record from the Rice Production page, never this season's harvest. --}}
-        @if ($p)
+        @if ($p && $h['state'] !== 'error')
             <div class="mfd-record">
                 <p><strong>{{ __('farmer.production.title', ['barangay' => $f['barangay']]) }}:</strong> {{ __('farmer.production.line', ['yield' => number_format($p['yield'], 2), 'when' => $p['when'], 'season' => $p['season'] ?? '']) }}</p>
                 <p class="mfd-muted">{{ __('farmer.production.note') }} <a class="mfd-link" href="{{ route('rice-productions.index') }}">{{ __('farmer.production.view') }}</a></p>

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -40,7 +41,10 @@ class FarmerOrganizationSummaryService
 
             return [
                 'farmerOrganizationSummary' => [
+                    // Farmer profiles (farm records MAO works with). Not the same as farmer accounts below.
                     'totalFarmers' => (int) $farmerTotals->total,
+                    // Everyone who can sign in as a Farmer, with or without a profile (same count as the IT dashboard).
+                    'totalFarmerAccounts' => User::query()->where('role', User::ROLE_FARMER)->count(),
                     'totalOrganizations' => $organizations->count(),
                     'farmersWithoutOrganization' => $farmersWithoutOrganization,
                     'totalFarmArea' => (float) $farmerTotals->total_farm_area,

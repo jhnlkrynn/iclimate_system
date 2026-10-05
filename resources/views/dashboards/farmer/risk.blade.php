@@ -30,10 +30,10 @@
                 </ul>
             @endif
             <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'clock'])<span>{{ __('farmer.risk.checked', ['time' => $risk['updated_at'] ? $risk['updated_at']->format('M j • g:i A') : '—']) }}. {{ __('farmer.risk.foot') }}</span></p>
-        @elseif ($risk['state'] === 'nobarangay')
-            <div class="mfd-empty">
+        @elseif (in_array($risk['state'], ['nobarangay', 'unverified'], true))
+            <div class="mfd-empty" @if ($risk['state'] === 'unverified') data-mfd-barangay-unverified @endif>
                 @include('dashboards.mao.icon', ['name' => 'map'])
-                <div><p><strong>{{ __('farmer.risk.no_barangay') }}</strong></p></div>
+                <div><p><strong>{{ $risk['state'] === 'unverified' ? __('farmer.risk.unverified', ['name' => $risk['stored']]) : __('farmer.risk.no_barangay') }}</strong></p></div>
                 <a class="mfd-btn" href="{{ route('profile.edit') }}" data-mfd-popup="profile" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.risk.update_profile') }}</a>
             </div>
         @else
@@ -42,6 +42,11 @@
                 <div><p><strong>{{ __('farmer.risk.no_rating') }}</strong></p><p class="mfd-muted">{{ __('farmer.risk.no_rating_reason') }}</p></div>
                 <button type="button" class="mfd-btn is-quiet" data-mfd-retry="risk">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
             </div>
+            {{-- No rating is ever guessed; the card still points to what the farmer can plan with meanwhile. --}}
+            <p class="mfd-foot" data-mfd-risk-meanwhile>
+                <a class="mfd-link" href="{{ route('weather-predictions.index', ['tab' => 'weather-forecast']) }}">{{ __('farmer.risk.no_rating_weather') }}</a>
+                · <a class="mfd-link" href="{{ route('planting-advisories.index') }}">{{ __('farmer.risk.no_rating_advice') }}</a>
+            </p>
         @endif
     </section>
 @endif

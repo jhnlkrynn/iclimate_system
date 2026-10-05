@@ -181,6 +181,25 @@ class RegistrationTest extends TestCase
     /**
      * @return array<string, array<string, mixed>>
      */
+    public function test_registration_rejects_a_generic_poblacion_and_offers_only_official_barangay_names(): void
+    {
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Pob Farmer',
+            'email' => 'pob@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Poblacion',   // Lian has five Poblacion barangays: a bare "Poblacion" is ambiguous
+            'captcha_answer' => '7',
+        ]);
+
+        $response->assertSessionHasErrors('barangay');
+        $this->assertDatabaseMissing('users', ['email' => 'pob@example.com']);
+
+        $offered = $this->get('/register')->viewData('manualBarangays');
+        $this->assertNotEmpty($offered);
+        $this->assertSame([], array_values(array_diff($offered, \App\Support\LianBarangays::all())), 'Every registration choice must be an official Lian barangay name.');
+    }
+
     private function captchaSession(string $context, string $answer): array
     {
         return [

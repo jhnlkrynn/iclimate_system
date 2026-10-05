@@ -469,7 +469,7 @@ class PlantingAdvisoryController extends Controller
         $barangay = $request->user()->role === User::ROLE_FARMER
             ? ($requestedBarangay ?? $request->user()->registeredBarangay())
             : $requestedBarangay;
-        $summary = $pagasa->fetchAndStore($this->canManage($request));
+        $summary = $pagasa->fetchAndStore($this->canManage($request), (int) config('services.pagasa.request_budget', 15));
         $weather = $local->refresh($barangay);
         PageCache::flushShared();
 

@@ -29,6 +29,9 @@ abstract class CrudController extends Controller
 
     protected array $filterable = [];
 
+    /** Filters whose options are keyed by their stored value (e.g. is_read => [0 => 'Unread', 1 => 'Read']). */
+    protected array $indexedFilters = [];
+
     protected array $manageableRoles = [User::ROLE_MAO, User::ROLE_IT_EXPERT];
 
     protected bool $farmerOwnRecordsOnly = false;
@@ -72,7 +75,7 @@ abstract class CrudController extends Controller
             'routeName' => $this->routeName,
             'columns' => $this->columns,
             'search' => $search,
-            'filterable' => $this->filterable,
+            'filterable' => $this->selectFilterOptions(),
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
         ];
@@ -231,6 +234,21 @@ abstract class CrudController extends Controller
     protected function rules(Request $request, ?int $id = null): array
     {
         return [];
+    }
+
+    /**
+     * Filter options as value => label for the select boxes. A plain list (['Wet', 'Dry']) filters by the names
+     * themselves; without this the form submitted the list position ("0") and every filtered list came back empty.
+     *
+     * @return array<string, array<int|string, string>>
+     */
+    protected function selectFilterOptions(): array
+    {
+        return collect($this->filterable)
+            ->map(fn (array $options, string $field): array => array_is_list($options) && ! in_array($field, $this->indexedFilters, true)
+                ? array_combine($options, $options)
+                : $options)
+            ->all();
     }
 
     protected function canManage(Request $request): bool

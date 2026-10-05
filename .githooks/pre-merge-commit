@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Same check for a merge git commits by itself (no conflicts to resolve), e.g. `git merge main` or `git pull`.
+exec bash "$(git rev-parse --show-toplevel)/.githooks/pre-commit"
