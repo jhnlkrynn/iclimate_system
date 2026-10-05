@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
-/** Tabs, the attention summary, task history, weather fetch logging and the retry audit trail. */
+/** Tabs, the System Health wording, task history, weather fetch logging and the retry audit trail. */
 class ItDashboardTabsTest extends TestCase
 {
     use RefreshDatabase;
@@ -37,6 +37,13 @@ class ItDashboardTabsTest extends TestCase
     private function it(): User
     {
         return User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+    }
+
+    /** The forecasting service answers its health check (setUp makes every outside call fail). */
+    private function predictionApiOnline(): void
+    {
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake(['*/health' => Http::response(['status' => 'ok', 'models_loaded' => ['rice', 'weather']]), '*' => Http::response([], 500)]);
     }
 
     // ------------------------------------------------------------ tabs
@@ -66,7 +73,7 @@ class ItDashboardTabsTest extends TestCase
             return substr($html, $start, $next - $start);
         };
 
-        foreach (['data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-activity'] as $marker) {
+        foreach (['data-it-health', 'data-it-activity', 'data-it-brief'] as $marker) {
             $this->assertStringContainsString($marker, $panel('overview'), $marker);
         }
         foreach (['Failed logins by IP', 'Admin actions by user', 'Accounts that never logged in', 'Dormant accounts'] as $text) {
@@ -75,7 +82,7 @@ class ItDashboardTabsTest extends TestCase
         foreach (['data-it-roles', 'data-it-usage', 'data-it-ai', 'Login activity heatmap', 'New registrations per week'] as $text) {
             $this->assertStringContainsString($text, $panel('users'), $text);
         }
-        foreach (['Largest tables', 'Uploads added', 'data-it-integrity', 'data-it-scheduler', 'data-it-app-errors'] as $text) {
+        foreach (['Largest tables', 'Uploads added', 'data-it-integrity', 'data-it-pipeline', 'data-it-scheduler', 'data-it-app-errors', 'data-it-failed-jobs'] as $text) {
             $this->assertStringContainsString($text, $panel('resources'), $text);
         }
         $this->assertStringContainsString('data-it-recent', $panel('activity'));
@@ -85,50 +92,59 @@ class ItDashboardTabsTest extends TestCase
     {
         $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
 
-        foreach (['data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-usage', 'data-it-ai', 'data-it-resources', 'data-it-integrity', 'data-it-ops', 'data-it-recent'] as $marker) {
+        foreach (['data-it-health', 'data-it-brief', 'data-it-failed-jobs', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-usage', 'data-it-ai', 'data-it-resources', 'data-it-integrity', 'data-it-ops', 'data-it-recent'] as $marker) {
             $section = substr($html, strpos($html, $marker), 6000);
             $this->assertStringContainsString('itd-sub', $section, "$marker subtitle");
             $this->assertStringContainsString('Last updated', $section, "$marker last updated");
         }
     }
 
-    // ------------------------------------------------------------ attention summary
+    // ------------------------------------------------------------ System Health wording
 
-    public function test_summary_says_everything_is_normal_when_there_are_no_issues(): void
+    public function test_the_overview_has_no_attention_banner_and_a_working_system_reads_healthy(): void
     {
-        $it = $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('Everything is running normally.')->viewData('it');
+        $this->predictionApiOnline();
+        $response = $this->actingAs($this->it())->get(route('admin.dashboard'));
+        $it = $response->viewData('it');
 
-        $this->assertSame([], $it['attention']['chips']);
-        $this->assertSame('ok', $it['attention']['level']);
+        $this->assertSame(['Healthy', 0], [$it['overall']['label'], $it['overall']['issues']]);
+        $this->assertArrayNotHasKey('attention', $it);
+        $this->assertArrayNotHasKey('alerts', $it);
+        $response->assertSee('System Health')->assertDontSee('Needs your attention')->assertDontSee('Attention Required');
     }
 
-    public function test_summary_names_the_issues_in_plain_language_with_clickable_chips(): void
+    public function test_services_that_need_a_look_say_so_in_plain_words_on_their_own_rows(): void
     {
         $it = $this->it();
+        $this->predictionApiOnline();
         DB::table('failed_jobs')->insert(['uuid' => (string) Str::uuid(), 'connection' => 'database', 'queue' => 'x', 'payload' => '{}', 'exception' => 'x', 'failed_at' => now()]);
         BackupVerification::query()->forceCreate(['backup_filename' => 'iclimate_2026-09-25_0315.backup', 'verified_at' => now()->subHour(), 'status' => BackupVerification::FAILED, 'failure_reason' => 'Unreadable']);
         \App\Models\ExternalWeatherData::query()->forceCreate(['source' => 'Open-Meteo', 'location_name' => 'Lian', 'latitude' => 14.0, 'longitude' => 120.6, 'forecast_date' => now()->toDateString(), 'fetched_at' => now()->subHours(5)]);
 
         $response = $this->actingAs($it)->get(route('admin.dashboard'));
-        $a = $response->viewData('it')['attention'];
+        $data = $response->viewData('it');
+        $rows = collect($data['services'])->keyBy('key');
 
-        $this->assertStringStartsWith('3 issues need action:', $a['text']);
-        $this->assertStringContainsString('weather data is 3 h overdue', $a['text']);      // 5 h old against a 2 h target
-        $this->assertStringContainsString('backup verification failed', $a['text']);
-        $this->assertCount(3, $a['chips']);
-        $response->assertSee('data-tab-link="overview"', false)->assertSee('#itd-pipeline', false)->assertSee('Needs your attention');
+        foreach (['jobs', 'backup', 'weather'] as $key) {
+            $this->assertSame('Needs attention', $rows[$key]['label'], $key);
+        }
+        $this->assertStringContainsString('Unreadable', $rows['backup']['detail']);
+        $this->assertSame(['Operational', 3], [$data['overall']['label'], $data['overall']['issues']]);      // the application and database are up
+        $this->assertStringEndsWith('3 to review', $data['overall']['text']);
+        $response->assertSee('data-service="jobs" data-level="warn"', false)->assertSee('Needs attention')->assertSee('Full diagnostics');
+        foreach (['Critical', 'Warning'] as $harsh) {
+            $this->assertStringNotContainsString($harsh, view('dashboards.it.health', ['it' => $data])->render(), $harsh);
+        }
     }
 
-    public function test_an_overdue_pipeline_is_counted_and_alerted_consistently(): void
+    public function test_an_overdue_pipeline_is_marked_on_its_own_row(): void
     {
         $record = ClimateRecord::factory()->create();
         $record->forceFill(['updated_at' => now()->subDays(200)])->save();
 
         $it = $this->actingAs($this->it())->get(route('admin.dashboard'))->viewData('it');
 
-        $card = collect($it['kpis_extra'])->firstWhere('key', 'overdue');
-        $this->assertSame('1', $card['value']);
-        $this->assertNotNull(collect($it['alerts'])->firstWhere('title', 'Climate Records Overdue'));
+        $this->assertSame('crit', collect($it['pipeline'])->firstWhere('key', 'climate')['level']);     // 200 days against a 45 day target
     }
 
     // ------------------------------------------------------------ scheduled task history
@@ -194,8 +210,6 @@ class ItDashboardTabsTest extends TestCase
 
         $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('Weather API reliability')->assertSee('2 in a row')->getContent();
         $this->assertStringContainsString('625', $html);
-        $card = collect($this->actingAs($this->it())->get(route('admin.dashboard'))->viewData('it')['kpis_extra'])->firstWhere('key', 'weather-api');
-        $this->assertSame('50', $card['value']);
     }
 
     public function test_weather_fetch_stats_have_an_empty_state(): void

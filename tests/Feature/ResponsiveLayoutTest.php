@@ -32,11 +32,12 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
-        // IT dashboard: built on the farmer KPI grid (.mfd-kpis: 2 per row on phones, 3 on tablets, 6 on wide screens);
+        // IT dashboard: five farmer-style KPI cards in its own grid (.itd-kpis: 2 per row on phones, 3 then 2 on tablets, 5 on desktops);
         // its own styles live in resources/css/it-dashboard.css. Wide tables scroll inside their own box, never the page.
         $itCss = file_get_contents(resource_path('css/it-dashboard.css'));
-        $this->assertStringContainsString('class="mfd-kpis', file_get_contents(resource_path('views/dashboards/it/kpis.blade.php')));
-        $this->assertStringContainsString('.itd .mfd-kpis.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itCss);
+        $this->assertStringContainsString('class="itd-kpis"', file_get_contents(resource_path('views/dashboards/it/kpis.blade.php')));
+        $this->assertStringContainsString('.itd-kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itCss);
+        $this->assertStringContainsString('@media (min-width: 1200px) {' . "\n" . '    .itd-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }', str_replace("\r\n", "\n", $itCss));
         $this->assertStringContainsString('.itd-table-wrap { max-width: 100%; overflow-x: auto;', $itCss);
         $this->assertStringContainsString('@media (max-width: 640px)', $itCss);
         $this->assertStringNotContainsString('<style>', $itDashboard);

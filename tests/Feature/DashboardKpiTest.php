@@ -180,7 +180,8 @@ class DashboardKpiTest extends TestCase
         $this->actingAs($it)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('IT Personnel Dashboard')
-            ->assertSee('data-kpi="users"', false)
+            ->assertSee('data-kpi="total-users"', false)
+            ->assertSee('data-kpi="active-users"', false)
             ->assertSee('data-kpi="status"', false)
             ->assertDontSee('data-kpi="prediction"', false)          // prediction diagnostics live on System Health, not the overview
             ->assertDontSee('data-kpi="historical-yield"', false);

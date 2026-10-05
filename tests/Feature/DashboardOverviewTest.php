@@ -419,7 +419,7 @@ class DashboardOverviewTest extends TestCase
         $this->actingAs($it)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('data-it-dashboard', false)
-            ->assertSee('All clear')
+            ->assertSee('System Health')
             ->assertSee('Users by Role')
             ->assertDontSee('id="dashYear"', false);
 

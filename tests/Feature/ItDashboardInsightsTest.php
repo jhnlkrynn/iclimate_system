@@ -64,9 +64,9 @@ class ItDashboardInsightsTest extends TestCase
     {
         $html = $this->actingAs($this->it())->get('/admin/dashboard')->assertOk()->assertViewIs('dashboards.it-expert')->getContent();
 
-        foreach (['Usage Patterns', 'Login activity heatmap', 'New registrations per week', 'Accounts that never logged in', 'Failed jobs by class',
+        foreach (['Usage Patterns', 'Login activity heatmap', 'New registrations per week', 'Accounts that never logged in', 'Background Jobs to Retry',
             'Scheduled tasks', 'Application errors', 'Failed logins by IP', 'Admin actions by user', 'Largest tables', 'Uploads added',
-            'Queries per day', 'Last run duration', 'Weather API reliability', 'Login Success Rate', 'Data Sources Overdue'] as $title) {
+            'Queries per day', 'Last run duration', 'Weather API reliability'] as $title) {
             $this->assertStringContainsString($title, $html, $title);
         }
         // Same two families as the farmer dashboard (Georgia titles, Inter text); the page no longer defines its own.
@@ -75,24 +75,23 @@ class ItDashboardInsightsTest extends TestCase
         foreach (['--itd-display', '--itd-sans', '--itd-mono-font'] as $font) {
             $this->assertStringNotContainsString($font, $html, $font);
         }
-        // Original sections are all still there, once.
-        foreach (['data-it-kpis', 'data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-activity', 'data-it-resources', 'data-it-integrity', 'data-it-recent', 'data-it-ai'] as $marker) {
+        // Each section is on the page once.
+        foreach (['data-it-kpis', 'data-it-brief', 'data-it-failed-jobs', 'data-it-health', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-activity', 'data-it-resources', 'data-it-integrity', 'data-it-recent', 'data-it-ai'] as $marker) {
             $this->assertSame(1, preg_match_all('/'.preg_quote($marker, '/').'(?![-\w])/', $html), $marker);
         }
-        $this->assertSame(['status', 'freshness', 'backup', 'users', 'login-rate', 'app-errors'], array_column($this->actingAs($this->it())->get('/admin/dashboard')->viewData('it')['kpis'], 'key'));
+        $this->assertSame(['total-users', 'active-users', 'status', 'database', 'api'], array_column($this->actingAs($this->it())->get('/admin/dashboard')->viewData('it')['kpis'], 'key'));
     }
 
-    public function test_second_kpi_row_has_data_sources_overdue_and_the_sessions_card_only_when_it_can_be_measured(): void
+    public function test_active_users_card_says_who_is_online_only_when_sessions_can_be_counted(): void
     {
+        $note = fn () => collect($this->actingAs($this->it())->get('/admin/dashboard')->viewData('it')['kpis'])->firstWhere('key', 'active-users')['note'];
+
         config(['session.driver' => 'file']);
-        $it = $this->actingAs($this->it())->get('/admin/dashboard')->viewData('it');
-        $this->assertSame(['overdue', 'weather-api', 'task-failures'], array_column($it['kpis_extra'], 'key'));      // no card that can never show data
+        $this->assertStringNotContainsString('online now', $note());      // never a made-up count
 
         config(['session.driver' => 'database']);
         Cache::flush();
-        $it = $this->actingAs($this->it())->get('/admin/dashboard')->viewData('it');
-        $this->assertSame(['overdue', 'sessions', 'weather-api', 'task-failures'], array_column($it['kpis_extra'], 'key'));
-        $this->assertLessThanOrEqual(4, count($it['kpis_extra']));
+        $this->assertMatchesRegularExpression('/· \d+ online now$/', $note());
     }
 
     public function test_refresh_endpoint_includes_the_usage_section(): void
@@ -259,7 +258,7 @@ class ItDashboardInsightsTest extends TestCase
     {
         $it = $this->actingAs($this->it())->get('/admin/dashboard')->viewData('it');
 
-        $this->assertSame('—', collect($it['kpis'])->firstWhere('key', 'login-rate')['value']);
+        $this->assertNull($it['extra']['logins']['rate']);
     }
 
     public function test_active_sessions_count_recent_activity_on_the_database_driver(): void

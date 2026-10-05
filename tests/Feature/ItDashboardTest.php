@@ -67,9 +67,11 @@ class ItDashboardTest extends TestCase
         return collect($payload['services'])->firstWhere('key', $key);
     }
 
-    private function alert(array $payload, string $title): ?array
+    /** The forecasting service answers its health check (setUp makes every outside call fail). */
+    private function predictionApiOnline(): void
     {
-        return collect($payload['alerts'])->firstWhere('title', $title);
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake(['*/health' => Http::response(['status' => 'ok', 'models_loaded' => ['rice', 'weather']]), '*' => Http::response([], 500)]);
     }
 
     private function analyticsRun(string $type, string $status, ?string $at = null, ?User $by = null): AnalyticsRun
@@ -124,8 +126,8 @@ class ItDashboardTest extends TestCase
     public function test_page_follows_the_layout_in_order_and_has_no_removed_sections(): void
     {
         $html = $this->page()->getContent();
-        $order = ['IT Personnel Dashboard', 'data-it-summary', 'data-it-kpis', 'data-it-alerts', 'data-it-health', 'data-it-pipeline', 'data-it-activity',
-            'data-it-security', 'data-it-roles', 'data-it-ai', 'data-it-usage', 'data-it-resources', 'data-it-integrity', 'data-it-ops', 'data-it-recent'];
+        $order = ['IT Personnel Dashboard', 'data-it-kpis', 'data-it-health', 'data-it-activity', 'data-it-brief',
+            'data-it-security', 'data-it-roles', 'data-it-ai', 'data-it-usage', 'data-it-resources', 'data-it-integrity', 'data-it-pipeline', 'data-it-ops', 'data-it-failed-jobs', 'data-it-recent'];
 
         $last = -1;
         foreach ($order as $marker) {
@@ -134,30 +136,60 @@ class ItDashboardTest extends TestCase
             $this->assertGreaterThan($last, $pos, "Section out of order: $marker");
             $last = $pos;
         }
-        foreach (['Monitor system health, data pipelines, security, and user activity', 'Page refreshed at', 'Weather data synced at', 'Manage Users', 'View System Logs'] as $text) {
+        foreach (['Users, system health and recent activity at a glance', 'Updated at', 'System Health', 'Recent System Activity'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
-        foreach (['Quick Actions', 'Farmer Database', 'User Distribution', 'Average Farm Size', 'itUsersByRoleChart'] as $gone) {
+        // The simpler dashboard has no attention banner, no alert list and no second row of cards.
+        foreach (['Quick Actions', 'Farmer Database', 'User Distribution', 'Average Farm Size', 'itUsersByRoleChart', 'data-it-summary', 'data-it-alerts', 'Attention Required', 'Needs your attention', 'Data Sources Overdue'] as $gone) {
             $this->assertStringNotContainsString($gone, $html);
         }
     }
 
-    public function test_there_are_exactly_six_kpi_cards_and_unmeasurable_ones_say_not_available(): void
+    public function test_the_five_cards_show_real_counts_and_the_same_statuses_as_the_health_rows(): void
     {
-        $data = $this->payload();
+        $it = $this->it();
+        User::factory()->count(2)->create(['role' => User::ROLE_FARMER]);
+        $this->predictionApiOnline();
+        $this->weather(minutesAgo: 10);
 
-        $this->assertSame(['status', 'freshness', 'backup', 'users', 'login-rate', 'app-errors'], array_column($data['kpis'], 'key'));
-        // A metric with no data yet shows a dash and says why; no card says "Not available".
-        foreach (['freshness', 'login-rate'] as $key) {
-            $card = collect($data['kpis'])->firstWhere('key', $key);
-            $this->assertSame('—', $card['value'], $key);
-            $this->assertNotEmpty($card['compare'], $key);
+        $data = $this->payload($it);
+        $card = fn (string $key) => collect($data['kpis'])->firstWhere('key', $key);
+
+        $this->assertSame(['total-users', 'active-users', 'status', 'database', 'api'], array_column($data['kpis'], 'key'));
+        $this->assertSame(['3', '2 farmers · 0 MAO · 1 IT'], [$card('total-users')['value'], $card('total-users')['note']]);
+        $this->assertSame((string) $data['roles']['active'], $card('active-users')['value']);
+        $this->assertSame($data['overall']['label'], $card('status')['value']);
+        $this->assertSame($this->service($data, 'database')['label'], $card('database')['value']);
+        $this->assertSame('Online', $card('database')['value']);
+        $this->assertSame(['Online', 'Weather API and Prediction API are responding'], [$card('api')['value'], $card('api')['note']]);
+        foreach ($data['kpis'] as $k) {
+            $this->assertNotSame('Not available', $k['value'], $k['key']);
+            $this->assertNotEmpty($k['note'], $k['key']);
+            $this->assertNotEmpty($k['href'], $k['key']);
         }
-        foreach (array_merge($data['kpis'], $data['kpis_extra']) as $card) {
-            $this->assertNotSame('Not available', $card['value'], $card['key']);
-            $this->assertNotEmpty($card['tip'], $card['key']);
-            $this->assertNotEmpty($card['href'], $card['key']);
-        }
+    }
+
+    public function test_api_status_follows_the_real_checks_and_leaves_out_a_service_with_nothing_to_check(): void
+    {
+        $it = $this->it();
+        $card = fn (array $data) => collect($data['kpis'])->firstWhere('key', 'api');
+
+        // setUp: the forecasting service does not answer, and no weather has been fetched yet.
+        $data = $this->payload($it);
+        $this->assertSame(['warn', 'Needs attention'], [$this->service($data, 'prediction-api')['level'], $this->service($data, 'prediction-api')['label']]);
+        $this->assertSame(['unk', 'Waiting for first update'], [$this->service($data, 'weather')['level'], $this->service($data, 'weather')['label']]);
+        $this->assertSame(['Needs attention', '0 of 1 services responding'], [$card($data)['value'], $card($data)['note']]);
+
+        $this->predictionApiOnline();
+        $data = $this->payload($it);
+        $this->assertSame(['ok', 'Online'], [$this->service($data, 'prediction-api')['level'], $this->service($data, 'prediction-api')['label']]);
+        $this->assertStringContainsString('2 models loaded', $this->service($data, 'prediction-api')['detail']);
+        $this->assertSame(['Online', 'Prediction API is responding'], [$card($data)['value'], $card($data)['note']]);
+
+        config(['services.farming_ai.url' => '']);
+        $data = $this->payload($it);
+        $this->assertSame('unk', $this->service($data, 'prediction-api')['level']);
+        $this->assertSame('Not set up yet', $card($data)['value']);
     }
 
     // ------------------------------------------------------------ users
@@ -182,14 +214,18 @@ class ItDashboardTest extends TestCase
         $this->assertSame(2, $roles['active']);
     }
 
-    public function test_users_by_role_is_a_table_with_total_active_and_percent(): void
+    public function test_users_by_role_is_a_six_column_table_that_fits_its_card(): void
     {
         User::factory()->create(['role' => User::ROLE_MAO]);
 
         $html = $this->page()->getContent();
 
         $this->assertStringContainsString('data-it-roles', $html);
-        foreach (['Farmer', 'MAO Personnel', 'IT Expert', 'Total accounts', 'Active (30 days)', 'Active %', 'Enabled', 'Disabled'] as $text) {
+        // No fixed minimum width (it used to force sideways scrolling), and a stacked layout for phones.
+        $css = file_get_contents(resource_path('css/it-dashboard.css'));
+        $this->assertStringContainsString('.itd-table.is-roles { min-width: 0; }', $css);
+        $this->assertStringContainsString('.itd-table.is-roles td::before { content: attr(data-label);', $css);
+        foreach (['Farmer', 'MAO Personnel', 'IT Expert', 'Total accounts', 'Share', 'Enabled', 'Disabled', 'Active users', 'data-label="Active users"'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
     }
@@ -214,7 +250,7 @@ class ItDashboardTest extends TestCase
 
         $this->assertStringContainsString('class="is-it-dashboard"', $html);                     // same sidebar colour and Georgia + Inter as the farmer page
         $this->assertStringContainsString('class="mfd itd"', $html);
-        foreach (['mfd-header', 'mfd-kicker', 'mfd-kpis', 'mfd-kpi-value', 'mfd-card-head', 'mfd-pill is-', 'mfd-btn is-quiet', 'mfd-section-title'] as $shared) {
+        foreach (['mfd-header', 'mfd-kicker', 'mfd-kpi ', 'mfd-kpi-value', 'mfd-card-head', 'mfd-pill is-', 'mfd-btn is-quiet'] as $shared) {
             $this->assertStringContainsString($shared, $html, $shared);
         }
         $this->assertStringNotContainsString('--itd-ink', $html);                                // no page-only palette any more
@@ -235,7 +271,7 @@ class ItDashboardTest extends TestCase
         $this->actingAs($it)->get(route('notifications.index'))->assertOk()->assertSee('Maintenance window');
     }
 
-    public function test_farmer_account_and_profile_gap_is_a_data_integrity_warning(): void
+    public function test_farmer_account_and_profile_gap_is_shown_on_the_data_integrity_card(): void
     {
         $with = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $with->id]);
@@ -246,7 +282,6 @@ class ItDashboardTest extends TestCase
         $this->assertSame(3, $data['integrity']['farmer_accounts']);
         $this->assertSame(1, $data['integrity']['farmer_profiles']);
         $this->assertSame(2, $data['integrity']['without_profile']);
-        $this->assertNotNull($this->alert($data, 'Farmer Accounts and Profiles Differ'));
         $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('data-integrity-gap', false)->assertSee('3 farmer accounts but 1 farmer profile records');
     }
 
@@ -258,28 +293,34 @@ class ItDashboardTest extends TestCase
         $data = $this->payload();
 
         $this->assertSame(0, $data['integrity']['account_gap']);
-        $this->assertNull($this->alert($data, 'Farmer Accounts and Profiles Differ'));
     }
 
-    // ------------------------------------------------------------ health, backup and alerts share one source
+    // ------------------------------------------------------------ health rows, the header status and the cards share one source
 
-    public function test_a_fresh_system_is_healthy_and_all_clear(): void
+    public function test_a_fresh_system_is_healthy_with_positive_status_words(): void
     {
+        $this->predictionApiOnline();
         $data = $this->payload();
 
-        $this->assertSame('ok', $data['overall']['level']);
-        $this->assertSame([], $data['alerts']);
-        $this->page()->assertSee('All clear');
-        $this->assertSame(['application', 'database', 'jobs', 'scheduler', 'weather', 'storage', 'backup'], array_column($data['services'], 'key'));
+        $this->assertSame(['ok', 'Healthy', 0], [$data['overall']['level'], $data['overall']['label'], $data['overall']['issues']]);
+        $this->assertSame(['application', 'database', 'weather', 'prediction-api', 'jobs', 'scheduler', 'storage', 'backup'], array_column($data['services'], 'key'));
+        $this->assertSame(['Online', 'Online', 'Online', 'Active', 'Healthy'], array_map(fn ($k) => $this->service($data, $k)['label'], ['application', 'database', 'prediction-api', 'jobs', 'storage']));
+        foreach ($data['services'] as $s) {
+            $this->assertNotContains($s['level'], ['warn', 'crit'], $s['key']);
+            $this->assertNotContains($s['label'], ['Warning', 'Critical', 'Unknown'], $s['key']);     // plain words only
+            $this->assertNotEmpty($s['detail'], $s['key']);
+        }
+        $this->predictionApiOnline();
+        $this->page()->assertSee('data-service="application" data-level="ok"', false)->assertSee('Healthy');
     }
 
-    public function test_database_backup_row_and_verification_alert_never_disagree(): void
+    public function test_database_backup_row_reports_a_failed_verification(): void
     {
         $it = $this->it();
         $this->backupFile(hoursOld: 2);
         $data = $this->payload($it);
         $this->assertSame('ok', $this->service($data, 'backup')['level']);
-        $this->assertNull($this->alert($data, 'Backup Verification Failed'));
+        $this->assertNull($this->service($data, 'backup')['issue']);
 
         BackupVerification::query()->forceCreate([
             'backup_filename' => 'iclimate_2026-09-25_0315.backup', 'verified_at' => now()->subHour(),
@@ -287,8 +328,8 @@ class ItDashboardTest extends TestCase
         ]);
         $data = $this->payload($it);
 
-        $this->assertNotNull($this->alert($data, 'Backup Verification Failed'));
-        $this->assertSame('warn', $this->service($data, 'backup')['level']);                 // the health row agrees with the alert
+        $this->assertSame('verification', $this->service($data, 'backup')['issue']);
+        $this->assertSame(['warn', 'Needs attention'], [$this->service($data, 'backup')['level'], $this->service($data, 'backup')['label']]);
         $this->assertStringContainsString('Archive could not be read', $this->service($data, 'backup')['detail']);
         $this->assertSame('warn', $data['overall']['level']);
     }
@@ -300,44 +341,43 @@ class ItDashboardTest extends TestCase
 
         $data = $this->payload($it);                                        // overdue but nothing proves the scheduler runs
         $this->assertSame('unk', $this->service($data, 'backup')['level']);
-        $this->assertNull($this->alert($data, 'Database Backup Overdue'));
+        $this->assertNull($this->service($data, 'backup')['issue']);
 
         $this->schedulerIsRunning();
         $data = $this->payload($it);
         $this->assertSame('warn', $this->service($data, 'backup')['level']);
-        $this->assertSame('warning', $this->alert($data, 'Database Backup Overdue')['severity']);
+        $this->assertSame('overdue', $this->service($data, 'backup')['issue']);
     }
 
-    public function test_failed_jobs_and_stale_weather_become_alerts_from_the_health_rows(): void
+    public function test_failed_jobs_and_stale_weather_need_attention_while_the_system_stays_operational(): void
     {
         $it = $this->it();
+        $this->predictionApiOnline();
         $this->failedJob();
         $this->weather(minutesAgo: 60 * 8);
 
         $data = $this->payload($it);
 
-        $this->assertSame('warn', $this->service($data, 'jobs')['level']);
-        $this->assertNotNull($this->alert($data, 'Background Jobs Need Review'));
-        $this->assertSame('crit', $this->service($data, 'weather')['level']);
-        $this->assertSame('critical', $this->alert($data, 'Weather Data Out of Date')['severity']);
-        $this->assertSame('critical', $data['alerts'][0]['severity']);          // critical first
-        $this->assertSame('crit', $data['overall']['level']);
+        $this->assertSame(['warn', 'Needs attention'], [$this->service($data, 'jobs')['level'], $this->service($data, 'jobs')['label']]);
+        $this->assertSame(['crit', 'Needs attention'], [$this->service($data, 'weather')['level'], $this->service($data, 'weather')['label']]);
+        // The application and the database are up, so the system is still working: two rows ask for a look.
+        $this->assertSame(['warn', 'Operational', 2], [$data['overall']['level'], $data['overall']['label'], $data['overall']['issues']]);
+        $this->assertStringEndsWith('2 to review', $data['overall']['text']);
+        $this->assertSame('Needs attention', collect($data['kpis'])->firstWhere('key', 'api')['value']);
     }
 
-    public function test_weather_row_shows_last_successful_sync_and_header_labels_both_timestamps(): void
+    public function test_weather_row_shows_the_last_successful_update_and_the_header_shows_when_the_page_was_built(): void
     {
         $this->weather(minutesAgo: 37);
 
         $data = $this->payload();
         $row = $this->service($data, 'weather');
 
-        $this->assertSame('ok', $row['level']);
-        $this->assertStringContainsString('Last successful sync', $row['detail']);
+        $this->assertSame(['ok', 'Operational'], [$row['level'], $row['label']]);
+        $this->assertStringContainsString('Live weather was last updated', $row['detail']);
+        $this->assertStringContainsString('37 minutes ago', $row['detail']);
         $this->assertNotNull($data['weather_synced_at']);
-        $this->page()->assertSee('Page refreshed at')->assertSee('Weather data synced at');
-        $fresh = collect($data['kpis'])->firstWhere('key', 'freshness');
-        $this->assertSame(['37', 'min old'], [$fresh['value'], $fresh['unit']]);
-        $this->assertStringContainsString('Target: < 2h', $fresh['compare']);
+        $this->page()->assertSee('Updated at')->assertDontSee('Weather data synced at');
     }
 
     // ------------------------------------------------------------ pipelines, security, resources, AI
@@ -467,9 +507,10 @@ class ItDashboardTest extends TestCase
 
     public function test_refresh_endpoint_rebuilds_every_live_section(): void
     {
+        $this->predictionApiOnline();
         $json = $this->actingAs($this->it())->getJson(route('admin.dashboard.live'))->assertOk()->json();
 
-        foreach (['kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'resources', 'integrity', 'recent', 'ai'] as $slot) {
+        foreach (['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'resources', 'integrity', 'recent', 'ai'] as $slot) {
             $this->assertNotSame('', trim($json['slots'][$slot]), $slot);
         }
         $this->assertSame('Healthy', $json['status']);

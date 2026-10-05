@@ -1,22 +1,14 @@
+{{-- The five summary cards. A status card (its value is a word) gets a dot in its status colour next to the word. --}}
 <section aria-labelledby="itdKpiTitle" data-it-kpis>
-    <h2 class="mfd-section-title" id="itdKpiTitle">System at a glance</h2>
-    <div class="itd-kpi-stack">
-        @foreach ([$it['kpis'], $it['kpis_extra']] as $row => $cards)
-            <div class="mfd-kpis {{ $row === 1 ? 'is-four' : '' }}">
-                @foreach ($cards as $k)
-                    <div class="mfd-kpi is-{{ $k['level'] }}" data-kpi="{{ $k['key'] }}">
-                        <div class="itd-kpi-top">
-                            <span class="mfd-kpi-label">{{ $k['label'] }}</span>
-                            <button type="button" class="itd-info" data-ic-info="{{ $k['tip'] }}" data-ic-title="{{ $k['label'] }}" data-ic-kicker="IT Personnel Dashboard" aria-haspopup="dialog" aria-label="About {{ $k['label'] }}" data-tip="{{ $k['tip'] }}">i</button>
-                        </div>
-                        <div class="mfd-kpi-value {{ preg_match('/^[\d.,\s—%]+$/u', $k['value']) ? '' : 'is-text' }}"><span>{{ $k['value'] }}</span>@if ($k['unit'])<small>{{ $k['unit'] }}</small>@endif</div>
-                        @include('dashboards.it._badge', ['level' => $k['level']])
-                        @if ($k['compare'])
-                            <div class="mfd-kpi-meaning itd-compare {{ $k['good'] === null ? '' : ($k['good'] ? 'is-good' : 'is-bad') }}">{{ $k['compare'] }}</div>
-                        @endif
-                        @if ($k['href'])<a class="itd-kpi-link" href="{{ $k['href'] }}" @if (str_contains($k['href'], 'tab=')) data-tab-link="{{ \Illuminate\Support\Str::between($k['href'], 'tab=', '#') }}" data-target="{{ \Illuminate\Support\Str::after($k['href'], '#') }}" @endif aria-label="{{ $k['label'] }}: open details"><span class="mfd-sr-only">Open details</span></a>@endif
-                    </div>
-                @endforeach
+    <h2 class="mfd-sr-only" id="itdKpiTitle">System at a glance</h2>
+    <div class="itd-kpis">
+        @foreach ($it['kpis'] as $k)
+            @php $word = ! preg_match('/^[\d.,\s—%]+$/u', $k['value']); @endphp
+            <div class="mfd-kpi is-{{ $k['level'] }}" data-kpi="{{ $k['key'] }}">
+                <span class="mfd-kpi-label">{{ $k['label'] }}</span>
+                <div class="mfd-kpi-value {{ $word ? 'is-text' : '' }}">@if ($word)<i class="itd-dot is-{{ $k['level'] }}" aria-hidden="true"></i>@endif<span>{{ $k['value'] }}</span>@if ($k['unit'])<small>{{ $k['unit'] }}</small>@endif</div>
+                <div class="mfd-kpi-meaning">{{ $k['note'] }}</div>
+                <a class="itd-kpi-link" href="{{ $k['href'] }}" @if (str_contains($k['href'], 'tab=')) data-tab-link="{{ \Illuminate\Support\Str::between($k['href'], 'tab=', '#') }}" data-target="{{ \Illuminate\Support\Str::after($k['href'], '#') }}" @endif aria-label="{{ $k['label'] }}: open details"><span class="mfd-sr-only">Open details</span></a>
             </div>
         @endforeach
     </div>
