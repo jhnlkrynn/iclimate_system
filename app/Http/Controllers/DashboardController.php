@@ -59,7 +59,7 @@ class DashboardController extends Controller
 
     private const IT_PAGE_CACHE_SECONDS = 60;
 
-    private const ADMIN_LATEST_KEY = 'dashboard:it:overview:2:latest';
+    private const ADMIN_LATEST_KEY = 'dashboard:it:overview:3:latest';
 
     /** The IT overview shows when each section was built, so its last copy may be shown for up to an hour while it rebuilds. */
     private const IT_MAX_STALE_SECONDS = 3600;
@@ -68,7 +68,7 @@ class DashboardController extends Controller
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
 
     /** Sections the IT refresh button re-renders (partials under dashboards/it). */
-    private const IT_LIVE_SLOTS = ['summary', 'kpis', 'alerts', 'health', 'pipeline', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
+    private const IT_LIVE_SLOTS = ['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
 
     /** Tabs of the IT dashboard (?tab=...). */
     private const IT_TABS = ['overview', 'heatmap', 'security', 'users', 'resources', 'activity'];
@@ -144,7 +144,7 @@ class DashboardController extends Controller
 
     private function adminCacheKey(): string
     {
-        return 'dashboard:it:overview:2:v'.DashboardData::version();
+        return 'dashboard:it:overview:3:v'.DashboardData::version();
     }
 
     /**

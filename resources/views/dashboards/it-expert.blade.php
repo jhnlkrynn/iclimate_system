@@ -1,14 +1,12 @@
 <x-app-layout>
     @php
         $overall = $it['overall'];
-        $tabs = ['overview' => 'Overview', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'];
         // Status level -> the shared status pill (colour, icon). The Refresh script swaps the header pill with the same map.
         $icon = fn (string $name): string => view('dashboards.mao.icon', ['name' => $name])->render();
-        $pills = ['ok' => ['good', $icon('check')], 'warn' => ['watch', $icon('alert')], 'crit' => ['danger', $icon('danger')], 'unk' => ['unk', $icon('info')]];
+        // "Operational" (warn) is still a working system, so it keeps the green pill; its rows on the System Health card say what to review.
+        $pills = ['ok' => ['good', $icon('check')], 'warn' => ['good', $icon('check')], 'crit' => ['watch', $icon('alert')], 'unk' => ['unk', $icon('info')]];
         $pill = $pills[$overall['level']] ?? $pills['unk'];
         $tabs = ['overview' => 'Overview', 'heatmap' => 'Heat Map', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'];
-        // Section cards get a 3px top border in their status colour.
-        $worstPipeline = collect($it['pipeline'])->contains('level', 'crit') ? 'crit' : (collect($it['pipeline'])->contains('level', 'warn') ? 'warn' : 'ok');
     @endphp
 
     {{-- Same design system as the farmer dashboard: the wrapper is .mfd, the shared parts are .mfd-* (farmer-dashboard.css)
@@ -19,26 +17,18 @@
             <div class="mfd-header-main">
                 <span class="mfd-kicker">iClimate System Administration</span>
                 <h1>IT Personnel Dashboard</h1>
-                <p class="itd-lede">Monitor system health, data pipelines, security, and user activity</p>
+                <p class="itd-lede">Users, system health and recent activity at a glance</p>
             </div>
             <div class="mfd-fresh">
                 <span class="mfd-pill is-{{ $pill[0] }}" data-it-status>{!! $pill[1] !!}<span data-it-status-text>{{ $overall['label'] }}</span></span>
-                <div class="itd-stamps" role="status" aria-live="polite">
-                    <span class="mfd-age">Page refreshed at <span data-it-refreshed>{{ $it['checked_at']->format('g:i:s A') }}</span></span>
-                    <span class="mfd-age">Weather data synced at <span data-it-weather>{{ $it['weather_synced_at'] ? $it['weather_synced_at']->format('M j, g:i A') : 'Not available' }}</span></span>
-                </div>
-                <div class="itd-header-actions">
-                    <a class="mfd-btn is-ghost" href="{{ route('users.index') }}">@include('dashboards.mao.icon', ['name' => 'farmers'])Manage Users</a>
-                    <a class="mfd-btn is-ghost" href="{{ route('system-logs.index') }}">@include('dashboards.mao.icon', ['name' => 'report'])View System Logs</a>
-                    <button type="button" class="mfd-btn is-quiet" data-it-refresh aria-label="Refresh the dashboard">@include('dashboards.mao.icon', ['name' => 'refresh'])<span data-it-refresh-text>Refresh</span></button>
-                </div>
+                <span class="mfd-age" role="status" aria-live="polite">Updated at <span data-it-refreshed>{{ $it['checked_at']->format('g:i:s A') }}</span></span>
+                <button type="button" class="mfd-btn is-quiet" data-it-refresh aria-label="Refresh the dashboard">@include('dashboards.mao.icon', ['name' => 'refresh'])<span data-it-refresh-text>Refresh</span></button>
             </div>
         </header>
 
         @if (session('status'))<div class="mfd-note is-good" role="status">@include('dashboards.mao.icon', ['name' => 'check'])<p>{{ session('status') }}</p></div>@endif
 
-        {{-- Needs your attention + KPI cards (always visible) --}}
-        <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-summary" data-slot="summary">@include('dashboards.it.summary')</div></div>
+        {{-- The five summary cards (always visible) --}}
         <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-kpis" data-slot="kpis">@include('dashboards.it.kpis')</div></div>
 
         {{-- Tabs --}}
@@ -50,18 +40,14 @@
 
         {{-- Overview --}}
         <div role="tabpanel" id="itd-panel-overview" data-panel="overview" aria-labelledby="itd-tab-overview" @if ($tab !== 'overview') hidden @endif>
-            <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-alerts" data-slot="alerts">@include('dashboards.it.alerts')</div></div>
-            <div class="itd-row r-50-50 is-wide">
-                <div class="itd-cell mfd-slot" id="itd-health" data-slot="health">@include('dashboards.it.health')</div>
-                <div class="itd-cell mfd-slot" id="itd-pipeline" data-slot="pipeline">@include('dashboards.it.pipeline')</div>
-            </div>
-            <div class="itd-row">
+            <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-health" data-slot="health">@include('dashboards.it.health')</div></div>
+            <div class="itd-row r-60-40">
                 <div class="itd-cell" id="itd-activity">
                     <section class="mfd-card itd-card" aria-labelledby="itdActivityTitle" data-it-activity>
                         <div class="mfd-card-head">
                             <div>
                                 <h2 id="itdActivityTitle">System Activity</h2>
-                                <p class="itd-sub">Logins, admin actions, processing, jobs and errors per day. Click a day to open its logs.</p>
+                                <p class="itd-sub">What happened in the system each day. Click a day to open its logs.</p>
                                 <span class="itd-updated"><span data-activity-range-label>Last 30 days</span> · Last updated <span data-activity-updated>…</span></span>
                             </div>
                             <div class="itd-range" role="group" aria-label="Activity period">
@@ -76,9 +62,9 @@
                                 <div class="itd-chart-state" data-activity-state role="status">Loading system activity...</div>
                             </div>
                         </figure>
-                        <p class="mfd-foot">Errors are failed logins, failed processing runs and failed jobs. Each line is a different kind of event, so read them by label, not only by colour.</p>
                     </section>
                 </div>
+                <div class="itd-cell mfd-slot" id="itd-brief" data-slot="brief">@include('dashboards.it.brief')</div>
             </div>
         </div>
 
@@ -123,7 +109,9 @@
                 <div class="itd-cell mfd-slot" id="itd-resources" data-slot="resources">@include('dashboards.it.resources')</div>
                 <div class="itd-cell mfd-slot" id="itd-integrity" data-slot="integrity">@include('dashboards.it.integrity')</div>
             </div>
+            <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-pipeline" data-slot="pipeline">@include('dashboards.it.pipeline')</div></div>
             <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-ops" data-slot="ops">@include('dashboards.it.ops')</div></div>
+            <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-jobs" data-slot="jobs">@include('dashboards.it.jobs')</div></div>
         </div>
 
         {{-- Activity Log --}}
@@ -191,7 +179,7 @@
                     const data = await res.json();
                     $('[data-activity-updated]').textContent = clock();
                     if (data.state === 'error') { message(data.message); return; }
-                    if (data.state === 'empty') { if (activity) { activity.destroy(); activity = null; } message('No system activity was recorded in this period. Logins, admin actions and errors will appear here.'); return; }
+                    if (data.state === 'empty') { if (activity) { activity.destroy(); activity = null; } message('Activity for this period will show here as people sign in and use the system.'); return; }
                     if (!(await ready())) { message('The chart library could not be loaded.'); return; }
                     state.hidden = true; box.classList.remove('is-loading');
                     const datasets = data.datasets.map((d) => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.color, borderWidth: 2, tension: .3, pointRadius: data.days <= 30 ? 3 : 1, pointHoverRadius: 6 }));
@@ -258,7 +246,6 @@
                         const el = root.querySelector('[data-slot="' + key + '"]'); if (el) el.innerHTML = html;
                     });
                     $('[data-it-refreshed]').textContent = data.refreshed_at;
-                    $('[data-it-weather]').textContent = data.weather_synced_at || 'Not available';
                     const pill = pills[data.level] || pills.unk; const status = $('[data-it-status]');
                     status.className = 'mfd-pill is-' + pill[0];
                     status.innerHTML = pill[1] + '<span data-it-status-text></span>';

@@ -4,7 +4,6 @@ namespace App\Services\Analytics;
 
 use App\Models\AIChat;
 use App\Models\AnalyticsRun;
-use App\Models\BackupVerification;
 use App\Models\ClimateRecord;
 use App\Models\ExternalWeatherData;
 use App\Models\FarmBoundary;
@@ -20,10 +19,10 @@ use App\Support\SampleData;
 use App\Support\SchemaCache;
 use App\Support\SystemLogPresenter;
 use Carbon\CarbonImmutable;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
@@ -33,7 +32,7 @@ use Throwable;
  * Rules this class keeps:
  *   - every figure comes from a query or a real check; when one cannot be computed it is null and the
  *     view prints "Not available" (never a made-up value);
- *   - the System Health table, the Attention Required list, the status badge and the KPI cards are all
+ *   - the System Health card, the status badge in the header and the status cards are all
  *     built from the SAME rows (see services()), so they can never disagree;
  *   - expensive queries are cached for 5 minutes (remember()), the Refresh button bypasses that cache.
  */
@@ -44,6 +43,19 @@ final class ItDashboardService
     public const CACHE_SECONDS = 300;
 
     public const LEVELS = ['ok' => 'Healthy', 'warn' => 'Warning', 'crit' => 'Critical', 'unk' => 'Unknown'];
+
+    /** Plain status words for the System Health card, by level; SERVICE_WORDS overrides them per service. */
+    public const STATUS_WORDS = ['ok' => 'Healthy', 'warn' => 'Needs attention', 'crit' => 'Needs attention', 'unk' => 'Not set up yet'];
+
+    public const SERVICE_WORDS = [
+        'application' => ['ok' => 'Online'],
+        'database' => ['ok' => 'Online', 'warn' => 'Slow', 'crit' => 'Unavailable'],
+        'weather' => ['ok' => 'Operational', 'unk' => 'Waiting for first update'],
+        'prediction-api' => ['ok' => 'Online'],
+        'jobs' => ['ok' => 'Active', 'unk' => 'Not tracked'],
+        'scheduler' => ['ok' => 'Active', 'unk' => 'Waiting for first run'],
+        'storage' => ['unk' => 'Not available'],
+    ];
 
     /** Freshness targets, in hours, for each data pipeline (shown on the page next to the real age). */
     public const TARGET_HOURS = ['weather' => 2, 'climate' => 24 * 45, 'rice' => 24 * 120, 'predictions' => SystemHealthService::PREDICTION_MAX_AGE_HOURS, 'advisories' => 24 * 14];
@@ -80,8 +92,6 @@ final class ItDashboardService
         $weather = collect($pipeline)->firstWhere('key', 'weather');
         $extra = $this->extra();
         $resources = $this->resources();
-        $cards = $this->kpiCards($overall, $pipeline, $roles, $checks, $extra);
-        $alerts = $this->alerts($services, $pipeline, $integrity, $now);
 
         return [
             'checked_at' => $now,
@@ -94,11 +104,8 @@ final class ItDashboardService
             'integrity' => $integrity,
             'resources' => $resources,
             'ai' => $this->ai(),
-            'kpis' => $cards['primary'],
-            'kpis_extra' => $cards['secondary'],
+            'kpis' => $this->kpiCards($overall, $services, $roles, $extra, $resources),
             'extra' => $extra,
-            'alerts' => $alerts,
-            'attention' => $this->attention($alerts),
             'recent' => $this->recentActivity(),
             'filters' => $this->filterOptions(),
             // When each cached block was built, shown as "Last updated" on its section. Live blocks use the page time.
@@ -260,15 +267,20 @@ final class ItDashboardService
     // ------------------------------------------------------------------ system health (single source of truth)
 
     /**
-     * The seven services. Alerts, the overall badge and the Database Backup figure all read these rows.
+     * The eight services on the System Health card, most essential first. The header badge and the System, Database
+     * and API status cards all read these rows, so they can never disagree.
+     *
+     * Each row carries a plain status word: a positive one when the check passes (Online, Operational, Active,
+     * Healthy), "Needs attention" when a real check failed, and a neutral one when there is nothing to check yet.
      *
      * @return array<int, array<string, mixed>>
      */
     private function services(array $checks, array $pipeline, CarbonImmutable $now): array
     {
         $rows = [];
-        $row = function (string $key, string $name, string $level, string $detail, ?CarbonInterface $checked = null, array $extra = []) use (&$rows, $now) {
-            $rows[] = ['key' => $key, 'name' => $name, 'level' => $level, 'label' => self::LEVELS[$level], 'detail' => $detail, 'checked_at' => $checked ?? $now] + $extra;
+        $row = function (string $key, string $name, string $level, string $detail, array $extra = []) use (&$rows, $now) {
+            $rows[] = ['key' => $key, 'name' => $name, 'level' => $level, 'label' => self::SERVICE_WORDS[$key][$level] ?? self::STATUS_WORDS[$level],
+                'detail' => $detail, 'checked_at' => $now] + $extra;
         };
         $map = fn (?string $s) => match ($s) {
             SystemHealthService::HEALTHY => 'ok',
@@ -277,57 +289,87 @@ final class ItDashboardService
         };
 
         // Serving this page proves the application is responding.
-        $row('application', 'Application', 'ok', 'The application is responding.');
+        $row('application', 'Application', 'ok', 'The iClimate website is up and responding.');
 
         $db = $checks['database'] ?? null;
-        $row('database', 'Database', $db ? $map($db['status']) : 'crit', $db ? (string) $db['summary'].($db['details']['Response time'] ?? null ? ' ('.$db['details']['Response time'].')' : '') : 'The database check could not run.');
-        if ($db && $db['status'] === SystemHealthService::UNAVAILABLE) {
-            $rows[count($rows) - 1]['level'] = 'crit';
-            $rows[count($rows) - 1]['label'] = self::LEVELS['crit'];
-        }
+        $ms = $db['details']['Response time'] ?? null;
+        $ms = $ms === '0 ms' ? 'under 1 ms' : $ms;   // the check rounds to whole milliseconds
+        match (true) {
+            $db === null || $db['status'] === SystemHealthService::UNAVAILABLE => $row('database', 'Database', 'crit', 'The database did not answer the last check.'),
+            $db['status'] === SystemHealthService::NEEDS_ATTENTION => $row('database', 'Database', 'warn', 'Connected, but answering slowly'.($ms ? ' ('.$ms.')' : '').'.', ['response' => $ms]),
+            default => $row('database', 'Database', 'ok', 'Connected and responding'.($ms ? ' in '.$ms : '').'.', ['response' => $ms]),
+        };
 
-        // Queue / background jobs: failed jobs and a backed-up queue are both real problems.
-        $jobs = array_filter([$checks['failed-jobs'] ?? null, $checks['queue'] ?? null], fn ($c) => $c && $c['status'] !== SystemHealthService::UNAVAILABLE);
-        $bad = collect($jobs)->firstWhere('status', SystemHealthService::NEEDS_ATTENTION);
-        $row('jobs', 'Queue / Background Jobs', $jobs === [] ? 'unk' : ($bad ? 'warn' : 'ok'), $jobs === [] ? 'Job counts cannot be read on this queue driver.' : (string) ($bad['summary'] ?? 'No failed jobs and nothing is stuck in the queue.'));
-
-        $sched = $checks['scheduler'] ?? null;
-        $lastSched = $sched['details']['Last scheduled automation'] ?? null;
-        $row('scheduler', 'Scheduler', $sched ? $map($sched['status']) : 'unk', $sched ? (string) $sched['summary'] : 'The scheduler check could not run.', null, ['evidence' => $lastSched]);
-
-        // Weather API: last successful sync + status.
+        // Weather API: judged by the last successful sync.
         $w = collect($pipeline)->firstWhere('key', 'weather');
         if ($w && $w['at']) {
-            $row('weather', 'Weather API', $w['level'] === 'crit' ? 'crit' : $w['level'], 'Last successful sync '.$w['at']->format('M j, g:i A').' ('.$w['at']->diffForHumans().').', $w['at'], ['at' => $w['at']]);
+            $row('weather', 'Weather API', $w['level'], 'Live weather was last updated '.$w['at']->format('M j, g:i A').' ('.$w['at']->diffForHumans().').', ['at' => $w['at']]);
         } else {
-            $row('weather', 'Weather API', 'unk', 'No successful weather sync has been recorded yet.');
+            $row('weather', 'Weather API', 'unk', 'Live weather will appear here after the first update.');
         }
 
-        $row(...$this->storageRow($now));
-        $row(...$this->backupRow($checks, $now));
+        $api = $this->predictionApi();
+        match ($api['state']) {
+            'online' => $row('prediction-api', 'Prediction API', 'ok', 'The forecasting service is answering'.($api['models'] > 0 ? ' with '.$api['models'].' '.($api['models'] === 1 ? 'model' : 'models').' loaded' : '').'.'),
+            'offline' => $row('prediction-api', 'Prediction API', 'warn', 'The forecasting service did not answer. Start it so new forecasts can be made.'),
+            default => $row('prediction-api', 'Prediction API', 'unk', 'No forecasting service address has been set.'),
+        };
+
+        // Background jobs: failed jobs and a backed-up queue are both real problems.
+        $jobs = array_filter([$checks['failed-jobs'] ?? null, $checks['queue'] ?? null], fn ($c) => $c && $c['status'] !== SystemHealthService::UNAVAILABLE);
+        $bad = collect($jobs)->firstWhere('status', SystemHealthService::NEEDS_ATTENTION);
+        $row('jobs', 'Background Jobs', $jobs === [] ? 'unk' : ($bad ? 'warn' : 'ok'), $jobs === [] ? 'Job counts cannot be read on this queue setup.' : (string) ($bad['summary'] ?? 'No failed jobs and nothing is waiting too long.'));
+
+        $sched = $checks['scheduler'] ?? null;
+        $row('scheduler', 'Scheduled Tasks', $sched ? $map($sched['status']) : 'unk', match (true) {
+            $sched === null => 'The scheduled tasks could not be checked.',
+            $sched['status'] === SystemHealthService::HEALTHY => 'Automatic tasks ran recently.',
+            $sched['status'] === SystemHealthService::NEEDS_ATTENTION => 'No automatic task has run recently. Check that the scheduler is set up to run.',
+            default => 'Automatic tasks will show here after their first run.',
+        }, ['evidence' => $sched['details']['Last scheduled automation'] ?? null]);
+
+        $row(...$this->storageRow());
+        $row(...$this->backupRow($checks));
 
         return $rows;
     }
 
+    /** Asks the forecasting (machine-learning) service's own health endpoint; cached with the other blocks. */
+    private function predictionApi(): array
+    {
+        return $this->remember('prediction-api', function (): array {
+            $url = rtrim((string) config('services.farming_ai.url'), '/');
+            if ($url === '') {
+                return ['state' => 'unset', 'models' => 0];
+            }
+            try {
+                $response = Http::connectTimeout(2)->timeout(3)->get($url.'/health');
+
+                return ['state' => $response->successful() ? 'online' : 'offline', 'models' => count((array) $response->json('models_loaded', []))];
+            } catch (Throwable) {
+                return ['state' => 'offline', 'models' => 0];
+            }
+        });
+    }
+
     /** @return array{0: string, 1: string, 2: string, 3: string} */
-    private function storageRow(CarbonImmutable $now): array
+    private function storageRow(): array
     {
         $disk = $this->disk();
         if ($disk === null) {
-            return ['storage', 'Storage', 'unk', 'Disk usage could not be read.'];
+            return ['storage', 'Storage', 'unk', 'Disk space could not be read on this server.'];
         }
         $level = $disk['pct'] >= self::DISK_CRIT ? 'crit' : ($disk['pct'] >= self::DISK_WARN ? 'warn' : 'ok');
 
-        return ['storage', 'Storage', $level, $disk['pct'].'% of the disk is used ('.$this->bytes($disk['free']).' free).'];
+        return ['storage', 'Storage', $level, $disk['pct'].'% of disk space is used, '.$this->bytes($disk['free']).' free.'];
     }
 
     /**
-     * ONE backup state. The "Database Backup" health row, the "Backup Verification Failed" alert and the
-     * "Last Verified Backup" KPI are all read from the row built here.
+     * ONE backup state, from the backup file check and the backup verification check together.
      *
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: null, 5: array<string, mixed>}
+     * @return array{0: string, 1: string, 2: string, 3: string, 4: array<string, mixed>}
      */
-    private function backupRow(array $checks, CarbonImmutable $now): array
+    private function backupRow(array $checks): array
     {
         $file = $checks['backup'] ?? null;
         $ver = $checks['backup-verification'] ?? null;
@@ -346,35 +388,37 @@ final class ItDashboardService
             $issue = $stale && $provable ? 'overdue' : null;
         } elseif ($none && app()->environment('production')) {
             $level = 'warn';
-            $detail = 'No valid backup was found. Check that the daily backup is running.';
+            $detail = 'No backup was found yet. Check that the daily backup is running.';
             $issue = 'overdue';
         }
         if ($verFailed) {
             $level = 'warn';
-            $detail = 'The latest backup check failed: '.($ver['details']['Reason'] ?? 'unknown reason').'.';
+            $detail = 'The latest backup check did not pass: '.($ver['details']['Reason'] ?? 'unknown reason').'.';
             $issue = 'verification';
         } elseif ($ver && ($ver['details']['Result'] ?? null) === 'Passed' && $level === 'ok') {
             $detail .= ' Last verified '.($ver['details']['Last checked'] ?? '').'.';
         }
 
-        return ['backup', 'Database Backup', $level, $detail, null, ['issue' => $issue]];
+        return ['backup', 'Database Backup', $level, $detail, ['issue' => $issue]];
     }
 
-    /** @return array{level: string, label: string, issues: int, checks: int, text: string} */
+    /**
+     * The one status in the header and on the System Status card. "Healthy" when every check passes, "Operational"
+     * when the application and database are up but another service wants a look, "Needs attention" otherwise.
+     *
+     * @return array{level: string, label: string, healthy: int, issues: int, unknown: int, checks: int, text: string}
+     */
     private function overall(array $services): array
     {
-        $count = fn (string $lvl) => count(array_filter($services, fn ($s) => $s['level'] === $lvl));
-        $crit = $count('crit');
-        $warn = $count('warn');
-        $level = $crit > 0 ? 'crit' : ($warn > 0 ? 'warn' : 'ok');
+        $count = fn (string ...$levels) => count(array_filter($services, fn ($s) => in_array($s['level'], $levels, true)));
+        $issues = $count('warn', 'crit');
+        $coreDown = collect($services)->whereIn('key', ['application', 'database'])->contains('level', 'crit');
+        $level = $coreDown ? 'crit' : ($issues > 0 ? 'warn' : 'ok');
 
         return [
-            'level' => $level, 'label' => self::LEVELS[$level], 'issues' => $crit + $warn, 'checks' => count($services),
-            'unknown' => $count('unk'),
-            'text' => match (true) {
-                $crit + $warn === 0 => 'No issues · '.$count('ok').' of '.count($services).' checks passing',
-                default => ($crit + $warn).' '.($crit + $warn === 1 ? 'issue' : 'issues'),
-            },
+            'level' => $level, 'label' => ['ok' => 'Healthy', 'warn' => 'Operational', 'crit' => 'Needs attention'][$level],
+            'healthy' => $count('ok'), 'issues' => $issues, 'unknown' => $count('unk'), 'checks' => count($services),
+            'text' => $count('ok').' of '.count($services).' services healthy'.($issues > 0 ? ' · '.$issues.' to review' : ''),
         ];
     }
 
@@ -409,214 +453,50 @@ final class ItDashboardService
         return route('admin.dashboard', ['tab' => $tab]).'#'.$anchor;
     }
 
-    /** @return array{0: string, 1: string} number and unit for an age in minutes, e.g. [37, 'min'] */
-    private function ageParts(int $minutes): array
-    {
-        return match (true) {
-            $minutes < 60 => [(string) $minutes, 'min'],
-            $minutes < 2880 => [(string) (float) round($minutes / 60, 1), 'h'],
-            default => [(string) round($minutes / 1440), 'days'],
-        };
-    }
-
     /**
-     * Every card has a label, value, unit, status (colour + icon + text), a comparison or target, a plain-language tip
-     * and a link to where it can be fixed or investigated. Six cards in the first row, at most four in the second.
-     *
-     * @return array{primary: array<int, array<string, mixed>>, secondary: array<int, array<string, mixed>>}
-     */
-    private function kpiCards(array $overall, array $pipeline, array $roles, array $checks, array $x): array
-    {
-        $card = fn (array $c) => $c + ['unit' => null, 'compare' => null, 'good' => null, 'level' => 'unk', 'href' => null];
-
-        // 1. System status
-        $passing = $overall['checks'] - $overall['issues'] - $overall['unknown'];
-        $status = $card(['key' => 'status', 'label' => 'System Status', 'value' => $overall['label'], 'level' => $overall['level'],
-            'compare' => $passing.' of '.$overall['checks'].' checks passing'.($overall['issues'] ? ' · '.$overall['issues'].' '.($overall['issues'] === 1 ? 'issue' : 'issues') : ''),
-            'tip' => 'The worst result of the seven live checks (application, database, jobs, scheduler, weather, storage, backup). Healthy means nothing needs action.',
-            'href' => self::tabLink('overview', 'itd-health')]);
-
-        // 2. Data freshness: the time-sensitive source furthest past its target.
-        $sources = collect($pipeline)->filter(fn ($p) => $p['age_minutes'] !== null && in_array($p['key'], ['weather', 'predictions'], true));
-        $worst = $sources->sortByDesc(fn ($p) => $p['age_minutes'] / ($p['target_hours'] * 60))->first();
-        $freshTip = 'How old the newest weather or prediction data is, compared with its target. Old data means farmers and MAO staff see out-of-date forecasts.';
-        if ($worst) {
-            [$v, $u] = $this->ageParts($worst['age_minutes']);
-            $fresh = $card(['key' => 'freshness', 'label' => 'Data Freshness', 'value' => $v, 'unit' => $u.' old', 'level' => $worst['level'],
-                'compare' => $worst['name'].' · Target: < '.$this->hours($worst['target_hours']), 'tip' => $freshTip, 'href' => self::tabLink('overview', 'itd-pipeline')]);
-        } else {
-            $fresh = $card(['key' => 'freshness', 'label' => 'Data Freshness', 'value' => '—', 'compare' => 'No weather or prediction data yet', 'tip' => $freshTip, 'href' => self::tabLink('overview', 'itd-pipeline')]);
-        }
-
-        // 3. Last verified backup (same verification check the health table and alerts use).
-        $ver = $checks['backup-verification'] ?? null;
-        $passed = BackupVerification::query()->where('status', BackupVerification::PASSED)->latest('verified_at')->first();
-        $maxHours = app(\App\Services\BackupVerificationService::class)->maxAgeHours();
-        $backupTip = 'The last time a database backup was opened and checked to prove it can be restored. An unverified backup may be useless in an emergency.';
-        if ($passed) {
-            $ageMin = (int) self::parse($passed->verified_at)->diffInMinutes(CarbonImmutable::now(), true);
-            [$v, $u] = $this->ageParts($ageMin);
-            $failed = ($ver['details']['Result'] ?? null) === 'Failed';
-            $backup = $card(['key' => 'backup', 'label' => 'Last Verified Backup', 'value' => $v, 'unit' => $u.' ago', 'level' => $failed || $ageMin > $maxHours * 60 ? 'warn' : 'ok',
-                'compare' => ($failed ? 'Latest check failed · ' : '').'Target: within '.$maxHours.'h', 'tip' => $backupTip, 'href' => self::tabLink('overview', 'itd-health')]);
-        } else {
-            $backup = $card(['key' => 'backup', 'label' => 'Last Verified Backup', 'value' => 'None', 'level' => app()->environment('production') ? 'warn' : 'unk',
-                'compare' => 'No backup has passed verification yet', 'tip' => $backupTip, 'href' => self::tabLink('overview', 'itd-health')]);
-        }
-
-        // 4. Active users
-        $users = ($roles['state'] ?? 'error') === 'ok'
-            ? $card(['key' => 'users', 'label' => 'Active Users (30 days)', 'value' => number_format($roles['active']), 'unit' => 'users', 'level' => 'ok',
-                'compare' => ($roles['pct'] !== null ? rtrim(rtrim(number_format($roles['pct'], 1), '0'), '.') : '0').'% of '.number_format($roles['total']).' accounts',
-                'tip' => 'Accounts that logged in or were used in the last 30 days. A low share can mean people are locked out or not using the system.', 'href' => route('users.index')])
-            : $card(['key' => 'users', 'label' => 'Active Users (30 days)', 'value' => '—', 'compare' => 'User counts could not be read', 'tip' => 'Accounts used in the last 30 days.', 'href' => route('users.index')]);
-
-        // 5. Login success rate
-        $logins = $x['logins'];
-        $loginTip = 'Successful logins as a share of all login attempts in the last 7 days. A sudden drop can mean a password problem or someone guessing passwords.';
-        if (($logins['state'] ?? 'error') === 'ok' && $logins['rate'] !== null) {
-            $t = $logins['prev_rate'] === null ? null : $this->trend($logins['rate'] - $logins['prev_rate'], 'pts', true);
-            $rate = $card(['key' => 'login-rate', 'label' => 'Login Success Rate (7d)', 'value' => rtrim(rtrim(number_format($logins['rate'], 1), '0'), '.'), 'unit' => '%',
-                'level' => $logins['rate'] >= 90 ? 'ok' : ($logins['rate'] >= 70 ? 'warn' : 'crit'),
-                'compare' => $t ? $t['text'] : number_format($logins['success']).' successful · '.number_format($logins['failed']).' failed', 'good' => $t['good'] ?? null,
-                'tip' => $loginTip, 'href' => self::tabLink('security', 'itd-security')]);
-        } else {
-            $rate = $card(['key' => 'login-rate', 'label' => 'Login Success Rate (7d)', 'value' => '—', 'compare' => 'No login attempts in the last 7 days', 'tip' => $loginTip, 'href' => self::tabLink('security', 'itd-security')]);
-        }
-
-        // 6. Application errors
-        $errors = $x['errors'];
-        $errTip = 'Errors and critical entries written to the application log in the last 24 hours. A rise usually means something broke after a change.';
-        if (($errors['state'] ?? '') === 'ok') {
-            $n = $errors['h24']['error'] + $errors['h24']['critical'];
-            $t = $this->trend($n - $errors['prev24'], '', false);
-            $err = $card(['key' => 'app-errors', 'label' => 'Application Errors (24h)', 'value' => number_format($n), 'unit' => $n === 1 ? 'error' : 'errors',
-                'level' => $errors['h24']['critical'] > 0 ? 'crit' : ($n > 0 ? 'warn' : 'ok'), 'compare' => $t['text'], 'good' => $t['good'], 'tip' => $errTip, 'href' => self::tabLink('resources', 'itd-ops')]);
-        } else {
-            $err = $card(['key' => 'app-errors', 'label' => 'Application Errors (24h)', 'value' => '0', 'unit' => 'errors', 'level' => 'ok', 'compare' => 'No application log entries yet', 'tip' => $errTip, 'href' => self::tabLink('resources', 'itd-ops')]);
-        }
-
-        // Second row
-        $overdue = collect($pipeline)->filter(fn ($p) => in_array($p['level'], ['warn', 'crit'], true));
-        $second = [$card(['key' => 'overdue', 'label' => 'Data Sources Overdue', 'value' => (string) $overdue->count(), 'unit' => 'of '.count($pipeline).' sources',
-            'level' => $overdue->contains('level', 'crit') ? 'crit' : ($overdue->isNotEmpty() ? 'warn' : 'ok'), 'compare' => 'Target: 0 overdue',
-            'tip' => 'Data pipelines whose latest successful run is older than their freshness target. Overdue data means a feed has stopped updating.', 'href' => self::tabLink('overview', 'itd-pipeline')])];
-
-        $sessions = $x['sessions'];
-        if ($sessions['state'] === 'ok') {
-            $second[] = $card(['key' => 'sessions', 'label' => 'Active Sessions', 'value' => number_format($sessions['count']), 'unit' => $sessions['count'] === 1 ? 'session' : 'sessions', 'level' => 'ok',
-                'compare' => 'Active in the last 15 minutes', 'tip' => 'Browsers that used the system in the last 15 minutes. Useful to pick a quiet moment for maintenance.', 'href' => self::tabLink('users', 'itd-usage')]);
-        }
-
-        $w = $x['weather_fetch'];
-        $weatherTip = 'How often the weather provider answered in the last 7 days. Repeated failures mean forecasts are going stale.';
-        $second[] = ($w['total'] ?? 0) > 0
-            ? $card(['key' => 'weather-api', 'label' => 'Weather API Success (7d)', 'value' => rtrim(rtrim(number_format($w['rate'], 1), '0'), '.'), 'unit' => '%',
-                'level' => $w['streak'] >= 3 ? 'crit' : ($w['streak'] > 0 || $w['rate'] < 90 ? 'warn' : 'ok'),
-                'compare' => 'Avg '.number_format($w['avg_ms']).' ms · '.$w['streak'].' failure streak', 'tip' => $weatherTip, 'href' => self::tabLink('overview', 'itd-pipeline')])
-            : $card(['key' => 'weather-api', 'label' => 'Weather API Success (7d)', 'value' => '—', 'compare' => 'No fetch attempts logged yet', 'tip' => $weatherTip, 'href' => self::tabLink('overview', 'itd-pipeline')]);
-
-        $ts = $x['task_stats'];
-        $taskTip = 'Scheduled tasks (backups, weather refresh, predictions) that failed in the last 24 hours. A failing task means automatic work is not happening.';
-        $second[] = ($ts['runs'] ?? 0) > 0
-            ? $card(['key' => 'task-failures', 'label' => 'Scheduled Task Failures (24h)', 'value' => number_format($ts['failed']), 'unit' => 'of '.number_format($ts['runs']).' runs',
-                'level' => $ts['failed'] > 0 ? 'warn' : 'ok', 'compare' => 'Target: 0 failures', 'tip' => $taskTip, 'href' => self::tabLink('resources', 'itd-ops')])
-            : $card(['key' => 'task-failures', 'label' => 'Scheduled Task Failures (24h)', 'value' => '—', 'compare' => 'No scheduled runs recorded yet', 'tip' => $taskTip, 'href' => self::tabLink('resources', 'itd-ops')]);
-
-        return ['primary' => [$status, $fresh, $backup, $users, $rate, $err], 'secondary' => $second];
-    }
-
-    /** @return array{text: string, good: bool} a change versus the previous period */
-    private function trend(float|int $delta, string $unit, bool $higherIsBetter): array
-    {
-        if ($delta == 0) {
-            return ['text' => '— same as previous period', 'good' => true];
-        }
-
-        return ['text' => ($delta > 0 ? '▲ ' : '▼ ').rtrim(rtrim(number_format(abs($delta), 1), '0'), '.').($unit ? ' '.$unit : '').' vs previous period', 'good' => ($delta > 0) === $higherIsBetter];
-    }
-
-    // ------------------------------------------------------------------ attention required
-
-    /**
-     * Built from the same service rows as the health table, plus overdue pipelines and data-integrity warnings.
-     * Sorted Critical first, then Warning. Each alert knows which tab/section shows it (for the summary bar chips).
+     * The five cards at the top of the page: Total Users, Active Users, System Status, Database Status, API Status.
+     * Each has a label, a value, a status level (its colour), one plain line of context and a link to the details.
+     * The three status cards repeat the System Health rows; nothing here is computed a second time.
      *
      * @return array<int, array<string, mixed>>
      */
-    private function alerts(array $services, array $pipeline, array $integrity, CarbonImmutable $now): array
+    private function kpiCards(array $overall, array $services, array $roles, array $x, array $resources): array
     {
-        $alerts = [];
-        $add = function (string $severity, string $title, string $short, string $message, string $action, string $href, string $tab, string $anchor, ?CarbonInterface $at = null) use (&$alerts, $now) {
-            $alerts[] = compact('severity', 'title', 'short', 'message', 'action', 'href', 'tab', 'anchor') + ['at' => $at ?? $now];
+        $service = fn (string $key) => collect($services)->firstWhere('key', $key);
+        $health = self::tabLink('overview', 'itd-health');
+        $percent = fn (?float $v) => $v === null ? '0' : rtrim(rtrim(number_format($v, 1), '0'), '.');
+
+        if (! isset($roles['rows'])) {
+            $total = ['key' => 'total-users', 'label' => 'Total Users', 'value' => '—', 'unit' => null, 'level' => 'unk', 'note' => 'User accounts could not be counted just now.', 'href' => route('users.index')];
+            $active = ['key' => 'active-users', 'label' => 'Active Users', 'value' => '—', 'unit' => null, 'level' => 'unk', 'note' => 'Recent sign-ins could not be counted just now.', 'href' => self::tabLink('users', 'itd-roles')];
+        } else {
+            $short = [User::ROLE_FARMER => 'farmers', User::ROLE_MAO => 'MAO', User::ROLE_IT_EXPERT => 'IT'];
+            $total = ['key' => 'total-users', 'label' => 'Total Users', 'value' => number_format($roles['total']), 'unit' => $roles['total'] === 1 ? 'account' : 'accounts', 'level' => 'ok',
+                'note' => collect($roles['rows'])->map(fn ($r) => number_format($r['total']).' '.$short[$r['role']])->implode(' · '), 'href' => route('users.index')];
+            $online = ($x['sessions']['state'] ?? null) === 'ok' ? ' · '.number_format($x['sessions']['count']).' online now' : '';
+            $active = ['key' => 'active-users', 'label' => 'Active Users', 'value' => number_format($roles['active']), 'unit' => 'in 30 days', 'level' => 'ok',
+                'note' => $percent($roles['pct']).'% of all accounts'.$online, 'href' => self::tabLink('users', 'itd-roles')];
+        }
+
+        $status = ['key' => 'status', 'label' => 'System Status', 'value' => $overall['label'], 'unit' => null, 'level' => $overall['level'] === 'crit' ? 'warn' : 'ok',
+            'note' => $overall['text'], 'href' => $health];
+
+        $db = $service('database');
+        $size = $resources['db_size'] ?? null;
+        $facts = array_filter([($db['response'] ?? null) ? 'Responds in '.$db['response'] : null, $size !== null ? $this->bytes($size).' stored' : null]);
+        $database = ['key' => 'database', 'label' => 'Database Status', 'value' => $db['label'], 'unit' => null, 'level' => $db['level'] === 'ok' ? 'ok' : 'warn',
+            'note' => $db['level'] === 'crit' || $facts === [] ? $db['detail'] : implode(' · ', $facts), 'href' => $health];
+
+        // API Status: the two outside services the system talks to. One that is not set up yet is left out of the count.
+        $apis = collect(['weather', 'prediction-api'])->map($service)->filter(fn ($s) => $s && $s['level'] !== 'unk');
+        $up = $apis->where('level', 'ok')->count();
+        $api = ['key' => 'api', 'label' => 'API Status', 'unit' => null, 'href' => $health] + match (true) {
+            $apis->isEmpty() => ['value' => 'Not set up yet', 'level' => 'unk', 'note' => 'The weather and prediction services have not been used yet.'],
+            $up === $apis->count() => ['value' => 'Online', 'level' => 'ok', 'note' => $apis->pluck('name')->implode(' and ').' '.($up === 1 ? 'is' : 'are').' responding'],
+            default => ['value' => 'Needs attention', 'level' => 'warn', 'note' => $up.' of '.$apis->count().' services responding'],
         };
-        $health = route('system-health.index');
 
-        foreach ($services as $s) {
-            if (! in_array($s['level'], ['warn', 'crit'], true)) {
-                continue;
-            }
-            $sev = $s['level'] === 'crit' ? 'critical' : 'warning';
-            match ($s['key']) {
-                'database' => $add($sev, $sev === 'critical' ? 'Database Connection Problem' : 'Database Responding Slowly', $sev === 'critical' ? 'the database is not connecting' : 'the database is slow', $s['detail'], 'View Details', $health, 'overview', 'itd-health'),
-                'jobs' => $add($sev, 'Background Jobs Need Review', 'background jobs need review', $s['detail'], 'View Details', $health, 'overview', 'itd-health'),
-                'scheduler' => $add($sev, 'Scheduler Not Running', 'the scheduler is not running', $s['detail'], 'View Details', $health, 'resources', 'itd-ops'),
-                'weather' => $add($sev, 'Weather Data Out of Date', 'weather data is '.$this->overdueBy($pipeline, 'weather').' overdue', $s['detail'], 'Retry', $health, 'overview', 'itd-pipeline', $s['at'] ?? null),
-                'storage' => $add($sev, 'Disk Space Running Low', 'disk space is running low', $s['detail'], 'View Details', $health, 'resources', 'itd-resources'),
-                'backup' => $add($sev, ($s['issue'] ?? null) === 'verification' ? 'Backup Verification Failed' : 'Database Backup Overdue', ($s['issue'] ?? null) === 'verification' ? 'backup verification failed' : 'the database backup is overdue', $s['detail'], 'Check Backup', $health, 'overview', 'itd-health'),
-                default => null,
-            };
-        }
-
-        // Pipelines past their freshness target (weather is already covered by its service row).
-        $fix = ['climate' => route('climate-records.index'), 'rice' => route('rice-productions.index'), 'predictions' => route('weather-predictions.index'), 'advisories' => route('management.advisories.index')];
-        foreach ($pipeline as $p) {
-            if ($p['key'] === 'weather' || ! in_array($p['level'], ['warn', 'crit'], true)) {
-                continue;
-            }
-            $add($p['level'] === 'crit' ? 'critical' : 'warning', $p['name'].' Overdue', strtolower($p['name']).' is '.$this->overdueBy($pipeline, $p['key']).' overdue',
-                'Last successful run '.$p['at']->diffForHumans().'; the target is under '.$this->hours($p['target_hours']).'.', 'View Details', $fix[$p['key']] ?? $health, 'overview', 'itd-pipeline', $p['at']);
-        }
-
-        if (($integrity['state'] ?? null) === 'ok' && ($integrity['account_gap'] ?? 0) !== 0) {
-            $add('warning', 'Farmer Accounts and Profiles Differ', 'farmer accounts and profiles do not match', number_format($integrity['farmer_accounts']).' farmer accounts vs '.number_format($integrity['farmer_profiles']).' farmer profile records.', 'Review', route('users.index', ['integrity' => 'farmers_without_profile']), 'resources', 'itd-integrity');
-        }
-
-        usort($alerts, fn ($a, $b) => ($a['severity'] === 'critical' ? 0 : 1) <=> ($b['severity'] === 'critical' ? 0 : 1));
-
-        return $alerts;
-    }
-
-    /** "3h" style text for how far a pipeline is past its target. */
-    private function overdueBy(array $pipeline, string $key): string
-    {
-        $p = collect($pipeline)->firstWhere('key', $key);
-        if (! $p || $p['age_minutes'] === null) {
-            return 'long';
-        }
-        [$v, $u] = $this->ageParts(max(0, $p['age_minutes'] - $p['target_hours'] * 60));
-
-        return $v.' '.$u;
-    }
-
-    /**
-     * One plain sentence plus a clickable chip per issue (for the bar at the top of the page).
-     *
-     * @return array{level: string, text: string, chips: array<int, array<string, string>>}
-     */
-    private function attention(array $alerts): array
-    {
-        $n = count($alerts);
-        if ($n === 0) {
-            return ['level' => 'ok', 'text' => 'Everything is running normally.', 'chips' => []];
-        }
-        $shown = array_slice(array_column($alerts, 'short'), 0, 3);
-
-        return [
-            'level' => collect($alerts)->contains('severity', 'critical') ? 'crit' : 'warn',
-            'text' => $n.' '.($n === 1 ? 'issue needs' : 'issues need').' action: '.implode(', ', $shown).($n > 3 ? ' and '.($n - 3).' more' : '').'.',
-            'chips' => array_map(fn ($a) => ['label' => $a['title'], 'severity' => $a['severity'], 'tab' => $a['tab'], 'anchor' => $a['anchor']], $alerts),
-        ];
+        return [$total, $active, $status, $database, $api];
     }
 
     // ------------------------------------------------------------------ security
@@ -920,19 +800,5 @@ final class ItDashboardService
         }
 
         return '';
-    }
-
-    private function minutes(int $m): string
-    {
-        return match (true) {
-            $m < 60 => $m.' min',
-            $m < 2880 => (float) round($m / 60, 1).' h',
-            default => round($m / 1440).' days',
-        };
-    }
-
-    private function hours(int $h): string
-    {
-        return $h < 48 ? $h.'h' : round($h / 24).' days';
     }
 }

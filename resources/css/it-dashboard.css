@@ -2,7 +2,7 @@
  * IT Personnel dashboard (/admin/dashboard). Built on the farmer dashboard design system in farmer-dashboard.css:
  * the page wrapper is .mfd.itd, so the tokens, header band, cards, KPI cards, status pills, buttons, links, notes,
  * empty states and loading skeleton are the shared .mfd-* parts. Only what the farmer page does not have lives here
- * as .itd-*: tabs, data tables, filters, tooltips, the attention summary, the heatmap and the small inline charts.
+ * as .itd-*: tabs, data tables, filters, the system health list, the activity feed, the heatmap and the small inline charts.
  * Same type scale (nothing under 12px), same 8px spacing, same status colours paired with an icon and a word.
  */
 
@@ -12,15 +12,13 @@
 .itd .mfd-btn .mtd-svg { width: 18px; height: 18px; }
 .mfd-header .mfd-btn.is-ghost { background: transparent; border-color: rgba(255, 255, 255, .6); color: #fff !important; }
 .mfd-header .mfd-btn.is-ghost:hover { background: rgba(255, 255, 255, .14); border-color: #fff; }
-.itd select:focus-visible, .itd input:focus-visible, .itd .itd-info:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; border-radius: 4px; }
+.itd select:focus-visible, .itd input:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; border-radius: 4px; }
 .itd .mfd-pill.is-unk { background: var(--subtle); color: var(--muted); border-color: var(--rule); }
 .itd .mfd-note.is-good { border-left-color: var(--good); background: var(--good-bg); color: var(--good-ink); }
 .itd .mfd-note.is-good .mtd-svg { color: var(--good); }
 .itd .mfd-note p { color: inherit; }
 .itd .mfd-empty p { color: var(--ink); }
 .itd .mfd-card-head { align-items: flex-start; }
-.itd .mfd-alert-body .mfd-pill span { font-size: inherit; font-weight: inherit; color: inherit; }
-.itd .mfd-alert-body strong { font-size: 1rem; }
 .itd .mfd-link { min-height: 32px; }
 .itd .mfd-foot { display: block; }
 .itd-num { text-align: right; }
@@ -31,7 +29,6 @@
 
 /* ---------------------------------------------------------------- header band */
 .itd-lede { margin-top: 8px !important; max-width: 760px; font-size: 1rem; font-weight: 400; color: rgba(255, 255, 255, .86); }
-.itd-stamps { display: flex; flex-direction: column; gap: 2px; }
 .itd-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* ---------------------------------------------------------------- layout: rows of one or two cards */
@@ -41,6 +38,7 @@
 .itd-cell { display: flex; min-width: 0; scroll-margin-top: 96px; }
 .itd-cell > * { flex: 1; min-width: 0; }
 .itd-cell.is-targeted > .mfd-card { outline: 3px solid var(--info); outline-offset: 2px; }
+@media (min-width: 1200px) { .itd-row.r-60-40 { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
 @media (min-width: 1400px) { .itd-row.r-50-50:not(.is-wide) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* cards holding wide tables go side by side only when each half still fits them */
 @media (min-width: 1750px) { .itd-row.r-50-50.is-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -56,8 +54,6 @@
 .itd-minor { margin: 16px 0 8px !important; font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 .itd-list { display: grid; gap: 8px; }
 .itd-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; overflow-wrap: anywhere; }
-.itd-count { min-width: 32px; padding: 2px 10px; border: 1px solid #b9dcc8; border-radius: 4px; text-align: center; font-size: .875rem; font-weight: 700; background: var(--good-bg); color: var(--good-ink); }
-.itd-count.has-items { border-color: #f0c2bc; background: var(--danger-bg); color: var(--danger-ink); }
 
 /* label / value rows: the shared .mfd-facts list with sentence-case labels */
 .itd-rows dt { font-size: .9375rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink); }
@@ -67,59 +63,49 @@
 .itd-meter.is-warn > span { background: var(--watch); }
 .itd-meter.is-crit > span { background: var(--danger); }
 
-/* ---------------------------------------------------------------- attention summary */
-.itd-summary {
-    display: flex; gap: 16px; align-items: flex-start; padding: 20px var(--gap);
-    border: 1px solid #b9dcc8; border-left: 4px solid var(--good); border-radius: 4px; background: var(--good-bg);
-}
-.itd-summary.is-warn { border-color: #ecd3a2; border-left-color: var(--watch); background: var(--watch-bg); }
-.itd-summary.is-crit { border-color: #f0c2bc; border-left-color: var(--danger); background: var(--danger-bg); }
-.itd-summary > .mtd-svg { width: 28px; height: 28px; margin-top: 2px; color: var(--good); }
-.itd-summary.is-warn > .mtd-svg { color: var(--watch); }
-.itd-summary.is-crit > .mtd-svg { color: var(--danger); }
-.itd-summary-body { min-width: 0; }
-.itd-summary h2 { font-size: 1.25rem; }
-.itd-summary p { margin-top: 4px; }
-.itd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px !important; }
-.itd-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 12px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); font-size: .875rem; font-weight: 600; text-decoration: none; }
-.itd-chips li { max-width: 100%; }
-.itd-chip:hover { border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
-.itd-chip .mtd-svg { width: 16px; height: 16px; }
-.itd-chip.is-crit { border-color: #f0c2bc; color: var(--danger-ink); }
-.itd-chip.is-warn { border-color: #ecd3a2; color: var(--watch-ink); }
-
 /* ---------------------------------------------------------------- KPI cards: the shared .mfd-kpi with a status edge */
-.itd-kpi-stack { display: grid; gap: var(--gap); align-content: start; }
-@media (min-width: 1600px) { .itd-kpi-stack { gap: 16px; } }
+/* five cards: two per row on phones (the last one full width), three then two on tablets, one line on desktops */
+.itd-kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.itd-kpis > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+@media (min-width: 768px) {
+    .itd-kpis { gap: 16px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .itd-kpis > .mfd-kpi, .itd-kpis > :last-child:nth-child(odd) { grid-column: span 2; }
+    .itd-kpis > .mfd-kpi:nth-child(n+4) { grid-column: span 3; }
+}
+@media (min-width: 1200px) {
+    .itd-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .itd-kpis > .mfd-kpi, .itd-kpis > .mfd-kpi:nth-child(n+4), .itd-kpis > :last-child:nth-child(odd) { grid-column: auto; }
+}
 .itd .mfd-kpi { position: relative; }
 .itd .mfd-kpi.is-ok { border-top-color: var(--good); }
 .itd .mfd-kpi.is-warn { border-top-color: var(--watch); }
 .itd .mfd-kpi.is-crit { border-top-color: var(--danger); }
 .itd .mfd-kpi.is-unk { border-top-color: var(--rule); }
-.itd-kpi-top { position: relative; z-index: 2; display: flex; align-items: center; gap: 8px; }
 .itd-kpi-link { position: absolute; inset: 0; border-radius: var(--radius); }
 .itd .mfd-kpi-value { flex-wrap: wrap; }
-.itd .mfd-kpi-value.is-text { font-size: 1.375rem; }
-.itd-compare.is-good { color: var(--good-ink); font-weight: 600; }
-.itd-compare.is-bad { color: var(--danger-ink); font-weight: 600; }
-/* second row holds three or four cards: two per row until they fit on one line */
-.itd .mfd-kpis.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 1200px) { .itd .mfd-kpis.is-four { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+.itd .mfd-kpi-value.is-text { align-items: center; gap: 10px; font-size: 1.375rem; }
+.itd .mfd-kpi-meaning { font-size: .875rem; color: var(--muted); }
+.itd-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+.itd-dot.is-ok { background: var(--good); box-shadow: 0 0 0 4px var(--good-bg); }
+.itd-dot.is-warn { background: var(--watch); box-shadow: 0 0 0 4px var(--watch-bg); }
 
-/* tooltips: hidden with display:none (not just transparent) so they never widen the page */
-.itd-info { z-index: 2; padding: 0; background: #fff; font: inherit; font-size: .75rem; cursor: pointer; position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; flex: none; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: .75rem; font-weight: 700; line-height: 1; cursor: help; text-transform: none; letter-spacing: 0; }
-.itd-info::after {
-    content: attr(data-tip); position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); width: max-content; max-width: min(270px, 70vw);
-    padding: 8px 12px; border-radius: 4px; background: var(--ink); color: #fff; font-size: .8125rem; font-weight: 400; line-height: 1.45;
-    text-transform: none; letter-spacing: 0; text-align: left; white-space: normal; display: none; pointer-events: none;
-}
-.itd-info:hover::after, .itd-info:focus::after { display: block; }
-/* cards in the right-hand columns open their tooltip leftwards so it stays on screen */
-.itd .mfd-kpis.is-four .mfd-kpi:nth-child(even) .itd-info::after { left: auto; right: 0; }
-@media (max-width: 767.98px) { .itd .mfd-kpi:nth-child(even) .itd-info::after { left: auto; right: 0; } }
-@media (min-width: 768px) and (max-width: 1599.98px) { .itd .mfd-kpis:not(.is-four) .mfd-kpi:nth-child(3n) .itd-info::after { left: auto; right: 0; } }
-@media (min-width: 1200px) { .itd .mfd-kpis.is-four .mfd-kpi:nth-child(n+3) .itd-info::after { left: auto; right: 0; } }
-@media (min-width: 1600px) { .itd .mfd-kpis:not(.is-four) .mfd-kpi:nth-child(n+5) .itd-info::after { left: auto; right: 0; } }
+/* ---------------------------------------------------------------- system health: one calm row per service */
+.itd-services { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 32px; margin: 0; padding: 0; list-style: none; }
+.itd-service { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.itd-service-text { min-width: 0; }
+.itd-service-text strong { display: block; font-size: 1rem; }
+.itd-service-text p { margin-top: 2px; font-size: .9375rem; font-weight: 400; color: var(--muted); }
+.itd-service .mfd-pill { flex: none; }
+@media (min-width: 1100px) { .itd-services { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------------------------------------------------------------- recent activity feed (Overview) */
+.itd-feed { display: grid; margin: 0; padding: 0; list-style: none; }
+.itd-feed li { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.itd-feed li:last-child { border-bottom: 0; padding-bottom: 0; }
+.itd-feed-text { min-width: 0; }
+.itd-feed-text strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.itd-feed-text span { font-size: .875rem; color: var(--muted); }
+.itd-feed time { flex: none; font-size: .875rem; color: var(--muted); white-space: nowrap; }
 
 /* ---------------------------------------------------------------- tabs */
 .itd-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid var(--rule); scrollbar-width: thin; }
@@ -134,7 +120,19 @@
 .itd-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
 .itd-table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: .9375rem; }
 .itd-table.is-wide { min-width: 820px; }
-.itd-table.is-roles { min-width: 760px; }
+/* Users by Role: no minimum width, so all six columns always fit the card; headings may wrap onto two lines */
+.itd-table.is-roles { min-width: 0; }
+.itd-table.is-roles th { white-space: normal; }
+.itd-table.is-roles thead th { vertical-align: bottom; }
+.itd-table.is-roles tbody th { padding: 12px 16px; border-top: 1px solid var(--line); border-bottom: 0; background: transparent; text-align: left; font-size: .9375rem; font-weight: 700; line-height: inherit; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.itd-table.is-roles tbody th { white-space: nowrap; }
+.itd-table.is-roles tbody tr:first-child th { border-top: 0; }
+.itd-table.is-roles tbody tr:nth-child(even) th { background: var(--subtle); }
+.itd-table.is-roles tbody tr:hover th { background: #f1f8f4; }
+.itd-table.is-roles tbody tr.itd-total th { border-top: 2px solid var(--rule); background: var(--card); }
+.itd-active { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
+.itd-active small { min-width: 3.25em; font-size: .875rem; font-weight: 400; color: var(--muted); text-align: right; }
+.itd-table-wrap + .mfd-foot { margin-top: 16px !important; }
 .itd-table td.itd-num { white-space: nowrap; }
 .itd-table th { padding: 12px 16px; border-bottom: 1px solid var(--rule); background: var(--subtle); text-align: left; font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
 .itd-table th.itd-num { text-align: right; }
@@ -152,6 +150,27 @@
 .itd-table form { margin: 0; }
 .itd-share { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .itd-share .mfd-bar { flex: none; width: 72px; height: 8px; }
+@media (min-width: 640.02px) and (max-width: 1199.98px) {
+    .itd-table.is-roles th, .itd-table.is-roles td, .itd-table.is-roles tbody th { padding: 12px 8px; }
+    .itd-table.is-roles th:first-child { padding-left: 16px; }
+    .itd-table.is-roles th:last-child, .itd-table.is-roles td:last-child { padding-right: 16px; }
+    .itd-table.is-roles thead th { letter-spacing: .5px; }
+    .itd-share .mfd-bar { width: 40px; }
+}
+/* phones: one block per role, each figure on its own line with its name on the left */
+@media (max-width: 640px) {
+    .itd-table.is-roles thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .itd-table.is-roles, .itd-table.is-roles tbody, .itd-table.is-roles tr, .itd-table.is-roles tbody th, .itd-table.is-roles td { display: block; }
+    .itd-table.is-roles tbody tr { padding: 12px 16px; border-top: 1px solid var(--line); }
+    .itd-table.is-roles tbody tr:first-child { border-top: 0; }
+    .itd-table.is-roles tbody tr:nth-child(even) { background: var(--subtle); }
+    .itd-table.is-roles tbody tr.itd-total { border-top: 2px solid var(--rule); background: var(--card); }
+    .itd-table.is-roles tbody tr th, .itd-table.is-roles tbody tr td { padding: 4px 0; border: 0 !important; background: transparent !important; }
+    .itd-table.is-roles tbody th { margin-bottom: 4px; font-size: 1rem; }
+    .itd-table.is-roles td { display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: right; }
+    .itd-table.is-roles td::before { content: attr(data-label); font-size: .875rem; font-weight: 400; color: var(--muted); text-align: left; }
+
+}
 
 /* ---------------------------------------------------------------- filters */
 .itd-filters { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 16px; }
@@ -193,7 +212,9 @@
 
 /* ---------------------------------------------------------------- phones */
 @media (max-width: 640px) {
-    .itd-summary { padding: 16px; }
+    .itd .mfd-kpi-value.is-text { flex-wrap: nowrap; gap: 8px; font-size: 1.125rem; }
+    .itd-service { flex-wrap: wrap; gap: 8px 16px; }
+    .itd-feed li { flex-direction: column; gap: 2px; }
     .itd-chart { height: 280px; }
     .itd-header-actions, .itd-header-actions .mfd-btn { flex: 1 1 100%; }
     .itd-table th, .itd-table td { padding: 10px 12px; }
