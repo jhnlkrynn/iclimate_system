@@ -471,12 +471,6 @@ class AIOrchestratorService
         ));
     }
 
-    /** The one Lian barangay a weather question names, or null for a Lian-wide question. */
-    private function weatherBarangay(User $user, string $question, array $entities): ?string
-    {
-        return LianBarangays::canonicalName(is_string($entities['barangay'] ?? null) ? $entities['barangay'] : null);
-    }
-
     /**
      * That barangay's shared weather record — the same reading the Heat Map and Advisories show. A due record
      * is refreshed after the reply (its last available values are used now, marked delayed when they are); only
@@ -497,6 +491,27 @@ class AIOrchestratorService
 
             return $record;
         });
+    }
+
+    /**
+     * The official Lian barangay a weather question asks about, or null for a Lian-wide answer: a barangay named in the
+     * question, or the farmer's own registered barangay when they ask about "my barangay" / "my farm" / "sa bukid".
+     * Anything else (or an unconfirmed registered barangay) is answered for Lian as a whole.
+     *
+     * @param  array<string, mixed>  $entities
+     */
+    private function weatherBarangay(User $user, string $question, array $entities): ?string
+    {
+        $text = mb_strtolower($question);
+        $named = is_string($entities['barangay'] ?? null) ? $entities['barangay'] : null;
+        $named ??= collect(LianBarangays::all())->first(fn (string $barangay): bool => str_contains($text, mb_strtolower($barangay)));
+        if ($named !== null) {
+            return LianBarangays::canonicalName($named);
+        }
+
+        $ownPlace = ['my barangay', 'our barangay', 'my farm', 'my field', 'aming barangay', 'barangay ko', 'bukid ko', 'aking bukid', 'sa bukid'];
+
+        return str($text)->contains($ownPlace) ? $user->registeredBarangay() : null;
     }
 
     /**

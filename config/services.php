@@ -93,6 +93,9 @@ return [
         )))),
         'weekly_outlook_url' => env('PAGASA_WEEKLY_OUTLOOK_URL', 'https://pagasa.dost.gov.ph/weather/weather-outlook-weekly'),
         'timeout' => env('PAGASA_TIMEOUT', 12),
+        // Total seconds a web-page refresh may spend on PAGASA (kept under PHP's 30 s max_execution_time, which also
+        // has to cover the local weather refresh). The scheduled iclimate command is not limited.
+        'request_budget' => env('PAGASA_REQUEST_BUDGET', 15),
         'cache_minutes' => env('PAGASA_CACHE_MINUTES', 10),
         'realtime' => env('PAGASA_REALTIME', true),
         'location_keywords' => array_filter(array_map('trim', explode(',', env('PAGASA_LOCATION_KEYWORDS', 'Lian,Batangas')))),

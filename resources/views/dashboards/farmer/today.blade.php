@@ -25,8 +25,8 @@
                 <span class="mfd-kpi-source">{{ __('farmer.today.updated', ['time' => $w['updated_label'] ?? '—']) }}</span>
                 <a class="mfd-kpi-link" href="{{ $weatherHref }}">{{ __('farmer.today.view_weather') }}</a>
             @else
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_available') }}</span></span>
-                <span class="mfd-kpi-meaning">{{ __('farmer.weather_card.error') }}</span>
+                <span class="mfd-kpi-value is-word"><span>{{ __('farmer.today.updating') }}</span></span>
+                <span class="mfd-kpi-meaning">{{ __('farmer.today.weather_updating') }}</span>
                 <button type="button" class="mfd-btn is-quiet is-small" data-mfd-retry="weather">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
             @endif
         </article>
@@ -49,8 +49,9 @@
                 <span class="mfd-kpi-meaning">{{ $w['rain_line'] }}</span>
                 <a class="mfd-kpi-link" href="{{ $weatherHref }}">{{ __('farmer.today.view_weather') }}</a>
             @else
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_available') }}</span></span>
-                <span class="mfd-kpi-meaning">{{ __('farmer.weather_card.error') }}</span>
+                <span class="mfd-kpi-value is-word"><span>{{ __('farmer.today.updating') }}</span></span>
+                <span class="mfd-kpi-meaning">{{ __('farmer.today.weather_updating') }}</span>
+                <a class="mfd-kpi-link" href="{{ $weatherHref }}">{{ __('farmer.today.view_weather') }}</a>
             @endif
         </article>
 
@@ -64,13 +65,15 @@
                 <span class="mfd-kpi-value is-word">@include('dashboards.mao.icon', ['name' => $statusIcon[$c['status']]])<span>{{ $c['value'] }}</span></span>
                 <span class="mfd-kpi-meaning">{{ $c['note'] }}</span>
             @else
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_available') }}</span></span>
+                {{-- No rating is ever guessed: without weather or a barangay rating, the card gives the one safe thing to do. --}}
+                <span class="mfd-kpi-value is-word">@include('dashboards.mao.icon', ['name' => 'info'])<span>{{ __('farmer.today.check_field') }}</span></span>
                 <span class="mfd-kpi-meaning">{{ __('farmer.condition.missing') }}</span>
             @endif
         </article>
 
         {{-- 4. Planting status (the Calendar's planting schedule) --}}
-        <article @class(['mfd-kpi', 'is-missing' => $s['state'] !== 'ok']) data-kpi="planting">
+        @php $g = $f['planting_guide'] ?? null; @endphp
+        <article @class(['mfd-kpi', 'is-'.($g['tone'] ?? 'info') => $s['state'] !== 'ok' && $g]) data-kpi="planting">
             <span class="mfd-kpi-label">@include('dashboards.mao.icon', ['name' => 'calendar']){{ __('farmer.today.planting') }}</span>
             @if ($s['state'] === 'ok')
                 @if ($s['planted'])
@@ -87,9 +90,11 @@
                 @endif
                 <a class="mfd-kpi-link" href="{{ route('calendar.index') }}">{{ __('farmer.schedule.view') }}</a>
             @else
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_set') }}</span></span>
+                {{-- No date saved yet: the Heat Map's planting advice for the barangay and this month's expected rain (dashboards/farmer/schedule.blade.php has the full guide). --}}
+                <span class="mfd-kpi-value is-word">@include('dashboards.mao.icon', ['name' => $statusIcon[$g['tone']] ?? 'info'])<span>{{ $g['title'] }}</span></span>
+                @if ($g['rain'])<span class="mfd-kpi-headline">{{ $g['rain'] }}</span>@endif
                 <span class="mfd-kpi-meaning">{{ __('farmer.today.planting_why') }}</span>
-                <a class="mfd-btn is-small" href="{{ route('farmer.planting-schedules.create') }}" data-mfd-popup="planting" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.today.set_planting') }}</a>
+                <a class="mfd-btn is-small" href="{{ route('farmer.planting-schedules.create') }}" data-mfd-popup="planting" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.today.add_planting') }}</a>
             @endif
         </article>
 
@@ -106,13 +111,13 @@
                 <span class="mfd-kpi-headline">{{ $r['barangay'] }}</span>
                 <span class="mfd-kpi-meaning">{{ $r['meaning'] }}</span>
                 <a class="mfd-kpi-link" href="{{ route('heat-map.index') }}">{{ __('farmer.today.view_heat_map') }}</a>
-            @elseif ($r['state'] === 'nobarangay')
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_set') }}</span></span>
-                <span class="mfd-kpi-meaning">{{ __('farmer.risk.no_barangay') }}</span>
+            @elseif (in_array($r['state'], ['nobarangay', 'unverified'], true))
+                <span class="mfd-kpi-value"><span>{{ $r['state'] === 'unverified' ? __('farmer.risk.needs_check') : __('farmer.my_farm.add.barangay') }}</span></span>
+                <span class="mfd-kpi-meaning">{{ $r['state'] === 'unverified' ? __('farmer.risk.unverified', ['name' => $r['stored']]) : __('farmer.risk.no_barangay') }}</span>
                 <a class="mfd-btn is-small" href="{{ route('profile.edit') }}" data-mfd-popup="profile" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.risk.update_profile') }}</a>
             @else
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_available') }}</span></span>
-                <span class="mfd-kpi-meaning">{{ $r['state'] === 'error' ? __('farmer.state.error') : __('farmer.risk.no_rating') }}</span>
+                <span class="mfd-kpi-value is-word"><span>{{ __('farmer.today.updating') }}</span></span>
+                <span class="mfd-kpi-meaning">{{ __('farmer.risk.no_rating') }} {{ __('farmer.risk.no_rating_reason') }}</span>
                 <button type="button" class="mfd-btn is-quiet is-small" data-mfd-retry="risk">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
             @endif
         </article>
@@ -138,14 +143,28 @@
                 <a class="mfd-kpi-link" href="{{ route('weather-predictions.index', ['tab' => 'rice-yield']) }}">{{ __('farmer.today.view_prediction') }}</a>
             </article>
         @else
-            <article class="mfd-kpi is-missing" data-kpi="yield">
+            {{-- No estimate this season yet: the latest real harvest record (the barangay's, else Lian's usual for this month), labelled as a record, never as this season's forecast. --}}
+            @php
+                $past = $f['production'];
+                $usual = $f['usual_yield'] ?? null;
+            @endphp
+            <article @class(['mfd-kpi', 'is-missing' => ! $past && ! $usual]) data-kpi="yield">
                 <span class="mfd-kpi-label">@include('dashboards.mao.icon', ['name' => 'yield']){{ __('farmer.today.yield') }}</span>
-                <span class="mfd-kpi-value"><span>{{ __('farmer.today.not_available') }}</span></span>
-                <span class="mfd-kpi-meaning">{{ __('farmer.today.yield_missing') }} {{ $h['reason'] }}</span>
+                @if ($past)
+                    <span class="mfd-kpi-value"><span>{{ number_format($past['yield'], 2) }}</span><small>{{ __('farmer.harvest.unit') }}</small></span>
+                    <span class="mfd-kpi-headline">{{ __('farmer.today.yield_past', ['barangay' => $f['barangay'], 'when' => $past['year']]) }}</span>
+                @elseif ($usual)
+                    <span class="mfd-kpi-value"><span>{{ number_format($usual['historical'], 2) }}</span><small>{{ __('farmer.harvest.unit') }}</small></span>
+                    <span class="mfd-kpi-headline">{{ $usual['same_month'] ? __('farmer.today.yield_usual', ['month' => $usual['month_name']]) : __('farmer.today.yield_usual_all') }}</span>
+                @else
+                    <span class="mfd-kpi-value is-word"><span>{{ __('farmer.today.updating') }}</span></span>
+                @endif
+                <span class="mfd-kpi-meaning">{{ $h['reason'] }}</span>
                 @if ($h['missing'] !== [])
-                    <a class="mfd-btn is-small" href="{{ route('profile.edit') }}" data-mfd-popup="{{ in_array('area', $h['missing'], true) ? 'farm-size' : 'planting' }}"
-                        @if (in_array('area', $h['missing'], true)) data-mfd-popup-variant="info" data-mfd-popup-title="{{ __('farmer.quick.farm.popup_title') }}" data-mfd-popup-intro="{{ __('farmer.quick.farm.popup_intro') }}" @endif
-                        aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.harvest.complete') }}</a>
+                    <a class="mfd-btn is-small" href="{{ route('profile.edit') }}" data-mfd-popup="farm-size" data-mfd-popup-variant="info" data-mfd-popup-title="{{ __('farmer.quick.farm.popup_title') }}" data-mfd-popup-intro="{{ __('farmer.quick.farm.popup_intro') }}"
+                        aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.harvest.add_area') }}</a>
+                @else
+                    <a class="mfd-kpi-link" href="{{ route('rice-productions.index') }}">{{ __('farmer.production.view') }}</a>
                 @endif
             </article>
         @endif

@@ -163,9 +163,11 @@ class DashboardKpiTest extends TestCase
             ->assertDontSee('data-kpi="historical-yield"', false)        // municipal history is not a farmer KPI
             ->assertDontSee('My Farm at a Glance')
             ->assertDontSee('data-kpi="users"', false);
-        // With the weather source down the weather number is a "Not Available" state, never a made-up 0.
+        // With the weather source down the weather number is an "updating" state with a retry, never a made-up 0
+        // and never a bare "Not Available".
         $page->assertSee('class="mfd-kpi is-missing" data-kpi="weather"', false)
-            ->assertSee(__('farmer.today.not_available'));
+            ->assertSee(__('farmer.today.updating'))
+            ->assertSee('data-mfd-retry="weather"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))

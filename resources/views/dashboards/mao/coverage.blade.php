@@ -3,7 +3,8 @@
     <section class="mtd-card" aria-labelledby="mtdCoverageTitle" data-mao-coverage>
         <div class="mtd-card-head"><h2 id="mtdCoverageTitle">Farmer Coverage</h2></div>
         <dl class="mtd-rows">
-            <div><dt>Registered Farmers</dt><dd>{{ number_format($f['farmers']) }}</dd></div>
+            <div><dt>Farmers with Profiles</dt><dd>{{ number_format($f['farmers']) }}</dd></div>
+            @if (($f['accounts'] ?? null) !== null)<div><dt>Farmer Accounts</dt><dd>{{ number_format($f['accounts']) }}</dd></div>@endif
             <div><dt>Farmer Organizations</dt><dd>{{ number_format($f['organizations']) }}</dd></div>
             <div><dt>Barangays Covered</dt><dd>{{ $f['barangays_covered'] }} / {{ $f['barangays_total'] }}</dd></div>
             <div><dt>Farmers Without Organization</dt><dd>{{ number_format($f['without_organization']) }}</dd></div>

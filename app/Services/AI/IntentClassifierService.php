@@ -208,6 +208,9 @@ class IntentClassifierService
                 $intent = self::PLANTING_RECOMMENDATION;
             } elseif ($this->looksLikeIrrigationAction($text)) {
                 $intent = self::IRRIGATION_RECOMMENDATION;
+            } elseif ($this->looksLikeFieldSafety($text)) {
+                // "Is it safe to work on my farm today?" is answered from today's real weather, not a model.
+                $intent = self::CURRENT_WEATHER;
             } elseif ($this->looksLikeAmbiguousPrediction($text)) {
                 $intent = self::UNKNOWN;
             } elseif ($this->looksLikeYieldPrediction($text)) {
@@ -263,7 +266,7 @@ class IntentClassifierService
 
     private function looksLikeCurrentWeather(string $text): bool
     {
-        return str($text)->contains([
+        if (str($text)->contains([
             'right now',
             'now',
             'current weather',
@@ -274,6 +277,21 @@ class IntentClassifierService
             'is it raining',
             'umuulan ba ngayon',
             'panahon ngayon',
+        ])) {
+            return true;
+        }
+
+        // A plain "what is the weather (in Binubusan)?" asks about now, unless it names a later day or a month.
+        return str($text)->contains(["what is the weather", "what's the weather", 'how is the weather', 'ano ang panahon', 'anong panahon', 'kumusta ang panahon'])
+            && ! $this->looksLikeApiForecast($text)
+            && ! $this->looksLikeMonthlyModelPrediction($text);
+    }
+
+    private function looksLikeFieldSafety(string $text): bool
+    {
+        return str($text)->contains([
+            'safe to work', 'safe to go to the farm', 'safe to go to the field', 'safe to farm', 'okay to work in the field', 'ok to work in the field',
+            'ligtas bang magtrabaho', 'ligtas bang pumunta sa bukid', 'ligtas ba sa bukid', 'ligtas bang magbukid',
         ]);
     }
 
@@ -367,9 +385,8 @@ class IntentClassifierService
             'estimate my production',
             'harvest',
             'production',
-            'ani',
             'aanihin',
-        ]);
+        ]) || preg_match('/\b(ani|anihan)\b/u', $text) === 1;   // whole words: "ani" is also inside "magtanim"
     }
 
     /**

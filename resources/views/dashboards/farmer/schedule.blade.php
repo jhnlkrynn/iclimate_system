@@ -8,13 +8,36 @@
     </div>
 
     @if ($s['state'] !== 'ok')
-        <div class="mfd-empty">
-            @include('dashboards.mao.icon', ['name' => 'calendar'])
-            <div>
-                <p><strong>{{ __('farmer.schedule.empty_title') }}</strong></p>
-                <p class="mfd-muted">{{ __('farmer.schedule.empty_text') }}</p>
+        {{-- No planting date yet: a planting guide instead of an empty box. The advice is the Heat Map's own rule for the
+             barangay, the rain is the Predictions page's monthly estimate, and the steps are the usual rice calendar the
+             Calendar follows once a date is saved (FarmerCropPlanService). Nothing here is presented as the farmer's own schedule. --}}
+        @php
+            $g = $f['planting_guide'];
+            $statusIcon = ['good' => 'check', 'watch' => 'alert', 'info' => 'info'];
+        @endphp
+        <div class="mfd-guide" data-mfd-planting-guide>
+            <h3 class="mfd-sub">{{ __('farmer.guide.heading') }}</h3>
+            <p class="mfd-note is-{{ $g['tone'] === 'watch' ? 'watch' : ($g['tone'] === 'good' ? 'good' : 'info') }}">
+                @include('dashboards.mao.icon', ['name' => $statusIcon[$g['tone']] ?? 'info'])
+                <span><strong>{{ $g['title'] }}.</strong> {{ $g['note'] }}@if ($g['rain']) {{ $g['rain'] }}@endif</span>
+            </p>
+            @if ($g['key'])<p class="mfd-foot">{{ __('farmer.guide.source') }}</p>@endif
+
+            <h3 class="mfd-sub">{{ __('farmer.guide.steps_title') }}</h3>
+            <ol class="mfd-guide-steps">
+                @foreach ($g['steps'] as $step)
+                    <li data-step="{{ $step['key'] }}"><strong>{{ $step['label'] }}</strong><span class="mfd-muted">{{ $step['when'] }}</span></li>
+                @endforeach
+            </ol>
+            <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'calendar'])<span>{{ __('farmer.guide.harvest_if_today', ['date' => $g['harvest_if_today']->translatedFormat('F Y')]) }}</span></p>
+            @if (($f['week']['state'] ?? null) === 'ok')
+                <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ $g['good_days'] !== [] ? __('farmer.guide.good_days', ['days' => implode(', ', $g['good_days'])]) : __('farmer.guide.good_days_none') }}</span></p>
+            @endif
+
+            <div class="mfd-card-foot">
+                <p class="mfd-muted">{{ __('farmer.guide.reminders') }}</p>
+                <a class="mfd-btn" href="{{ route('farmer.planting-schedules.create') }}" data-mfd-popup="planting" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.today.add_planting') }}</a>
             </div>
-            <a class="mfd-btn" href="{{ route('farmer.planting-schedules.create') }}" data-mfd-popup="planting" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.schedule.set') }}</a>
         </div>
     @else
         <dl class="mfd-facts">

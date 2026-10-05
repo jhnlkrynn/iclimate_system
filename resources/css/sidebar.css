@@ -15,6 +15,8 @@
 :root {
     --sidebar-width: 248px;
     --sb-bg: linear-gradient(180deg, #0f3d2e 0%, #0c3326 100%);
+    /* Desktop sidebar: the same green, let through a little of the page backdrop behind it. The drawer stays solid. */
+    --sb-bg-fixed: linear-gradient(180deg, rgba(15, 61, 46, .9) 0%, rgba(12, 51, 38, .94) 100%);
     --sb-edge: rgba(255, 255, 255, .08);
     --sb-text: rgba(255, 255, 255, .8);
     --sb-text-strong: #ffffff;
@@ -29,6 +31,7 @@
 
 html[data-theme="dark"] {
     --sb-bg: linear-gradient(180deg, #0b261c 0%, #091d16 100%);
+    --sb-bg-fixed: linear-gradient(180deg, rgba(11, 38, 28, .9) 0%, rgba(9, 29, 22, .94) 100%);
     --sb-edge: rgba(255, 255, 255, .06);
     --sb-active-bg: rgba(127, 214, 181, .13);
     --sb-switch-bg: rgba(0, 0, 0, .28);
@@ -61,6 +64,7 @@ html body .ic-sidebar.sidebar-fixed {
     height: 100dvh;
     z-index: 1030;
     overflow: hidden;
+    background: var(--sb-bg-fixed);
 }
 
 html body .ic-sidebar::before { content: none; }

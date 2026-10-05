@@ -93,7 +93,7 @@ class SystemPageSmokeTest extends TestCase
             '/climate-records' => 'Climate Records',
             '/weather-predictions' => 'Prediction',
             '/rice-productions' => 'Rice',
-            '/field-reports' => 'Report',
+            // Field reports are staff-only (FieldReportAuthorizationTest checks a farmer gets 403).
             '/announcements' => 'Announcements',
             '/farmer/boundary' => 'farm',
             '/profile' => 'Profile',

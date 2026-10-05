@@ -128,7 +128,12 @@ final class FarmerDashboardService
         $forceWeather = $forceWeather || in_array('weather', $refresh, true);
 
         $weather = $this->weather($forceWeather, $now);
-        $risk = $this->riskStatus($barangay, in_array('risk', $refresh, true));
+        // A stored barangay that is not one official name (e.g. a bare "Poblacion": Lian has five) is never guessed; the
+        // farmer is asked to confirm it instead of being told to add one.
+        $stored = trim((string) ($profile?->barangay ?: $user->barangay));
+        $risk = $barangay === null && $stored !== ''
+            ? ['state' => 'unverified', 'stored' => $stored]
+            : $this->riskStatus($barangay, in_array('risk', $refresh, true));
         $rows = $this->scheduleRows($user);
         $prediction = $this->prediction($user, $profile, $rows, in_array('harvest', $refresh, true), $deferHarvest);
         $advisories = $this->advisories($barangay, $now);
@@ -141,6 +146,9 @@ final class FarmerDashboardService
         $unread = $this->unread($user);
         $messages = $this->unreadMessages($user);
         $highlights = $this->highlights($alerts, $actions, $schedule, $advisories['items'], $weather, $risk, $now);
+        $week = $this->week($weather, $now);
+        $climate = $this->climate($now);
+        $production = $this->production($barangay);
 
         return [
             'generated_at' => $now,
@@ -152,12 +160,16 @@ final class FarmerDashboardService
             'weather' => $weather,
             'alerts' => $alerts,
             'actions' => $actions,
-            'week' => $this->week($weather, $now),
+            'week' => $week,
             'condition' => $this->condition($weather, $risk, $alerts),
             'season' => $season,
             'schedule' => $schedule,
+            'climate' => $climate,
+            // Shown only while no planting date is saved: the Heat Map's planting advice and the usual rice calendar.
+            'planting_guide' => $schedule['state'] === 'ok' ? null : $this->plantingGuide($risk, $climate, $week, $now),
             'harvest' => $this->harvest($prediction, $profile, $rows),
-            'production' => $this->production($barangay),
+            'production' => $production,
+            'usual_yield' => $this->usualYield($now->month),
             'risk' => $risk,
             'profile' => $this->profile($profile, $barangay, $schedule),
             'setup' => $setup,
@@ -533,7 +545,7 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ farm risk (barangay) — the Heat Map's own rating
 
     /**
-     * @return array<string, mixed> state: ok | error | nodata | nobarangay
+     * @return array<string, mixed> state: ok | error | nodata | nobarangay (payload() adds: unverified)
      */
     private function riskStatus(?string $barangay, bool $refresh = false): array
     {
@@ -579,6 +591,8 @@ final class FarmerDashboardService
             'meaning' => __('farmer.risk.meaning.'.strtolower($level)),
             'concern' => $concern && Lang::has('farmer.risk.concern.'.strtolower($concern)) ? __('farmer.risk.concern.'.strtolower($concern)) : null,
             'planting' => $english ? ($r['advisory']['planting'] ?? null) : null,
+            // The same planting rule as one key, so it can be said in either language (DecisionSupportService::plantingAdvisory).
+            'planting_key' => $this->plantingKey((string) ($r['advisory']['planting'] ?? '')),
             'irrigation' => $english ? ($r['advisory']['irrigation'] ?? null) : null,
             'warnings' => $english ? array_values(array_filter((array) ($r['advisory']['warnings'] ?? []), 'is_string')) : [],
             'updated_at' => $updated,
@@ -602,6 +616,105 @@ final class FarmerDashboardService
         $cheerful = str_starts_with($planting, 'Ideal');
 
         return $planting !== '' && ! ($cheerful && $risk['level'] !== 'Low') ? $planting : (string) $risk['meaning'];
+    }
+
+    /** The risk map's planting sentence (English, from DecisionSupportService) as a key: its first rule decides. */
+    private function plantingKey(string $planting): ?string
+    {
+        return match (true) {
+            str_starts_with($planting, 'Ideal planting') => 'good',
+            str_starts_with($planting, 'Planting is possible') => 'possible',
+            str_starts_with($planting, 'Plant with caution') => 'caution',
+            str_starts_with($planting, 'Delay planting due to flood') => 'wait_flood',
+            str_starts_with($planting, 'Wait for sufficient rainfall'), str_starts_with($planting, 'Delay planting during dry season') => 'wait_rain',
+            default => null,
+        };
+    }
+
+    // ------------------------------------------------------------------ this month's climate — the Predictions page's monthly outlook
+
+    /**
+     * This month in Lian: the stored monthly weather estimate compared with past years of the same month, by the same rule
+     * as the Predictions page (MonthlyWeatherOutlookService). Read-only: a month nothing has been prepared for is null,
+     * the model is never run from the dashboard.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function climate(CarbonImmutable $now): ?array
+    {
+        try {
+            $month = $now->startOfMonth();
+            $prepared = app(\App\Services\Prediction\PredictionOrchestrator::class)->preparedMonthlyWeatherForecasts([$month]);
+            $calendar = app(\App\Services\Weather\MonthlyWeatherCalendarService::class)->build($month, null, $prepared[$month->format('Y-m')] ?? null);
+            $outlook = app(\App\Services\Weather\MonthlyWeatherOutlookService::class)->build($calendar);
+        } catch (Throwable $e) {
+            Log::info('Farmer dashboard monthly outlook was not available.', ['source' => 'monthly weather outlook', 'exception' => $e::class]);
+
+            return null;
+        }
+        $mp = $calendar['monthly_prediction'] ?? null;
+        if (! is_array($mp) || $mp['rainfall_mm'] === null) {
+            return null;
+        }
+
+        $cards = (array) data_get($outlook, 'model.cards', []);
+        $rain = (array) ($cards['rainfall'] ?? []);
+        $status = ($rain['available'] ?? false) ? ['Above Normal' => 'above', 'Below Normal' => 'below', 'Near Normal' => 'near'][$rain['status']] ?? null : null;
+        $usual = data_get($outlook, 'historical.avg.rainfall');
+
+        return [
+            'month' => $month->translatedFormat('F'),
+            'rain' => (float) $mp['rainfall_mm'],
+            'rain_status' => $status,
+            'usual_rain' => $status !== null && is_numeric($usual) ? (float) $usual : null,
+            'span' => $status !== null ? ($rain['span'] ?? null) : null,
+            'low' => $mp['tmin_c'],
+            'high' => $mp['tmax_c'],
+            'season' => strtolower((string) data_get($cards, 'season.active', '')) ?: null,
+        ];
+    }
+
+    // ------------------------------------------------------------------ planting guide (before a planting date is saved)
+
+    /**
+     * What a farmer without a planting date can plan with: the Heat Map's planting advice for the barangay (the same rule
+     * the map shows), this month's expected rain, good field-work days this week, and the usual rice calendar that the
+     * Calendar follows once a date is saved. Nothing is presented as the farmer's own schedule.
+     *
+     * @return array<string, mixed>
+     */
+    private function plantingGuide(array $risk, ?array $climate, array $week, CarbonImmutable $now): array
+    {
+        $key = ($risk['state'] ?? null) === 'ok' ? $risk['planting_key'] : null;
+        // The rain-only rule can say "ideal" while the barangay is rated Moderate or worse; a cheerful line next to a
+        // warning would mislead (see planningLine), so the rating is said with it.
+        if (in_array($key, ['good', 'possible'], true) && $risk['level'] !== 'Low') {
+            $key = $risk['high'] ? 'check_first' : 'good_check';
+        }
+        $tone = match (true) {
+            $key === null => 'info',
+            in_array($key, ['good', 'possible'], true) => 'good',
+            default => 'watch',
+        };
+        $duration = (int) config('farmer_dashboard.crop.default_duration_days');
+        $good = array_values(array_filter($week['days'] ?? [], fn (array $d) => $d['good'] === true));
+
+        $steps = [['key' => 'land_prep', 'when' => __('farmer.guide.before_planting', ['days' => FarmerCropPlanService::LAND_PREP_DAYS])]];
+        foreach (FarmerCropPlanService::FERTILIZER_WINDOWS as $milestone => [$from, $to]) {
+            $steps[] = ['key' => $milestone, 'when' => __('farmer.guide.days', ['from' => $from, 'to' => $to])];
+        }
+        $steps[] = ['key' => 'harvest', 'when' => __('farmer.guide.around_day', ['day' => $duration])];
+
+        return [
+            'key' => $key,
+            'tone' => $tone,
+            'title' => __('farmer.guide.title.'.($key ?? 'plan')),
+            'note' => $key ? __('farmer.guide.note.'.$key) : __('farmer.guide.note.plan'),
+            'rain' => $climate ? __('farmer.guide.rain', ['mm' => number_format($climate['rain'], 0), 'month' => $climate['month']]) : null,
+            'good_days' => array_map(fn (array $d) => $d['is_today'] ? __('farmer.weather_card.today') : $d['date']->translatedFormat('D'), $good),
+            'steps' => array_map(fn (array $s) => $s + ['label' => $this->milestoneLabel(['key' => $s['key'], 'label' => $s['key']])], $steps),
+            'harvest_if_today' => $now->addDays($duration),
+        ];
     }
 
     // ------------------------------------------------------------------ expected harvest — the Predictions page's own estimate
@@ -664,15 +777,14 @@ final class FarmerDashboardService
      */
     private function harvest(array $prediction, $profile, Collection $rows): array
     {
-        $missing = array_values(array_filter([
-            (float) ($profile?->farm_area ?? 0) > 0 ? null : 'area',
-            $rows->reject(fn (FarmerPlantingSchedule $r) => $r->monitoringStatus() === 'harvested')->isEmpty() ? 'planting' : null,
-        ]));
+        // Only what the model really reads: the farm size. The planting date is not a model input, so it is never asked for here.
+        $missing = (float) ($profile?->farm_area ?? 0) > 0 ? [] : ['area'];
 
         if ($prediction['state'] !== 'ok') {
             return [
                 'state' => $prediction['state'],
                 'missing' => $missing,
+                'cause' => $prediction['cause'] ?? null,                        // records | service (a retry helps only the service)
                 // What the farmer can fix comes first; otherwise say honestly whether the records or the service is the cause.
                 'reason' => match (true) {
                     $missing !== [] => __('farmer.harvest.reason_missing'),
@@ -713,6 +825,29 @@ final class FarmerDashboardService
      */
     private function yieldOutlook(array $prediction, Collection $scheduleRows): ?array
     {
+        $usual = $this->usualYield($prediction['month'] ?? null);
+        if ($usual === null) {
+            return null;
+        }
+        $mean = $usual['mean'];
+        unset($usual['mean']);
+
+        return $usual + [
+            'own' => $this->ownHarvests($scheduleRows, (float) $prediction['yield']),
+            'predicted' => round($prediction['yield'], 2),
+            'difference' => round($prediction['yield'] - $mean, 2),
+            'percent' => round(($prediction['yield'] - $mean) / $mean * 100),
+        ];
+    }
+
+    /**
+     * Lian's usual yield from the project yield records: the average of the same calendar month in past years, or of all
+     * months when that month has no records (and says so). Null without records.
+     *
+     * @return array{historical: float, from: mixed, to: mixed, same_month: bool, month_name: ?string}|null
+     */
+    private function usualYield(?int $month): ?array
+    {
         try {
             $latest = $this->yields->years()->first();
             $rows = $latest ? $this->yields->rows()->where('year', '<=', (int) $latest) : collect();
@@ -722,10 +857,8 @@ final class FarmerDashboardService
             return null;
         }
 
-        // Compare like with like: the prediction is for one calendar month, so use the average of that same month in past
-        // years. Only when that month has no records does it fall back to the all-months average (and says so).
-        $targetMonth = $prediction['month'] ?? null;
-        $sameMonth = $targetMonth ? $rows->where('month', $targetMonth) : collect();
+        // Compare like with like: a prediction is for one calendar month, so use the average of that same month in past years.
+        $sameMonth = $month ? $rows->where('month', $month) : collect();
         $sameMonthBasis = $sameMonth->isNotEmpty();
         $basis = $sameMonthBasis ? $sameMonth : $rows;
         $mean = $basis->isEmpty() ? null : (float) $basis->avg('yield');
@@ -734,15 +867,12 @@ final class FarmerDashboardService
         }
 
         return [
+            'mean' => $mean,
             'historical' => round($mean, 2),
             'from' => $basis->min('year'),
             'to' => $basis->max('year'),
             'same_month' => $sameMonthBasis,
-            'month_name' => $sameMonthBasis ? CarbonImmutable::create(2000, (int) $targetMonth, 1)->format('F') : null,
-            'own' => $this->ownHarvests($scheduleRows, (float) $prediction['yield']),
-            'predicted' => round($prediction['yield'], 2),
-            'difference' => round($prediction['yield'] - $mean, 2),
-            'percent' => round(($prediction['yield'] - $mean) / $mean * 100),
+            'month_name' => $sameMonthBasis ? CarbonImmutable::create(2000, (int) $month, 1)->translatedFormat('F') : null,
         ];
     }
 
@@ -1213,7 +1343,8 @@ final class FarmerDashboardService
         $note = match (true) {
             $top !== null => (string) str(rtrim((string) $top['title'], '.').'.')->squish()->limit(120),
             $rainToday === 'heavy' => __('farmer.condition.note_heavy'),
-            $status !== 'good' => (string) $risk['meaning'],
+            // The rating's own meaning is already on the Barangay Farm Risk card: say what to do instead.
+            $status !== 'good' => __('farmer.condition.note_check'),
             $rainToday !== null => __('farmer.condition.note_'.$rainToday),
             default => __('farmer.condition.note_default'),
         };

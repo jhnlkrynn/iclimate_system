@@ -603,3 +603,16 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 }
 .mfd-toast::before { content: "✓"; display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #198754; color: #fff; font-size: .875rem; }
 @media (max-width: 480px) { .mfd-toast { left: 16px; } }
+
+/* Planting guide (schedule card before a planting date is saved) and "This Month" in the weather card. */
+.mfd[data-farmer-dashboard] .mfd-guide > .mfd-sub:first-child { margin-top: 4px !important; }
+.mfd[data-farmer-dashboard] .mfd-guide-steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); counter-reset: mfd-step; }
+.mfd[data-farmer-dashboard] .mfd-guide-steps li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--line); counter-increment: mfd-step; }
+.mfd[data-farmer-dashboard] .mfd-guide-steps li strong::before { content: counter(mfd-step) ". "; color: var(--muted); font-weight: 600; }
+.mfd[data-farmer-dashboard] .mfd-guide .mfd-foot { margin-top: 12px; }
+.mfd[data-farmer-dashboard] .mfd-guide .mfd-card-foot .mfd-muted { flex: 1 1 220px; margin: 0; }
+.mfd[data-farmer-dashboard] .mfd-climate { margin-top: 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--subtle); }
+.mfd[data-farmer-dashboard] .mfd-climate p { margin: 4px 0 0; font-size: .9375rem; }
+.mfd[data-farmer-dashboard] .mfd-climate .mfd-climate-head { margin: 0 !important; font-weight: 700; color: var(--ink); }
+.mfd[data-farmer-dashboard] .mfd-climate .mfd-foot { margin-top: 8px; }
+.mfd[data-farmer-dashboard] .mfd-yield-records { margin-top: 12px; }

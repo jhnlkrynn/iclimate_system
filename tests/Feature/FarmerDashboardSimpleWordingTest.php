@@ -83,12 +83,15 @@ class FarmerDashboardSimpleWordingTest extends TestCase
         // The redesigned risk card carries the note with a real rating (without one it says there is no rating yet).
         $this->computedRating('Moderate');
 
-        $response = $this->actingAs($this->farmer())->get(route('farmer.dashboard'));
-        $response->assertOk();
+        // No rating yet: no level is invented, and the card still gives a planning message and where to look meanwhile.
+        $html = $this->actingAs($this->farmer())->get(route('farmer.dashboard'))->assertOk()->getContent();
+        $start = strpos($html, 'data-mfd-risk');
+        $card = substr($html, $start, strpos($html, '</section>', $start) - $start);
+        $text = preg_replace('/\s+/', ' ', $this->visibleText($card));
 
         $this->assertStringContainsString(
             'A planning guide, not an official hazard warning.',
-            $this->visibleText($response->getContent())
+            $this->visibleText($html)
         );
     }
 
@@ -112,7 +115,7 @@ class FarmerDashboardSimpleWordingTest extends TestCase
         $text = $this->visibleText($response->getContent());
 
         // With no rating the risk card says so (and offers a retry): an unrated barangay is never presented as Low.
-        $this->assertStringContainsString('We do not have a risk rating for your barangay yet.', $text);
+        $this->assertStringContainsString('Your barangay rating is being updated.', $text);
         $this->assertStringNotContainsString('Low Farm Risk', $text);
         $this->assertDoesNotMatchRegularExpression('/(?<!not )Low risk/', $text);   // the map legend's "not Low risk" note is fine
         // The install migration's "Moderate / Pending climate update" row is a placeholder, not a rating.

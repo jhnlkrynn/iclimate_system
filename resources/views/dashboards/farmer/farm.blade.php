@@ -1,11 +1,12 @@
-{{-- "My Farm": the farmer's own farm details (barangay, size, water source, planting date). Something not saved yet says
-     "Not set", and what is still needed is listed with the pop-up that fixes it (dashboards/farmer/popups.blade.php). --}}
+{{-- "My Farm": the farmer's own farm details (barangay, size, water source, planting date). Something not saved yet is
+     a link that opens its pop-up, and what is still needed is listed with the pop-up that fixes it (dashboards/farmer/popups.blade.php). --}}
 @php
     $p = $f['profile'];
     $setup = $f['setup'];
     // The pop-up each missing item's button opens on the dashboard; an item without one (recording a harvest) goes to its page.
     $popups = ['barangay' => 'profile', 'farm_type' => 'profile', 'farm_area' => 'farm-size', 'boundary' => 'farm-map'];
-    $notSet = '<span class="mfd-muted">'.e(__('farmer.my_farm.not_set')).'</span>';
+    // Something not saved yet is a button that opens its pop-up, never a bare "Not set".
+    $add = fn (string $key, string $popup, ?string $href = null) => '<a class="mfd-link" href="'.e($href ?? route('profile.edit')).'" data-mfd-popup="'.$popup.'" aria-haspopup="dialog" data-fast-nav-bound="true">'.e(__('farmer.my_farm.add.'.$key)).'</a>';
 @endphp
 <section class="mfd-card mfd-myfarm" aria-labelledby="mfdFarmTitle" data-mfd-farm>
     <div class="mfd-card-head">
@@ -13,10 +14,10 @@
         @if ($setup)<span class="mfd-muted">{{ __('farmer.setup.progress', ['done' => $setup['done'], 'total' => $setup['total']]) }}</span>@endif
     </div>
     <dl class="mfd-facts">
-        <div data-farm="barangay"><dt>{{ __('farmer.my_farm.barangay') }}</dt><dd>{!! $p['barangay'] ? e($p['barangay']) : $notSet !!}</dd></div>
-        <div data-farm="size"><dt>{{ __('farmer.my_farm.size') }}</dt><dd>{!! $p['area'] ? e(number_format($p['area'], 2).' ha') : $notSet !!}@if ($p['mapped_in'])<span class="mfd-muted"> • {{ __('farmer.my_farm.mapped_in', ['barangay' => $p['mapped_in']]) }}</span>@endif</dd></div>
-        <div data-farm="water"><dt>{{ __('farmer.my_farm.water_label') }}</dt><dd>{!! $p['water'] ? e($p['water']) : $notSet !!}</dd></div>
-        <div data-farm="planting"><dt>{{ __('farmer.my_farm.planting') }}</dt><dd>{!! $p['planting_date'] ? e($p['planting_date']->format('F j, Y')) : $notSet !!}</dd></div>
+        <div data-farm="barangay"><dt>{{ __('farmer.my_farm.barangay') }}</dt><dd>{!! $p['barangay'] ? e($p['barangay']) : $add('barangay', 'profile') !!}</dd></div>
+        <div data-farm="size"><dt>{{ __('farmer.my_farm.size') }}</dt><dd>{!! $p['area'] ? e(number_format($p['area'], 2).' ha') : $add('size', 'farm-size') !!}@if ($p['mapped_in'])<span class="mfd-muted"> • {{ __('farmer.my_farm.mapped_in', ['barangay' => $p['mapped_in']]) }}</span>@endif</dd></div>
+        <div data-farm="water"><dt>{{ __('farmer.my_farm.water_label') }}</dt><dd>{!! $p['water'] ? e($p['water']) : $add('water', 'profile') !!}</dd></div>
+        <div data-farm="planting"><dt>{{ __('farmer.my_farm.planting') }}</dt><dd>{!! $p['planting_date'] ? e($p['planting_date']->format('F j, Y')) : $add('planting', 'planting', route('farmer.planting-schedules.create')) !!}</dd></div>
     </dl>
 
     @if ($setup)

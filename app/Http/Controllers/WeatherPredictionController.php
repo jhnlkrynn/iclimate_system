@@ -138,6 +138,9 @@ class WeatherPredictionController extends Controller
         // other not-ready result.
         try {
             $monthlyPrediction = $predictionOrchestrator->monthlyWeatherForecast($calendarMonth);
+        } catch (\App\Exceptions\PredictionNotReady) {
+            // Not an error: this request may only read prepared forecasts and the scheduler has not built this month yet.
+            $monthlyPrediction = null;
         } catch (\Throwable $exception) {
             report($exception);
             $monthlyPrediction = null;

@@ -45,8 +45,15 @@ class PythonRuntimeTest extends TestCase
     public function test_on_linux_a_system_python_runs_with_its_own_path_and_no_windows_paths(): void
     {
         config(['iclimate.python_os_family' => 'Linux']);
+        // A Linux machine's own PATH (the inherited one is kept after the interpreter's folder).
+        $inherited = getenv('PATH');
+        putenv('PATH=/usr/local/bin:/usr/bin:/bin');
 
-        $env = PythonRuntime::environment('/usr/bin/python3');
+        try {
+            $env = PythonRuntime::environment('/usr/bin/python3');
+        } finally {
+            putenv('PATH='.$inherited);
+        }
 
         $this->assertStringStartsWith('/usr/bin'.PATH_SEPARATOR, $env['PATH']);
         $this->assertArrayNotHasKey('VIRTUAL_ENV', $env);              // not a virtualenv: its packages stay visible
@@ -83,12 +90,27 @@ class PythonRuntimeTest extends TestCase
 
     public function test_a_windows_python_binary_setting_is_ignored_on_linux_and_macos(): void
     {
-        if (PHP_OS_FAMILY === 'Windows') {
-            $this->markTestSkipped('Checks the Unix behaviour.');
-        }
-        config(['iclimate.python_binary' => 'C:\Python312\python.exe']);
+        config(['iclimate.python_os_family' => 'Linux', 'iclimate.python_binary' => 'C:\Python312\python.exe']);
 
         $this->assertNotSame('C:\Python312\python.exe', PythonRuntime::executable());
+    }
+
+    public function test_on_windows_a_configured_path_that_does_not_exist_is_kept_so_the_health_check_reports_it(): void
+    {
+        config(['iclimate.python_os_family' => 'Windows', 'iclimate.python_binary' => 'Z:\no-such-folder\python.exe']);
+
+        $this->assertSame('Z:\no-such-folder\python.exe', PythonRuntime::executable());
+    }
+
+    public function test_the_project_virtualenv_is_recognised_whatever_the_path_separators(): void
+    {
+        config(['iclimate.python_os_family' => 'Windows']);
+
+        // How the app finds it on Windows: base_path() uses "\" but the relative part keeps "/".
+        $env = PythonRuntime::environment(base_path('.venv/Scripts/python.exe'));
+
+        $this->assertSame(base_path('.venv'), $env['VIRTUAL_ENV']);
+        $this->assertSame('1', $env['PYTHONNOUSERSITE']);
     }
 
     public function test_the_candidate_prediction_controller_runs_the_python_that_python_runtime_resolves(): void

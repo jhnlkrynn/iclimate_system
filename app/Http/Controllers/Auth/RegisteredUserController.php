@@ -7,6 +7,7 @@ use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\User;
 use App\Services\Security\CaptchaService;
+use App\Support\LianFarmTypes;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -91,18 +92,9 @@ class RegisteredUserController extends Controller
             ->with('success', 'Account created successfully. Please log in using your email and password.');
     }
 
+    /** The barangays with a registered farmer association (LianFarmTypes, which the organizations are seeded from). */
     private function manualBarangays(): array
     {
-        return [
-            'Balibago',
-            'Binubusan',
-            'Bungahan',
-            'Kapito',
-            'Luyahan',
-            'Malaruhatan',
-            'Matabungkay',
-            'Prenza',
-            'San Diego',
-        ];
+        return LianFarmTypes::records()->pluck('barangay')->unique()->sort()->values()->all();
     }
 }

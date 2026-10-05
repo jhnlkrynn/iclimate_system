@@ -28,6 +28,8 @@ class NotificationController extends CrudController
 
     protected array $filterable = ['type' => ['Announcement', 'Advisory', 'Warning'], 'is_read' => [0 => 'Unread', 1 => 'Read']];
 
+    protected array $indexedFilters = ['is_read'];
+
     protected bool $farmerPages = true;
 
     protected string $farmerSortColumn = 'created_at';

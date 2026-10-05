@@ -1,6 +1,6 @@
 {{-- Quick Actions: four things a farmer does from the dashboard. Pages already linked from the cards above (weather,
      heat map, calendar, advisories) are not repeated. The farm tasks open their pop-up (dashboards/farmer/popups.blade.php);
-     their wording follows what the farmer has saved: "Not set" until it is set. --}}
+     each one says what it opens; nothing is marked "Not set". --}}
 @php
     $q = $f['quick'] ?? ['farm' => false, 'map' => false, 'plan' => false];
     $cards = [
@@ -29,7 +29,7 @@
                     @if ($card['key'] === 'farm') data-mfd-popup-variant="info" data-mfd-popup-title="{{ __('farmer.quick.farm.popup_title') }}" data-mfd-popup-intro="{{ __('farmer.quick.farm.popup_intro') }}" @endif>
                     <span class="mfd-quick-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $card['icon']])</span>
                     <span class="mfd-quick-text">
-                        <span class="mfd-quick-title"><strong>{{ __('farmer.quick.'.$card['key'].'.'.($done ? 'update' : 'add')) }}</strong>@unless ($done) <span class="mfd-quick-state">{{ __('farmer.quick.not_set') }}</span>@endunless</span>
+                        <span class="mfd-quick-title"><strong>{{ __('farmer.quick.'.$card['key'].'.'.($done ? 'update' : 'add')) }}</strong></span>
                         <span class="mfd-quick-desc">{{ __('farmer.quick.'.$card['key'].'.text') }}</span>
                     </span>
                 </a>

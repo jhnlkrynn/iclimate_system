@@ -5,8 +5,9 @@
  * in layouts/app.blade.php and switched by resources/js/theme.js (Light / Dark buttons at the bottom of the sidebar).
  * Bootstrap follows through data-bs-theme on the same element.
  *
- * Light: off-white page, white cards, dark green sidebar, top bar and page headers.
- * Dark: charcoal-green page, slightly lighter dark cards, near-white text; the same greens for brand and status.
+ * Both themes share one backdrop: the landing page's rice-field photo under a dark green overlay (BACKDROP below).
+ * Light: white cards on that backdrop, dark green sidebar, top bar and page headers.
+ * Dark: a deeper overlay, dark cards, near-white text; the same greens for brand and status.
  *
  * Most pages are drawn from shared tokens (--ic-*, --color-*, --gl-*, and the .mfd / .mtd page tokens), so a theme is
  * mainly a token swap; the rules after the tokens cover surfaces that hard-code white. Selectors start with
@@ -25,16 +26,18 @@ html[data-theme="light"] {
     --gl-shadow: 0 1px 2px rgba(16, 40, 30, .06), 0 4px 14px rgba(16, 40, 30, .06);
     --gl-border: #dfe6e1;
     --glass-light-border: #dfe6e1;
-    background: var(--ic-page-bg);
-}
-
-html[data-theme="light"] body,
-html[data-theme="light"] body .app-main {
-    background: var(--ic-page-bg) !important;   /* ui-refresh.css paints .app-main green with !important */
+    /* Content surfaces stay close to solid white, so the photo never shows through text, charts or tables. */
+    --gl-surface: rgba(255, 255, 255, .96);
+    --gl-surface-strong: rgba(255, 255, 255, .98);
+    --gl-surface-soft: rgba(255, 255, 255, .95);
+    --glass-light-bg: rgba(255, 255, 255, .96);
+    --glass-light-bg-strong: rgba(255, 255, 255, .98);
+    /* The landing page hero's overlay, unchanged. */
+    --ic-backdrop-base: #163b2d;
+    --ic-backdrop-overlay: linear-gradient(180deg, rgba(15, 41, 32, .94) 0%, rgba(22, 59, 45, .90) 55%, rgba(31, 77, 58, .94) 100%);
 }
 
 html[data-theme="light"] body { color: var(--ic-ink); }
-html[data-theme="light"] body::before { content: none; }
 
 /* Top bar: solid brand green, like the sidebar. */
 html[data-theme="light"] body .topbar {
@@ -44,11 +47,13 @@ html[data-theme="light"] body .topbar {
     box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgba(15, 61, 46, .14) !important;
 }
 
-/* Text that used to sit straight on the green backdrop. */
-html[data-theme="light"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: var(--ic-ink); }
+/* Text that sits straight on the green backdrop. */
+html[data-theme="light"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: #fff; }
 html[data-theme="light"] body .dashboard-section-label,
-html[data-theme="light"] body .dashboard-section-label .section-note { color: var(--ic-ink-mid); }
+html[data-theme="light"] body .dashboard-section-label .section-note { color: rgba(255, 255, 255, .86); }
 html[data-theme="light"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: #0f3d2e; border-color: transparent; }
+/* The page panel of the .mfd / .mtd pages: a light sheet that lets a trace of the backdrop through. */
+html[data-theme="light"] body :is(.mfd, .mtd) { --bg: rgba(245, 247, 246, .96); }
 
 /* ================================================================== DARK */
 html[data-theme="dark"] {
@@ -125,16 +130,42 @@ html[data-theme="dark"] {
     --bs-link-color-rgb: 127, 214, 181;
     --bs-link-hover-color-rgb: 168, 230, 204;
 
-    background: var(--ic-page-bg);
-}
-
-html[data-theme="dark"] body,
-html[data-theme="dark"] body .app-main {
-    background: var(--ic-page-bg) !important;   /* ui-refresh.css paints .app-main green with !important */
+    /* Same photo, deeper overlay, so dark cards keep their edge and the page stays easy on the eyes. */
+    --ic-backdrop-base: var(--ic-page-bg);
+    --ic-backdrop-overlay: linear-gradient(180deg, rgba(8, 20, 15, .95) 0%, rgba(11, 30, 23, .91) 55%, rgba(13, 34, 26, .95) 100%);
 }
 
 html[data-theme="dark"] body { color: var(--dk-ink); }
-html[data-theme="dark"] body::before { content: none; }
+
+/* ================================================================== BACKDROP
+ * One backdrop for every signed-in page (Farmer, MAO, IT): the landing page's rice-field photo under its dark green
+ * overlay. It is a single fixed layer behind the whole app, so it covers the screen at any page length, never tiles or
+ * stretches, and stays put on phones without background-attachment: fixed. The photo's address comes from
+ * --ic-backdrop-image in layouts/app.blade.php; the solid --ic-backdrop-base shows while it loads.
+ */
+html[data-theme] { background: var(--ic-backdrop-base); }
+
+html[data-theme] body,
+html[data-theme] body .app-main {
+    background: transparent !important;   /* ui-refresh.css paints .app-main green with !important */
+}
+
+html[data-theme] body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100lvh;   /* the tallest viewport, so no gap opens when a phone's address bar slides away */
+    z-index: -1;
+    pointer-events: none;
+    background: var(--ic-backdrop-overlay), var(--ic-backdrop-image, none) center 30% / cover no-repeat var(--ic-backdrop-base);
+}
+
+/* Panels that were thin glass over the old off-white page are near-solid now, so their text never sits on the photo. */
+html[data-theme="light"] body :is(.sl-card, .mao-highlight, .dash-overview .dash-sources) { background: rgba(255, 255, 255, .96); }
+html[data-theme="light"] body .ic-collapse > summary { background: rgba(255, 255, 255, .97) !important; }
 
 html[data-theme="dark"] body .topbar {
     background: #0b231b;
@@ -529,11 +560,12 @@ html[data-theme="dark"] body :is(.mao-tap-hint, .mao-yoy-down, .dashboard-group-
 html[data-theme="dark"] body .mao-console .btn-outline-primary { color: var(--dk-accent) !important; border-color: rgba(127, 214, 181, .55) !important; }
 html[data-theme="dark"] body .mao-console .btn-outline-primary:hover { background: var(--dk-surface-3) !important; color: #fff !important; }
 
-/* MAO operations page (dashboards/mao-operations): its header and section titles were drawn for the old green page
-   backdrop (translucent dark glass, pale titles). Both themes now give the header a solid green and titles ink colour. */
+/* MAO operations page (dashboards/mao-operations): its header was translucent dark glass; both themes give it a solid
+   green. Its section titles sit straight on the backdrop, so they are white in Light and near-white ink in Dark. */
 html[data-theme] body .mao-hero { background: linear-gradient(145deg, #164a39 0%, #1f5a46 100%); -webkit-backdrop-filter: none; backdrop-filter: none; }
 html[data-theme="dark"] body .mao-hero { background: linear-gradient(145deg, #123a2c 0%, #184a39 100%); border-color: rgba(255, 255, 255, .07); }
-html[data-theme] body .mao-console .dashboard-section-label .section-title { color: var(--ic-ink); }
+html[data-theme="light"] body .mao-console .dashboard-section-label .section-title { color: #fff; }
+html[data-theme="dark"] body .mao-console .dashboard-section-label .section-title { color: var(--ic-ink); }
 
 /* Top bar Menu button (phones / tablets): on keyboard focus Bootstrap switches to the hover text colour (dark ink) while
    ui-refresh.css keeps the background transparent, leaving dark text on the green bar. Keep it white with a light fill. */
