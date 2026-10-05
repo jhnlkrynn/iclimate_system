@@ -139,8 +139,8 @@ const average = (values) => {
 /**
  * One category's pop-up.
  * ctx: { audience, names (rendered barangays, map order), entryFor(name), levelOf(entry), displayName(name),
- *        weatherFor(entry) -> { line, notice, fresh }, updatedFor(entry), month (forecast month or null),
- *        generatedAt (text), sourceNote }
+ *        weatherFor(entry) -> { line, notice, current, stale, lastAvailable }, updatedFor(entry) (weather time),
+ *        month (forecast month or null), generatedAt (risk ratings time, text), weatherSummary (text), sourceNote }
  */
 export function openRiskCategory(category, trigger, ctx) {
     const meta = CATEGORIES[category];
@@ -175,7 +175,7 @@ export function openRiskCategory(category, trigger, ctx) {
                     <td>${escapeHtml(ctx.displayName(name))}</td>
                     <td data-label="Risk">${levelBadge(level, month && level === 'No Data' ? 'Insufficient data' : null)}</td>
                     ${staff && !month ? `<td data-label="Score">${score}</td>` : ''}
-                    <td data-label="${month ? 'Forecast Period' : 'Weather'}">${escapeHtml(month ? month.label : (weather.line || weather.notice))}</td>
+                    <td data-label="${month ? 'Forecast Period' : 'Weather'}">${month ? escapeHtml(month.label) : `${escapeHtml(weather.line || weather.notice)}${weather.stale && weather.line ? `<small class="ic-risk-sub">${escapeHtml(weather.lastAvailable || weather.notice)}</small>` : ''}`}</td>
                     ${month ? '' : `<td data-label="Updated">${escapeHtml(ctx.updatedFor(entry) || '—')}</td>`}
                 </tr>`;
             }).join('')}</tbody></table></div>`;
@@ -196,22 +196,23 @@ export function openRiskCategory(category, trigger, ctx) {
             ? `<dl class="fad-m-details">${facts.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}</dl><p class="fad-m-small">Forecast values apply to Lian as a whole; barangay ratings differ by local farm and exposure factors.</p>`
             : '<p class="fad-m-empty">Forecast weather values are not available for this month.</p>';
     } else {
-        const fresh = rows.map((row) => row.entry?.weather).filter((w) => w?.status === 'fresh');
+        const fresh = rows.map((row) => ctx.weatherFor(row.entry)).filter((w) => w.current).map((w) => w.values);
         if (!fresh.length) {
-            conditions = `<p class="fad-m-empty">${count ? 'Live weather for these barangays is refreshing. The ratings shown are the last verified results.' : 'No barangays to describe in this category right now.'}</p>`;
+            conditions = `<p class="fad-m-empty">${count ? 'Weather update is temporarily delayed for these barangays. Their last available readings are shown in the list.' : 'No barangays to describe in this category right now.'}</p>`;
         } else {
             const temp = average(fresh.map((w) => w.temperature_c));
             const humidity = average(fresh.map((w) => w.humidity_percent));
             const rain = average(fresh.map((w) => w.rainfall_24h_mm));
             const statuses = [...new Set(fresh.map((w) => w.rainfall_status).filter(Boolean))];
             const cells = [
-                ['Temperature', temp != null ? `${temp.toFixed(1)}°C` : null, 'average of live readings'],
-                ['Humidity', humidity != null ? `${Math.round(humidity)}%` : null, 'average of live readings'],
-                ['Rainfall (24 h)', rain != null ? `${rain.toFixed(1)} mm` : null, statuses.join(', ') || 'average of live readings'],
-                ['Live Readings', `${fresh.length} of ${count}`, 'barangays with current weather'],
+                ['Temperature', temp != null ? `${temp.toFixed(1)}°C` : null, 'average of latest readings'],
+                ['Humidity', humidity != null ? `${Math.round(humidity)}%` : null, 'average of latest readings'],
+                ['Rainfall (next 24 h)', rain != null ? `${rain.toFixed(1)} mm` : null, statuses.join(', ') || 'average of latest readings'],
+                ['Latest Weather', `${fresh.length} of ${count}`, 'barangays with a current reading'],
             ].filter(([, value]) => value != null);
             conditions = `<dl class="fad-m-weather">${cells.map(([label, value, sub]) => `<div><dt>${escapeHtml(label)}</dt><dd><strong>${escapeHtml(value)}</strong><span>${escapeHtml(sub)}</span></dd></div>`).join('')}</dl>`;
         }
+        if (ctx.weatherSummary) conditions += `<p class="fad-m-small">${escapeHtml(ctx.weatherSummary)}</p>`;
     }
 
     const body = `${countBlock}
@@ -236,7 +237,7 @@ export function openRiskCategory(category, trigger, ctx) {
         size: 'wide',
         trigger,
         body,
-        note: `${icon('clock')} Data updated: ${escapeHtml(ctx.generatedAt || 'not available')}`,
+        note: `${icon('clock')} Risk calculated: ${escapeHtml(ctx.generatedAt || 'not available')}${!month && ctx.weatherCheckedAt ? ` · Weather checked: ${escapeHtml(ctx.weatherCheckedAt)}` : ''}`,
         actions: ctx.mapAnchor ? `<button type="button" class="fad-btn is-quiet" data-ic-close data-risk-goto-map>View on the risk map</button>` : '',
     });
 }

@@ -7,6 +7,8 @@ import { open as openModal } from './info-modal';
 
 const RISK_COLORS = { Low: '#2e7d32', Moderate: '#f2b134', High: '#e05a2b', Severe: '#8b0000', 'No Data': '#8a939b' };
 const EXPECTED_BARANGAYS = 19;
+// The page asks Laravel for the prepared map again this often (one request; Laravel refreshes the provider data).
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const DISPLAY_NAMES = { 'Barangay 1 (Pob.)': 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)': 'Barangay 5 / Tabok City (Poblacion)' };
 const OFFICIAL_NAMES = ['Bagong Pook', 'Balibago', 'Barangay 1 (Pob.)', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)', 'Barangay 4 (Pob.)', 'Barangay 5 (Pob.)', 'Binubusan', 'Bungahan', 'Cumba', 'Humayingan', 'Kapito', 'Lumaniag', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'Puting-Kahoy', 'San Diego'];
 const nameKey = (name) => String(name || '').toLowerCase().replace(/[().,/-]/g, ' ').replace(/barangay|brgy|poblacion|\bpob\b/g, ' ').replace(/([a-z])(\d)/g, '$1 $2').replace(/\s+/g, ' ').trim();
@@ -27,13 +29,20 @@ function popupMarkup(name, entry) {
 
 function detailMarkup(name, entry) {
     const level = riskLevel(entry);
-    const weather = entry?.weather?.status === 'fresh' ? entry.weather : null;
+    const weather = currentWeatherParts(entry);
     const yieldData = entry?.last_recorded_yield;
-    const facts = [];
-    if (weather?.temperature_c != null) facts.push(`Temperature: ${escapeHtml(weather.temperature_c)}°C`);
-    if (weather?.rainfall_24h_mm != null) facts.push(`Rainfall: ${escapeHtml(weather.rainfall_24h_mm)} mm`);
+    const facts = weather.rows.map(([label, value]) => `${escapeHtml(label)}: ${escapeHtml(value)}`);
     if (yieldData?.value != null) facts.push(`Recorded yield: ${escapeHtml(yieldData.value)} t/ha`);
-    return `<div class="risk-map-detail-content"><div><span class="risk-map-detail-kicker">Selected barangay</span><h3>${escapeHtml(displayName(name))}</h3></div><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">FARM RISK: ${escapeHtml(level.toUpperCase())}</span>${facts.length ? `<p>${facts.join(' · ')}</p>` : '<p>Current weather information is temporarily unavailable.</p>'}<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+    return `<div class="risk-map-detail-content"><div><span class="risk-map-detail-kicker">Selected barangay</span><h3>${escapeHtml(displayName(name))}</h3></div><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">FARM RISK: ${escapeHtml(level.toUpperCase())}</span>${weather.stale || !weather.rows.length ? `<p>${escapeHtml(weather.notice)}</p>` : ''}${facts.length ? `<p>${facts.join(' · ')}</p>` : ''}${timestampsMarkup(entry, weather)}<button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
+}
+
+// Weather and risk carry separate times: refreshed weather never makes an older rating look newer.
+function timestampsMarkup(entry, weather) {
+    const lines = [
+        weather.updatedLong ? `Weather updated: ${weather.updatedLong}${weather.ago ? ` (${weather.ago})` : ''} · Source: ${weather.provider}` : null,
+        `Risk calculated: ${philippineDateTime(entry?.risk_calculated_at) || 'not available yet'}`,
+    ].filter(Boolean);
+    return `<p class="rf-small">${lines.map(escapeHtml).join('<br>')}</p>`;
 }
 
 const CURRENT_RISK_MEANING = {
@@ -64,22 +73,51 @@ function philippineDateTime(value) {
     return new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
 }
 
+// Freshness rules (the server's, in its weather summary): fresh ≤ 10 min "Current", ≤ 30 min "Recent", older
+// "delayed" (last available values + their time), no reading "unavailable". Worked out again here from the
+// reading's own fetch time, so "Updated X minutes ago" stays true between updates.
+let freshMinutes = 10;
+let recentMinutes = 30;
+
+function minutesSince(value) {
+    const time = value ? new Date(value).getTime() : NaN;
+    return Number.isNaN(time) ? null : Math.max(0, Math.floor((Date.now() - time) / 60000));
+}
+
+function agoText(minutes) {
+    if (minutes == null) return null;
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(minutes / 60);
+    return hours < 24 ? `${hours} hour${hours === 1 ? '' : 's'} ago` : `${Math.floor(hours / 24)} day${hours < 48 ? '' : 's'} ago`;
+}
+
+const sentenceCase = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase() : text);
+
 function currentWeatherParts(entry) {
     const weather = entry?.weather || {};
     const temperature = numberValue(weather.temperature_c);
     const humidity = numberValue(weather.humidity_percent);
     const wind = numberValue(weather.wind_speed_kmh);
     const rainfall = numberValue(weather.rainfall_24h_mm);
+    const chance = numberValue(weather.rain_probability_percent);
     const rainfallStatus = String(weather.rainfall_status || '').trim();
-    const fresh = weather.status === 'fresh';
-    const stale = weather.status === 'stale' || entry?.status === 'stale';
+    const condition = weather.condition ? sentenceCase(String(weather.condition)) : null;
+    const minutes = minutesSince(weather.fetched_at);
+    const hasValues = weather.status !== 'unavailable' && temperature != null;
+    const status = !hasValues ? 'unavailable' : minutes == null ? weather.status : minutes <= freshMinutes ? 'fresh' : minutes <= recentMinutes ? 'recent' : 'stale';
+    const current = status === 'fresh' || status === 'recent';
+    const stale = status === 'stale';
     const rows = [];
 
-    if (fresh) {
-        if (rainfallStatus) rows.push(['Rainfall', rainfallStatus.replace(/\s+rainfall/i, '')]);
-        else if (rainfall != null) rows.push(['Rainfall', `${rainfall} mm`]);
-        if (temperature != null) rows.push(['Temperature', `${temperature}°C`]);
+    if (hasValues) {
+        if (condition) rows.push(['Condition', condition]);
+        rows.push(['Temperature', `${temperature}°C`]);
         if (humidity != null) rows.push(['Humidity', `${humidity}%`]);
+        if (wind != null) rows.push(['Wind', `${wind} km/h`]);
+        if (chance != null) rows.push(['Rain chance (24 h)', `${chance}%`]);
+        if (rainfallStatus) rows.push(['Rainfall (24 h)', `${rainfallStatus.replace(/\s+rainfall/i, '')}${rainfall != null ? ` · ${rainfall} mm` : ''}`]);
+        else if (rainfall != null) rows.push(['Rainfall (24 h)', `${rainfall} mm`]);
     }
 
     let effect = 'No major weather problem is affecting the rice field right now.';
@@ -97,30 +135,34 @@ function currentWeatherParts(entry) {
         effect = 'Strong winds may damage rice plants.';
         action = 'Check rice plants and secure loose farm materials.';
     }
-    if (!rows.length && !stale) {
-        // The weather line already says it is unavailable; this line says what that means, without repeating it.
-        effect = 'The effect on your rice field will be checked again after the next update.';
+    if (!current) {
+        // Only a current reading describes today's effect; an older one is never presented as today's conditions.
+        effect = 'The effect on your rice field will be checked again after the next weather update.';
         action = 'Check your field conditions and wait for the next update.';
     }
 
-    const observedAt = philippineTime(weather.observed_at || (fresh ? entry?.updated_at : null));
-    const notice = fresh ? (observedAt ? `Updated: ${observedAt}` : 'Weather information has not been updated yet.') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.';
-    // One short line for the popup, e.g. "29°C · 78% humidity · Low rainfall".
-    const line = fresh ? [
-        temperature != null ? `${temperature}°C` : null,
-        humidity != null ? `${humidity}% humidity` : null,
-        rainfallStatus || (rainfall != null ? `${rainfall} mm rain` : null),
-    ].filter(Boolean).join(' · ') : '';
+    const ago = agoText(minutes);
+    const updatedTime = philippineTime(weather.fetched_at);
+    const notice = current ? (ago ? `Updated ${ago}` : 'Latest weather') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.';
+    // One short line for the popup and the barangay list, e.g. "29.4°C · Light rain".
+    const line = hasValues ? [`${temperature}°C`, condition].filter(Boolean).join(' · ') : '';
     return {
         rows,
         effect,
         action,
-        fresh,
+        status,
+        current,
+        fresh: current,
         stale,
-        observedAt,
         notice,
         line,
-        lastAvailable: !fresh && observedAt ? `Last update: ${observedAt}` : null,
+        ago,
+        provider: weather.provider || 'Open-Meteo',
+        updatedTime,
+        updatedLong: philippineDateTime(weather.fetched_at),
+        observedAt: updatedTime,
+        values: { temperature_c: temperature, humidity_percent: humidity, rainfall_24h_mm: rainfall, rainfall_status: rainfallStatus || null },
+        lastAvailable: stale && ago ? `Last available ${ago}${updatedTime ? ` (${updatedTime})` : ''}` : null,
     };
 }
 
@@ -128,9 +170,10 @@ function currentWeatherParts(entry) {
 function farmerCurrentPopupMarkup(name, entry, fit) {
     const level = riskLevel(entry);
     const weather = currentWeatherParts(entry);
-    const updated = weather.fresh ? (weather.observedAt ? `Updated: ${weather.observedAt}` : null) : weather.lastAvailable;
+    const updated = weather.current ? `${weather.notice} · ${weather.provider}` : weather.lastAvailable;
+    const extra = weather.current ? weather.rows.filter(([label]) => label === 'Humidity' || label === 'Wind').map(([label, value]) => `${label} ${value}`).join(' · ') : '';
     return farmerPopupShell(name, level, ''
-        + farmerBlock('Current Weather', `<p>${escapeHtml(weather.line || weather.notice)}</p>`)
+        + farmerBlock('Current Weather', `${weather.stale ? `<p>${escapeHtml(weather.notice)}</p>` : ''}<p>${escapeHtml(weather.line || weather.notice)}</p>${extra ? `<p class="rf-small">${escapeHtml(extra)}</p>` : ''}`)
         + farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)
         + farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)
         + (updated ? `<p class="rf-updated">${escapeHtml(updated)}</p>` : ''), fit);
@@ -146,8 +189,8 @@ function farmerCurrentDetailMarkup(name, entry) {
     const level = riskLevel(entry);
     const weather = currentWeatherParts(entry);
     const conditions = weather.rows.length
-        ? `${rowsMarkup(weather.rows).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts')}<p class="rf-small">${escapeHtml(weather.notice)}</p>`
-        : `<p>${escapeHtml(weather.notice)}</p>${weather.lastAvailable ? `<p class="rf-small">${escapeHtml(weather.lastAvailable)}</p>` : ''}${!weather.stale ? `<p>The current farm risk is still: <strong>${escapeHtml(level.toUpperCase())}</strong></p>` : ''}`;
+        ? `${weather.stale ? `<p>${escapeHtml(weather.notice)}</p><p class="rf-small">${escapeHtml(weather.lastAvailable || '')}</p>` : ''}${rowsMarkup(weather.rows).replace('risk-forecast-facts', 'risk-forecast-facts rf-facts')}${timestampsMarkup(entry, weather)}`
+        : `<p>${escapeHtml(weather.notice)}</p>${timestampsMarkup(entry, weather)}`;
     const riskMeaning = CURRENT_RISK_MEANING[level] || CURRENT_RISK_MEANING['No Data'];
     return `<div class="rf-detail"><div class="rf-head"><h3>${escapeHtml(displayName(name))}</h3><span class="risk-map-detail-risk" style="--risk-color:${RISK_COLORS[level]}">${escapeHtml(`${level.toUpperCase()} RISK`)}</span></div><div class="rf-grid">${farmerBlock('Current Weather', conditions)}${farmerBlock('Risk Meaning', `<p>${escapeHtml(riskMeaning)}</p>`)}${farmerBlock('Possible Effect', `<p>${escapeHtml(weather.effect)}</p>`)}${farmerBlock('What You Can Do', `<p>${escapeHtml(weather.action)}</p>`)}</div><button type="button" class="risk-map-detail-close" data-risk-map-detail-close>Close details</button></div>`;
 }
@@ -433,7 +476,26 @@ export function initBarangayRiskMap() {
     let generatedText = null;
     let sourceNote = '';
     let refreshQueued = false;
+    let weatherSummary = null;
+    const weatherHealth = card?.querySelector('[data-risk-weather-health]');
     const renderedNames = () => OFFICIAL_NAMES.filter((name) => layers.has(name));
+    // Current Conditions health: how many barangays have a current reading, which are on their last available
+    // one, when the provider was last checked, and the source. Counted from the same entries the map shows.
+    const weatherHealthText = () => {
+        const names = renderedNames();
+        if (!names.length) return '';
+        const states = names.map((name) => [displayName(name), currentWeatherParts(entries.get(name)).status]);
+        const current = states.filter(([, status]) => status === 'fresh' || status === 'recent').length;
+        const delayed = states.filter(([, status]) => status === 'stale').map(([name]) => name);
+        const missing = states.filter(([, status]) => status === 'unavailable').map(([name]) => name);
+        const checked = philippineTime(weatherSummary?.last_checked_at);
+        const provider = weatherSummary?.provider || 'Open-Meteo';
+        const parts = [current ? `Latest weather is available for ${current} of ${names.length} barangays.` : 'Latest weather information is temporarily unavailable.'];
+        if (current && delayed.length) parts.push(`${delayed.length} ${delayed.length === 1 ? 'barangay is' : 'barangays are'} temporarily using their last available update (${delayed.join(', ')}).`);
+        if (current && missing.length) parts.push(`No weather reading yet for ${missing.join(', ')}.`);
+        parts.push(`Last checked: ${checked || 'not yet'} · Weather source: ${provider}`);
+        return parts.join(' ');
+    };
     const updateCounts = () => {
         const counts = { Low: 0, Moderate: 0, High: 0, Severe: 0, 'No Data': 0 };
         layers.forEach((_, name) => { counts[riskLevel(activeEntries().get(name))] += 1; });
@@ -444,8 +506,10 @@ export function initBarangayRiskMap() {
             monitored: layers.size,
             forLine: month
                 ? `Monthly forecast · ${month.label}`
-                : `Current conditions · ratings updated ${generatedText || 'recently'}${refreshQueued ? ' · a refresh is running in the background' : ''}`,
+                : `Current conditions · risk calculated ${generatedText || 'recently'}${refreshQueued ? ' · a risk refresh is running in the background' : ''}`,
         });
+        // Monthly forecast values are predictions, so the current-weather health line only shows for "Now".
+        if (weatherHealth) { weatherHealth.textContent = month ? '' : weatherHealthText(); weatherHealth.hidden = Boolean(month) || !weatherHealth.textContent; }
         document.dispatchEvent(new CustomEvent('iclimate:risk-counts', { detail: { counts, monitored: layers.size, month: month?.month || null, generatedAt: generatedText } }));
         updateForecastPanel(counts);
     };
@@ -456,9 +520,11 @@ export function initBarangayRiskMap() {
         levelOf: riskLevel,
         displayName,
         weatherFor: currentWeatherParts,
-        updatedFor: (entry) => philippineDateTime(entry?.updated_at),
+        updatedFor: (entry) => { const weather = currentWeatherParts(entry); return weather.updatedTime ? `${weather.updatedTime}${weather.stale && weather.ago ? ` · ${weather.ago}` : ''}` : null; },
         month: activeForecast(),
         generatedAt: generatedText,
+        weatherSummary: activeForecast() ? null : weatherHealthText(),
+        weatherCheckedAt: philippineDateTime(weatherSummary?.last_checked_at),
         sourceNote,
         mapAnchor: true,
     });
@@ -504,7 +570,7 @@ export function initBarangayRiskMap() {
         const month = activeForecast();
         if (forLabel) forLabel.innerHTML = month
             ? `<span class="risk-mode-badge is-forecast">Monthly Forecast</span> Forecast for: <strong>${escapeHtml(month.label)}</strong>`
-            : '<span class="risk-mode-badge">Current Conditions</span> Today\'s risk (live weather)';
+            : '<span class="risk-mode-badge">Current Conditions</span> Today\'s risk · latest weather';
         if (aboutConfidence) aboutConfidence.textContent = month?.confidence_level ? `${month.confidence_level} (${month.label})` : 'Shown when a forecast month is selected';
         if (legendTitle) legendTitle.textContent = month ? 'Forecast risk' : 'Farm risk';
         if (overview) { overview.hidden = !month; overview.innerHTML = month ? overviewMarkup(month) : ''; }
@@ -559,34 +625,59 @@ export function initBarangayRiskMap() {
     monthSelect?.addEventListener('change', () => setMonth(monthSelect.value));
     timeline?.addEventListener('click', (event) => { const button = event.target.closest('[data-month]'); if (button) setMonth(button.dataset.month); });
     loadForecast();
+    // The risk URL: ?refresh=1 for Refresh Weather; ?priority= asks for the farmer's own barangay first.
+    const riskUrl = (forceRefresh) => {
+        const url = new URL(mapElement.dataset.riskMapUrl, window.location.href);
+        if (forceRefresh) url.searchParams.set('refresh', '1');
+        if (highlightBarangay) url.searchParams.set('priority', highlightBarangay);
+        return url.toString();
+    };
+    let followUp = null;
+    // Takes in one /api/lian/risk-map response; returns any coverage problems found in it.
+    const applyRisk = (risk) => {
+        generatedText = philippineDateTime(risk.generated_at);
+        sourceNote = risk.source_note || '';
+        refreshQueued = Boolean(risk.refresh_queued);
+        weatherSummary = risk.weather_summary || null;
+        if (weatherSummary?.fresh_minutes) freshMinutes = Number(weatherSummary.fresh_minutes);
+        if (weatherSummary?.recent_minutes) recentMinutes = Number(weatherSummary.recent_minutes);
+        // A weather refresh was due and is running on the server now: ask again shortly for its result.
+        window.clearTimeout(followUp);
+        if (risk.weather_refresh_scheduled) followUp = window.setTimeout(() => updateRisk(false), 20000);
+        entries.clear();
+        // Coverage problems are reported, never silently dropped: an unmatched name would otherwise
+        // vanish from the map (boundary) or show as No Data (risk record).
+        const problems = [];
+        (risk.barangays || []).forEach((entry) => {
+            const canonical = canonicalName(entry.barangay);
+            if (!canonical) problems.push(`risk record "${entry.barangay}" matches no official barangay`);
+            else if (entries.has(canonical)) problems.push(`duplicate risk record for ${canonical}`);
+            else entries.set(canonical, entry);
+        });
+        return problems;
+    };
+    const fetchRisk = async (forceRefresh) => {
+        // loader: false keeps the full-page iClimate overlay away; the button shows its own small loader.
+        const response = await fetch(riskUrl(forceRefresh), { headers: { Accept: 'application/json' }, loader: false });
+        if (!response.ok) throw new Error(`Risk map data request failed (${response.status})`);
+        const risk = await response.json();
+        if (risk.status !== 'ok') throw new Error('Risk map data is unavailable');
+        return risk;
+    };
     const render = async (forceRefresh = false) => {
         let ok = false;
         loading?.removeAttribute('hidden');
         if (error) error.hidden = true;
         if (refresh) refresh.disabled = true;
         try {
-            const riskUrl = forceRefresh ? `${mapElement.dataset.riskMapUrl}${mapElement.dataset.riskMapUrl.includes('?') ? '&' : '?'}refresh=1` : mapElement.dataset.riskMapUrl;
-            const [boundaryResponse, riskResponse] = await Promise.all([
+            const [boundaryResponse, risk] = await Promise.all([
                 fetch(mapElement.dataset.boundaryUrl, { headers: { Accept: 'application/json' } }),
-                fetch(riskUrl, { headers: { Accept: 'application/json' } }),
+                fetchRisk(forceRefresh),
             ]);
-            if (!boundaryResponse.ok || !riskResponse.ok) throw new Error('Risk map data request failed');
+            if (!boundaryResponse.ok) throw new Error('Risk map data request failed');
             const boundary = await boundaryResponse.json();
-            const risk = await riskResponse.json();
-            if (risk.status !== 'ok' || !Array.isArray(boundary.features)) throw new Error('Risk map data is unavailable');
-            generatedText = philippineDateTime(risk.generated_at);
-            sourceNote = risk.source_note || '';
-            refreshQueued = Boolean(risk.refresh_queued);
-            entries.clear();
-            // Coverage problems are reported, never silently dropped: an unmatched name would otherwise
-            // vanish from the map (boundary) or show as No Data (risk record).
-            const problems = [];
-            (risk.barangays || []).forEach((entry) => {
-                const canonical = canonicalName(entry.barangay);
-                if (!canonical) problems.push(`risk record "${entry.barangay}" matches no official barangay`);
-                else if (entries.has(canonical)) problems.push(`duplicate risk record for ${canonical}`);
-                else entries.set(canonical, entry);
-            });
+            if (!Array.isArray(boundary.features)) throw new Error('Risk map data is unavailable');
+            const problems = applyRisk(risk);
             const featureNames = new Set();
             const acceptFeature = (feature) => {
                 const props = feature?.properties || {};
@@ -661,8 +752,45 @@ export function initBarangayRiskMap() {
             window.setTimeout(() => map.invalidateSize(), 0);
         }
     };
-    refresh?.addEventListener('click', () => render(true));
+    // After the first load only the ratings and weather change: they are fetched again (one request) and the
+    // existing polygons are recoloured, so the boundaries, mask and map position stay exactly as they are.
+    let riskRequest = null;
+    const refreshLabel = refresh?.textContent;
+    const updateRisk = (forceRefresh = false) => {
+        if (!layers.size) return render(forceRefresh);
+        if (riskRequest) return riskRequest;
+        if (forceRefresh && refresh) { refresh.disabled = true; refresh.setAttribute('aria-busy', 'true'); refresh.textContent = 'Refreshing…'; }
+        let ok = false;
+        riskRequest = fetchRisk(forceRefresh)
+            .then((risk) => {
+                const problems = applyRisk(risk);
+                OFFICIAL_NAMES.forEach((name) => { if (layers.has(name) && !entries.has(name)) problems.push(`${name} has no risk record (shown as No Data)`); });
+                if (problems.length) console.warn('Lian risk map: coverage problems after update.', problems);
+                layers.forEach((layer, name) => {
+                    layer.setStyle(styleFor(name, name === selectedName));
+                    if (layer.isPopupOpen()) layer.getPopup().update();
+                });
+                updateCounts();
+                if (selectedName && details && !details.hidden) showDetails(selectedName);
+                if (error) error.hidden = true;
+                ok = true;
+            })
+            .catch((requestError) => {
+                console.error('iClimate could not update the Lian risk map.', requestError);
+                // The last loaded ratings and weather stay on the map; only an explicit refresh reports the failure.
+                if (forceRefresh && error) { error.textContent = 'The latest weather could not be loaded. Showing the last loaded values.'; error.hidden = false; }
+            })
+            .finally(() => {
+                riskRequest = null;
+                if (refresh) { refresh.disabled = false; refresh.removeAttribute('aria-busy'); refresh.textContent = refreshLabel; }
+                document.dispatchEvent(new CustomEvent('iclimate:risk-map-rendered', { detail: { ok, refreshQueued } }));
+            });
+        return riskRequest;
+    };
+    refresh?.addEventListener('click', () => updateRisk(true));
     // The page's own Refresh Data button (MAO dashboard) refreshes the map, overview and counts together.
-    document.addEventListener('iclimate:risk-map-refresh', () => render(true));
+    document.addEventListener('iclimate:risk-map-refresh', () => updateRisk(true));
+    // Keep "Now" current without a page reload: one request to Laravel every few minutes while the page is visible.
+    window.setInterval(() => { if (document.visibilityState === 'visible') updateRisk(false); }, AUTO_REFRESH_MS);
     render();
 }

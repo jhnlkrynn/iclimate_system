@@ -103,9 +103,12 @@ Schedule::command('iclimate:automation-run --force-weather')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
-Schedule::command('iclimate:refresh-lian-weather')
-    ->everyThirtyMinutes()
-    ->withoutOverlapping()
+// Shared current weather for all 19 barangays (Heat Map, Advisories, Climora): one batched Open-Meteo request
+// every 10 minutes, so pages read a reading that is at most ~10 minutes old. Offset from the quarter hour
+// (see the PAGASA note below). After a deployment run `php artisan iclimate:refresh-barangay-weather --force`.
+Schedule::command('iclimate:refresh-barangay-weather')
+    ->cron('1,11,21,31,41,51 * * * *')
+    ->withoutOverlapping(5)
     ->appendOutputTo($automationLog);
 
 // Keeps the MAO / IT dashboard payloads cached (they cost ~40 Supabase round
@@ -145,8 +148,10 @@ Schedule::command('iclimate:refresh-lian-boundaries')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 
+// Re-rates the 19 barangays with the existing risk engine from the shared weather above (no extra provider
+// request when that weather is current). The ratings carry their own calculation time.
 Schedule::command('iclimate:refresh-barangay-risk')
-    ->everyFourHours()
+    ->cron('5,35 * * * *')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog);
 

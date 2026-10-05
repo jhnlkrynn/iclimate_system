@@ -58,5 +58,8 @@
         </ul>
     </div>
     <p class="risk-overview-check" data-risk-overview-check role="status" aria-live="polite"></p>
+    {{-- Current Conditions weather health (filled by barangay-risk-map.js): how many barangays have a current
+         reading, which use their last available one, when the weather was last checked, and its source. --}}
+    <p class="risk-overview-check risk-overview-weather" data-risk-weather-health role="status" aria-live="polite" hidden></p>
     <p class="risk-overview-check">Farm risk is a planning guide based on available weather and agricultural data. A barangay without a rating is counted as No Data, not Low risk.</p>
 </section>

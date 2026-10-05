@@ -1,6 +1,6 @@
 @php
     $heading = $heading ?? 'Lian Municipality Risk Map';
-    $subheading = $subheading ?? 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.';
+    $subheading = $subheading ?? 'All 19 barangays at a glance, using the same latest barangay weather and recorded rice yield data used municipality-wide. Click any barangay for details.';
     $showRefresh = $showRefresh ?? true;
     // A canonical barangay name (normalize with \App\Support\LianBarangays::canonicalName()) to
     // highlight as the farmer's own. It never hides or filters any of the other 18 barangays.
@@ -33,7 +33,7 @@
             <p class="risk-map-subtitle">{{ $subheading }}</p>
         </div>
         @if($showRefresh)
-            <button type="button" class="risk-map-refresh" data-risk-map-refresh>Refresh data</button>
+            <button type="button" class="risk-map-refresh" data-risk-map-refresh>Refresh weather</button>
         @endif
     </div>
 
@@ -67,14 +67,14 @@
             <div class="risk-forecast-toolbar" data-risk-map-toolbar>
                 <div class="risk-forecast-toolbar-context">
                     <span class="risk-forecast-toolbar-label">Forecast View</span>
-                    <p class="risk-forecast-for" data-risk-forecast-for><span class="risk-mode-badge">Current Conditions</span> Today's risk (live weather)</p>
+                    <p class="risk-forecast-for" data-risk-forecast-for><span class="risk-mode-badge">Current Conditions</span> Today's risk · latest weather</p>
                 </div>
                 <div class="risk-forecast-toolbar-controls">
                     <div class="risk-forecast-timeline" data-risk-forecast-timeline role="group" aria-label="Forecast months" hidden></div>
                     <div class="risk-forecast-select">
                         <label for="riskForecastMonth">Forecast Month</label>
                         <select id="riskForecastMonth" class="form-select" data-risk-forecast-month disabled>
-                            <option value="">Current conditions (live)</option>
+                            <option value="">Current conditions</option>
                         </select>
                     </div>
                 </div>

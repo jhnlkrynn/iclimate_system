@@ -79,7 +79,7 @@ class LocalFarmGuidanceService
             return $this->barangayWeather->cachedForBarangay($barangay);
         }
         $weather = $this->barangayWeather->latestForBarangay($barangay);
-        if (($weather['status'] ?? '') !== 'fresh' || ! is_numeric($weather['temperature_c'] ?? null)
+        if (($weather['is_fresh'] ?? false) !== true || ! is_numeric($weather['temperature_c'] ?? null)
             || ! is_numeric($weather['rainfall_now_mm'] ?? null) || empty($weather['observed_at'])
             || Carbon::parse($weather['observed_at'], 'Asia/Manila')->lt(now()->subHours(6))) {
             Log::warning('Barangay farm guidance unavailable.', ['barangay' => $barangay]);

@@ -87,6 +87,62 @@ class BarangayRiskMapService
     }
 
     /**
+     * The display block for one barangay's shared weather record (LianBarangayWeatherService), with its own
+     * freshness and timestamps. Values are the provider's; a missing value stays null.
+     *
+     * @param  array<string, mixed>  $weather
+     * @return array<string, mixed>
+     */
+    public function weatherBlock(array $weather): array
+    {
+        $status = $weather['status'] ?? 'unavailable';
+        $hasValues = $status !== 'unavailable' && is_numeric($weather['temperature_c'] ?? null);
+
+        return [
+            'status' => $hasValues ? $status : 'unavailable',
+            'is_fresh' => $hasValues && ($weather['is_fresh'] ?? false) === true,
+            'age_minutes' => $weather['age_minutes'] ?? null,
+            'message' => $weather['message'] ?? null,
+            'provider' => $weather['provider'] ?? LianBarangayWeatherService::PROVIDER,
+            'temperature_c' => $weather['temperature_c'] ?? null,
+            'humidity_percent' => $weather['humidity_percent'] ?? null,
+            'precipitation_mm' => $weather['precipitation_mm'] ?? $weather['rainfall_now_mm'] ?? null,
+            'rain_probability_percent' => $weather['rain_probability_percent'] ?? $weather['precip_probability_percent'] ?? null,
+            'rainfall_24h_mm' => $weather['rainfall_24h_mm'] ?? null,
+            'rainfall_7d_mm' => $weather['rainfall_7d_mm'] ?? null,
+            'rainfall_status' => $weather['rainfall_status'] ?? null,
+            'wind_speed_kmh' => $weather['wind_speed_kmh'] ?? $weather['wind_kmh'] ?? null,
+            'observed_at' => $weather['observed_at'] ?? null,
+            'fetched_at' => $weather['fetched_at'] ?? null,
+            ...($hasValues ? $this->weatherIconFields($weather) : []),
+        ];
+    }
+
+    /**
+     * Replace each barangay's weather with the latest shared reading, read from the cache (no online request).
+     * The risk rating and its own calculation time are left exactly as computed: refreshed weather never gives
+     * a risk a newer timestamp.
+     *
+     * @param  array<string, mixed>  $map
+     * @return array<string, mixed>
+     */
+    public function withCurrentWeather(array $map): array
+    {
+        $records = $this->weatherService->snapshot();
+
+        $map['barangays'] = collect($map['barangays'] ?? [])->map(function (array $entry) use ($records): array {
+            $canonical = LianBarangays::canonicalName($entry['barangay'] ?? null);
+            $entry['risk_calculated_at'] = ($entry['risk_level'] ?? 'No Data') === 'No Data' ? null : ($entry['updated_at'] ?? null);
+            $entry['weather'] = $this->weatherBlock($canonical !== null ? ($records[$canonical] ?? []) : []);
+
+            return $entry;
+        })->values()->all();
+        $map['weather_summary'] = $this->weatherService->summary($records);
+
+        return $map;
+    }
+
+    /**
      * Barangays whose risk refresh failed today (weather lookup threw).
      * Read by the IT-expert dashboard.
      */
@@ -383,23 +439,24 @@ class BarangayRiskMapService
         $farmTypes = $this->dominantFarmTypes();
         $existingAreas = $this->existingAreas();
 
+        // The shared barangay weather records (one batched provider request for all 19 when they are due),
+        // the same readings the Heat Map popups, Advisories and Climora show.
+        try {
+            $allWeather = $this->weatherService->all($refresh);
+        } catch (Throwable $exception) {
+            Log::warning('Barangay risk map: weather lookup failed, treating as No Data.', ['message' => $exception->getMessage()]);
+            $allWeather = [];
+            self::recordFailure();
+        }
+
         foreach (LianBarangays::coordinates() as $barangay => [$latitude, $longitude]) {
             $psgc = $psgcMap[$barangay] ?? null;
-
-            try {
-                $weather = $this->weatherService->forBarangay($barangay, $latitude, $longitude, $refresh);
-            } catch (Throwable $exception) {
-                Log::warning('Barangay risk map: weather lookup failed, treating as No Data.', [
-                    'barangay' => $barangay,
-                    'message' => $exception->getMessage(),
-                ]);
-                $weather = ['status' => 'unavailable', 'stale' => true];
-                self::recordFailure();
-            }
+            $weather = $allWeather[$barangay] ?? ['status' => 'unavailable', 'stale' => true];
 
             $lastYield = $latestYields[$barangay] ?? null;
-            // Temperature is a scored input: "fresh" weather without it is not usable (never read as 0 °C).
-            $hasFreshWeather = ($weather['status'] ?? null) === 'fresh' && is_numeric($weather['temperature_c'] ?? null);
+            // Only a current reading (fresh or recent) is scored; a delayed one is the last available value, not
+            // today's conditions. Temperature is a scored input: a reading without it is never read as 0 °C.
+            $hasFreshWeather = ($weather['is_fresh'] ?? false) === true && is_numeric($weather['temperature_c'] ?? null);
             $hasMonthlyRainfall = $monthlyRainfall['available'];
 
             // Two independent guards: temperature/humidity/wind context comes
@@ -537,18 +594,7 @@ class BarangayRiskMapService
         // real short-range weather fields for display/context — only the
         // scored result is missing, not the weather reading itself.
         $weatherBlock = $hasFreshWeather
-            ? [
-                'status' => 'fresh',
-                'message' => $message,
-                'rainfall_24h_mm' => $weather['rainfall_24h_mm'] ?? null,
-                'rainfall_7d_mm' => $weather['rainfall_7d_mm'] ?? null,
-                'rainfall_status' => $weather['rainfall_status'] ?? null,
-                'temperature_c' => $weather['temperature_c'] ?? null,
-                'humidity_percent' => $weather['humidity_percent'] ?? null,
-                'wind_speed_kmh' => $weather['wind_speed_kmh'] ?? null,
-                'observed_at' => $weather['observed_at'] ?? null,
-                ...$this->weatherIconFields($weather),
-            ]
+            ? ['message' => $message] + $this->weatherBlock($weather)
             : [
                 'status' => $weather['status'] ?? 'unavailable',
                 'message' => $message,
@@ -598,19 +644,9 @@ class BarangayRiskMapService
             'color' => $this->colorFor($risk['level']),
             'status' => $weather['stale'] ?? false ? 'stale' : 'ok',
             'updated_at' => now()->toIso8601String(),
-            'weather' => [
-                'status' => 'fresh',
-                // Short-range Open-Meteo figures — display/advisory context
-                // only, NOT what was scored (see 'monthly_rainfall' below).
-                'rainfall_24h_mm' => $weather['rainfall_24h_mm'] ?? null,
-                'rainfall_7d_mm' => $weather['rainfall_7d_mm'] ?? null,
-                'rainfall_status' => $weather['rainfall_status'] ?? null,
-                'temperature_c' => $weather['temperature_c'] ?? null,
-                'humidity_percent' => $weather['humidity_percent'] ?? null,
-                'wind_speed_kmh' => $weather['wind_speed_kmh'] ?? null,
-                'observed_at' => $weather['observed_at'] ?? null,
-                ...$this->weatherIconFields($weather),
-            ],
+            // Short-range Open-Meteo figures — display/advisory context
+            // only, NOT what was scored (see 'monthly_rainfall' below).
+            'weather' => $this->weatherBlock($weather),
             // The monthly-scale rainfall figure actually fed to the scorer
             // (mm/calendar month, municipality-wide — see monthlyRainfall()).
             // Deliberately reported separately from 'weather' above so the UI

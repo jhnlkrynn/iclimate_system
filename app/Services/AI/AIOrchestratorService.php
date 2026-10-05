@@ -471,6 +471,34 @@ class AIOrchestratorService
         ));
     }
 
+    /** The one Lian barangay a weather question names, or null for a Lian-wide question. */
+    private function weatherBarangay(User $user, string $question, array $entities): ?string
+    {
+        return LianBarangays::canonicalName(is_string($entities['barangay'] ?? null) ? $entities['barangay'] : null);
+    }
+
+    /**
+     * That barangay's shared weather record — the same reading the Heat Map and Advisories show. A due record
+     * is refreshed after the reply (its last available values are used now, marked delayed when they are); only
+     * a cold cache with no reading at all is fetched now (all 19 in one batched request), time permitting.
+     *
+     * @return array<string, mixed>
+     */
+    private function barangayWeather(string $barangay): array
+    {
+        return $this->barangayWeatherMemo[$barangay] ??= $this->timings->time('barangay_weather', function () use ($barangay): array {
+            $record = $this->barangayWeatherService->getCurrentWeather($barangay) ?? [];
+
+            if (($record['status'] ?? 'unavailable') === 'unavailable' && $this->timings->remainingSeconds() > 8) {
+                return rescue(fn (): array => $this->barangayWeatherService->latestForBarangay($barangay), $record, false);
+            }
+
+            $this->barangayWeatherService->refreshIfDue($barangay);
+
+            return $record;
+        });
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Weather\LianBarangayWeatherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +12,13 @@ use Throwable;
 
 class BarangayRiskMapController extends Controller
 {
-    public function __construct(private readonly BarangayRiskMapService $riskMapService) {}
+    public function __construct(
+        private readonly BarangayRiskMapService $riskMapService,
+        private readonly LianBarangayWeatherService $weatherService,
+    ) {}
+
+    /** True when this request found the weather due and started a refresh that runs after the response. */
+    private bool $weatherRefreshScheduled = false;
 
     /**
      * GET /api/lian/risk-map
@@ -20,16 +27,16 @@ class BarangayRiskMapController extends Controller
     public function index(Request $request): JsonResponse
     {
         $refreshQueued = false;
+        $weatherRefreshed = $this->refreshWeather($request);
 
-        // A manual refresh is intentionally asynchronous. The risk service
-        // performs 19 weather lookups and database writes; doing that inside
-        // this HTTP request can exceed PHP's 30-second execution limit.
+        // The risk recompute (19 database writes) stays out of this request; it is queued here and also runs
+        // on the scheduler. The weather shown below is the shared, separately timestamped reading.
         if ($request->boolean('refresh')) {
             $refreshQueued = $this->riskMapService->queueRefresh();
         }
 
         try {
-            $map = $this->riskMapService->riskMap(false);
+            $map = $this->riskMapService->withCurrentWeather($this->riskMapService->riskMap(false));
         } catch (Throwable $exception) {
             return $this->unavailableResponse($exception);
         }
@@ -49,6 +56,7 @@ class BarangayRiskMapController extends Controller
                 'color' => $entry['color'],
                 'status' => $entry['status'],
                 'updated_at' => $entry['updated_at'],
+                'risk_calculated_at' => $entry['risk_calculated_at'] ?? null,
                 'weather' => $entry['weather'],
                 'last_recorded_yield' => $entry['last_recorded_yield'],
             ];
@@ -60,6 +68,9 @@ class BarangayRiskMapController extends Controller
             'stale' => (bool) ($map['stale'] ?? false),
             'stale_count' => (int) ($map['stale_count'] ?? 0),
             'refresh_queued' => $refreshQueued,
+            'weather_refreshed' => $weatherRefreshed,
+            'weather_refresh_scheduled' => $this->weatherRefreshScheduled,
+            'weather_summary' => $map['weather_summary'] ?? null,
             'source_note' => $map['source_note'],
             'legend' => ['Low', 'Moderate', 'High', 'Severe', 'No Data'],
             'barangays' => $barangays,
@@ -72,14 +83,19 @@ class BarangayRiskMapController extends Controller
      */
     public function show(Request $request, string $barangay): JsonResponse
     {
+        $this->refreshWeather($request);
+
         if ($request->boolean('refresh')) {
             $this->riskMapService->queueRefresh();
         }
 
         try {
-            // Detail requests must be bounded too; live refresh is handled by
-            // the queue and the current verified entry is returned now.
+            // Detail requests must be bounded too; the risk recompute is queued
+            // and the current verified entry is returned now.
             $entry = $this->riskMapService->detailFor($barangay, false);
+            if ($entry !== null) {
+                $entry = $this->riskMapService->withCurrentWeather(['barangays' => [$entry]])['barangays'][0];
+            }
         } catch (Throwable $exception) {
             return $this->unavailableResponse($exception);
         }
@@ -92,6 +108,31 @@ class BarangayRiskMapController extends Controller
         }
 
         return response()->json(['status' => 'ok'] + $entry);
+    }
+
+    /**
+     * Refresh Weather (?refresh=1) fetches all 19 now in one batched request (bounded by a short timeout), so
+     * the response already carries the new readings. Any other request only schedules a due refresh to run
+     * after the response is sent. ?priority= names the farmer's own barangay, which is requested first.
+     */
+    private function refreshWeather(Request $request): bool
+    {
+        $priority = $request->query('priority');
+        $priority = is_string($priority) ? $priority : null;
+
+        try {
+            if ($request->boolean('refresh')) {
+                $this->weatherService->refreshUnlessJustChecked($priority);
+
+                return true;
+            }
+
+            $this->weatherRefreshScheduled = $this->weatherService->refreshIfDue($priority);
+        } catch (Throwable $exception) {
+            Log::warning('Barangay weather refresh could not start.', ['message' => $exception->getMessage()]);
+        }
+
+        return false;
     }
 
     private function unavailableResponse(Throwable $exception): JsonResponse

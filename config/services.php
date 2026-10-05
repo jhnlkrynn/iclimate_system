@@ -73,6 +73,8 @@ return [
         'location_name' => env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas'),
         'timeout' => env('OPEN_METEO_TIMEOUT', 10),
         'refresh_minutes' => env('OPEN_METEO_REFRESH_MINUTES', 10),
+        // Shared barangay current weather (LianBarangayWeatherService): all 19 are refreshed in one request this often.
+        'barangay_refresh_minutes' => env('OPEN_METEO_BARANGAY_REFRESH_MINUTES', 10),
         'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
         'realtime' => env('OPEN_METEO_REALTIME', true),
     ],

@@ -12,6 +12,13 @@ class PlainLanguagePagesTest extends TestCase
 
     private const FORBIDDEN = ['Random Forest', 'Python', 'Open-Meteo', 'analytics run', 'Traceback', '.pkl'];
 
+    /**
+     * Farmer explanations stay in simple words, but the weather provider may be named where the page says where
+     * the data comes from ("Weather source: Open-Meteo", "Source: Open-Meteo + …", the "Weather Data" card).
+     * Only those attribution labels are removed before the check; "Open-Meteo" anywhere else still fails it.
+     */
+    private const SOURCE_ATTRIBUTION = '/\b(?:weather\s+source|source|weather\s+data)\s*:?\s*open-meteo\b/i';
+
     private function visibleText(string $html): string
     {
         return strip_tags(preg_replace('#<(script|style)\b.*?</\1>#is', '', $html));
@@ -28,12 +35,20 @@ class PlainLanguagePagesTest extends TestCase
                     continue;
                 }
                 $response->assertOk();
-                $text = $this->visibleText($response->getContent());
+                $text = preg_replace(self::SOURCE_ATTRIBUTION, '', $this->visibleText($response->getContent()));
                 foreach (self::FORBIDDEN as $term) {
-                    $this->assertStringNotContainsStringIgnoringCase($term, $text, "$role $url shows $term");
+                    $this->assertStringNotContainsStringIgnoringCase($term, $text, "$role $url shows $term outside a source attribution");
                 }
             }
         }
+    }
+
+    public function test_open_meteo_is_allowed_only_as_a_source_attribution(): void
+    {
+        $this->assertSame('29.4°C · Overcast. Updated 4 minutes ago. ', preg_replace(self::SOURCE_ATTRIBUTION, '', '29.4°C · Overcast. Updated 4 minutes ago. Weather source: Open-Meteo'));
+        $this->assertSame(' + iClimate Local Guidance', preg_replace(self::SOURCE_ATTRIBUTION, '', 'Source: Open-Meteo + iClimate Local Guidance'));
+        $this->assertSame("\n", preg_replace(self::SOURCE_ATTRIBUTION, '', "Weather Data\n Open-Meteo\n"));
+        $this->assertStringContainsString('Open-Meteo', preg_replace(self::SOURCE_ATTRIBUTION, '', 'Open-Meteo predicts rain for your rice field.'));
     }
 
     public function test_management_page_stays_plain_for_mao(): void

@@ -11,10 +11,12 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\FakesBarangayWeather;
 use Tests\TestCase;
 
 class FarmerAdvisorySourcesTest extends TestCase
 {
+    use FakesBarangayWeather;
     use RefreshDatabase;
 
     private const SOURCE = 'https://www.pagasa.dost.gov.ph/regional-forecast/ncrprsd';
@@ -290,7 +292,8 @@ class FarmerAdvisorySourcesTest extends TestCase
     {
         Http::fake([
             self::SOURCE => Http::response('<body>'.$bulletin.'</body>', $status),
-            'api.open-meteo.com/*' => Http::response([
+            // Batch-aware, like the provider: the 19-barangay request gets one result per coordinate.
+            'api.open-meteo.com/*' => fn ($request) => $this->openMeteoAnswer($request, fn () => [
                 'current' => ['time' => now('Asia/Manila')->format('Y-m-d\TH:i'), 'temperature_2m' => 29,
                     'precipitation' => 0.1, 'relative_humidity_2m' => 80, 'wind_speed_10m' => 10],
                 'daily' => ['time' => [now('Asia/Manila')->toDateString()], 'temperature_2m_max' => [31],

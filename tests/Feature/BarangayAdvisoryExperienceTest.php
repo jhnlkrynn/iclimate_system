@@ -11,10 +11,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\FakesBarangayWeather;
 use Tests\TestCase;
 
 class BarangayAdvisoryExperienceTest extends TestCase
 {
+    use FakesBarangayWeather;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -57,23 +59,24 @@ class BarangayAdvisoryExperienceTest extends TestCase
 
     public function test_each_tested_barangay_uses_its_own_polygon_verified_coordinate_request(): void
     {
-        Http::fake(['api.open-meteo.com/*' => Http::response($this->weatherPayload())]);
+        Http::fake(['api.open-meteo.com/*' => fn ($request) => $this->openMeteoAnswer($request, fn () => $this->weatherPayload())]);
         $barangays = ['San Diego', 'Binubusan', 'Bungahan', 'Malaruhatan'];
 
+        // One batched request carries every barangay's own coordinate; the asked-for barangay goes first.
+        $result = app(LianBarangayWeatherService::class)->latestForBarangay('San Diego', refresh: true);
+
+        $this->assertCount(1, Http::recorded());
+        $points = $this->requestedPoints(Http::recorded()[0][0]);
+        $this->assertCount(19, $points);
+        $this->assertCount(19, collect($points)->map(fn (array $point) => implode(',', $point))->unique());
+        $this->assertEquals(LianBarangays::coordinateFor('San Diego'), $points[0]);
+        $this->assertSame(LianBarangays::coordinateFor('San Diego'), [$result['latitude'], $result['longitude']]);
+
         foreach ($barangays as $barangay) {
-            app(LianBarangayWeatherService::class)->latestForBarangay($barangay, refresh: true);
-        }
-
-        $requests = collect(Http::recorded())->map(function (array $record): array {
-            parse_str((string) parse_url($record[0]->url(), PHP_URL_QUERY), $query);
-
-            return [(float) $query['latitude'], (float) $query['longitude']];
-        })->values();
-
-        $this->assertCount(4, $requests);
-        $this->assertCount(4, $requests->map(fn (array $point) => implode(',', $point))->unique());
-        foreach ($barangays as $index => $barangay) {
-            $this->assertEquals(LianBarangays::coordinateFor($barangay), $requests[$index]);
+            $this->assertContainsEquals(LianBarangays::coordinateFor($barangay), $points);
+            $record = app(LianBarangayWeatherService::class)->getCurrentWeather($barangay);
+            $this->assertSame(LianBarangays::coordinateFor($barangay), [$record['latitude'], $record['longitude']]);
+            $this->assertSame('fresh', $record['status']);
         }
     }
 
@@ -97,15 +100,16 @@ class BarangayAdvisoryExperienceTest extends TestCase
 
     public function test_failed_refresh_returns_stale_barangay_weather_without_claiming_it_is_current(): void
     {
-        Http::fakeSequence()
-            ->push($this->weatherPayload())
-            ->push('unavailable', 503)
-            ->push('unavailable', 503)
-            ->push('unavailable', 503);
+        $providerUp = true;
+        Http::fake(['api.open-meteo.com/*' => function ($request) use (&$providerUp) {
+            return $this->openMeteoAnswer($request, fn () => $providerUp ? $this->weatherPayload() : null);
+        }]);
         $service = app(LianBarangayWeatherService::class);
         $service->latestForBarangay('Binubusan', refresh: true);
 
-        $this->travel(11)->minutes();
+        // Past the 30-minute "recent" window, with the provider down for the batch and every retry.
+        $this->travel(31)->minutes();
+        $providerUp = false;
         $result = $service->latestForBarangay('Binubusan', refresh: true);
 
         $this->assertSame('stale', $result['status']);

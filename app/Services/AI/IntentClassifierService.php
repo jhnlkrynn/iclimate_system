@@ -214,7 +214,7 @@ class IntentClassifierService
                 $intent = self::RICE_YIELD_PREDICTION;
             } elseif ($this->looksLikeRisk($text)) {
                 $intent = self::CLIMATE_RISK;
-            } elseif ($this->looksLikeCurrentWeather($text)) {
+            } elseif ($this->looksLikeCurrentWeather($text) || $this->asksAboutConditionsWithoutPeriod($text)) {
                 $intent = self::CURRENT_WEATHER;
             } elseif ($this->looksLikeApiForecast($text)) {
                 $intent = self::WEATHER_FORECAST;
@@ -277,6 +277,26 @@ class IntentClassifierService
         ]);
     }
 
+    /**
+     * A plain question about the weather/conditions ("What is the weather in San Diego?", "Kamusta ang panahon
+     * sa San Diego?", "Umuulan ba sa San Diego?") with no future period is about the weather now. Wording with
+     * a short-term period (tomorrow, later, next week) stays a forecast, a month or "monthly" stays the monthly
+     * prediction, and advisory/warning questions stay advisories.
+     */
+    private function asksAboutConditionsWithoutPeriod(string $text): bool
+    {
+        $asksAboutConditions = preg_match('/\b(?:what|how)(?:\s+is|[\'’]s|s)?\s+(?:the\s+)?(?:weather|temperature|humidity|panahon)\b/u', $text) === 1
+            || preg_match('/^\W*(?:the\s+)?weather\s+(?:in|at|sa|for)\b/u', $text) === 1
+            || preg_match('/\b(?:kamusta|kumusta|ano)\s+(?:na\s+)?(?:ang\s+)?panahon\b/u', $text) === 1
+            || preg_match('/\b(?:umuulan|mainit|maulan|mahangin|maalinsangan|malamig)\s+ba\b/u', $text) === 1
+            || preg_match('/\bis\s+it\s+(?:raining|hot|humid|windy|sunny|cloudy)\b/u', $text) === 1;
+
+        return $asksAboutConditions
+            && ! $this->looksLikeApiForecast($text)
+            && ! $this->looksLikeMonthlyModelPrediction($text)
+            && ! $this->looksLikeAdvisory($text);
+    }
+
     private function looksLikeRisk(string $text): bool
     {
         return str($text)->contains(['risk', 'high risk', 'severe risk', 'heat map', 'heatmap', 'panganib']);
@@ -286,6 +306,10 @@ class IntentClassifierService
     {
         return str($text)->contains([
             'tomorrow',
+            'later',
+            'next week',
+            'next few days',
+            'mamaya',
             'this week',
             'weekend',
             '7-day',
