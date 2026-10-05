@@ -490,9 +490,14 @@ export function initBarangayRiskMap() {
         const missing = states.filter(([, status]) => status === 'unavailable').map(([name]) => name);
         const checked = philippineTime(weatherSummary?.last_checked_at);
         const provider = weatherSummary?.provider || 'Open-Meteo';
-        const parts = [current ? `Latest weather is available for ${current} of ${names.length} barangays.` : 'Latest weather information is temporarily unavailable.'];
-        if (current && delayed.length) parts.push(`${delayed.length} ${delayed.length === 1 ? 'barangay is' : 'barangays are'} temporarily using their last available update (${delayed.join(', ')}).`);
-        if (current && missing.length) parts.push(`No weather reading yet for ${missing.join(', ')}.`);
+        // "Unavailable" only when no barangay has any reading; older readings are "delayed" and still shown.
+        const parts = [current
+            ? `Latest weather is available for ${current} of ${names.length} barangays.`
+            : delayed.length ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.'];
+        if (delayed.length) parts.push(current
+            ? `${delayed.length} ${delayed.length === 1 ? 'barangay is' : 'barangays are'} temporarily using their last available update (${delayed.join(', ')}).`
+            : `Showing the last available update for ${delayed.length} of ${names.length} barangays.`);
+        if (missing.length && missing.length < names.length) parts.push(`No weather reading yet for ${missing.join(', ')}.`);
         parts.push(`Last checked: ${checked || 'not yet'} · Weather source: ${provider}`);
         return parts.join(' ');
     };
