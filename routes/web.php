@@ -4,6 +4,7 @@ use App\Http\Controllers\AIChatController;
 use App\Http\Controllers\AiAdminController;
 use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
+use App\Http\Controllers\BarangayInsightController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CandidatePredictionController;
 use App\Http\Controllers\ClimateRecordController;
@@ -65,6 +66,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/heat-map', [DashboardController::class, 'heatMap'])
         ->name('heat-map.index');
+
+    // Barangay AI Insight pop-up (Heat Map's Barangays Monitored list, and the MAO dashboard's).
+    Route::get('/heat-map/insight/{barangay}', BarangayInsightController::class)
+        ->middleware('throttle:30,1')
+        ->name('heat-map.insight');
 
     /*
     |--------------------------------------------------------------------------

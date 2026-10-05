@@ -29,10 +29,10 @@ class BarangayRiskMapController extends Controller
         $refreshQueued = false;
         $weatherRefreshed = $this->refreshWeather($request);
 
-        // The risk recompute (19 database writes) stays out of this request; it is queued here and also runs
-        // on the scheduler. The weather shown below is the shared, separately timestamped reading.
+        // Refresh weather & risk: the 19 ratings are made from the new weather right after this response is sent
+        // (no queue worker needed); the page asks again shortly for them. Until then the last verified ratings show.
         if ($request->boolean('refresh')) {
-            $refreshQueued = $this->riskMapService->queueRefresh();
+            $refreshQueued = $this->riskMapService->refreshAfterResponse();
         }
 
         try {
@@ -70,6 +70,7 @@ class BarangayRiskMapController extends Controller
             'refresh_queued' => $refreshQueued,
             'weather_refreshed' => $weatherRefreshed,
             'weather_refresh_scheduled' => $this->weatherRefreshScheduled,
+            'risk_refresh_scheduled' => $refreshQueued,
             'weather_summary' => $map['weather_summary'] ?? null,
             'source_note' => $map['source_note'],
             'legend' => ['Low', 'Moderate', 'High', 'Severe', 'No Data'],
@@ -86,7 +87,7 @@ class BarangayRiskMapController extends Controller
         $this->refreshWeather($request);
 
         if ($request->boolean('refresh')) {
-            $this->riskMapService->queueRefresh();
+            $this->riskMapService->refreshAfterResponse();
         }
 
         try {

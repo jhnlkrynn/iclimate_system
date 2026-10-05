@@ -62,7 +62,8 @@ class HeatmapArea extends Model
                     ?: $area->planting_advisory
                     ?: 'Continue routine field monitoring.';
             }
-            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'risk_computed_at')) {
+            // A caller that set the calculation time (the risk map, one time for all 19) keeps it.
+            if (! $area->isDirty('risk_computed_at') && \Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'risk_computed_at')) {
                 $area->risk_computed_at = now();
             }
         });

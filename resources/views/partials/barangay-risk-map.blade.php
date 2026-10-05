@@ -33,7 +33,7 @@
             <p class="risk-map-subtitle">{{ $subheading }}</p>
         </div>
         @if($showRefresh)
-            <button type="button" class="risk-map-refresh" data-risk-map-refresh>Refresh weather</button>
+            <button type="button" class="risk-map-refresh" data-risk-map-refresh>Refresh weather &amp; risk</button>
         @endif
     </div>
 
@@ -89,6 +89,8 @@
                 data-risk-map-url="{{ url('/api/lian/risk-map') }}"
                 data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"
                 @if($highlightBarangay) data-highlight-barangay="{{ $highlightBarangay }}" @endif
+                {{-- Barangay AI Insight: farmers start in their saved English/Filipino choice; staff start in English. --}}
+                @auth data-insight-url="{{ url('/heat-map/insight') }}" data-insight-language="{{ auth()->user()->role === \App\Models\User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve(request()) : 'en' }}" @endauth
                 role="application" aria-label="Interactive risk map of all 19 barangays in Lian, Batangas"></div>
             <div class="risk-map-loading" data-risk-map-loading aria-live="polite">Loading the 19 barangays…</div>
             <div class="risk-map-error" data-risk-map-error hidden></div>

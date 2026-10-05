@@ -19,6 +19,9 @@ return [
         'timeout' => (float) env('AI_GROQ_TIMEOUT', 4),
         'connect_timeout' => (float) env('AI_GROQ_CONNECT_TIMEOUT', 2),
 
+        /* The Heat Map's Barangay AI Insight loads after its values are already on screen, so it may wait longer than the chat. */
+        'insight_timeout' => (float) env('AI_GROQ_INSIGHT_TIMEOUT', 8),
+
         /* After a timeout / 429 / 5xx, skip Groq for this long so following messages are not delayed too. */
         'cooldown_seconds' => (int) env('AI_GROQ_COOLDOWN', 30),
 

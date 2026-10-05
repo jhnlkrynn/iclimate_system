@@ -52,6 +52,11 @@ class BarangayRiskMapService
     /** Set while a background refresh is queued, so a burst of page loads queues only one. */
     public const REFRESH_LOCK_KEY = 'geo:lian-risk-map:v2:refresh-lock';
 
+    /** Held while one process rates the 19 barangays, so two triggers never compute the same weather twice. */
+    private const COMPUTE_LOCK_KEY = 'geo:lian-risk-map:v2:compute-lock';
+
+    private bool $refreshScheduled = false;
+
     /** A stored map older than this also triggers a background refresh. */
     private const REFRESH_AFTER_MINUTES = 60;
 
@@ -249,23 +254,161 @@ class BarangayRiskMapService
         $generatedAt = is_array($latest) ? ($latest['generated_at'] ?? null) : null;
         $old = $generatedAt === null || \Illuminate\Support\Carbon::parse($generatedAt)->lt(now()->subMinutes(self::REFRESH_AFTER_MINUTES));
 
-        if ($old) {
+        // Also when the shared weather is newer than the weather these ratings were made from. The queue is only
+        // an accelerator: the scheduled weather command rates the barangays itself after every refresh.
+        if ($old || $this->isBehindWeather($latest)) {
             $this->queueRefresh();
         }
 
         if (is_array($latest) && count($latest['barangays'] ?? []) === count(LianBarangays::all())) {
-            return $latest + ['stale' => true];
+            return $this->withStoredVerifiedRatings($latest) + ['stale' => true];
         }
 
         // On a cold install, use persisted verified risk rows immediately.
-        // Computing live weather for all 19 barangays belongs in the queue
-        // worker, otherwise a normal page request can exceed PHP's 30-second
-        // execution limit.
+        // Computing live weather for all 19 barangays belongs in the
+        // scheduler/after-response refresh, otherwise a normal page request can
+        // exceed PHP's 30-second execution limit. Only a computed map is ever
+        // kept as the long-lived LATEST map, so a fallback built while nothing
+        // is rated yet can never stick.
         $map = $this->storedMap();
         Cache::put(self::CACHE_KEY, $map, now()->addMinutes(self::CACHE_TTL_MINUTES));
-        Cache::forever(self::LATEST_KEY, $map);
 
         return $map;
+    }
+
+    /**
+     * A barangay's last verified rating as persisted by persist(), shown with its own calculation time while a
+     * newer rating is being made. Install placeholders never get here (see storedVerifiedEntries()).
+     *
+     * @return array<string, mixed>
+     */
+    private function storedVerifiedEntry(string $barangay, HeatmapArea $area, ?string $psgc): array
+    {
+        return [
+            'barangay' => $barangay,
+            'psgc_10d' => $psgc,
+            'risk_level' => $area->risk_level,
+            'risk_score' => $area->risk_score !== null ? (float) $area->risk_score : null,
+            'color' => $this->colorFor($area->risk_level),
+            'status' => 'stale',
+            'updated_at' => $area->risk_computed_at?->toIso8601String() ?? $area->updated_at?->toIso8601String(),
+            'weather' => [
+                'status' => 'unavailable',
+                'message' => 'Live weather is refreshing. Showing the last verified risk result.',
+                'temperature_c' => null,
+                'rainfall_24h_mm' => null,
+                'humidity_percent' => null,
+                'wind_speed_kmh' => null,
+            ],
+            'monthly_rainfall' => [
+                'value_mm' => null,
+                'unit' => 'mm/calendar month',
+                'available' => false,
+                'message' => 'Live risk refresh is still in progress.',
+            ],
+            'last_recorded_yield' => null,
+            'advisory' => null,
+            'risk_breakdown' => $area->risk_components,
+            'last_known_good' => true,
+            'stale_reason' => 'Risk assessment is being refreshed. Showing the last verified rating.',
+        ];
+    }
+
+    /**
+     * Last verified (computed, never placeholder) rating per barangay from the database.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function storedVerifiedEntries(): array
+    {
+        $psgcMap = $this->safePsgcMap();
+        $entries = [];
+
+        foreach ($this->existingAreas() as $barangay => $area) {
+            if (! $area->isSeedPlaceholder() && in_array($area->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)) {
+                $entries[$barangay] = $this->storedVerifiedEntry($barangay, $area, $psgcMap[$barangay] ?? null);
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * A cached map that says "No Data" for a barangay whose verified rating is in the database shows that rating
+     * (with its own time) instead: No Data is only shown when no verified rating has ever been made.
+     *
+     * @param  array<string, mixed>  $map
+     * @return array<string, mixed>
+     */
+    private function withStoredVerifiedRatings(array $map): array
+    {
+        if (collect($map['barangays'] ?? [])->every(fn (array $entry): bool => ($entry['risk_level'] ?? 'No Data') !== 'No Data')) {
+            return $map;
+        }
+
+        $stored = $this->storedVerifiedEntries();
+        $map['barangays'] = collect($map['barangays'])->map(
+            fn (array $entry): array => ($entry['risk_level'] ?? 'No Data') === 'No Data' && isset($stored[$entry['barangay']]) ? $stored[$entry['barangay']] : $entry
+        )->values()->all();
+
+        return $map;
+    }
+
+    /** True when the shared weather has a newer successful refresh than the one this map was rated from. */
+    private function isBehindWeather(mixed $map): bool
+    {
+        $weatherGeneration = $this->weatherService->summary()['last_success_at'] ?? null;
+
+        return $weatherGeneration !== null && (! is_array($map) || ($map['weather_generation'] ?? null) !== $weatherGeneration);
+    }
+
+    /**
+     * Rate the 19 barangays from the current shared weather, unless these exact readings are already rated.
+     * Called by the scheduled weather command after every refresh and after Refresh weather & risk, so the ratings
+     * follow the weather without depending on a queue worker. Returns the new map, or null when nothing was done.
+     */
+    public function refreshForCurrentWeather(bool $force = false): ?array
+    {
+        $latest = Cache::get(self::LATEST_KEY);
+        $complete = is_array($latest) && count($latest['barangays'] ?? []) === count(LianBarangays::all());
+        if (! $force && $complete && ! $this->isBehindWeather($latest)) {
+            return null;
+        }
+
+        $lock = Cache::lock(self::COMPUTE_LOCK_KEY, 120);
+        if (! rescue(fn () => $lock->get(), false, false)) {
+            return null;
+        }
+
+        try {
+            $this->refreshCache();
+
+            return Cache::get(self::LATEST_KEY);
+        } catch (Throwable $exception) {
+            // The previous verified ratings stay exactly as they were.
+            Log::error('Barangay risk map: rating the current weather failed; the last verified ratings are kept.', ['message' => $exception->getMessage()]);
+
+            return null;
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
+            Cache::forget(self::REFRESH_LOCK_KEY);
+        }
+    }
+
+    /** Rate the barangays after the current response has been sent (Refresh weather & risk); no worker needed. */
+    public function refreshAfterResponse(): bool
+    {
+        if ($this->refreshScheduled) {
+            return false;
+        }
+
+        $this->refreshScheduled = true;
+        app()->terminating(function (): void {
+            rescue(fn () => $this->refreshForCurrentWeather(), report: false);
+            $this->refreshScheduled = false;
+        });
+
+        return true;
     }
 
     /** Build a complete, fast response from the last persisted risk rows. */
@@ -291,34 +434,7 @@ class BarangayRiskMapService
                 continue;
             }
 
-            $rows[] = [
-                'barangay' => $barangay,
-                'psgc_10d' => $psgcMap[$barangay] ?? null,
-                'risk_level' => $area->risk_level,
-                'risk_score' => $area->risk_score !== null ? (float) $area->risk_score : null,
-                'color' => $this->colorFor($area->risk_level),
-                'status' => 'stale',
-                'updated_at' => $area->risk_computed_at?->toIso8601String() ?? $area->updated_at?->toIso8601String(),
-                'weather' => [
-                    'status' => 'unavailable',
-                    'message' => 'Live weather is refreshing. Showing the last verified risk result.',
-                    'temperature_c' => null,
-                    'rainfall_24h_mm' => null,
-                    'humidity_percent' => null,
-                    'wind_speed_kmh' => null,
-                ],
-                'monthly_rainfall' => [
-                    'value_mm' => null,
-                    'unit' => 'mm/calendar month',
-                    'available' => false,
-                    'message' => 'Live risk refresh is still in progress.',
-                ],
-                'last_recorded_yield' => null,
-                'advisory' => null,
-                'risk_breakdown' => $area->risk_components,
-                'last_known_good' => true,
-                'stale_reason' => 'Showing the last persisted iClimate risk result while live weather refresh runs.',
-            ];
+            $rows[] = $this->storedVerifiedEntry($barangay, $area, $psgcMap[$barangay] ?? null);
         }
 
         $generatedAt = collect($rows)->pluck('updated_at')->filter()->max() ?: now()->toIso8601String();
@@ -350,21 +466,27 @@ class BarangayRiskMapService
      */
     private function retainLastKnownGood(array $map): array
     {
-        $previous = Cache::get(self::LATEST_KEY);
-        if (! is_array($previous) || ! is_array($previous['barangays'] ?? null)) {
+        if (collect($map['barangays'] ?? [])->every(fn (array $entry): bool => ($entry['risk_level'] ?? 'No Data') !== 'No Data')) {
             return $map;
         }
 
-        $previousByBarangay = collect($previous['barangays'])->keyBy('barangay');
+        $previous = Cache::get(self::LATEST_KEY);
+        $previousByBarangay = collect(is_array($previous) && is_array($previous['barangays'] ?? null) ? $previous['barangays'] : [])->keyBy('barangay');
+        // A verified rating persisted in the database counts too (the cached map can be missing or cleared).
+        $stored = null;
         $fallbackCount = 0;
         $levels = ['Low', 'Moderate', 'High', 'Severe'];
 
-        $map['barangays'] = collect($map['barangays'] ?? [])->map(function (array $entry) use ($previousByBarangay, $levels, &$fallbackCount): array {
+        $map['barangays'] = collect($map['barangays'] ?? [])->map(function (array $entry) use ($previousByBarangay, $levels, &$fallbackCount, &$stored): array {
             if (($entry['risk_level'] ?? 'No Data') !== 'No Data') {
                 return $entry;
             }
 
             $last = $previousByBarangay->get($entry['barangay']);
+            if (! is_array($last) || ! in_array($last['risk_level'] ?? null, $levels, true)) {
+                $stored ??= $this->storedVerifiedEntries();
+                $last = $stored[$entry['barangay']] ?? null;
+            }
             if (! is_array($last) || ! in_array($last['risk_level'] ?? null, $levels, true)) {
                 return $entry;
             }
@@ -441,6 +563,10 @@ class BarangayRiskMapService
 
         // The shared barangay weather records (one batched provider request for all 19 when they are due),
         // the same readings the Heat Map popups, Advisories and Climora show.
+        // One calculation time for this pass: the map, the database rows and every dashboard show the same one.
+        $computedAt = now();
+        $unchangedIds = [];
+
         try {
             $allWeather = $this->weatherService->all($refresh);
         } catch (Throwable $exception) {
@@ -472,12 +598,16 @@ class BarangayRiskMapService
 
             $farmType = $farmTypes[$barangay] ?? FarmerProfile::FARM_TYPE_RAINFED;
             $evaluation = $this->evaluate($barangay, $weather, $lastYield, $farmType, $monthlyRainfall['value']);
-            $results[] = $this->realResult($barangay, $psgc, $weather, $lastYield, $farmType, $evaluation, $monthlyRainfall['value']);
-            $this->persist($barangay, $latitude, $longitude, $weather, $evaluation, $existingAreas[$barangay] ?? null);
+            $results[] = ['updated_at' => $computedAt->toIso8601String()] + $this->realResult($barangay, $psgc, $weather, $lastYield, $farmType, $evaluation, $monthlyRainfall['value']);
+            $unchangedIds[] = $this->persist($barangay, $latitude, $longitude, $weather, $evaluation, $existingAreas[$barangay] ?? null, $computedAt);
         }
 
+        $this->stampUnchanged(array_values(array_filter($unchangedIds)), $computedAt);
+
         return [
-            'generated_at' => now()->toIso8601String(),
+            'generated_at' => $computedAt->toIso8601String(),
+            // Which shared weather refresh these ratings were made from (refreshForCurrentWeather() skips it next time).
+            'weather_generation' => rescue(fn () => $this->weatherService->summary()['last_success_at'] ?? null, null, false),
             'source_note' => AgriculturalRiskScorer::METHODOLOGY_CAVEAT,
             'barangays' => $results,
         ];
@@ -675,7 +805,12 @@ class BarangayRiskMapService
         ];
     }
 
-    private function persist(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, ?HeatmapArea $existing = null): void
+    /**
+     * Saves one barangay's rating. A changed (or new) rating is saved normally, with its model events, so the
+     * cached dashboards are retired. An unchanged rating only needs its calculation time restamped; it is returned
+     * as its row id for one batched update (no per-barangay query, no needless dashboard cache flush).
+     */
+    private function persist(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, ?HeatmapArea $existing = null, ?\Illuminate\Support\Carbon $computedAt = null): ?int
     {
         $risk = $evaluation['risk'];
         $stressLabels = array_map(fn (array $f): string => (string) ($f['label'] ?? ''), $evaluation['stress_factors'] ?? []);
@@ -691,7 +826,7 @@ class BarangayRiskMapService
 
         try {
             // Same effect as updateOrCreate(), minus its SELECT: the row was preloaded.
-            ($existing ?? new HeatmapArea(['barangay' => $barangay]))->fill(
+            $area = ($existing ?? new HeatmapArea(['barangay' => $barangay]))->fill(
                 [
                     'latitude' => $latitude,
                     'longitude' => $longitude,
@@ -704,12 +839,36 @@ class BarangayRiskMapService
                     'irrigation_recommendation' => $evaluation['irrigation']['recommendation'] ?? null,
                     'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
                 ]
-            )->save();
+            );
+
+            if ($area->exists && ! $area->isDirty()) {
+                return (int) $area->getKey();
+            }
+
+            // Stamped on every successful rating, so the dashboards and Climora show when it was last verified.
+            $area->risk_computed_at = $computedAt ?? now();
+            $area->save();
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: failed to persist HeatmapArea row.', [
                 'barangay' => $barangay,
                 'message' => $exception->getMessage(),
             ]);
+        }
+
+        return null;
+    }
+
+    /** Restamp the calculation time of ratings that came out unchanged: one query for all of them. */
+    private function stampUnchanged(array $ids, \Illuminate\Support\Carbon $computedAt): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        try {
+            HeatmapArea::query()->whereKey($ids)->update(['risk_computed_at' => $computedAt]);
+        } catch (Throwable $exception) {
+            Log::warning('Barangay risk map: could not restamp unchanged ratings.', ['message' => $exception->getMessage()]);
         }
     }
 

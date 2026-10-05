@@ -12,7 +12,7 @@ export const CATEGORIES = {
     nodata: { title: 'No Data Yet', levels: ['No Data'], color: '#8a939b', icon: 'clock', tone: 'info' },
 };
 
-const LEVEL_COLORS = { Low: '#2e7d32', Moderate: '#c98a12', High: '#c4471f', Severe: '#8b0000', 'No Data': '#8a939b' };
+export const LEVEL_COLORS = { Low: '#2e7d32', Moderate: '#c98a12', High: '#c4471f', Severe: '#8b0000', 'No Data': '#8a939b' };
 
 // What each category means and what to do, worded for each audience. The score bands are the ones
 // AgriculturalRiskScorer uses (0.45 Moderate, 0.68 High, 0.85 Severe).
@@ -161,6 +161,8 @@ export function openRiskCategory(category, trigger, ctx) {
             ${category === 'monitored' ? '' : `<span class="ic-risk-share">${share}% of monitored barangays</span>`}
         </div>`;
 
+    // Current conditions only: each barangay row opens that barangay's AI Insight (barangay-insight.js).
+    const insightRows = !month && typeof ctx.openInsight === 'function';
     let list;
     if (!count) {
         list = `<div class="fad-m-note is-good" role="status"><strong>${escapeHtml(copy.empty || `No barangays are currently classified under ${meta.title}.`)}</strong>${category === 'high' ? '<span>This is a good sign. The category is explained above so it is easy to recognise if it appears later.</span>' : ''}</div>`;
@@ -171,9 +173,10 @@ export function openRiskCategory(category, trigger, ctx) {
             <tbody>${rows.map(({ name, entry, level }) => {
                 const weather = ctx.weatherFor(entry);
                 const score = entry?.risk_score != null ? Number(entry.risk_score).toFixed(2) : '—';
-                return `<tr>
-                    <td>${escapeHtml(ctx.displayName(name))}</td>
-                    <td data-label="Risk">${levelBadge(level, month && level === 'No Data' ? 'Insufficient data' : null)}</td>
+                const label = escapeHtml(ctx.displayName(name));
+                return `<tr${insightRows ? ` class="ic-risk-row" data-insight-row="${escapeHtml(name)}"` : ''}>
+                    <td>${insightRows ? `<button type="button" class="ic-risk-name" aria-label="${label}: open AI insight">${label}<span class="ic-risk-chevron" aria-hidden="true">›</span></button>` : label}</td>
+                    <td data-label="Risk">${levelBadge(level, month && level === 'No Data' ? 'Insufficient data' : !month && level === 'No Data' ? 'Not yet available' : null)}${!month && entry?.last_known_good && level !== 'No Data' && ctx.riskTimeFor ? `<small class="ic-risk-sub">Calculated ${escapeHtml(ctx.riskTimeFor(entry) || '')} · refreshing</small>` : ''}</td>
                     ${staff && !month ? `<td data-label="Score">${score}</td>` : ''}
                     <td data-label="${month ? 'Forecast Period' : 'Weather'}">${month ? escapeHtml(month.label) : `${escapeHtml(weather.line || weather.notice)}${weather.stale && weather.line ? `<small class="ic-risk-sub">${escapeHtml(weather.lastAvailable || weather.notice)}</small>` : ''}`}</td>
                     ${month ? '' : `<td data-label="Updated">${escapeHtml(ctx.updatedFor(entry) || '—')}</td>`}
@@ -205,9 +208,9 @@ export function openRiskCategory(category, trigger, ctx) {
             const rain = average(fresh.map((w) => w.rainfall_24h_mm));
             const statuses = [...new Set(fresh.map((w) => w.rainfall_status).filter(Boolean))];
             const cells = [
-                ['Temperature', temp != null ? `${temp.toFixed(1)}°C` : null, 'average of latest readings'],
-                ['Humidity', humidity != null ? `${Math.round(humidity)}%` : null, 'average of latest readings'],
-                ['Rainfall (next 24 h)', rain != null ? `${rain.toFixed(1)} mm` : null, statuses.join(', ') || 'average of latest readings'],
+                ['Temperature', temp != null ? `${temp.toFixed(1)}°C` : null, 'Average of latest barangay readings'],
+                ['Humidity', humidity != null ? `${Math.round(humidity)}%` : null, 'Average of latest barangay readings'],
+                ['Rainfall (next 24 h)', rain != null ? `${rain.toFixed(1)} mm` : null, `Average of barangay forecasts${statuses.length ? ` · ${statuses.join(', ')}` : ''}`],
                 ['Latest Weather', `${fresh.length} of ${count}`, 'barangays with a current reading'],
             ].filter(([, value]) => value != null);
             conditions = `<dl class="fad-m-weather">${cells.map(([label, value, sub]) => `<div><dt>${escapeHtml(label)}</dt><dd><strong>${escapeHtml(value)}</strong><span>${escapeHtml(sub)}</span></dd></div>`).join('')}</dl>`;
@@ -219,7 +222,7 @@ export function openRiskCategory(category, trigger, ctx) {
         <div class="ic-risk-grid">
             <div class="ic-risk-side">
                 <section class="fad-m-section"><h3>${category === 'monitored' ? 'Purpose' : `What does ${escapeHtml(meta.title)} mean?`}</h3><p class="fad-m-body">${escapeHtml(copy.meaning)}</p></section>
-                <section class="fad-m-section"><h3>${category === 'monitored' ? 'Barangay List' : 'Current Barangays'}</h3>${list}</section>
+                <section class="fad-m-section"><h3>${category === 'monitored' ? 'Barangay List' : 'Current Barangays'}</h3>${insightRows && count ? '<p class="fad-m-small ic-risk-hint">Tap a barangay to see its AI insight.</p>' : ''}${list}</section>
             </div>
             <div class="ic-risk-side">
                 <section class="fad-m-section"><h3>${month ? 'Forecast Conditions' : 'Current Conditions'}</h3>${conditions}</section>
@@ -228,7 +231,7 @@ export function openRiskCategory(category, trigger, ctx) {
         </div>
         ${staff && ctx.sourceNote ? `<p class="fad-m-small">About these ratings: ${escapeHtml(ctx.sourceNote)}</p>` : ''}`;
 
-    openModal({
+    const dialog = openModal({
         title: meta.title,
         kicker: month ? `Municipal Risk Overview · ${month.label}` : 'Municipal Risk Overview',
         description: month ? `Forecast farm-risk ratings for Lian's barangays, ${month.label}.` : `Current farm-risk ratings for Lian's ${monitored} barangays.`,
@@ -240,4 +243,12 @@ export function openRiskCategory(category, trigger, ctx) {
         note: `${icon('clock')} Risk calculated: ${escapeHtml(ctx.generatedAt || 'not available')}${!month && ctx.weatherCheckedAt ? ` · Weather checked: ${escapeHtml(ctx.weatherCheckedAt)}` : ''}`,
         actions: ctx.mapAnchor ? `<button type="button" class="fad-btn is-quiet" data-ic-close data-risk-goto-map>View on the risk map</button>` : '',
     });
+    // The whole row is the touch target; its name button keeps it reachable by keyboard. The body is new on every
+    // opening, so this listener never piles up.
+    if (insightRows) {
+        dialog.querySelector('[data-ic-body]')?.addEventListener('click', (event) => {
+            const row = event.target.closest('[data-insight-row]');
+            if (row) ctx.openInsight(row.dataset.insightRow, row.querySelector('.ic-risk-name'), category);
+        });
+    }
 }

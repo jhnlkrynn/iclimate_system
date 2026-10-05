@@ -206,6 +206,9 @@ class LianBarangayWeatherService
         $this->refreshScheduled = true;
         app()->terminating(function () use ($priorityBarangay): void {
             rescue(fn () => $this->refreshAll($priorityBarangay), report: false);
+            // Rate the barangays from the new readings too (skipped if already rated), so the risk follows the
+            // weather even when no queue worker or scheduler is running.
+            rescue(fn () => app(\App\Services\Risk\BarangayRiskMapService::class)->refreshForCurrentWeather(), report: false);
             $this->refreshScheduled = false;
         });
 

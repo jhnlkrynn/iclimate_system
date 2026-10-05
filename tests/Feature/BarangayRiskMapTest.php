@@ -585,10 +585,10 @@ class BarangayRiskMapTest extends TestCase
         // separate, farmer-only, single-barangay map data source.
         $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // Farmers get the plain-language panel. Their only refresh control fetches the latest weather; risk
-        // ratings are recomputed by the scheduler, never from a farmer's click.
+        // Farmers get the plain-language panel and one refresh control: the latest weather, then the risk rated
+        // from it by the existing engine (no separate risk button).
         $response->assertSee('data-forecast-audience="farmer"', false);
-        $response->assertSee('Refresh weather');
+        $response->assertSee('Refresh weather &amp; risk', false);
     }
 
     public function test_farmer_dashboard_always_opens_overview_without_a_tab_selector(): void

@@ -4,6 +4,7 @@
 
 import { renderOverview, openRiskCategory } from './risk-overview';
 import { open as openModal } from './info-modal';
+import { openBarangayInsight, refreshOpenInsight } from './barangay-insight';
 
 const RISK_COLORS = { Low: '#2e7d32', Moderate: '#f2b134', High: '#e05a2b', Severe: '#8b0000', 'No Data': '#8a939b' };
 const EXPECTED_BARANGAYS = 19;
@@ -41,6 +42,8 @@ function timestampsMarkup(entry, weather) {
     const lines = [
         weather.updatedLong ? `Weather updated: ${weather.updatedLong}${weather.ago ? ` (${weather.ago})` : ''} · Source: ${weather.provider}` : null,
         `Risk calculated: ${philippineDateTime(entry?.risk_calculated_at) || 'not available yet'}`,
+        // A last verified rating kept while a newer one is made says so, next to its own (older) time.
+        entry?.last_known_good && riskLevel(entry) !== 'No Data' ? 'Risk assessment is being refreshed.' : null,
     ].filter(Boolean);
     return `<p class="rf-small">${lines.map(escapeHtml).join('<br>')}</p>`;
 }
@@ -477,6 +480,7 @@ export function initBarangayRiskMap() {
     let sourceNote = '';
     let refreshQueued = false;
     let weatherSummary = null;
+    let riskRefreshing = false;
     const weatherHealth = card?.querySelector('[data-risk-weather-health]');
     const renderedNames = () => OFFICIAL_NAMES.filter((name) => layers.has(name));
     // Current Conditions health: how many barangays have a current reading, which are on their last available
@@ -511,7 +515,7 @@ export function initBarangayRiskMap() {
             monitored: layers.size,
             forLine: month
                 ? `Monthly forecast · ${month.label}`
-                : `Current conditions · risk calculated ${generatedText || 'recently'}${refreshQueued ? ' · a risk refresh is running in the background' : ''}`,
+                : `Current conditions · risk calculated ${generatedText || 'not yet'}${refreshQueued || riskRefreshing ? ' · risk assessment is being refreshed' : ''}`,
         });
         // Monthly forecast values are predictions, so the current-weather health line only shows for "Now".
         if (weatherHealth) { weatherHealth.textContent = month ? '' : weatherHealthText(); weatherHealth.hidden = Boolean(month) || !weatherHealth.textContent; }
@@ -530,9 +534,41 @@ export function initBarangayRiskMap() {
         generatedAt: generatedText,
         weatherSummary: activeForecast() ? null : weatherHealthText(),
         weatherCheckedAt: philippineDateTime(weatherSummary?.last_checked_at),
+        riskTimeFor: (entry) => philippineTime(entry?.risk_calculated_at),
         sourceNote,
         mapAnchor: true,
+        openInsight: insightUrl ? openInsight : null,
     });
+    // Barangay AI Insight (barangay-insight.js): the same entry this map shows, explained in two short parts.
+    const insightUrl = mapElement.dataset.insightUrl;
+    let insightLanguage = mapElement.dataset.insightLanguage || 'en';
+    // Highlights and zooms to the existing polygon (no new layer), then opens its usual popup.
+    const viewOnMap = (name) => {
+        const layer = layers.get(name);
+        if (!layer) return;
+        mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 15 });
+        selectLayer(name, layer);
+        window.setTimeout(() => {
+            fitPopup(layer);
+            layer.openPopup();
+            if (farmerView) layer.getPopup().update();
+        }, 450);
+    };
+    function openInsight(name, trigger, category = null) {
+        openBarangayInsight(name, trigger, {
+            url: insightUrl,
+            entry: entries.get(name),
+            weatherParts: currentWeatherParts(entries.get(name)),
+            displayName,
+            own: name === highlightBarangay,
+            language: insightLanguage,
+            onLanguage: (code) => { insightLanguage = code; },
+            timeFor: philippineTime,
+            onViewMap: viewOnMap,
+            onBack: category ? () => openCategory(category, trigger) : null,
+        });
+    }
     const openCategory = (category, trigger) => {
         if (!layers.size) {
             openModal({ title: 'Risk data is loading', icon: 'clock', trigger, size: 'compact', body: '<p class="fad-m-body">The barangay ratings are still loading. Please try again in a moment.</p>' });
@@ -640,7 +676,10 @@ export function initBarangayRiskMap() {
     let followUp = null;
     // Takes in one /api/lian/risk-map response; returns any coverage problems found in it.
     const applyRisk = (risk) => {
-        generatedText = philippineDateTime(risk.generated_at);
+        // "Risk calculated" is the newest rating's own time (a kept older rating never borrows the weather's time).
+        const ratedTimes = (risk.barangays || []).map((entry) => entry.risk_calculated_at).filter(Boolean).sort();
+        generatedText = philippineDateTime(ratedTimes[ratedTimes.length - 1] || null) || philippineDateTime(risk.generated_at);
+        riskRefreshing = (risk.barangays || []).some((entry) => entry.last_known_good && riskLevel(entry) !== 'No Data');
         sourceNote = risk.source_note || '';
         refreshQueued = Boolean(risk.refresh_queued);
         weatherSummary = risk.weather_summary || null;
@@ -648,7 +687,8 @@ export function initBarangayRiskMap() {
         if (weatherSummary?.recent_minutes) recentMinutes = Number(weatherSummary.recent_minutes);
         // A weather refresh was due and is running on the server now: ask again shortly for its result.
         window.clearTimeout(followUp);
-        if (risk.weather_refresh_scheduled) followUp = window.setTimeout(() => updateRisk(false), 20000);
+        // The same after a Refresh weather & risk: the ratings are made right after that response.
+        if (risk.weather_refresh_scheduled || risk.risk_refresh_scheduled) followUp = window.setTimeout(() => updateRisk(false), 15000);
         entries.clear();
         // Coverage problems are reported, never silently dropped: an unmatched name would otherwise
         // vanish from the map (boundary) or show as No Data (risk record).
@@ -777,6 +817,8 @@ export function initBarangayRiskMap() {
                 });
                 updateCounts();
                 if (selectedName && details && !details.hidden) showDetails(selectedName);
+                // An open AI Insight is explained again only if its barangay's weather or risk time changed.
+                refreshOpenInsight((name) => entries.get(name), currentWeatherParts);
                 if (error) error.hidden = true;
                 ok = true;
             })

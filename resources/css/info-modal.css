@@ -148,3 +148,44 @@ html body .fad-modal .fad-m-head h2, html body .fad-modal .fad-m-scroll h3 { fon
     .ic-notif-row-actions { justify-content: flex-start; padding: 0 16px 12px; }
     .ic-notif-pager { justify-content: center; }
 }
+
+/* ------------------------------------------------------------ barangay rows → AI Insight (risk-overview.js, barangay-insight.js) */
+.ic-risk-hint { margin: 0 0 8px; }
+.ic-risk-row { cursor: pointer; }
+.ic-risk-row:hover, .ic-risk-row:focus-within { background: var(--subtle); }
+.ic-risk-name { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0; border: 0; background: none; color: var(--brand-ink, var(--brand)); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.ic-risk-name:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; border-radius: 2px; }
+.ic-risk-chevron { font-size: 1.25rem; line-height: 1; color: var(--muted); }
+@media (max-width: 640px) { .ic-risk-name { width: 100%; min-height: 44px; justify-content: space-between; } }
+
+.bi { display: grid; gap: 14px; }
+.bi-back { margin: -8px 0 -6px; }
+.bi-own { justify-self: start; margin: 0; padding: 3px 10px; border: 1px solid var(--info-line); border-radius: 999px; background: var(--info-bg); color: var(--info-ink); font-size: .75rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.bi-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.bi-cards > div { display: grid; gap: 2px; align-content: start; min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--subtle); }
+.bi-cards dt { font-size: .8125rem; font-weight: 600; color: var(--muted); }
+.bi-cards dd { display: grid; gap: 2px; margin: 0; }
+.bi-cards dd strong { font-size: 1.375rem; font-weight: 700; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bi-cards dd span { font-size: .8125rem; color: var(--muted); }
+.bi-cards .bi-card-risk { border-left: 4px solid var(--risk-color); background: #fff; }
+.bi-cards .bi-card-risk strong { display: inline-flex; align-items: center; gap: 8px; }
+.bi-cards .bi-card-risk strong::before { content: ""; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--risk-color); }
+.bi-notices { display: grid; gap: 6px; }
+.bi-notices p { margin: 0; padding: 8px 12px; border: 1px solid var(--watch-line); border-radius: 6px; background: var(--watch-bg); color: var(--watch-ink); font-size: .875rem; }
+.bi-ai { display: grid; gap: 6px; padding: 14px 16px; border-left: 4px solid var(--brand); border-radius: 8px; background: var(--good-bg); }
+.bi-ai-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ic-modal .bi-ai h3 { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-family: inherit !important; font-size: .8125rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--brand-ink, var(--brand)); }
+.ic-modal .bi-ai > h3 { margin-top: 8px; }
+.bi-ai h3 .mtd-svg { width: 16px; height: 16px; }
+.bi-ai p { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.bi-ai .bi-ai-text { font-weight: 600; }
+.bi-ai .bi-ai-off { color: var(--muted); font-style: italic; }
+.bi-loading { gap: 8px; }
+.bi-lang { display: inline-flex; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+.bi-lang button { min-height: 32px; padding: 4px 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.bi-lang button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+.bi-lang button:focus-visible { outline: 3px solid var(--info); outline-offset: 1px; }
+@media (max-width: 640px) {
+    .bi-lang button { min-height: 40px; padding: 4px 12px; }
+    .bi-cards dd strong { font-size: 1.25rem; }
+}

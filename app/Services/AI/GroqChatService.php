@@ -414,6 +414,96 @@ PROMPT,
         return $answer !== '' ? $answer : null;
     }
 
+    /**
+     * The Heat Map's Barangay AI Insight: explains one barangay's verified weather and risk (built by
+     * BarangayInsightService) in two short plain parts. The AI only words the supplied values; it never decides the
+     * risk or fetches weather. Returns the raw {insight, action} strings (checked by the caller), or null.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array{insight: string, action: string, model: string, usage: mixed}|null
+     */
+    public function barangayInsight(array $context, string $language): ?array
+    {
+        if (! $this->usable()) {
+            return null;
+        }
+
+        $model = (string) config('services.groq.model', 'openai/gpt-oss-120b');
+        $baseUrl = rtrim((string) config('services.groq.base_url', 'https://api.groq.com/openai/v1'), '/');
+        $languageInstruction = $language === 'fil'
+            ? 'Write in simple, natural everyday Filipino (Tagalog), the way a farmer talks. Avoid deep or formal Tagalog. Common farm words in English such as "drainage" are fine.'
+            : 'Write in simple, clear English for a rice farmer.';
+        $contextJson = json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        try {
+            $response = $this->timed(fn () => Http::withToken((string) config('services.groq.key'))
+                ->acceptJson()
+                ->connectTimeout($this->connectTimeout())
+                ->timeout(max(1.0, (float) config('ai.groq.insight_timeout', 8)))
+                ->post($baseUrl.'/chat/completions', array_filter([
+                    'model' => $model,
+                    'temperature' => 0.2,
+                    // A reply uses ~150 tokens; a smaller reservation keeps more requests inside Groq's per-minute token limit.
+                    'max_completion_tokens' => 300,
+                    // gpt-oss models think before answering; a short explanation needs little of it.
+                    'reasoning_effort' => str_starts_with($model, 'openai/gpt-oss') ? 'low' : null,
+                    'response_format' => ['type' => 'json_object'],
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => <<<PROMPT
+You are Climora AI, the iClimate assistant. You explain one barangay's verified iClimate data to rice farmers in Lian, Batangas.
+{$languageInstruction}
+Rules:
+- Use only the supplied data. Never guess, add or change a value.
+- The risk level comes from iClimate. Never decide or change it. If risk_level is null, do not mention any risk level.
+- Do not mention typhoons, floods, drought, pests, diseases, rice yield, planting dates or harvest dates.
+- No technical words (meteorological, precipitation, probability, model, algorithm, classification, confidence, data).
+- Use at most one number in total, copied exactly as supplied. Words like "high humidity" or "little rain" are better.
+- Write complete, natural sentences. No abbreviations, semicolons or lists.
+- If weather_status is "delayed", these are the last available readings: never call them current or live.
+- "insight": 1 or 2 short sentences, at most 30 words, saying what the conditions mean for the field.
+- "action": 1 short practical sentence, at most 20 words, that the farmer can do now.
+Style examples only (describe the actual data, do not copy them):
+{"insight":"Conditions need some attention. Rain is expected to stay low and the air is very humid.","action":"Check the soil before watering your field."}
+{"insight":"Kailangang bantayan nang kaunti ang kondisyon. Kaunti lang ang ulan at maalinsangan ang hangin.","action":"Suriin muna ang lupa bago magdilig."}
+Return strict JSON only: {"insight":"...","action":"..."}
+PROMPT,
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Verified iClimate data:\n{$contextJson}",
+                        ],
+                    ],
+                ], fn ($value) => $value !== null)));
+        } catch (Throwable $exception) {
+            $this->recordFailure();
+
+            Log::warning('Groq barangay insight request failed.', ['message' => $exception->getMessage()]);
+
+            return null;
+        }
+
+        if (! $response->successful()) {
+            $this->recordFailure($response->status());
+
+            Log::warning('Groq barangay insight returned an unsuccessful response.', [
+                'status' => $response->status(),
+                'body' => str($response->body())->limit(300)->toString(),
+            ]);
+
+            return null;
+        }
+
+        $decoded = json_decode(trim((string) $response->json('choices.0.message.content')), true);
+
+        if (! is_array($decoded) || ! is_string($decoded['insight'] ?? null) || ! is_string($decoded['action'] ?? null)) {
+            return null;
+        }
+
+        return ['insight' => $decoded['insight'], 'action' => $decoded['action'], 'model' => $model, 'usage' => $response->json('usage')];
+    }
+
     private function systemPrompt(string $language): string
     {
         $languageInstruction = $this->languageInstruction($language);
