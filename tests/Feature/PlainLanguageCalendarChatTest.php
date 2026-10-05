@@ -27,7 +27,9 @@ class PlainLanguageCalendarChatTest extends TestCase
             $res = $this->actingAs($farmer)->get(route($name));
             $res->assertOk();
             $html = $this->visible($res->getContent());
-            foreach (['Random Forest', 'Python', 'Open-Meteo', 'Groq', 'machine learning', '.pkl', 'Prediction confidence', 'Predict.py'] as $term) {
+            // The dashboard's weather card names its provider on purpose ("Source: Open-Meteo"); the calendar does not.
+            $terms = $name === 'farmer.dashboard' ? ['Random Forest', 'Python', 'Groq'] : ['Random Forest', 'Python', 'Open-Meteo', 'Groq'];
+            foreach (array_merge($terms, [ 'machine learning', '.pkl', 'Prediction confidence', 'Predict.py']) as $term) {
                 $this->assertStringNotContainsStringIgnoringCase($term, $html, "$name leaks $term");
             }
             $this->assertStringNotContainsString('>Weather Prediction<', $html);

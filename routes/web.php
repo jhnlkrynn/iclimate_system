@@ -76,7 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/farmer/dashboard',
         [DashboardController::class, 'farmer']
     )
-        ->middleware('role:'.User::ROLE_FARMER)
+        ->middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])
         ->name('farmer.dashboard');
 
 
@@ -91,8 +91,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('farmer.dashboard.weather');
 
     Route::get('/farmer/dashboard/live', [DashboardController::class, 'farmerLive'])
-        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:30,1'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'farmer.language', 'throttle:30,1'])
         ->name('farmer.dashboard.live');
+
+    // The dashboard's English / Filipino selector: saves the choice on the farmer's account.
+    Route::post('/farmer/dashboard/language', [DashboardController::class, 'farmerLanguage'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1'])
+        ->name('farmer.dashboard.language');
 
 
     Route::middleware(
@@ -100,7 +105,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->group(function () {
 
         // The farmer dashboard's pop-ups (planting date, farm size, profile, farm map): each saves for the signed-in farmer and answers in JSON.
-        Route::middleware('throttle:20,1')->group(function () {
+        Route::middleware(['farmer.language', 'throttle:20,1'])->group(function () {
             Route::post('/farmer/dashboard/planting-info', [FarmerPlantingScheduleController::class, 'applyFromDashboard'])->name('farmer.dashboard.planting-info');
             Route::post('/farmer/dashboard/farm-size', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'farmSize'])->name('farmer.dashboard.farm-size');
             Route::post('/farmer/dashboard/profile', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'profile'])->name('farmer.dashboard.profile');

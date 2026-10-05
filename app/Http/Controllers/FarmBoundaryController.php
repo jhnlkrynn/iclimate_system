@@ -122,7 +122,7 @@ class FarmBoundaryController extends Controller
     /** The farmer dashboard keeps its page for a minute: its "Draw your farm on the map" item must not outlive this change. */
     private function forgetDashboard(Request $request): void
     {
-        Cache::forget(FarmerDashboardService::cacheKey($request->user()));
+        FarmerDashboardService::forgetCached($request->user());
     }
 
     public function destroy(Request $request): RedirectResponse

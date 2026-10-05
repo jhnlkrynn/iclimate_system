@@ -9,12 +9,10 @@ use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\FarmerKpiService;
-use App\Services\Analytics\FarmerRainAnalyticsService;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
-use App\Services\Weather\RecentRainService;
 use App\Support\ProjectYieldDataset;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -139,22 +137,19 @@ class FarmerDashboardTest extends TestCase
     }
 
     /** The dashboard body only (no sidebar, header or chat widget scripts), as text a farmer can read. */
+    /** The dashboard body only (no sidebar, header or chat widget scripts), as text a farmer can read. */
     private function body(string $html): string
     {
         $start = strpos($html, '<div class="mfd"');
+        $end = strpos($html, 'data-fad-modal', $start);
 
-        return substr($html, $start, strpos($html, 'About this information', $start) - $start + 1800);
+        return substr($html, $start, ($end === false ? strlen($html) : $end) - $start);
     }
 
     private function readable(string $html): string
     {
         // Dropdown choices are left out: they are place names (the barangay "Kapito" is not the word "API"), not wording.
         return html_entity_decode(strip_tags(preg_replace(['#<script\b.*?</script>#is', '#<style\b.*?</style>#is', '#<select\b.*?</select>#is'], '', $this->body($html))), ENT_QUOTES);
-    }
-
-    private function kpi(array $data, string $key): ?array
-    {
-        return collect($data['kpis'])->firstWhere('key', $key);
     }
 
     private function mockPrediction(float $yield, string $areaSource = 'farmer_profile', ?float $uncertainty = null): void
@@ -201,19 +196,6 @@ class FarmerDashboardTest extends TestCase
     }
 
     /** @param  array<string, float>  $daily  rain in mm by Y-m-d date */
-    private function rainHistory(array $daily): void
-    {
-        $this->app->bind(RecentRainService::class, fn () => new class($daily) extends RecentRainService
-        {
-            public function __construct(private array $daily) {}
-
-            public function history(bool $force = false): array
-            {
-                return ['daily' => $this->daily, 'fetched_at' => CarbonImmutable::now('Asia/Manila')->subMinutes(10)];
-            }
-        });
-    }
-
     private function openSchedule(User $farmer, array $extra = []): FarmerPlantingSchedule
     {
         return FarmerPlantingSchedule::query()->create($extra + [
@@ -236,22 +218,6 @@ class FarmerDashboardTest extends TestCase
         }
     }
 
-    public function test_the_chart_library_loader_recognises_the_dashboard_charts(): void
-    {
-        $js = file_get_contents(resource_path('js/app.js'));
-        $html = $this->page()->getContent();
-
-        $this->assertStringContainsString('canvas[id*="Chart"]', $js);              // every canvas id on this page contains "Chart"
-        foreach (['farmerWeekRainChart', 'farmerRainfallTrendChart'] as $id) {
-            if (str_contains($html, 'id="'.$id.'"')) {
-                $this->assertStringContainsString('Chart', $id);
-            }
-        }
-        $this->assertStringContainsString('id="farmerWeekRainChart"', $html);
-        // One weather chart on the dashboard: each day's high and low is on the day cards, not in a second chart.
-        $this->assertStringNotContainsString('id="farmerWeekTempChart"', $html);
-    }
-
     public function test_no_technical_or_broken_component_text_reaches_the_farmer(): void
     {
         $text = $this->readable($this->page()->getContent());
@@ -269,12 +235,11 @@ class FarmerDashboardTest extends TestCase
         $this->mockPrediction(4.2, uncertainty: 0.4);
         $this->lianYields(3.82);
         $this->openSchedule($farmer);
-        $this->rainHistory($this->rainDays('2026-09-01', 31, 4.0));
         $html = $this->page($farmer)->getContent();
-        $text = $this->readable($html).' '.$this->readable($this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+        $text = $this->readable($html).' '.$this->readable('<div class="mfd">'.$this->slot($farmer, 'harvest', ['retry' => 'harvest']).'</div>');
 
-        foreach (['Precipitation', 'Relative humidity', 'Air moisture', 'Heat index', 'Anomaly', 'Deviation', 'Yield prediction',
-            'Phenological', 'Data unavailable', 'Synchronization', 'Regression', 'RMSE', 'Confidence', 'Probability', 'How sure we are'] as $word) {
+        foreach (['Precipitation', 'Relative humidity', 'Air moisture', 'Heat index', 'Anomaly', 'Deviation', 'Yield prediction', 'Meteorological',
+            'Phenological', 'Data unavailable', 'Synchronization', 'Regression', 'RMSE', 'Confidence', 'Probability', 'How sure we are', 'Agronomic', 'Hydrological'] as $word) {
             $this->assertStringNotContainsStringIgnoringCase($word, $text, $word);
         }
         // Calm wording: nothing on a normal day reads as discouraging.
@@ -293,10 +258,9 @@ class FarmerDashboardTest extends TestCase
         $this->openSchedule($farmer);
         $html = $this->page($farmer)->getContent();
 
-        // The farm, today, the week and the yield come first; the detail asked for less often is folded away under them.
-        $order = ['Good ', 'My Farm at a Glance', 'Today&#039;s Farm Conditions', 'What You Should Know Today', 'Weather This Week', 'data-mfd-harvest', 'My Crop Season',
-            'Finish Setting Up Your Farm', 'Quick Actions', 'More rain and risk details for your area', 'Rain and Spraying This Week', 'Rain Each Month',
-            'Farm Risk in Your Barangay', 'Show risk map and barangay details', 'About this information'];
+        // Header, the numbers, today's highlights, then the summaries of the other Farmer pages, then quick actions.
+        $order = ['Good ', 'id="mfdTodayTitle"', 'id="mfdHighlightsTitle"', 'id="mfdWeatherTitle"', 'id="mfdScheduleTitle"', 'id="mfdRiskTitle"',
+            'id="mfdHarvestTitle"', 'id="mfdAdvisoriesTitle"', 'id="mfdFarmTitle"', 'id="mfdUpdatesTitle"', 'id="mfdQuickTitle"'];
         $last = -1;
         foreach ($order as $marker) {
             $pos = strpos($html, $marker, max(0, strpos($html, 'data-farmer-dashboard')));
@@ -304,7 +268,10 @@ class FarmerDashboardTest extends TestCase
             $this->assertGreaterThan($last, $pos, "Out of order: $marker");
             $last = $pos;
         }
-        $this->assertSame(['header', 'farm', 'today', 'week', 'harvest', 'advisories', 'season', 'setup', 'quick', 'kpis', 'rain', 'risk'], $this->slotOrder($html));
+        $this->assertSame(['header', 'today', 'highlights', 'weather', 'schedule', 'risk', 'harvest', 'advisories', 'farm', 'updates', 'quick'], $this->slotOrder($html));
+        foreach (["Today's Highlights", 'My Farm Today', 'Weather for Lian, Batangas', 'My Farm Schedule', 'Farm Condition in Your Barangay', 'Latest Farming Advice', 'Reminders & Updates', 'Quick Actions'] as $title) {
+            $this->assertStringContainsString($title, $this->readable($html), $title);
+        }
     }
 
     private function slotOrder(string $html): array
@@ -316,11 +283,20 @@ class FarmerDashboardTest extends TestCase
 
     public function test_the_old_sections_are_gone(): void
     {
-        $text = $this->readable($this->page()->getContent());
+        $this->rainyDay();
+        $html = $this->page()->getContent();
+        $body = $this->body($html);
+        $text = $this->readable($html);
 
-        foreach (['Important Alerts', 'My Farm Today', 'My Farm Status', 'Farm / Crop Information', 'Next Farm Activity', 'My Crop Plan', 'Some information isn'] as $removed) {
+        foreach (['My Farm at a Glance', 'What You Should Know Today', 'Weather This Week', 'Rain and Spraying This Week', 'Rain Each Month',
+            'Finish Setting Up Your Farm', 'About this information', 'Show risk map and barangay details', 'More rain and risk details', 'Important Alerts'] as $removed) {
             $this->assertStringNotContainsString($removed, $text, $removed);
         }
+        // No full map, chart or seven-day table on the overview: their own pages have them.
+        $this->assertStringNotContainsString('<canvas', $body);
+        $this->assertStringNotContainsString('data-risk-map-url', $body);
+        $this->assertStringNotContainsString('<table', $body);
+        $this->assertSame(4, preg_match_all('/class="mfd-day( is-today)?"/', $body));                              // a short preview, not the full week
     }
 
     // ------------------------------------------------------------ header + weather now: one consistent reading
@@ -356,15 +332,27 @@ class FarmerDashboardTest extends TestCase
 
         $data = $this->data($farmer);
         $html = $this->page($farmer)->getContent();
-        $now = substr($html, strpos($html, 'data-mfd-now'), 4500);
+        $rain = $this->kpiCard($html, 'rain');
+        $weather = substr($html, strpos($html, 'data-mfd-weather'), 9000);
 
         $this->assertSame(5.9, $data['weather']['rain_today']);
-        $this->assertSame(5.9, $data['week']['days'][0]['rain']);                              // the same number on today's card
+        $this->assertSame(5.9, $data['week']['preview'][0]['rain']);                            // the same number on today's forecast card
+        $this->assertTrue($data['week']['preview'][0]['is_today']);
         $this->assertSame('Clear right now. Rain expected later today (about 5.9 mm).', $data['weather']['now_summary']);
-        $this->assertStringContainsString('Clear right now. Rain expected later today (about 5.9 mm).', $now);
-        $this->assertStringContainsString('5.9 mm', $now);                                     // never 5.9 in one place and 6 in another
-        $this->assertMatchesRegularExpression('/data-condition="rain".*?5\.9 mm.*?Light/s', $now);       // the number and its one plain word
-        $this->assertTrue($data['week']['days'][0]['is_today']);
+        $this->assertStringContainsString('Clear right now. Rain expected later today (about 5.9 mm).', $weather);
+        $this->assertMatchesRegularExpression('#<span>5\.9</span><small>mm</small>#', $rain);   // never 5.9 in one place and 6 in another
+        $this->assertStringContainsString('100% chance of rain', $rain);
+        $this->assertStringContainsString('Rain is expected later today.', $rain);
+        $this->assertStringContainsString('5.9 mm', $weather);
+    }
+
+    /** One "My Farm Today" card's markup. */
+    private function kpiCard(string $html, string $key): string
+    {
+        $from = strpos($html, 'data-kpi="'.$key.'"');
+        $this->assertNotFalse($from, $key.' card');
+
+        return substr($html, $from, strpos($html, '</article>', $from) - $from);
     }
 
     public function test_a_dry_day_and_a_rainy_moment_are_told_plainly(): void
@@ -430,13 +418,14 @@ class FarmerDashboardTest extends TestCase
 
         $this->assertSame('error', $data['weather']['state']);
         $this->assertStringContainsString("We can't show this right now.", $text);
-        $this->assertStringContainsString('data-mfd-retry="today"', $html);
-        $this->assertStringContainsString('data-mfd-retry="week"', $html);
-        $this->assertStringContainsString('What You Should Know Today', $text);                 // the other card on the row keeps working
+        $this->assertStringContainsString('Weather information is temporarily unavailable.', $text);
+        $this->assertStringContainsString('data-mfd-retry="weather"', $html);
+        $this->assertStringContainsString("Today's Highlights", $text);                          // the other sections keep working
+        $this->assertStringContainsString('Check the advisories before field work', $text);
         $this->assertStringContainsString('Quick Actions', $text);
         $this->assertStringNotContainsString('0.0 mm', $text);
-        foreach (['unavailable', 'API', 'failed'] as $technical) {
-            $this->assertStringNotContainsStringIgnoringCase($technical, $text, $technical);
+        foreach (['API', 'failed', 'Exception'] as $technical) {
+            $this->assertStringNotContainsString($technical, $text, $technical);
         }
     }
 
@@ -449,15 +438,18 @@ class FarmerDashboardTest extends TestCase
 
         $actions = $this->data($farmer)['actions'];
         $html = $this->page($farmer)->getContent();
-        $section = substr($html, strpos($html, 'data-mfd-advice'), 5000);
+        $section = substr($html, strpos($html, 'data-mfd-highlights'), 6000);
 
         $this->assertGreaterThanOrEqual(1, count($actions));
         $this->assertLessThanOrEqual(3, count($actions));
         $this->assertSame(['Wait before you put on fertilizer or spray', 'Look at your rice leaves for spots'], array_column($actions, 'title'));
         $this->assertStringContainsString('Humidity is 93%', $actions[1]['reason']);
         $this->assertStringContainsString('Rain is expected today (about 6.0 mm)', $actions[0]['reason']);
-        $this->assertSame(2, substr_count($section, 'Ask Climora AI'));
-        $this->assertSame(2, substr_count($section, 'data-ai-prefill='));
+        // Today's Highlights carries the first action with its reason, and Climora can be asked about it.
+        $this->assertStringContainsString('Wait before you put on fertilizer or spray', $section);
+        $this->assertStringContainsString('Rain can wash fertilizer and spray away.', $section);
+        $this->assertSame(1, substr_count($section, 'data-ai-prefill='));
+        $this->assertStringContainsString('window.iClimateAi.prefill(ask.dataset.aiPrefill)', file_get_contents(resource_path('js/farmer-dashboard.js')));
     }
 
     public function test_a_normal_day_still_gets_one_calm_action(): void
@@ -472,11 +464,18 @@ class FarmerDashboardTest extends TestCase
 
     public function test_no_warnings_is_a_green_badge_with_an_icon_and_words(): void
     {
-        $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], options: ['code' => 0, 'currentRain' => 0.0, 'chance' => 5]);
-        $html = $this->page($this->farmer())->getContent();
+        $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], humidity: 60, options: ['code' => 0, 'currentRain' => 0.0, 'chance' => 5, 'feelsMax' => 28.0]);
+        $this->mockRisk('Low');
+        $farmer = $this->farmer();
+        $data = $this->data($farmer);
+        $html = $this->page($farmer)->getContent();
+        $card = $this->kpiCard($html, 'condition');
 
-        $this->assertStringContainsString('No weather warnings', $html);
-        $this->assertMatchesRegularExpression('/mfd-pill is-good"><svg[^>]*>.*?<\/svg>\s*<span>No weather warnings<\/span>/s', $html);
+        $this->assertSame([], $data['alerts']);
+        $this->assertSame('good', $data['condition']['status']);
+        $this->assertStringContainsString('mfd-kpi is-good', substr($html, strpos($html, 'data-kpi="condition"') - 60, 80));
+        $this->assertMatchesRegularExpression('/<svg[^>]*>.*?<\/svg>\s*<span>Good<\/span>/s', $card);       // an icon and the word, not colour alone
+        $this->assertStringContainsString('Good day to check your farm', $html);
     }
 
     public function test_a_real_warning_shows_in_colour_with_an_icon_and_a_label(): void
@@ -484,14 +483,18 @@ class FarmerDashboardTest extends TestCase
         $this->rainyDay();                                                                      // 30 mm tomorrow
         $farmer = $this->farmer();
 
-        $alert = $this->data($farmer)['alerts'][0];
+        $data = $this->data($farmer);
+        $alert = $data['alerts'][0];
         $html = $this->page($farmer)->getContent();
+        $highlights = substr($html, strpos($html, 'data-mfd-highlights'), 6000);
 
         $this->assertSame('Heavy rain expected tomorrow', $alert['title']);
         $this->assertSame('danger', $alert['level']);
-        $this->assertStringContainsString('mfd-pill is-danger', $html);
-        $this->assertStringContainsString('<span>Warning</span>', $html);                      // the word, not just the colour
-        $this->assertStringNotContainsString('No weather warnings', $this->body($html));
+        $this->assertStringContainsString('mfd-hl is-danger', $highlights);
+        $this->assertStringContainsString('Warning', $highlights);                                 // the word, not just the colour
+        $this->assertStringContainsString('About 30 mm of rain is coming.', $highlights);           // what is happening
+        $this->assertStringContainsString('Check field drainage and do not spray.', $highlights);   // and what to do
+        $this->assertSame('Needs Attention', $data['condition']['value']);
     }
 
     public function test_only_notifications_marked_as_weather_show_as_weather_alerts(): void
@@ -522,113 +525,7 @@ class FarmerDashboardTest extends TestCase
 
     // ------------------------------------------------------------ KPI row
 
-    public function test_the_number_cards_each_have_a_link_and_a_source_and_do_not_repeat_other_cards(): void
-    {
-        $farmer = $this->farmer();
-        $data = $this->data($farmer);
-        $html = $this->page($farmer)->getContent();
-        $section = substr($html, strpos($html, 'data-mfd-kpis'), 9000);
-
-        $this->assertSame(['rain_past', 'rain_next', 'rain_vs_normal', 'heat', 'work_days', 'alerts'], array_column($data['kpis'], 'key'));
-        // Four are shown: a hot day is a warning under What You Should Know Today, and so is the alert count.
-        $this->assertSame(4, substr_count($section, 'class="mfd-kpi '));
-        foreach ($data['kpis'] as $k) {
-            if (! in_array($k['key'], ['heat', 'alerts'], true)) {
-                $this->assertStringContainsString('href="'.$k['href'].'"', $section);          // tapping a card opens its page
-            }
-            $this->assertNotEmpty($k['source']);
-        }
-        $this->assertStringContainsString('Source: ', $section);
-        $this->assertStringContainsString('Rain this past week', $section);
-        $this->assertStringContainsString('Rain coming this week', $section);
-        $this->assertStringContainsString('Rain compared to normal (this month)', $section);
-        $this->assertStringContainsString('Good days for spraying', $section);
-        $this->assertStringNotContainsString('data-kpi="heat"', $section);
-        $this->assertStringNotContainsString('data-kpi="alerts"', $section);
-        $this->assertStringContainsString('Rain and Spraying This Week', $section);
-    }
-
-    public function test_kpis_match_a_hand_calculation_for_one_farmer(): void
-    {
-        $this->travelTo(CarbonImmutable::parse('2026-10-12 10:00', 'Asia/Manila'));
-        // Weather coming (today = Oct 12): 4 + 6 + 3 + 2 + 1 + 5 + 2 = 23 mm; every day 12 km/h wind and 10% chance of rain, "feels like" 34 °C.
-        $this->fakeWeather([4.0, 6.0, 3.0, 2.0, 1.0, 5.0, 2.0], options: ['chance' => 10, 'wind' => 12.0, 'feelsMax' => 34.0]);
-        // Recorded rain: Oct 1-11 is 5 mm a day (55 mm so far this month); Oct 5-11 is the past week = 35 mm; Sep 28 - Oct 4 = 35 mm before.
-        $history = $this->rainDays('2026-09-01', 30, 5.0) + $this->rainDays('2026-10-01', 11, 5.0);
-        $this->rainHistory($history);
-        $farmer = $this->farmer();
-
-        $data = $this->data($farmer);
-
-        $past = $this->kpi($data, 'rain_past');
-        $this->assertSame('35', $past['display']);                                              // Oct 5 .. Oct 11
-        $this->assertSame('mm', $past['unit']);
-        $this->assertSame('flat', $past['trend']['dir']);                                       // the week before was also 35 mm
-
-        $next = $this->kpi($data, 'rain_next');
-        $this->assertSame('23', $next['display']);
-
-        $normal = app(FarmerRainAnalyticsService::class)->monthlyNormal(10);
-        $this->assertNotNull($normal, 'the Ambulong records give a long-term October average');
-        $usualSoFar = $normal * 11 / 31;                                                        // 11 full days of October
-        $expectedPercent = (string) round(55 / $usualSoFar * 100);
-        $vs = $this->kpi($data, 'rain_vs_normal');
-        $this->assertSame($expectedPercent, $vs['display']);
-        $this->assertSame('%', $vs['unit']);
-        $this->assertContains($vs['meaning'], ['More than usual', 'Normal', 'Less than usual']);
-
-        $heat = $this->kpi($data, 'heat');
-        $this->assertSame('34.0', $heat['display']);                                            // the provider's own "feels like" high for today
-        $this->assertSame('Heat today: Extreme Caution', $heat['headline']);
-
-        $good = $this->kpi($data, 'work_days');
-        $this->assertSame('7', $good['display']);                                               // every day: 10% chance, 12 km/h
-        $this->assertSame('Good days for spraying', $good['label']);
-    }
-
-    private function rainDays(string $from, int $days, float $mm): array
-    {
-        $out = [];
-        for ($i = 0; $i < $days; $i++) {
-            $out[CarbonImmutable::parse($from)->addDays($i)->toDateString()] = $mm;
-        }
-
-        return $out;
-    }
-
-    public function test_missing_data_shows_a_dash_and_a_reason_never_zero(): void
-    {
-        // No rain history (the test default) and a provider that gives no wind or rain chance.
-        $farmer = $this->farmer();
-        $data = $this->data($farmer);
-        $html = $this->page($farmer)->getContent();
-
-        $past = $this->kpi($data, 'rain_past');
-        $this->assertSame('—', $past['display']);
-        $this->assertTrue($past['missing']);
-        $this->assertStringContainsString('We only have rain records for 0 of the last 7 days.', $past['reason']);
-        $this->assertSame('—', $this->kpi($data, 'rain_vs_normal')['display']);
-        $start = strpos($html, 'data-kpi="rain_past"');
-        $section = substr($html, $start, strpos($html, '</a>', $start) - $start);               // that one card only
-        $this->assertStringContainsString('<span>—</span>', $section);
-        $this->assertStringNotContainsString('0 mm', $section);
-        $this->assertStringNotContainsString('0.0', $section);
-    }
-
-    public function test_a_dry_week_is_a_real_zero_and_alerts_zero_is_calm(): void
-    {
-        $this->travelTo(CarbonImmutable::parse('2026-10-12 10:00', 'Asia/Manila'));
-        $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], options: ['code' => 0, 'currentRain' => 0.0, 'chance' => 5]);
-        $this->rainHistory($this->rainDays('2026-09-20', 22, 0.0));
-        $data = $this->data($this->farmer());
-
-        $this->assertSame('0.0', $this->kpi($data, 'rain_past')['display']);                  // measured as zero
-        $this->assertFalse($this->kpi($data, 'rain_past')['missing']);
-        $this->assertSame('0', $this->kpi($data, 'alerts')['display']);
-        $this->assertSame('Nothing needs your attention right now.', $this->kpi($data, 'alerts')['meaning']);
-    }
-
-    public function test_good_days_are_marked_on_the_week_with_the_same_rule_as_the_number(): void
+    public function test_good_days_are_marked_on_the_forecast_with_the_spraying_rule(): void
     {
         $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], options: ['code' => 0, 'currentRain' => 0.0, 'chance' => 10, 'wind' => 8.0]);
         $farmer = $this->farmer();
@@ -636,8 +533,8 @@ class FarmerDashboardTest extends TestCase
         $html = $this->page($farmer)->getContent();
 
         $this->assertSame(7, $data['week']['good']['value']);
-        $this->assertSame(7, substr_count($html, 'Good day for farm work'));
-        $this->assertStringContainsString('Good for spraying and fertilizer: under 40% chance of rain and wind under 15 km/h.', $html);
+        $this->assertCount(4, $data['week']['preview']);
+        $this->assertSame(4, substr_count($html, '<span>Good for spraying</span>'));                         // each day shown on the preview
 
         $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], options: ['chance' => 60, 'wind' => 8.0]);
         $this->assertSame(0, $this->data($this->farmer(['email' => 'b@example.test']))['week']['good']['value']);
@@ -645,98 +542,44 @@ class FarmerDashboardTest extends TestCase
 
     // ------------------------------------------------------------ weather this week + charts
 
-    public function test_the_week_shows_seven_cards_and_flags_only_real_risks(): void
+    public function test_the_forecast_preview_shows_four_days_and_flags_only_real_risks(): void
     {
         $this->rainyDay();
 
         $html = $this->page($this->farmer())->getContent();
-        $section = substr($html, strpos($html, 'data-mfd-week'), 16000);
+        $section = substr($html, strpos($html, 'data-mfd-weather'), 16000);
 
-        $this->assertSame(7, substr_count($section, 'class="mfd-day '));
-        $this->assertSame(1, substr_count($section, '<canvas'));                                  // one chart for the week
-        $this->assertSame(1, substr_count($section, '>Heavy rain<'));
-        $this->assertStringContainsString('% chance of rain', $section);
+        $this->assertSame(4, preg_match_all('/class="mfd-day( is-today)?"/', $section));
+        $this->assertSame(1, substr_count($section, '<span>Heavy rain</span>'));
+        $this->assertStringContainsString('% rain', $section);
         $this->assertStringContainsString('30 mm', $section);
         $this->assertStringContainsString('The wettest day is', $section);
+        $this->assertStringContainsString('View Full Forecast', $section);
+        $this->assertStringContainsString('href="'.route('weather-predictions.index', ['tab' => 'weather-forecast']).'"', $section);
+        $this->assertStringContainsString('Source: Open-Meteo', $section);                        // the configured provider, by name
+        $this->assertStringContainsString('Weather for the whole of Lian, not measured on your farm.', $section);
         $this->assertStringNotContainsStringIgnoringCase('drizzle', $html);
-    }
-
-    public function test_charts_have_a_title_a_takeaway_units_and_a_text_alternative(): void
-    {
-        $this->rainyDay();
-        $html = $this->page($this->farmer())->getContent();
-
-        $this->assertStringContainsString('7-Day Rainfall (mm)', $html);
-        $this->assertStringContainsString('The wettest day is', $html);                         // one-sentence reading under the chart
-        $this->assertStringContainsString('The hottest day is', $html);
-        $this->assertMatchesRegularExpression('/<canvas id="farmerWeekRainChart"[^>]*role="img"[^>]*aria-label="Bar chart of the rain expected each day/', $html);
-        $this->assertStringContainsString('<th scope="col">Rain (mm)</th>', $html);              // a table for screen readers
-        // Last year's monthly rain is one tap away, closed until asked for.
-        $this->assertMatchesRegularExpression('/<details class="mfd-map mfd-more" data-mfd-rainfall>\s*<summary>Show rain each month \(\d{4} records\)<\/summary>/', $html);
-    }
-
-    public function test_no_chart_has_two_vertical_axes_and_the_heavy_rain_line_is_dashed(): void
-    {
-        $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
-
-        $this->assertStringNotContainsString('yAxisID', $js);
-        $this->assertStringNotContainsString("position: 'right'", $js);
-        $this->assertStringNotContainsString('y1:', $js);
-        $this->assertStringContainsString('Heavy rain level', $js);
-        $this->assertStringContainsString('borderDash: [6, 6]', $js);
-        foreach (['Rain (mm)', 'Temperature (°C)', 'Month', 'Day'] as $axisTitle) {
-            $this->assertStringContainsString("axisText('$axisTitle')", $js);
-        }
-        $this->assertStringContainsString('"Inter"', $js);                                       // the chart library's font
-        $this->assertStringContainsString('C.defaults.font.family = FONT', $js);
-    }
-
-    public function test_the_rain_chart_is_this_year_against_usual_and_names_the_station(): void
-    {
-        $farmer = $this->farmer();
-        $data = $this->data($farmer);
-        $html = $this->page($farmer)->getContent();
-
-        $this->assertSame('ok', $data['rain']['state'], 'the Ambulong monthly records are in the repository');
-        $this->assertCount(12, $data['rain']['actual']);
-        $this->assertCount(12, $data['rain']['normal']);
-        $this->assertMatchesRegularExpression('/had [\d,.]+ mm of rain, (about \d+% (more|less) than usual|about the usual amount)\./', $data['rain']['summary']);
-        $this->assertStringContainsString('Measured at Ambulong station (nearest PAGASA station, in Tanauan). Rain in your barangay may be different.', $html);
-        $this->assertStringContainsString('id="farmerRainfallTrendChart"', $html);
-        $this->assertStringContainsString('Usual rain (mm)', $html);                              // the text alternative lists the usual rain too
-    }
-
-    public function test_a_failed_rain_record_gives_that_card_its_own_error_state(): void
-    {
-        $this->mock(FarmerRainAnalyticsService::class, function ($mock): void {
-            $mock->shouldReceive('monthly')->andThrow(new \RuntimeException('secret-csv-failure'));
-            $mock->shouldReceive('monthlyNormal')->andReturn(null);
-        });
-        $farmer = $this->farmer();
-        $html = $this->page($farmer)->getContent();
-
-        $this->assertSame('error', $this->data($farmer)['rain']['state']);
-        $this->assertStringContainsString('data-mfd-retry="rain"', $html);
-        $this->assertStringContainsString('Weather This Week', $html);                           // everything else keeps working
-        $this->assertStringNotContainsString('secret-csv-failure', $html);
     }
 
     // ------------------------------------------------------------ my crop season
 
-    public function test_without_a_planting_date_there_is_exactly_one_prompt_for_it(): void
+    public function test_without_a_planting_date_the_status_and_schedule_say_so_and_nothing_is_made_up(): void
     {
         $farmer = $this->farmer([], 2.0);
+        $data = $this->data($farmer);
         $html = $this->page($farmer)->getContent();
-        $body = $this->body($html);
+        $status = $this->kpiCard($html, 'planting');
+        $schedule = substr($html, strpos($html, 'data-mfd-schedule'), 2500);
 
-        // The Planting Status tile asks for it; the Crop Season card is left out until there is a season to show.
-        $this->assertSame(1, substr_count($body, 'Set planting date'), 'one button to set a planting date');
-        $this->assertStringContainsString('Add your planting date to receive better farming guidance.', $body);
-        $this->assertStringNotContainsString('My Crop Season', $body);
-        $this->assertStringNotContainsString('Set your planting schedule', $body);
-        $this->assertStringNotContainsString('Set Planting Schedule', $body);
-        $this->assertStringNotContainsString('Add Schedule', $body);
-        $this->assertNotContains('schedule', array_column($this->data($farmer)['setup']['items'], 'key'));
+        $this->assertSame('empty', $data['schedule']['state']);
+        $this->assertNull($data['profile']['planting_date']);
+        $this->assertStringContainsString('Not Set', $status);
+        $this->assertStringContainsString('Add your planting date to receive better guidance.', $status);
+        $this->assertStringContainsString('data-mfd-popup="planting"', $status);
+        $this->assertStringContainsString('Planting schedule is not set.', $schedule);
+        $this->assertStringContainsString('Add your planting date to receive farm reminders.', $schedule);
+        $this->assertStringNotContainsString('Day ', $schedule);
+        $this->assertNotContains('schedule', array_column($data['setup']['items'], 'key'));
     }
 
     public function test_each_setup_button_opens_its_own_pop_up_on_the_dashboard(): void
@@ -771,7 +614,7 @@ class FarmerDashboardTest extends TestCase
         // data-fast-nav-bound keeps the layout's page-leaving fade from starting on a click that does not leave the page.
         $plain = preg_replace('#<svg\b.*?</svg>#s', '', $html);
         $opens = fn (string $label) => preg_match('/<a [^>]*data-mfd-popup="([a-z-]+)" aria-haspopup="dialog" data-fast-nav-bound="true"[^>]*>\s*'.preg_quote($label, '/').'\s*</', $plain, $m) ? $m[1] : null;
-        $this->assertSame('planting', $opens('Set planting date'));
+        $this->assertSame('planting', $opens('Set Planting Date'));
         $this->assertSame('farm-size', $opens('Add farm size'));
         $this->assertSame('profile', $opens('Update profile'));
         $this->assertSame('farm-map', $opens('Map my farm'));
@@ -842,32 +685,44 @@ class FarmerDashboardTest extends TestCase
 
         $slots = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => 'planting']))->assertOk()->json('slots');
 
-        $this->assertSame(['farm', 'season', 'harvest', 'setup', 'quick'], array_keys($slots));
-        $this->assertStringContainsString('My Crop Season', $slots['season']);
+        $this->assertSame(['today', 'highlights', 'schedule', 'harvest', 'farm', 'updates', 'quick'], array_keys($slots));
+        $this->assertStringContainsString('My Farm Schedule', $slots['schedule']);
 
         $live = fn (string $retry) => array_keys($this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => $retry]))->assertOk()->json('slots'));
-        $this->assertSame(['header', 'farm', 'today', 'risk', 'setup', 'advisories', 'quick'], $live('profile'));   // the slow harvest card is asked for separately
-        $this->assertSame(['farm', 'setup', 'quick'], $live('map'));
+        $this->assertSame(['header', 'today', 'highlights', 'risk', 'advisories', 'farm', 'updates', 'quick'], $live('profile'));   // the slow harvest card is asked for separately
+        $this->assertSame(['farm', 'updates', 'quick'], $live('map'));
+        $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
+        $this->assertStringContainsString("planting: ['today', 'highlights', 'schedule', 'harvest', 'farm', 'updates', 'quick']", $js);   // the script marks the same sections busy
     }
 
-    public function test_the_crop_season_shows_the_six_stages_the_day_and_the_harvest_dates(): void
+    public function test_the_schedule_shows_the_planting_date_the_day_the_next_activity_and_the_harvest_dates(): void
     {
         $farmer = $this->farmer([], 2.0);
         $schedule = $this->openSchedule($farmer);                                               // planted 5 days ago, harvest in 110 days: a 115 day season
 
+        $data = $this->data($farmer);
         $html = $this->page($farmer)->getContent();
-        $section = substr($html, strpos($html, 'data-mfd-season'), 9000);
+        $section = substr($html, strpos($html, 'data-mfd-schedule'), 6000);
+        $planted = CarbonImmutable::parse($schedule->planting_date->toDateString(), 'Asia/Manila');
         $harvest = CarbonImmutable::parse($schedule->scheduled_harvest_date, 'Asia/Manila');
 
+        // The calendar's own record: the planting date as saved, never a made-up one.
+        $this->assertSame($planted->toDateString(), $data['schedule']['planting_date']->toDateString());
+        $this->assertStringContainsString($planted->format('F j, Y'), $section);
         $this->assertStringContainsString('Day 5 of about 115', $section);
-        $this->assertStringContainsString('Planting stage', $section);
-        foreach (['Land preparation', 'Planting', 'Growing', 'Flowering', 'Ripening', 'Harvest'] as $stage) {
-            $this->assertStringContainsString('<strong>'.$stage.'</strong>', $section);
-        }
-        $this->assertStringContainsString('aria-current="step"', $section);                       // the stage under way is announced, not just coloured
+        $this->assertStringContainsString('Planting', $section);
+        // Fertilizer at planting runs days 0-7, so it is due now; the first extra fertilizer starts on day 14.
+        $this->assertSame('basal', $data['schedule']['current']['key']);
+        $this->assertSame('topdress1', $data['schedule']['next']['key']);
+        $this->assertSame(9, $data['schedule']['next']['in_days']);
+        $this->assertStringContainsString('Fertilizer at planting', $section);
+        $this->assertStringContainsString('First extra fertilizer', $section);
+        $this->assertStringContainsString($planted->addDays(14)->format('l, F j'), $section);
         $this->assertStringContainsString($harvest->subDays(7)->format('M j').' – '.$harvest->addDays(7)->format('M j, Y'), $section);
-        $this->assertStringContainsString('Next task', $section);
-        $this->assertStringNotContainsString('Add your planting date', $section);
+        $this->assertStringContainsString('role="progressbar"', $section);
+        // The same plot in "My Farm Today" and in Today's Highlights.
+        $this->assertStringContainsString('Day 5 after planting', $this->kpiCard($html, 'planting'));
+        $this->assertStringContainsString('Fertilizer at planting is due now', $this->readable($html));
     }
 
     public function test_a_finished_plot_is_not_part_of_the_season(): void
@@ -913,23 +768,26 @@ class FarmerDashboardTest extends TestCase
         $this->lianYields(3.82);
 
         $h = $this->payload($farmer)['harvest'];
-        $html = $this->slot($farmer, 'harvest', ['retry' => 'harvest']);
+        $slots = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => 'harvest']))->assertOk()->json('slots');
+        $html = $slots['harvest'];
 
         $this->assertSame('ok', $h['state']);
         $this->assertSame(['low' => 3.8, 'high' => 4.6], $h['range']);
         $this->assertSame(8.4, $h['production']);                                               // 4.2 t/ha x 2 ha
         $this->assertNotNull($h['ran_at']);                                                     // the date the model last ran
-        $this->assertMatchesRegularExpression('#<span>4\.20</span><small>tons/ha</small>#', $html);   // same unit and decimals as the Predictions page
-        $this->assertStringContainsString('Usually between 3.80 and 4.60 tons/ha', $html);
-        $this->assertStringContainsString('Estimated from your available farm and climate information.', $html);
-        $this->assertStringContainsString('Expected range:', $html);
+        // Same unit and decimals as the Predictions page, in the number card and in the forecast card.
+        $this->assertMatchesRegularExpression('#<span>4\.20</span><small>t/ha</small>#', $slots['today']);
+        $this->assertStringContainsString('About 8.4 tons from your 2.00 ha farm', $slots['today']);
+        $this->assertStringContainsString('4.20 t/ha', $html);
+        $this->assertStringContainsString('Usually between 3.80 and 4.60 t/ha', $html);
+        $this->assertStringContainsString('For your 2.00 ha farm: about 8.4 tons.', $html);
+        $this->assertStringContainsString('the same one on the Predictions page', $html);
         $this->assertStringContainsString('Normal', $html);                                      // 10% above the average is inside the typical band
-        $this->assertStringContainsString('About 8.4 tons from your 2.00 ha farm.', $html);
-        $this->assertStringContainsString('Estimate made by iClimate on '.$h['ran_at']->format('M j, Y'), $html);
-        $this->assertStringContainsString('not a harvest record', $html);
+        $this->assertStringContainsString('Forecast updated: '.$h['ran_at']->format('F j, Y'), $html);
+        $this->assertStringContainsString(route('weather-predictions.index', ['tab' => 'rice-yield']), $html);
         $this->assertStringNotContainsStringIgnoringCase('how sure', $html);                    // no model confidence on the farmer's page
-        $this->assertStringNotContainsString('8.4 tons/ha', $html);
-        $this->assertStringNotContainsString('8.40 tons/ha', $html);                                // tons and tons per hectare are never mixed up
+        $this->assertStringNotContainsString('8.4 t/ha', $html);
+        $this->assertStringNotContainsString('8.40 t/ha', $html);                                // tons and tons per hectare are never mixed up
     }
 
     public function test_the_harvest_is_compared_with_the_average_for_the_same_month(): void
@@ -945,8 +803,7 @@ class FarmerDashboardTest extends TestCase
         $this->assertSame(0.38, $o['difference']);
         $this->assertSame(10.0, $o['percent']);
         $this->assertTrue($o['same_month'] || ! $o['same_month']);                              // yearly rows cover every month in the fixture
-        $this->assertStringContainsString('About 10% more than the Lian average for '.now()->format('F').' (3.82 tons/ha).', $html);
-        $this->assertStringContainsString('It is not for your barangay or your farm.', $html);
+        $this->assertStringContainsString('Lian average for '.now()->format('F').': 3.82 t/ha.', $html);
     }
 
     public function test_the_range_is_left_out_when_the_model_gives_no_uncertainty(): void
@@ -996,7 +853,7 @@ class FarmerDashboardTest extends TestCase
         $this->assertSame(3.5, $own['average']);
         $this->assertSame(4.0, $own['latest']);
         $this->assertSame(1.06, $own['difference']);                                            // 4.56 estimate - 3.50 own average
-        $this->assertStringContainsString('Your own past harvests (2)', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+        $this->assertStringContainsString('Your own past harvests: 3.50 t/ha (2 recorded).', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
     }
 
     public function test_the_outlook_compares_the_same_calendar_month_and_falls_back_to_all_months(): void
@@ -1033,7 +890,7 @@ class FarmerDashboardTest extends TestCase
 
         $this->assertSame('ok', $h['state']);                                                   // the estimate itself does not need the history
         $this->assertNull($h['outlook']);
-        $this->assertStringNotContainsString('Compared with the average', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+        $this->assertStringNotContainsString('Lian average', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
     }
 
     public function test_an_unavailable_estimate_says_why_and_offers_a_retry_on_its_own_card(): void
@@ -1043,17 +900,19 @@ class FarmerDashboardTest extends TestCase
 
         $h = $this->payload($farmer)['harvest'];
         $html = $this->slot($farmer, 'harvest', ['retry' => 'harvest']);
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES);
 
         $this->assertSame('error', $h['state']);
-        $this->assertSame(['planting', 'area'], $h['missing']);
-        $this->assertStringContainsString('Yield forecast is not available yet.', $html);
-        $this->assertStringContainsString('Complete Farm Information', $html);
+        $this->assertSame(['area', 'planting'], $h['missing']);
+        $this->assertStringContainsString('Rice yield forecast is not available yet.', $text);
+        $this->assertStringContainsString('We still need:', $text);
+        $this->assertStringContainsString('Farm size', $text);
+        $this->assertStringContainsString('Planting date', $text);
+        $this->assertStringContainsString('Complete Farm Information', $text);
         $this->assertStringNotContainsString('0.00', $html);                                     // never a made-up zero
-        $this->assertStringContainsString('Add your planting date and farm size.', $html);
         $this->assertStringContainsString('data-mfd-retry="harvest"', $html);
         $this->assertStringContainsString(route('profile.edit'), $html);
         $this->assertStringNotContainsString('secret-model-failure', $html);
-        $this->assertStringNotContainsString(route('farmer.planting-schedules.create'), $html);    // the planting prompt lives in one place only
     }
 
     public function test_too_few_weather_records_is_said_plainly_and_not_blamed_on_the_service_or_the_farmer(): void
@@ -1152,22 +1011,18 @@ class FarmerDashboardTest extends TestCase
 
         $data = $this->payload($farmer);
         $html = $this->page($farmer)->getContent();
-        $card = substr($html, strpos($html, 'data-mfd-risk'), 2500);
+        $card = substr($html, strpos($html, 'data-mfd-risk'), 3500);
 
         $this->assertSame('ok', $data['risk']['state']);
-        $this->assertStringContainsString('<span>High risk</span>', $card);
+        $this->assertStringContainsString('<span>High Risk</span>', $card);
         $this->assertStringContainsString('mfd-pill is-danger', $card);
+        $this->assertStringContainsString('Binubusan', $card);
         $this->assertStringContainsString('Delay planting until rainfall stabilizes.', $card);
-        $this->assertStringContainsString('A planning guide, not an official hazard warning. Checked on '.now('Asia/Manila')->format('M j, Y'), $card);
+        $this->assertStringContainsString('Last checked: '.now('Asia/Manila')->format('M j'), $card);
+        $this->assertStringContainsString('The same rating as the Heat Map.', $card);
+        $this->assertStringContainsString('href="'.route('heat-map.index').'"', $card);
+        $this->assertStringContainsString('High Risk', $this->kpiCard($html, 'risk'));            // the number card says the same
         $this->assertSame('Farm risk in your barangay is High', collect($data['alerts'])->firstWhere('icon', 'map')['title']);
-    }
-
-    public function test_the_risk_map_is_collapsed_by_default(): void
-    {
-        $html = $this->page()->getContent();
-
-        $this->assertMatchesRegularExpression('/<details class="mfd-map" id="farmRiskMap">/', $html);
-        $this->assertDoesNotMatchRegularExpression('/<details class="mfd-map"[^>]*\sopen/', $html);
     }
 
     public function test_a_risk_failure_shows_its_own_error_and_retry_while_other_cards_keep_working(): void
@@ -1181,8 +1036,8 @@ class FarmerDashboardTest extends TestCase
 
         $this->assertStringContainsString(e("We can't show this right now."), $card);
         $this->assertStringContainsString('data-mfd-retry="risk"', $card);
-        $this->assertStringContainsString('Weather This Week', $html);
-        $this->assertStringContainsString('My Crop Season', $html);
+        $this->assertStringContainsString('Weather for Lian, Batangas', $html);
+        $this->assertStringContainsString('My Farm Schedule', $html);
         $this->assertStringNotContainsString('secret-risk-failure', $html);
     }
 
@@ -1296,13 +1151,34 @@ class FarmerDashboardTest extends TestCase
         $this->assertStringContainsString('Latest Farming Advice', $this->page($farmer)->getContent());
     }
 
-    public function test_the_advisory_section_is_left_out_when_there_are_none(): void
+    public function test_with_no_advisories_the_advice_card_says_so(): void
     {
         $this->assertSame([], $this->data($this->farmer())['advisories']);
-        $this->assertStringNotContainsString('Latest Farming Advice', $this->readable($this->page($this->farmer(['email' => 'q@example.test']))->getContent()));
+        $text = $this->readable($this->page($this->farmer(['email' => 'q@example.test']))->getContent());
+
+        $this->assertStringContainsString('Latest Farming Advice', $text);
+        $this->assertStringContainsString('There is no farming advice for your area right now.', $text);
     }
 
-    public function test_my_farm_at_a_glance_shows_the_farmers_own_farm(): void
+    public function test_the_advice_card_puts_the_farmers_barangay_first_and_marks_what_is_new(): void
+    {
+        $farmer = $this->farmer();
+        PlantingAdvisory::factory()->create(['title' => 'Lian-wide reminder', 'target_barangay' => null, 'status' => PlantingAdvisory::STATUS_PUBLISHED, 'valid_from' => now()->subHour(), 'published_at' => now()->subHour()]);
+        PlantingAdvisory::factory()->create(['title' => 'Binubusan drainage check', 'target_scope' => 'barangay', 'target_barangay' => 'Binubusan', 'status' => PlantingAdvisory::STATUS_PUBLISHED, 'valid_from' => now()->subDays(2), 'published_at' => now()->subDays(2)]);
+        PlantingAdvisory::factory()->create(['title' => 'Old guidance', 'target_barangay' => null, 'status' => PlantingAdvisory::STATUS_PUBLISHED, 'valid_from' => now()->subDays(20), 'published_at' => now()->subDays(20)]);
+
+        $data = $this->data($farmer);
+
+        $this->assertSame('Binubusan drainage check', $data['advisories'][0]['title']);
+        $this->assertTrue($data['advisories'][0]['for_barangay']);
+        $this->assertSame([true, true, false], array_column($data['advisories'], 'is_new'));
+        $this->assertSame(2, $data['advisories_new']);                                          // published this week
+        $this->assertContains('advisories', array_column($data['reminders'], 'key'));
+        $this->assertSame('advisory', collect($data['highlights'])->firstWhere('key', 'advisory')['icon']);
+        $this->assertNotEmpty($data['advisories'][0]['source']);                                // who it is from, as on the Advisories page
+    }
+
+    public function test_my_farm_shows_the_farmers_own_farm(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-04 10:00', 'Asia/Manila'));
         $this->fakeWeather([4.0, 6.0, 3.0, 2.0, 1.0, 5.0, 2.0]);
@@ -1313,46 +1189,45 @@ class FarmerDashboardTest extends TestCase
             'barangay' => 'San Diego', 'calculated_area_hectares' => 0.6, 'calculated_perimeter_meters' => 380]);
 
         $data = $this->data($farmer);
-        $farm = $data['farm'];
-        $this->assertSame(['size', 'planting', 'weather', 'condition'], array_keys($farm));        // four cards, all about the farm
-        // The mapped farm's barangay, not the farmer's home barangay.
-        $this->assertSame(['value' => '1.50 ha', 'note' => 'Your registered farm area in Barangay San Diego'], $farm['size']);
-        $this->assertSame(['value' => 'Active', 'note' => 'Planted on September 29, 2026'], $farm['planting']);
-        // The weather card is the same reading as Today's Farm Conditions, and says it is Lian's, not the farm's own.
-        $this->assertSame(FarmerKpiService::formatTemperature($data['weather']['temperature']).'°C', $farm['weather']['value']);
-        $this->assertSame($data['weather']['condition'], $farm['weather']['detail']);
-        $this->assertStringContainsString('Lian weather overview', $farm['weather']['note']);
-        $this->assertSame(['value' => 'Good', 'status' => 'good', 'note' => 'Rainfall is light today. Continue regular field monitoring.'], $farm['condition']);
+        $p = $data['profile'];
+        $this->assertSame('Binubusan', $p['barangay']);
+        $this->assertSame(1.5, $p['area']);
+        $this->assertSame('Irrigated (canal or pump)', $p['water']);
+        $this->assertSame('2026-09-29', $p['planting_date']->toDateString());
+        $this->assertSame('Barangay San Diego', $p['mapped_in']);                                // the mapped farm's barangay, from the map
+        $this->assertSame(['value' => 'Good', 'status' => 'good', 'note' => 'Only light rain today. Conditions are manageable.'], $data['condition']);
 
         $section = $this->farmSection($this->page($farmer)->getContent());
-        foreach (['My Farm at a Glance', 'Farm Size', '1.50 ha', 'Planting Status', 'Active', 'Planted on September 29, 2026', 'Lian Weather', 'Farm Condition', 'Good'] as $text) {
+        foreach (['My Farm', 'Binubusan', '1.50 ha', 'Irrigated (canal or pump)', 'September 29, 2026', 'Mapped in Barangay San Diego', 'Your farm information is complete.'] as $text) {
             $this->assertStringContainsString($text, $section, $text);
         }
-        $this->assertSame(4, substr_count($section, 'class="mfd-farm-tile'));
         $this->assertStringNotContainsString('data-mfd-popup', $section);                        // nothing is missing, so nothing to add
-        foreach (['14.03', '120.65', '2026-09-29'] as $raw) {
-            $this->assertStringNotContainsString($raw, $section, $raw);                          // no raw positions or dates
+        foreach (['14.03', '120.65', '2026-09-29', '@'] as $raw) {
+            $this->assertStringNotContainsString($raw, $section, $raw);                          // no raw positions, dates or personal details
         }
     }
 
-    public function test_my_farm_at_a_glance_says_what_is_missing_and_offers_the_right_pop_up(): void
+    public function test_my_farm_says_what_is_missing_and_offers_the_right_pop_up(): void
     {
         $this->replaceWeather(Http::response([], 500));                                          // no weather either
-        $farmer = $this->farmer();                                                               // no farm size, no map, no planting date; the risk service is not answering
+        $farmer = $this->farmer();                                                               // no farm size, no map, no planting date; no risk rating yet
 
-        $farm = $this->data($farmer)['farm'];
-        $this->assertSame([null, null, null, null], array_column($farm, 'value'));
+        $data = $this->data($farmer);
+        $this->assertNull($data['profile']['area']);
+        $this->assertNull($data['profile']['planting_date']);
+        $this->assertNull($data['condition']['value']);                                          // never "Good" without data
 
-        $section = $this->farmSection($this->page($farmer)->getContent());
-        $this->assertSame(2, substr_count($section, 'Not Set'));
-        $this->assertSame(2, substr_count($section, 'Not Available Yet'));
-        $this->assertStringContainsString('Add your farm size to complete your farm information.', $section);
-        $this->assertStringContainsString('Add your planting date to receive better farming guidance.', $section);
+        $html = $this->page($farmer)->getContent();
+        $section = $this->farmSection($html);
+        $this->assertSame(2, substr_count($section, 'Not set'));                                 // farm size and planting date
+        $this->assertStringContainsString('Still needed', $section);
         preg_match_all('/data-mfd-popup="([a-z-]+)"[^>]*>([^<]+)</', $section, $m);
-        $this->assertSame(['Add farm size' => 'farm-size', 'Set planting date' => 'planting'], array_combine($m[2], $m[1]));
-        foreach (['>0<', '0.00 ha', '0°C', 'N/A', 'Unknown', '>Good<'] as $fake) {
-            $this->assertStringNotContainsString($fake, $section, $fake);                        // nothing made up, and never "Good" without data
+        $this->assertSame(['Add farm size' => 'farm-size', 'Map my farm' => 'farm-map'], array_combine($m[2], $m[1]));
+        foreach (['>0<', '0.00 ha', '0°C', 'N/A', 'Unknown'] as $fake) {
+            $this->assertStringNotContainsString($fake, $section, $fake);
         }
+        $this->assertStringContainsString('Not Available', $this->kpiCard($html, 'condition'));
+        $this->assertStringNotContainsString('>Good<', $this->kpiCard($html, 'condition'));
     }
 
     public function test_a_planting_date_still_to_come_is_upcoming_not_active(): void
@@ -1360,9 +1235,10 @@ class FarmerDashboardTest extends TestCase
         $farmer = $this->farmer([], 2.0);
         $this->openSchedule($farmer, ['planting_date' => now('Asia/Manila')->addDays(9)->toDateString()]);
 
-        $planting = $this->data($farmer)['farm']['planting'];
-        $this->assertSame('Upcoming', $planting['value']);
-        $this->assertSame('Planting on '.now('Asia/Manila')->addDays(9)->format('F j, Y'), $planting['note']);
+        $data = $this->data($farmer);
+        $this->assertFalse($data['schedule']['planted']);
+        $this->assertSame(9, $data['schedule']['until_planting']);
+        $this->assertStringContainsString('Planting in 9 days', $this->kpiCard($this->page($farmer)->getContent(), 'planting'));
     }
 
     public function test_farm_condition_is_the_most_serious_real_warning_never_a_separate_opinion(): void
@@ -1371,10 +1247,10 @@ class FarmerDashboardTest extends TestCase
         $this->fakeWeather([40.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0]);
         $this->mockRisk('Low');
         $data = $this->data($this->farmer());
-        $this->assertSame('High Weather Risk', $data['farm']['condition']['value']);
-        $this->assertSame('danger', $data['farm']['condition']['status']);
-        $this->assertStringContainsString('Heavy rain expected today', $data['farm']['condition']['note']);
-        $this->assertStringContainsString('Heavy rain expected today', $data['alerts'][0]['title']);  // the same warning as What You Should Know Today
+        $this->assertSame('Needs Attention', $data['condition']['value']);
+        $this->assertSame('danger', $data['condition']['status']);
+        $this->assertStringContainsString('Heavy rain expected today', $data['condition']['note']);
+        $this->assertStringContainsString('Heavy rain expected today', $data['alerts'][0]['title']);  // the same warning as Today's Highlights
         $this->assertSame('heavy', $data['weather']['levels']['rain']);
 
         // A calm day in a barangay rated Moderate: the rating shows through, in the rating's own words.
@@ -1382,35 +1258,53 @@ class FarmerDashboardTest extends TestCase
         $this->mockRisk('Moderate');
         $data = $this->data($this->farmer(['email' => 'moderate@example.test']));
         if ($data['alerts'] === []) {
-            $this->assertSame(['value' => 'Needs Attention', 'status' => 'watch', 'note' => $data['risk']['meaning']], $data['farm']['condition']);
+            $this->assertSame(['value' => 'Watch', 'status' => 'watch', 'note' => $data['risk']['meaning']], $data['condition']);
         }
-        $this->assertNotSame('Good', $data['farm']['condition']['value']);
+        $this->assertNotSame('Good', $data['condition']['value']);
 
         // The same calm day rated High is a high risk on the card too: one risk level everywhere on the page.
         $this->mockRisk('High');
         $data = $this->data($this->farmer(['email' => 'high@example.test']));
-        $this->assertSame('High Weather Risk', $data['farm']['condition']['value']);
+        $this->assertSame('Needs Attention', $data['condition']['value']);
         $this->assertTrue($data['risk']['high']);
     }
 
-    public function test_todays_conditions_are_three_numbers_each_with_one_plain_word(): void
+    public function test_my_farm_today_is_six_numbers_from_the_same_reading(): void
     {
         $this->fakeWeather([12.0, 6.0, 3.0, 2.0, 1.0, 5.0, 2.0], 82, ['temperature' => 31.0]);
         $data = $this->data($farmer = $this->farmer());
 
         $this->assertSame(['temperature' => 'warm', 'rain' => 'moderate', 'humidity' => 'high'], $data['weather']['levels']);
         $html = $this->page($farmer)->getContent();
-        $now = substr($html, strpos($html, 'data-mfd-now'), 4500);
-        foreach (['temperature' => ['31.0°C', 'Warm'], 'rain' => ['12 mm', 'Moderate'], 'humidity' => ['82%', 'High']] as $key => [$value, $word]) {
-            $this->assertMatchesRegularExpression('/data-condition="'.$key.'".*?'.preg_quote($value, '/').'.*?'.$word.'/s', $now, $key);
+        $today = substr($html, strpos($html, 'data-mfd-today'), strpos($html, 'data-mfd-highlights') - strpos($html, 'data-mfd-today'));
+        $this->assertSame(['weather', 'rain', 'condition', 'planting', 'risk', 'yield'], preg_match_all('/data-kpi="([a-z]+)"/', $today, $m) ? $m[1] : []);
+        $this->assertMatchesRegularExpression('#<span>31\.0</span><small>°C</small>#', $this->kpiCard($html, 'weather'));
+        $this->assertMatchesRegularExpression('#<span>12</span><small>mm</small>#', $this->kpiCard($html, 'rain'));
+        $this->assertStringContainsString('Updated '.$data['weather']['updated_label'], $this->kpiCard($html, 'weather'));
+        $this->assertStringContainsString('82%', substr($html, strpos($html, 'data-mfd-weather'), 5000));   // humidity is in the weather card, not repeated
+        foreach (['Total Users', 'Total Farmers', 'System Requests', 'Database Records'] as $admin) {
+            $this->assertStringNotContainsString($admin, $today, $admin);                        // no administrator numbers
         }
-        $this->assertSame(3, substr_count($now, 'data-condition='));
 
         // The bands come from the one config file, and the top bands are the warning limits themselves.
         $kpi = app(FarmerKpiService::class);
         $this->assertSame('heavy', $kpi->todayLevels(30.0, (float) config('farmer_dashboard.heavy_rain_mm'), 50.0)['rain']);
         $this->assertSame('very_high', $kpi->todayLevels(30.0, 0.0, (float) config('farmer_dashboard.humid_percent'))['humidity']);
         $this->assertSame(['temperature' => null, 'rain' => null, 'humidity' => null], $kpi->todayLevels(null, null, null));
+    }
+
+    public function test_a_number_that_may_confuse_has_a_what_does_this_mean_pop_up(): void
+    {
+        $this->mockRisk('Low');
+        $html = $this->page($this->farmer())->getContent();
+
+        foreach (['mfdLearnChance', 'mfdLearnCondition', 'mfdLearnRisk'] as $id) {
+            $this->assertMatchesRegularExpression('/<button type="button" class="mfd-learn" data-ic-template="'.$id.'"[^>]*aria-haspopup="dialog"/', $html, $id);
+            $this->assertStringContainsString('<template id="'.$id.'">', $html);
+        }
+        $this->assertStringContainsString('What should I do?', $html);
+        $this->assertMatchesRegularExpression('/A 60% chance of rain means rain is possible in Lian today\./', $html);
+        $this->assertStringContainsString("closeLabel: button.dataset.icCloseLabel || undefined", file_get_contents(resource_path('js/info-modal.js')));
     }
 
     public function test_the_yield_forecast_reads_plainly_against_the_usual_yield(): void
@@ -1424,8 +1318,7 @@ class FarmerDashboardTest extends TestCase
         $this->lianYields(4.0);
         $this->assertSame('below', $this->payload($farmer)['harvest']['typical']);
         $html = $this->slot($farmer, 'harvest', ['retry' => 'harvest']);
-        $this->assertStringContainsString('Below typical range', $html);
-        $this->assertStringContainsString('Review current farm and climate conditions for possible adjustments.', $html);
+        $this->assertStringContainsString('Below usual', $html);
         foreach (['bad', 'poor', 'fail'] as $word) {
             $this->assertStringNotContainsStringIgnoringCase($word, strip_tags($html), $word);
         }
@@ -1457,28 +1350,30 @@ class FarmerDashboardTest extends TestCase
     }
 
     /** The "My Farm at a Glance" section's own markup. */
+    /** The "My Farm" section's own markup. */
     private function farmSection(string $html): string
     {
         $from = strpos($html, 'data-mfd-farm>');
-        $this->assertNotFalse($from, 'My Farm at a Glance section');
+        $this->assertNotFalse($from, 'My Farm section');
 
         return substr($html, $from, strpos($html, '</section>', $from) - $from);
     }
 
-    public function test_quick_actions_are_three_farm_tasks_not_a_second_menu(): void
+    public function test_quick_actions_are_four_tasks_not_a_second_menu(): void
     {
         $html = $this->page($this->farmer())->getContent();
         $quick = $this->quickSection($html);
 
-        // Three cards, each opening its own pop-up on the dashboard.
+        // Climora, then three farm tasks, each opening its own pop-up on the dashboard.
+        $this->assertSame(1, substr_count($quick, 'data-ai-open'));
         preg_match_all('/<a class="mfd-quick-card"[^>]*data-mfd-popup="([a-z-]+)"[^>]*data-quick="([a-z]+)"/', $quick, $m);
-        $this->assertSame(['farm' => 'farm-size', 'map' => 'farm-map', 'plan' => 'planting'], array_combine($m[2], $m[1]));
+        $this->assertSame(['farm' => 'farm-size', 'plan' => 'planting', 'map' => 'farm-map'], array_combine($m[2], $m[1]));
         $this->assertSame(3, substr_count($quick, '<a '));
-        // The Farm Information card is the farm size pop-up with its farm type field shown, under its own title.
+        // The Farm Information card is the farm size pop-up with its water source field shown, under its own title.
         $this->assertMatchesRegularExpression('/data-quick="farm"\s+data-mfd-popup-variant="info" data-mfd-popup-title="Farm Information"/', $quick);
         $this->assertSame(['farm_area', 'farm_type'], array_values(array_diff($this->fieldNames($this->popup($html, 'farm-size')), ['_token'])));
 
-        // Pages that are already in the side menu are not repeated here.
+        // Pages that are already linked from the cards above are not repeated here.
         foreach (['View Advisories', 'Open Calendar', 'Check Prediction', 'Notifications', 'My Profile', 'Update Profile', 'Community'] as $gone) {
             $this->assertStringNotContainsString($gone, $quick, $gone);
         }
@@ -1493,7 +1388,7 @@ class FarmerDashboardTest extends TestCase
         $new = $this->farmer();
         $this->assertSame(['farm' => false, 'map' => false, 'plan' => false], $this->data($new)['quick']);
         $text = html_entity_decode(strip_tags($this->quickSection($this->page($new)->getContent())), ENT_QUOTES);
-        foreach (['Farm Information', 'Map My Farm', 'Planting Plan'] as $title) {
+        foreach (['Update Farm Information', 'Map My Farm', 'Planting Plan'] as $title) {
             $this->assertStringContainsString($title, $text, $title);
         }
         $this->assertSame(3, substr_count($text, 'Not set'));
@@ -1504,7 +1399,7 @@ class FarmerDashboardTest extends TestCase
         $set->farmerProfile->farmBoundary()->create(['boundary_coordinates' => [['lat' => 14.03, 'lng' => 120.65], ['lat' => 14.031, 'lng' => 120.65], ['lat' => 14.031, 'lng' => 120.651]], 'calculated_area_hectares' => 0.6, 'calculated_perimeter_meters' => 380]);
         $this->assertSame(['farm' => true, 'map' => true, 'plan' => true], $this->data($set)['quick']);
         $text = html_entity_decode(strip_tags($this->quickSection($this->page($set)->getContent())), ENT_QUOTES);
-        foreach (['Farm Information', 'Map My Farm', 'Planting Plan'] as $title) {
+        foreach (['Update Farm Information', 'Map My Farm', 'Planting Plan'] as $title) {
             $this->assertStringContainsString($title, $text, $title);
         }
         $this->assertStringNotContainsString('Not set', $text);
@@ -1579,14 +1474,12 @@ class FarmerDashboardTest extends TestCase
     {
         $html = $this->page($this->farmer())->getContent();
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
-        $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
 
         $this->assertStringContainsString('family=Inter:wght@', $html);
         $this->assertStringContainsString('class="is-farmer-dashboard"', $html);
         $this->assertStringContainsString('--mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;', $css);
         $this->assertStringContainsString('--mfd-serif: Georgia, "Times New Roman", Times, serif;', $css);         // page and section titles
         $this->assertStringContainsString('font-variant-numeric: tabular-nums', $css);
-        $this->assertStringContainsString('"Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif', $js);
         $this->assertStringNotContainsString('DM Serif', $css);
         $this->assertStringNotContainsString('DM Mono', $css);
         $this->assertDoesNotMatchRegularExpression('/font-family:\s*+(?!var\(--mfd-)/', preg_replace('#/\*.*?\*/#s', '', $css));
@@ -1619,11 +1512,30 @@ class FarmerDashboardTest extends TestCase
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
 
         $this->assertStringContainsString('max-width: 1680px', $css);                           // fills a 1728px-wide screen
-        $this->assertStringContainsString('.mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }', $css);   // two columns on a phone
-        $this->assertStringContainsString('.mfd-today { display: grid;', $css);
-        $this->assertStringContainsString('grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch', $css);        // side by side on a desktop
+        $this->assertStringContainsString('.mfd[data-farmer-dashboard] .mfd-kpis { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }', $css);   // desktop
+        $this->assertStringContainsString('.mfd[data-farmer-dashboard] .mfd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $css);                            // tablet
+        $this->assertStringContainsString('.mfd[data-farmer-dashboard] .mfd-kpis, .mfd[data-farmer-dashboard] .mfd-quick { grid-template-columns: minmax(0, 1fr); gap: 12px; }', $css);   // phone
+        $this->assertStringContainsString('.mfd[data-farmer-dashboard] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }', $css);      // pairs on a desktop
         $this->assertStringNotContainsString('overflow-x: auto', $css);                          // nothing scrolls sideways
         $this->assertDoesNotMatchRegularExpression('/(?<![\w-])order:\s*\d/', $css);             // never rearranged by CSS
+    }
+
+    public function test_the_mao_and_it_dashboards_keep_their_own_look(): void
+    {
+        $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
+        $sections = substr($css, strpos($css, 'Farmer dashboard sections'), strpos($css, 'dashboard pop-ups') - strpos($css, 'Farmer dashboard sections'));
+
+        // Every new rule is scoped to the Farmer dashboard (the IT dashboard's root is also .mfd).
+        preg_match_all('/^\s*([.#][^{@]*)\{/m', $sections, $m);
+        foreach ($m[1] as $selector) {
+            foreach (explode(',', $selector) as $one) {
+                $this->assertStringStartsWith('.mfd[data-farmer-dashboard]', trim($one), trim($one));
+            }
+        }
+        // The shared rules the other dashboards use are still there, unchanged.
+        foreach (['.mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }', '.mfd-alert-list { display: grid; gap: 8px; }', '.mfd-chart { position: relative; height: 280px; }'] as $rule) {
+            $this->assertStringContainsString($rule, $css, $rule);
+        }
     }
 
     public function test_the_floating_climora_button_never_covers_content(): void
@@ -1655,34 +1567,52 @@ class FarmerDashboardTest extends TestCase
         $this->openSchedule($farmer);
         $css = file_get_contents(resource_path('css/farmer-dashboard.css'));
         $html = $this->page($farmer)->getContent();
+        $body = $this->body($html);
 
         $this->assertStringContainsString('role="status" aria-live="polite" data-mfd-live', $html);       // a refresh is announced
         $this->assertStringContainsString('focus-visible', $css);
         $this->assertStringContainsString('min-height: 44px', $css);                                      // tap targets
         $this->assertMatchesRegularExpression('/aria-label="Refresh the dashboard"/', $html);
-        $this->assertStringContainsString('aria-labelledby="mfdNowTitle"', $html);
-        $this->assertGreaterThanOrEqual(3, substr_count($html, 'role="img"'));                            // every chart has a text alternative
-        $this->assertSame(0, preg_match('/<svg(?![^>]*aria-hidden)/', $this->body($html)), 'decorative icons are hidden from screen readers');
+        $this->assertStringContainsString('<label for="mfdLanguage">Language</label>', $html);            // the language selector is labelled
+        foreach (['mfdTodayTitle', 'mfdHighlightsTitle', 'mfdWeatherTitle', 'mfdScheduleTitle', 'mfdRiskTitle', 'mfdFarmTitle', 'mfdUpdatesTitle', 'mfdQuickTitle'] as $id) {
+            $this->assertStringContainsString('aria-labelledby="'.$id.'"', $html, $id);
+        }
+        $slots = preg_replace('/<div class="mfd-tabs".*?<\/nav>/s', '', substr($body, 0, strpos($body, 'data-mfd-popup-modal') ?: strlen($body)));
+        $this->assertSame(0, preg_match('/<svg(?![^>]*aria-hidden)/', $slots), 'decorative icons are hidden from screen readers');
         foreach (['mfd-pill is-watch', 'mfd-pill is-danger', 'mfd-pill is-good'] as $pill) {
-            if (str_contains($this->body($html), $pill)) {
-                $this->assertMatchesRegularExpression('/'.$pill.'"><svg[^>]*>.*?<\/svg>\s*<span>[A-Za-z]/s', $this->body($html), "$pill has an icon and words");
+            if (str_contains($slots, $pill)) {
+                $this->assertMatchesRegularExpression('/'.$pill.'"><svg[^>]*>.*?<\/svg>\s*<span>[A-Za-z]/s', $slots, "$pill has an icon and words");
             }
         }
     }
 
     public function test_every_word_on_the_page_comes_from_the_language_file(): void
     {
-        $lang = require lang_path('en/farmer.php');
-        $this->assertIsArray($lang);
-        foreach (['greeting', 'header', 'now', 'advice', 'actions', 'kpi', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'quick', 'about', 'state', 'reason'] as $group) {
-            $this->assertArrayHasKey($group, $lang, $group);
+        $en = require lang_path('en/farmer.php');
+        $fil = require lang_path('fil/farmer.php');
+        foreach (['greeting', 'header', 'today', 'highlights', 'weather_card', 'schedule', 'risk', 'harvest', 'advisories', 'my_farm', 'updates', 'quick', 'learn', 'state', 'reason'] as $group) {
+            $this->assertArrayHasKey($group, $en, $group);
         }
-        $this->assertSame('Good evening, :name', __('farmer.greeting.evening'));
 
-        // A Filipino file added later is picked up with no change to the views.
+        // English and Filipino have the same keys (Filipino also names the weather words the provider sends).
+        $keys = function (array $a, string $prefix = '') use (&$keys): array {
+            $out = [];
+            foreach ($a as $k => $v) {
+                $out = array_merge($out, is_array($v) && $v !== [] ? $keys($v, $prefix.$k.'.') : [$prefix.$k]);
+            }
+
+            return $out;
+        };
+        $missing = array_diff(array_filter($keys($en), fn ($k) => $k !== 'conditions'), $keys($fil));
+        $this->assertSame([], array_values($missing), 'every English key has a Filipino translation');
+
+        $this->assertSame('Good evening, :name', __('farmer.greeting.evening'));
         app()->setLocale('fil');
-        $this->assertSame('Good evening, :name', __('farmer.greeting.evening'));              // falls back to English until translated
+        $this->assertSame('Magandang gabi, :name', __('farmer.greeting.evening'));
+        $this->assertSame('Mababang Panganib', __('farmer.risk.level_full.low'));
+        $this->assertSame('Mahinang Ulan', FarmerDashboardService::conditionText('Light Rain'));
         app()->setLocale('en');
+        $this->assertSame('Light Rain', FarmerDashboardService::conditionText('Light Rain'));
 
         foreach (glob(resource_path('views/dashboards/farmer/*.blade.php')) as $view) {
             if (basename($view) === '_status.blade.php') {
@@ -1690,6 +1620,49 @@ class FarmerDashboardTest extends TestCase
             }
             $this->assertStringContainsString('__(', file_get_contents($view), basename($view).' uses the language file');
         }
+    }
+
+    public function test_the_farmer_can_switch_to_filipino_and_the_numbers_stay_the_same(): void
+    {
+        $this->mockRisk('Low');
+        $farmer = $this->farmer([], 2.0);
+        $this->openSchedule($farmer);
+        $english = $this->page($farmer);
+        $en = $english->viewData('f');
+        $this->assertStringContainsString('<option value="en" lang="en" selected>English</option>', $english->getContent());
+
+        $this->actingAs($farmer)->postJson(route('farmer.dashboard.language'), ['language' => 'fil'])->assertOk()->assertJson(['language' => 'fil']);
+        $this->assertSame('fil', $farmer->fresh()->preferred_language);                          // kept on the account
+
+        $page = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();            // no Cache::flush(): a separate copy per language
+        $fil = $page->viewData('f');
+        $html = $page->getContent();
+        $text = $this->readable($html);
+
+        $this->assertSame('fil', $fil['locale']);
+        $this->assertMatchesRegularExpression('/^Magandang (umaga|hapon|gabi), John Luke$/', $fil['greeting']);
+        foreach (['Ang Aking Bukid Ngayon', 'Panahon Ngayon', 'Ulan Ngayon', 'Kalagayan ng Bukid', 'Mababang Panganib', 'Mahalaga Ngayon', 'Iskedyul ng Aking Bukid', 'Mabilisang Gawain'] as $word) {
+            $this->assertStringContainsString($word, $text, $word);
+        }
+        $this->assertStringContainsString('<option value="fil" lang="fil" selected>Filipino</option>', $html);
+        // Names, barangays, numbers and units are never translated, and every number is the same as in English.
+        $this->assertStringContainsString('Binubusan, Lian, Batangas', $text);
+        $this->assertSame($en['weather']['temperature'], $fil['weather']['temperature']);
+        $this->assertSame($en['weather']['rain_today'], $fil['weather']['rain_today']);
+        $this->assertSame($en['risk']['level'], $fil['risk']['level']);
+        $this->assertSame($en['schedule']['day'], $fil['schedule']['day']);
+        $this->assertSame($en['schedule']['planting_date']->toDateString(), $fil['schedule']['planting_date']->toDateString());
+        $this->assertStringContainsString('2.00 ha', $text);
+        $this->assertStringContainsString('°C', $text);
+        // The refresh and the pop-ups answer in the same language.
+        $this->assertStringContainsString('Ang Aking Bukid Ngayon', $this->slot($farmer, 'today', []));
+
+        // Only English and Filipino can be chosen; without scripts the form posts back to the dashboard.
+        $this->actingAs($farmer)->postJson(route('farmer.dashboard.language'), ['language' => 'fr'])->assertUnprocessable();
+        $this->actingAs($farmer)->post(route('farmer.dashboard.language'), ['language' => 'en'])->assertRedirect(route('farmer.dashboard'));
+        $this->assertSame('en', $farmer->fresh()->preferred_language);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+        $this->actingAs($mao)->postJson(route('farmer.dashboard.language'), ['language' => 'fil'])->assertForbidden();
     }
 
     public function test_the_thresholds_live_in_one_config_file_with_the_mao_note(): void
@@ -1708,15 +1681,28 @@ class FarmerDashboardTest extends TestCase
 
     // ------------------------------------------------------------ live refresh and per-card retry
 
+    public function test_the_new_language_is_used_at_once_even_with_the_signed_in_user_cached(): void
+    {
+        config(['auth.user_cache_seconds' => 30]);
+        $farmer = $this->farmer([], 2.0);
+        $provider = auth()->createUserProvider('users');
+        $this->assertSame('en', \App\Support\FarmerLanguage::resolve(tap(request(), fn ($r) => $r->setUserResolver(fn () => $provider->retrieveById($farmer->id)))));   // now cached
+
+        $this->actingAs($farmer)->postJson(route('farmer.dashboard.language'), ['language' => 'fil'])->assertOk();
+
+        // The next request reads the signed-in user through the cache: it must already carry the new choice.
+        $this->assertSame('fil', $provider->retrieveById($farmer->id)->preferred_language);
+    }
+
     public function test_the_live_endpoint_rebuilds_each_section(): void
     {
         $json = $this->actingAs($this->farmer())->getJson(route('farmer.dashboard.live', ['refresh' => 1]))->assertOk()->json();
 
-        $this->assertEqualsCanonicalizing(['header', 'farm', 'today', 'kpis', 'week', 'season', 'harvest', 'rain', 'risk', 'setup', 'advisories', 'quick'], array_keys($json['slots']));
+        $this->assertEqualsCanonicalizing(['header', 'today', 'highlights', 'weather', 'schedule', 'risk', 'harvest', 'advisories', 'farm', 'updates', 'quick'], array_keys($json['slots']));
         $this->assertStringContainsString('Good ', $json['slots']['header']);
-        $this->assertStringContainsString('My Farm at a Glance', $json['slots']['farm']);
-        $this->assertStringContainsString('Rain and Spraying This Week', $json['slots']['kpis']);
-        $this->assertSame('', trim($json['slots']['advisories']));                             // nothing to show: the section disappears
+        $this->assertStringContainsString('My Farm Today', $json['slots']['today']);
+        $this->assertStringContainsString('My Farm', $json['slots']['farm']);
+        $this->assertStringContainsString('There is no farming advice for your area right now.', $json['slots']['advisories']);
         $this->assertArrayHasKey('updated', $json);
     }
 
@@ -1727,7 +1713,7 @@ class FarmerDashboardTest extends TestCase
         $json = $this->actingAs($this->farmer())->getJson(route('farmer.dashboard.live'))->assertOk()->json();
 
         $this->assertArrayNotHasKey('harvest', $json['slots']);                                // a finished card is not replaced by a placeholder
-        $this->assertArrayHasKey('kpis', $json['slots']);
+        $this->assertArrayHasKey('today', $json['slots']);
     }
 
     public function test_each_card_has_its_own_try_again_that_rebuilds_only_what_it_needs(): void
@@ -1735,10 +1721,9 @@ class FarmerDashboardTest extends TestCase
         $farmer = $this->farmer([], 2.0);
 
         $expect = [
-            'harvest' => ['harvest'],
-            'risk' => ['risk', 'today', 'farm'],
-            'rain' => ['rain', 'kpis'],
-            'today' => ['header', 'farm', 'today', 'kpis', 'week', 'season'],
+            'harvest' => ['harvest', 'today'],
+            'risk' => ['risk', 'today', 'highlights'],
+            'weather' => ['header', 'today', 'highlights', 'weather'],
         ];
         foreach ($expect as $retry => $slots) {
             $json = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => $retry]))->assertOk()->json();
@@ -1753,11 +1738,11 @@ class FarmerDashboardTest extends TestCase
 
         $json = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['refresh' => 1]))->assertOk()->json();
 
-        $this->assertStringContainsString(e("We can't show this right now."), $json['slots']['today']);
-        $this->assertStringContainsString('data-mfd-retry="today"', $json['slots']['today']);
-        $this->assertStringContainsString('data-mfd-retry="week"', $json['slots']['week']);
+        $this->assertStringContainsString('Weather information is temporarily unavailable.', $json['slots']['today']);
+        $this->assertStringContainsString('data-mfd-retry="weather"', $json['slots']['today']);
+        $this->assertStringContainsString(e("We can't show this right now."), $json['slots']['weather']);
         $this->assertStringContainsString('Good ', $json['slots']['header']);
-        $this->assertStringContainsString('—', $json['slots']['kpis']);                           // rain coming is a dash, not 0 mm
+        $this->assertStringNotContainsString('0.0 mm', $json['slots']['today']);                  // not a made-up zero
     }
 
     public function test_the_script_keeps_the_last_information_and_respects_low_data_mode(): void
@@ -1791,6 +1776,7 @@ class FarmerDashboardTest extends TestCase
 
         $data = $this->payload($farmer);
         $html = $this->page($farmer)->getContent();
+        $text = $this->readable($html);
 
         $this->assertSame('empty', $data['season']['state']);
         $this->assertSame('nobarangay', $data['risk']['state']);
@@ -1798,9 +1784,12 @@ class FarmerDashboardTest extends TestCase
         $this->assertSame([], $data['alerts']);
         $this->assertSame(0, $data['unread']);
         $this->assertGreaterThanOrEqual(3, count($data['setup']['items']));
-        $this->assertStringContainsString('Finish Setting Up Your Farm', $html);
-        $this->assertStringContainsString('Add your planting date to receive better farming guidance.', $html);
-        $this->assertStringContainsString('No weather warnings', $html);
+        $this->assertStringContainsString('Good morning, Ana', str_replace(['afternoon', 'evening'], 'morning', $text));
+        $this->assertStringContainsString('Lian, Batangas', $text);
+        $this->assertStringContainsString('Still needed', $text);
+        $this->assertStringContainsString('Add your planting date to receive better guidance.', $text);
+        $this->assertStringContainsString('Planting schedule is not set.', $text);
+        $this->assertStringContainsString('Add your barangay to see farm risk for your area.', $text);
         $this->assertNoTechnicalLeak($html);
     }
 
@@ -1822,10 +1811,10 @@ class FarmerDashboardTest extends TestCase
         $this->assertSame('error', $data['week']['state']);
         $this->assertSame('ok', $data['season']['state']);                                         // the crop calendar needs no live source, so it stays
         $this->assertSame([], $data['season']['plots'][0]['advice']);                              // and gives no weather advice without weather
-        foreach (['today', 'week', 'risk'] as $retry) {
+        foreach (['weather', 'risk'] as $retry) {
             $this->assertStringContainsString('data-mfd-retry="'.$retry.'"', $html);
         }
-        $this->assertStringContainsString('My Crop Season', $html);
+        $this->assertStringContainsString('My Farm Schedule', $html);
         $this->assertNoTechnicalLeak($html, ['secret-model-failure', 'secret-risk-failure']);
     }
 
@@ -1849,7 +1838,7 @@ class FarmerDashboardTest extends TestCase
 
         $data = app(FarmerDashboardService::class)->payload($farmer);                            // the service itself, without the page layout
 
-        $this->assertSame(0, $data['unread']);
+        $this->assertNull($data['unread']);                                                     // unknown, never shown as 0
         $this->assertSame([], $data['alerts']);
         $this->assertSame('ok', $data['weather']['state']);
     }
@@ -1868,12 +1857,82 @@ class FarmerDashboardTest extends TestCase
     public function test_a_new_schedule_shows_on_the_dashboard_at_once_not_after_the_cache_expires(): void
     {
         $farmer = $this->farmer([], 2.0);
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertSee('Add your planting date to receive better farming guidance.');     // page is now cached
+        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertSee('Add your planting date to receive better guidance.');     // page is now cached
 
         $this->openSchedule($farmer);                                                              // no Cache::flush(): the model event must do it
         $after = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();
 
-        $after->assertSee('Day 5 of about 115')->assertDontSee('Add your planting date to receive better farming guidance.');
+        $after->assertSee('Day 5 of about 115')->assertDontSee('Add your planting date to receive better guidance.');
+    }
+
+    public function test_messages_community_and_rice_production_come_from_their_own_pages_sources(): void
+    {
+        $farmer = $this->farmer([], 2.0);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO, 'name' => 'MAO Staff']);
+        $conversation = \App\Models\Conversation::query()->create(['participant_one_id' => min($farmer->id, $mao->id), 'participant_two_id' => max($farmer->id, $mao->id), 'last_message_at' => now()]);
+        foreach (['Hello', 'Seed pickup is Friday'] as $body) {
+            \App\Models\ConversationMessage::query()->create(['conversation_id' => $conversation->id, 'sender_id' => $mao->id, 'body' => $body]);
+        }
+        \App\Models\ConversationMessage::query()->create(['conversation_id' => $conversation->id, 'sender_id' => $farmer->id, 'body' => 'Thank you']);   // my own message is not unread
+        \App\Models\ConversationMessage::query()->create(['conversation_id' => $conversation->id, 'sender_id' => $mao->id, 'body' => 'Read already', 'read_at' => now()]);
+        \App\Models\FeedPost::query()->create(['user_id' => $mao->id, 'title' => 'Seed Distribution Program', 'body' => 'Free certified seeds at the municipal hall.', 'category' => 'Announcement', 'visibility' => 'All Farmers']);
+        \App\Models\FeedPost::query()->create(['user_id' => $mao->id, 'title' => 'Archived post', 'body' => 'Old.', 'category' => 'Announcement', 'visibility' => 'All Farmers', 'archived_at' => now()]);
+        \App\Models\RiceProduction::query()->create(['barangay' => 'Binubusan', 'season' => 'Wet', 'irrigation_type' => 'Irrigated', 'yield_per_hectare' => 4.1, 'area_hectares' => 10, 'total_production' => 41, 'year' => 2024]);
+        \App\Models\RiceProduction::query()->create(['barangay' => 'Binubusan', 'season' => 'Dry', 'irrigation_type' => 'Irrigated', 'yield_per_hectare' => 3.6, 'area_hectares' => 10, 'total_production' => 36, 'year' => 2023]);
+        \App\Models\RiceProduction::query()->create(['barangay' => 'Prenza', 'season' => 'Wet', 'irrigation_type' => 'Rainfed', 'yield_per_hectare' => 5.0, 'area_hectares' => 10, 'total_production' => 50, 'year' => 2025]);
+
+        $data = $this->payload($farmer);
+
+        $this->assertSame(2, $data['messages']);
+        $this->assertSame(2, \App\Models\ConversationMessage::unreadCountFor($farmer));         // the Messages page's own rule
+        $this->assertSame('Seed Distribution Program', $data['community']['title']);
+        $this->assertSame('Municipal Agriculture Office', $data['community']['author']);
+        $this->assertSame(4.1, $data['production']['yield']);                                    // the farmer's barangay, newest year
+        $this->assertSame(2024, (int) $data['production']['year']);
+        $this->assertContains('messages', array_column($data['reminders'], 'key'));
+
+        $html = $this->page($farmer)->getContent();
+        $updates = substr($html, strpos($html, 'data-mfd-updates'), 6000);
+        $this->assertStringContainsString('2 unread messages', $updates);
+        $this->assertStringContainsString('Seed Distribution Program', $updates);
+        $this->assertStringNotContainsString('Seed pickup is Friday', $updates);                 // never a message thread on the dashboard
+        foreach (['messages.index', 'community-feed.index', 'notifications.index'] as $route) {
+            $this->assertStringContainsString('href="'.route($route).'"', $updates, $route);
+        }
+        $this->assertStringContainsString('Past harvest record for Binubusan', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+        $this->assertStringContainsString('A recorded past harvest, not this season.', $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+    }
+
+    public function test_every_summary_links_to_its_own_farmer_page(): void
+    {
+        $this->mockRisk('Low');
+        $farmer = $this->farmer([], 2.0);
+        $this->openSchedule($farmer);
+        $body = $this->body($this->page($farmer)->getContent());
+
+        foreach ([route('weather-predictions.index', ['tab' => 'weather-forecast']), route('heat-map.index'), route('calendar.index'), route('planting-advisories.index'),
+            route('community-feed.index'), route('messages.index'), route('notifications.index')] as $href) {
+            $this->assertStringContainsString('href="'.$href.'"', $body, $href);
+        }
+        $this->assertStringContainsString(route('weather-predictions.index', ['tab' => 'rice-yield']), $this->slot($farmer, 'harvest', ['retry' => 'harvest']));
+    }
+
+    public function test_a_moderate_barangay_rating_is_one_of_todays_highlights(): void
+    {
+        $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], options: ['code' => 0, 'currentRain' => 0.0, 'chance' => 5]);
+        $this->mockRisk('Moderate');
+        $highlights = $this->payload($this->farmer())['highlights'];
+
+        $this->assertGreaterThanOrEqual(2, count($highlights));
+        $this->assertLessThanOrEqual(4, count($highlights));
+        $risk = collect($highlights)->firstWhere('key', 'risk');
+        $this->assertSame('Moderate Risk in Binubusan', $risk['title']);
+        $this->assertSame('watch', $risk['level']);
+        $this->assertNotEmpty($risk['todo']);
+        foreach ($highlights as $item) {
+            $this->assertNotEmpty($item['what'], $item['key'].' says what is happening');
+            $this->assertTrue(! empty($item['todo']) || $item['key'] === 'action', $item['key'].' says what to do');   // an action is itself what to do
+        }
     }
 
     public function test_seeded_placeholder_notifications_are_left_out_everywhere_a_farmer_sees_them(): void

@@ -1,37 +1,36 @@
-{{-- "My Farm at a Glance": four answers a farmer needs first (how big the farm is, whether a crop is planted, the weather
-     now, and whether anything needs attention). Something not saved or not available yet is said plainly, with the one
-     button that fixes it (dashboards/farmer/popups.blade.php); nothing is shown as 0 or N/A. --}}
-@php $farm = $f['farm'] ?? null; @endphp
-@if ($farm)
-    @php
-        $tiles = [
-            ['key' => 'size', 'icon' => 'yield', 'popup' => 'farm-size', 'href' => route('farmer.boundary.edit')],
-            ['key' => 'planting', 'icon' => 'calendar', 'popup' => 'planting', 'href' => route('calendar.index')],
-            ['key' => 'weather', 'icon' => 'weather', 'popup' => null, 'href' => null],
-            ['key' => 'condition', 'icon' => 'sprout', 'popup' => null, 'href' => null],
-        ];
-        $statusIcon = ['good' => 'check', 'watch' => 'alert', 'danger' => 'danger'];
-    @endphp
-    <section aria-labelledby="mfdFarmTitle" data-mfd-farm>
-        <h2 class="mfd-section-title" id="mfdFarmTitle">{{ __('farmer.farm.title') }}</h2>
-        <div class="mfd-farm">
-            @foreach ($tiles as $tile)
-                @php $item = $farm[$tile['key']]; $status = $item['status'] ?? null; @endphp
-                <div @class(['mfd-farm-tile', 'is-missing' => $item['value'] === null, 'is-'.$status => $status]) data-farm="{{ $tile['key'] }}">
-                    <span class="mfd-farm-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ __('farmer.farm.'.$tile['key'].'.label') }}</span>
-                    @if ($item['value'] !== null)
-                        <strong class="mfd-farm-value">@if ($status)@include('dashboards.mao.icon', ['name' => $statusIcon[$status]])@endif<span>{{ $item['value'] }}</span></strong>
-                        @if (! empty($item['detail']))<span class="mfd-farm-detail">{{ $item['detail'] }}</span>@endif
-                        <span class="mfd-farm-note">{{ $item['note'] }}</span>
-                    @else
-                        <strong class="mfd-farm-value"><span>{{ __('farmer.farm.'.$tile['key'].'.missing') }}</span></strong>
-                        <span class="mfd-farm-note">{{ __('farmer.farm.'.$tile['key'].'.why') }}</span>
-                        @if ($tile['popup'])
-                            <a class="mfd-btn is-quiet" href="{{ $tile['href'] }}" data-mfd-popup="{{ $tile['popup'] }}" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.farm.'.$tile['key'].'.cta') }}</a>
-                        @endif
-                    @endif
-                </div>
+{{-- "My Farm": the farmer's own farm details (barangay, size, water source, planting date). Something not saved yet says
+     "Not set", and what is still needed is listed with the pop-up that fixes it (dashboards/farmer/popups.blade.php). --}}
+@php
+    $p = $f['profile'];
+    $setup = $f['setup'];
+    // The pop-up each missing item's button opens on the dashboard; an item without one (recording a harvest) goes to its page.
+    $popups = ['barangay' => 'profile', 'farm_type' => 'profile', 'farm_area' => 'farm-size', 'boundary' => 'farm-map'];
+    $notSet = '<span class="mfd-muted">'.e(__('farmer.my_farm.not_set')).'</span>';
+@endphp
+<section class="mfd-card mfd-myfarm" aria-labelledby="mfdFarmTitle" data-mfd-farm>
+    <div class="mfd-card-head">
+        <h2 id="mfdFarmTitle" tabindex="-1">{{ __('farmer.my_farm.title') }}</h2>
+        @if ($setup)<span class="mfd-muted">{{ __('farmer.setup.progress', ['done' => $setup['done'], 'total' => $setup['total']]) }}</span>@endif
+    </div>
+    <dl class="mfd-facts">
+        <div data-farm="barangay"><dt>{{ __('farmer.my_farm.barangay') }}</dt><dd>{!! $p['barangay'] ? e($p['barangay']) : $notSet !!}</dd></div>
+        <div data-farm="size"><dt>{{ __('farmer.my_farm.size') }}</dt><dd>{!! $p['area'] ? e(number_format($p['area'], 2).' ha') : $notSet !!}@if ($p['mapped_in'])<span class="mfd-muted"> • {{ __('farmer.my_farm.mapped_in', ['barangay' => $p['mapped_in']]) }}</span>@endif</dd></div>
+        <div data-farm="water"><dt>{{ __('farmer.my_farm.water_label') }}</dt><dd>{!! $p['water'] ? e($p['water']) : $notSet !!}</dd></div>
+        <div data-farm="planting"><dt>{{ __('farmer.my_farm.planting') }}</dt><dd>{!! $p['planting_date'] ? e($p['planting_date']->format('F j, Y')) : $notSet !!}</dd></div>
+    </dl>
+
+    @if ($setup)
+        <div class="mfd-progress" role="progressbar" aria-label="{{ __('farmer.my_farm.title') }}" aria-valuemin="0" aria-valuemax="{{ $setup['total'] }}" aria-valuenow="{{ $setup['done'] }}"><i @style(['width: '.round($setup['done'] / $setup['total'] * 100).'%'])></i></div>
+        <h3 class="mfd-sub">{{ __('farmer.my_farm.still_needed') }}</h3>
+        <ul class="mfd-setup">
+            @foreach ($setup['items'] as $item)
+                <li data-setup="{{ $item['key'] }}">
+                    <div><strong>{{ $item['title'] }}</strong> <span class="mfd-muted">{{ $item['benefit'] }}</span></div>
+                    <a class="mfd-btn is-quiet is-small" href="{{ $item['href'] }}" @isset($popups[$item['key']]) data-mfd-popup="{{ $popups[$item['key']] }}" aria-haspopup="dialog" data-fast-nav-bound="true" @endisset>{{ $item['cta'] }}</a>
+                </li>
             @endforeach
-        </div>
-    </section>
-@endif
+        </ul>
+    @else
+        <p class="mfd-note is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>{{ __('farmer.my_farm.done') }}</span></p>
+    @endif
+</section>

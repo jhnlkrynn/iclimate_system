@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,6 +30,24 @@ class ConversationMessage extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    /** Messages the user has received and not opened yet: the one rule the Messages page and the Farmer dashboard count with. */
+    public function scopeUnreadFor(Builder $query, User $user): Builder
+    {
+        return $query->where('sender_id', '!=', $user->id)->whereNull('read_at');
+    }
+
+    /** Unread messages across every conversation the user is part of. */
+    public static function unreadCountFor(User $user): int
+    {
+        return static::query()
+            ->whereIn('conversation_id', Conversation::query()
+                ->where('participant_one_id', $user->id)
+                ->orWhere('participant_two_id', $user->id)
+                ->select('id'))
+            ->unreadFor($user)
+            ->count();
     }
 
     public function humanTimestamp(): string

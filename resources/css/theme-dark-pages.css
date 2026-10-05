@@ -798,7 +798,7 @@ html[data-theme="dark"] body .feed-post-card:hover,
 html[data-theme="dark"] body .variable-info-card:hover { border-color: color-mix(in srgb, #3ec18f 30%, var(--dk-border)) !important; }
 html[data-theme="dark"] body .quick-action:hover { background-color: var(--dk-surface-3) !important; }
 
-/* ---- css/farmer-dashboard.css (32) */
+/* ---- css/farmer-dashboard.css (23) */
 html[data-theme="dark"] body .mfd { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --line: var(--dk-border-strong); --rule: var(--dk-border-strong); --ink: var(--dk-ink); --muted: var(--dk-muted); --good-ink: #9de7c4; --good-bg: var(--dk-surface-2); --watch-ink: #e7ca9d; --watch-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --danger-ink: #e7a49d; --danger-bg: var(--dk-surface-2); --info-ink: #9dc4e7; --info-bg: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-btn.is-quiet { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-pill.is-good { border-color: color-mix(in srgb, #55aa79 30%, var(--dk-border)); }
@@ -812,23 +812,12 @@ html[data-theme="dark"] body .mfd-soft { border-color: color-mix(in srgb, #cc983
 html[data-theme="dark"] body .mfd-empty.is-error { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-alert.is-watch { background: color-mix(in srgb, #c39722 16%, var(--dk-surface)); }
 html[data-theme="dark"] body .mfd-alert.is-danger { background: color-mix(in srgb, #c33422 16%, var(--dk-surface)); }
-html[data-theme="dark"] body .mfd-action-icon { border-color: color-mix(in srgb, #55aa79 30%, var(--dk-border)); }
-html[data-theme="dark"] body .mfd-day { background: var(--dk-surface-2); }
-@media (min-width: 768px) {
-html[data-theme="dark"] body .mfd-day.is-today { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
-}
 html[data-theme="dark"] body .mfd-progress { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-bar { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-skel { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-map summary { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-map-body { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-quick-card { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-quick-state { border-color: color-mix(in srgb, #cca633 30%, var(--dk-border)); background: color-mix(in srgb, #bd9928 18%, var(--dk-surface)); color: #e7d19d; }
-html[data-theme="dark"] body .mfd-info-panel { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-slot.is-loading .mfd-card { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-chart.is-loading::before { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mfd-farm-tile.is-watch { background: color-mix(in srgb, #c39722 16%, var(--dk-surface)); }
-html[data-theme="dark"] body .mfd-farm-tile.is-danger { background: color-mix(in srgb, #c33422 16%, var(--dk-surface)); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .mfd-lang select { border-color: var(--dk-border-strong); background-color: var(--dk-surface-2); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .mfd-quick-state { border-color: color-mix(in srgb, #cca633 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mfd-pm-pin { border-color: var(--dk-border-strong); }
 html[data-theme="dark"] body .mfd-pm-popup { color: var(--dk-ink); }
 html[data-theme="dark"] body .mfd-pm-place[data-state="ok"] { border-color: color-mix(in srgb, #53ac77 30%, var(--dk-border)); }

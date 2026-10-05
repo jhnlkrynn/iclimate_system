@@ -3,6 +3,7 @@
 use App\Http\Middleware\ReadPreparedPredictionsOnly;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetFarmerLanguage;
 use App\Http\Middleware\TrackUserActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'farmer.language' => SetFarmerLanguage::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

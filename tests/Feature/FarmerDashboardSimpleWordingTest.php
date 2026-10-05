@@ -62,15 +62,16 @@ class FarmerDashboardSimpleWordingTest extends TestCase
         $response->assertOk();
         $text = $this->visibleText($response->getContent());
 
-        foreach (['Random Forest', 'Python', 'Open-Meteo', 'Confidence', 'Prediction tool', 'Historical Production Comparison', 'Agricultural Risk Classification', 'model output', 'Prediction unavailable', 'insufficient input'] as $term) {
+        // The weather provider is named on purpose ("Source: Open-Meteo"), so farmers know where the reading comes from.
+        foreach (['Random Forest', 'Python', 'Confidence', 'Prediction tool', 'Historical Production Comparison', 'Agricultural Risk Classification', 'model output', 'Prediction unavailable', 'insufficient input'] as $term) {
             $this->assertStringNotContainsStringIgnoringCase($term, $text, "Farmer dashboard should not show \"{$term}\".");
         }
 
-        foreach (["Today's Farm Conditions", 'My Farm at a Glance', 'What You Should Know Today', 'Weather This Week', 'Quick Actions'] as $heading) {
+        foreach (['My Farm Today', "Today's Highlights", 'Weather for Lian, Batangas', 'My Farm Schedule', 'Quick Actions'] as $heading) {
             $this->assertStringContainsString($heading, $text);
         }
         $response->assertSee(route('weather-predictions.index', ['tab' => 'weather-forecast']), false);
-        foreach (['Upcoming Weather', 'Farm Status Summary', 'Recommended Action', 'More for Your Farm', 'My Farm Status', 'My Farm Today'] as $old) {
+        foreach (['Upcoming Weather', 'Farm Status Summary', 'Recommended Action', 'More for Your Farm', 'My Farm Status', 'My Farm at a Glance', 'What You Should Know Today', 'Weather This Week'] as $old) {
             $this->assertStringNotContainsString($old, $text);              // the retired section names
         }
     }

@@ -3,41 +3,54 @@
 namespace App\Services\Analytics;
 
 use App\Enums\PredictionType;
+use App\Models\ConversationMessage;
 use App\Models\FarmerPlantingSchedule;
+use App\Models\FeedPost;
 use App\Models\HeatmapArea;
 use App\Models\Notification as UserNotification;
 use App\Models\PlantingAdvisory;
+use App\Models\RiceProduction;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
-use App\Services\Weather\RecentRainService;
 use App\Services\WeatherApiService;
 use App\Support\DashboardData;
+use App\Support\FarmerAdvisoryView;
+use App\Support\FarmerLanguage;
+use App\Support\LianGeography;
 use App\Support\ProjectYieldDataset;
 use App\Support\SampleData;
-use App\Support\LianGeography;
 use App\Support\SchemaCache;
 use App\Support\WeatherConditionLabel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Everything the Farmer dashboard shows, from ONE place, in plain language (all wording is in lang/en/farmer.php).
+ * Everything the Farmer dashboard shows, from ONE place, in plain language (all wording is in lang/{en,fil}/farmer.php).
+ * The dashboard is a summary of the other Farmer pages, so every part reads the same source as its own page:
+ *   weather      - FarmerDashboardWeatherService (the Lian reading the Predictions / weather pages show)
+ *   farm risk    - BarangayRiskMapService (the Heat Map)
+ *   yield        - RiceYieldPredictionService (the Predictions page)
+ *   schedule     - the farmer's planting schedules (the Calendar)
+ *   advisories   - published, in-effect advisories (the Advisories page), worded by FarmerAdvisoryView
+ *   messages     - ConversationMessage::unreadFor (the Messages page)
+ *   notifications, community posts, rice production records - their own tables, read the way their pages read them.
  *
  * Rules that shape it:
- *   - every number is queried or computed here from a real source (the KPI maths is in FarmerKpiService), never typed in;
- *   - a card without real data says what is missing ("—" and a reason, never 0) and how to fix it;
+ *   - every number is queried or computed here from a real source, never typed in;
+ *   - a card without real data says what is missing ("Not set", never 0) and how to fix it;
  *   - a card whose source fails shows its own "We can't show this right now" state; other cards keep working;
  *   - failures are logged for IT with the source name;
- *   - the current weather, today's rain and today's weather card are all read from the SAME stored reading;
- *   - Lian-wide values are labelled as Lian, never as "your farm"; estimates are labelled as estimates;
- *   - t/ha (yield) and tons (production) are never mixed up: production is shown only from the farmer's own farm area.
+ *   - the current weather, today's rain and the forecast are all read from the SAME stored reading;
+ *   - Lian-wide values are labelled as Lian, never as "your farm"; estimates are labelled as estimates; past records as records;
+ *   - t/ha (yield) and tons (production) are never mixed up: tons are shown only from the farmer's own farm area.
  */
 final class FarmerDashboardService
 {
@@ -56,6 +69,18 @@ final class FarmerDashboardService
     /** At most this many actions are suggested for today. */
     private const MAX_ACTIONS = 3;
 
+    /** Today's Highlights: never more than this many cards. */
+    private const MAX_HIGHLIGHTS = 4;
+
+    /** Days of forecast shown on the dashboard (the full week is on the weather page). */
+    public const PREVIEW_DAYS = 4;
+
+    /** An advisory this recent is "new". */
+    private const NEW_ADVISORY_DAYS = 3;
+
+    /** The Reminders card mentions a farm activity this many days ahead. */
+    private const REMINDER_DAYS = 7;
+
     public function __construct(
         private readonly FarmerDashboardWeatherService $weather,
         private readonly WeatherApiService $weatherApi,
@@ -65,13 +90,20 @@ final class FarmerDashboardService
         private readonly ProjectYieldDataset $yields,
         private readonly FarmerCropPlanService $cropPlan,
         private readonly FarmerKpiService $kpi,
-        private readonly FarmerRainAnalyticsService $rainAnalytics,
-        private readonly RecentRainService $recentRain,
     ) {}
 
-    public static function cacheKey(User $user): string
+    /** The page is cached per farmer AND per language: the numbers are the same, the words are not. */
+    public static function cacheKey(User $user, ?string $locale = null): string
     {
-        return 'dashboard:farmer:overview:'.$user->id.':v'.DashboardData::version();
+        return 'dashboard:farmer:overview:'.$user->id.':'.($locale ?? app()->getLocale()).':v'.DashboardData::version();
+    }
+
+    /** Drops the stored page in every language (after the farmer changes something it shows). */
+    public static function forgetCached(User $user): void
+    {
+        foreach (array_keys(FarmerLanguage::SUPPORTED) as $locale) {
+            Cache::forget(self::cacheKey($user, $locale));
+        }
     }
 
     /** The cached yield prediction is dropped whenever the farmer's profile or planting schedule changes (see AppServiceProvider). */
@@ -83,7 +115,7 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ payload
 
     /**
-     * @param  array<int, string>  $refresh  parts to rebuild from their source instead of a cache: weather, harvest, risk, rain
+     * @param  array<int, string>  $refresh  parts to rebuild from their source instead of a cache: weather, harvest, risk
      * @param  bool  $deferHarvest  do not wait for the slow harvest model: with nothing cached the card is a loading placeholder
      *                              that the page fills in with a second request
      * @return array<string, mixed>
@@ -99,33 +131,44 @@ final class FarmerDashboardService
         $risk = $this->riskStatus($barangay, in_array('risk', $refresh, true));
         $rows = $this->scheduleRows($user);
         $prediction = $this->prediction($user, $profile, $rows, in_array('harvest', $refresh, true), $deferHarvest);
-        $advisories = $this->advisories($barangay);
+        $advisories = $this->advisories($barangay, $now);
         $alerts = $this->alerts($user, $weather, $risk, $now);
-        $rain = $this->rainHistory(in_array('rain', $refresh, true) || $forceWeather);
-        $kpis = $this->kpiCards($weather, $rain, $alerts, $now);
+        $actions = $this->actions($weather, $risk, $now);
         $plan = $this->plan($rows, $weather, $now);
         $season = $this->season($rows, $plan, $now);
+        $schedule = $this->schedule($season, $now);
+        $setup = $this->setup($profile, $barangay, $rows);
+        $unread = $this->unread($user);
+        $messages = $this->unreadMessages($user);
+        $highlights = $this->highlights($alerts, $actions, $schedule, $advisories['items'], $weather, $risk, $now);
 
         return [
             'generated_at' => $now,
+            'locale' => app()->getLocale(),
             'greeting' => __('farmer.greeting.'.$this->period($now), ['name' => $this->displayName($user)]),
             'name' => $this->displayName($user),
             'barangay' => $barangay,
             'place' => $barangay ? __('farmer.place', ['barangay' => $barangay]) : __('farmer.place_default'),
             'weather' => $weather,
             'alerts' => $alerts,
-            'actions' => $this->actions($weather, $risk, $now),
-            'kpis' => $kpis,
+            'actions' => $actions,
             'week' => $this->week($weather, $now),
-            'farm' => $this->farm($profile, $rows, $season, $risk, $weather, $alerts),
+            'condition' => $this->condition($weather, $risk, $alerts),
             'season' => $season,
+            'schedule' => $schedule,
             'harvest' => $this->harvest($prediction, $profile, $rows),
-            'rain' => $this->rainSection($now),
+            'production' => $this->production($barangay),
             'risk' => $risk,
-            'setup' => $this->setup($profile, $barangay, $rows),
+            'profile' => $this->profile($profile, $barangay, $schedule),
+            'setup' => $setup,
             'quick' => $this->quick($profile, $rows),
-            'advisories' => $advisories,
-            'unread' => $this->unread($user),
+            'advisories' => $advisories['items'],
+            'advisories_new' => $advisories['new'],
+            'unread' => $unread,
+            'messages' => $messages,
+            'community' => $this->community(),
+            'highlights' => $highlights,
+            'reminders' => $this->reminders($schedule, $setup, $advisories['new'], $messages, $unread, $highlights),
         ];
     }
 
@@ -169,11 +212,30 @@ final class FarmerDashboardService
         return $time->isSameDay($now) ? $time->format('g:i A') : $time->format('M j, g:i A');
     }
 
+    /** "today", "tomorrow" or "in 3 days", in the farmer's language. */
+    private function aheadText(int $days): string
+    {
+        return match (true) {
+            $days <= 0 => __('farmer.alerts.today'),
+            $days === 1 => __('farmer.alerts.tomorrow'),
+            default => trans_choice('farmer.when.in_days', $days, ['count' => $days]),
+        };
+    }
+
+    /** A weather condition as the farmer reads it ("Light Rain" / "Mahinang Ulan"); an unknown provider phrase stays as given. */
+    public static function conditionText(string $condition): string
+    {
+        $key = 'farmer.conditions.'.str($condition)->lower()->replaceMatches('/[^a-z]+/', '_')->trim('_');
+
+        return Lang::has($key) ? __($key) : $condition;
+    }
+
     // ------------------------------------------------------------------ weather (live, Lian-wide)
 
     /**
-     * One reading, one clock: "now", today's rain and today's weather card all come from the same stored reading
+     * One reading, one clock: "now", today's rain and the forecast all come from the same stored reading
      * (current conditions and the daily list in the same provider response), and are written by one formatter.
+     * Conditions are matched in the provider's English; only the words shown are translated.
      *
      * @return array<string, mixed>
      */
@@ -220,7 +282,7 @@ final class FarmerDashboardService
             $condition = (string) (WeatherConditionLabel::display($day['condition'] ?? null) ?: '');
             $days[] = [
                 'date' => CarbonImmutable::parse($day['date'], self::TIMEZONE),
-                'condition' => $condition !== '' ? $condition : __('farmer.weather.unknown'),
+                'condition' => $condition !== '' ? self::conditionText($condition) : __('farmer.weather.unknown'),
                 'icon' => $this->iconFor($condition, true),
                 'high' => $high,
                 'low' => is_numeric($day['temperature_min'] ?? null) ? (float) $day['temperature_min'] : null,
@@ -242,11 +304,12 @@ final class FarmerDashboardService
         $todayChance = $todayDay['chance'] ?? (is_numeric($today['precipitation_probability'] ?? null) ? (float) $today['precipitation_probability'] : null);
         $todayHigh = $todayDay['high'] ?? (is_numeric($today['temperature_max'] ?? null) ? (float) $today['temperature_max'] : null);
 
-        $conditionNow = (string) (WeatherConditionLabel::display($current['condition'] ?? null) ?: __('farmer.weather.unknown'));
+        $conditionEn = (string) (WeatherConditionLabel::display($current['condition'] ?? null) ?: '');
+        $conditionNow = $conditionEn !== '' ? self::conditionText($conditionEn) : __('farmer.weather.unknown');
         $humidity = is_numeric($current['humidity'] ?? null) ? (float) $current['humidity'] : null;
         $feels = is_numeric($current['feels_like'] ?? null) ? (float) $current['feels_like'] : null;
         $wind = is_numeric($current['wind_speed'] ?? null) ? (float) $current['wind_speed'] : null;
-        $rainingNow = $this->isRaining($conditionNow, $current['precipitation'] ?? null);
+        $rainingNow = $this->isRaining($conditionEn, $current['precipitation'] ?? null);
         $rainExpected = $this->rainExpected($todayRain, $todayChance);
 
         // The time the reading was fetched (not the page load time); the provider's own time only when that is all we have.
@@ -264,9 +327,10 @@ final class FarmerDashboardService
 
         return [
             'state' => 'ok',
+            // The configured provider's own name, shown as the source (e.g. Open-Meteo).
             'provider' => (string) ($w['provider'] ?? $w['source'] ?? 'Weather'),
             'condition' => $conditionNow,
-            'icon' => $this->iconFor($conditionNow, ($current['is_day'] ?? true) !== false),
+            'icon' => $this->iconFor($conditionEn, ($current['is_day'] ?? true) !== false),
             'temperature' => (float) $current['temperature'],
             'feels_like' => $feels,
             'feels_level' => $feels !== null ? $this->kpi->heatLevel($feels) : null,
@@ -275,7 +339,17 @@ final class FarmerDashboardService
             'raining_now' => $rainingNow,
             'rain_today' => $todayRain,
             'rain_chance' => $todayChance,
+            'chance_level' => $todayChance === null ? null : match (true) {
+                $todayChance >= 70 => 'very_likely',
+                $todayChance >= 40 => 'possible',
+                default => 'unlikely',
+            },
             'rain_expected' => $rainExpected,
+            'rain_line' => __('farmer.rain_today.'.match (true) {
+                $rainingNow => 'now',
+                $rainExpected => 'later',
+                default => 'none',
+            }),
             'now_summary' => $this->nowSummary($conditionNow, $rainingNow, $rainExpected, $todayRain),
             'updated_at' => $updated,
             'updated_label' => $this->stamp($updated, $now),
@@ -354,13 +428,14 @@ final class FarmerDashboardService
      * One to three actions, each tied to a real condition today. Nothing is generated: every action is one of these
      * fixed rules firing on the same reading shown in the weather card.
      *
-     * @return array<int, array{icon: string, title: string, reason: string, ask: string}>
+     * @return array<int, array{key: string, icon: string, title: string, reason: string, ask: string}>
      */
     private function actions(array $weather, ?array $risk, CarbonImmutable $now): array
     {
         $actions = [];
         $push = function (string $icon, string $key, array $params = []) use (&$actions): void {
             $actions[] = [
+                'key' => $key,
                 'icon' => $icon,
                 'title' => __('farmer.actions.'.$key.'.title', $params),
                 'reason' => __('farmer.actions.'.$key.'.reason', $params),
@@ -385,11 +460,11 @@ final class FarmerDashboardService
                 $push('wind', 'wind', ['kmh' => number_format($weather['wind'], 0)]);
             }
             if (in_array($weather['heat']['level'] ?? null, ['extreme_caution', 'danger', 'extreme_danger'], true)) {
-                $push('heat', 'heat', ['feels' => $weather['heat']['display'], 'level' => strtolower((string) $weather['heat']['label'])]);
+                $push('heat', 'heat', ['feels' => $weather['heat']['display'], 'level' => mb_strtolower((string) $weather['heat']['label'])]);
             }
         }
         if ($risk && ($risk['state'] ?? null) === 'ok' && $risk['high']) {
-            $push('map', 'risk', ['level' => strtolower($risk['level_label'])]);
+            $push('map', 'risk', ['level' => mb_strtolower($risk['level_label'])]);
         }
         if ($actions === []) {
             $push('check', $weather['state'] === 'ok' ? 'normal' : 'no_weather');
@@ -398,11 +473,11 @@ final class FarmerDashboardService
         return array_slice($actions, 0, self::MAX_ACTIONS);
     }
 
-    // ------------------------------------------------------------------ weather this week
+    // ------------------------------------------------------------------ the next few days
 
     /**
-     * Seven day cards and the two small charts' data. A day is marked good for farm work with the same rule the
-     * "good days" number uses (see FarmerKpiService::goodWorkDays).
+     * The forecast days with "good day for spraying" marked by the same rule as FarmerKpiService::goodWorkDays, and one
+     * sentence about the wettest day. The dashboard shows the first few; the weather page shows them all.
      *
      * @return array<string, mixed>
      */
@@ -412,7 +487,11 @@ final class FarmerDashboardService
             return ['state' => $weather['state'] === 'ok' ? 'empty' : 'error', 'days' => []];
         }
 
-        $good = $this->goodDays($weather['days'], $now);
+        $good = $this->kpi->goodWorkDays(
+            array_map(fn (array $d) => ['date' => $d['date'], 'chance' => $d['chance'], 'wind_kmh' => $d['wind']], $weather['days']),
+            $now,
+        );
+        $days = array_values(array_filter($weather['days'], fn (array $d) => $d['date']->toDateString() >= $now->toDateString()));
         $days = array_map(function (array $d) use ($good, $now): array {
             $key = $d['date']->toDateString();
             $d['is_today'] = $key === $now->toDateString();
@@ -424,51 +503,18 @@ final class FarmerDashboardService
             ]));
 
             return $d;
-        }, $weather['days']);
-
-        $chart = fn (callable $pick) => array_map($pick, $days);
+        }, $days);
 
         return [
-            'state' => 'ok',
+            'state' => $days === [] ? 'empty' : 'ok',
             'days' => $days,
             'good' => $good,
+            'preview' => array_slice($days, 0, self::PREVIEW_DAYS),
             'takeaway' => $this->weekTakeaway($days),
-            'temp_takeaway' => $this->tempTakeaway($days),
-            'rain_chart' => [
-                'labels' => $chart(fn ($d) => $d['date']->format('D j')),
-                'rain' => $chart(fn ($d) => $d['rain']),
-                'heavy_mm' => (float) config('farmer_dashboard.heavy_rain_mm'),
-            ],
-            'temp_chart' => [
-                'labels' => $chart(fn ($d) => $d['date']->format('D j')),
-                'high' => $chart(fn ($d) => $d['high']),
-                'low' => $chart(fn ($d) => $d['low']),
-            ],
         ];
     }
 
-    /** @return array{key: string, value: ?int, display: string, unit: string, reason: ?string, dates: array<int, string>, judged: int} */
-    private function goodDays(array $days, CarbonImmutable $now): array
-    {
-        return $this->kpi->goodWorkDays(
-            array_map(fn (array $d) => ['date' => $d['date'], 'chance' => $d['chance'], 'wind_kmh' => $d['wind']], $days),
-            $now,
-        );
-    }
-
-    /** One sentence above the temperature chart: the hottest day. */
-    private function tempTakeaway(array $days): ?string
-    {
-        $withHigh = array_values(array_filter($days, fn ($d) => $d['high'] !== null));
-        if ($withHigh === []) {
-            return null;
-        }
-        usort($withHigh, fn ($a, $b) => $b['high'] <=> $a['high']);
-
-        return __('farmer.week.temp_takeaway', ['day' => $withHigh[0]['date']->format('l'), 'temp' => number_format($withHigh[0]['high'], 0)]);
-    }
-
-    /** One sentence above the weekly rain chart: the wettest day, or that no day is wet. */
+    /** One sentence for the coming days: the wettest day, or that no day is wet. */
     private function weekTakeaway(array $days): string
     {
         $withRain = array_values(array_filter($days, fn ($d) => $d['rain'] !== null));
@@ -484,123 +530,7 @@ final class FarmerDashboardService
         return __('farmer.week.takeaway_wet', ['day' => $top['date']->format('l'), 'mm' => FarmerKpiService::formatRain($top['rain'])]);
     }
 
-    // ------------------------------------------------------------------ rain history + KPI cards
-
-    /** @return array{daily: array<string, float>, fetched_at: ?CarbonImmutable} */
-    private function rainHistory(bool $force): array
-    {
-        $history = $this->recentRain->history($force);
-
-        return ['daily' => $history['daily'], 'fetched_at' => $history['fetched_at'] ? CarbonImmutable::instance($history['fetched_at'])->timezone(self::TIMEZONE) : null];
-    }
-
-    /**
-     * The six numbers under "My farm at a glance". Each has a label, the number with its unit (or "—" and a reason),
-     * what it means, a comparison, its source and update time, and the page it opens.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function kpiCards(array $weather, array $rain, array $alerts, CarbonImmutable $now): array
-    {
-        $weatherOk = $weather['state'] === 'ok';
-        // Sources are named in plain words for the farmer (the provider's own name is logged and kept in the payload for IT).
-        $weatherSource = __('farmer.source.weather');
-        $weatherAt = $weatherOk ? $weather['updated_at'] : null;
-        $rainSource = __('farmer.source.rain_records');
-        $rainAt = $rain['fetched_at'];
-        $weatherHref = route('weather-predictions.index', ['tab' => 'weather-forecast']);
-
-        // 1. rain this past week (compared with the week before)
-        $past = $this->kpi->rainLast7Days($rain['daily'], $now);
-        $pastTrend = null;
-        if ($past['value'] !== null && $past['previous'] !== null) {
-            $dir = abs($past['value'] - $past['previous']) < 1 ? 'flat' : ($past['value'] > $past['previous'] ? 'up' : 'down');
-            $pastTrend = ['dir' => $dir, 'text' => __('farmer.kpi.rain_past.trend_'.$dir, ['mm' => FarmerKpiService::formatRain($past['previous'])])];
-        }
-
-        // 2. rain coming (compared with the past week)
-        $next = $this->kpi->rainNext7Days($weatherOk ? $weather['days'] : [], $now);
-        $nextTrend = null;
-        if ($next['value'] !== null && $past['value'] !== null) {
-            $dir = abs($next['value'] - $past['value']) < 1 ? 'flat' : ($next['value'] > $past['value'] ? 'up' : 'down');
-            $nextTrend = ['dir' => $dir, 'text' => __('farmer.kpi.rain_next.trend_'.$dir, ['mm' => FarmerKpiService::formatRain($past['value'])])];
-        }
-
-        // 3. rain compared with normal (this month so far)
-        $normalMonthly = null;
-        try {
-            $normalMonthly = $this->rainAnalytics->monthlyNormal($now->month);
-        } catch (Throwable $e) {
-            Log::warning('Farmer dashboard long-term rain average failed.', ['source' => 'Ambulong monthly dataset', 'message' => $e->getMessage()]);
-        }
-        $vs = $this->kpi->rainComparedWithNormal($rain['daily'], $normalMonthly, $now);
-        $vsTrend = $vs['value'] === null ? null : [
-            'dir' => ['more' => 'up', 'less' => 'down', 'normal' => 'flat'][$vs['level']],
-            'text' => __('farmer.kpi.rain_vs_normal.detail', ['mtd' => FarmerKpiService::formatRain($vs['month_to_date']), 'normal' => FarmerKpiService::formatRain($vs['normal_to_date']), 'days' => $vs['days']]),
-        ];
-
-        // 4. heat today
-        $heat = $weather['heat'] ?? $this->kpi->heatToday(null, null, null);
-
-        // 5. good work days
-        $good = $weatherOk ? $this->goodDays($weather['days'], $now) : $this->kpi->goodWorkDays([], $now);
-
-        // 6. alerts
-        $alertKpi = $this->kpi->activeAlerts(count($alerts));
-
-        $card = fn (array $kpi, array $x): array => $x + [
-            'key' => $kpi['key'],
-            'display' => $kpi['display'],
-            'unit' => $kpi['unit'],
-            'reason' => $kpi['reason'],
-            'missing' => $kpi['value'] === null,
-            'trend' => null,
-            'label' => __('farmer.kpi.'.$kpi['key'].'.label'),
-        ];
-
-        return [
-            $card($past, [
-                'meaning' => $past['level'] ? __('farmer.kpi.rain_past.meaning_'.$past['level']) : null,
-                'status' => $past['level'] === 'heavy' ? 'watch' : 'info',
-                'trend' => $pastTrend,
-                'source' => $rainSource, 'updated' => $this->stamp($rainAt, $now), 'href' => route('weather-predictions.index', ['tab' => 'weather-forecast']),
-            ]),
-            $card($next, [
-                'label' => $next['days'] > 0 && $next['days'] < 7 ? __('farmer.kpi.rain_next.label_days', ['days' => $next['days']]) : __('farmer.kpi.rain_next.label'),
-                'meaning' => $next['level'] ? __('farmer.kpi.rain_next.meaning_'.$next['level']) : null,
-                'status' => $next['level'] === 'heavy' ? 'watch' : 'info',
-                'trend' => $nextTrend,
-                'source' => $weatherSource, 'updated' => $this->stamp($weatherAt, $now), 'href' => $weatherHref,
-            ]),
-            $card($vs, [
-                'meaning' => $vs['label'],
-                'status' => $vs['level'] === null ? 'info' : ($vs['level'] === 'normal' ? 'good' : 'watch'),
-                'trend' => $vsTrend,
-                'source' => __('farmer.source.rain_vs_normal'), 'updated' => $this->stamp($rainAt, $now), 'href' => route('weather-predictions.index', ['tab' => 'weather-forecast']),
-            ]),
-            $card($heat, [
-                'meaning' => $heat['value'] !== null ? __('farmer.kpi.heat.meaning_'.$heat['level']) : null,
-                'status' => match ($heat['level']) {
-                    'normal' => 'good', 'caution', 'extreme_caution' => 'watch', 'danger', 'extreme_danger' => 'danger', default => 'info',
-                },
-                'headline' => $heat['value'] !== null ? __('farmer.kpi.heat.headline', ['level' => $heat['label']]) : null,
-                'source' => $heat['basis'] === 'calculated' ? __('farmer.source.weather_calculated') : $weatherSource, 'updated' => $this->stamp($weatherAt, $now), 'href' => $weatherHref,
-            ]),
-            $card($good, [
-                'meaning' => $good['value'] !== null ? __('farmer.kpi.work_days.meaning', ['rain' => (int) config('farmer_dashboard.good_work_day.max_rain_chance_percent'), 'wind' => (int) config('farmer_dashboard.good_work_day.max_wind_kmh')]) : null,
-                'status' => $good['value'] === null ? 'info' : ($good['value'] === 0 ? 'watch' : 'good'),
-                'trend' => $good['value'] !== null ? ['dir' => 'flat', 'text' => __('farmer.kpi.work_days.of', ['judged' => $good['judged']])] : null,
-                'source' => $weatherSource, 'updated' => $this->stamp($weatherAt, $now), 'href' => route('calendar.index'),
-            ]),
-            $card($alertKpi, [
-                'meaning' => $alertKpi['value'] === 0 ? __('farmer.kpi.alerts.none') : __('farmer.kpi.alerts.some'),
-                'status' => $alertKpi['value'] === 0 ? 'good' : (($alerts[0]['severity'] ?? '') === 'watch' ? 'watch' : 'danger'),
-                'source' => __('farmer.kpi.alerts.source'), 'updated' => $this->stamp($now, $now), 'href' => route('notifications.index'),
-            ]),
-        ];
-    }
-
-    // ------------------------------------------------------------------ farm risk (barangay)
+    // ------------------------------------------------------------------ farm risk (barangay) — the Heat Map's own rating
 
     /**
      * @return array<string, mixed> state: ok | error | nodata | nobarangay
@@ -635,17 +565,22 @@ final class FarmerDashboardService
             // the main concern is optional detail
         }
         $updated = ! empty($r['updated_at']) ? CarbonImmutable::parse($r['updated_at'])->timezone(self::TIMEZONE) : null;
+        // The risk map writes its advice in English: it is shown as written in English, and in Filipino the plain meaning is used.
+        $english = app()->getLocale() === 'en';
 
         $result = [
             'state' => 'ok',
+            'barangay' => $r['barangay'] ?? $barangay,
             'level' => $level,
             'level_label' => __('farmer.risk.level.'.strtolower($level)),
+            'level_full' => __('farmer.risk.level_full.'.strtolower($level)),
+            'tone' => ['low' => 'good', 'moderate' => 'watch', 'high' => 'danger', 'severe' => 'danger'][strtolower($level)] ?? 'info',
             'high' => in_array($level, ['High', 'Severe'], true),
             'meaning' => __('farmer.risk.meaning.'.strtolower($level)),
-            'concern' => $concern && \Illuminate\Support\Facades\Lang::has('farmer.risk.concern.'.strtolower($concern)) ? __('farmer.risk.concern.'.strtolower($concern)) : null,
-            'planting' => $r['advisory']['planting'] ?? null,
-            'irrigation' => $r['advisory']['irrigation'] ?? null,
-            'warnings' => (array) ($r['advisory']['warnings'] ?? []),
+            'concern' => $concern && Lang::has('farmer.risk.concern.'.strtolower($concern)) ? __('farmer.risk.concern.'.strtolower($concern)) : null,
+            'planting' => $english ? ($r['advisory']['planting'] ?? null) : null,
+            'irrigation' => $english ? ($r['advisory']['irrigation'] ?? null) : null,
+            'warnings' => $english ? array_values(array_filter((array) ($r['advisory']['warnings'] ?? []), 'is_string')) : [],
             'updated_at' => $updated,
         ];
         // The planting line shown with the rating (never a cheerful line next to a warning).
@@ -669,7 +604,7 @@ final class FarmerDashboardService
         return $planting !== '' && ! ($cheerful && $risk['level'] !== 'Low') ? $planting : (string) $risk['meaning'];
     }
 
-    // ------------------------------------------------------------------ expected harvest
+    // ------------------------------------------------------------------ expected harvest — the Predictions page's own estimate
 
     /**
      * The model's raw result (cached 6 hours per farmer, with the time it ran), or why there is none.
@@ -719,7 +654,7 @@ final class FarmerDashboardService
     }
 
     /**
-     * The Expected Harvest card. Production (tons) is shown only when the area comes from the farmer's own profile: the
+     * The Rice Yield Forecast. Production (tons) is shown only when the area comes from the farmer's own profile: the
      * model's fallback area is a documented default, so it would present a guess as this farm's harvest. The range
      * comes from the model's own uncertainty and is left out when the model gives none.
      *
@@ -730,8 +665,8 @@ final class FarmerDashboardService
     private function harvest(array $prediction, $profile, Collection $rows): array
     {
         $missing = array_values(array_filter([
-            $rows->reject(fn (FarmerPlantingSchedule $r) => $r->monitoringStatus() === 'harvested')->isEmpty() ? 'planting' : null,
             (float) ($profile?->farm_area ?? 0) > 0 ? null : 'area',
+            $rows->reject(fn (FarmerPlantingSchedule $r) => $r->monitoringStatus() === 'harvested')->isEmpty() ? 'planting' : null,
         ]));
 
         if ($prediction['state'] !== 'ok') {
@@ -740,7 +675,7 @@ final class FarmerDashboardService
                 'missing' => $missing,
                 // What the farmer can fix comes first; otherwise say honestly whether the records or the service is the cause.
                 'reason' => match (true) {
-                    $missing !== [] => __('farmer.harvest.reason_missing_'.implode('_', $missing)),
+                    $missing !== [] => __('farmer.harvest.reason_missing'),
                     ($prediction['cause'] ?? null) === 'records' => __('farmer.harvest.reason_records'),
                     default => __('farmer.harvest.reason_service'),
                 },
@@ -837,80 +772,142 @@ final class FarmerDashboardService
         ];
     }
 
-    // ------------------------------------------------------------------ monthly rain chart
+    // ------------------------------------------------------------------ rice production records — the Rice Production page
 
     /**
-     * Ambulong monthly rain for the latest year on record next to the long-term average, and one sentence about the
-     * latest recorded month. State: ok | error | empty.
+     * The latest recorded harvest for the farmer's barangay, read the way the Rice Production page lists records (newest
+     * year first). It is a PAST record, labelled as such, never today's harvest. Null when there is none.
      *
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    private function rainSection(CarbonImmutable $now): array
+    private function production(?string $barangay): ?array
     {
+        if (! $barangay) {
+            return null;
+        }
         try {
-            $monthly = $this->rainAnalytics->monthly($now);
+            $row = RiceProduction::query()->where('barangay', $barangay)->whereNotNull('yield_per_hectare')
+                ->latest('year')->latest('id')->first();
         } catch (Throwable $e) {
-            Log::warning('Farmer dashboard monthly rain failed.', ['source' => 'Ambulong monthly dataset', 'exception' => $e::class, 'message' => $e->getMessage()]);
+            Log::warning('Farmer dashboard rice production record failed.', ['source' => 'rice productions', 'exception' => $e::class]);
 
-            return ['state' => 'error'];
+            return null;
         }
-        if ($monthly === null) {
-            return ['state' => 'empty'];
-        }
-
-        $latest = $monthly['latest'];
-        $month = $latest ? CarbonImmutable::create($monthly['year'], $latest['month'], 1)->format('F Y') : null;
-        $summary = null;
-        if ($latest) {
-            $summary = $latest['percent'] === null
-                ? __('farmer.rain.summary_no_normal', ['month' => $month, 'mm' => FarmerKpiService::formatRain($latest['rain'])])
-                : __('farmer.rain.summary_'.$latest['level'], ['month' => $month, 'mm' => FarmerKpiService::formatRain($latest['rain']), 'percent' => FarmerKpiService::formatPercent(abs($latest['percent']))]);
+        if (! $row || (float) $row->yield_per_hectare <= 0) {
+            return null;
         }
 
-        return ['state' => 'ok', 'summary' => $summary, 'older' => ! $monthly['is_current_year']] + $monthly;
+        return [
+            'yield' => (float) $row->yield_per_hectare,
+            'season' => $row->season ? __('farmer.production.season.'.strtolower((string) $row->season)) : null,
+            'year' => $row->year,
+            'when' => $row->production_month?->format('F Y') ?? (string) $row->year,
+        ];
     }
 
-    // ------------------------------------------------------------------ advisories + notifications
+    // ------------------------------------------------------------------ advisories, notifications, messages, community
 
-    /** Only published, in-effect advisories for the farmer's area: never drafts, pending, expired or archived. @return array<int, array<string, mixed>> */
-    private function advisories(?string $barangay): array
+    /**
+     * Only published, in-effect advisories for the farmer's area (never drafts, pending, expired or archived), newest
+     * first, worded the way the Advisories page words them. `new` counts those published in the last week.
+     *
+     * @return array{items: array<int, array<string, mixed>>, new: int}
+     */
+    private function advisories(?string $barangay, CarbonImmutable $now): array
     {
         try {
-            $rows = SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->forBarangay($barangay)->latest('valid_from')->latest('id')->take(3)->get();
+            $query = SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->forBarangay($barangay);
+            $rows = (clone $query)->latest('valid_from')->latest('id')->take(3)->get();
+            $new = (clone $query)->whereRaw('COALESCE(published_at, valid_from, created_at) >= ?', [$now->subDays(self::REMINDER_DAYS)->utc()->format('Y-m-d H:i:s')])->count();
         } catch (Throwable $e) {
             Log::warning('Farmer dashboard advisories failed.', ['source' => 'planting advisories', 'exception' => $e::class]);
 
-            return [];
+            return ['items' => [], 'new' => 0];
         }
 
-        return $rows->map(function (PlantingAdvisory $a): array {
-            $when = ($a->valid_from ?? $a->published_at ?? $a->created_at);
+        $items = $rows->map(function (PlantingAdvisory $a) use ($now, $barangay): array {
+            $when = ($a->published_at ?? $a->valid_from ?? $a->created_at);
+            $when = $when ? CarbonImmutable::instance($when)->timezone(self::TIMEZONE) : null;
+            $view = new FarmerAdvisoryView($a);
 
             return [
                 'id' => $a->id,
                 'title' => (string) $a->title,
-                'summary' => (string) str($a->displaySummary() ?: $a->content)->squish()->limit(130),
-                'when' => $when ? CarbonImmutable::instance($when)->timezone(self::TIMEZONE) : null,
+                'summary' => (string) str($view->farmerEffect())->squish()->limit(140),
+                'action' => (string) str($view->farmerAction())->squish()->limit(140),
+                'source' => $view->sourceName(),
+                'for_barangay' => $barangay && $a->target_barangay === $barangay,
+                'tone' => $view->farmerRiskTone(),
+                'when' => $when,
+                'is_new' => $when !== null && $when->gte($now->subDays(self::NEW_ADVISORY_DAYS)),
                 'href' => route('planting-advisories.show', $a),
             ];
-        })->all();
+        })
+            // The farmer's own barangay first, then Lian-wide; newest first within each.
+            ->sortBy(fn (array $a) => [$a['for_barangay'] ? 0 : 1, -($a['when']?->timestamp ?? 0)])
+            ->values()->all();
+
+        return ['items' => $items, 'new' => $new];
     }
 
-    private function unread(User $user): int
+    private function unread(User $user): ?int
     {
         try {
             return SampleData::without(UserNotification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count();
         } catch (Throwable) {
-            return 0;
+            return null;
         }
+    }
+
+    /** Unread messages, counted by the same rule as the Messages page. Null when the messages could not be read. */
+    private function unreadMessages(User $user): ?int
+    {
+        if (! SchemaCache::hasTable('conversation_messages')) {
+            return null;
+        }
+        try {
+            return ConversationMessage::unreadCountFor($user);
+        } catch (Throwable $e) {
+            Log::warning('Farmer dashboard unread messages failed.', ['source' => 'messages', 'exception' => $e::class]);
+
+            return null;
+        }
+    }
+
+    /**
+     * The newest community post a farmer can see (the Community page shows farmers the posts that are not archived,
+     * newest first). Null when there is none.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function community(): ?array
+    {
+        try {
+            $post = FeedPost::query()->with('author:id,name,role')->whereNull('archived_at')->latest()->latest('id')->first();
+        } catch (Throwable $e) {
+            Log::warning('Farmer dashboard community post failed.', ['source' => 'community feed', 'exception' => $e::class]);
+
+            return null;
+        }
+        if (! $post) {
+            return null;
+        }
+
+        return [
+            'title' => (string) ($post->title ?: str($post->body)->squish()->limit(60)),
+            'summary' => (string) str(strip_tags((string) $post->body))->squish()->limit(110),
+            'author' => $post->author?->role === User::ROLE_MAO ? __('farmer.updates.mao') : ($post->author?->name ?: __('farmer.updates.mao')),
+            'when' => $post->created_at ? CarbonImmutable::instance($post->created_at)->timezone(self::TIMEZONE) : null,
+        ];
     }
 
     // ------------------------------------------------------------------ alerts (real warnings, never hidden)
 
     /**
-     * Each alert has a `level` (danger = red, watch = amber) that the page shows with an icon AND a text label.
+     * Each alert has a `level` (danger = red, watch = amber) that the page shows with an icon AND a text label, a `kind`
+     * (rain, wind, heat, risk, typhoon, notice), WHAT is happening and WHAT to do.
      *
-     * @return array<int, array{severity: string, level: string, title: string, message: string, href: string, icon: string}>
+     * @return array<int, array<string, string>>
      */
     private function alerts(User $user, array $weather, ?array $risk, CarbonImmutable $now): array
     {
@@ -934,7 +931,8 @@ final class FarmerDashboardService
             }
             $notes = $query->latest()->take(3)->get();
             foreach ($notes as $n) {
-                $alerts[] = ['severity' => 'warning', 'icon' => 'alert', 'title' => (string) $n->title, 'message' => (string) str($n->message)->squish()->limit(140), 'href' => route('notifications.index')];
+                $alerts[] = ['severity' => 'warning', 'kind' => 'notice', 'icon' => 'alert', 'title' => (string) $n->title,
+                    'what' => (string) str($n->message)->squish()->limit(140), 'todo' => __('farmer.alerts.notice_todo'), 'href' => route('notifications.index')];
             }
         } catch (Throwable $e) {
             Log::warning('Farmer dashboard alert notifications failed.', ['source' => 'notifications', 'exception' => $e::class]);
@@ -949,28 +947,29 @@ final class FarmerDashboardService
                 if ($ahead < 0 || $ahead > self::WARNING_LOOKAHEAD_DAYS) {
                     continue;
                 }
-                $when = $ahead === 0 ? __('farmer.alerts.today') : ($ahead === 1 ? __('farmer.alerts.tomorrow') : __('farmer.alerts.on_day', ['day' => $day['date']->format('l')]));
+                $when = $ahead <= 1 ? $this->aheadText($ahead) : __('farmer.alerts.on_day', ['day' => $day['date']->format('l')]);
                 if ($day['heavy'] && ! isset($seen['rain'])) {
                     $seen['rain'] = true;
-                    $alerts[] = ['severity' => 'warning', 'icon' => 'rain', 'title' => __('farmer.alerts.heavy_rain.title', ['when' => $when]),
-                        'message' => __('farmer.alerts.heavy_rain.message', ['mm' => FarmerKpiService::formatRain($day['rain'])]), 'href' => $forecastHref];
+                    $alerts[] = ['severity' => 'warning', 'kind' => 'rain', 'icon' => 'rain', 'title' => __('farmer.alerts.heavy_rain.title', ['when' => $when]),
+                        'what' => __('farmer.alerts.heavy_rain.what', ['mm' => FarmerKpiService::formatRain($day['rain'])]), 'todo' => __('farmer.alerts.heavy_rain.todo'), 'href' => $forecastHref];
                 }
                 if ($day['strong_wind'] && ! isset($seen['wind'])) {
                     $seen['wind'] = true;
-                    $alerts[] = ['severity' => 'watch', 'icon' => 'wind', 'title' => __('farmer.alerts.strong_wind.title', ['when' => $when]),
-                        'message' => __('farmer.alerts.strong_wind.message', ['kmh' => number_format($day['wind'], 0)]), 'href' => $forecastHref];
+                    $alerts[] = ['severity' => 'watch', 'kind' => 'wind', 'icon' => 'wind', 'title' => __('farmer.alerts.strong_wind.title', ['when' => $when]),
+                        'what' => __('farmer.alerts.strong_wind.what', ['kmh' => number_format($day['wind'], 0)]), 'todo' => __('farmer.alerts.strong_wind.todo'), 'href' => $forecastHref];
                 }
                 if ($day['high_heat'] && ! isset($seen['heat'])) {
                     $seen['heat'] = true;
-                    $alerts[] = ['severity' => 'watch', 'icon' => 'heat', 'title' => __('farmer.alerts.high_heat.title', ['when' => $when]),
-                        'message' => __('farmer.alerts.high_heat.message', ['temp' => number_format($day['high'], 0)]), 'href' => $forecastHref];
+                    $alerts[] = ['severity' => 'watch', 'kind' => 'heat', 'icon' => 'heat', 'title' => __('farmer.alerts.high_heat.title', ['when' => $when]),
+                        'what' => __('farmer.alerts.high_heat.what', ['temp' => number_format($day['high'], 0)]), 'todo' => __('farmer.alerts.high_heat.todo'), 'href' => $forecastHref];
                 }
             }
         }
 
         if ($risk && ($risk['state'] ?? null) === 'ok' && $risk['high']) {
-            $alerts[] = ['severity' => $risk['level'] === 'Severe' ? 'critical' : 'warning', 'icon' => 'map',
-                'title' => __('farmer.alerts.risk.title', ['level' => $risk['level_label']]), 'message' => $this->planningLine($risk), 'href' => '#farmRiskMap'];
+            $alerts[] = ['severity' => $risk['level'] === 'Severe' ? 'critical' : 'warning', 'kind' => 'risk', 'icon' => 'map',
+                'title' => __('farmer.alerts.risk.title', ['level' => $risk['level_label']]), 'what' => $this->planningLine($risk),
+                'todo' => __('farmer.alerts.risk.todo'), 'href' => route('heat-map.index')];
         }
 
         if ($item = $this->typhoonAlert($user)) {
@@ -980,7 +979,10 @@ final class FarmerDashboardService
         $rank = ['critical' => 0, 'warning' => 1, 'watch' => 2];
         usort($alerts, fn ($a, $b) => ($rank[$a['severity']] ?? 3) <=> ($rank[$b['severity']] ?? 3));
 
-        return array_map(fn (array $a) => $a + ['level' => $a['severity'] === 'watch' ? 'watch' : 'danger'], $alerts);
+        return array_map(fn (array $a) => $a + [
+            'level' => $a['severity'] === 'watch' ? 'watch' : 'danger',
+            'message' => trim($a['what'].' '.$a['todo']),
+        ], $alerts);
     }
 
     /** An open typhoon safety check-in the farmer has not answered yet. */
@@ -997,14 +999,14 @@ final class FarmerDashboardService
             return null;
         }
 
-        return $answered ? null : ['severity' => 'critical', 'icon' => 'storm', 'title' => __('farmer.alerts.typhoon.title'),
-            'message' => __('farmer.alerts.typhoon.message'), 'href' => route('planting-advisories.index')];
+        return $answered ? null : ['severity' => 'critical', 'kind' => 'typhoon', 'icon' => 'storm', 'title' => __('farmer.alerts.typhoon.title'),
+            'what' => __('farmer.alerts.typhoon.what'), 'todo' => __('farmer.alerts.typhoon.todo'), 'href' => route('planting-advisories.index')];
     }
 
-    // ------------------------------------------------------------------ planting schedule + crop season
+    // ------------------------------------------------------------------ planting schedule — the Calendar's own records
 
     /**
-     * All of the farmer's schedules (one per plot), read once for the crop season, the harvest card and the setup list.
+     * All of the farmer's schedules (one per plot), read once for the schedule, the harvest card and the setup list.
      * Empty when the table is missing or cannot be read.
      *
      * @return Collection<int, FarmerPlantingSchedule>
@@ -1024,7 +1026,7 @@ final class FarmerDashboardService
     }
 
     /**
-     * The crop calendar for every open plot, with reminders and weather advice. Null with no open schedule.
+     * The crop calendar for every open plot, with weather advice. Null with no open schedule.
      *
      * @param  Collection<int, FarmerPlantingSchedule>  $rows
      * @return array<string, mixed>|null
@@ -1042,10 +1044,34 @@ final class FarmerDashboardService
         }
     }
 
+    /** A crop activity's name in the farmer's language ("First extra fertilizer" / "Unang dagdag na abono"). */
+    private function milestoneLabel(array $milestone): string
+    {
+        $key = 'farmer.milestones.'.$milestone['key'];
+
+        return Lang::has($key) ? __($key) : (string) $milestone['label'];
+    }
+
+    /** One crop-plan advice rule, said in the farmer's language from its key and numbers (FarmerCropPlanService::advice). */
+    private function adviceText(array $advice): string
+    {
+        $key = 'farmer.crop_advice.'.($advice['key'] ?? '');
+        if (empty($advice['key']) || ! Lang::has($key)) {
+            return (string) $advice['text'];
+        }
+        $params = (array) ($advice['params'] ?? []);
+        $params['when'] = $this->aheadText((int) ($params['ahead'] ?? 0));
+        if (isset($params['activity'])) {
+            $params['activity'] = mb_strtolower($this->milestoneLabel(['key' => $params['activity'], 'label' => $params['activity']]));
+        }
+        unset($params['ahead']);
+
+        return __($key, $params);
+    }
+
     /**
-     * "My Crop Season": for each open plot the six crop stages, "Day 45 of about 115", the expected harvest dates and the
-     * next task. With no open schedule the state is `empty`: one card with one button (the only place the farmer is asked
-     * to add a planting date).
+     * Each open plot: its day in the season, its stage, the activity due now and the next one, the expected harvest dates
+     * and the weather advice for the activity. State `empty` with no open schedule.
      *
      * @param  Collection<int, FarmerPlantingSchedule>  $rows
      * @return array<string, mixed>
@@ -1060,6 +1086,7 @@ final class FarmerDashboardService
 
         $planPlots = collect($plan['plots'] ?? [])->keyBy('edit_id');
         $window = (int) FarmerCropPlanService::HARVEST_DAYS_BEFORE;
+        $today = $now->startOfDay();
         $plots = [];
         foreach ($open->take(FarmerCropPlanService::MAX_PLOTS) as $row) {
             // Date columns are stored as UTC midnight: read them as calendar dates in Manila so "day 5" is not off by one near midnight.
@@ -1070,76 +1097,98 @@ final class FarmerDashboardService
             $crop = $this->kpi->cropAge($planting, $now, $duration !== null && $duration > 0 ? $duration : null);
             $expected = $harvestOn ?? $planting->addDays($crop['duration']);
             $planPlot = $planPlots->get($row->id);
-            $next = $planPlot['next'] ?? null;
+            $milestones = collect($planPlot['milestones'] ?? []);
+            $current = $milestones->firstWhere('state', 'current');
+            $next = $milestones->firstWhere('state', 'upcoming');
 
             $plots[] = [
                 'edit_id' => $row->id,
-                'label' => $planPlot['label'] ?? __('farmer.season.plot', ['n' => count($plots) + 1]),
+                'number' => count($plots) + 1,
+                'planting_date' => $planting,
                 'crop' => $crop,
                 'harvest_from' => $expected->subDays($window),
                 'harvest_to' => $expected->addDays(FarmerCropPlanService::HARVEST_DAYS_AFTER),
-                'next' => $next ? ['label' => $next['label'], 'start' => $next['start']] : null,
-                'reminders' => collect($plan['reminders'] ?? [])->where('plot', $planPlot['label'] ?? null)->values()->all(),
-                'advice' => collect($plan['advice'] ?? [])->where('plot', $planPlot['label'] ?? null)->values()->all(),
+                'current' => $current ? ['key' => $current['key'], 'kind' => $current['kind'], 'label' => $this->milestoneLabel($current), 'start' => $current['start'], 'end' => $current['end']] : null,
+                'next' => $next ? ['key' => $next['key'], 'kind' => $next['kind'], 'label' => $this->milestoneLabel($next), 'start' => $next['start'],
+                    'in_days' => max(0, (int) $today->diffInDays($next['start']->startOfDay(), false))] : null,
+                'advice' => array_map(fn (array $a) => ['severity' => $a['severity'], 'text' => $this->adviceText($a)], (array) ($planPlot['advice'] ?? [])),
             ];
         }
 
         return ['state' => 'ok', 'plots' => $plots, 'more' => max(0, $open->count() - count($plots))];
     }
 
-    // ------------------------------------------------------------------ my farm at a glance
+    /**
+     * "My Farm Schedule": the first open plot (the earliest planting), which is also what the Planting Status number shows.
+     *
+     * @param  array<string, mixed>  $season
+     * @return array<string, mixed>  state: ok | empty
+     */
+    private function schedule(array $season, CarbonImmutable $now): array
+    {
+        if ($season['state'] !== 'ok') {
+            return ['state' => 'empty'];
+        }
+        $plot = $season['plots'][0];
+        $crop = $plot['crop'];
+        $planted = $crop['value'] !== null;
+
+        return [
+            'state' => 'ok',
+            'edit_id' => $plot['edit_id'],
+            'planting_date' => $plot['planting_date'],
+            'planted' => $planted,
+            'day' => $crop['value'],
+            'duration' => $crop['duration'],
+            'percent' => $planted ? min(100, max(0, (int) round($crop['value'] / max(1, $crop['duration']) * 100))) : 0,
+            'stage' => $planted ? ($crop['stage_label'] ?? null) : null,
+            'until_planting' => $planted ? null : max(0, (int) $now->startOfDay()->diffInDays($plot['planting_date'], false)),
+            'current' => $plot['current'],
+            'next' => $plot['next'],
+            'advice' => $plot['advice'],
+            'harvest_from' => $plot['harvest_from'],
+            'harvest_to' => $plot['harvest_to'],
+            'plots' => count($season['plots']) + $season['more'],
+        ];
+    }
+
+    // ------------------------------------------------------------------ my farm
 
     /**
-     * The farmer's own farm in four answers: how big it is, whether a crop is planted, the weather now and whether
-     * anything needs attention. A null value means "not saved yet" or "not available yet" (the card then says what is
-     * needed); nothing is made up. The weather is the same Lian reading every other card uses and is labelled as Lian.
+     * The farmer's own farm details: barangay, size, how it gets water and the planting date. A null value means "not
+     * saved yet" (the card says so and offers the pop-up that fixes it); nothing personal beyond that is shown.
      *
-     * @param  Collection<int, FarmerPlantingSchedule>  $rows
-     * @param  array<string, mixed>  $season
-     * @param  array<string, mixed>  $risk
-     * @param  array<string, mixed>  $weather
-     * @param  array<int, array<string, mixed>>  $alerts
+     * @param  array<string, mixed>  $schedule
      * @return array<string, mixed>
      */
-    private function farm($profile, Collection $rows, array $season, array $risk, array $weather, array $alerts): array
+    private function profile($profile, ?string $barangay, array $schedule): array
     {
-        // The barangay of the mapped farm, read from the map when it was saved (not the farmer's home barangay).
-        $farmBarangay = null;
+        $area = (float) ($profile?->farm_area ?? 0);
+        $mappedIn = null;
         try {
             $boundary = $profile?->farmBoundary;
             if ($boundary && (float) $boundary->calculated_area_hectares > 0) {
-                $farmBarangay = $boundary->getAttribute('barangay') ?: LianGeography::locate($boundary->boundary_coordinates ?? [])['barangay'];
+                $mappedIn = $boundary->getAttribute('barangay') ?: LianGeography::locate($boundary->boundary_coordinates ?? [])['barangay'];
             }
         } catch (Throwable) {
             // an unreadable boundary counts as not mapped
         }
-
-        $area = (float) ($profile?->farm_area ?? 0);
-        $plot = $season['plots'][0] ?? null;
-        $row = $plot ? $rows->firstWhere('id', $plot['edit_id']) : null;
-        $planted = ($plot['crop']['value'] ?? null) !== null;           // null until the planting day has come
+        $type = $profile?->farm_type ? strtolower((string) $profile->farm_type) : null;
 
         return [
-            'size' => $area > 0
-                ? ['value' => number_format($area, 2).' ha', 'note' => $farmBarangay
-                    ? __('farmer.farm.size.note_mapped', ['barangay' => LianGeography::barangayLabel($farmBarangay)])
-                    : __('farmer.farm.size.note')]
-                : ['value' => null],
-            'planting' => $row?->planting_date
-                ? ['value' => __('farmer.farm.planting.'.($planted ? 'active' : 'upcoming')),
-                    'note' => __('farmer.farm.planting.'.($planted ? 'note' : 'note_upcoming'), ['date' => $row->planting_date->format('F j, Y')])]
-                : ['value' => null],
-            'weather' => $weather['state'] === 'ok'
-                ? ['value' => FarmerKpiService::formatTemperature($weather['temperature']).'°C', 'detail' => $weather['condition'], 'note' => __('farmer.farm.weather.note')]
-                : ['value' => null],
-            'condition' => $this->condition($weather, $risk, $alerts),
+            'barangay' => $barangay,
+            'area' => $area > 0 ? $area : null,
+            'water' => $type && Lang::has('farmer.my_farm.water.'.$type) ? __('farmer.my_farm.water.'.$type) : null,
+            'planting_date' => $schedule['state'] === 'ok' ? $schedule['planting_date'] : null,
+            'mapped' => $this->hasBoundary($profile),
+            'mapped_in' => $mappedIn ? LianGeography::barangayLabel($mappedIn) : null,
         ];
     }
 
     /**
-     * "Farm Condition": Good, Needs Attention or High Weather Risk. It adds nothing of its own: it is the most serious of
-     * the warnings shown under "What You Should Know Today" and the barangay risk rating, so the card can never disagree
-     * with them. With neither weather nor a rating there is no condition to report (never "Good" by default).
+     * "Farm Condition": Good, Watch or Needs Attention. It adds nothing of its own: it is the most serious of the
+     * warnings shown in Today's Highlights and the barangay risk rating, so the card can never disagree with them.
+     * With neither weather nor a rating there is no condition to report (never "Good" by default).
      *
      * @param  array<string, mixed>  $weather
      * @param  array<string, mixed>  $risk
@@ -1162,20 +1211,170 @@ final class FarmerDashboardService
             default => 'good',
         };
         $note = match (true) {
-            $top !== null => (string) str(rtrim((string) $top['title'], '.').'. '.$top['message'])->squish()->limit(150),
-            $rainToday === 'heavy' => __('farmer.farm.condition.note_heavy'),
+            $top !== null => (string) str(rtrim((string) $top['title'], '.').'.')->squish()->limit(120),
+            $rainToday === 'heavy' => __('farmer.condition.note_heavy'),
             $status !== 'good' => (string) $risk['meaning'],
-            $rainToday !== null => __('farmer.farm.condition.note_'.$rainToday),
-            default => __('farmer.farm.condition.note_default'),
+            $rainToday !== null => __('farmer.condition.note_'.$rainToday),
+            default => __('farmer.condition.note_default'),
         };
 
-        return ['value' => __('farmer.farm.condition.'.$status), 'status' => $status, 'note' => $note];
+        return ['value' => __('farmer.condition.'.$status), 'status' => $status, 'note' => $note];
     }
 
-    // ------------------------------------------------------------------ quick actions
+    // ------------------------------------------------------------------ today's highlights + reminders
 
     /**
-     * What the three Quick Actions cards say: "Add" until the farmer has saved that thing, then "Update".
+     * Two to four things to know today, each saying WHAT is happening and WHAT to do. Every card comes from data shown
+     * elsewhere on the page (warnings, today's action, the crop calendar, the newest advisory); nothing is made up.
+     *
+     * @param  array<int, array<string, mixed>>  $alerts
+     * @param  array<int, array<string, mixed>>  $actions
+     * @param  array<string, mixed>  $schedule
+     * @param  array<int, array<string, mixed>>  $advisories
+     * @return array<int, array<string, mixed>>
+     */
+    private function highlights(array $alerts, array $actions, array $schedule, array $advisories, array $weather, array $risk, CarbonImmutable $now): array
+    {
+        $items = [];
+        $covered = [];
+        foreach (array_slice($alerts, 0, 2) as $alert) {
+            $covered[] = $alert['kind'];
+            $items[] = [
+                'key' => 'alert', 'level' => $alert['level'], 'icon' => $alert['icon'],
+                'kicker' => __('farmer.highlights.kicker.'.($alert['level'] === 'danger' ? 'warning' : 'watch')),
+                'title' => $alert['title'], 'what' => $alert['what'], 'todo' => $alert['todo'],
+                'href' => $alert['href'], 'link' => __('farmer.highlights.link.'.$alert['kind']),
+            ];
+        }
+
+        // What to do today: the first action a warning above does not already say.
+        $sameAs = ['heavy_rain' => 'rain', 'heat' => 'heat', 'wind' => 'wind', 'risk' => 'risk'];
+        foreach ($actions as $action) {
+            if (in_array($sameAs[$action['key']] ?? null, $covered, true)) {
+                continue;
+            }
+            $items[] = [
+                'key' => 'action', 'level' => in_array($action['key'], ['normal', 'no_weather'], true) ? 'good' : 'info', 'icon' => $action['icon'],
+                'kicker' => __('farmer.highlights.kicker.today'), 'title' => $action['title'], 'what' => $action['reason'], 'todo' => null,
+                'ask' => $action['ask'],
+            ];
+            break;
+        }
+
+        // The farm activity due now, or starting within the reminder window.
+        if ($schedule['state'] === 'ok') {
+            $current = $schedule['current'];
+            $next = $schedule['next'];
+            $advice = $schedule['advice'][0] ?? null;
+            if ($current) {
+                $items[] = [
+                    'key' => 'activity', 'level' => $advice && $advice['severity'] === 'warning' ? 'watch' : 'info', 'icon' => 'calendar',
+                    'kicker' => __('farmer.highlights.kicker.activity'),
+                    'title' => __('farmer.highlights.activity_now', ['activity' => $current['label']]),
+                    'what' => __('farmer.highlights.activity_until', ['date' => $current['end']->format('M j')]),
+                    'todo' => $advice['text'] ?? __('farmer.highlights.activity_todo.'.$current['kind']),
+                    'href' => route('calendar.index'), 'link' => __('farmer.highlights.link.calendar'),
+                ];
+            } elseif ($next && $next['in_days'] <= FarmerCropPlanService::REMIND_DAYS) {
+                $items[] = [
+                    'key' => 'activity', 'level' => 'info', 'icon' => 'calendar',
+                    'kicker' => __('farmer.highlights.kicker.activity'),
+                    'title' => trans_choice('farmer.highlights.activity_soon', $next['in_days'], ['activity' => $next['label'], 'count' => $next['in_days']]),
+                    'what' => __('farmer.highlights.activity_on', ['date' => $next['start']->format('l, M j')]),
+                    'todo' => $advice['text'] ?? __('farmer.highlights.activity_todo.'.$next['kind']),
+                    'href' => route('calendar.index'), 'link' => __('farmer.highlights.link.calendar'),
+                ];
+            }
+        }
+
+        // Heavy rain later this week (the warnings above only look two days ahead).
+        if (! in_array('rain', $covered, true) && $weather['state'] === 'ok') {
+            $later = collect($weather['days'])->first(function (array $d) use ($now) {
+                $ahead = (int) $now->startOfDay()->diffInDays($d['date']->startOfDay(), false);
+
+                return $d['heavy'] && $ahead > self::WARNING_LOOKAHEAD_DAYS;
+            });
+            if ($later) {
+                $items[] = [
+                    'key' => 'week', 'level' => 'watch', 'icon' => 'rain',
+                    'kicker' => __('farmer.highlights.kicker.week'),
+                    'title' => __('farmer.highlights.week_rain', ['day' => $later['date']->format('l')]),
+                    'what' => __('farmer.alerts.heavy_rain.what', ['mm' => FarmerKpiService::formatRain($later['rain'])]),
+                    'todo' => __('farmer.highlights.week_todo'),
+                    'href' => route('weather-predictions.index', ['tab' => 'weather-forecast']), 'link' => __('farmer.highlights.link.rain'),
+                ];
+            }
+        }
+
+        // A Moderate rating for the barangay (High and Severe are already warnings above): the Heat Map's own rating.
+        if (($risk['state'] ?? null) === 'ok' && strtolower((string) $risk['level']) === 'moderate') {
+            $items[] = [
+                'key' => 'risk', 'level' => 'watch', 'icon' => 'map',
+                'kicker' => __('farmer.highlights.kicker.watch'),
+                'title' => __('farmer.highlights.risk_title', ['level' => $risk['level_full'], 'barangay' => $risk['barangay']]),
+                'what' => trim($risk['meaning'].($risk['concern'] ? ' '.__('farmer.risk.watch').': '.$risk['concern'].'.' : '')),
+                'todo' => __('farmer.learn.risk.todo'),
+                'href' => route('heat-map.index'), 'link' => __('farmer.highlights.link.risk'),
+            ];
+        }
+
+        // A new advisory from the last few days.
+        $fresh = collect($advisories)->first(fn (array $a) => $a['is_new']);
+        if ($fresh) {
+            $items[] = [
+                'key' => 'advisory', 'level' => 'info', 'icon' => 'advisory',
+                'kicker' => __('farmer.highlights.kicker.advisory'),
+                'title' => $fresh['title'], 'what' => $fresh['summary'], 'todo' => $fresh['action'],
+                'href' => $fresh['href'], 'link' => __('farmer.highlights.link.advisory'), 'modal' => true,
+            ];
+        }
+
+        return array_slice($items, 0, self::MAX_HIGHLIGHTS);
+    }
+
+    /**
+     * Small "don't forget" lines: the next farm activity (when Today's Highlights does not already show it), farm details
+     * still missing, new advisories, unread messages and notifications. Only what applies is listed.
+     *
+     * @param  array<string, mixed>  $schedule
+     * @param  array<string, mixed>|null  $setup
+     * @param  array<int, array<string, mixed>>  $highlights
+     * @return array<int, array<string, mixed>>
+     */
+    private function reminders(array $schedule, ?array $setup, int $newAdvisories, ?int $messages, ?int $notifications, array $highlights): array
+    {
+        $items = [];
+        $shown = array_column($highlights, 'key');
+
+        if ($schedule['state'] === 'ok' && ! in_array('activity', $shown, true) && $schedule['next'] && $schedule['next']['in_days'] <= self::REMINDER_DAYS) {
+            $items[] = ['key' => 'activity', 'icon' => 'calendar', 'href' => route('calendar.index'),
+                'text' => trans_choice('farmer.reminders.activity', $schedule['next']['in_days'], ['activity' => $schedule['next']['label'], 'count' => $schedule['next']['in_days']])];
+        }
+        if ($setup) {
+            $missing = count($setup['items']);
+            $items[] = ['key' => 'setup', 'icon' => 'farmers', 'href' => '#mfdFarmTitle', 'anchor' => true,
+                'text' => trans_choice('farmer.reminders.setup', $missing, ['count' => $missing, 'first' => mb_strtolower($setup['items'][0]['short'])])];
+        }
+        if ($newAdvisories > 0) {
+            $items[] = ['key' => 'advisories', 'icon' => 'advisory', 'href' => route('planting-advisories.index'),
+                'text' => trans_choice('farmer.reminders.advisories', $newAdvisories, ['count' => $newAdvisories])];
+        }
+        if ($messages) {
+            $items[] = ['key' => 'messages', 'icon' => 'message', 'href' => route('messages.index'),
+                'text' => trans_choice('farmer.reminders.messages', $messages, ['count' => $messages])];
+        }
+        if ($notifications) {
+            $items[] = ['key' => 'notifications', 'icon' => 'bell', 'href' => route('notifications.index'),
+                'text' => trans_choice('farmer.reminders.notifications', $notifications, ['count' => $notifications])];
+        }
+
+        return $items;
+    }
+
+    // ------------------------------------------------------------------ quick actions + setup
+
+    /**
+     * What the Quick Actions say: "Add" until the farmer has saved that thing, then "Update".
      *
      * @param  Collection<int, FarmerPlantingSchedule>  $rows
      * @return array{farm: bool, map: bool, plan: bool}
@@ -1198,11 +1397,9 @@ final class FarmerDashboardService
         }
     }
 
-    // ------------------------------------------------------------------ setup list
-
     /**
-     * What is missing from the farmer's profile and what filling it in would unlock. Each item is one real gap.
-     * The planting date is not listed here: the Crop Season card is where the farmer is asked for it, once.
+     * What is missing from the farmer's farm information and what filling it in would unlock. Each item is one real gap.
+     * The planting date is asked for by the schedule card, so it is not listed here.
      *
      * @param  Collection<int, FarmerPlantingSchedule>  $rows
      * @return array{items: array<int, array<string, mixed>>, done: int, total: int}|null
@@ -1228,6 +1425,7 @@ final class FarmerDashboardService
         }
         $items = array_map(fn (array $c) => $c + [
             'title' => __('farmer.setup.'.$c['key'].'.title'),
+            'short' => __('farmer.setup.'.$c['key'].'.short'),
             'benefit' => __('farmer.setup.'.$c['key'].'.benefit'),
             'cta' => __('farmer.setup.'.$c['key'].'.cta'),
         ], $items);
