@@ -5,44 +5,26 @@
         $showYield = count($yieldPoints) >= 2;                                   // a trend needs at least two years
         $partialYears = collect($yieldPoints)->filter(fn ($p) => $p['months'] < 12)->map(fn ($p) => $p['year'].' ('.$p['months'].' months)')->implode(', ');
         $climate = $mao['climate'];
-        $riskOk = ($mao['risk']['state'] ?? null) === 'ok';
-        $coverageOk = ($mao['farmers']['state'] ?? null) === 'ok';
-        $typeClass = ['LIVE' => 'is-live', 'HISTORICAL' => 'is-hist', 'RECORDED' => 'is-rec', 'FORECAST' => 'is-fc', 'CALCULATED' => 'is-calc'];
     @endphp
 
 
-    {{-- Same design system as the farmer dashboard (resources/css/mao-dashboard.css follows farmer-dashboard.css):
-         green header band, Georgia section titles over a green rule, flat ruled cards. Information opens in the shared
-         pop-up (resources/js/info-modal.js); module pages stay normal navigation. --}}
+    {{-- A short municipal monitoring page: summary, weather, the barangay heat map, rice and climate trends, planting
+         and farmers. Same design system as the farmer dashboard (resources/css/mao-dashboard.css follows
+         farmer-dashboard.css). Information opens in the shared pop-up (resources/js/info-modal.js); office tools such as
+         the activity log and reports stay on their own pages. --}}
     <div class="mtd" data-mao-dashboard data-live-url="{{ route('mao.dashboard.live') }}">
         <header class="mtd-header">
             <div class="mtd-header-main">
                 <span class="mtd-kicker">Municipal Agriculture Office</span>
                 <h1>MAO Dashboard</h1>
                 <p class="mtd-place">@include('dashboards.mao.icon', ['name' => 'map'])Municipal Agriculture Monitoring — Lian, Batangas</p>
-                <p class="mtd-lead">Monitor farmers, weather conditions, farm risk, rice yield, and agricultural advisories.</p>
+                <p class="mtd-lead">Today's weather, farm risk, rice yield and planting guidance for Lian's rice farmers.</p>
             </div>
             <div class="mtd-tools">
                 <span class="mtd-refreshed" role="status" aria-live="polite" data-mao-status>Last updated: <span data-mao-refreshed>{{ $mao['generated_at']->format('g:i A') }}</span><span data-mao-result></span></span>
-                <button type="button" class="mtd-btn is-ghost" data-ic-template="mtdDataSources" data-ic-title="Data Sources" data-ic-icon="info" data-ic-kicker="MAO Dashboard"
-                    data-ic-description="Where each part of this dashboard comes from, and when it was last updated." aria-haspopup="dialog"
-                    data-ic-note="Last synchronized: {{ $mao['generated_at']->format('M j, Y g:i A') }}. Live, forecast, historical, recorded and calculated data are never mixed without a label.">
-                    @include('dashboards.mao.icon', ['name' => 'info'])Data Sources
-                </button>
                 <button type="button" class="mtd-btn is-ghost" data-mao-refresh>@include('dashboards.mao.icon', ['name' => 'refresh'])<span data-mao-refresh-text>Refresh Data</span></button>
-                <a class="mtd-btn is-ghost" href="{{ route('reports.index') }}">@include('dashboards.mao.icon', ['name' => 'report'])Open Reports</a>
                 <a class="mtd-btn" href="{{ route('planting-advisories.create') }}">@include('dashboards.mao.icon', ['name' => 'plus'])Create Advisory</a>
             </div>
-            <template id="mtdDataSources">
-                <dl class="fad-m-details">
-                    @foreach ($mao['sources'] as $source)
-                        <div>
-                            <dt><span class="fad-badge is-type">{{ $source['type'] }}</span></dt>
-                            <dd>{{ $source['label'] }}<br><span class="fad-m-small">{{ $source['source'] }}@if ($source['updated']) · updated {{ $source['updated']->format('M j, g:i A') }}@endif</span></dd>
-                        </div>
-                    @endforeach
-                </dl>
-            </template>
         </header>
 
         <section class="mtd-section" aria-labelledby="mtdSummaryTitle">
@@ -52,24 +34,24 @@
         </section>
 
         <section class="mtd-section" aria-labelledby="mtdTodayTitle">
-            <h2 class="mtd-section-title" id="mtdTodayTitle">Weather &amp; Farm Conditions</h2>
+            <h2 class="mtd-section-title" id="mtdTodayTitle">Weather in Lian</h2>
             <div class="mtd-row"><div class="mtd-cell" data-slot="conditions">@include('dashboards.mao.conditions')</div></div>
             <div class="mtd-row"><div class="mtd-cell" data-slot="forecast" @if (($mao['weather']['state'] ?? null) !== 'ok' || count($mao['weather']['days'] ?? []) === 0) hidden @endif>@include('dashboards.mao.forecast')</div></div>
         </section>
 
         <section class="mtd-section" aria-labelledby="mtdRiskSectionTitle">
-            <h2 class="mtd-section-title" id="mtdRiskSectionTitle">Municipal Risk</h2>
+            <h2 class="mtd-section-title" id="mtdRiskSectionTitle">Barangay Heat Map</h2>
             <div class="mtd-row"><div class="mtd-cell">@include('dashboards.mao.risk')</div></div>
             <div class="mtd-row"><div class="mtd-cell" data-slot="watch" @if (($mao['watch']['state'] ?? 'hidden') === 'hidden') hidden @endif>@include('dashboards.mao.watch')</div></div>
         </section>
 
         <section class="mtd-section" aria-labelledby="mtdTrendsTitle">
-            <h2 class="mtd-section-title" id="mtdTrendsTitle">Rice Production &amp; Climate Trends</h2>
+            <h2 class="mtd-section-title" id="mtdTrendsTitle">Rice Yield &amp; Climate</h2>
             <div class="mtd-row r-50-50">
                 <div class="mtd-cell">
                     @if (! $showYield)
                         <section class="mtd-card" aria-labelledby="mtdYieldTitle" data-mao-yield-empty>
-                            <div class="mtd-card-head"><h2 id="mtdYieldTitle">Rice Yield Trend</h2></div>
+                            <div class="mtd-card-head"><h2 id="mtdYieldTitle">Rice Yield by Year</h2></div>
                             <div class="mtd-empty" role="status">
                                 @if (($yield['state'] ?? null) === 'error')<strong>Rice yield history is temporarily unavailable.</strong><span>Please try again shortly.</span>
                                 @else<strong>No data available.</strong><span>A yield trend needs recorded yields for at least two years.</span>@endif
@@ -78,7 +60,10 @@
                     @else
                         <section class="mtd-card" aria-labelledby="mtdYieldTitle" data-mao-yield>
                             <div class="mtd-card-head">
-                                <h2 id="mtdYieldTitle">Rice Yield Trend</h2>
+                                <div>
+                                    <h2 id="mtdYieldTitle">Rice Yield by Year</h2>
+                                    <p class="mtd-sub">Tons per hectare, from past records.</p>
+                                </div>
                                 @if (count($yieldPoints) > 5)
                                     <div class="mtd-range" role="group" aria-label="Years shown">
                                         <button type="button" data-yield-range="5" aria-pressed="false">5 Years</button>
@@ -92,7 +77,7 @@
                                     data-chart-note="Historical data, not a forecast. A year with fewer than 12 monthly records is the average of the months on file."
                                     aria-label="Average rice yield by year"></canvas>
                             </div>
-                            <p class="mtd-foot">Average rice yield by year, in tons per hectare (historical).@if ($partialYears) Years with fewer than 12 monthly records: {{ $partialYears }}. These years are shown as hollow points with dashed lines.@endif</p>
+                            @if ($partialYears)<p class="mtd-foot">Hollow points are years with incomplete records. Years with fewer than 12 monthly records: {{ $partialYears }}.</p>@endif
                         </section>
                     @endif
                 </div>
@@ -104,16 +89,19 @@
                         </section>
                     @else
                         <section class="mtd-card" aria-labelledby="mtdClimateTitle" data-mao-climate>
-                            <div class="mtd-card-head"><h2 id="mtdClimateTitle">Rainfall &amp; Temperature — {{ $climate['year'] }}</h2></div>
+                            <div class="mtd-card-head"><div>
+                                    <h2 id="mtdClimateTitle">Rainfall &amp; Temperature — {{ $climate['year'] }}</h2>
+                                    <p class="mtd-sub">Bars show rainfall each month; the line shows temperature.</p>
+                                </div></div>
                             <div class="mtd-chart">
                                 <canvas id="maoRainTempChart" data-climate="{{ json_encode(['labels' => $climate['chart']['labels'], 'datasets' => $climate['chart']['datasets']]) }}"
-                                    data-chart-source="Ambulong monthly climate records (recorded); iClimate monthly model (forecast, dashed)" data-chart-type="mixed"
+                                    data-chart-source="Ambulong monthly climate records (recorded); iClimate monthly model (forecast, lighter)" data-chart-type="mixed"
                                     data-chart-period="{{ $climate['year'] }}, by month" data-chart-info-style="icon" aria-label="Monthly rainfall and temperature"></canvas>
                             </div>
                             <p class="mtd-foot">
-                                Solid lines are historical records; dashed lines are model forecasts.
+                                Lighter bars and dashed lines are forecasts, not records.
                                 @if ($climate['annual_rainfall'] !== null)
-                                    Annual rainfall {{ $climate['year'] }}: <strong>{{ number_format($climate['annual_rainfall'], 0) }} mm</strong>
+                                    Rainfall in {{ $climate['year'] }}: <strong>{{ number_format($climate['annual_rainfall'], 0) }} mm</strong>
                                     (total of {{ $climate['rainfall_months'] }} recorded {{ $climate['rainfall_months'] === 1 ? 'month' : 'months' }}@if ($climate['rainfall_months'] < 12), not a full year @endif).
                                 @endif
                             </p>
@@ -121,19 +109,35 @@
                     @endunless
                 </div>
             </div>
-            <div class="mtd-row r-65-35">
-                <div class="mtd-cell" data-slot="production" @if (! $mao['production']) hidden @endif>@include('dashboards.mao.production')</div>
+            <div class="mtd-row"><div class="mtd-cell" data-slot="production" @if (! $mao['production']) hidden @endif>@include('dashboards.mao.production')</div></div>
+        </section>
+
+        <section class="mtd-section" aria-labelledby="mtdPlantingSectionTitle">
+            <h2 class="mtd-section-title" id="mtdPlantingSectionTitle">Planting &amp; Farmers</h2>
+            <div class="mtd-row r-50-50">
+                <div class="mtd-cell" data-slot="planting" @if (! $mao['planting']) hidden @endif>@include('dashboards.mao.planting')</div>
                 <div class="mtd-cell" data-slot="coverage">@include('dashboards.mao.coverage')</div>
             </div>
         </section>
 
-        <section class="mtd-section" aria-labelledby="mtdCommunityTitle" @if (! $mao['feedback'] && ($mao['activity']['state'] ?? null) !== 'ok') hidden @endif>
-            <h2 class="mtd-section-title" id="mtdCommunityTitle">Feedback &amp; Activity</h2>
-            <div class="mtd-row"><div class="mtd-cell" data-slot="feedback" @if (! $mao['feedback']) hidden @endif>@include('dashboards.mao.feedback')</div></div>
-            <div class="mtd-row"><div class="mtd-cell" data-slot="activity" @if (($mao['activity']['state'] ?? null) !== 'ok') hidden @endif>@include('dashboards.mao.activity')</div></div>
-        </section>
-
-        <p class="mtd-more"><a class="mtd-link" href="{{ route('mao.operations') }}">More MAO tools: field reports, planting calendar, supplies, and reports center →</a></p>
+        <p class="mtd-more">
+            <a class="mtd-link" href="{{ route('mao.operations') }}">More MAO tools: field reports, planting calendar, supplies, and reports center →</a>
+            <button type="button" class="mtd-link" data-ic-template="mtdDataSources" data-ic-title="Data Sources" data-ic-icon="info" data-ic-kicker="MAO Dashboard"
+                data-ic-description="Where each part of this dashboard comes from, and when it was last updated." aria-haspopup="dialog"
+                data-ic-note="Last synchronized: {{ $mao['generated_at']->format('M j, Y g:i A') }}. Live, forecast, historical, recorded and calculated data are never mixed without a label.">
+                @include('dashboards.mao.icon', ['name' => 'info'])Where this data comes from
+            </button>
+        </p>
+        <template id="mtdDataSources">
+            <dl class="fad-m-details">
+                @foreach ($mao['sources'] as $source)
+                    <div>
+                        <dt><span class="fad-badge is-type">{{ $source['type'] }}</span></dt>
+                        <dd>{{ $source['label'] }}<br><span class="fad-m-small">{{ $source['source'] }}@if ($source['updated']) · updated {{ $source['updated']->format('M j, g:i A') }}@endif</span></dd>
+                    </div>
+                @endforeach
+            </dl>
+        </template>
     </div>
 
     <script>
@@ -170,7 +174,7 @@
                             responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                             scales: {
                                 y: { beginAtZero: false, title: { display: true, text: 'Yield (t/ha)' }, grid: { color: '#eef2ef' } },
-                                x: { title: { display: true, text: 'Year' }, grid: { display: false } },
+                                x: { grid: { display: false } },
                             },
                             plugins: {
                                 legend: { display: false },
@@ -193,20 +197,24 @@
                 try {
                     const cfg = JSON.parse(canvas.dataset.climate || '{}');
                     const colors = ['#1f6fb2', '#c4471f'];
-                    const datasets = Array.isArray(cfg.datasets) ? cfg.datasets.map((d) => ({
-                        label: d.label, data: Array.isArray(d.data) ? d.data : [], yAxisID: d.axis || 'y', borderColor: colors[d.series ?? 0], backgroundColor: colors[d.series ?? 0],
-                        borderWidth: 2.5, tension: .3, spanGaps: false, borderDash: d.kind === 'predicted' ? [6, 4] : [],
-                        pointStyle: d.kind === 'predicted' ? 'rectRot' : 'circle', pointRadius: d.kind === 'predicted' ? 5 : 3.5,
-                    })).filter((d) => d.data.some((v) => v !== null)) : [];
+                    // Rainfall is drawn as bars and temperature as a line; a forecast is lighter (bars) or dashed (line).
+                    const datasets = Array.isArray(cfg.datasets) ? cfg.datasets.map((d) => {
+                        const color = colors[d.series ?? 0];
+                        const predicted = d.kind === 'predicted';
+                        const base = { label: d.label, data: Array.isArray(d.data) ? d.data : [], yAxisID: d.axis || 'y', borderColor: color };
+                        return (d.axis || 'y') === 'y'
+                            ? { ...base, type: 'bar', order: 2, grouped: false, backgroundColor: predicted ? 'rgba(31,111,178,.35)' : color, borderWidth: 0, borderRadius: 3, maxBarThickness: 28 }
+                            : { ...base, type: 'line', order: 1, backgroundColor: color, borderWidth: 2.5, tension: .3, spanGaps: false, borderDash: predicted ? [6, 4] : [], pointStyle: predicted ? 'rectRot' : 'circle', pointRadius: predicted ? 5 : 3.5 };
+                    }).filter((d) => d.data.some((v) => v !== null)) : [];
                     charts.climate?.destroy();
                     charts.climate = new window.Chart(canvas, {
-                        type: 'line', data: { labels: cfg.labels || [], datasets },
+                        type: 'bar', data: { labels: cfg.labels || [], datasets },
                         options: {
                             responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                             scales: {
                                 y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Rainfall (mm)' }, grid: { color: '#eef2ef' } },
-                                y2: { position: 'right', title: { display: true, text: 'Temperature (°C)' }, grid: { drawOnChartArea: false } },
-                                x: { title: { display: true, text: 'Month' }, grid: { display: false } },
+                                y2: { position: 'right', beginAtZero: false, title: { display: true, text: 'Temperature (°C)' }, grid: { drawOnChartArea: false } },
+                                x: { grid: { display: false }, ticks: { maxRotation: 0 } },
                             },
                             plugins: {
                                 legend: { position: 'bottom', labels: { boxWidth: 14 } },

@@ -7,7 +7,7 @@
     <section class="mtd-card" id="mtdRiskMap" aria-label="Municipal risk overview and risk map" data-mao-risk>
         @include('partials.barangay-risk-map', [
             'heading' => 'Lian Municipality Risk Map',
-            'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
+            'subheading' => 'All 19 barangays at a glance. Click a barangay for its weather, farm risk and advice.',
             'showRefresh' => true,
             'overview' => true,
         ])
