@@ -389,7 +389,7 @@ class DataProvenanceService
      */
     private function databaseFacts(): array
     {
-        return Cache::remember('provenance:db:v'.DashboardData::version(), now()->addMinutes(5), function (): array {
+        return \App\Support\StaleCache::remember('provenance:db:v'.DashboardData::version(), 300, function (): array {
             $iso = fn ($v) => $v ? Carbon::parse($v)->toIso8601String() : null;
 
             $rice = $this->samples->summary('rice_productions');

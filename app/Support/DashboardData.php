@@ -41,12 +41,14 @@ class DashboardData
 
     /**
      * One rating per official Lian barangay: the most recently computed one. Rows whose name is not an official
-     * barangay are left out so they can never inflate a count.
+     * barangay are left out so they can never inflate a count, and so are install placeholders
+     * (HeatmapArea::isSeedPlaceholder()): a barangay with no computed rating has none here and shows as No Data,
+     * the same rule the risk map and the farmer dashboard use.
      */
     public function currentRiskRatings(): Collection
     {
         return $this->heatmapAreas()
-            ->filter(fn (HeatmapArea $a): bool => LianBarangays::canonicalName($a->barangay) !== null)
+            ->filter(fn (HeatmapArea $a): bool => LianBarangays::canonicalName($a->barangay) !== null && ! $a->isSeedPlaceholder())
             ->sortByDesc(fn (HeatmapArea $a): string => ($a->risk_computed_at?->format('YmdHis') ?? '0').str_pad((string) $a->id, 12, '0', STR_PAD_LEFT))
             ->unique(fn (HeatmapArea $a): string => (string) LianBarangays::canonicalName($a->barangay))
             ->sortBy('barangay')

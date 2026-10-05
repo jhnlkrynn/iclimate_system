@@ -3,9 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClimateRecord;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Climate\AmbulongHistoricalClimateDataset;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+use Throwable;
 
 class ClimateRecordController extends CrudController
 {
@@ -25,15 +32,152 @@ class ClimateRecordController extends CrudController
 
     protected string $farmerSortColumn = 'record_date';
 
-    protected function farmerIndexData(Request $request, Builder $filtered): array
-    {
-        $stats = (clone $filtered)->toBase()->selectRaw('count(*) as records, avg(temperature) as avg_temp, max(temperature) as max_temp, min(temperature) as min_temp, sum(rainfall) as total_rain, avg(humidity) as avg_humidity, min(record_date) as first_date, max(record_date) as last_date')->first();
+    /** How the Ambulong monthly record is labelled; the station is in Tanauan, the nearest PAGASA station to Lian. */
+    public const AMBULONG_SOURCE = 'PAGASA Ambulong Station (Tanauan, Batangas)';
 
-        return [
-            'stats' => $stats,
-            // Oldest first, so the rainfall bars read left to right in time.
-            'rainBars' => (clone $filtered)->whereNotNull('rainfall')->latest('record_date')->limit(12)->get(['id', 'record_date', 'rainfall'])->sortBy('record_date')->values(),
-            'sources' => (clone $filtered)->toBase()->distinct()->pluck('source')->filter()->values(),
+    /**
+     * Farmer-facing names for the Ambulong rows: the page presents them as the climate reference used for Lian,
+     * while the stored source above stays the true one (filters still match it) and the page notes the station.
+     */
+    public const AMBULONG_ROW_LABEL = 'Lian Climate Reference';
+
+    public const AMBULONG_FILTER_LABEL = 'Lian Historical Climate Data';
+
+    private const FARMER_PER_PAGE = 20;
+
+    /**
+     * Farmers see the stored climate history: the Ambulong monthly record (database/data/Ambulong Monthly Data.csv,
+     * read through the same loader as the forecast model) plus any plausible climate_records rows. Nothing is
+     * written or invented; staff keep the climate_records management list.
+     */
+    public function index(Request $request): View
+    {
+        if (! $this->usesFarmerPages($request)) {
+            return parent::index($request);
+        }
+
+        $this->authorizeView($request);
+
+        [$all, $unavailable] = $this->farmerRecords();
+        $search = trim((string) $request->query('search', ''));
+        $season = (string) $request->query('season', '');
+        $source = (string) $request->query('source', '');
+        $sort = $request->query('sort') === 'oldest' ? 'oldest' : 'newest';
+        $needle = mb_strtolower($search);
+
+        $filtered = $all
+            ->filter(fn (object $row): bool => ($needle === '' || str_contains($row->search_text, $needle))
+                && ($season === '' || $row->season === $season)
+                && ($source === '' || $row->source === $source))
+            ->sortBy(fn (object $row): string => $row->record_date->format('Y-m-d').'|'.$row->source, SORT_STRING, $sort === 'newest')
+            ->values();
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $records = new LengthAwarePaginator(
+            $filtered->forPage($page, self::FARMER_PER_PAGE)->values(),
+            $filtered->count(),
+            self::FARMER_PER_PAGE,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
+
+        return view('farmer-records.climate-records', [
+            'title' => $this->title,
+            'routeName' => $this->routeName,
+            'search' => $search,
+            'sort' => $sort,
+            // Filter choices come from the records themselves, in their own terms.
+            'filterable' => [
+                'season' => $all->pluck('season')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v])->all(),
+                'source' => $all->pluck('source')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v === self::AMBULONG_SOURCE ? self::AMBULONG_FILTER_LABEL : $v])->all(),
+            ],
+            'records' => $records,
+            'stats' => $this->farmerStats($filtered),
+            // Latest 12 with rainfall, oldest first, so the bars read left to right in time.
+            'rainBars' => $filtered->filter(fn ($row) => $row->rainfall !== null)->sortByDesc(fn ($row) => $row->record_date->format('Y-m-d'))->take(12)->sortBy(fn ($row) => $row->record_date->format('Y-m-d'))->values(),
+            'sources' => $filtered->pluck('source')->filter()->unique()->values(),
+            'totalRecords' => $all->count(),
+            'unavailable' => $unavailable,
+        ]);
+    }
+
+    /**
+     * Every stored record a farmer may see, newest data source first. A part that cannot be read is named in
+     * $unavailable instead of being reported as "no records".
+     *
+     * @return array{0: Collection<int, object>, 1: list<string>}
+     */
+    private function farmerRecords(): array
+    {
+        $rows = collect();
+        $unavailable = [];
+
+        try {
+            $dataset = app(AmbulongHistoricalClimateDataset::class)->load();
+            if (! ($dataset['available'] ?? false)) {
+                throw new \RuntimeException((string) ($dataset['message'] ?? 'Ambulong dataset is not available.'));
+            }
+            foreach ($dataset['observations'] as $obs) {
+                $date = Carbon::create((int) $obs['year'], (int) $obs['month'], 1)->startOfDay();
+                $rows->push($this->farmerRow(null, $date, 'month', $obs['rainfall'] ?? null, $obs['temperature'] ?? null, $obs['humidity'] ?? null, $obs['season'] ?? null, self::AMBULONG_SOURCE));
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Climate records: Ambulong monthly record could not be read.', ['message' => $exception->getMessage()]);
+            $unavailable[] = 'the Ambulong station record';
+        }
+
+        try {
+            ClimateRecord::query()->plausible()->get(['id', 'record_date', 'rainfall', 'temperature', 'humidity', 'season', 'source'])
+                ->each(fn (ClimateRecord $record) => $rows->push($this->farmerRow($record->id, $record->record_date, 'day', $record->rainfall, $record->temperature, $record->humidity, $record->season, $record->source)));
+        } catch (QueryException $exception) {
+            Log::warning('Climate records: climate_records could not be read.', ['message' => $exception->getMessage()]);
+            $unavailable[] = 'entered climate records';
+        }
+
+        return [$rows, $unavailable];
+    }
+
+    private function farmerRow(?int $id, ?Carbon $date, string $period, mixed $rainfall, mixed $temperature, mixed $humidity, ?string $season, ?string $source): object
+    {
+        $date ??= Carbon::create(1970);
+        $label = $period === 'month' ? $date->format('M Y') : $date->format('M j, Y');
+        // Missing stays missing (null), never 0.
+        $number = fn ($value) => is_numeric($value) ? (float) $value : null;
+
+        return (object) [
+            'id' => $id,
+            'record_date' => $date,
+            'date_label' => $label,
+            'period' => $period,
+            'rainfall' => $number($rainfall),
+            'temperature' => $number($temperature),
+            'humidity' => $number($humidity),
+            'season' => $season ?: null,
+            'source' => $source ?: null,
+            'source_label' => $source === self::AMBULONG_SOURCE ? self::AMBULONG_ROW_LABEL : ($source ?: null),
+            'search_text' => mb_strtolower(implode(' ', [$label, $date->format('F Y'), $date->format('Y-m'), $date->format('Y-m-d'), $season, $source, $source === self::AMBULONG_SOURCE ? self::AMBULONG_ROW_LABEL.' '.self::AMBULONG_FILTER_LABEL : null])),
+        ];
+    }
+
+    /** Summary of exactly the records listed; each average or total skips records without that value. */
+    private function farmerStats(Collection $rows): object
+    {
+        $values = fn (string $field) => $rows->pluck($field)->filter(fn ($value) => $value !== null);
+        $temperature = $values('temperature');
+        $rainfall = $values('rainfall');
+        $humidity = $values('humidity');
+
+        return (object) [
+            'records' => $rows->count(),
+            'avg_temp' => $temperature->isNotEmpty() ? $temperature->avg() : null,
+            'max_temp' => $temperature->max(),
+            'min_temp' => $temperature->min(),
+            'total_rain' => $rainfall->isNotEmpty() ? $rainfall->sum() : null,
+            'avg_humidity' => $humidity->isNotEmpty() ? $humidity->avg() : null,
+            'first_date' => $rows->min(fn ($row) => $row->record_date),
+            'last_date' => $rows->max(fn ($row) => $row->record_date),
+            'first_label' => $rows->sortBy(fn ($row) => $row->record_date->format('Y-m-d'))->first()?->date_label,
+            'last_label' => $rows->sortByDesc(fn ($row) => $row->record_date->format('Y-m-d'))->first()?->date_label,
         ];
     }
 

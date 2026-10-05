@@ -13,30 +13,6 @@
         data-text-language="{{ __('farmer.header.language_changing') }}" data-text-language-failed="{{ __('farmer.state.language_failed') }}"
         data-font="Inter">
 
-        <nav class="mfd-tabs" aria-label="Farmer dashboard sections">
-            <a class="mfd-tab @if (($tab ?? 'overview') === 'overview') is-active @endif"
-                href="{{ route('farmer.dashboard', ['tab' => 'overview']) }}"
-                @if (($tab ?? 'overview') === 'overview') aria-current="page" @endif>Overview</a>
-            <a class="mfd-tab @if (($tab ?? 'overview') === 'heatmap') is-active @endif"
-                href="{{ route('farmer.dashboard', ['tab' => 'heatmap']) }}"
-                @if (($tab ?? 'overview') === 'heatmap') aria-current="page" @endif>Heat Map</a>
-        </nav>
-
-        @if (($tab ?? 'overview') === 'heatmap')
-            <section class="mfd-card mfd-map-page" aria-labelledby="farmerHeatMapTitle">
-                <div class="mfd-card-head">
-                    <div>
-                        <h1 id="farmerHeatMapTitle" class="mfd-map-section-label">LIAN MUNICIPALITY RISK MAP</h1>
-                    </div>
-                </div>
-                @include('partials.barangay-risk-map', [
-                    'heading' => 'Lian Municipality Risk Map',
-                    'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
-                    'showRefresh' => false,
-                    'highlightBarangay' => $f['barangay'] ? \App\Support\LianBarangays::canonicalName($f['barangay']) : null,
-                ])
-            </section>
-        @else
         {{-- Read out by screen readers after a refresh; the sections themselves are not live, so a refresh does not re-read the page. --}}
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden>
@@ -54,6 +30,17 @@
 
         @include('dashboards.farmer.popups')
         @endif
+
+        <details class="mfd-info">
+            <summary>@include('dashboards.mao.icon', ['name' => 'info']){{ __('farmer.about.title') }}</summary>
+            <div class="mfd-info-panel">
+                <ul>
+                    @foreach (['weather', 'coming', 'rain', 'harvest', 'advisories'] as $item)
+                        <li><strong>{{ __('farmer.about.'.$item.'.label') }}</strong> {{ __('farmer.about.'.$item.'.text') }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </details>
     </div>
 
     {{-- "View Advisory" opens the advisory here, in the same pop-up as the Advisories page. --}}

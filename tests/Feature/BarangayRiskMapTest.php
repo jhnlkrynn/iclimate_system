@@ -17,10 +17,12 @@ use App\Support\LianBarangays;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\ComputesRiskRatings;
 use Tests\TestCase;
 
 class BarangayRiskMapTest extends TestCase
 {
+    use ComputesRiskRatings;
     use RefreshDatabase;
 
     /** The process-wide time limit before this test, restored in tearDown(). */
@@ -468,6 +470,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_mao_dashboard_loads_with_risk_map_section(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
@@ -476,6 +479,9 @@ class BarangayRiskMapTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('id="riskMapLegend"', false);
+        $response->assertDontSee('id="riskMeaningTitle"', false);
+        $response->assertDontSee('class="risk-map-meaning"', false);
         $response->assertSee('Lian Municipality Risk Map');
     }
 
@@ -570,6 +576,9 @@ class BarangayRiskMapTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('id="riskMapLegend"', false);
+        $response->assertDontSee('id="riskMeaningTitle"', false);
+        $response->assertDontSee('class="risk-map-meaning"', false);
         $response->assertSee('Lian Municipality Risk Map');
         // Same read-only endpoints MAO/Admin use — proves there is no
         // separate, farmer-only, single-barangay map data source.
@@ -580,7 +589,7 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('data-risk-map-refresh', false);
     }
 
-    public function test_farmer_can_open_the_heat_map_tab(): void
+    public function test_farmer_dashboard_always_opens_overview_without_a_tab_selector(): void
     {
         Cache::flush();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
@@ -590,14 +599,19 @@ class BarangayRiskMapTest extends TestCase
             'barangay' => 'Malaruhatan',
         ]);
 
-        $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']))
+        foreach ([[], ['tab' => 'overview'], ['tab' => 'heatmap']] as $query) {
+            $this->actingAs($user)->get(route('farmer.dashboard', $query))
+                ->assertOk()
+                ->assertSeeInOrder(['data-slot="header"', 'data-slot="farm"', 'data-slot="today"'], false)
+                ->assertDontSee('mfd-tabs', false)
+                ->assertDontSee('mfd-tab', false)
+                ->assertDontSee('farmerHeatMapTitle', false)
+                ->assertSee('href="'.route('heat-map.index').'"', false);
+        }
+
+        $this->actingAs($user)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertViewHas('tab', 'heatmap')
-            ->assertSee('aria-current="page"', false)
-            ->assertSee('Lian Municipality Risk Map')
-            ->assertSee('id="barangayRiskMap"', false)
-            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
-            ->assertSee('data-highlight-barangay="Malaruhatan"', false);
+            ->assertSee('id="barangayRiskMap"', false);
     }
 
     public function test_shared_heat_map_page_is_available_to_every_account_role(): void
@@ -609,6 +623,9 @@ class BarangayRiskMapTest extends TestCase
                 ->assertOk()
                 ->assertSee('Lian Municipality Risk Map')
                 ->assertSee('id="barangayRiskMap"', false)
+                ->assertSee('id="riskMapLegend"', false)
+                ->assertDontSee('id="riskMeaningTitle"', false)
+                ->assertDontSee('class="risk-map-meaning"', false)
                 ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
                 ->assertSee('href="'.route('heat-map.index').'"', false);
         }
@@ -617,6 +634,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_admin_dashboard_has_a_heat_map_tab_and_mao_still_does(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
@@ -626,12 +644,18 @@ class BarangayRiskMapTest extends TestCase
             ->assertSee('Heat Map')
             ->assertSee('id="itd-panel-heatmap"', false)
             ->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('id="riskMapLegend"', false)
+            ->assertDontSee('id="riskMeaningTitle"', false)
+            ->assertDontSee('class="risk-map-meaning"', false)
             ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
+        $response->assertSee('id="riskMapLegend"', false);
+        $response->assertDontSee('id="riskMeaningTitle"', false);
+        $response->assertDontSee('class="risk-map-meaning"', false);
         $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
         // MAO is management-level: the refresh control is present.
@@ -699,6 +723,7 @@ class BarangayRiskMapTest extends TestCase
     public function test_farmer_and_mao_render_the_same_shared_risk_map_component(): void
     {
         Cache::flush();
+        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);

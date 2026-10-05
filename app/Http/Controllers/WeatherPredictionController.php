@@ -88,38 +88,40 @@ class WeatherPredictionController extends Controller
         $location = $this->savedLocation($request);
         // The Lian-wide reading is the same one the dashboards show; the
         // barangay reading is shown beside it (not instead of it).
-        $lianWeather = $sharedWeather->current();
-        $liveWeather = match (true) {
-            // No usable barangay: show the Lian-wide reading instead of nothing.
-            ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($weatherApi->forecast(
-                location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-            )) ?? data_get($weatherResult, 'live_weather'),
-            default => $weatherApi->forecast(
-                latitude: $location['coordinates'][0],
-                longitude: $location['coordinates'][1],
-                location: $location['label'],
-            ) ?? data_get($weatherResult, 'live_weather'),
-        };
+        $lianWeather = rescue(fn () => $sharedWeather->current(), null, false);
+        $liveWeather = rescue(function () use ($location, $sharedWeather, $weatherApi, $weatherResult) {
+            return match (true) {
+                // No usable barangay: show the Lian-wide reading instead of nothing.
+                ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($weatherApi->forecast(
+                    location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
+                )) ?? data_get($weatherResult, 'live_weather'),
+                default => $weatherApi->forecast(
+                    latitude: $location['coordinates'][0],
+                    longitude: $location['coordinates'][1],
+                    location: $location['label'],
+                ) ?? data_get($weatherResult, 'live_weather'),
+            };
+        }, null, false);
 
         // Keep both readings on the same update time: if they were fetched
         // more than two minutes apart, refresh both together.
         if (! $location['is_municipal_preview'] && $location['coordinates'] && $this->readingsOutOfSync($liveWeather, $lianWeather)) {
-            $liveWeather = $weatherApi->forecast(
+            $liveWeather = rescue(fn () => $weatherApi->forecast(
                 refresh: true,
                 latitude: $location['coordinates'][0],
                 longitude: $location['coordinates'][1],
                 location: $location['label'],
-            ) ?? $liveWeather;
-            $lianWeather = $sharedWeather->current(force: true);
+            ), null, false) ?? $liveWeather;
+            $lianWeather = rescue(fn () => $sharedWeather->current(force: true), null, false) ?? $lianWeather;
         }
         $calendarMonth = isset($validated['calendar_month'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $validated['calendar_month'].'-01')
             : \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         // Municipal calendar uses the shared Lian reading so its daily values
         // match the Farmer/MAO dashboards, login page and chatbot exactly.
-        $calendarWeather = $sharedWeather->alignForecast($weatherApi->forecast(
+        $calendarWeather = rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast(
             location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-        ));
+        )), null, false);
         // A single whole-month estimate (not per-day) from the same monthly
         // Random Forest model already used by the barangay risk map — shown
         // in the calendar as its own clearly-labeled "Monthly Prediction"
@@ -171,9 +173,9 @@ class WeatherPredictionController extends Controller
             'yieldSummary' => $mlResult
                 ? $this->yieldSummary($mlResult, $location['barangay'], $targetDate, $targetMonth)
                 : null,
-            'weatherCheck' => $feedbackService->pendingPrompt($request->user()),
+            'weatherCheck' => rescue(fn () => $feedbackService->pendingPrompt($request->user()), null, false),
             'weatherCheckBarangayIssue' => $request->user()->role === User::ROLE_FARMER
-                ? $feedbackService->barangayFor($request->user())[1]
+                ? rescue(fn () => $feedbackService->barangayFor($request->user())[1] ?? null, null, false)
                 : null,
             'liveWeather' => $liveWeather,
             'lianWeather' => ($lianWeather['success'] ?? false) === true && $location['coordinates'] && ! $location['is_municipal_preview'] ? $lianWeather : null,

@@ -30,6 +30,34 @@
                 <button type="button" class="mfd-btn is-quiet is-small" data-mfd-retry="weather">@include('dashboards.mao.icon', ['name' => 'refresh']){{ __('farmer.state.retry') }}</button>
             @endif
         </article>
+<div class="mfd-today">
+    {{-- Left: today's conditions. The same reading feeds the Weather tile above, the sentence and today's rain. --}}
+    @if ($ok)
+        <section class="mfd-card mfd-now" aria-labelledby="mfdNowTitle" data-mfd-now>
+            <div class="mfd-card-head">
+                <h2 id="mfdNowTitle">{{ __('farmer.now.title') }}</h2>
+                @if ($w['stale'])@include('dashboards.farmer._status', ['level' => 'watch', 'label' => __('farmer.header.old_data')])@endif
+            </div>
+            <ul class="mfd-conditions">
+                @foreach ($conditions as $c)
+                    <li data-condition="{{ $c['key'] }}">
+                        <span class="mfd-metric-label">@include('dashboards.mao.icon', ['name' => $c['icon']]){{ __('farmer.now.'.$c['key']) }}</span>
+                        <strong>{{ $c['value'] }}</strong>
+                        <span class="mfd-condition-level">{{ __('farmer.now.level.'.$c['key'].'.'.$c['level']) }}</span>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="mfd-now-summary" role="img" aria-label="{{ $w['now_summary'] }}">{{ $w['now_summary'] }}</p>
+            <p class="mfd-foot">{{ __('farmer.now.source', ['source' => __('farmer.source.weather'), 'time' => $w['updated_label'] ?? '—']) }}</p>
+            <a class="mfd-link" href="{{ route('weather-predictions.index', ['tab' => 'weather-forecast']) }}">{{ __('farmer.now.see_full') }}</a>
+        </section>
+    @else
+        @include('dashboards.farmer._error', ['retry' => 'today', 'title' => __('farmer.now.title')])
+    @endif
+
+    {{-- Right: what the farmer should know today. Real warnings always come first and are never left out. --}}
+    <section class="mfd-card mfd-advice" aria-labelledby="mfdAdviceTitle" data-mfd-advice data-kpi="alerts">
+        <div class="mfd-card-head"><h2 id="mfdAdviceTitle">{{ __('farmer.advice.title') }}</h2></div>
 
         {{-- 2. Rain today (same reading) --}}
         @php $rainKnown = $wOk && ($w['rain_today'] !== null || $w['rain_chance'] !== null); @endphp

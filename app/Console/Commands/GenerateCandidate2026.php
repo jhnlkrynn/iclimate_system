@@ -923,158 +923,21 @@ class GenerateCandidate2026 extends Command
 
         /*
         |--------------------------------------------------------------------------
-        | Clean Python Environment
+        | Python Environment
         |--------------------------------------------------------------------------
         |
-        | This matches the working Laravel integration and avoids the
-        | WinError 10106 issue caused by inherited XAMPP environment paths.
+        | One cross-platform environment for every ML script (Windows, macOS,
+        | Linux VPS): App\Support\PythonRuntime::environment().
         |
         */
 
         $projectRoot =
             base_path();
 
-        $venvRoot =
-            $projectRoot
-            .DIRECTORY_SEPARATOR
-            .'.venv';
-
-        $venvScripts =
-            $venvRoot
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $pythonBase =
-            'C:\Users\Luke\AppData\Local\Programs\Python\Python312';
-
-        $pythonScripts =
-            $pythonBase
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $windowsRoot =
-            getenv(
-                'SystemRoot'
-            )
-            ?: 'C:\Windows';
-
-        $system32 =
-            $windowsRoot
-            .DIRECTORY_SEPARATOR
-            .'System32';
-
-        $cleanPath =
-            implode(
-                PATH_SEPARATOR,
-                [
-                    $venvScripts,
-                    $pythonBase,
-                    $pythonScripts,
-                    $system32,
-                    $windowsRoot,
-                ]
+        $environment =
+            PythonRuntime::environment(
+                $pythonBinary
             );
-
-        $environment = [
-            'PATH' =>
-                $cleanPath,
-
-            'Path' =>
-                $cleanPath,
-
-            'SYSTEMROOT' =>
-                $windowsRoot,
-
-            'SystemRoot' =>
-                $windowsRoot,
-
-            'WINDIR' =>
-                $windowsRoot,
-
-            'VIRTUAL_ENV' =>
-                $venvRoot,
-
-            /*
-            |--------------------------------------------------------------------------
-            | Prevent System Python from Polluting the Virtual Environment
-            |--------------------------------------------------------------------------
-            */
-
-            'PYTHONHOME' =>
-                false,
-
-            'PYTHONPATH' =>
-                false,
-
-            'PYTHONNOUSERSITE' =>
-                '1',
-
-            'PYTHONUTF8' =>
-                '1',
-
-            'PYTHONIOENCODING' =>
-                'utf-8',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Keep Candidate Prediction Single Process
-            |--------------------------------------------------------------------------
-            */
-
-            'JOBLIB_MULTIPROCESSING' =>
-                '0',
-
-            'LOKY_MAX_CPU_COUNT' =>
-                '1',
-
-            'OMP_NUM_THREADS' =>
-                '1',
-
-            'OPENBLAS_NUM_THREADS' =>
-                '1',
-
-            'MKL_NUM_THREADS' =>
-                '1',
-
-            'NUMEXPR_NUM_THREADS' =>
-                '1',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Windows User Paths
-            |--------------------------------------------------------------------------
-            */
-
-            'USERPROFILE' =>
-                getenv(
-                    'USERPROFILE'
-                )
-                ?: 'C:\Users\Luke',
-
-            'LOCALAPPDATA' =>
-                getenv(
-                    'LOCALAPPDATA'
-                )
-                ?: 'C:\Users\Luke\AppData\Local',
-
-            'APPDATA' =>
-                getenv(
-                    'APPDATA'
-                )
-                ?: 'C:\Users\Luke\AppData\Roaming',
-
-            'TEMP' =>
-                getenv(
-                    'TEMP'
-                )
-                ?: sys_get_temp_dir(),
-
-            'TMP' =>
-                getenv(
-                    'TMP'
-                )
-                ?: sys_get_temp_dir(),
-        ];
 
         /*
         |--------------------------------------------------------------------------
@@ -1239,38 +1102,14 @@ class GenerateCandidate2026 extends Command
 
     private function pythonBinary(): string
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Prefer .env
-        |--------------------------------------------------------------------------
-        */
+        // PYTHON_BINARY, then the project virtualenv, then python3/python on PATH: the one shared resolver.
+        $python = PythonRuntime::executable();
 
-        $configured =
-            config('iclimate.python_binary');
-
-        if (
-            is_string(
-                $configured
-            )
-            &&
-            trim(
-                $configured
-            )
-            !== ''
-        ) {
-            return trim(
-                $configured,
-                " \t\n\r\0\x0B\"'"
-            );
+        if ($python === null) {
+            throw new \RuntimeException('Python was not found. Set PYTHON_BINARY or create the project .venv.');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Default Project Virtual Environment
-        |--------------------------------------------------------------------------
-        */
-
-        return PythonRuntime::executable() ?? 'python';
+        return $python;
     }
 
     /*

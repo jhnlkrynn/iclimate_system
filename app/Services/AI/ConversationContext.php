@@ -28,7 +28,7 @@ class ConversationContext
     }
 
     /**
-     * @return array{last_intent: ?string, pending_intent: mixed, recent_questions: list<string>, recent_facts: list<string>}
+     * @return array{last_intent: ?string, last_details: ?string, pending_intent: mixed, recent_questions: list<string>, recent_facts: list<string>}
      */
     public function recent(User $user): array
     {
@@ -50,6 +50,8 @@ class ConversationContext
 
         return [
             'last_intent' => $latest->first()?->intent,
+            // The full report behind the latest short farmer answer, for a "Why?" follow-up.
+            'last_details' => data_get($latest->first()?->memory, 'details'),
             'pending_intent' => data_get($pending, 'pending_intent'),
             'recent_questions' => $latest->pluck('question')->all(),
             'recent_facts' => $latest->pluck('intent')->filter()->values()->all(),

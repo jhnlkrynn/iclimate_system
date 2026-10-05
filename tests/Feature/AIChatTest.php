@@ -316,8 +316,9 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.source_type', 'Machine Learning + Generative AI')
             ->assertJsonPath('chat.prediction_result.generative_ai.provider', 'Groq');
 
-        $this->assertStringContainsString('trained Python model is unavailable', $response->json('chat.answer'));
-        $this->assertStringContainsString('delay planting', $response->json('chat.answer'));
+        $this->assertStringContainsString('20 mm of rain is expected this month', $response->json('chat.answer'));   // the figure as given, not "about"
+        $this->assertStringNotContainsString('trained Python model', $response->json('chat.answer'));
+        $this->assertStringNotContainsString('fallback', strtolower($response->json('chat.answer')));
         $this->assertNull($response->json('chat.rice_yield_prediction.predicted_yield'));     // advice from the weather rules; no invented yield
 
         Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Bearer test-groq-key')
@@ -548,11 +549,10 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.language', 'Tagalog');
 
         $answer = $response->json('chat.answer');
-        $this->assertStringContainsString('Para sa pagtatanim', $answer);
-        $this->assertStringContainsString('Mga input na ginamit', $answer);
-        $this->assertStringContainsString('Rekomendasyon:', $answer);
-        $this->assertStringContainsString('Susunod na hakbang:', $answer);
-        $this->assertStringContainsString('Babala:', $answer);
+        $this->assertStringContainsString('Puwede ka nang magtanim', $answer);
+        $this->assertStringNotContainsString('Mga input na ginamit', $answer);
+        $this->assertStringNotContainsString('Random Forest', $answer);
+        $this->assertStringNotContainsString('score', strtolower($answer));
     }
 
     public function test_ai_assistant_general_answer_does_not_show_report_template(): void

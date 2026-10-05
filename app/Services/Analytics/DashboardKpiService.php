@@ -270,7 +270,7 @@ class DashboardKpiService
 
     public function mao(): array
     {
-        return Cache::remember('dashboard:kpi:mao:v'.DashboardData::version(), now()->addSeconds(self::CACHE_SECONDS), function (): array {
+        return \App\Support\StaleCache::remember('dashboard:kpi:mao:v'.DashboardData::version(), self::CACHE_SECONDS, function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
@@ -411,7 +411,7 @@ class DashboardKpiService
 
     public function itExpert(): array
     {
-        return Cache::remember('dashboard:kpi:it:v'.DashboardData::version(), now()->addSeconds(self::CACHE_SECONDS), function (): array {
+        return \App\Support\StaleCache::remember('dashboard:kpi:it:v'.DashboardData::version(), self::CACHE_SECONDS, function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 

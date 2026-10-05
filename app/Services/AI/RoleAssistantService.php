@@ -153,7 +153,9 @@ class RoleAssistantService
         }
 
         $production = RiceProduction::query()->where('barangay', $barangay)->latest('year')->take(5)->get();
-        $heatmap = HeatmapArea::query()->where('barangay', $barangay)->latest()->first();
+        // Keep Climora aligned with Heat Map/MAO: seed placeholders are not
+        // ratings and must never be presented as calculated risk.
+        $heatmap = HeatmapArea::query()->computed()->where('barangay', $barangay)->latest()->first();
 
         $lines = [];
 
@@ -186,21 +188,21 @@ class RoleAssistantService
             $lines[] = $tagalog
                 ? "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type})."
                 : "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type}).";
-        } elseif ($heatmap) {
+        } elseif ($heatmap && ! $liveReportsNoData) {
             $date = $heatmap->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
             $lines[] = $tagalog
                 ? "Noong {$date}, ang climate risk ay {$heatmap->risk_level} ({$heatmap->risk_type}) — maaaring hindi na ito kasalukuyang kondisyon."
                 : "As of {$date}, climate risk was marked {$heatmap->risk_level} ({$heatmap->risk_type}); this may not reflect current conditions.";
         } else {
             $lines[] = $tagalog
-                ? 'Wala pang current na climate risk information para sa barangay na ito.'
-                : 'Current climate risk information is not available for this barangay yet.';
+                ? 'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
+                : 'No calculated farm-risk rating is available for this barangay yet. Check the latest weather and advisories.';
         }
 
         return [
             'answer' => implode(' ', $lines),
             'source_name' => 'iClimate Barangay Records',
-            'confidence' => $production->isNotEmpty() || $heatmap ? 88 : 70,
+            'confidence' => $production->isNotEmpty() || ($heatmap && ! $liveReportsNoData) ? 88 : 70,
         ];
     }
 

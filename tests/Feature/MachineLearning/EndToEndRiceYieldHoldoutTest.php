@@ -6,12 +6,18 @@ use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
+use Tests\Concerns\RunsProjectPython;
 use Tests\TestCase;
 
 class EndToEndRiceYieldHoldoutTest extends TestCase
 {
+    use RunsProjectPython;
+
     public function test_2025_end_to_end_weather_to_rice_yield_holdout(): void
     {
+        // Runs the real candidate model through Python; skipped (with the reason) where no usable environment exists.
+        $this->projectPythonOrSkip();
+
         /*
         |--------------------------------------------------------------------------
         | Purpose
@@ -852,159 +858,22 @@ class EndToEndRiceYieldHoldoutTest extends TestCase
         |--------------------------------------------------------------------------
         */
 
-        $pythonBinary = base_path(
-            '.venv/Scripts/python.exe'
-        );
-
-        if (! File::exists($pythonBinary)) {
-            throw new \RuntimeException(
-                'Python virtual-environment executable was not found: '
-                .$pythonBinary
-            );
-        }
+        $pythonBinary =
+            $this->projectPythonOrSkip();
 
         $json = json_encode(
             $payload,
             JSON_THROW_ON_ERROR
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clean Python Environment
-        |--------------------------------------------------------------------------
-        |
-        | Same protection used by the candidate controller to avoid
-        | Windows/XAMPP DLL and WinError 10106 issues.
-        |
-        */
-
         $projectRoot =
             base_path();
 
-        $venvRoot =
-            $projectRoot
-            .DIRECTORY_SEPARATOR
-            .'.venv';
-
-        $venvScripts =
-            $venvRoot
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $pythonBase =
-            'C:\Users\Luke\AppData\Local\Programs\Python\Python312';
-
-        $pythonScripts =
-            $pythonBase
-            .DIRECTORY_SEPARATOR
-            .'Scripts';
-
-        $windowsRoot =
-            getenv(
-                'SystemRoot'
-            )
-            ?: 'C:\Windows';
-
-        $system32 =
-            $windowsRoot
-            .DIRECTORY_SEPARATOR
-            .'System32';
-
-        $cleanPath = implode(
-            PATH_SEPARATOR,
-            [
-                $venvScripts,
-                $pythonBase,
-                $pythonScripts,
-                $system32,
-                $windowsRoot,
-            ]
-        );
-
-        $environment = [
-            'PATH' =>
-                $cleanPath,
-
-            'Path' =>
-                $cleanPath,
-
-            'SYSTEMROOT' =>
-                $windowsRoot,
-
-            'SystemRoot' =>
-                $windowsRoot,
-
-            'WINDIR' =>
-                $windowsRoot,
-
-            'VIRTUAL_ENV' =>
-                $venvRoot,
-
-            'PYTHONHOME' =>
-                false,
-
-            'PYTHONPATH' =>
-                false,
-
-            'PYTHONNOUSERSITE' =>
-                '1',
-
-            'PYTHONUTF8' =>
-                '1',
-
-            'PYTHONIOENCODING' =>
-                'utf-8',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Keep Prediction Single-Process
-            |--------------------------------------------------------------------------
-            */
-
-            'JOBLIB_MULTIPROCESSING' =>
-                '0',
-
-            'LOKY_MAX_CPU_COUNT' =>
-                '1',
-
-            'OMP_NUM_THREADS' =>
-                '1',
-
-            'OPENBLAS_NUM_THREADS' =>
-                '1',
-
-            'MKL_NUM_THREADS' =>
-                '1',
-
-            'NUMEXPR_NUM_THREADS' =>
-                '1',
-
-            /*
-            |--------------------------------------------------------------------------
-            | User Environment
-            |--------------------------------------------------------------------------
-            */
-
-            'USERPROFILE' =>
-                getenv('USERPROFILE')
-                ?: 'C:\Users\Luke',
-
-            'LOCALAPPDATA' =>
-                getenv('LOCALAPPDATA')
-                ?: 'C:\Users\Luke\AppData\Local',
-
-            'APPDATA' =>
-                getenv('APPDATA')
-                ?: 'C:\Users\Luke\AppData\Roaming',
-
-            'TEMP' =>
-                getenv('TEMP')
-                ?: sys_get_temp_dir(),
-
-            'TMP' =>
-                getenv('TMP')
-                ?: sys_get_temp_dir(),
-        ];
+        // Cross-platform interpreter and clean environment: tests/Concerns/RunsProjectPython.php
+        $environment =
+            $this->pythonEnvironment(
+                $pythonBinary
+            );
 
         $process = new Process(
             [

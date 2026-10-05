@@ -193,7 +193,7 @@ class MessagingController extends Controller
 
     public function searchRecipients(Request $request): JsonResponse
     {
-        $query = trim((string) $request->string('q'));
+        $query = is_string($request->query('q')) ? trim($request->query('q')) : '';
 
         $recipients = $this->recipients($request->user(), $query !== '' ? $query : null);
 

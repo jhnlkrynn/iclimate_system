@@ -50,7 +50,7 @@ abstract class CrudController extends Controller
         $this->authorizeView($request);
 
         $query = $this->baseQuery($request);
-        $search = trim((string) $request->query('search', ''));
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
 
         if ($search !== '' && $this->searchable !== []) {
             $query->where(function (Builder $builder) use ($search) {
@@ -62,7 +62,7 @@ abstract class CrudController extends Controller
 
         foreach ($this->filterable as $field => $options) {
             $value = $request->query($field);
-            if ($value !== null && $value !== '') {
+            if (is_string($value) && $value !== '') {
                 $query->where($field, $value);
             }
         }

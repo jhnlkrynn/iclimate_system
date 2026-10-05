@@ -8,6 +8,8 @@ use Illuminate\Support\Arr;
 
 class IntentClassifierService
 {
+    public const GREETING = 'greeting';
+
     public const GENERAL_CHAT = 'general_chat';
 
     public const CURRENT_WEATHER = 'current_weather';
@@ -37,6 +39,7 @@ class IntentClassifierService
     public const UNKNOWN = 'unknown';
 
     private const SUPPORTED_INTENTS = [
+        self::GREETING,
         self::GENERAL_CHAT,
         self::CURRENT_WEATHER,
         self::WEATHER_FORECAST,
@@ -130,6 +133,19 @@ class IntentClassifierService
     private function preflight(string $question): ?array
     {
         $text = str($question)->lower()->toString();
+
+        // Keep simple greetings local; they must never enter weather or
+        // prediction handling.
+        if (preg_match('/^\s*(?:hi|hello|hey|hoy|kumusta|kamusta|good\s+morning|good\s+afternoon|good\s+evening)(?:\s+(?:there|po|ka|kayo))?\s*[!,.?]*\s*$/iu', $text) === 1) {
+            return [
+                'intent' => self::GREETING,
+                'confidence' => 1.0,
+                'entities' => [],
+                'source' => 'local_greeting_preflight',
+                'missing' => [],
+                'requires_clarification' => false,
+            ];
+        }
 
         // "sino ka"/"ano ka" are checked with word boundaries, not plain
         // substring matching — "ano ka" is otherwise a false-positive

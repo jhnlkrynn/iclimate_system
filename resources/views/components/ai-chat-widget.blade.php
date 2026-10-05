@@ -4,6 +4,7 @@
     // Greeting uses only the account's first name; nothing else about the account is shown.
     $icAiFirstName = \Illuminate\Support\Str::of((string) auth()->user()?->name)->squish()->before(' ')->toString();
     $icAiGreeting = $icAiFirstName !== '' ? 'Hi, '.$icAiFirstName.'! How can I help you today?' : 'Hi! How can I help you today?';
+    $icAiFarmerLanguage = auth()->user()?->role === \App\Models\User::ROLE_FARMER;
 
     $icAiChips = match (auth()->user()->role) {
         \App\Models\User::ROLE_MAO => [
@@ -138,6 +139,7 @@
     }
 
     .ic-ai-header {
+        position: relative;
         min-height: 78px;
         display: flex;
         align-items: center;
@@ -180,6 +182,11 @@
         font-weight: 700;
         line-height: 1.25;
     }
+
+    .ic-ai-language { display:flex; align-items:center; gap:.45rem; margin-left:auto; color:var(--ai-ink); font-size:.72rem; font-weight:800; }
+    .ic-ai-language select { min-height:32px; border:1px solid rgba(255,255,255,.45); border-radius:7px; padding:.2rem 1.7rem .2rem .45rem; background:#fff; color:#173b29; font:inherit; }
+    .ic-ai-language-notice { position:absolute; right:4.5rem; top:calc(100% + .35rem); z-index:2; display:none; max-width:220px; padding:.45rem .6rem; border:1px solid #f0c36d; border-radius:7px; background:#fff8e8; color:#795b16; font-size:.72rem; font-weight:800; box-shadow:0 .35rem .9rem rgba(13,31,24,.12); }
+    .ic-ai-language-notice.show { display:block; }
 
     .ic-ai-actions {
         display: flex;
@@ -510,6 +517,17 @@
                     <p class="ic-ai-subtitle">Weather, rice yield, planting, and system guidance</p>
                 </div>
             </div>
+            @if($icAiFarmerLanguage)
+                <label class="ic-ai-language" for="icAiLanguage">Conversation Language
+                    <select id="icAiLanguage" data-language-url="{{ route('ai-chat.language') }}" data-language-persisted="{{ auth()->user()->aiLanguageCode() ? '1' : '0' }}" data-language-db-value="{{ auth()->user()->aiLanguageCode() ?? '' }}" aria-label="Conversation Language">
+                        <option value="en" @selected(auth()->user()->aiLanguageCode() === 'en')>English</option>
+                        <option value="tl" @selected(auth()->user()->aiLanguageCode() === 'tl')>Tagalog</option>
+                    </select>
+                </label>
+            @endif
+            @if($icAiFarmerLanguage)
+                <div id="icAiLanguageNotice" class="ic-ai-language-notice" role="status" aria-live="polite"></div>
+            @endif
             <div class="ic-ai-actions">
                 <button type="button" class="ic-ai-minimize" data-ai-close aria-label="Minimize assistant">&minus;</button>
                 <button type="button" class="ic-ai-close" data-ai-close aria-label="Close assistant">&times;</button>
@@ -629,15 +647,63 @@
         const body = document.getElementById('icAiBody');
         const typing = document.getElementById('icAiTyping');
         const send = document.getElementById('icAiSend');
+        const languageSelect = document.getElementById('icAiLanguage');
         const token = widget.querySelector('input[name="_token"]')?.value;
         const messageUrl = widget.dataset.messageUrl;
         const saveStorageKey = 'iclimate_ai_save_conversation';
+        const languageStorageKey = 'iclimate_ai_language';
+        const languageFallbackStorageKey = 'iclimate_ai_language_fallback';
         let requestPending = false;
+        let languageSaveInFlight = false;
+        let languageNoticeTimer = null;
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
         const scrollMessages = () => { body.scrollTop = body.scrollHeight; };
         const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const shouldSaveConversation = () => localStorage.getItem(saveStorageKey) !== '0';
+        const selectedLanguage = () => languageSelect?.value || null;
+        const languageText = (english, tagalog) => selectedLanguage() === 'tl' ? tagalog : english;
+        const showLanguageNotice = (message) => {
+            const notice = document.getElementById('icAiLanguageNotice');
+            if (!notice) return;
+            notice.textContent = message;
+            notice.classList.add('show');
+            clearTimeout(languageNoticeTimer);
+            languageNoticeTimer = setTimeout(() => notice.classList.remove('show'), 5000);
+        };
+        const hideLanguageNotice = () => {
+            const notice = document.getElementById('icAiLanguageNotice');
+            if (!notice) return;
+            clearTimeout(languageNoticeTimer);
+            notice.textContent = '';
+            notice.classList.remove('show');
+        };
+        const restoreLanguage = () => {
+            if (!languageSelect) return;
+            try {
+                const dbLanguage = languageSelect.dataset.languageDbValue;
+                const fallback = localStorage.getItem(languageFallbackStorageKey);
+                const saved = localStorage.getItem(languageStorageKey);
+
+                // The database is authoritative. A fallback wins only after
+                // a failed save, so the current session choice survives.
+                if ((fallback === 'en' || fallback === 'tl') && fallback !== dbLanguage) {
+                    languageSelect.value = fallback;
+                } else if (dbLanguage === 'en' || dbLanguage === 'tl') {
+                    languageSelect.value = dbLanguage;
+                    localStorage.removeItem(languageFallbackStorageKey);
+                    localStorage.setItem(languageStorageKey, dbLanguage);
+                } else if (saved === 'en' || saved === 'tl') {
+                    languageSelect.value = saved;
+                }
+            } catch {
+                // The account value remains the fallback when storage is unavailable.
+            }
+        };
+        const updateLanguageUi = () => {
+            const typingText = typing?.querySelector('.ic-ai-typing-text');
+            if (typingText) typingText.textContent = languageText('Climora AI is checking iClimate...', 'Sinusuri ng Climora AI ang iClimate...');
+        };
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
         const featureCatalog = (() => {
             try {
@@ -686,6 +752,8 @@
             return `<details class="ic-collapse mt-2"><summary><span class="ic-collapse-title">Why this yield estimate</span></summary><div class="ai-feature-list mt-2">${rows}</div></details>`;
         };
         const relevantPredictionCards = (chat) => {
+            // A short farmer answer already says what to do; the raw result cards would repeat it in engine wording.
+            if (chat.memory?.brief) return [];
             switch (chat.intent) {
                 case 'Weather Prediction': return ['weather'];
                 case 'Rice Yield Prediction': return ['yield'];
@@ -717,10 +785,16 @@
 
             return grid + features;
         };
-        const addMessage = (role, message, extra = '') => {
+        // A short farmer answer leads with its answer line in bold; everything stays escaped.
+        const answerHtml = (chat) => {
+            if (!chat.memory?.brief) return escapeHtml(chat.answer);
+            const [first, ...rest] = String(chat.answer ?? '').split('\n');
+            return `<strong>${escapeHtml(first)}</strong>${rest.length ? '\n' + escapeHtml(rest.join('\n')) : ''}`;
+        };
+        const addMessage = (role, message, extra = '', html = null) => {
             body.insertAdjacentHTML(
                 'beforeend',
-                `<div class="ic-ai-msg ${role}"><div class="ic-ai-msg-col"><div class="ic-ai-bubble">${escapeHtml(message)}${extra}</div><div class="ic-ai-msg-time">${timeNow()}</div></div></div>`
+                `<div class="ic-ai-msg ${role}"><div class="ic-ai-msg-col"><div class="ic-ai-bubble">${html ?? escapeHtml(message)}${extra}</div><div class="ic-ai-msg-time">${timeNow()}</div></div></div>`
             );
             scrollMessages();
         };
@@ -754,19 +828,19 @@
                 const response = await fetch(messageUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ question: trimmedQuestion, save_conversation: shouldSaveConversation() }),
+                    body: JSON.stringify({ question: trimmedQuestion, save_conversation: shouldSaveConversation(), language: selectedLanguage() }),
                     signal: controller.signal,
                     loader: false, // the chat shows its own typing indicator
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'The assistant could not answer right now.');
+                if (!response.ok) throw new Error('assistant request failed');
 
                 const chat = data.chat;
-                addMessage('assistant', chat.answer, predictionGrid(chat));
+                addMessage('assistant', chat.answer, predictionGrid(chat), answerHtml(chat));
             } catch (error) {
                 const message = error.name === 'AbortError'
-                    ? 'The assistant took too long. Please ask a shorter iClimate question or try again.'
-                    : error.message;
+                    ? languageText('The assistant took too long. Please ask a shorter iClimate question or try again.', 'Matagal sumagot ang assistant. Magtanong nang mas maikli o subukan ulit.')
+                    : languageText('The assistant could not answer right now. Please try again.', 'Hindi makasagot ang assistant ngayon. Subukan ulit.');
                 addMessage('assistant', message);
             } finally {
                 clearTimeout(timeout);
@@ -777,6 +851,49 @@
                 scrollMessages();
             }
         };
+
+        languageSelect?.addEventListener('change', async () => {
+            const language = selectedLanguage();
+            if (languageSaveInFlight || !['en', 'tl'].includes(language)) return;
+
+            languageSaveInFlight = true;
+            try {
+                localStorage.setItem(languageStorageKey, language);
+            } catch {
+                // The selected control value still keeps this session in the chosen language.
+            }
+            updateLanguageUi();
+            languageSelect.disabled = true;
+
+            try {
+                const response = await fetch(languageSelect.dataset.languageUrl, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ language }),
+                });
+                if (!response.ok) throw new Error('language update failed');
+                const data = await response.json();
+                if (data.language !== language) throw new Error('language update mismatch');
+                languageSelect.dataset.languageDbValue = language;
+                localStorage.setItem(languageStorageKey, language);
+                localStorage.removeItem(languageFallbackStorageKey);
+                hideLanguageNotice();
+            } catch {
+                try {
+                    localStorage.setItem(languageStorageKey, language);
+                    localStorage.setItem(languageFallbackStorageKey, language);
+                } catch {
+                    // The selected control value still keeps this session in
+                    // the chosen language when storage is unavailable.
+                }
+                showLanguageNotice(languageText('Language could not be saved. It will remain active for this session.', 'Hindi na-save ang wika. Mananatili itong aktibo sa session na ito.'));
+            } finally {
+                languageSaveInFlight = false;
+                languageSelect.disabled = false;
+            }
+        });
+        restoreLanguage();
+        updateLanguageUi();
 
         window.iClimateAi = {
             open: openAssistant,

@@ -12,6 +12,8 @@ use App\Services\Prediction\PredictionReadMode;
 use App\Services\PredictionService;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Weather\FarmerDashboardWeatherService;
+use App\Services\Weather\LianBarangayWeatherService;
+use App\Support\LianBarangays;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Arr;
@@ -26,6 +28,7 @@ class AIOrchestratorService
         private readonly IntentClassifierService $classifier,
         private readonly PredictionService $predictionService,
         private readonly FarmerDashboardWeatherService $weatherService,
+        private readonly LianBarangayWeatherService $barangayWeatherService,
         private readonly PredictionOrchestrator $predictionOrchestrator,
         private readonly GroqChatService $groq,
         private readonly BarangayRiskMapService $riskMapService,
@@ -39,6 +42,9 @@ class AIOrchestratorService
 
     /** The weather read once for the current message, so two tools never fetch it twice. */
     private ?array $weatherMemo = null;
+
+    /** @var array<string, array<string, mixed>> */
+    private array $barangayWeatherMemo = [];
 
     /**
      * @return array<string, mixed>
@@ -55,6 +61,7 @@ class AIOrchestratorService
 
         $this->context->reset();
         $this->weatherMemo = null;
+        $this->barangayWeatherMemo = [];
 
         // A chat request only READS prepared predictions: it may never train a model or process a dataset.
         $this->readMode->enter();
@@ -106,7 +113,12 @@ class AIOrchestratorService
         }
 
         $memory = $this->conversationMemory($user);
-        $language = $this->languageDetector->detectLanguage($question, $memory);
+        $language = $this->languageDetector->detectLanguage($question, $memory, $user->aiLanguageCode());
+
+        // "Why?" / "Show me the details" right after a short farmer answer: give the full report behind it.
+        if (filled($memory['last_details'] ?? null) && FarmerAnswerStyle::isDetailsFollowUp($question)) {
+            return $this->textResult((string) $memory['last_details'], (string) ($memory['last_intent'] ?: 'details'), 'Details', 'iClimate', $language, [...$memory, 'details' => null, 'brief' => false], ['confidence_score' => 80]);
+        }
 
         // Rule-based classification: instant. Groq is asked below, and only if the rules cannot place the message.
         $classification = $this->timings->time('intent', fn () => $this->classifier->classifyLocal($question, $memory));
@@ -163,7 +175,8 @@ class AIOrchestratorService
 
         try {
             $result = match ($intent) {
-                IntentClassifierService::CURRENT_WEATHER => $this->currentWeather($user, $question, $language, $memory),
+                IntentClassifierService::GREETING => $this->greeting($language, $memory),
+                IntentClassifierService::CURRENT_WEATHER => $this->currentWeather($user, $question, $language, $memory, $entities),
                 IntentClassifierService::WEATHER_FORECAST => $this->weatherForecast($user, $question, $language, $memory, $entities),
                 IntentClassifierService::WEATHER_PREDICTION => $this->timings->time('prediction', fn () => $this->weatherPrediction($user, $question, $language, $memory, $entities)),
                 IntentClassifierService::RICE_YIELD_PREDICTION,
@@ -192,8 +205,10 @@ class AIOrchestratorService
         }
 
         $result['language'] = $result['language'] ?? $language;
+        // last_details is read from the previous chat; saving it again would copy the report into every chat.
+        unset($result['memory']['last_details']);
         $result['memory'] = [
-            ...($result['memory'] ?? $memory),
+            ...($result['memory'] ?? \Illuminate\Support\Arr::except($memory, ['last_details'])),
             'orchestrator' => [
                 'intent' => $intent,
                 'classifier_source' => $classification['source'],
@@ -203,6 +218,21 @@ class AIOrchestratorService
         ];
 
         return $result;
+    }
+
+    private function greeting(string $language, array $memory): array
+    {
+        return $this->textResult(
+            $language === 'Tagalog'
+                ? 'Hello! Ano ang maitutulong ko sa iyo ngayon?'
+                : 'Hello! How can I help you today?',
+            IntentClassifierService::GREETING,
+            'Assistant',
+            'Climora AI',
+            $language,
+            $memory,
+            ['confidence_score' => 100],
+        );
     }
 
     /**
@@ -215,7 +245,7 @@ class AIOrchestratorService
      */
     private function moderated(User $user, string $question, array $moderation, float $startedAt): array
     {
-        $language = $this->languageDetector->detectLanguage($question);
+        $language = $this->languageDetector->detectLanguage($question, [], $user->aiLanguageCode());
 
         // Profanity with no other Filipino cue words ("putangina mo") reads as
         // English to the language detector; the matched entry knows better.
@@ -444,15 +474,29 @@ class AIOrchestratorService
     /**
      * @return array<string, mixed>
      */
-    private function currentWeather(User $user, string $question, string $language, array $memory): array
+    private function currentWeather(User $user, string $question, string $language, array $memory, array $entities): array
     {
-        $weather = $this->weather();
+        $barangay = $this->weatherBarangay($user, $question, $entities);
+        $barangayWeather = $barangay ? $this->barangayWeather($barangay) : null;
+        $weather = $barangayWeather ?? $this->weather();
         $tool = [
             'tool' => 'current_weather',
-            'success' => (bool) ($weather['success'] ?? false),
-            'source' => $weather['source'] ?? $weather['provider'] ?? 'Weather service',
-            'location' => $weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas'],
-            'data' => [
+            'success' => $barangayWeather
+                ? ($weather['status'] ?? 'unavailable') !== 'unavailable' && is_numeric($weather['temperature_c'] ?? null)
+                : (bool) ($weather['success'] ?? false),
+            'source' => $weather['provider'] ?? $weather['source'] ?? 'Weather service',
+            'location' => $barangayWeather ? ['name' => $barangay, 'municipality' => 'Lian', 'province' => 'Batangas'] : ($weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas']),
+            'data' => $barangayWeather ? [
+                'condition' => $weather['condition'] ?? null,
+                'temperature_c' => $weather['temperature_c'] ?? null,
+                'feels_like_c' => null,
+                'humidity_percent' => $weather['humidity_percent'] ?? null,
+                'rainfall_today_mm' => $weather['rainfall_24h_mm'] ?? null,
+                'rain_probability_percent' => $weather['rain_probability_percent'] ?? null,
+                'wind_kph' => $weather['wind_speed_kmh'] ?? null,
+                'provider_updated_at' => $weather['fetched_at'] ?? null,
+                'stale' => (bool) ($weather['stale'] ?? false),
+            ] : [
                 'condition' => \App\Support\WeatherConditionLabel::display(data_get($weather, 'current.condition')),
                 'temperature_c' => data_get($weather, 'current.temperature'),
                 'feels_like_c' => data_get($weather, 'current.feels_like'),
@@ -464,12 +508,40 @@ class AIOrchestratorService
             ],
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user, $barangay) {
             if (! $tool['success']) {
-                return $this->translate($language, 'Current weather data is temporarily unavailable. Please try refreshing again in a moment.', 'Hindi available ngayon ang current weather data. Subukan ulit mag-refresh mamaya.');
+                return $this->translate($language, $barangay ? "Latest weather for {$barangay} is temporarily unavailable." : 'Current weather data is temporarily unavailable. Please try refreshing again in a moment.', $barangay ? "Hindi available ngayon ang latest weather para sa {$barangay}." : 'Hindi available ngayon ang current weather data. Subukan ulit mag-refresh mamaya.');
             }
 
             $data = $tool['data'];
+
+            if ($barangay) {
+                $temperature = is_numeric($data['temperature_c'] ?? null) ? FarmerAnswerStyle::number($data['temperature_c']).'°C' : 'temperature unavailable';
+                $chance = is_numeric($data['rain_probability_percent'] ?? null) ? FarmerAnswerStyle::number($data['rain_probability_percent']).'%' : 'unavailable';
+                $rainfall = is_numeric($data['rainfall_today_mm'] ?? null) ? FarmerAnswerStyle::number($data['rainfall_today_mm']).' mm' : 'unavailable';
+                $delayedEn = $data['stale'] ? ' Weather update is temporarily delayed; these are the last available values.' : '';
+                $delayedTl = $data['stale'] ? ' Delayed ang weather update; ito ang huling available na datos.' : '';
+
+                return $this->translate(
+                    $language,
+                    "Latest weather update for {$barangay}, Lian: {$data['condition']}, {$temperature}. Rain chance for the next 24 hours is {$chance}, with {$rainfall} expected rainfall.{$delayedEn}",
+                    "Latest weather update para sa {$barangay}, Lian: {$data['condition']}, {$temperature}. Ang tsansa ng ulan sa susunod na 24 oras ay {$chance}, na may {$rainfall} na inaasahang ulan.{$delayedTl}"
+                );
+            }
+
+            if ($user->role === User::ROLE_FARMER) {
+                // The provider's own figures, unrounded; wind is live (km/h is the provider's confirmed unit).
+                $temperature = is_numeric($data['temperature_c'] ?? null) ? FarmerAnswerStyle::number($data['temperature_c']).'°C' : null;
+                $wind = is_numeric($data['wind_kph'] ?? null) ? FarmerAnswerStyle::number($data['wind_kph']).' km/h' : null;
+                $en = array_filter([FarmerAnswerStyle::condition($data['condition'], false), $temperature, $wind ? 'wind '.$wind : null]);
+                $tl = array_filter([FarmerAnswerStyle::condition($data['condition'], true), $temperature, $wind ? 'hangin na '.$wind : null]);
+
+                return $this->translate(
+                    $language,
+                    'Current weather in Lian: '.implode(', ', $en).'. Check the weather before working in the field.',
+                    'Kasalukuyang panahon sa Lian: '.implode(', ', $tl).'. Bantayan ang panahon bago magtrabaho sa bukid.'
+                );
+            }
 
             return $this->translate(
                 $language,
@@ -489,8 +561,16 @@ class AIOrchestratorService
      */
     private function weatherForecast(User $user, string $question, string $language, array $memory, array $entities): array
     {
-        $weather = $this->weather();
-        $forecast = array_map(
+        $barangay = $this->weatherBarangay($user, $question, $entities);
+        $barangayWeather = $barangay ? $this->barangayWeather($barangay) : null;
+        $weather = $barangayWeather ?? $this->weather();
+        $forecast = $barangayWeather ? [[
+            'day' => 'Next 24 hours',
+            'condition' => $weather['condition'] ?? 'Condition unavailable',
+            'rainfall' => $weather['rainfall_24h_mm'] ?? null,
+            'precipitation_probability' => $weather['rain_probability_percent'] ?? null,
+            'temperature_max' => null,
+        ]] : array_map(
             fn ($day) => is_array($day) && isset($day['condition']) ? ['condition' => \App\Support\WeatherConditionLabel::display($day['condition'])] + $day : $day,
             (array) ($weather['forecast'] ?? [])
         );
@@ -498,19 +578,58 @@ class AIOrchestratorService
         $selected = $target === 'tomorrow' && isset($forecast[1]) ? [$forecast[1]] : $forecast;
         $tool = [
             'tool' => 'weather_forecast',
-            'success' => (bool) ($weather['success'] ?? false) && $forecast !== [],
-            'source' => $weather['source'] ?? $weather['provider'] ?? 'Weather forecast service',
-            'location' => $weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas'],
+            'success' => ($barangayWeather ? ($weather['status'] ?? 'unavailable') !== 'unavailable' : (bool) ($weather['success'] ?? false)) && $forecast !== [],
+            'source' => $weather['provider'] ?? $weather['source'] ?? 'Weather forecast service',
+            'location' => $barangayWeather ? ['name' => $barangay, 'municipality' => 'Lian', 'province' => 'Batangas'] : ($weather['location'] ?? ['name' => 'Lian', 'province' => 'Batangas']),
             'target_period' => $target ?: 'next_7_days',
             'data' => array_values(array_slice($selected, 0, 7)),
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user, $barangay) {
             if (! $tool['success']) {
                 return $this->translate($language, 'The weather forecast is temporarily unavailable. I will not guess the forecast.', 'Hindi available ngayon ang weather forecast. Hindi ako manghuhula ng forecast.');
             }
 
             $first = $tool['data'][0] ?? [];
+
+            if ($barangay) {
+                $chance = is_numeric($first['precipitation_probability'] ?? null) ? FarmerAnswerStyle::number($first['precipitation_probability']).'%' : 'unavailable';
+                $rainfall = is_numeric($first['rainfall'] ?? null) ? FarmerAnswerStyle::number($first['rainfall']).' mm' : 'unavailable';
+
+                return $this->translate(
+                    $language,
+                    "For {$barangay}, Lian, the next-24-hour rain chance is {$chance}, with {$rainfall} expected rainfall, based on {$tool['source']}.",
+                    "Para sa {$barangay}, Lian, ang tsansa ng ulan sa susunod na 24 oras ay {$chance}, na may {$rainfall} na inaasahang ulan, batay sa {$tool['source']}."
+                );
+            }
+
+            if ($user->role === User::ROLE_FARMER) {
+                // Day and condition in the farmer's language; every figure exactly as the forecast gives it.
+                $rain = is_numeric($first['rainfall'] ?? null) ? FarmerAnswerStyle::number($first['rainfall']).' mm' : null;
+                $high = is_numeric($first['temperature_max'] ?? null) ? FarmerAnswerStyle::number($first['temperature_max']).'°C' : null;
+                $chance = is_numeric($first['precipitation_probability'] ?? null) ? FarmerAnswerStyle::number($first['precipitation_probability']).'%' : null;
+
+                $en = FarmerAnswerStyle::day($first, false).' '.FarmerAnswerStyle::condition($first['condition'] ?? null, false, 'sentence').'.'
+                    .match (true) {
+                        $high && $rain => " Expected temperature is up to {$high} with {$rain} of rain.",
+                        (bool) $rain => " Expected rain is {$rain}.",
+                        (bool) $high => " Expected temperature is up to {$high}.",
+                        default => '',
+                    }
+                    .($chance ? " Rain chance is {$chance}." : '')
+                    .' Check the weather before field work.';
+                $tl = FarmerAnswerStyle::day($first, true).' ay '.FarmerAnswerStyle::condition($first['condition'] ?? null, true, 'sentence').'.'
+                    .match (true) {
+                        $high && $rain => " Inaasahang temperatura ay hanggang {$high} at ulan ay {$rain}.",
+                        (bool) $rain => " Inaasahang ulan ay {$rain}.",
+                        (bool) $high => " Inaasahang temperatura ay hanggang {$high}.",
+                        default => '',
+                    }
+                    .($chance ? " May {$chance} na tsansa ng ulan." : '')
+                    .' Bantayan ang panahon bago magtrabaho sa bukid.';
+
+                return $this->translate($language, $en, $tl);
+            }
 
             return $this->translate(
                 $language,
@@ -545,7 +664,7 @@ class AIOrchestratorService
             'message' => $prediction['message'] ?? null,
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if (! $tool['success']) {
                 return $this->translate($language, 'I could not generate the iClimate monthly weather model prediction right now. '.$tool['message'], 'Hindi ko magenerate ngayon ang iClimate monthly weather model prediction. '.$tool['message']);
             }
@@ -565,6 +684,14 @@ class AIOrchestratorService
                 'Batay sa iClimate monthly Random Forest model, ang estimate para sa '.$tool['target_month'].' ay '.$data['rainfall'].' mm ulan, '.$data['temperature'].' C temperatura, '.$data['humidity'].'% humidity, at wind speed reading na '.$data['wind_speed'].'.'
             );
         });
+
+        // Farmers get the amounts that matter and what they mean, without the model name or the
+        // unconfirmed wind reading; the full sentence is kept for a "Why?" follow-up.
+        if ($tool['success'] && $user->role === User::ROLE_FARMER && ! FarmerAnswerStyle::asksForDetails($question)) {
+            $data = $tool['data'];
+            $memory = [...$memory, 'details' => $answer, 'brief' => true];
+            $answer = FarmerAnswerStyle::monthlyWeather((string) $tool['target_month'], $data['rainfall'] ?? null, $data['temperature'] ?? null, $data['humidity'] ?? null, str_contains($language, 'Tagalog'));
+        }
 
         return $this->textResult($answer, 'weather_prediction', 'Trained Model', (string) $tool['source'], $language, $memory, [
             'tool_result' => $tool,
@@ -641,6 +768,7 @@ class AIOrchestratorService
         // No specific barangay named: rank across whatever rows are CURRENT
         // right now, never mixing in stale rows unqualified.
         $current = HeatmapArea::query()
+            ->computed()
             ->orderByDesc('risk_score')
             ->take(20)
             ->get()
@@ -665,12 +793,25 @@ class AIOrchestratorService
             ])->all(),
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if (! $tool['success']) {
                 return $this->translate($language, 'I could not find any current heat-map risk records right now.', 'Wala akong makitang current heat-map risk records ngayon.');
             }
 
             $first = $tool['data'][0];
+
+            if ($user->role === User::ROLE_FARMER) {
+                $risk = strtolower((string) $first['risk_level']);
+                $action = str_contains($risk, 'high') || str_contains($risk, 'severe')
+                    ? 'Check your field and keep drainage open.'
+                    : 'Keep checking the weather and your field.';
+
+                return $this->translate(
+                    $language,
+                    'Your area has '.$first['risk_level'].' weather risk for '.$first['risk_type'].'. This may affect your rice field. '.$action,
+                    'May '.$first['risk_level'].' na panganib sa panahon sa lugar mo para sa '.$first['risk_type'].'. Maaari itong makaapekto sa palayan mo. '.($action === 'Check your field and keep drainage open.' ? 'Tingnan ang bukid at panatilihing bukas ang drainage.' : 'Patuloy na bantayan ang panahon at ang bukid.')
+                );
+            }
 
             return $this->translate(
                 $language,
@@ -690,7 +831,13 @@ class AIOrchestratorService
      */
     private function climateRiskForBarangay(User $user, string $question, string $language, array $memory, string $barangay): array
     {
-        $row = HeatmapArea::query()->where('barangay', 'like', '%'.$barangay.'%')->orderByDesc('risk_score')->first();
+        // The computed scope is the single source of truth for excluding the
+        // migration's seed/demo placeholders from Climora answers.
+        $row = HeatmapArea::query()
+            ->computed()
+            ->where('barangay', 'like', '%'.$barangay.'%')
+            ->orderByDesc('risk_score')
+            ->first();
 
         $liveDetail = null;
         try {
@@ -705,7 +852,7 @@ class AIOrchestratorService
 
         $status = match (true) {
             $row === null => 'no_data',
-            $liveReportsNoData => 'stale', // a row exists but the live pipeline currently disagrees / has no data
+            $liveReportsNoData => 'no_data',
             $row->isCurrentlyComputed() => 'current',
             default => 'stale',
         };
@@ -732,8 +879,8 @@ class AIOrchestratorService
             if ($status === 'no_data' || $row === null) {
                 return $this->translate(
                     $language,
-                    'Current risk information is not available for that barangay right now.',
-                    'Wala pang current na risk information para sa barangay na iyon ngayon.'
+                    'No calculated farm-risk rating is available for this barangay yet. Check the latest weather and advisories.',
+                    'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
                 );
             }
 
@@ -789,12 +936,23 @@ class AIOrchestratorService
             ])->all(),
         ];
 
-        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language) {
+        $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if ($tool['data'] === []) {
                 return $this->translate($language, 'There are no active iClimate advisories for your area right now.', 'Walang active iClimate advisories para sa lugar mo ngayon.');
             }
 
             $first = $tool['data'][0];
+
+            if ($user->role === User::ROLE_FARMER) {
+                $action = trim((string) ($first['recommended_action'] ?? ''));
+                $summary = trim((string) ($first['summary'] ?? ''));
+
+                return $this->translate(
+                    $language,
+                    'Advisory: '.$first['title'].'. '.($action !== '' ? $action : ($summary !== '' ? $summary : 'Follow the guidance for your area.')),
+                    'Abiso: '.$first['title'].'. '.($action !== '' ? $action : ($summary !== '' ? $summary : 'Sundin ang gabay para sa lugar mo.'))
+                );
+            }
 
             return $this->translate($language, 'The latest active advisory is '.$first['title'].'. '.$first['summary'], 'Ang latest active advisory ay '.$first['title'].'. '.$first['summary']);
         });

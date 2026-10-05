@@ -177,10 +177,10 @@ class NotificationController extends CrudController
         $all = $this->baseQuery($request);
         $tz = \App\Support\BusinessClock::timezone();
         $canManage = $this->canManage($request);
-        $search = trim((string) $request->query('search', ''));
-        $type = (string) $request->query('type', '');
-        $filter = (string) $request->query('filter', '');
-        $perPage = min(30, max(5, (int) $request->query('per_page', 30)));
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
+        $type = is_string($request->query('type')) ? $request->query('type') : '';
+        $filter = is_string($request->query('filter')) ? $request->query('filter') : '';
+        $perPage = min(30, max(5, $request->integer('per_page', 30)));
 
         $page = (clone $all)
             ->when($filter === 'unread', fn (Builder $query) => $query->where('is_read', false))
@@ -192,7 +192,7 @@ class NotificationController extends CrudController
                 }
             }))
             ->latest('created_at')->latest('id')
-            ->paginate($perPage, ['*'], 'page', max(1, (int) $request->query('page', 1)));
+            ->paginate($perPage, ['*'], 'page', max(1, $request->integer('page', 1)));
 
         return response()->json([
             'ok' => true,

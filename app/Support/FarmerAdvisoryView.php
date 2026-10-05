@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\PlantingAdvisory;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 /**
  * Turns an advisory into the plain-language pieces shown in the farmer's advisory popup
@@ -57,14 +58,11 @@ class FarmerAdvisoryView
         'wind' => '/strong wind|gust/i',
     ];
 
-    public function __construct(private readonly PlantingAdvisory $advisory)
-    {
-    }
+    public function __construct(private readonly PlantingAdvisory $advisory) {}
 
     public function isPagasa(): bool
     {
-        return in_array($this->advisory->source, PlantingAdvisory::pagasaOnlineSources(), true)
-            || stripos((string) $this->advisory->source, 'pagasa') !== false;
+        return $this->advisory->isOfficialPagasa();
     }
 
     /** Who the advice comes from, in words a farmer knows. */
@@ -102,6 +100,10 @@ class FarmerAdvisoryView
 
     public function farmerArea(): string
     {
+        if ($scope = data_get($this->advisory->metadata, 'scope_name')) {
+            return $scope;
+        }
+
         return $this->advisory->target_barangay
             ? 'Barangay '.$this->advisory->target_barangay.', Lian, Batangas'
             : 'Lian, Batangas';
@@ -138,7 +140,12 @@ class FarmerAdvisoryView
 
     public function farmerSourceLabel(): string
     {
-        return $this->isPagasa() ? 'PAGASA' : 'iClimate Weather Analysis';
+        return match (true) {
+            $this->isPagasa() => 'PAGASA',
+            stripos((string) $this->advisory->source, 'open-meteo') !== false => 'Open-Meteo + iClimate Local Guidance',
+            stripos((string) $this->advisory->source, 'pagasa') !== false => 'Unverified source',
+            default => $this->advisory->plainSourceLabel(),
+        };
     }
 
     public function officialUrl(): ?string
@@ -271,7 +278,7 @@ class FarmerAdvisoryView
         }
         if (! empty($wx['stale']) && ! empty($wx['updated'])) {
             $notes[] = 'A new forecast could not be loaded just now, so the last one is shown (from '
-                .\Illuminate\Support\Carbon::parse($wx['updated'])->timezone('Asia/Manila')->format('M j, g:i A').').';
+                .Carbon::parse($wx['updated'])->timezone('Asia/Manila')->format('M j, g:i A').').';
         }
         if (str_contains($messages, 'only part') || str_contains($messages, 'ends before')) {
             $notes[] = 'The forecast covers only part of this advisory’s dates.';
@@ -304,6 +311,7 @@ class FarmerAdvisoryView
                 } elseif ($label === 'farm guidance') {
                     array_push($guidance, ...$this->sentences($match[2]));
                 }
+
                 // "Details" is a raw copy of the PAGASA web page and "Source" is shown in its own section.
                 continue;
             }

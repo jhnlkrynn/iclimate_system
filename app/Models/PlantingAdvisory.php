@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\JsonColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -130,12 +131,15 @@ class PlantingAdvisory extends Model
     public function scopeForBarangay(Builder $query, ?string $barangay): Builder
     {
         return $query->where(function (Builder $builder) use ($barangay) {
-            $builder->whereNull('target_barangay')
-                ->orWhere('target_barangay', '')
-                ->orWhere('target_scope', 'municipality');
+            // metadata is text on the live database: JSON reads go through JsonColumn (a raw ->> is a PostgreSQL error).
+            $builder->where(function (Builder $wide) {
+                $wide->where(fn ($q) => $q->whereNull('target_barangay')->orWhere('target_barangay', '')->orWhere('target_scope', 'municipality'));
+                JsonColumn::whereKeyMissingOrNot($wide, 'metadata', 'scope_type', 'barangay');
+            });
 
             if ($barangay) {
                 $builder->orWhere('target_barangay', $barangay);
+                JsonColumn::orWhereContains($builder, 'metadata', 'pagasa_barangay_matches', $barangay);
             }
         });
     }
@@ -196,6 +200,14 @@ class PlantingAdvisory extends Model
         return $this->status === self::STATUS_PUBLISHED
             && (! $this->valid_from || $this->valid_from->lte($now))
             && (! $this->valid_until || $this->valid_until->gte($now));
+    }
+
+    public function isOfficialPagasa(): bool
+    {
+        $url = $this->source_url ?: data_get($this->metadata, 'pagasa_source_url');
+
+        return in_array($this->source, self::pagasaOnlineSources(), true)
+            && (bool) preg_match('#^https://(?:[a-z0-9-]+\.)?pagasa\.dost\.gov\.ph/#i', (string) $url);
     }
 
     public function typeLabel(): string
@@ -322,9 +334,9 @@ class PlantingAdvisory extends Model
             };
 
             return "Official PAGASA Weather Advisory for {$location}.\n\n"
-                . "• Weather Situation: {$situation}\n"
-                . "• Farm Guidance: {$advice}\n"
-                . "• Source: PAGASA Online Weather Bulletin";
+                ."• Weather Situation: {$situation}\n"
+                ."• Farm Guidance: {$advice}\n"
+                .'• Source: PAGASA Online Weather Bulletin';
         }
 
         return $raw;

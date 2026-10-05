@@ -32,6 +32,10 @@ class User extends Authenticatable
 
     public const ROLE_IT_EXPERT = 'IT Expert';
 
+    public const AI_LANGUAGE_EN = 'en';
+
+    public const AI_LANGUAGE_TL = 'tl';
+
     public const STATUS_ACTIVE = 'Active';
 
     public const STATUS_INACTIVE = 'Inactive';
@@ -52,6 +56,7 @@ class User extends Authenticatable
         'address',
         'barangay',
         'status',
+        'ai_language',
     ];
 
     public function farmerProfile(): HasOne
@@ -123,6 +128,15 @@ class User extends Authenticatable
     public function roleLabel(): string
     {
         return $this->role;
+    }
+
+    public function aiLanguageCode(): ?string
+    {
+        return match ($this->ai_language) {
+            self::AI_LANGUAGE_EN, 'English' => self::AI_LANGUAGE_EN,
+            self::AI_LANGUAGE_TL, 'Tagalog' => self::AI_LANGUAGE_TL,
+            default => null,
+        };
     }
 
     public function dashboardRoute(): string

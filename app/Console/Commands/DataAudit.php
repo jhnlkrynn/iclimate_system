@@ -78,7 +78,8 @@ class DataAudit extends Command
         $actualProduction = $kpi($mao, 'production')['value'];
         $this->compare('MAO · Production (no verified harvest rows → must not show a number)', $expectedProduction, $riceVerified > 0 ? 'has value' : $actualProduction);
 
-        $this->compare('MAO · Monitored barangays', (int) DB::table('heatmap_areas')->distinct()->count('barangay'), (int) $kpi($mao, 'monitored')['value']);
+        // The KPI counts calculated ratings; install placeholders (HeatmapArea::isSeedPlaceholder()) are not ratings.
+        $this->compare('MAO · Monitored barangays', (int) \App\Models\HeatmapArea::query()->computed()->distinct()->count('barangay'), (int) $kpi($mao, 'monitored')['value']);
 
         $validRuns = DB::table('analytics_runs')->where('type', 'rice_yield_prediction')->where('status', 'completed')->count() - count(array_filter($runs, fn ($id) => DB::table('analytics_runs')->where('id', $id)->where('type', 'rice_yield_prediction')->exists()));
         $this->compare('MAO · Valid yield prediction runs', $validRuns, (int) preg_replace('/\D.*/', '', (string) $kpi($mao, 'predictions')['value']) - (int) DB::table('farmer_planting_schedules')->whereNotNull('predicted_yield')->count());

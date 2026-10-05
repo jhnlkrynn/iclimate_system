@@ -29,6 +29,9 @@ class XamppLocalhostSeeder extends Seeder
             throw new RuntimeException("XamppLocalhostSeeder expects DB_DATABASE={$expectedDatabase}.");
         }
 
-        $this->call(DatabaseSeeder::class);
+        $this->call([
+            DatabaseSeeder::class,
+            DevelopmentDemoSeeder::class,
+        ]);
     }
 }

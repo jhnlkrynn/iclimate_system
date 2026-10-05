@@ -20,12 +20,12 @@
             <dl class="row mb-0 details-list g-3">
                 @foreach ($columns as $field => $label)
                     <dt class="col-sm-3">{{ $label }}</dt>
-                    <dd class="col-sm-9">{{ data_get($record, $field) }}</dd>
+                    <dd class="col-sm-9">{{ filled(data_get($record, $field)) ? data_get($record, $field) : 'Not set' }}</dd>
                 @endforeach
                 <dt class="col-sm-3">Created</dt>
-                <dd class="col-sm-9">{{ $record->created_at }}</dd>
+                <dd class="col-sm-9">{{ $record->created_at ?? 'Not set' }}</dd>
                 <dt class="col-sm-3">Updated</dt>
-                <dd class="col-sm-9">{{ $record->updated_at }}</dd>
+                <dd class="col-sm-9">{{ $record->updated_at ?? 'Not set' }}</dd>
             </dl>
         </div>
     </div>
@@ -39,8 +39,8 @@
             <div class="card-body">
                 <div id="staffBoundaryMap" style="height: 430px; border-radius: 10px; overflow: hidden;"></div>
                 <div class="row g-3 mt-1">
-                    <div class="col-sm-6"><strong>{{ number_format((float) $record->farmBoundary->calculated_area_hectares, 4) }} ha</strong><div class="small text-muted">Calculated mapped area</div></div>
-                    <div class="col-sm-6"><strong>{{ number_format((float) $record->farmBoundary->calculated_perimeter_meters, 2) }} m</strong><div class="small text-muted">Calculated perimeter</div></div>
+                    <div class="col-sm-6"><strong>{{ number_format((float) ($record->farmBoundary->calculated_area_hectares ?? 0), 4) }} ha</strong><div class="small text-muted">Calculated mapped area</div></div>
+                    <div class="col-sm-6"><strong>{{ number_format((float) ($record->farmBoundary->calculated_perimeter_meters ?? 0), 2) }} m</strong><div class="small text-muted">Calculated perimeter</div></div>
                 </div>
             </div>
         </div>
@@ -50,13 +50,21 @@
                 try { await window.iClimateVisualsReady; } catch (e) { /* no map */ }
                 const Leaflet = window.L;
                 if (!Leaflet) return;
+                const mapEl = document.getElementById('staffBoundaryMap');
+                if (!mapEl) return;
                 const points = @js($record->farmBoundary->boundary_coordinates);
+                if (!Array.isArray(points) || points.length < 3) return;
+                const latLngs = points.filter(p => p && typeof p.lat === 'number' && typeof p.lng === 'number').map((point) => [point.lat, point.lng]);
+                if (latLngs.length < 3) return;
                 const map = Leaflet.map('staffBoundaryMap', { scrollWheelZoom: false, dragging: false }).setView([14.033, 120.650], 13);
                 const satelliteLayer = Leaflet.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 19 }).addTo(map);
                 const streetLayer = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 });
                 Leaflet.control.layers({ 'Satellite imagery': satelliteLayer, 'Street map': streetLayer }, null, { position: 'topright', collapsed: false }).addTo(map);
-                const polygon = Leaflet.polygon(points.map((point) => [point.lat, point.lng]), { color: '#1f5a46', fillColor: '#52b788', fillOpacity: .28, weight: 3 }).addTo(map);
-                map.fitBounds(polygon.getBounds(), { padding: [24, 24] });
+                const polygon = Leaflet.polygon(latLngs, { color: '#1f5a46', fillColor: '#52b788', fillOpacity: .28, weight: 3 }).addTo(map);
+                const bounds = polygon.getBounds();
+                if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [24, 24] });
+                }
             });
         </script>
     @elseif ($routeName === 'farmer-profiles')

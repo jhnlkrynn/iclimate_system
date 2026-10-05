@@ -22,7 +22,7 @@ class AiAdminController extends Controller
     public function index(Request $request, string $resource): View
     {
         $config = $this->config($resource);
-        $search = trim((string) $request->query('q', ''));
+        $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
 
         $query = $config['model']::query()->with($config['with'] ?? [])->orderByDesc('id');
 

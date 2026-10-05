@@ -222,7 +222,7 @@ class BarangayRiskMapService
         foreach (LianBarangays::all() as $barangay) {
             $area = $areas[$barangay] ?? null;
 
-            if ($area === null || ! in_array($area->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)) {
+            if ($area === null || $area->isSeedPlaceholder() || ! in_array($area->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)) {
                 $rows[] = $this->noDataResult(
                     $barangay,
                     $psgcMap[$barangay] ?? null,

@@ -21,6 +21,11 @@
 .frec-takeaway { font-size: 1rem; font-weight: 600; color: var(--ink); }
 .frec-note { display: grid; gap: 6px; padding: 16px 20px; background: var(--subtle); border: 1px solid var(--line); border-left: 4px solid var(--info); border-radius: 6px; }
 .frec-note a { color: var(--brand-ink, var(--brand)); font-weight: 600; }
+.frec-note a { color: var(--brand); font-weight: 600; }
+/* The Lian label leads; the station is a smaller, still visible provenance note under it. */
+.frec-reference { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin: 0; }
+.frec-reference strong { color: var(--ink, inherit); }
+.frec-provenance { margin: 0; font-size: .82em; color: var(--muted, inherit); }
 
 /* ------------------------------------------------------------ comparison bars (real values, drawn to one scale) */
 .frec-bars { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }

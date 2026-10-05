@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\PreparesPredictions;
 use Tests\TestCase;
 
 /**
@@ -23,6 +24,7 @@ use Tests\TestCase;
  */
 class ClimoraWindUnitAndSemanticsTest extends TestCase
 {
+    use PreparesPredictions;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -33,6 +35,8 @@ class ClimoraWindUnitAndSemanticsTest extends TestCase
         Config::set('services.groq.enabled', false);
         Config::set('services.weather.provider', 'weatherapi');
         Config::set('services.weatherapi.key', 'test-key');
+        // Chat only reads prepared monthly forecasts (the scheduled refresh builds them); it never trains on request.
+        $this->preparePredictions();
     }
 
     public function test_monthly_prediction_wind_text_does_not_assert_kmh(): void
@@ -50,11 +54,14 @@ class ClimoraWindUnitAndSemanticsTest extends TestCase
 
         $this->assertIsNumeric($windValue);
         $this->assertStringNotContainsString('km/h', $answer, 'Monthly-prediction wind text must not assert an unverified km/h unit.');
+        // A rainfall question gets a short farmer answer; the unconfirmed wind reading is not forced into it.
+        $this->assertStringNotContainsString('wind', strtolower($answer));
 
-        // Value-preservation: the raw wind figure must still appear verbatim
-        // in the answer text — only the unit CLAIM was removed, the number
-        // itself must not be silently converted.
-        $this->assertStringContainsString((string) $windValue, $answer);
+        // Value-preservation: the full report behind the short answer ("Why?") still carries the raw wind
+        // figure verbatim — only the unit CLAIM was removed, the number itself is not silently converted.
+        $details = (string) $this->actingAs($user)->postJson(route('ai-chat.message'), ['question' => 'Why?'])->assertOk()->json('chat.answer');
+        $this->assertStringContainsString((string) $windValue, $details);
+        $this->assertStringNotContainsString('km/h', $details);
     }
 
     public function test_current_weather_wind_text_still_asserts_kmh_because_it_is_confirmed(): void
@@ -100,8 +107,11 @@ class ClimoraWindUnitAndSemanticsTest extends TestCase
         $predictionAnswer = (string) $prediction->json('chat.answer');
 
         $this->assertStringContainsString('current weather', strtolower($currentAnswer));
-        $this->assertStringContainsString('random forest model', strtolower($predictionAnswer));
         $this->assertStringNotContainsString('current weather', strtolower($predictionAnswer));
+        // Farmers get the month's estimate without the model name; "Why?" names the model behind it.
+        $this->assertStringContainsString(now('Asia/Manila')->startOfMonth()->addMonthNoOverflow()->format('F Y'), $predictionAnswer);
+        $details = (string) $this->actingAs($user)->postJson(route('ai-chat.message'), ['question' => 'Why?'])->assertOk()->json('chat.answer');
+        $this->assertStringContainsString('random forest model', strtolower($details));
     }
 
     private function weatherApiPayload(float $windKph): array

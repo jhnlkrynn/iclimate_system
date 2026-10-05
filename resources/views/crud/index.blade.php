@@ -43,7 +43,7 @@
             <summary>
                 <span class="ic-collapse-title">
                     Farmers by Organization
-                    <span class="ic-collapse-count">{{ number_format($farmerOrganizationSummary['totalFarmers']) }}</span>
+                    <span class="ic-collapse-count">{{ number_format((int) ($farmerOrganizationSummary['totalFarmers'] ?? 0)) }}</span>
                 </span>
             </summary>
             <div class="card no-lift">
@@ -96,7 +96,7 @@
                                 <option value="">All</option>
                                 @foreach ($options as $value => $label)
                                     @php $actual = is_int($value) ? $value : $value; @endphp
-                                    <option value="{{ $actual }}" @selected((string) request($field) === (string) $actual)>{{ $label }}</option>
+                                    <option value="{{ $actual }}" @selected(is_string(request($field)) && (string) request($field) === (string) $actual)>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -136,7 +136,7 @@
                                         @elseif ($field === 'farm_type' && data_get($record, $field))
                                             <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                         @else
-                                            {{ data_get($record, $field) }}
+                                            {{ filled(data_get($record, $field)) ? data_get($record, $field) : 'Not set' }}
                                         @endif
                                     </td>
                                 @endforeach
@@ -175,7 +175,7 @@
                                     @elseif ($field === 'farm_type' && data_get($record, $field))
                                         <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                     @else
-                                        {{ data_get($record, $field) }}
+                                        {{ filled(data_get($record, $field)) ? data_get($record, $field) : 'Not set' }}
                                     @endif
                                 </div>
                             </div>

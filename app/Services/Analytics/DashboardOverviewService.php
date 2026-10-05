@@ -478,9 +478,9 @@ class DashboardOverviewService
     {
         $year = $this->resolveYear($requestedYear);
 
-        $data = Cache::remember(
+        $data = \App\Support\StaleCache::remember(
             'dashboard:overview:mao:v'.DashboardData::version().':'.($year ?? 'none'),
-            now()->addSeconds(self::CACHE_SECONDS),
+            self::CACHE_SECONDS,
             fn (): array => $this->maoStored($year),
         );
 
@@ -742,7 +742,7 @@ class DashboardOverviewService
 
     public function it(): array
     {
-        $data = Cache::remember('dashboard:overview:it:v'.DashboardData::version(), now()->addSeconds(self::CACHE_SECONDS), fn (): array => $this->itStored());
+        $data = \App\Support\StaleCache::remember('dashboard:overview:it:v'.DashboardData::version(), self::CACHE_SECONDS, fn (): array => $this->itStored());
 
         $data['sources'] = $this->provenance->it($data['status']);
 

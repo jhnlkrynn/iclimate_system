@@ -20,43 +20,66 @@ export function initAdvisoryModal() {
     let opener = null;
     let currentUrl = null;
     let saving = false;
+    let refreshing = false;
 
     // Refresh the configured PAGASA endpoint without navigating away. The
     // returned page is fetched again so cards, timestamps, and empty states
     // all reflect the same server-side cache/database snapshot.
     document.addEventListener('submit', async (event) => {
         const form = event.target.closest('[data-fad-refresh]');
-        if (!form || form.dataset.refreshing === 'true') return;
+        if (!form) return;
         event.preventDefault();
+        if (refreshing) return;
+        refreshing = true;
         form.dataset.refreshing = 'true';
         const button = form.querySelector('button');
-        const original = button?.textContent;
+        const original = button?.innerHTML;
         if (button) { button.disabled = true; button.textContent = 'Refreshing…'; }
+        const showStatus = (message) => {
+            const status = document.querySelector('[data-fad-refresh-status]');
+            if (status) { status.hidden = false; status.textContent = message; }
+        };
+        showStatus('Checking PAGASA and local weather sources…');
         try {
             const body = new FormData(form);
             const response = await fetch(form.action, {
                 method: 'POST', body,
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 credentials: 'same-origin',
+                loader: false,
             });
             const result = await response.json().catch(() => ({}));
-            if (!response.ok || !result.ok) throw new Error(result.message || 'Could not refresh advisories.');
-            const page = await fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' });
+            if (!response.ok && response.status !== 503) throw new Error(result.message || 'Could not refresh advisories.');
+            const page = await fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin', loader: false });
             if (!page.ok) throw new Error('Advisories refreshed, but the page could not be updated.');
             const html = await page.text();
             const template = document.createElement('template');
             template.innerHTML = html;
             const current = document.querySelector('.fad');
             const updated = template.content.querySelector('.fad');
-            if (current && updated) current.replaceWith(updated);
+            if (current && updated) {
+                current.replaceWith(updated);
+                cache.clear();
+                updated.querySelectorAll('.ic-collapse').forEach((details) => {
+                    details.open = window.matchMedia('(min-width: 768px)').matches || details.dataset.forceOpen === 'true';
+                });
+            }
+            showStatus(result.message || 'Advisories refreshed.');
         } catch (error) {
             window.dispatchEvent(new CustomEvent('fad-refresh-error', { detail: error.message }));
+            showStatus(error.message);
             if (button) button.setAttribute('aria-label', error.message);
         } finally {
+            refreshing = false;
             form.dataset.refreshing = 'false';
-            if (button) { button.disabled = false; button.textContent = original || 'Refresh Advisories'; }
+            if (button) { button.disabled = false; button.innerHTML = original || 'Refresh Advisories'; }
         }
-    });
+    }, true); // Intercept before the shared form-navigation handler locks/leaves the page.
+    // First/stale visit starts one backend refresh. Ordinary page reads use
+    // saved results; the backend's shared cooldown also covers concurrent users.
+    if (document.querySelector('[data-fad-auto-refresh]')) {
+        document.querySelector('[data-fad-refresh]')?.requestSubmit();
+    }
 
     const render = (content) => dialog.replaceChildren(content);
     const focusTitle = () => (dialog.querySelector('#fadModalTitle') || dialog).focus();

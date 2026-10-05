@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Advisories\LocalFarmGuidanceService;
 use App\Services\Advisories\PagasaAdvisoryService;
 use Illuminate\Console\Command;
 
@@ -11,9 +12,10 @@ class FetchPagasaAdvisories extends Command
 
     protected $description = 'Fetch official PAGASA online advisories and store Lian, Batangas matches.';
 
-    public function handle(PagasaAdvisoryService $service): int
+    public function handle(PagasaAdvisoryService $service, LocalFarmGuidanceService $local): int
     {
         $summary = $service->fetchAndStore((bool) $this->option('force'));
+        $local->refresh();
 
         $this->info($summary['message']);
         $this->line('Sources checked: '.$summary['sources_checked']);

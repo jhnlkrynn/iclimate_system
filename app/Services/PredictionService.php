@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\User;
+use App\Services\AI\FarmerAnswerStyle;
 use App\Services\AI\GroqChatService;
 use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
@@ -50,7 +51,7 @@ class PredictionService
     {
         $startedAt = microtime(true);
         $memory = $this->conversationMemory($user);
-        $language = $this->intentDetector->detectLanguage($question, $memory);
+        $language = $this->intentDetector->detectLanguage($question, $memory, $user->aiLanguageCode());
         $intentResult = $this->intentDetector->detect($question, $memory);
         $intent = $intentResult['intent'];
 
@@ -143,9 +144,21 @@ class PredictionService
             $answer = $groqFallback['answer'];
         }
 
+        // Farmers get the short Answer → Reason → Action version unless they asked why or for details;
+        // the full report above is kept as this chat's details for a "Why?" follow-up.
+        $brief = $user->role === User::ROLE_FARMER && ! FarmerAnswerStyle::asksForDetails($question)
+            ? FarmerAnswerStyle::brief($intent, $decision, $weather, $yield, $warnings, $insights, (string) ($context['farm_type'] ?? ''), $this->isTagalog($language))
+            : null;
+        if ($brief !== null) {
+            // 'brief' tells the chat UI to skip the raw prediction cards; it lives in memory because that column is saved and returned.
+            $memory = [...$memory, 'details' => $answer, 'brief' => true];
+            $answer = $brief;
+        }
+
         return [
             'intent' => $intent,
             'answer' => $answer,
+            'brief' => $brief !== null,
             'source_type' => $groqFallback ? 'Machine Learning + Generative AI' : 'Machine Learning',
             // With no model result there is no yield source to name: the advice then rests on the weather rules alone.
             'source_name' => $groqFallback
