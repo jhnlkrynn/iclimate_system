@@ -60,7 +60,7 @@ class FarmerDashboardPopupsTest extends TestCase
         $this->assertSame('Irrigated', $farmer->farmerProfile()->first()->farm_type);
 
         $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-size'), ['farm_area' => '2.5', 'farm_type' => 'Hydroponic'])
-            ->assertStatus(422)->assertJsonPath('errors.farm_type.0', 'Please choose a farm type from the list.');
+            ->assertStatus(422)->assertJsonPath('errors.farm_type.0', 'Please choose a water source from the list.');
     }
 
     public function test_farm_size_must_be_a_number_above_zero(): void
@@ -123,7 +123,7 @@ class FarmerDashboardPopupsTest extends TestCase
             ->assertJsonPath('errors.email.0', 'Please enter a valid email address.')
             ->assertJsonPath('errors.contact_number.0', 'Please enter a valid contact number, for example 0917 123 4567.')
             ->assertJsonPath('errors.barangay.0', 'Please choose a barangay from the list.')
-            ->assertJsonPath('errors.farm_type.0', 'Please choose a farm type from the list.');
+            ->assertJsonPath('errors.farm_type.0', 'Please choose a water source from the list.');
         $this->actingAs($farmer)->postJson(route('farmer.dashboard.profile'), $this->profileData(['email' => 'taken@example.com']))
             ->assertStatus(422)->assertJsonPath('errors.email.0', 'This email address is already used by another account.');
 

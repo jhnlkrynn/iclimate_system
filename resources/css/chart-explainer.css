@@ -29,7 +29,7 @@
     font: 600 .75rem/1.2 inherit;
     font-family: inherit;
     vertical-align: middle;
-    color: var(--ic-leaf, #3fa66b);
+    color: #23704b;   /* 5:1 on its pale green fill */
     background: rgba(63, 166, 107, .1);
     border: 1px solid rgba(63, 166, 107, .35);
     border-radius: 999px;
@@ -147,7 +147,7 @@ html.ic-chartinfo-open { overflow: hidden; }
     font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
-    color: #2f7d5b;
+    color: #23704b;
 }
 .ic-chartinfo__sec--notice {
     padding: .7rem .9rem;
@@ -186,7 +186,7 @@ html.ic-chartinfo-open { overflow: hidden; }
     border-radius: 12px;
 }
 .ic-chartinfo__row { display: grid; grid-template-columns: 8rem 1fr; gap: .6rem; }
-.ic-chartinfo__row dt { font-weight: 700; color: #2f7d5b; }
+.ic-chartinfo__row dt { font-weight: 700; color: #23704b; }
 .ic-chartinfo__row dd { margin: 0; }
 
 .ic-chartinfo__note {

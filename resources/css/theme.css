@@ -1,0 +1,543 @@
+/*
+ * iClimate appearance: Light (default) and Dark, the same for Farmer, MAO and IT.
+ *
+ * The theme is the data-theme attribute on <html> ("light" | "dark"), set before the first paint by the inline script
+ * in layouts/app.blade.php and switched by resources/js/theme.js (Light / Dark buttons at the bottom of the sidebar).
+ * Bootstrap follows through data-bs-theme on the same element.
+ *
+ * Light: off-white page, white cards, dark green sidebar, top bar and page headers.
+ * Dark: charcoal-green page, slightly lighter dark cards, near-white text; the same greens for brand and status.
+ *
+ * Most pages are drawn from shared tokens (--ic-*, --color-*, --gl-*, and the .mfd / .mtd page tokens), so a theme is
+ * mainly a token swap; the rules after the tokens cover surfaces that hard-code white. Selectors start with
+ * html[data-theme] so they win over the layout's inline <style> and the per-page styles.
+ */
+
+/* ================================================================== LIGHT */
+html[data-theme="light"] {
+    --ic-page-bg: #eef2ef;
+    /* Dark "glass" (top bar, page headers, tab trays) was translucent over the old green backdrop; on a light page it
+       has to be solid to keep white text readable. */
+    --glass-dark-bg: #164a39;
+    --glass-dark-bg-strong: #0f3d2e;
+    --glass-dark-border: rgba(255, 255, 255, .12);
+    --glass-dark-shadow: 0 6px 18px rgba(15, 61, 46, .18);
+    --gl-shadow: 0 1px 2px rgba(16, 40, 30, .06), 0 4px 14px rgba(16, 40, 30, .06);
+    --gl-border: #dfe6e1;
+    --glass-light-border: #dfe6e1;
+    background: var(--ic-page-bg);
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] body .app-main {
+    background: var(--ic-page-bg) !important;   /* ui-refresh.css paints .app-main green with !important */
+}
+
+html[data-theme="light"] body { color: var(--ic-ink); }
+html[data-theme="light"] body::before { content: none; }
+
+/* Top bar: solid brand green, like the sidebar. */
+html[data-theme="light"] body .topbar {
+    background: #0f3d2e;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgba(15, 61, 46, .14) !important;
+}
+
+/* Text that used to sit straight on the green backdrop. */
+html[data-theme="light"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: var(--ic-ink); }
+html[data-theme="light"] body .dashboard-section-label,
+html[data-theme="light"] body .dashboard-section-label .section-note { color: var(--ic-ink-mid); }
+html[data-theme="light"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: #0f3d2e; border-color: transparent; }
+
+/* ================================================================== DARK */
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --ic-page-bg: #0e1814;
+    --dk-surface: #16231e;
+    --dk-surface-2: #1b2a24;
+    --dk-surface-3: #213229;
+    --dk-field: #111c18;
+    --dk-border: #2a3b33;
+    --dk-border-strong: #36493f;
+    --dk-ink: #e4ece7;
+    --dk-ink-mid: #c3cfc8;
+    --dk-muted: #9fb1a7;
+    --dk-accent: #7fd6b5;
+
+    /* app tokens */
+    --iclimate-surface: var(--dk-surface-2);
+    --iclimate-border: var(--dk-border);
+    --iclimate-text: var(--dk-ink);
+    --iclimate-text-muted: var(--dk-muted);
+    --color-primary-soft: #1c3129;
+    --color-surface: var(--dk-surface);
+    --color-surface-muted: var(--dk-surface-2);
+    --color-border: var(--dk-border);
+    --color-text: var(--dk-ink);
+    --color-text-muted: var(--dk-muted);
+    --ic-ink: var(--dk-ink);
+    --ic-ink-mid: var(--dk-ink-mid);
+    --ic-muted: var(--dk-muted);
+    --ic-border: var(--dk-border);
+    --ic-sand: var(--dk-surface-2);
+    --ic-sand-dark: var(--dk-border);
+    --ic-paper: var(--dk-surface);
+    --ic-panel: var(--dk-surface);
+    --ic-panel-strong: var(--dk-surface-2);
+    --ic-field: var(--dk-field);
+    --ic-green-50: #1c3129;
+    --ic-green-100: rgba(127, 214, 181, .12);
+    --ic-shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+    --ic-shadow-md: 0 6px 16px rgba(0, 0, 0, .3);
+    --ic-shadow-lg: 0 10px 26px rgba(0, 0, 0, .35);
+
+    /* glass tokens */
+    --glass-light-bg: var(--dk-surface);
+    --glass-light-bg-strong: var(--dk-surface);
+    --glass-light-border: var(--dk-border);
+    --glass-light-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    --glass-dark-bg: #123a2c;
+    --glass-dark-bg-strong: #0c271e;
+    --glass-dark-border: rgba(255, 255, 255, .07);
+    --glass-dark-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    --gl-surface: var(--dk-surface);
+    --gl-surface-strong: var(--dk-surface);
+    --gl-surface-soft: var(--dk-surface-2);
+    --gl-border: var(--dk-border);
+    --gl-edge: var(--dk-border);
+    --gl-highlight: inset 0 1px 0 rgba(255, 255, 255, .02);
+    --gl-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .22);
+    --gl-shadow-strong: 0 12px 30px rgba(0, 0, 0, .4);
+    --gl-hover: rgba(127, 214, 181, .1);
+
+    /* Bootstrap (data-bs-theme="dark" supplies the rest) */
+    --bs-body-bg: var(--ic-page-bg);
+    --bs-body-color: var(--dk-ink);
+    --bs-emphasis-color: #ffffff;
+    --bs-secondary-color: var(--dk-muted);
+    --bs-secondary-bg: var(--dk-surface-2);
+    --bs-tertiary-bg: var(--dk-surface-2);
+    --bs-border-color: var(--dk-border);
+    --bs-heading-color: var(--dk-ink);
+    --bs-link-color: var(--dk-accent);
+    --bs-link-hover-color: #a8e6cc;
+    --bs-link-color-rgb: 127, 214, 181;
+    --bs-link-hover-color-rgb: 168, 230, 204;
+
+    background: var(--ic-page-bg);
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] body .app-main {
+    background: var(--ic-page-bg) !important;   /* ui-refresh.css paints .app-main green with !important */
+}
+
+html[data-theme="dark"] body { color: var(--dk-ink); }
+html[data-theme="dark"] body::before { content: none; }
+
+html[data-theme="dark"] body .topbar {
+    background: #0b231b;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: rgba(255, 255, 255, .06);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .3) !important;
+}
+
+/* The farmer, IT and staff page system (.mfd / .itd / .itp) and the MAO dashboard (.mtd) carry their own tokens. */
+html[data-theme="dark"] body :is(.mfd, .mtd) {
+    --bg: var(--ic-page-bg);
+    --card: var(--dk-surface);
+    --line: var(--dk-border);
+    --rule: var(--dk-border-strong);
+    --ink: var(--dk-ink);
+    --ink-2: var(--dk-ink-mid);
+    --muted: var(--dk-muted);
+    --subtle: var(--dk-surface-2);
+    --good-bg: rgba(25, 135, 84, .18);  --good-ink: #8fdcb0;
+    --ok-bg: rgba(25, 135, 84, .18);    --ok-ink: #8fdcb0;
+    --watch-bg: rgba(183, 121, 31, .2); --watch-ink: #f0c47a;
+    --warn-bg: rgba(183, 121, 31, .2);  --warn-ink: #f0c47a;
+    --danger-bg: rgba(192, 57, 43, .2); --danger-ink: #f3a397;
+    --crit-bg: rgba(192, 57, 43, .2);   --crit-ink: #f3a397;
+    --info-bg: rgba(31, 111, 178, .22); --info-ink: #9fcaf0;
+}
+
+/* Text that used to sit straight on the green backdrop. */
+html[data-theme="dark"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: var(--dk-ink); }
+html[data-theme="dark"] body .dashboard-section-label,
+html[data-theme="dark"] body .dashboard-section-label .section-note { color: var(--dk-ink-mid); }
+html[data-theme="dark"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: #0c271e; border-color: rgba(255, 255, 255, .06); }
+
+/* ------------------------------------------------------------------ dark: surfaces that hard-code white */
+html[data-theme="dark"] body :is(.bg-white, .bg-light, .bg-body, .table-light) { background-color: var(--dk-surface) !important; }
+html[data-theme="dark"] body .bg-body-tertiary { background-color: var(--dk-surface-2) !important; }
+html[data-theme="dark"] body :is(.text-dark, .text-black, .text-body) { color: var(--dk-ink) !important; }
+html[data-theme="dark"] body :is(.text-muted, .text-body-secondary, .text-secondary) { color: var(--dk-muted) !important; }
+html[data-theme="dark"] body :is(.border, .border-top, .border-bottom, .border-start, .border-end) { border-color: var(--dk-border) !important; }
+html[data-theme="dark"] body .text-bg-light { background-color: var(--dk-surface-3) !important; color: var(--dk-ink) !important; }
+
+html[data-theme="dark"] body :is(.card, .glass-card, .soft-section, .filter-panel, .farmer-panel, .mao-panel, .it-panel, .weather-live-card) {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body :is(.module-tile, .climate-chip, .stat-card, .risk-level-card, .mao-card, .it-card, .field-card, .quick-action, .priority-card, .details-list dd, .action-cluster, .empty-state) {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .quick-action:hover { background-color: var(--dk-surface-3) !important; }
+html[data-theme="dark"] body :is(.card-header, .card-footer) { background-color: transparent; border-color: var(--dk-border) !important; color: var(--dk-ink); }
+html[data-theme="dark"] body :is(.stat-value, .ic-logout-title) { color: var(--dk-ink); }
+html[data-theme="dark"] body .details-list dt { color: var(--dk-muted); }
+html[data-theme="dark"] body .weather-strip { background: var(--dk-surface-2); border-color: var(--dk-border); color: var(--dk-ink); }
+
+/* forms */
+html[data-theme="dark"] body :is(.form-control, .form-select, .input-group-text) {
+    background-color: var(--dk-field);
+    border-color: var(--dk-border-strong);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body :is(.form-control, .form-select):hover { background-color: var(--dk-field); }
+html[data-theme="dark"] body :is(.form-control, .form-select):focus { background-color: var(--dk-field); color: var(--dk-ink); border-color: var(--dk-accent); }
+html[data-theme="dark"] body .form-control::placeholder { color: #7f9188; }
+html[data-theme="dark"] body .form-control:disabled,
+html[data-theme="dark"] body .form-select:disabled { background-color: var(--dk-surface-2); color: var(--dk-muted); }
+html[data-theme="dark"] body .form-label { color: var(--dk-muted); }
+html[data-theme="dark"] body .form-check-input:not(:checked) { background-color: var(--dk-field); border-color: var(--dk-border-strong); }
+
+/* buttons */
+html[data-theme="dark"] body .btn-light {
+    --bs-btn-bg: var(--dk-surface-2); --bs-btn-border-color: var(--dk-border-strong); --bs-btn-color: var(--dk-ink);
+    --bs-btn-hover-bg: var(--dk-surface-3); --bs-btn-hover-border-color: var(--dk-accent); --bs-btn-hover-color: #fff;
+    --bs-btn-active-bg: var(--dk-surface-3); --bs-btn-active-border-color: var(--dk-accent); --bs-btn-active-color: #fff;
+}
+html[data-theme="dark"] body .page-shell :is(.btn-outline-primary, .btn-outline-success) {
+    --bs-btn-color: var(--dk-accent); --bs-btn-border-color: rgba(127, 214, 181, .5);
+    --bs-btn-hover-bg: rgba(127, 214, 181, .12); --bs-btn-hover-border-color: var(--dk-accent); --bs-btn-hover-color: #fff;
+    background-color: transparent; color: var(--dk-accent); border-color: rgba(127, 214, 181, .5);
+}
+html[data-theme="dark"] body .page-shell :is(.btn-outline-secondary, .btn-outline-dark) {
+    --bs-btn-color: var(--dk-ink-mid); --bs-btn-border-color: var(--dk-border-strong);
+    --bs-btn-hover-bg: var(--dk-surface-3); --bs-btn-hover-border-color: var(--dk-muted); --bs-btn-hover-color: #fff;
+    background-color: transparent; color: var(--dk-ink-mid); border-color: var(--dk-border-strong);
+}
+
+/* tables */
+html[data-theme="dark"] body .table {
+    --bs-table-color: var(--dk-ink);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--dk-border);
+    --bs-table-striped-bg: rgba(255, 255, 255, .025);
+    --bs-table-hover-bg: rgba(127, 214, 181, .06);
+    --bs-table-hover-color: var(--dk-ink);
+    color: var(--dk-ink);
+    border-color: var(--dk-border);
+}
+html[data-theme="dark"] body .table thead th { background: var(--dk-surface-2); color: var(--dk-muted); border-color: var(--dk-border); }
+html[data-theme="dark"] body .table td,
+html[data-theme="dark"] body .table th { border-color: var(--dk-border); }
+html[data-theme="dark"] body .table-hover tbody tr:hover { background: rgba(127, 214, 181, .06) !important; }
+
+/* pop-ups, menus, drawers, toasts */
+html[data-theme="dark"] body :is(.modal-content, .dropdown-menu, .popover, .toast, .ic-logout-card) {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .ic-drawer-panel .modal-content { background: var(--dk-surface); border-color: var(--dk-border); }
+html[data-theme="dark"] body :is(.modal-header, .modal-footer) { border-color: var(--dk-border); }
+html[data-theme="dark"] body .offcanvas:not(.ic-sidebar) { background: var(--dk-surface); color: var(--dk-ink); border-color: var(--dk-border); }
+html[data-theme="dark"] body .dropdown-item { color: var(--dk-ink); }
+html[data-theme="dark"] body .dropdown-item:is(:hover, :focus) { background: var(--dk-surface-3); color: #fff; }
+html[data-theme="dark"] body .modal-backdrop.show,
+html[data-theme="dark"] body .offcanvas-backdrop.show { background: rgba(0, 0, 0, .6); }
+html[data-theme="dark"] body .ic-logout-cancel { background: var(--dk-surface-3); color: var(--dk-ink); }
+html[data-theme="dark"] body .btn-close:not(.btn-close-white) { filter: invert(1) grayscale(100%) brightness(200%); }
+
+/* lists, alerts, pagination, nav tabs */
+html[data-theme="dark"] body .list-group-item { background-color: var(--dk-surface); border-color: var(--dk-border); color: var(--dk-ink); }
+html[data-theme="dark"] body .page-link { background-color: var(--dk-surface); border-color: var(--dk-border); color: var(--dk-accent); }
+html[data-theme="dark"] body .page-item.active .page-link { background-color: #1f5a46; border-color: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .page-item.disabled .page-link { background-color: var(--dk-surface-2); color: var(--dk-muted); }
+html[data-theme="dark"] body .nav-tabs { border-color: var(--dk-border); }
+html[data-theme="dark"] body .nav-tabs .nav-link.active { background-color: var(--dk-surface); border-color: var(--dk-border) var(--dk-border) var(--dk-surface); color: var(--dk-ink); }
+html[data-theme="dark"] body hr { border-color: var(--dk-border); opacity: 1; }
+html[data-theme="dark"] body .page-shell a:not([class]) { color: var(--dk-accent); }
+
+/* Maps keep their own colours (map tiles are photos and drawings, not page surfaces); only their controls follow. */
+html[data-theme="dark"] body .leaflet-control-zoom a,
+html[data-theme="dark"] body .leaflet-bar a { background-color: var(--dk-surface-2); color: var(--dk-ink); border-color: var(--dk-border); }
+html[data-theme="dark"] body .leaflet-popup-content-wrapper,
+html[data-theme="dark"] body .leaflet-popup-tip { background: var(--dk-surface); color: var(--dk-ink); }
+
+/* Scrollbars */
+html[data-theme="dark"] { scrollbar-color: #3a4d44 var(--ic-page-bg); }
+
+/* ------------------------------------------------------------------ dark: farmer page systems (their own tokens) */
+html[data-theme="dark"] body :is(.fad, .fad-modal, .mfd, .mtd, .fcal) { --brand-ink: #7fd6b5; }
+html[data-theme="dark"] body :is(.fad, .fad-modal) {
+    --bg: var(--ic-page-bg); --card: var(--dk-surface); --rule: var(--dk-border-strong); --line: var(--dk-border); --field: var(--dk-border-strong);
+    --ink: var(--dk-ink); --muted: var(--dk-muted); --head: var(--dk-ink-mid); --head-bg: var(--dk-surface-2); --subtle: var(--dk-surface-2);
+    --good-bg: rgba(25, 135, 84, .18); --good-line: rgba(25, 135, 84, .45);
+    --watch-ink: #f0c47a; --watch-bg: rgba(183, 121, 31, .2); --watch-line: rgba(183, 121, 31, .5);
+    --danger-ink: #f3a397; --danger-bg: rgba(192, 57, 43, .2); --danger-line: rgba(192, 57, 43, .5);
+    --info-ink: #9fcaf0; --info-bg: rgba(31, 111, 178, .22); --info-line: rgba(31, 111, 178, .5);
+}
+html[data-theme="dark"] body .fcal {
+    --k-climate-bg: rgba(31, 111, 178, .22); --k-planting-bg: rgba(25, 135, 84, .2); --k-harvesting-bg: rgba(138, 109, 31, .25);
+    --k-irrigation-bg: rgba(19, 132, 150, .22); --k-community-bg: var(--dk-surface-3);
+    --k-climate: #8dbde8; --k-planting: #7fd6a5; --k-harvesting: #e0c27a; --k-irrigation: #7fd0dc; --k-community: var(--dk-ink-mid);
+}
+html[data-theme="dark"] body .risk-overview {
+    --ro-ink: var(--dk-ink); --ro-muted: var(--dk-muted); --ro-rule: var(--dk-border-strong); --ro-line: var(--dk-border); --ro-subtle: var(--dk-surface-2);
+    --ro-brand: #7fd6b5;
+}
+
+/* Quiet buttons, tabs, inputs, chips and rows that are drawn white on purpose in the light theme. */
+html[data-theme="dark"] body :is(
+    .fad-btn.is-quiet:not(.fad-header *), .fad-btn.is-vote, .fad-badge.is-type, .fcal-day, .fad-badge.fcal-kind,
+    .mfd-btn.is-quiet:not(.mfd-header *), .mfd-tab:hover, .mfd-tab.is-active, .mfd-day, .mfd-map summary, .mfd-map-body, .mfd-info-panel,
+    .fpred .wp-advisory, .frec-card, .risk-donut-center:hover, .ic-notif-tab[aria-selected="true"], .ic-notif-item,
+    .itd-chip, .itd-info, .itd-range button, .itd-filters select, .itd-filters input,
+    .mtd-btn.is-quiet, .mtd-attn-icon, .mtd-range button[aria-pressed="true"], .mtd-flag,
+    .iclimate-soft-panel, .iclimate-empty-state, .risk-card, .weather-marker-badge, .risk-map-card, .risk-map-meaning-item,
+    .risk-map-refresh, .risk-map-legend, .risk-map-meaning, .risk-forecast-timeline button, .risk-forecast-overview,
+    .risk-forecast-about-body, .risk-forecast-toolbar, .rf-weather div, .risk-map-detail-close, .weather-mini:hover,
+    .risk-map-tool:hover, button.legend-swatch:hover, button.legend-swatch[aria-pressed="true"], .risk-weather-tile:hover,
+    .ic-collapse > summary
+) {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border-strong);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .fad-field :is(input, select, textarea),
+html[data-theme="dark"] body :is(.fad, .fad-modal) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    background-color: var(--dk-field);
+    color: var(--dk-ink);
+    border-color: var(--dk-border-strong);
+}
+html[data-theme="dark"] body :is(.fcal-day.is-today, .mfd-day.is-today, .fmsg .thread-link.active, .frec-table tbody tr.is-mine > *, .frec-noteitem.is-unread, .ic-notif-item.is-unread, .ic-notif-list.is-full .ic-notif-row:has(.ic-notif-item.is-unread), .itd-table tbody tr:hover td) {
+    background: rgba(127, 214, 181, .09);
+}
+html[data-theme="dark"] body .frec-table tbody tr:nth-child(even) > * { background: rgba(255, 255, 255, .025); }
+html[data-theme="dark"] body :is(.mfd-alert.is-watch, .mfd-farm-tile.is-watch, .itd-table tbody tr.is-flag-privileged td) { background: rgba(183, 121, 31, .14); }
+html[data-theme="dark"] body :is(.mfd-alert.is-danger, .mfd-farm-tile.is-danger, .mfd-empty.is-error, .itd-table tbody tr.is-flag-failed td) { background: rgba(192, 57, 43, .14); }
+html[data-theme="dark"] body .risk-forecast-empty { background: rgba(183, 121, 31, .16); border-color: rgba(183, 121, 31, .45); color: #f0c47a; }
+html[data-theme="dark"] body .risk-forecast-strip span.is-active { background: var(--dk-surface-3); color: var(--dk-ink); }
+html[data-theme="dark"] body .risk-map-meaning-item,
+html[data-theme="dark"] body .risk-map-card :is(h2, h3, h4, strong, p, span) { color: inherit; }
+
+/* Staff page system (.itp): its buttons and message parts force white with !important. */
+html[data-theme="dark"] body .mfd.itd.itp .btn:is(.btn-light, .btn-outline-primary, .btn-outline-success, .btn-outline-secondary, .btn-outline-dark),
+html[data-theme="dark"] body .mfd.itd.itp .btn.btn-outline-danger {
+    background: var(--dk-surface-2) !important;
+}
+html[data-theme="dark"] body .mfd.itd.itp :is(.composer-head-tag, .msg-tab, .bubble-row:not(.mine) .bubble, .msg-compose) {
+    background: var(--dk-surface-2);
+    color: var(--dk-ink);
+    border-color: var(--dk-border-strong);
+}
+html[data-theme="dark"] body .mfd.itd.itp .thread-link.active { background: rgba(127, 214, 181, .09); }
+
+/* Hover states that the light theme paints white with !important (ui-refresh.css). */
+html[data-theme="dark"] body :is(.btn-outline-primary, .btn-outline-success, .fc-btn-outline, .btn-light):hover,
+html[data-theme="dark"] body .quick-action:hover,
+html[data-theme="dark"] body :is(.calendar-page .calendar-day, .wp-calendar-day):hover,
+html[data-theme="dark"] body .calendar-page .upcoming-item:hover,
+html[data-theme="dark"] body .ic-collapse > summary:hover {
+    background-color: var(--dk-surface-3) !important;
+    color: #fff !important;
+}
+html[data-theme="dark"] body :is(.card, .glass-card, .module-tile, .climate-chip, .soft-section, .quick-action, .priority-card, .farmer-panel, .mao-card, .it-card, .feed-post-card, .variable-info-card):hover {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .3) !important;
+}
+
+/* Buttons that stay white on the green page headers keep their dark green text. */
+html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light) { background: #fff; color: #0f5132 !important; border-color: #fff; }
+html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light):hover { background: #e6f4ec; }
+html[data-theme="dark"] body .mfd-tabs { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .mfd-tab { color: var(--dk-ink-mid); }
+html[data-theme="dark"] body :is(.mfd-tab:hover, .mfd-tab.is-active) { background: var(--dk-surface-3); color: #fff; box-shadow: none; }
+
+/* ------------------------------------------------------------------ dark: shared parts that hard-code light colours
+   (found by scanning app.css, ui-refresh.css and glass-system.css for light backgrounds and dark text) */
+html[data-theme="dark"] body .ic-collapse > summary { background: var(--dk-surface-2) !important; background-color: var(--dk-surface-2) !important; color: var(--dk-ink) !important; border-color: var(--dk-border); }
+html[data-theme="dark"] body .ic-collapse > summary:hover { background: var(--dk-surface-3) !important; background-color: var(--dk-surface-3) !important; }
+html[data-theme="dark"] body .table-hover tbody tr:hover,
+html[data-theme="dark"] body :is(table.ic-row-hover tbody tr:hover, .ic-row-hover .ic-table-card-row:hover) { background: rgba(127, 214, 181, .06) !important; }
+/* the sticky Actions column of record tables */
+html[data-theme="dark"] body .table-responsive > .table > :is(thead, tbody) > tr > :is(th, td).text-end:last-child { background: var(--dk-surface); }
+html[data-theme="dark"] body .table-responsive > .table > thead > tr > th.text-end:last-child { background: var(--dk-surface-2); }
+
+html[data-theme="dark"] body .alert-success { background: rgba(25, 135, 84, .16); border-color: rgba(25, 135, 84, .45); color: #a6e3c0; }
+html[data-theme="dark"] body .alert-danger { background: rgba(192, 57, 43, .16); border-color: rgba(192, 57, 43, .45); color: #f3b0a6; }
+html[data-theme="dark"] body .alert-warning { background: rgba(183, 121, 31, .16); border-color: rgba(183, 121, 31, .45); color: #f0c47a; }
+html[data-theme="dark"] body .alert-info { background: rgba(31, 111, 178, .16); border-color: rgba(31, 111, 178, .45); color: #a9d0f2; }
+html[data-theme="dark"] body .alert :is(strong, a, .alert-link) { color: inherit; }
+
+html[data-theme="dark"] body :is(.forecast-day, .forecast-strip-day):hover { background: var(--dk-surface-3) !important; }
+html[data-theme="dark"] body .forecast-day.is-today { background: rgba(25, 135, 84, .16) !important; }
+html[data-theme="dark"] body :is(.forecast-day, .forecast-strip-day).is-wet { background: rgba(31, 111, 178, .16) !important; }
+
+html[data-theme="dark"] body :is(.risk-map-tool, .risk-map-status, .risk-map-legend, .risk-map-legend .legend-swatch, .risk-map-loading, .risk-map-error,
+    .risk-mode-badge, .iclimate-pill, .farmer-org-chart-state, .leaflet-tooltip.risk-map-tooltip, .risk-map-card .leaflet-tooltip) {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border-strong);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body :is(.ic-skeleton, .iclimate-meter) { background: var(--dk-surface-3); }
+html[data-theme="dark"] body .risk-map-error { color: #f3a397; }
+html[data-theme="dark"] body :is(.risk-map-card .risk-map-title, .risk-map-legend-item, .risk-map-legend-item strong, .risk-map-meaning-item, .risk-map-meaning-label,
+    .risk-map-popup strong, .risk-map-detail-content h3, .risk-forecast-for strong, .risk-forecast-overview-head h3, .risk-forecast-facts dd,
+    .risk-forecast-about-body, .risk-forecast-section p, .rf-head h3, .rf-block p, .rf-weather strong) { color: var(--dk-ink); }
+html[data-theme="dark"] body .risk-level-badge-moderate .risk-level-badge-text { color: #3a2a00; }
+
+/* risk overview card (heat map pages and dashboards) */
+html[data-theme="dark"] body .risk-overview { background: var(--dk-surface); }
+html[data-theme="dark"] body .risk-overview-item { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-ink); }
+html[data-theme="dark"] body .risk-overview-item.is-total { background: var(--dk-surface-3); }
+html[data-theme="dark"] body .risk-overview-icon { background: rgba(25, 135, 84, .2); }
+html[data-theme="dark"] body .risk-overview-icon.is-level { background: color-mix(in srgb, var(--risk-color) 22%, var(--dk-surface-2)); }
+html[data-theme="dark"] body .risk-overview-bar { background: var(--dk-surface-3); }
+html[data-theme="dark"] body .risk-donut-center:hover { background: var(--dk-surface-2); }
+
+/* labels and text drawn in fixed dark greys */
+html[data-theme="dark"] body :is(.form-label, .stat-label, .farmer-panel-sub, .mao-label, .mao-note, .mao-value-unit, .it-label, .it-note) { color: var(--dk-muted); }
+html[data-theme="dark"] body .table thead th { color: var(--dk-muted); }
+html[data-theme="dark"] body :is(.dash-overview .kpi-value, .dash-overview .dash-chart h3) { color: var(--dk-ink); }
+html[data-theme="dark"] body .dash-overview .dash-chart-sub { color: var(--dk-muted); }
+html[data-theme="dark"] body .dash-overview .kpi-tile { background: var(--dk-surface-2) !important; }
+
+/* bare inputs (no .form-control class) inside pages */
+html[data-theme="dark"] body .page-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="button"]), select, textarea) {
+    background-color: var(--dk-field);
+    color: var(--dk-ink);
+    border-color: var(--dk-border-strong);
+}
+html[data-theme="dark"] body .page-shell input::placeholder,
+html[data-theme="dark"] body .page-shell textarea::placeholder { color: #7f9188; }
+
+/* ------------------------------------------------------------------ dark: remaining page-system parts */
+html[data-theme="dark"] body :is(.fad-m-x, .mfd-quick-card, .mfd-toast, .itd-chart-state, .ic-chartinfo__panel, .ic-risk-level,
+    .mtd-range, .ic-notif-tabs, .ic-notif-list.is-full .ic-notif-row, .mfd.itd.itp :is(.reaction-trigger, .manage-panel summary, .reaction-count-pill),
+    .fpred .wp-advisory, .fpred :is(.btn-outline-success, .btn-outline-primary, .btn-outline-secondary)) {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border-strong);
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .mfd.itd.itp :is(.form-control, .form-select, .msg-search-input, input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="search"], input[type="date"], textarea, select),
+html[data-theme="dark"] body .fpred :is(.form-control, .form-select) {
+    background-color: var(--dk-field) !important;
+    color: var(--dk-ink) !important;
+    border-color: var(--dk-border-strong) !important;
+}
+html[data-theme="dark"] body :is(.mfd-progress, .mfd-bar, .frec-bar, .itd-meter, .itd-heat td) { background: var(--dk-surface-3); }
+html[data-theme="dark"] body :is(.mfd-skel, .fad-skel, .mfd-chart.is-loading::before) { background: linear-gradient(100deg, var(--dk-surface-2) 30%, var(--dk-surface-3) 50%, var(--dk-surface-2) 70%); background-size: 200% 100%; }
+html[data-theme="dark"] body .mfd-slot.is-loading .mfd-card { background: var(--dk-surface); }
+html[data-theme="dark"] body .mtd-badge.is-high { background: rgba(224, 113, 79, .2); color: #f5b49d; border-color: rgba(224, 113, 79, .45); }
+html[data-theme="dark"] body .frec-tab.is-active .fad-count { background: var(--dk-surface); color: var(--brand-ink); }
+html[data-theme="dark"] body .msg-wrap { --msg-ink: var(--dk-ink); --msg-muted: var(--dk-muted); --msg-line: var(--dk-border); }
+html[data-theme="dark"] body .ic-collapse > summary::after { color: var(--dk-accent); }
+html[data-theme="dark"] body .page-shell .btn-outline-danger {
+    --bs-btn-color: #f3a397; --bs-btn-border-color: rgba(192, 57, 43, .6);
+    --bs-btn-hover-bg: rgba(192, 57, 43, .2); --bs-btn-hover-border-color: #e07264; --bs-btn-hover-color: #fff;
+    background-color: transparent; color: #f3a397; border-color: rgba(192, 57, 43, .6);
+}
+html[data-theme="dark"] body .page-shell :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-success, .btn-outline-danger, .btn-outline-dark):not(:hover) { background-color: transparent; }
+
+/* ------------------------------------------------------------------ dark: community feed (inline styles in community-feed/index) */
+html[data-theme="dark"] body .feed-wrap { --feed-ink: var(--dk-ink); --feed-muted: var(--dk-muted); --feed-line: var(--dk-border); }
+html[data-theme="dark"] body .feed-wrap :is(.feed-card, .feed-post-card, .side-panel, .feed-composer, .feed-hero, .reaction-viewer-card, .manage-panel, .file-tile) {
+    background: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .feed-wrap :is(.feed-composer .feed-card-body, .feed-post-card > .feed-card-body, .feed-post-card .feed-post-head, .composer-surface,
+    .composer-head, .composer-submit-row, .composer-option, .field-box, .comment-bubble, .manage-panel-body, .manage-actions, .reaction-row, .composer-file-chip) {
+    background: var(--dk-surface-2) !important;
+    border-color: var(--dk-border-strong) !important;
+    color: var(--dk-ink);
+}
+html[data-theme="dark"] body .feed-wrap :is(.reaction-trigger, .reaction-count-pill, .manage-panel summary, .manage-actions .btn, .reaction-viewer-close, .composer-option:hover) {
+    background: var(--dk-surface-3) !important;
+    border-color: var(--dk-border-strong) !important;
+    color: var(--dk-ink) !important;
+}
+html[data-theme="dark"] body .feed-wrap :is(.reaction-trigger.active, .composer-option:has(input:checked), .manage-panel[open] summary) {
+    background: rgba(127, 214, 181, .14) !important;
+    border-color: rgba(127, 214, 181, .45) !important;
+}
+html[data-theme="dark"] body .feed-wrap :is(.avatar, .reaction-viewer-avatar, .feed-empty-icon) { background: #1c3129; color: var(--dk-accent); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .feed-wrap .composer-layout .row::before { background: transparent; }
+html[data-theme="dark"] body .feed-wrap :is(h1, h2, h3, h4, h5, strong, .feed-title) { color: var(--dk-ink); }
+html[data-theme="dark"] body .feed-wrap :is(p, small, .small, .text-muted):not(.fad-hero *, .mfd-header *) { color: var(--dk-muted); }
+
+/* ------------------------------------------------------------------ dark: Climora AI chat panel (components/ai-chat-widget) */
+html[data-theme="dark"] body .ic-ai-panel { background: var(--dk-surface); border-color: var(--dk-border); color: var(--dk-ink); }
+html[data-theme="dark"] body :is(.ic-ai-header, .ic-ai-chips, .ic-ai-form) { background: var(--dk-surface-2); border-color: var(--dk-border); }
+html[data-theme="dark"] body .ic-ai-body { background: var(--dk-surface); }
+html[data-theme="dark"] body :is(.ic-ai-title, .ic-ai-card-value, .ai-feature-value) { color: var(--dk-ink); }
+html[data-theme="dark"] body :is(.ic-ai-subtitle, .ic-ai-card-label, .ai-feature-label, .ai-feature-status, .ic-ai-msg-time, .ic-ai-msg.user .ic-ai-msg-time) { color: var(--dk-muted); }
+html[data-theme="dark"] body :is(.ic-ai-minimize, .ic-ai-close) { background: var(--dk-surface-3); color: var(--dk-ink); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body :is(.ic-ai-minimize, .ic-ai-close):hover { background: #2a3d34; }
+html[data-theme="dark"] body :is(.ic-ai-bubble, .ic-ai-msg.assistant .ic-ai-bubble, .ic-ai-card, .ai-feature-row, .ic-ai-typing) { background: var(--dk-surface-2); color: var(--dk-ink); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .ic-ai-msg.user .ic-ai-bubble { background: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .ic-ai-chip { background: var(--dk-surface-3); color: var(--dk-accent); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .ic-ai-chip:hover { background: #2a3d34; }
+html[data-theme="dark"] body .ic-ai-form textarea { background: var(--dk-field); color: var(--dk-ink); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .ic-ai-send { background: #1f5a46; }
+
+/* ------------------------------------------------------------------ dark: Tailwind colour utilities (profile pages and the
+   Breeze components: x-text-input, x-input-label, x-modal, x-dropdown) */
+html[data-theme="dark"] body :is(.text-\[\#1B2B23\], .text-\[\#1A3A2A\], .text-\[\#122B20\]) { color: var(--dk-ink); }
+html[data-theme="dark"] body .text-\[\#44604E\] { color: var(--dk-muted); }
+html[data-theme="dark"] body .text-\[\#2D6A4F\] { color: var(--dk-accent); }
+html[data-theme="dark"] body :is(.bg-\[\#F0F7F4\], .bg-\[\#eaf5e6\]) { background-color: var(--dk-surface-2); }
+html[data-theme="dark"] body .bg-\[\#D8F3DC\] { background-color: rgba(25, 135, 84, .18); }
+html[data-theme="dark"] body .bg-white { background-color: var(--dk-surface-2); }
+html[data-theme="dark"] body :is(.border-\[\#95D5B2\], .border-\[\#D4EDDA\], .border-gray-300) { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body :is(.border-\[\#52B788\], .border-\[\#2D6A4F\]) { border-color: rgba(127, 214, 181, .55); }
+html[data-theme="dark"] body .placeholder-\[\#9DB3A4\]::placeholder { color: #7f9188; }
+html[data-theme="dark"] body .text-red-600 { color: #f3a397; }
+html[data-theme="dark"] body .text-green-600 { color: #8fdcb0; }
+
+/* Keyboard focus: a bright mint ring that stands out on every dark surface. */
+html[data-theme="dark"] body :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--dk-accent); outline-offset: 2px; }
+html[data-theme="dark"] body :is(.form-control, .form-select):focus { box-shadow: 0 0 0 .2rem rgba(127, 214, 181, .25); }
+
+/* ------------------------------------------------------------------ both themes: small contrast fixes found by the audit */
+/* Count bubbles: white on the light sage green was 3.7:1; this green gives 5:1 or better in both themes. */
+html body .ic-collapse-count { background: #3d7a60; }
+/* Info badges: white on the light info blue was 4:1. */
+html body :is(.badge.text-bg-info, .badge.bg-info) { background: #2f6f8f !important; color: #fff !important; }   /* replaces a light-blue gradient */
+
+/* ------------------------------------------------------------------ dark: remaining audit findings */
+html[data-theme="dark"] body { --bs-secondary-color: var(--dk-muted); }   /* ui-refresh.css sets a dark grey on <body> */
+html[data-theme="dark"] body .ic-notif-tab-count { background: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .ic-notif-tab:not([aria-selected="true"]) .ic-notif-tab-count { background: var(--dk-surface-3); color: var(--dk-ink); }
+html[data-theme="dark"] body .fad-hero p { color: rgba(255, 255, 255, .86); }
+/* Warning badges keep dark text on their amber fill. */
+html[data-theme="dark"] body :is(.badge.text-bg-warning, .badge.bg-warning) { color: #2a1f00 !important; }
+/* The map stays light, so its attribution link keeps the light theme's dark green. */
+html[data-theme="dark"] body .leaflet-control-attribution { background: rgba(255, 255, 255, .85); }
+html[data-theme="dark"] body :is(.leaflet-control-attribution a, .page-shell .leaflet-control-attribution a) { color: #0f5132; }
+
+/* MAO operations page: --mao-green stays dark (it fills buttons); where it colours text it becomes mint. */
+html[data-theme="dark"] body :is(.mao-tap-hint, .mao-yoy-down, .dashboard-group-toggle, .mao-console .status-pill:not(.muted)) { color: var(--dk-accent); }
+html[data-theme="dark"] body .mao-console .btn-outline-primary { color: var(--dk-accent) !important; border-color: rgba(127, 214, 181, .55) !important; }
+html[data-theme="dark"] body .mao-console .btn-outline-primary:hover { background: var(--dk-surface-3) !important; color: #fff !important; }
+
+/* MAO operations page (dashboards/mao-operations): its header and section titles were drawn for the old green page
+   backdrop (translucent dark glass, pale titles). Both themes now give the header a solid green and titles ink colour. */
+html[data-theme] body .mao-hero { background: linear-gradient(145deg, #164a39 0%, #1f5a46 100%); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme="dark"] body .mao-hero { background: linear-gradient(145deg, #123a2c 0%, #184a39 100%); border-color: rgba(255, 255, 255, .07); }
+html[data-theme] body .mao-console .dashboard-section-label .section-title { color: var(--ic-ink); }
+
+/* Top bar Menu button (phones / tablets): on keyboard focus Bootstrap switches to the hover text colour (dark ink) while
+   ui-refresh.css keeps the background transparent, leaving dark text on the green bar. Keep it white with a light fill. */
+html[data-theme] body .topbar .btn-outline-primary:focus-visible { color: #fff; background-color: rgba(255, 255, 255, .14); border-color: #fff; }
+/* White outline buttons on green page headers turn white on hover: their text must stay dark green in both themes
+   (--ic-ink is light in dark mode). */
+html[data-theme] body .page-hero .btn-outline-light { --bs-btn-hover-color: #0f3d2e; --bs-btn-active-color: #0f3d2e; }

@@ -22,7 +22,7 @@
             'user-management' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6.5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.3 15c.6-3 2.3-4.6 4.7-4.6s4.1 1.6 4.7 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4.5a2.2 2.2 0 0 1 0 4.3M14.2 10.6c1.5.5 2.4 1.9 2.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'system-health' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2 9h3l1.6-4 3 8 1.9-4H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
             'system-logs' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="2.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 2.5v-.2a1.2 1.2 0 0 1 1.2-1h1.6a1.2 1.2 0 0 1 1.2 1v.2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8h5M6.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            'ai' => '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+            'ai' => '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             default => '',
         };
     };
@@ -92,19 +92,23 @@
             $navLink('Reports', 'reports', 'reports'),
         ];
     } else {
-        // IT Personnel: grouped by purpose; each page appears once.
+        // IT Personnel: four groups so every page fits on a laptop screen without scrolling the menu; each page appears once.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Reports', 'reports', 'reports'),
+            $navLink('Messages', 'messages', 'messages'),
         ];
         $moreGroup = [];
         $publishingGroup = [];
         $itSections = [
-            ['Main', $primaryGroup],
+            ['Main Menu', $primaryGroup],
             ['Management', [
                 $navLink('User Management', 'user-management', 'user-management'),
                 $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
+                $navLink('Planting Advisories', 'advisories', 'advisories'),
+                $navLink('Community Feed', 'community', 'community'),
+                $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             ]],
             ['Data', [
                 $navLink('Climate Records', 'climate-records', 'climate-records'),
@@ -114,14 +118,6 @@
             ['System', [
                 $navLink('System Health', 'system-health', 'system-health'),
                 $navLink('System Logs', 'system-logs', 'system-logs'),
-            ]],
-            ['Content', [
-                $navLink('Planting Advisories', 'advisories', 'advisories'),
-                $navLink('Community Feed', 'community', 'community'),
-                $navLink('Messages', 'messages', 'messages'),
-            ]],
-            ['Support', [
-                $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             ]],
         ];
     }
@@ -134,24 +130,25 @@
             ['Community & Updates', $publishingGroup],
         ], fn ($section) => ! empty($section[1])));
 
-    $renderSidebarNav = function () use ($sidebarSections, $sidebarIcon): string {
+    // Flat sections (a small label over its links); the open page, or any page under it, is marked active.
+    $renderSidebarNav = function (string $idPrefix) use ($sidebarSections, $sidebarIcon): string {
         $html = '';
 
-        foreach ($sidebarSections as [$sectionLabel, $links]) {
-            $html .= '<div class="sidebar-group">';
-            $html .= '<div class="sidebar-section">'.e($sectionLabel).'</div>';
-            $html .= '<div class="sidebar-stack d-grid gap-1">';
+        foreach ($sidebarSections as $index => [$sectionLabel, $links]) {
+            $labelId = $idPrefix.'-section-'.$index;
+            $html .= '<div class="sidebar-group" role="group" aria-labelledby="'.$labelId.'">';
+            $html .= '<div class="sidebar-section" id="'.$labelId.'">'.e($sectionLabel).'</div>';
+            $html .= '<div class="sidebar-stack">';
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $href = $anchor ? route($route).'#'.$anchor : route($route);
                 $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'"'.($active ? ' aria-current="page"' : '').'>';
-                $html .= '<span class="d-flex align-items-center gap-2"><span class="sidebar-icon">'.$sidebarIcon($iconKey).'</span><span>'.e($label).'</span></span>';
-                $html .= '<span class="d-flex align-items-center gap-2">';
+                $html .= '<span class="sidebar-icon" aria-hidden="true">'.$sidebarIcon($iconKey).'</span>';
+                $html .= '<span class="sidebar-label">'.e($label).'</span>';
                 if (! empty($badge)) {
                     $html .= '<span class="sidebar-badge">'.(int) $badge.'</span>';
                 }
-                $html .= '<svg class="sidebar-link-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-                $html .= '</span></a>';
+                $html .= '</a>';
             }
             $html .= '</div>';
             $html .= '</div>';
@@ -160,36 +157,47 @@
         return $html;
     };
 
-    $renderAiCard = function () use ($sidebarIcon): string {
-        return '<button type="button" class="sidebar-ai-card" data-ai-open>'
-            .'<span class="sidebar-ai-icon"><img src="'.e(asset('images/climora-ai-icon.png')).'" alt=""></span>'
-            .'<span><span class="sidebar-ai-title d-block">Climora AI</span><span class="sidebar-ai-sub">Ask me anything!</span></span>'
-            .'</button>';
+    // Light / Dark switch: resources/js/theme.js applies and remembers the choice; the inline script in
+    // layouts/app.blade.php sets it before the first paint so the page never flashes the other theme.
+    $renderSidebarFoot = function (): string {
+        return '<div class="ic-sb-foot">'
+            .'<div class="ic-sb-appearance">'
+            .'<span class="ic-sb-appearance-label" aria-hidden="true">Appearance</span>'
+            .'<div class="ic-theme-switch" role="group" aria-label="Appearance">'
+            .'<button type="button" class="ic-theme-btn" data-theme-set="light" aria-pressed="true">'
+            .'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.8v1.7M9 14.5v1.7M1.8 9h1.7M14.5 9h1.7M3.9 3.9l1.2 1.2M12.9 12.9l1.2 1.2M3.9 14.1l1.2-1.2M12.9 5.1l1.2-1.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+            .'<span>Light</span></button>'
+            .'<button type="button" class="ic-theme-btn" data-theme-set="dark" aria-pressed="false">'
+            .'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M14.8 11.2A6.3 6.3 0 0 1 6.8 3.2a6.3 6.3 0 1 0 8 8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+            .'<span>Dark</span></button>'
+            .'</div>'
+            .'</div>'
+            .'<div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div>'
+            .'</div>';
     };
 @endphp
 
-{{-- The one sidebar of the application shell (layouts/app.blade.php): the same place, width, icons and colours on every
-     page; only the menu items differ by role. On phones and tablets the same menu is the slide-in drawer below. --}}
-<aside class="sidebar-fixed d-none d-lg-flex flex-column" aria-label="Main menu">
+{{-- The one sidebar of the application shell (layouts/app.blade.php) for Farmer, MAO and IT: the same place, width, icons and
+     colours on every page; only the menu items differ by role. Styles: resources/css/sidebar.css. Below 992px the fixed
+     sidebar is hidden and the same menu opens as the slide-in drawer below (button in layouts/navigation.blade.php). --}}
+<aside class="ic-sidebar sidebar-fixed d-none d-lg-flex flex-column" aria-label="Sidebar">
     @include('layouts.partials.sidebar-brand')
-    <div class="px-3 flex-grow-1 sidebar-nav-scroll">
-        {!! $renderSidebarNav() !!}
-    </div>
-    {!! $renderAiCard() !!}
-    <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
+    <nav class="ic-sb-nav sidebar-nav-scroll" aria-label="Main menu">
+        {!! $renderSidebarNav('sb') !!}
+    </nav>
+    {!! $renderSidebarFoot() !!}
 </aside>
 
-<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-    <div class="offcanvas-header" style="border-bottom: 1px solid rgba(255,255,255,.14);">
-        <h5 class="offcanvas-title" id="mobileSidebarLabel" style="color: #fff;">Menu</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body p-0 d-flex flex-column">
+<div class="ic-sidebar ic-sidebar--drawer offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="ic-sb-drawer-head">
         @include('layouts.partials.sidebar-brand')
-        <div class="px-3 flex-grow-1 overflow-auto sidebar-nav-scroll" style="justify-content: flex-start;">
-            {!! $renderSidebarNav() !!}
-        </div>
-        {!! $renderAiCard() !!}
-        <div class="sidebar-foot">&copy; 2026 iClimate Research Group &ndash; Batangas State University ARASOF-Nasugbu</div>
+        <h2 class="visually-hidden" id="mobileSidebarLabel">Menu</h2>
+        <button type="button" class="ic-sb-close" data-bs-dismiss="offcanvas" aria-label="Close menu">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
     </div>
+    <nav class="ic-sb-nav sidebar-nav-scroll overflow-auto" aria-label="Main menu">
+        {!! $renderSidebarNav('dr') !!}
+    </nav>
+    {!! $renderSidebarFoot() !!}
 </div>

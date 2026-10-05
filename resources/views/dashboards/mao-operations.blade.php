@@ -4,6 +4,7 @@
             --mao-ink: #1F2937;
             --mao-muted: #475569;
             --mao-green: #1F5A46;
+            --mao-green-700: #1F5A46;   /* fill of the numbered workflow steps */
             --mao-blue: #4B7185;
             --mao-accent: #8FAF9A;
             --mao-accent-dark: #6F8978;

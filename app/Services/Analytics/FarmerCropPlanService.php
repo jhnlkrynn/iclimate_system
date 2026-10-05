@@ -180,7 +180,9 @@ final class FarmerCropPlanService
      * Rules that tie the activity to the forecast for today and the next two days. Nothing is generated: each line
      * comes from a rule and the forecast value that triggered it.
      *
-     * @return array<int, array{severity: string, text: string}>
+     * `key` and `params` name the rule and its numbers, so the dashboard can say the same thing in the farmer's language.
+     *
+     * @return array<int, array{severity: string, key: string, params: array<string, mixed>, text: string}>
      */
     private function advice(array $activity, array $forecast, CarbonImmutable $today): array
     {
@@ -193,13 +195,13 @@ final class FarmerCropPlanService
             }
             $when = $ahead === 0 ? 'today' : ($ahead === 1 ? 'tomorrow' : 'in '.$ahead.' days');
             if ($rain === null && ($day['rain'] ?? null) !== null && $day['rain'] >= FarmerDashboardService::HEAVY_RAIN_MM) {
-                $rain = ['mm' => $day['rain'], 'when' => $when];
+                $rain = ['mm' => $day['rain'], 'when' => $when, 'ahead' => $ahead];
             }
             if ($wind === null && ($day['wind'] ?? null) !== null && $day['wind'] >= FarmerDashboardService::STRONG_WIND_KMH) {
-                $wind = ['kmh' => $day['wind'], 'when' => $when];
+                $wind = ['kmh' => $day['wind'], 'when' => $when, 'ahead' => $ahead];
             }
             if ($heat === null && ($day['high'] ?? null) !== null && $day['high'] >= FarmerDashboardService::VERY_HOT_C) {
-                $heat = ['c' => $day['high'], 'when' => $when];
+                $heat = ['c' => $day['high'], 'when' => $when, 'ahead' => $ahead];
             }
         }
 
@@ -208,24 +210,24 @@ final class FarmerCropPlanService
         switch ($activity['kind']) {
             case 'fertilizer':
                 if ($rain) {
-                    $out[] = ['severity' => 'warning', 'text' => 'Hold off on the '.$name.': about '.number_format($rain['mm'], 0).' mm of rain is forecast '.$rain['when'].' and can wash fertilizer away. Apply it after the rain, when the field is not flooded.'];
+                    $out[] = ['severity' => 'warning', 'key' => 'fertilizer_rain', 'params' => ['activity' => $activity['key'], 'mm' => number_format($rain['mm'], 0), 'ahead' => $rain['ahead']], 'text' => 'Hold off on the '.$name.': about '.number_format($rain['mm'], 0).' mm of rain is forecast '.$rain['when'].' and can wash fertilizer away. Apply it after the rain, when the field is not flooded.'];
                 }
                 if ($heat && ! $rain) {
-                    $out[] = ['severity' => 'watch', 'text' => 'It will be very hot '.$heat['when'].' (up to '.number_format($heat['c'], 0).'°C). Apply the '.$name.' in the early morning or late afternoon.'];
+                    $out[] = ['severity' => 'watch', 'key' => 'fertilizer_heat', 'params' => ['activity' => $activity['key'], 'temp' => number_format($heat['c'], 0), 'ahead' => $heat['ahead']], 'text' => 'It will be very hot '.$heat['when'].' (up to '.number_format($heat['c'], 0).'°C). Apply the '.$name.' in the early morning or late afternoon.'];
                 }
                 break;
             case 'planting':
             case 'land_prep':
                 if ($rain) {
-                    $out[] = ['severity' => 'warning', 'text' => 'Heavy rain ('.number_format($rain['mm'], 0).' mm) is forecast '.$rain['when'].'. '.($activity['kind'] === 'planting' ? 'Consider planting after the rain, once the field drains, so seedlings are not washed out.' : 'Field work will be hard while the field is flooded; plan it for after the rain.')];
+                    $out[] = ['severity' => 'warning', 'key' => $activity['kind'].'_rain', 'params' => ['mm' => number_format($rain['mm'], 0), 'ahead' => $rain['ahead']], 'text' => 'Heavy rain ('.number_format($rain['mm'], 0).' mm) is forecast '.$rain['when'].'. '.($activity['kind'] === 'planting' ? 'Consider planting after the rain, once the field drains, so seedlings are not washed out.' : 'Field work will be hard while the field is flooded; plan it for after the rain.')];
                 }
                 break;
             case 'harvest':
                 if ($rain) {
-                    $out[] = ['severity' => 'warning', 'text' => 'Rain ('.number_format($rain['mm'], 0).' mm) is forecast '.$rain['when'].'. If your grain is ready, harvest before it, and keep harvested palay covered and dry.'];
+                    $out[] = ['severity' => 'warning', 'key' => 'harvest_rain', 'params' => ['mm' => number_format($rain['mm'], 0), 'ahead' => $rain['ahead']], 'text' => 'Rain ('.number_format($rain['mm'], 0).' mm) is forecast '.$rain['when'].'. If your grain is ready, harvest before it, and keep harvested palay covered and dry.'];
                 }
                 if ($wind) {
-                    $out[] = ['severity' => 'watch', 'text' => 'Strong wind (up to '.number_format($wind['kmh'], 0).' km/h) is forecast '.$wind['when'].' and can lay down ripe rice. Harvest ripe fields first.'];
+                    $out[] = ['severity' => 'watch', 'key' => 'harvest_wind', 'params' => ['kmh' => number_format($wind['kmh'], 0), 'ahead' => $wind['ahead']], 'text' => 'Strong wind (up to '.number_format($wind['kmh'], 0).' km/h) is forecast '.$wind['when'].' and can lay down ripe rice. Harvest ripe fields first.'];
                 }
                 break;
         }

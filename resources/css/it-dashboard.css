@@ -83,7 +83,7 @@
 .itd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px !important; }
 .itd-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 12px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); font-size: .875rem; font-weight: 600; text-decoration: none; }
 .itd-chips li { max-width: 100%; }
-.itd-chip:hover { border-color: var(--brand); color: var(--brand); }
+.itd-chip:hover { border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .itd-chip .mtd-svg { width: 16px; height: 16px; }
 .itd-chip.is-crit { border-color: #f0c2bc; color: var(--danger-ink); }
 .itd-chip.is-warn { border-color: #ecd3a2; color: var(--watch-ink); }
@@ -127,8 +127,8 @@
     flex: none; min-height: 44px; padding: 8px 20px; margin-bottom: -2px; border: 0; border-bottom: 3px solid transparent; border-radius: 4px 4px 0 0;
     background: transparent; color: var(--muted); font-size: .9375rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s;
 }
-.itd-tab:hover { background: var(--good-bg); color: var(--brand); }
-.itd-tab[aria-selected="true"] { background: var(--card); color: var(--brand); border-bottom-color: var(--brand); }
+.itd-tab:hover { background: var(--good-bg); color: var(--brand-ink, var(--brand)); }
+.itd-tab[aria-selected="true"] { background: var(--card); color: var(--brand-ink, var(--brand)); border-bottom-color: var(--brand); }
 
 /* ---------------------------------------------------------------- tables: ruled, striped, scrolling inside their own box */
 .itd-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
@@ -161,7 +161,7 @@
 
 /* ---------------------------------------------------------------- charts */
 .itd-range { display: inline-flex; border: 1px solid var(--brand); border-radius: 4px; overflow: hidden; }
-.itd-range button { min-height: 36px; padding: 6px 14px; border: 0; background: #fff; color: var(--brand); font-size: .875rem; font-weight: 600; cursor: pointer; }
+.itd-range button { min-height: 36px; padding: 6px 14px; border: 0; background: #fff; color: var(--brand-ink, var(--brand)); font-size: .875rem; font-weight: 600; cursor: pointer; }
 .itd-range button + button { border-left: 1px solid var(--brand); }
 .itd-range button:hover { background: var(--good-bg); }
 .itd-range button[aria-pressed="true"] { background: var(--brand); color: #fff; }
@@ -170,7 +170,7 @@
 .itd-chart canvas { cursor: pointer; }
 .itd-chart-state { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 16px; text-align: center; font-weight: 600; color: var(--muted); background: rgba(255, 255, 255, .9); }
 .mfd-chart.is-loading .itd-chart-state { background: transparent; }   /* the shared chart skeleton shows through while loading */
-.itd-spark { display: block; width: 100px; height: 24px; color: var(--brand); }
+.itd-spark { display: block; width: 100px; height: 24px; color: var(--brand-ink, var(--brand)); }
 .itd-spark-cell { min-width: 120px; }
 .itd-spark-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .itd-spark-row .itd-spark { width: 160px; height: 32px; }

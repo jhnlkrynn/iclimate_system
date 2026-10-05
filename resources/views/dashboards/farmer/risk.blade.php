@@ -1,23 +1,40 @@
+{{-- "Farm Condition in Your Barangay": the Heat Map's own rating for the farmer's barangay (BarangayRiskMapService, the
+     same entry the map shows), with what to watch and when it was checked. No map here: the Heat Map page has it. --}}
 @php
     $risk = $f['risk'];
     $title = __('farmer.risk.title');
-    $level = $risk['state'] === 'ok' ? ['low' => 'good', 'moderate' => 'watch', 'high' => 'danger', 'severe' => 'danger'][strtolower($risk['level'])] ?? 'info' : 'info';
 @endphp
 @if ($risk['state'] === 'error')
     @include('dashboards.farmer._error', ['retry' => 'risk', 'title' => $title])
 @else
-    <section class="mfd-card" aria-labelledby="mfdRiskTitle" data-mfd-risk>
-        <div class="mfd-card-head"><h2 id="mfdRiskTitle">{{ $title }}</h2></div>
+    <section class="mfd-card mfd-risk" aria-labelledby="mfdRiskTitle" data-mfd-risk>
+        <div class="mfd-card-head">
+            <h2 id="mfdRiskTitle">{{ $title }}</h2>
+            <a class="mfd-link" href="{{ route('heat-map.index') }}">{{ __('farmer.risk.view') }}</a>
+        </div>
         @if ($risk['state'] === 'ok')
-            <p class="mfd-risk-level">@include('dashboards.farmer._status', ['level' => $level, 'label' => __('farmer.risk.level_line', ['level' => $risk['level_label']])])</p>
-            <p>{{ $risk['meaning'] }}@if ($risk['concern']) {{ __('farmer.risk.concern_line', ['concern' => $risk['concern']]) }}@endif</p>
-            @if ($risk['line'] !== $risk['meaning'])<p class="mfd-muted">{{ $risk['line'] }}</p>@endif
-            <p class="mfd-foot">{{ __('farmer.risk.foot', ['time' => $risk['updated_at'] ? $risk['updated_at']->format('M j, Y, g:i A') : __('farmer.harvest.time_unknown')]) }}</p>
+            <div class="mfd-risk-head">
+                <span class="mfd-risk-place">@include('dashboards.mao.icon', ['name' => 'map']){{ $risk['barangay'] }}</span>
+                @include('dashboards.farmer._status', ['level' => $risk['tone'], 'label' => $risk['level_full']])
+            </div>
+            <p class="mfd-risk-meaning">{{ $risk['meaning'] }}</p>
+            @if ($risk['concern'])
+                <p class="mfd-note is-{{ $risk['tone'] === 'good' ? 'info' : 'watch' }}">@include('dashboards.mao.icon', ['name' => 'alert'])<span><strong>{{ __('farmer.risk.watch') }}:</strong> {{ $risk['concern'] }}</span></p>
+            @endif
+            @if ($risk['line'] !== $risk['meaning'])
+                <p class="mfd-risk-advice"><strong>{{ __('farmer.risk.advice') }}:</strong> {{ $risk['line'] }}</p>
+            @endif
+            @if ($risk['warnings'] !== [])
+                <ul class="mfd-bullets">
+                    @foreach (array_slice($risk['warnings'], 0, 2) as $warning)<li>{{ $warning }}</li>@endforeach
+                </ul>
+            @endif
+            <p class="mfd-foot">@include('dashboards.mao.icon', ['name' => 'clock'])<span>{{ __('farmer.risk.checked', ['time' => $risk['updated_at'] ? $risk['updated_at']->format('M j • g:i A') : '—']) }}. {{ __('farmer.risk.foot') }}</span></p>
         @elseif ($risk['state'] === 'nobarangay')
             <div class="mfd-empty">
                 @include('dashboards.mao.icon', ['name' => 'map'])
                 <div><p><strong>{{ __('farmer.risk.no_barangay') }}</strong></p></div>
-                <a class="mfd-btn" href="{{ route('profile.edit') }}" data-mfd-popup="profile" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.setup.barangay.cta') }}</a>
+                <a class="mfd-btn" href="{{ route('profile.edit') }}" data-mfd-popup="profile" aria-haspopup="dialog" data-fast-nav-bound="true">{{ __('farmer.risk.update_profile') }}</a>
             </div>
         @else
             <div class="mfd-empty">

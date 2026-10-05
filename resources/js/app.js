@@ -13,6 +13,7 @@ import { initFarmerDashboard } from './farmer-dashboard';
 import { initAdvisoryModal } from './farmer-advisories';
 import { initInfoModal } from './info-modal';
 import { initNotificationsPopup } from './notifications-popup';
+import { initTheme, registerChartTheme } from './theme';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -133,6 +134,8 @@ window.iClimateVisualsReady = (async () => {
             Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
             // "ⓘ Learn More" + click-for-explanation on every chart, present and future.
             registerChartExplainer(Chart);
+            // Readable axes, grid and legends in dark mode.
+            registerChartTheme(Chart);
             window.Chart = Chart;
         } catch (error) {
             console.error('iClimate could not load Chart.js.', error);
@@ -164,6 +167,7 @@ Alpine.start();
  * and no prevention of server-side validation/submission.
  */
 function initApp() {
+    initTheme();
     bindNavbarState();
     bindMobileNavigation();
     bindScrollSpy();
@@ -321,8 +325,6 @@ function bindRevealMotion() {
 function bindGestureFeedback() {
     const selectors = [
         '.btn',
-        '.sidebar-link',
-        '.sidebar-ai-card',
         '.ai-chip',
         '.ic-ai-chip',
         '.quick-action',

@@ -290,8 +290,7 @@ class MessagingController extends Controller
 
         return ConversationMessage::query()
             ->whereIn('conversation_id', $conversations->pluck('id'))
-            ->where('sender_id', '!=', $user->id)
-            ->whereNull('read_at')
+            ->unreadFor($user)
             ->selectRaw('conversation_id, count(*) as unread_count')
             ->groupBy('conversation_id')
             ->pluck('unread_count', 'conversation_id');

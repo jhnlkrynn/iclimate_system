@@ -17,6 +17,9 @@ return [
     /* Password shown next to the demo accounts on the login page. */
     'default_account_password' => env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
 
+    /* Password given to it@gmail.com and mao@gmail.com by StaffLoginAccountSeeder. Empty: those accounts are not seeded. */
+    'staff_account_password' => env('ICLIMATE_STAFF_ACCOUNT_PASSWORD'),
+
     /*
     | Where iClimate operates. The single source is App\Support\LianLocation;
     | services.php reads the same constants. The timezone here is the BUSINESS

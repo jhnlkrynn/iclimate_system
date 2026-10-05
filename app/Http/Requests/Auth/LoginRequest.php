@@ -24,6 +24,16 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Emails are stored lowercase, so a stray space or capital letter must not fail a valid sign-in.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('email'))) {
+            $this->merge(['email' => Str::lower(trim($this->input('email')))]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>

@@ -6,7 +6,7 @@
 // Ways to open it:
 //   <a href="/page" data-ic-view>                 the page's content (or its ?modal=1 version) inside the pop-up
 //   <a href="/page" data-ic-view data-ic-select="#part">   only that part of the page
-//   <button data-ic-template="tplId" data-ic-title="…">     the content of <template id="tplId">
+//   <button data-ic-template="tplId" data-ic-title="…">     the content of <template id="tplId"> (data-ic-close-label: the Close button's words)
 //   <form data-ic-confirm="Delete this record?">            asks first (Delete / Archive / Publish …)
 //   window.iClimateModal.open({ title, description, icon, kicker, body, actions, note, size, trigger })
 
@@ -320,6 +320,7 @@ export function initInfoModal() {
                 actions: button.dataset.icHref ? `<a class="fad-btn" href="${escapeHtml(button.dataset.icHref)}">${escapeHtml(button.dataset.icHrefLabel || 'Open page')}</a>` : '',
                 body: template.content.cloneNode(true),
                 trigger: button,
+                closeLabel: button.dataset.icCloseLabel || undefined,
             });
         }
     }, true);

@@ -59,7 +59,7 @@
 }
 .fad-btn:hover { background: #0b3d26; color: #fff; }
 .fad-btn.is-quiet { background: #fff; color: var(--ink); border-color: var(--field); }
-.fad-btn.is-quiet:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand); }
+.fad-btn.is-quiet:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .fad-btn.is-compact { min-height: 40px; padding: 6px 16px; font-size: .875rem; }
 .fad-btn.is-light { background: #fff; color: var(--brand); border-color: #fff; }
 .fad-btn.is-light:hover { background: var(--good-bg); color: var(--brand); }
@@ -73,7 +73,7 @@
     font-size: .75rem; font-weight: 600; line-height: 1.4; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
 }
 .fad-badge .mtd-svg { width: 14px; height: 14px; }
-.fad-badge.is-good { background: var(--good-bg); color: var(--brand); border-color: var(--good-line); }
+.fad-badge.is-good { background: var(--good-bg); color: var(--brand-ink, var(--brand)); border-color: var(--good-line); }
 .fad-badge.is-watch { background: var(--watch-bg); color: var(--watch-ink); border-color: var(--watch-line); }
 .fad-badge.is-danger { background: var(--danger-bg); color: var(--danger-ink); border-color: var(--danger-line); }
 .fad-badge.is-info { background: var(--info-bg); color: var(--info-ink); border-color: var(--info-line); }
@@ -113,7 +113,7 @@
 }
 .fad-card > .fad-label { margin-bottom: 4px; }
 .fad-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
-.fad-details summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; font-size: .9375rem; font-weight: 600; color: var(--brand); list-style: none; }
+.fad-details summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; font-size: .9375rem; font-weight: 600; color: var(--brand-ink, var(--brand)); list-style: none; }
 .fad-details summary::-webkit-details-marker { display: none; }
 .fad-details summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .15s; }
 .fad-details[open] summary::before { transform: rotate(45deg); }
@@ -129,7 +129,7 @@
 :is(.fad, .fad-modal) .fad-filters > summary .fad-label { color: var(--ink); }
 :is(.fad, .fad-modal) .fad-filters > summary::after {
     content: "Show Filters"; margin-left: auto; display: inline-flex; align-items: center; min-height: 36px; padding: 0 2px;
-    font-size: .9375rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--brand) !important;
+    font-size: .9375rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--brand-ink, var(--brand)) !important;
 }
 :is(.fad, .fad-modal) .fad-filters[open] > summary::after { content: "Hide Filters"; }
 :is(.fad, .fad-modal) .fad-filters > summary::before {
@@ -159,7 +159,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%230f5132' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m4 6 4 4 4-4'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important; background-position: right 14px center !important; background-size: 16px 16px !important;
 }
-:is(.fad, .fad-modal) .fad-input::placeholder { color: #7a857f; }
+:is(.fad, .fad-modal) .fad-input::placeholder { color: #66716b; }
 :is(.fad, .fad-modal) .fad-input:hover { border-color: #9fb3a8; }
 :is(.fad, .fad-modal) .fad-input:focus { border-color: var(--brand); outline: 3px solid rgba(31, 111, 178, .35); outline-offset: 1px; }
 .fad-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-top: 4px; padding-right: var(--fab-clear); }
@@ -187,7 +187,7 @@
 .fad-acard-facts dd { margin: 0; font-size: .9375rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 .fad-acard-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 4px; }
 .fad-acard-foot .fad-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: .875rem; }
-.fad-source.is-official { font-weight: 600; color: var(--brand); }
+.fad-source.is-official { font-weight: 600; color: var(--brand-ink, var(--brand)); }
 .fad-view { min-width: 96px; border-radius: 6px; }
 
 .fad-pages { display: flex; justify-content: flex-end; padding-right: var(--fab-clear); }
@@ -220,11 +220,11 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
     background: #fff; color: var(--ink); cursor: pointer;
 }
 .fad-m-x svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.fad-m-x:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand); }
+.fad-m-x:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .fad-m-x:focus-visible, .fad-modal .fad-btn:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 /* One scroll area (the body); header and footer stay in place. Single column so nothing gets squeezed. */
 .fad-m-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 24px 28px 28px; display: grid; gap: 28px; align-content: start; }
-.fad-m-eyebrow { font-size: .875rem; font-weight: 600; color: var(--brand); }
+.fad-m-eyebrow { font-size: .875rem; font-weight: 600; color: var(--brand-ink, var(--brand)); }
 .fad-m-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .9375rem; color: var(--muted); }
 .fad-m-alert { display: inline-flex; align-items: center; gap: 6px; justify-self: start; margin-top: 2px; padding: 4px 10px; border-radius: 999px; font-size: .875rem; font-weight: 600; }
 .fad-m-alert .mtd-svg { width: 16px; height: 16px; }

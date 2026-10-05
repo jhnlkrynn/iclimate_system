@@ -2,11 +2,14 @@
 
 /*
 | Every word on the Farmer dashboard (/farmer/dashboard). Short sentences, common words, written for a farmer reading
-| on a phone. To add Filipino, copy this file to lang/fil/farmer.php and translate the values: nothing else changes.
+| on a phone. lang/fil/farmer.php has the same keys in Filipino: the dashboard has one set of templates and the farmer's
+| language picks the file.
 |
 | Words to avoid on this page: precipitation, relative humidity, heat index, anomaly, deviation, yield prediction,
 | phenological stage, "data unavailable", "synchronization failed", and discouraging words (poor, bad, failure).
 | A real risk is always said plainly, with what to do about it.
+|
+| Never translated: names, barangay names, dates, numbers and units (°C, mm, km/h, ha, t/ha).
 */
 
 return [
@@ -29,11 +32,16 @@ return [
         'js_minutes' => 'Updated :count minutes ago',
         'js_hour' => 'Updated 1 hour ago',
         'js_hours' => 'Updated :count hours ago',
+        'last_updated' => 'Weather last updated: :time',
         'no_update' => 'We do not know when the weather was last updated',
         'old_data' => 'Old data',
         'refresh' => 'Refresh',
         'refreshing' => 'Refreshing…',
         'refresh_label' => 'Refresh the dashboard',
+        'language' => 'Language',
+        'language_label' => 'Choose the dashboard language',
+        'language_apply' => 'Apply',
+        'language_changing' => 'Changing language…',
     ],
 
     'state' => [
@@ -44,6 +52,7 @@ return [
         'offline' => 'You are offline.',
         'seeing_from' => 'You are seeing what loaded at :time.',
         'updated_announce' => 'Dashboard updated.',
+        'language_failed' => "We couldn't change the language. Please try again.",
     ],
 
     'status' => [
@@ -51,6 +60,10 @@ return [
         'watch' => 'Watch',
         'danger' => 'Warning',
         'info' => 'Note',
+    ],
+
+    'when' => [
+        'in_days' => '{1} in 1 day|[2,*] in :count days',
     ],
 
     'weather' => [
@@ -68,22 +81,22 @@ return [
     ],
 
     'now' => [
-        'title' => "Today's Farm Conditions",
-        'temperature' => 'Temperature',
-        'rain' => 'Rainfall',
-        'humidity' => 'Humidity',
         'level' => [
             'temperature' => ['cool' => 'Cool', 'mild' => 'Mild', 'warm' => 'Warm', 'hot' => 'Hot', 'very_hot' => 'Very hot'],
             'rain' => ['none' => 'None', 'light' => 'Light', 'moderate' => 'Moderate', 'heavy' => 'Heavy'],
             'humidity' => ['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High', 'very_high' => 'Very high'],
         ],
-        'source' => 'Weather for Lian • Source: :source • Updated :time',
-        'see_full' => "See the week's weather",
         'raining_amount' => 'Raining now. About :mm mm of rain expected today.',
         'raining' => 'Raining now.',
         'later_amount' => ':condition right now. Rain expected later today (about :mm mm).',
         'later' => ':condition right now. Rain expected later today.',
         'dry' => ':condition right now. No rain expected today.',
+    ],
+
+    'rain_today' => [
+        'now' => 'It is raining now.',
+        'later' => 'Rain is expected later today.',
+        'none' => 'No rain expected today.',
     ],
 
     'heat' => [
@@ -92,11 +105,6 @@ return [
         'extreme_caution' => 'Extreme Caution',
         'danger' => 'Danger',
         'extreme_danger' => 'Extreme Danger',
-    ],
-
-    'advice' => [
-        'title' => 'What You Should Know Today',
-        'ask' => 'Ask Climora AI',
     ],
 
     'actions' => [
@@ -145,142 +153,157 @@ return [
     ],
 
     'alerts' => [
-        'none' => 'No weather warnings',
-        'list_label' => 'Weather warnings',
-        'details' => 'Details',
         'today' => 'today',
         'tomorrow' => 'tomorrow',
         'on_day' => 'on :day',
+        'notice_todo' => 'Open your notifications to read the full warning.',
         'heavy_rain' => [
             'title' => 'Heavy rain expected :when',
-            'message' => 'About :mm mm of rain is coming. Check field drainage and do not spray.',
+            'what' => 'About :mm mm of rain is coming.',
+            'todo' => 'Check field drainage and do not spray.',
         ],
         'strong_wind' => [
             'title' => 'Strong wind expected :when',
-            'message' => 'Winds up to :kmh km/h are coming. Do not spray.',
+            'what' => 'Winds up to :kmh km/h are coming.',
+            'todo' => 'Do not spray, and tie down what the wind can blow away.',
         ],
         'high_heat' => [
             'title' => 'Very hot weather expected :when',
-            'message' => 'Up to :temp°C is coming. Check that your crop has enough water.',
+            'what' => 'Up to :temp°C is coming.',
+            'todo' => 'Check that your rice has enough water. Work early in the morning.',
         ],
-        'risk' => ['title' => 'Farm risk in your barangay is :level'],
+        'risk' => [
+            'title' => 'Farm risk in your barangay is :level',
+            'todo' => 'Check the Heat Map before you work in the field.',
+        ],
         'typhoon' => [
             'title' => 'Typhoon safety check-in is open',
-            'message' => 'Let the Municipal Agriculture Office know if you are safe.',
+            'what' => 'The Municipal Agriculture Office is checking on farmers.',
+            'todo' => 'Let them know if you are safe.',
         ],
     ],
 
-    'source' => [
-        'weather' => 'Online weather service',
-        'weather_calculated' => 'Online weather service (feels like is worked out from temperature and humidity)',
-        'rain_records' => 'Online daily weather records',
-        'rain_vs_normal' => 'Online daily weather records and Ambulong station average',
+    // Weather words from the weather service, said simply.
+    'conditions' => [],
+
+    // ------------------------------------------------------------------ My Farm Today (the numbers)
+    'today' => [
+        'title' => 'My Farm Today',
+        'weather' => 'Weather Now',
+        'feels_like' => 'Feels like :temp°C',
+        'rain' => 'Rain Today',
+        'chance' => ':percent% chance of rain',
+        'condition' => 'Farm Condition',
+        'planting' => 'Planting Status',
+        'day' => 'Day :day after planting',
+        'stage' => ':stage stage',
+        'upcoming' => '{0} Planting today|{1} Planting tomorrow|[2,*] Planting in :count days',
+        'next' => 'Next: :activity',
+        'not_set' => 'Not Set',
+        'planting_why' => 'Add your planting date to receive better guidance.',
+        'set_planting' => 'Set Planting Date',
+        'risk' => 'Barangay Farm Risk',
+        'yield' => 'Rice Yield Forecast',
+        'yield_total' => 'About :tons tons from your :area ha farm',
+        'yield_missing' => 'Yield forecast is not available yet.',
+        'not_available' => 'Not Available',
+        'updated' => 'Updated :time',
+        'view_weather' => 'View Weather',
+        'view_heat_map' => 'View Heat Map',
+        'view_prediction' => 'View Prediction',
+        'learn_more' => 'What does this mean?',
     ],
 
-    'farm' => [
-        'title' => 'My Farm at a Glance',
-        'size' => [
-            'label' => 'Farm Size', 'note' => 'Your registered farm area', 'note_mapped' => 'Your registered farm area in :barangay',
-            'missing' => 'Not Set', 'why' => 'Add your farm size to complete your farm information.', 'cta' => 'Add farm size',
-        ],
-        'planting' => [
-            'label' => 'Planting Status', 'active' => 'Active', 'upcoming' => 'Upcoming',
-            'note' => 'Planted on :date', 'note_upcoming' => 'Planting on :date',
-            'missing' => 'Not Set', 'why' => 'Add your planting date to receive better farming guidance.', 'cta' => 'Set planting date',
-        ],
-        // The reading is for Lian as a whole, so the card says so; it is never called the farm's own weather.
-        'weather' => [
-            'label' => 'Lian Weather', 'note' => 'Lian weather overview, not measured on your farm',
-            'missing' => 'Not Available Yet', 'why' => 'The weather could not be loaded. Use Refresh to try again.',
-        ],
-        'condition' => [
-            'label' => 'Farm Condition',
-            'good' => 'Good', 'watch' => 'Needs Attention', 'danger' => 'High Weather Risk',
-            'note_none' => 'No rain is expected today. Continue regular field monitoring.',
-            'note_light' => 'Rainfall is light today. Continue regular field monitoring.',
-            'note_moderate' => 'Rainfall is moderate today. Continue regular field monitoring.',
-            'note_heavy' => 'Heavy rainfall is expected today. Check that water can drain from your field.',
-            'note_default' => 'No warnings right now. Continue regular field monitoring.',
-            'missing' => 'Not Available Yet', 'why' => 'This shows once the weather or your barangay rating is available.',
-        ],
+    'condition' => [
+        'good' => 'Good', 'watch' => 'Watch', 'danger' => 'Needs Attention',
+        'note_none' => 'No rain is expected today. Conditions are manageable.',
+        'note_light' => 'Only light rain today. Conditions are manageable.',
+        'note_moderate' => 'Some rain today. Conditions are manageable.',
+        'note_heavy' => 'Heavy rain is expected today. Check that water can drain from your field.',
+        'note_default' => 'No warnings right now. Conditions are manageable.',
+        'missing' => 'This shows once the weather or your barangay rating is available.',
     ],
 
-    'more' => [
-        'summary' => 'More rain and risk details for your area',
+    // ------------------------------------------------------------------ Today's Highlights
+    'highlights' => [
+        'title' => "Today's Highlights",
+        'intro' => 'The most important things for your farm today.',
+        'todo' => 'What to do:',
+        'ask' => 'Ask Climora AI',
+        'kicker' => [
+            'warning' => 'Warning',
+            'watch' => 'Watch',
+            'today' => 'What to do today',
+            'activity' => 'Farm activity',
+            'week' => 'Later this week',
+            'advisory' => 'New farming advice',
+        ],
+        'link' => [
+            'rain' => 'View Weather', 'wind' => 'View Weather', 'heat' => 'View Weather',
+            'risk' => 'View Heat Map', 'typhoon' => 'View Advisories', 'notice' => 'View Notifications',
+            'calendar' => 'View Calendar', 'advisory' => 'View Advisory',
+        ],
+        'activity_now' => ':activity is due now',
+        'activity_until' => 'Until :date.',
+        'activity_soon' => '{0} :activity starts today|{1} :activity starts tomorrow|[2,*] :activity starts in :count days',
+        'activity_on' => 'Starts on :date.',
+        'activity_todo' => [
+            'land_prep' => 'Prepare your field for planting.',
+            'planting' => 'Prepare your seedlings and your field.',
+            'fertilizer' => 'Get your fertilizer ready and check the weather before you apply it.',
+            'harvest' => 'Get ready to harvest and keep harvested palay dry.',
+        ],
+        'risk_title' => ':level in :barangay',
+        'week_rain' => 'Heavy rain expected on :day',
+        'week_todo' => 'Plan spraying and fertilizer for the drier days.',
     ],
 
-    'kpi' => [
-        'title' => 'Rain and Spraying This Week',
-        'source' => 'Source: :source • :time',
-        'updated' => 'updated :time',
-        'no_time' => 'update time not known',
-        'rain_past' => [
-            'label' => 'Rain this past week',
-            'meaning_none' => 'No rain was recorded in the last 7 days.',
-            'meaning_light' => 'A little rain fell in the last 7 days.',
-            'meaning_moderate' => 'A fair amount of rain fell in the last 7 days.',
-            'meaning_heavy' => 'A lot of rain fell in the last 7 days. Check your field for standing water.',
-            'trend_up' => 'More than the week before (:mm mm)',
-            'trend_down' => 'Less than the week before (:mm mm)',
-            'trend_flat' => 'About the same as the week before (:mm mm)',
-        ],
-        'rain_next' => [
-            'label' => 'Rain coming this week',
-            'label_days' => 'Rain coming in the next :days days',
-            'meaning_none' => 'No rain is expected.',
-            'meaning_light' => 'Only a little rain is expected.',
-            'meaning_moderate' => 'A fair amount of rain is expected.',
-            'meaning_heavy' => 'A lot of rain is expected. Plan field work around it.',
-            'trend_up' => 'More than this past week (:mm mm)',
-            'trend_down' => 'Less than this past week (:mm mm)',
-            'trend_flat' => 'About the same as this past week (:mm mm)',
-        ],
-        'rain_vs_normal' => [
-            'label' => 'Rain compared to normal (this month)',
-            'detail' => ':mtd mm so far. Usual for the first :days days: :normal mm.',
-        ],
-        'heat' => [
-            'label' => 'Heat today',
-            'headline' => 'Heat today: :level',
-            'meaning_normal' => 'It will not feel dangerously hot.',
-            'meaning_caution' => 'It may feel tiring to work in the sun for a long time.',
-            'meaning_extreme_caution' => 'Heat cramps and exhaustion are possible. Rest in the shade and drink water.',
-            'meaning_danger' => 'Heat stroke is possible. Work early in the morning and rest often.',
-            'meaning_extreme_danger' => 'Heat stroke is very likely. Avoid working in the sun.',
-        ],
-        'work_days' => [
-            'label' => 'Good days for spraying',
-            'meaning' => 'Days with under :rain% chance of rain and wind under :wind km/h.',
-            'of' => 'Out of :judged days checked',
-        ],
-        'alerts' => [
-            'label' => 'Alerts that need your attention',
-            'none' => 'Nothing needs your attention right now.',
-            'some' => 'Read these warnings before you go to the field.',
-            'source' => 'iClimate alerts',
-        ],
+    // ------------------------------------------------------------------ Weather for Lian
+    'weather_card' => [
+        'title' => 'Weather for Lian, Batangas',
+        'humidity' => 'Humidity',
+        'wind' => 'Wind',
+        'heat' => 'Hottest it will feel today',
+        'scope' => 'Weather for the whole of Lian, not measured on your farm.',
+        'source' => 'Source: :source • Updated :time',
+        'next_days' => 'Next Few Days',
+        'today' => 'Today',
+        'good_day' => 'Good for spraying',
+        'flag_heavy_rain' => 'Heavy rain',
+        'flag_strong_wind' => 'Strong wind',
+        'flag_high_heat' => 'Very hot',
+        'chance_short' => ':percent% rain',
+        'view_full' => 'View Full Forecast',
+        'empty' => 'The weather for the coming days is not available yet.',
+        'error' => 'Weather information is temporarily unavailable.',
     ],
 
-    'rain_vs_normal' => [
-        'more' => 'More than usual',
-        'normal' => 'Normal',
-        'less' => 'Less than usual',
+    'week' => [
+        'takeaway_none' => 'We do not have rain amounts for the coming days.',
+        'takeaway_dry' => 'No real rain is expected in the coming days.',
+        'takeaway_wet' => 'The wettest day is :day, with about :mm mm of rain.',
     ],
 
-    'reason' => [
-        'rain_records_missing' => 'We only have rain records for :found of the last 7 days.',
-        'rain_records_missing_month' => 'We only have rain records for :found of :needed days this month.',
-        'forecast_rain_missing' => 'The rain amounts coming are not available yet.',
-        'forecast_missing' => 'The weather coming is not available right now.',
-        'month_just_started' => 'The month just started. Check again tomorrow.',
-        'no_normal' => 'We do not have enough past years to say what is usual.',
-        'heat_missing' => "We can't work out how hot it will feel today.",
-        'work_days_missing' => "We can't tell which days are good for work right now.",
-        'no_planting_date' => 'Add your planting date to see this.',
-        'not_planted_yet' => 'Planting is in :days days.',
+    // ------------------------------------------------------------------ My Farm Schedule
+    'schedule' => [
+        'title' => 'My Farm Schedule',
+        'planting_date' => 'Planting date',
+        'stage' => 'Current stage',
+        'day_of' => 'Day :day of about :total',
+        'not_planted' => '{0} Planting is today|{1} Planting is tomorrow|[2,*] Planting is in :count days',
+        'now' => 'Due now',
+        'until' => 'until :date',
+        'next' => 'Next farm activity',
+        'harvest' => 'Expected harvest',
+        'none_next' => 'No more activities before harvest.',
+        'more_plots' => '{1} You have 1 more plot in your calendar.|[2,*] You have :count more plots in your calendar.',
+        'empty_title' => 'Planting schedule is not set.',
+        'empty_text' => 'Add your planting date to receive farm reminders.',
+        'set' => 'Set Planting Date',
+        'view' => 'View Calendar',
+        'edit' => 'Change this plan',
+        'foot' => 'Activities follow a usual rice calendar counted from your own planting date. Follow MAO advisories first.',
     ],
-
-    'units' => ['days' => 'days'],
 
     'stages' => [
         'land_prep' => 'Land preparation',
@@ -291,145 +314,203 @@ return [
         'harvest' => 'Harvest',
     ],
 
-    'week' => [
-        'title' => 'Weather This Week',
-        'see_full' => "See the week's weather",
-        'good_legend' => 'Good for spraying and fertilizer: under :rain% chance of rain and wind under :wind km/h.',
-        'today' => 'Today',
-        'high_low' => 'high / low',
-        'chance' => ':percent% chance of rain',
-        'good_day' => 'Good day for farm work',
-        'flag_heavy_rain' => 'Heavy rain',
-        'flag_strong_wind' => 'Strong wind',
-        'flag_high_heat' => 'Very hot',
-        'rain_chart_title' => '7-Day Rainfall (mm)',
-        'each_day' => 'See each day',
-        'rain_chart_label' => 'Bar chart of the rain expected each day this week, in millimeters, with a dashed line at the heavy rain level.',
-        'temp_chart_title' => 'High and low temperature each day (°C)',
-        'temp_chart_label' => 'Line chart of the highest and lowest temperature each day this week, in degrees Celsius.',
-        'col_day' => 'Day',
-        'col_rain' => 'Rain (mm)',
-        'col_high' => 'High (°C)',
-        'col_low' => 'Low (°C)',
-        'foot' => 'Weather for Lian, Batangas. It can change, so check again before big farm work.',
-        'empty' => 'The weather for the coming days is not available yet.',
-        'takeaway_none' => 'We do not have rain amounts for the coming days.',
-        'takeaway_dry' => 'No real rain is expected this week.',
-        'takeaway_wet' => 'The wettest day is :day, with about :mm mm of rain.',
-        'temp_takeaway' => 'The hottest day is :day, up to :temp°C.',
+    // Crop calendar activities (FarmerCropPlanService milestone keys).
+    'milestones' => [
+        'land_prep' => 'Land preparation',
+        'planting' => 'Planting',
+        'basal' => 'Fertilizer at planting',
+        'topdress1' => 'First extra fertilizer',
+        'topdress2' => 'Second extra fertilizer',
+        'harvest' => 'Harvest',
     ],
 
-    'season' => [
-        'title' => 'My Crop Season',
-        'empty_title' => 'Add your planting date to see your crop calendar',
-        'empty_reason' => 'You will see each crop stage, your expected harvest dates and reminders for farm work.',
-        'add' => 'Add planting date',
-        'open_calendar' => 'Open Calendar',
-        'plot' => 'Plot :n',
-        'day_of' => 'Day :day of about :total',
-        'stage_line' => ':stage stage',
-        'progress_label' => 'How far along the crop season is',
-        'stages_label' => 'Crop stages',
-        'state_done' => 'Done',
-        'state_current' => 'Now',
-        'state_upcoming' => 'Coming up',
-        'harvest_dates' => 'Expected harvest',
-        'next_task' => 'Next task',
-        'edit' => 'Change this plan',
-        'more' => '{1} And 1 more plot in your calendar.|[2,*] And :count more plots in your calendar.',
-        'foot' => 'The stages are a usual rice calendar counted from your own planting and harvest dates. Follow the Municipal Agriculture Office advisories first.',
+    // Weather advice for the activity (FarmerCropPlanService advice keys).
+    'crop_advice' => [
+        'fertilizer_rain' => 'Hold off on the :activity: about :mm mm of rain is expected :when. Apply it after the rain, when the field is not flooded.',
+        'fertilizer_heat' => 'It will be very hot :when (up to :temp°C). Apply the :activity in the early morning or late afternoon.',
+        'planting_rain' => 'Heavy rain (:mm mm) is expected :when. Plant after the rain, once the field drains, so seedlings are not washed out.',
+        'land_prep_rain' => 'Heavy rain (:mm mm) is expected :when. Field work is hard in a flooded field, so plan it for after the rain.',
+        'harvest_rain' => 'Rain (:mm mm) is expected :when. If your grain is ready, harvest before it and keep harvested palay covered and dry.',
+        'harvest_wind' => 'Strong wind (up to :kmh km/h) is expected :when and can knock down ripe rice. Harvest ripe fields first.',
     ],
 
-    'harvest' => [
-        'title' => 'Rice Yield Forecast',
-        'not_ready' => 'Yield forecast is not available yet.',
-        'complete' => 'Complete Farm Information',
-        'estimated' => 'Estimated yield',
-        'unit' => 'tons/ha',
-        'typical_label' => 'Expected range:',
-        'typical' => ['above' => 'Above typical range', 'typical' => 'Normal', 'below' => 'Below typical range'],
-        'typical_below_note' => 'Review current farm and climate conditions for possible adjustments.',
-        'reason_service' => "The estimate service is not answering right now. This is not about your farm. Try again in a few minutes.",
-        'reason_records' => 'iClimate does not have enough weather records yet to estimate your harvest. This is not about your farm. It will show here once the records are complete.',
-        'reason_missing_planting' => 'Add your planting date.',
-        'reason_missing_area' => 'Add your farm size.',
-        'reason_missing_planting_area' => 'Add your planting date and farm size.',
-        'add_area' => 'Add farm size',
-        'needs_script' => 'Turn on JavaScript or reload the page to see your harvest estimate.',
-        'see_more' => 'See details',
-        'range' => 'Usually between :low and :high tons/ha',
-        'for_month' => 'Expected for :month',
-        'expected' => 'Expected harvest',
-        'meaning' => 'Estimated from your available farm and climate information. It is not a harvest record and can change with the weather.',
-        'total' => 'About :tons tons from your :area ha farm.',
-        'total_missing' => 'Add your farm size to see how many tons you may harvest.',
-        'compare_title' => 'Compared with the average',
-        'above' => 'About :percent% more than the :scope (:avg tons/ha).',
-        'below' => 'About :percent% less than the :scope (:avg tons/ha).',
-        'avg_month' => 'Lian average for :month',
-        'avg_all' => 'Lian average for all months',
-        'yours' => 'Your estimated yield',
-        'own_past' => 'Your own past harvests (:count)',
-        'avg_foot' => 'The average is for all of Lian, from records for :from to :to. It is not for your barangay or your farm.',
-        'source' => 'Estimate made by iClimate on :time.',
-        'time_unknown' => 'a date we do not know',
-    ],
-
-    'rain' => [
-        'title' => 'Rain Each Month',
-        'summary' => 'Show rain each month (:year records)',
-        'summary_more' => ':month had :mm mm of rain, about :percent% more than usual.',
-        'summary_less' => ':month had :mm mm of rain, about :percent% less than usual.',
-        'summary_normal' => ':month had :mm mm of rain, about the usual amount.',
-        'summary_no_normal' => ':month had :mm mm of rain. We do not have enough past years to say what is usual.',
-        'empty' => 'We do not have monthly rain records yet.',
-        'chart_title' => 'Rain each month in :year compared with usual (mm)',
-        'chart_label' => 'Bar chart of the rain in each month of :year next to the usual rain for that month, in millimeters.',
-        'col_month' => 'Month',
-        'col_year' => 'Rain in :year (mm)',
-        'col_usual' => 'Usual rain (mm)',
-        'station' => 'Measured at Ambulong station (nearest PAGASA station, in Tanauan). Rain in your barangay may be different.',
-        'older' => 'The latest records from Ambulong station are for :year.',
-        'usual_note' => 'Usual rain is the average of the other years on record for that month. A month needs at least :years years of records.',
-    ],
-
+    // ------------------------------------------------------------------ Farm Condition in Your Barangay
     'risk' => [
-        'title' => 'Farm Risk in Your Barangay',
+        'title' => 'Farm Condition in Your Barangay',
         'level' => ['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High', 'severe' => 'Severe'],
+        'level_full' => ['low' => 'Low Risk', 'moderate' => 'Moderate Risk', 'high' => 'High Risk', 'severe' => 'Severe Risk'],
         'meaning' => [
-            'low' => 'Conditions in your barangay look manageable for now.',
+            'low' => 'Conditions are manageable today.',
             'moderate' => 'Some conditions in your barangay need watching.',
-            'high' => 'The weather in your barangay suggests a higher chance of crop trouble.',
-            'severe' => 'The weather in your barangay suggests a high chance of crop trouble.',
+            'high' => 'The weather in your barangay may cause crop problems.',
+            'severe' => 'The weather in your barangay is likely to cause crop problems.',
         ],
         'concern' => [
-            'flood' => 'Main worry: too much water (flood).',
-            'drought' => 'Main worry: too little water (dry spell).',
-            'typhoon' => 'Main worry: strong wind (typhoon).',
-            'heat' => 'Main worry: heat.',
+            'flood' => 'too much water (flooding)',
+            'drought' => 'too little water (dry spell)',
+            'typhoon' => 'strong wind (typhoon)',
+            'heat' => 'hot weather',
         ],
-        'level_line' => ':level risk',
-        'concern_line' => ':concern',
-        'foot' => 'A planning guide, not an official hazard warning. Checked on :time.',
+        'watch' => 'Main thing to watch',
+        'advice' => 'Advice for planting',
+        'checked' => 'Last checked: :time',
+        'foot' => 'The same rating as the Heat Map. A planning guide, not an official hazard warning.',
         'no_barangay' => 'Add your barangay to see farm risk for your area.',
         'no_rating' => 'We do not have a risk rating for your barangay yet.',
         'no_rating_reason' => 'It is made from the latest weather. Try again in a few minutes.',
-        'map_summary' => 'Show risk map and barangay details',
-        'map_note' => 'Farm risk is a planning guide only. It is not an official hazard warning.',
-        'map_heading' => 'Lian Municipality Risk Map',
-        'map_subheading' => 'All 19 barangays at a glance, using the weather right now. Tap a barangay for details.',
+        'update_profile' => 'Update profile',
+        'view' => 'View Heat Map',
+    ],
+
+    // ------------------------------------------------------------------ Rice Yield Forecast
+    'harvest' => [
+        'title' => 'Rice Yield Forecast',
+        'not_ready' => 'Rice yield forecast is not available yet.',
+        'still_need' => 'We still need:',
+        'need' => ['area' => 'Farm size', 'planting' => 'Planting date'],
+        'complete' => 'Complete Farm Information',
+        'expected' => 'Expected yield',
+        'for_month' => 'For :month',
+        'unit' => 't/ha',
+        'range' => 'Usually between :low and :high t/ha',
+        'total' => 'For your :area ha farm: about :tons tons.',
+        'total_missing' => 'Add your farm size to see how many tons you may harvest.',
+        'add_area' => 'Add farm size',
+        'typical_label' => 'Compared with usual:',
+        'typical' => ['above' => 'Above usual', 'typical' => 'Normal', 'below' => 'Below usual'],
+        'compare' => 'Lian average for :scope: :avg t/ha.',
+        'scope_month' => ':month',
+        'scope_all' => 'all months',
+        'own_past' => 'Your own past harvests: :avg t/ha (:count recorded).',
+        'meaning' => 'An estimate from your farm and weather information, the same one on the Predictions page. It can change with the weather.',
+        'source' => 'Forecast updated: :time',
+        'reason_service' => 'The estimate service is not answering right now. This is not about your farm. Try again in a few minutes.',
+        'reason_records' => 'iClimate does not have enough weather records yet to estimate your harvest. It will show here once the records are complete.',
+        'reason_missing' => 'Complete your farm information first.',
+        'needs_script' => 'Turn on JavaScript or reload the page to see your harvest estimate.',
+        'view' => 'View Prediction',
+    ],
+
+    'production' => [
+        'title' => 'Past harvest record for :barangay',
+        'line' => ':yield t/ha (:when:season)',
+        'season' => ['wet' => ', Wet season', 'dry' => ', Dry season'],
+        'note' => 'A recorded past harvest, not this season.',
+        'view' => 'View Rice Production',
+    ],
+
+    // ------------------------------------------------------------------ Latest Farming Advice
+    'advisories' => [
+        'title' => 'Latest Farming Advice',
+        'for_farmers' => 'For farmers:',
+        'your_barangay' => 'For your barangay',
+        'new' => 'New',
+        'read' => 'View Advisory',
+        'read_label' => 'View advisory: :title',
+        'all' => 'View All Advisories',
+        'today' => 'Today',
+        'yesterday' => 'Yesterday',
+        'empty' => 'There is no farming advice for your area right now.',
+    ],
+
+    // ------------------------------------------------------------------ My Farm
+    'my_farm' => [
+        'title' => 'My Farm',
+        'barangay' => 'Barangay',
+        'size' => 'Farm Size',
+        'planting' => 'Planting Date',
+        'mapped_in' => 'Mapped in :barangay',
+        'not_set' => 'Not set',
+        'water' => [
+            'irrigated' => 'Irrigated (canal or pump)',
+            'rainfed' => 'Rainfed (rain only)',
+        ],
+        'water_label' => 'Water Source',
+        'still_needed' => 'Still needed',
+        'complete' => 'Complete Farm Information',
+        'done' => 'Your farm information is complete.',
     ],
 
     'setup' => [
-        'title' => 'Finish Setting Up Your Farm',
         'progress' => ':done of :total done',
-        'barangay' => ['title' => 'Add your barangay', 'benefit' => 'to see farm risk and advisories for your area.', 'cta' => 'Update profile'],
-        'farm_type' => ['title' => 'Choose your farm type', 'benefit' => 'so your expected harvest fits how your farm gets water (irrigated or rain only).', 'cta' => 'Update profile'],
-        'farm_area' => ['title' => 'Add your farm size', 'benefit' => 'to see how many tons your farm may produce, not just tons per hectare.', 'cta' => 'Add farm size'],
-        'boundary' => ['title' => 'Draw your farm on the map', 'benefit' => 'so your farm size comes from your own map.', 'cta' => 'Map my farm'],
-        'harvest' => ['title' => 'Record your harvest', 'benefit' => 'so your harvest is compared with your own past harvests.', 'cta' => 'Record harvest'],
+        'barangay' => ['title' => 'Add your barangay', 'short' => 'Barangay', 'benefit' => 'to see farm risk and advice for your area.', 'cta' => 'Update profile'],
+        'farm_type' => ['title' => 'Choose your water source', 'short' => 'Water source', 'benefit' => 'so your yield forecast fits how your farm gets water.', 'cta' => 'Update profile'],
+        'farm_area' => ['title' => 'Add your farm size', 'short' => 'Farm size', 'benefit' => 'to see how many tons your farm may produce.', 'cta' => 'Add farm size'],
+        'boundary' => ['title' => 'Draw your farm on the map', 'short' => 'Farm map', 'benefit' => 'so your farm size comes from your own map.', 'cta' => 'Map my farm'],
+        'harvest' => ['title' => 'Record your harvest', 'short' => 'Harvest record', 'benefit' => 'so your forecast is compared with your own harvests.', 'cta' => 'Record harvest'],
     ],
 
+    // ------------------------------------------------------------------ Reminders and updates
+    'updates' => [
+        'title' => 'Reminders & Updates',
+        'reminders' => 'Reminders',
+        'none' => 'You are all caught up.',
+        'community' => 'Community Update',
+        'community_none' => 'No community posts yet.',
+        'community_by' => ':author • :date',
+        'mao' => 'Municipal Agriculture Office',
+        'messages' => 'Messages',
+        'messages_count' => '{0} No unread messages|{1} 1 unread message|[2,*] :count unread messages',
+        'messages_unknown' => 'Open Messages to see your conversations.',
+        'notifications' => 'Notifications',
+        'notifications_count' => '{0} No unread notifications|{1} 1 unread notification|[2,*] :count unread notifications',
+        'view_community' => 'View Community',
+        'view_messages' => 'View Messages',
+        'view_notifications' => 'View Notifications',
+        'open' => 'Open',
+    ],
+
+    'reminders' => [
+        'activity' => '{0} Next farm activity: :activity starts today|{1} Next farm activity: :activity starts tomorrow|[2,*] Next farm activity: :activity in :count days',
+        'setup' => '{1} Farm information: :first still needs to be added|[2,*] Farm information: :count details still need to be added',
+        'advisories' => '{1} 1 new farming advisory this week|[2,*] :count new farming advisories this week',
+        'messages' => '{1} 1 unread message|[2,*] :count unread messages',
+        'notifications' => '{1} 1 unread notification|[2,*] :count unread notifications',
+    ],
+
+    // ------------------------------------------------------------------ Quick Actions
+    'quick' => [
+        'title' => 'Quick Actions',
+        'not_set' => 'Not set',
+        'ai' => ['title' => 'Ask Climora AI', 'text' => 'Ask about your rice farm, the weather or pests.'],
+        'farm' => [
+            'add' => 'Update Farm Information', 'update' => 'Update Farm Information', 'text' => 'Your farm size and water source.',
+            'popup_title' => 'Farm Information', 'popup_intro' => 'Add or update your basic farm details.',
+        ],
+        'map' => ['add' => 'Map My Farm', 'update' => 'Map My Farm', 'text' => 'Mark where your farm is in Lian, Batangas.'],
+        'plan' => ['add' => 'Planting Plan', 'update' => 'Planting Plan', 'text' => 'Set your planting date for this season.'],
+    ],
+
+    // ------------------------------------------------------------------ "What does this mean?" pop-ups
+    'learn' => [
+        'kicker' => 'Farmer Dashboard',
+        'meaning' => 'What does this mean?',
+        'todo' => 'What should I do?',
+        'chance' => [
+            'title' => 'Chance of rain',
+            'very_likely' => 'A :percent% chance of rain means rain is very likely somewhere in Lian today.',
+            'possible' => 'A :percent% chance of rain means rain is possible in Lian today.',
+            'unlikely' => 'A :percent% chance of rain means rain is not likely in Lian today.',
+            'todo' => 'Check the weather again before you spray or apply fertilizer.',
+        ],
+        'condition' => [
+            'title' => 'Farm condition',
+            'meaning' => 'Good means no warnings today. Watch means something needs your attention. Needs Attention means a real warning for today or the next days.',
+            'todo' => 'Read Today\'s Highlights below. They say what is happening and what to do.',
+        ],
+        'risk' => [
+            'title' => 'Barangay farm risk',
+            'meaning' => 'This is the same rating shown for your barangay on the Heat Map. It looks at the weather and past rice harvests in your area.',
+            'todo' => 'When the risk is Moderate or higher, check your field more often and follow MAO advisories.',
+        ],
+        'yield' => [
+            'title' => 'Rice yield forecast',
+            'meaning' => 't/ha means tons of palay per hectare. It is an estimate from your farm and the weather, not a harvest record.',
+            'todo' => 'Keep your farm size and planting date up to date so the estimate fits your farm.',
+        ],
+    ],
+
+    // ------------------------------------------------------------------ pop-ups (unchanged keys used by the save endpoints)
     'planting_info' => [
         'title' => 'Add Planting Information',
         'intro' => 'Enter your planting date and farm size so iClimate can give you farming advice and harvest estimates that fit your farm.',
@@ -468,8 +549,8 @@ return [
             'update' => 'Update Farm Size',
             'save_info' => 'Save Farm Information',
             'saved_info' => 'Farm information saved successfully.',
-            'farm_type' => 'Farm Type',
-            'farm_type_invalid' => 'Please choose a farm type from the list.',
+            'farm_type' => 'Water Source',
+            'farm_type_invalid' => 'Please choose a water source from the list.',
             'saving' => 'Saving...',
             'saved' => 'Farm size saved successfully.',
             'invalid' => 'Please enter a valid farm size.',
@@ -487,7 +568,7 @@ return [
             'address' => 'House Number / Street / Sitio or Purok',
             'barangay' => 'Barangay',
             'barangay_choose' => 'Choose your barangay',
-            'farm_type' => 'Farm Type',
+            'farm_type' => 'Water Source',
             'farm_type_choose' => 'Choose how your farm gets water',
             'farm_type_irrigated' => 'Irrigated (water from a canal or pump)',
             'farm_type_rainfed' => 'Rainfed (rain only)',
@@ -500,7 +581,7 @@ return [
             'contact_invalid' => 'Please enter a valid contact number, for example 0917 123 4567.',
             'address_long' => 'Please shorten your address.',
             'barangay_invalid' => 'Please choose a barangay from the list.',
-            'farm_type_invalid' => 'Please choose a farm type from the list.',
+            'farm_type_invalid' => 'Please choose a water source from the list.',
         ],
         'map' => [
             'title' => 'Map My Farm',
@@ -543,32 +624,25 @@ return [
         ],
     ],
 
-    'advisories' => [
-        'title' => 'Latest Farming Advice',
-        'all' => 'All advisories',
-        'read' => 'View Advisory',
-        'read_label' => 'View advisory: :title',
-        'today' => 'Today',
-        'yesterday' => 'Yesterday',
+    // ------------------------------------------------------------------ used by FarmerKpiService
+    'rain_vs_normal' => [
+        'more' => 'More than usual',
+        'normal' => 'Normal',
+        'less' => 'Less than usual',
     ],
 
-    'quick' => [
-        'title' => 'Quick Actions',
-        'not_set' => 'Not set',
-        'farm' => [
-            'add' => 'Farm Information', 'update' => 'Farm Information', 'text' => 'Your farm size and how your farm gets water.',
-            'popup_title' => 'Farm Information', 'popup_intro' => 'Add or update your basic farm details.',
-        ],
-        'map' => ['add' => 'Map My Farm', 'update' => 'Map My Farm', 'text' => 'Mark where your farm is in Lian, Batangas.'],
-        'plan' => ['add' => 'Planting Plan', 'update' => 'Planting Plan', 'text' => 'Set your planting date for this crop season.'],
+    'reason' => [
+        'rain_records_missing' => 'We only have rain records for :found of the last 7 days.',
+        'rain_records_missing_month' => 'We only have rain records for :found of :needed days this month.',
+        'forecast_rain_missing' => 'The rain amounts coming are not available yet.',
+        'forecast_missing' => 'The weather coming is not available right now.',
+        'month_just_started' => 'The month just started. Check again tomorrow.',
+        'no_normal' => 'We do not have enough past years to say what is usual.',
+        'heat_missing' => "We can't work out how hot it will feel today.",
+        'work_days_missing' => "We can't tell which days are good for work right now.",
+        'no_planting_date' => 'Add your planting date to see this.',
+        'not_planted_yet' => 'Planting is in :days days.',
     ],
 
-    'about' => [
-        'title' => 'About this information',
-        'weather' => ['label' => 'Weather now', 'text' => 'The latest reading for Lian, Batangas from an online weather service. It is not measured on your own farm.'],
-        'coming' => ['label' => 'Weather coming', 'text' => 'What the weather service expects for the next days. It can change.'],
-        'rain' => ['label' => 'Rain each month', 'text' => 'Rain recorded at Ambulong station, the nearest PAGASA station. Rain in your barangay may be different.'],
-        'harvest' => ['label' => 'Rice yield forecast', 'text' => 'An estimate made by iClimate, the same one shown on the Predictions page. It is not a harvest record.'],
-        'advisories' => ['label' => 'Advisories', 'text' => 'Written by the Municipal Agriculture Office.'],
-    ],
+    'units' => ['days' => 'days'],
 ];

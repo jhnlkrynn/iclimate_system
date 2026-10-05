@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Throwable;
 
@@ -150,9 +151,37 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         SystemAuditLogger::record('User Login', $request);
 
+        $user = $request->user();
+        $intended = $request->session()->pull('url.intended');
+        $dashboard = route($user->dashboardRoute(), absolute: false);
+
         return redirect()
-            ->intended(route($request->user()->dashboardRoute(), absolute: false))
+            ->to(is_string($intended) && $this->roleMayOpen($user, $intended) ? $intended : $dashboard)
             ->with('success', 'Login successful. Welcome back to iClimate.');
+    }
+
+    /**
+     * Whether the page a guest was sent to login from is one this user's role is allowed to open.
+     *
+     * The remembered page can belong to another role (a different person used the browser before, or
+     * a bookmarked staff link): following it would land a correct sign-in on a 403 page.
+     */
+    private function roleMayOpen(User $user, string $url): bool
+    {
+        try {
+            $route = Route::getRoutes()->match(Request::create($url));
+        } catch (Throwable) {
+            return false;
+        }
+
+        foreach ($route->gatherMiddleware() as $middleware) {
+            if (is_string($middleware) && str_starts_with($middleware, 'role:')
+                && ! in_array($user->role, explode(',', substr($middleware, 5)), true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

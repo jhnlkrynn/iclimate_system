@@ -12,16 +12,17 @@
             gap: .45rem;
             min-width: 112px;
             white-space: nowrap;
-            border-color: var(--ic-border) !important;
-            background: rgba(31,42,36,.04) !important;
-            color: var(--ic-ink) !important;
-            box-shadow: 0 .55rem 1.2rem rgba(13,31,24,.06);
+            /* sits on the dark green page header: white outline button */
+            border-color: rgba(255,255,255,.6) !important;
+            background: transparent !important;
+            color: #fff !important;
+            box-shadow: none;
         }
         .advisory-back-btn:hover,
         .advisory-back-btn:focus {
-            background: rgba(31,42,36,.08) !important;
-            border-color: var(--ic-green-500) !important;
-            color: var(--ic-ink) !important;
+            background: rgba(255,255,255,.12) !important;
+            border-color: #fff !important;
+            color: #fff !important;
         }
     </style>
     <section class="page-hero">

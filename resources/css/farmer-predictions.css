@@ -23,7 +23,7 @@
     min-height: 44px; padding: 8px 20px; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); color: var(--ink);
     font-size: .9375rem; font-weight: 600; box-shadow: none !important;
 }
-.fpred .wp-tab-button:hover { border-color: var(--brand); color: var(--brand); }
+.fpred .wp-tab-button:hover { border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .fpred .wp-tab-button.active { background: var(--brand); border-color: var(--brand); color: #fff; }
 .fpred .wp-tab-button:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 
@@ -38,7 +38,7 @@
 .fpred .wp-page .wp-calendar-toolbar h2 { font-family: var(--serif) !important; font-size: 1.5rem !important; font-weight: 700; line-height: 1.25; color: var(--ink) !important; }
 .fpred .wp-page .wp-panel h3, .fpred .wp-page .wp-outlook-head h3 { font-family: var(--serif) !important; font-size: 1.25rem; font-weight: 700; color: var(--ink); }
 .fpred .wp-panel-body { padding: 20px 24px 24px; }
-.fpred details.wp-panel > summary { min-height: 56px; display: flex; align-items: center; font-size: 1rem; font-weight: 600; color: var(--brand); }
+.fpred details.wp-panel > summary { min-height: 56px; display: flex; align-items: center; font-size: 1rem; font-weight: 600; color: var(--brand-ink, var(--brand)); }
 .fpred details.wp-panel > summary:focus-visible { outline: 3px solid var(--info); outline-offset: -3px; }
 
 /* type roles: labels, values, notes */

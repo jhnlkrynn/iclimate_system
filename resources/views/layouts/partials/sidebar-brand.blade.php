@@ -1,17 +1,8 @@
-@if ($isFarmer)
-    <div class="sidebar-brand sidebar-brand--large p-3 pb-2">
-        <img src="{{ asset('images/iclimate-icon-light.png') }}" alt="iClimate" class="sidebar-logo-large">
-        <div class="sidebar-wordmark-lg">iClimate</div>
-        <div class="sidebar-brand-underline"></div>
-    </div>
-@else
-    <div class="sidebar-brand p-3 pb-1">
-        <div class="sidebar-brand-row">
-            <img src="{{ asset('images/iclimate-icon-light.png') }}" alt="" class="sidebar-logo-icon">
-            <span class="sidebar-wordmark">iClimate</span>
-        </div>
-        <div class="sidebar-brand-underline"></div>
-        <div class="sidebar-location"><span class="pulse-dot"></span> Lian, Batangas</div>
-        <div class="sidebar-tagline pe-2">Weather Impact and Rice Yield System</div>
-    </div>
-@endif
+{{-- Compact brand row at the top of the sidebar (desktop and phone drawer), the same for every role. --}}
+<a class="sidebar-brand ic-sb-brand" href="{{ route(auth()->user()->dashboardRoute()) }}" aria-label="iClimate home">
+    <img src="{{ asset('images/iclimate-icon-light.png') }}" alt="" class="ic-sb-logo" width="34" height="34">
+    <span class="ic-sb-brand-text">
+        <span class="ic-sb-wordmark">iClimate</span>
+        <span class="ic-sb-place">Lian, Batangas</span>
+    </span>
+</a>

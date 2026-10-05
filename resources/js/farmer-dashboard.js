@@ -1,18 +1,19 @@
-// Farmer dashboard (resources/views/dashboards/farmer.blade.php): the clock, "updated N minutes ago", the three charts,
-// the refresh button, each card's own "Try again", the late-loading harvest card and the offline / low-data behaviour
-// (the page keeps the last information it loaded and says when that was).
+// Farmer dashboard (resources/views/dashboards/farmer.blade.php): the clock, "updated N minutes ago", the language
+// selector, the refresh button, each card's own "Try again", the late-loading yield forecast, the "Ask Climora AI" buttons
+// and the offline / low-data behaviour (the page keeps the last information it loaded and says when that was).
 // Nothing here runs on other pages: it starts only when the dashboard root is present. All wording comes from the
-// page itself (data-text-* / data-age-* attributes, written from lang/en/farmer.php), so the page can be translated.
+// page itself (data-text-* / data-age-* attributes, written from lang/{en,fil}/farmer.php), so the page is translated.
 
 const TIMEZONE = 'Asia/Manila';
 const REFRESH_EVERY_MS = 300000;
-const FONT = '"Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif';
 
-// Palette (matches the page's status colours; every series also differs by shape or dash, never by colour alone).
-// The sections each dashboard pop-up changes (they show as busy while they are rebuilt); the server holds the same list.
-const POPUP_SLOTS = { planting: ['farm', 'season', 'harvest', 'setup', 'quick'], profile: ['header', 'farm', 'today', 'risk', 'setup', 'advisories', 'quick'], map: ['farm', 'setup', 'quick'] };
-
-const COLORS = { brand: '#0f5132', accent: '#198754', rain: '#1f6fb2', danger: '#c0392b', muted: '#5b6660', grid: '#e3e8e5' };
+// The sections each dashboard pop-up changes (they show as busy while they are rebuilt); the server holds the same list
+// (DashboardController::FARMER_RETRY).
+const POPUP_SLOTS = {
+    planting: ['today', 'highlights', 'schedule', 'harvest', 'farm', 'updates', 'quick'],
+    profile: ['header', 'today', 'highlights', 'risk', 'advisories', 'farm', 'updates', 'quick'],
+    map: ['farm', 'updates', 'quick'],
+};
 
 export function initFarmerDashboard() {
     const root = document.querySelector('[data-farmer-dashboard]');
@@ -20,20 +21,13 @@ export function initFarmerDashboard() {
 
     const $ = (selector) => root.querySelector(selector);
     const t = (name) => root.dataset[name] || '';
-    const charts = {};                      // key -> Chart instance, so a redrawn canvas never leaves a stale chart behind
     const lastHtml = new Map();             // slot name -> HTML last put on the page, so an unchanged section is left alone
     let refreshing = false;
     let lastOkAt = new Date();              // the page itself was rendered from fresh data a moment ago
 
     const timeText = (d) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TIMEZONE });
-    // Data Saver or a very slow connection: the optional charts and the background refresh are skipped, the numbers stay.
+    // Data Saver or a very slow connection: the background refresh is skipped, the numbers stay.
     const lowData = () => { const c = navigator.connection; return !!c && (!!c.saveData || /(^|slow-)2g$/.test(c.effectiveType || '')); };
-    const small = () => window.matchMedia('(max-width: 640px)').matches;
-
-    const ready = async () => {
-        try { await window.iClimateVisualsReady; } catch (e) { /* handled by callers */ }
-        return !!window.Chart;
-    };
 
     // ------------------------------------------------------------------ clock and "updated N minutes ago"
 
@@ -68,124 +62,6 @@ export function initFarmerDashboard() {
         }
     };
     setInterval(() => { tickClock(); tickAge(); }, 30000);
-
-    // ------------------------------------------------------------------ charts
-
-    const axisText = (text) => ({ display: true, text, color: COLORS.muted, font: { size: 13, weight: '500' } });
-    const tickFont = { size: 13 };
-
-    /** Defaults for every chart on the page: one font, readable sizes, readable tooltips. */
-    const setDefaults = () => {
-        const C = window.Chart;
-        C.defaults.font.family = FONT;
-        C.defaults.font.size = 14;
-        C.defaults.color = '#1b1f1d';
-        C.defaults.plugins.tooltip.titleFont = { family: FONT, size: 14, weight: '600' };
-        C.defaults.plugins.tooltip.bodyFont = { family: FONT, size: 14 };
-        C.defaults.plugins.tooltip.padding = 12;
-    };
-
-    const baseOptions = (extra = {}) => ({
-        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 14, font: { size: 13 } } }, ...(extra.plugins || {}) },
-        scales: extra.scales || {},
-    });
-
-    /**
-     * Draws one chart into a canvas. A chart is optional: when the library, the data or the drawing fails, its box is
-     * quietly left out (the text and the screen-reader table stay), and the reason goes to the console for IT.
-     */
-    async function draw(key, canvasSelector, build) {
-        const canvas = $(canvasSelector);
-        if (!canvas) return;
-        const box = canvas.parentElement;
-        const drop = (why) => { console.error('Farmer dashboard chart not drawn (' + key + '):', why); if (box) box.hidden = true; };
-        if (lowData()) { if (box) box.hidden = true; return; }
-        try {
-            if (charts[key]) { charts[key].destroy(); delete charts[key]; }
-            if (!(await ready())) return drop('chart library not loaded');
-            setDefaults();
-            const config = build(JSON.parse(canvas.dataset.mfdChart));
-            if (!config) return drop('no values to draw');
-            charts[key] = new window.Chart(canvas, config);
-            box?.classList.remove('is-loading');
-        } catch (e) { drop(e); }
-    }
-
-    // Rain each day as bars (mm), with a light dashed line at the heavy-rain level. One y axis only.
-    const weekRainChart = () => draw('weekRain', '#farmerWeekRainChart', (cfg) => {
-        if (!cfg.labels.length) return null;
-        const top = Math.max(cfg.heavy_mm * 1.1, ...cfg.rain.map((v) => v ?? 0));
-
-        return {
-            type: 'bar',
-            data: {
-                labels: cfg.labels,
-                datasets: [
-                    { type: 'bar', label: 'Rain (mm)', data: cfg.rain, backgroundColor: COLORS.rain, borderRadius: 4, maxBarThickness: 36, order: 2 },
-                    { type: 'line', label: 'Heavy rain level (' + cfg.heavy_mm + ' mm)', data: cfg.labels.map(() => cfg.heavy_mm), borderColor: COLORS.danger, borderDash: [6, 6], borderWidth: 1.5, pointRadius: 0, order: 1 },
-                ],
-            },
-            options: baseOptions({
-                scales: {
-                    y: { beginAtZero: true, suggestedMax: top, title: axisText('Rain (mm)'), ticks: { font: tickFont, maxTicksLimit: 6 }, grid: { color: COLORS.grid } },
-                    x: { title: axisText('Day'), ticks: { font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: small() ? 4 : 7 }, grid: { display: false } },
-                },
-                plugins: { tooltip: { callbacks: { label: (c) => c.dataset.label.startsWith('Heavy') ? c.dataset.label : 'Rain: ' + (c.parsed.y ?? 0).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' mm' } } },
-            }),
-        };
-    });
-
-    // High and low temperature as two lines on their own small chart (°C).
-    const weekTempChart = () => draw('weekTemp', '#farmerWeekTempChart', (cfg) => {
-        if (!cfg.labels.length) return null;
-
-        return {
-            type: 'line',
-            data: {
-                labels: cfg.labels,
-                datasets: [
-                    { label: 'High (°C)', data: cfg.high, borderColor: COLORS.danger, backgroundColor: COLORS.danger, pointStyle: 'circle', pointRadius: 4, tension: .25 },
-                    { label: 'Low (°C)', data: cfg.low, borderColor: COLORS.rain, backgroundColor: COLORS.rain, borderDash: [6, 4], pointStyle: 'rectRot', pointRadius: 5, tension: .25 },
-                ],
-            },
-            options: baseOptions({
-                scales: {
-                    y: { title: axisText('Temperature (°C)'), ticks: { font: tickFont, maxTicksLimit: 5 }, grid: { color: COLORS.grid } },
-                    x: { title: axisText('Day'), ticks: { font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: small() ? 4 : 7 }, grid: { display: false } },
-                },
-                plugins: { tooltip: { callbacks: { label: (c) => c.dataset.label.replace(' (°C)', '') + ': ' + (c.parsed.y ?? 0).toFixed(0) + ' °C' } } },
-            }),
-        };
-    });
-
-    // This year's months next to the usual rain for the same month: filled bars against outlined bars.
-    const rainfallChart = () => draw('rainfall', '#farmerRainfallTrendChart', (cfg) => {
-        if (!cfg.actual.some((v) => v !== null)) return null;
-
-        return {
-            type: 'bar',
-            data: {
-                labels: cfg.labels,
-                datasets: [
-                    { label: 'Rain in ' + cfg.year + ' (mm)', data: cfg.actual, backgroundColor: COLORS.accent, borderColor: COLORS.accent, borderWidth: 1, borderRadius: 4, maxBarThickness: 22 },
-                    { label: 'Usual rain (mm)', data: cfg.normal, backgroundColor: 'rgba(91,102,96,.12)', borderColor: COLORS.muted, borderWidth: 2, borderRadius: 4, maxBarThickness: 22 },
-                ],
-            },
-            options: baseOptions({
-                scales: {
-                    y: { beginAtZero: true, title: axisText('Rain (mm)'), ticks: { font: tickFont, maxTicksLimit: 6 }, grid: { color: COLORS.grid } },
-                    x: { title: axisText('Month'), ticks: { font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: small() ? 6 : 12 }, grid: { display: false } },
-                },
-                plugins: { tooltip: { callbacks: { label: (c) => c.dataset.label.replace(' (mm)', '') + ': ' + (c.parsed.y === null ? '—' : c.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' mm') } } },
-            }),
-        };
-    });
-
-    const drawCharts = (which = ['week', 'rain']) => {
-        if (which.includes('week')) { weekRainChart(); weekTempChart(); }
-        if (which.includes('rain')) rainfallChart();
-    };
 
     // ------------------------------------------------------------------ refresh and per-card retry
 
@@ -238,24 +114,19 @@ export function initFarmerDashboard() {
             const res = await fetch(root.dataset.liveUrl + (query.toString() ? '?' + query : ''), { headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error('bad status ' + res.status);
             const data = await res.json();
-            const redraw = new Set();
             Object.entries(data.slots).forEach(([key, html]) => {
                 const el = root.querySelector('[data-slot="' + key + '"]');
                 if (!el) return;
                 el.hidden = html.trim() === '';
                 if (lastHtml.get(key) === html) return;             // unchanged: keep the section, its focus and its screen-reader state
                 lastHtml.set(key, html);
-                (key === 'week' ? ['weekRain', 'weekTemp'] : key === 'rain' ? ['rainfall'] : []).forEach((c) => { charts[c]?.destroy(); delete charts[c]; });
                 el.innerHTML = html;
-                if (key === 'week') redraw.add('week');
-                if (key === 'rain') redraw.add('rain');
             });
             const banner = $('[data-mfd-refresh-error]');
             if (banner) banner.hidden = true;
             lastOkAt = new Date();
             tickClock();
             tickAge();
-            if (redraw.size) drawCharts([...redraw]);
             announce(t('textUpdated'));
         } catch (e) {
             console.error('Farmer dashboard refresh failed:', e);     // the farmer keeps seeing the last loaded data
@@ -265,7 +136,43 @@ export function initFarmerDashboard() {
             setBusy(false, busyNames);
             if (refocus && (!document.activeElement || document.activeElement === document.body)) $(refocus)?.focus();
         }
+        // The slow yield forecast was left as a placeholder (a timed refresh never waits for it): fill it in on its own.
+        if (retry !== 'harvest' && $('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest' });
     }
+
+    // ------------------------------------------------------------------ language (English / Filipino)
+
+    /**
+     * The selector saves the choice on the farmer's account, then the page is opened again in that language (the same
+     * stored readings, so no number changes). Without scripts the form posts and the server sends the page back.
+     */
+    const initLanguage = () => {
+        // Listened for on the page root: Refresh re-renders the header, which replaces the selector itself.
+        root.addEventListener('change', async (e) => {
+            const select = e.target.closest('[data-mfd-language] select');
+            if (!select) return;
+            const form = select.form;
+            const saved = Array.from(select.options).find((o) => o.defaultSelected)?.value;
+            if (select.value === saved) return;
+            select.disabled = true;
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': form.elements._token.value, 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ language: select.value }),
+                    loader: t('textLanguage'),
+                });
+                if (!res.ok) throw new Error('bad status ' + res.status);
+                window.iClimateLoader?.show(t('textLanguage'));
+                window.location.reload();
+            } catch (e) {
+                console.error('Changing the dashboard language failed:', e);
+                select.value = saved;
+                select.disabled = false;
+                showStale(t('textLanguageFailed'));
+            }
+        });
+    };
 
     // ------------------------------------------------------------------ dashboard pop-ups
 
@@ -445,7 +352,7 @@ export function initFarmerDashboard() {
 
         // ---- Add Planting Information (Add planting date; Quick Actions)
         const planting = make('planting', {
-            retry: 'planting', focusAfter: '#mfdSeasonTitle',
+            retry: 'planting', focusAfter: '#mfdScheduleTitle',
             validate: (p) => {
                 const date = p.field('planting_date');
                 const dateMessage = !date.value ? (date.validity.badInput ? p.text('textDateInvalid') : p.text('textDateRequired'))
@@ -701,7 +608,7 @@ export function initFarmerDashboard() {
             const ready = () => !!state.map && state.place.state === 'ok' && points().length >= 3;
 
             return make('farm-map', {
-                retry: 'map', focusAfter: '#mfdSetupTitle',
+                retry: 'map', focusAfter: '#mfdFarmTitle',
                 validate: (p) => problems([['boundary_coordinates', ready() ? '' : {
                     outside: p.text('textOutside'), partly: p.text('textPartly'), unknown: p.text('textUnknown'),
                 }[state.place.state] || p.text('textRequired')]]),
@@ -737,10 +644,11 @@ export function initFarmerDashboard() {
     root.addEventListener('click', (e) => {
         if (e.target.closest('[data-mfd-refresh]')) return refresh({ force: true });
         const retry = e.target.closest('[data-mfd-retry]');
-        if (retry) refresh({ retry: retry.dataset.mfdRetry });
+        if (retry) return refresh({ retry: retry.dataset.mfdRetry });
+        // "Ask Climora AI": opens the assistant with the question already typed, for the farmer to send or change.
+        const ask = e.target.closest('[data-ai-prefill]');
+        if (ask && window.iClimateAi) { e.preventDefault(); window.iClimateAi.prefill(ask.dataset.aiPrefill); }
     });
-    // A chart inside a closed "Show ..." section has no size until it is opened.
-    root.addEventListener('toggle', (e) => { if (e.target.open) Object.values(charts).forEach((chart) => chart.resize()); }, true);
     setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);
 
     window.addEventListener('offline', () => showStale(t('textOffline')));
@@ -748,9 +656,9 @@ export function initFarmerDashboard() {
 
     const start = () => {
         initPopups();
+        initLanguage();
         tickClock();
         tickAge();
-        drawCharts();
         // The harvest model is slow, so the page opens with a placeholder and fills the card in here.
         if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest' });
     };

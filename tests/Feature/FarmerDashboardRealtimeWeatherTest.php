@@ -26,9 +26,9 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
             ->get(route('farmer.dashboard'))
             ->assertOk()
             ->assertSeeText('28.7°C')
-            ->assertSee('0.0 mm')
+            ->assertSee('<span>0.0</span><small>mm</small>', false)
             ->assertSee('77%')
-            ->assertSee("Today's Farm Conditions")
+            ->assertSee('Weather for Lian, Batangas')
             ->assertSee('Updated')
             ->assertDontSee('Live online fetch')
             ->assertDontSee('Live database count');
@@ -72,7 +72,7 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
             ->get(route('farmer.dashboard'))
             ->assertOk()
             ->assertSeeText('29.4°C')
-            ->assertSee("Today's Farm Conditions")->assertDontSee('OPEN-METEO');
+            ->assertSee('Weather for Lian, Batangas')->assertDontSee('OPEN-METEO');
     }
 
     private function openMeteoPayload(): array

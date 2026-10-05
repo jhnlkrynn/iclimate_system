@@ -20,6 +20,7 @@
 .frec-panel-head h2 { font-family: var(--serif) !important; font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: var(--ink); }
 .frec-takeaway { font-size: 1rem; font-weight: 600; color: var(--ink); }
 .frec-note { display: grid; gap: 6px; padding: 16px 20px; background: var(--subtle); border: 1px solid var(--line); border-left: 4px solid var(--info); border-radius: 6px; }
+.frec-note a { color: var(--brand-ink, var(--brand)); font-weight: 600; }
 .frec-note a { color: var(--brand); font-weight: 600; }
 /* The Lian label leads; the station is a smaller, still visible provenance note under it. */
 .frec-reference { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin: 0; }
@@ -77,15 +78,15 @@
     display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 18px; border: 1px solid var(--rule); border-radius: 6px;
     background: var(--card); color: var(--ink); font-size: .9375rem; font-weight: 600; text-decoration: none;
 }
-.frec-tab:hover { border-color: var(--brand); color: var(--brand); }
+.frec-tab:hover { border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .frec-tab.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
 .frec-tab:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 .frec-tab-count { font-size: .8125rem; font-weight: 600; opacity: .8; font-variant-numeric: tabular-nums; }
-.frec-tab.is-active .fad-count { background: #fff; color: var(--brand); }
+.frec-tab.is-active .fad-count { background: #fff; color: var(--brand-ink, var(--brand)); }
 .frec-notes { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .frec-noteitem { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 16px 12px; border-bottom: 1px solid var(--line); }
 .frec-noteitem.is-unread { background: #f4faf6; box-shadow: inset 4px 0 0 var(--brand); }
-.frec-note-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--rule); background: var(--subtle); color: var(--brand); }
+.frec-note-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--rule); background: var(--subtle); color: var(--brand-ink, var(--brand)); }
 .frec-note-icon[data-type="warning"] { color: var(--watch-ink); background: var(--watch-bg); border-color: var(--watch-line); }
 .frec-note-icon[data-type="advisory"] { color: var(--info-ink); background: var(--info-bg); border-color: var(--info-line); }
 .frec-note-body { display: grid; gap: 6px; min-width: 0; }
@@ -93,7 +94,7 @@
 .frec-note-title { font-size: 1rem; font-weight: 500; line-height: 1.35; }
 .frec-noteitem.is-unread .frec-note-title { font-weight: 700; }
 .frec-note-title a { color: var(--ink); text-decoration: none; }
-.frec-note-title a:hover { color: var(--brand); text-decoration: underline; }
+.frec-note-title a:hover { color: var(--brand-ink, var(--brand)); text-decoration: underline; }
 .frec-note-title a:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 .frec-note-text { font-size: .9375rem; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
 .frec-note-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

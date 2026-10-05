@@ -572,7 +572,7 @@ class BarangayRiskMapTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
@@ -670,7 +670,7 @@ class BarangayRiskMapTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Cumba']);
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
 
         $response->assertOk();
         $response->assertSee('data-highlight-barangay="Cumba"', false);
@@ -693,7 +693,7 @@ class BarangayRiskMapTest extends TestCase
 
         $this->assertSame('Barangay 1 (Pob.)', LianBarangays::canonicalName('Brgy. 1'));
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
 
         $response->assertOk();
         $response->assertSee('data-highlight-barangay="Barangay 1 (Pob.)"', false);
@@ -713,7 +713,7 @@ class BarangayRiskMapTest extends TestCase
 
         $this->assertNull(LianBarangays::canonicalName('Poblacion'));
 
-        $response = $this->actingAs($user)->get(route('farmer.dashboard'));
+        $response = $this->actingAs($user)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
 
         $response->assertOk();
         $response->assertSee('id="barangayRiskMap"', false);
@@ -730,7 +730,7 @@ class BarangayRiskMapTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $farmerResponse = $this->actingAs($farmer)->get(route('farmer.dashboard'));
+        $farmerResponse = $this->actingAs($farmer)->get(route('farmer.dashboard', ['tab' => 'heatmap']));
         $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
 
         foreach ([$farmerResponse, $maoResponse] as $response) {

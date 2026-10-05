@@ -94,12 +94,12 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertOk();
         $response->assertSee('Lian, Batangas');
         $response->assertSee('Light Rain');
-        $response->assertSee('Rainfall');
+        $response->assertSee('Rain Today');
         $response->assertSeeText('25.5°C');
         $response->assertDontSee('&deg;C', false);
         $response->assertDontSee('Â°C', false);
         $response->assertSee('6.2 mm');
-        $response->assertSee('What You Should Know Today');
+        $response->assertSee("Today's Highlights");
         // Live weather is labelled as Lian's current reading with its update time, and refreshes on its own.
         $response->assertSee('Updated');
         $response->assertSee('Weather for Lian');

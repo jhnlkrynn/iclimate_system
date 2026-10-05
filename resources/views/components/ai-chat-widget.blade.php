@@ -275,14 +275,14 @@
 
     .ic-ai-msg-time {
         font-size: .75rem;
-        color: #7d9584;
+        color: #52665a;
         font-family: 'DM Mono', monospace;
         margin-top: .3rem;
         padding: 0 .1rem;
     }
 
     .ic-ai-msg.user .ic-ai-msg-time {
-        color: #6f8679;
+        color: #52665a;
     }
 
     .ic-ai-results {

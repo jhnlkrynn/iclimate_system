@@ -154,3 +154,19 @@
     .icl-ring { animation: none; }
     .icl-ring-arc { stroke-dasharray: none; animation: icl-pulse 2s ease-in-out infinite; }
 }
+
+/* Dark theme (data-theme on <html>, see resources/js/theme.js): dark box, bright green rice symbol, light text. */
+html[data-theme="dark"] .icl-overlay {
+    --icl-green: #7fd6b5;
+    --icl-green-deep: #4fb88e;
+    --icl-track: #2a3b33;
+    --icl-grain: #e0b45a;
+    --icl-text: #e4ece7;
+    background: rgba(8, 16, 12, .55);
+}
+
+html[data-theme="dark"] .icl-box {
+    background: #16231e;
+    border-color: #2a3b33;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}

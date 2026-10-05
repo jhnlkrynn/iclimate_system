@@ -269,7 +269,7 @@ class NotificationController extends CrudController
     private function forgetUnreadCaches(User $user): void
     {
         Cache::forget('sidebar:unread-notifications:'.$user->id);
-        Cache::forget(\App\Services\Analytics\FarmerDashboardService::cacheKey($user));
+        \App\Services\Analytics\FarmerDashboardService::forgetCached($user);
     }
 
     protected function rules(Request $request, ?int $id = null): array
