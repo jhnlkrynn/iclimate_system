@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use App\Services\Security\CaptchaService;
+use Database\Seeders\StaffLoginAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -205,6 +206,90 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_seeded_staff_accounts_sign_in_and_reach_their_own_dashboard(): void
+    {
+        config(['iclimate.staff_account_password' => 'Password@123']);
+        $this->seed(StaffLoginAccountSeeder::class);
+        $this->seed(StaffLoginAccountSeeder::class);
+
+        $this->assertSame(1, User::query()->where('email', 'it@gmail.com')->count());
+        $this->assertSame(1, User::query()->where('email', 'mao@gmail.com')->count());
+        $this->assertNotSame('Password@123', User::query()->where('email', 'it@gmail.com')->value('password'));
+
+        $this->post('/login', ['email' => 'it@gmail.com', 'password' => 'Password@123'])
+            ->assertRedirect(route('admin.dashboard', absolute: false));
+        $this->assertAuthenticated();
+        $this->assertSame(User::ROLE_IT_EXPERT, Auth::user()->role);
+        $this->get(route('admin.dashboard'))->assertOk();
+        $this->get(route('mao.dashboard'))->assertForbidden();
+        $this->post('/logout');
+
+        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Password@123'])
+            ->assertRedirect(route('mao.dashboard', absolute: false));
+        $this->assertSame(User::ROLE_MAO, Auth::user()->role);
+        $this->get(route('mao.dashboard'))->assertOk();
+        $this->get(route('admin.dashboard'))->assertForbidden();
+    }
+
+    public function test_seeded_staff_accounts_reject_a_wrong_password(): void
+    {
+        config(['iclimate.staff_account_password' => 'Password@123']);
+        $this->seed(StaffLoginAccountSeeder::class);
+
+        foreach (['it@gmail.com', 'mao@gmail.com'] as $email) {
+            $response = $this->from('/login')->post('/login', ['email' => $email, 'password' => 'WrongPassword']);
+
+            $this->assertGuest();
+            $this->followRedirects($response)->assertSee('Unable to sign in. Please check your email and password.');
+        }
+    }
+
+    public function test_staff_accounts_are_not_seeded_without_a_configured_password(): void
+    {
+        config(['iclimate.staff_account_password' => null]);
+        $this->seed(StaffLoginAccountSeeder::class);
+
+        $this->assertSame(0, User::query()->whereIn('email', ['it@gmail.com', 'mao@gmail.com'])->count());
+    }
+
+    public function test_login_ignores_stray_spaces_and_capitals_in_the_email(): void
+    {
+        $user = User::factory()->create(['email' => 'juan@example.com']);
+
+        $response = $this->post('/login', ['email' => '  Juan@Example.com ', 'password' => 'password']);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('farmer.dashboard', absolute: false));
+    }
+
+    public function test_login_does_not_follow_a_remembered_page_the_role_can_not_open(): void
+    {
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
+
+        $this->post('/login', ['email' => $mao->email, 'password' => 'password'])
+            ->assertRedirect(route('mao.dashboard', absolute: false));
+    }
+
+    public function test_login_returns_to_a_remembered_page_the_role_can_open(): void
+    {
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->get(route('profile.edit'))->assertRedirect(route('login'));
+
+        $this->post('/login', ['email' => $mao->email, 'password' => 'password'])
+            ->assertRedirect(route('profile.edit'));
+    }
+
+    public function test_farmers_can_not_open_the_staff_dashboards(): void
+    {
+        $farmer = User::factory()->create();
+
+        $this->actingAs($farmer)->get(route('admin.dashboard'))->assertForbidden();
+        $this->actingAs($farmer)->get(route('mao.dashboard'))->assertForbidden();
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

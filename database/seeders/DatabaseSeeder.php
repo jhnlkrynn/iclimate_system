@@ -130,6 +130,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
+            StaffLoginAccountSeeder::class,
             FarmerOrganizationSeeder::class,
             KnowledgeBaseSeeder::class,
             AdvisoryRuleSeeder::class,
