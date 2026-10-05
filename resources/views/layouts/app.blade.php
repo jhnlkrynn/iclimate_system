@@ -13,6 +13,8 @@
         @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/css/glass-system.css', 'resources/css/sidebar.css', 'resources/css/theme-dark-pages.css', 'resources/css/theme.css', 'resources/js/app.js'])
         <style>
             :root {
+                /* The landing page's rice-field photo, reused as the backdrop of every signed-in page (see BACKDROP in theme.css). */
+                --ic-backdrop-image: url('{{ asset('images/rice-hero-aerial.jpg') }}');
                 --iclimate-primary: #123F32;
                 --iclimate-primary-medium: #1F5A46;
                 --iclimate-accent: #8FAF9A;
@@ -120,17 +122,6 @@
             small, .small, .text-muted, .card-text, .form-text {
                 font-size: var(--ic-readable-small);
                 line-height: 1.52;
-            }
-            body::before {
-                content: "";
-                position: fixed;
-                inset: 0;
-                pointer-events: none;
-                z-index: -1;
-                background:
-                    radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
-                background-size: 30px 30px;
-                mask-image: linear-gradient(90deg, transparent, #000 18%, #000 100%);
             }
             .app-main {
                 margin-left: var(--sidebar-width);
