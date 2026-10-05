@@ -162,11 +162,22 @@
             <div class="card no-lift">
                 <div class="card-body p-3">
                     <div class="fw-bold mb-2">Result Summary</div>
-                    <div class="report-summary-grid">
-                        @foreach ($reportSummary as $item)
-                            <div class="report-stat"><div class="report-stat-label">{{ $item['label'] }}</div><div class="h5 fw-bold mb-0 mt-2">{{ $item['value'] }}</div></div>
-                        @endforeach
-                    </div>
+                    {{-- A climate report has two groups (historical station months, entered records) that are never averaged together. --}}
+                    @foreach (collect($reportSummary)->groupBy(fn ($item) => $item['group'] ?? '') as $group => $items)
+                        @if ($group !== '')
+                            <div class="fw-semibold {{ $loop->first ? '' : 'mt-3' }}">{{ $group }}</div>
+                            <div class="small text-muted mb-2">{{ $items->first()['source'] ?? '' }}</div>
+                        @endif
+                        @if ($items->first()['note'] ?? null)
+                            <p class="mb-0 text-muted">{{ $items->first()['note'] }}</p>
+                        @else
+                            <div class="report-summary-grid">
+                                @foreach ($items as $item)
+                                    <div class="report-stat"><div class="report-stat-label">{{ $item['label'] }}</div><div class="h5 fw-bold mb-0 mt-2">{{ $item['value'] }}</div></div>
+                                @endforeach
+                            </div>
+                        @endif
+                    @endforeach
                 </div>
             </div>
         @endif
@@ -175,10 +186,21 @@
             <div class="card no-lift">
                 <div class="card-body p-3">
                     <div class="fw-bold mb-1">Weather During This Period</div>
-                    @if ($weatherBasis['has_data'])
-                        <p class="mb-0">During {{ $weatherBasis['range_label'] }}, recorded conditions averaged {{ number_format($weatherBasis['avg_rainfall'], 1) }} mm rainfall and {{ number_format($weatherBasis['avg_temperature'], 1) }}&deg;C, based on {{ number_format($weatherBasis['record_count']) }} climate record(s) for that period.</p>
+                    @php
+                        $h = $weatherBasis['historical'];
+                        $e = $weatherBasis['entered'];
+                        $amount = fn (?float $value, string $unit) => $value === null ? 'not available' : number_format($value, 1).$unit;
+                    @endphp
+                    {{-- Two separate parts: a month's rainfall total and one day's reading are never averaged together. --}}
+                    @if ($h)
+                        <p class="mb-1"><strong>Historical weather</strong> ({{ $weatherBasis['historical_source'] }}, iClimate's weather reference for Lian): {{ $h['months'] }} month(s), {{ $h['first'] === $h['last'] ? $h['first'] : $h['first'].' – '.$h['last'] }}, with {{ $amount($h['total_rainfall'], ' mm') }} total rainfall and an average of {{ $amount($h['avg_temperature'], '°C') }}.</p>
                     @else
-                        <p class="mb-0 text-muted">No climate records are stored for {{ $weatherBasis['range_label'] }}, so weather context isn't available for this report.</p>
+                        <p class="mb-1 text-muted"><strong>Historical weather:</strong> no station months for {{ $weatherBasis['range_label'] }}.</p>
+                    @endif
+                    @if ($e)
+                        <p class="mb-0"><strong>Entered climate records:</strong> {{ number_format($e['records']) }} record(s) during {{ $weatherBasis['range_label'] }}, averaging {{ $amount($e['avg_rainfall'], ' mm rainfall') }} per record and {{ $amount($e['avg_temperature'], '°C') }}.</p>
+                    @else
+                        <p class="mb-0 text-muted"><strong>Entered climate records:</strong> no entered climate records for this period.</p>
                     @endif
                 </div>
             </div>

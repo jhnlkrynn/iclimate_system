@@ -294,8 +294,11 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('15.00 tons')
             ->assertSee('3.00 t/ha')
             ->assertSee('Weather During This Period')
-            ->assertSee('150.0 mm rainfall', false)
-            ->assertSee('29.0&deg;C', false);
+            // Entered records are summarised on their own (September 2026 has no historical station month).
+            ->assertSee('Entered climate records:', false)
+            ->assertSee('150.0 mm rainfall per record', false)
+            ->assertSee('29.0°C')
+            ->assertSee('no station months for 2026-09-01 to 2026-09-30');
     }
 
     public function test_mao_can_queue_live_advisory_generation_and_return_to_management(): void

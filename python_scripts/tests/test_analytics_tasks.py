@@ -47,8 +47,29 @@ def test_climate_report_filters_real_rows_and_sorts_newest_first():
     assert result["row_count"] == 2
     assert [row["record_date"] for row in result["records"]] == ["2026-08-01", "2026-07-01"]
     assert list(result["columns"]) == [
-        "record_date", "rainfall", "temperature", "humidity", "wind_speed", "season", "source"
+        "record_type", "record_date", "rainfall", "temperature", "humidity", "wind_speed", "season", "source"
     ]
+
+
+def test_climate_report_keeps_historical_months_and_entered_records_apart():
+    result = report_analytics({
+        "report_type": "climate_records",
+        "filters": {"date_from": "2024-01-15", "date_to": "2024-02-10"},
+        "source_rows": [
+            {"record_type": "Historical Weather", "period": "month", "record_date": "2024-01", "rainfall": 40.5, "season": "Dry", "source": "PAGASA Ambulong Station (Tanauan, Batangas)"},
+            {"record_type": "Historical Weather", "period": "month", "record_date": "2024-02", "rainfall": None, "season": "Dry", "source": "PAGASA Ambulong Station (Tanauan, Batangas)"},
+            {"record_type": "Historical Weather", "period": "month", "record_date": "2024-03", "rainfall": 12.0, "season": "Dry", "source": "PAGASA Ambulong Station (Tanauan, Batangas)"},
+            {"record_type": "Entered Record", "period": "day", "record_date": "2024-01-10", "rainfall": 3.0, "season": "Dry", "source": "MAO"},
+            {"record_type": "Entered Record", "period": "day", "record_date": "2024-02-01", "rainfall": 5.0, "season": "Dry", "source": "MAO"},
+        ],
+    })
+
+    # January and February overlap the range (March does not); the entered row of Jan 10 is before it.
+    assert [(row["record_type"], row["record_date"]) for row in result["records"]] == [
+        ("Entered Record", "2024-02-01"), ("Historical Weather", "2024-02"), ("Historical Weather", "2024-01"),
+    ]
+    # A missing value stays missing.
+    assert result["records"][1]["rainfall"] is None
 
 
 def test_empty_report_returns_no_rows():

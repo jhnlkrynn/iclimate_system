@@ -1,5 +1,6 @@
 """Pure-Python analytics handlers called only by queued Laravel jobs."""
 
+import calendar
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 import csv
@@ -14,7 +15,7 @@ import rice_yield_service
 
 REPORT_COLUMNS = {
     "climate_records": {
-        "record_date": "Date", "rainfall": "Rainfall", "temperature": "Temperature",
+        "record_type": "Record Type", "record_date": "Date", "rainfall": "Rainfall", "temperature": "Temperature",
         "humidity": "Humidity", "wind_speed": "Wind Speed", "season": "Season", "source": "Source",
     },
     "rice_production": {
@@ -291,9 +292,14 @@ def report_analytics(payload: dict) -> dict:
 
     def matches(row):
         date_field = "record_date" if report_type == "climate_records" else "created_at"
-        if filters.get("date_from") and _day(row.get(date_field)) < filters["date_from"]:
+        start = end = _day(row.get(date_field))
+        # A historical month ("2024-01") is in the range when any of its days is.
+        if row.get("period") == "month" and len(start) == 7:
+            year, month = int(start[:4]), int(start[5:7])
+            start, end = f"{start}-01", f"{start}-{calendar.monthrange(year, month)[1]:02d}"
+        if filters.get("date_from") and end < filters["date_from"]:
             return False
-        if filters.get("date_to") and _day(row.get(date_field)) > filters["date_to"]:
+        if filters.get("date_to") and start > filters["date_to"]:
             return False
         if filters.get("year") and int(row.get("year") or 0) != int(filters["year"]):
             return False
