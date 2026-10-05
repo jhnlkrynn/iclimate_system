@@ -128,6 +128,7 @@
                     </thead>
                     <tbody>
                         @foreach ($records as $record)
+                            @php $recordKey = $record instanceof \Illuminate\Database\Eloquent\Model ? $record : data_get($record, 'id'); @endphp
                             <tr>
                                 @foreach ($columns as $field => $label)
                                     <td>
@@ -136,12 +137,16 @@
                                         @elseif ($field === 'farm_type' && data_get($record, $field))
                                             <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                         @else
-                                            {{ filled(data_get($record, $field)) ? data_get($record, $field) : 'Not set' }}
+                                            {{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}
                                         @endif
                                     </td>
                                 @endforeach
                                 <td class="text-end text-nowrap">
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
+                                    @if (data_get($record, 'is_source_dataset'))
+                                        {{-- A row read from a source dataset: read-only, so no View / Edit / Delete. --}}
+                                        <span class="small text-muted" title="{{ data_get($record, 'source_note') }}">Dataset · read-only</span>
+                                    @else
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $recordKey) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
                                     @if ($routeName === 'notifications' && ! $record->is_read)
                                         <form class="d-inline" method="POST" action="{{ route('notifications.mark-read', $record) }}" data-loading="true">
                                             @csrf
@@ -150,12 +155,13 @@
                                         </form>
                                     @endif
                                     @if ($canManage)
-                                        <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
-                                        <form class="d-inline" method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $recordKey) }}">Edit</a>
+                                        <form class="d-inline" method="POST" action="{{ route($routeName.'.destroy', $recordKey) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Deleting...">Delete</button>
                                         </form>
+                                    @endif
                                     @endif
                                 </td>
                             </tr>
@@ -165,6 +171,7 @@
             </div>
             <div class="card-body ic-table-cards">
                 @foreach ($records as $record)
+                    @php $recordKey = $record instanceof \Illuminate\Database\Eloquent\Model ? $record : data_get($record, 'id'); @endphp
                     <div class="ic-table-card">
                         @foreach ($columns as $field => $label)
                             <div class="ic-table-card-row">
@@ -175,13 +182,16 @@
                                     @elseif ($field === 'farm_type' && data_get($record, $field))
                                         <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                     @else
-                                        {{ filled(data_get($record, $field)) ? data_get($record, $field) : 'Not set' }}
+                                        {{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}
                                     @endif
                                 </div>
                             </div>
                         @endforeach
                         <div class="ic-table-card-actions">
-                            <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $record) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
+                            @if (data_get($record, 'is_source_dataset'))
+                                <span class="small text-muted" title="{{ data_get($record, 'source_note') }}">Dataset · read-only</span>
+                            @else
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ route($routeName.'.show', $recordKey) }}" data-ic-view data-ic-size="normal" @if ($routeName === 'notifications') data-ic-notif-item @endif aria-haspopup="dialog">View</a>
                             @if ($routeName === 'notifications' && ! $record->is_read)
                                 <form method="POST" action="{{ route('notifications.mark-read', $record) }}" data-loading="true">
                                     @csrf
@@ -190,12 +200,13 @@
                                 </form>
                             @endif
                             @if ($canManage)
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
-                                <form method="POST" action="{{ route($routeName.'.destroy', $record) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $recordKey) }}">Edit</a>
+                                <form method="POST" action="{{ route($routeName.'.destroy', $recordKey) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" type="submit" data-loading-text="Deleting...">Delete</button>
                                 </form>
+                            @endif
                             @endif
                         </div>
                     </div>
