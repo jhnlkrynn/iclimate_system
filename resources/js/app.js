@@ -198,7 +198,7 @@ if (document.readyState === 'loading') {
 }
 
 /*
- * Every Leaflet map on any page (Map My Farm, the barangay risk map, MAO maps) is told when its box changes size:
+ * Every Leaflet map on any page (Map My Farm, the barangay heat map, MAO maps) is told when its box changes size:
  * a pop-up or a folded section opening, the phone rotating, the window or the sidebar changing width. Without this
  * Leaflet keeps drawing for the old size and leaves grey tiles.
  */

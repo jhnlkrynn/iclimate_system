@@ -418,7 +418,7 @@ class FarmerDashboardTest extends TestCase
 
         $this->assertSame('error', $data['weather']['state']);
         $this->assertStringContainsString("We can't show this right now.", $text);
-        $this->assertStringContainsString('Weather information is temporarily unavailable.', $text);
+        $this->assertStringContainsString('Latest weather is temporarily unavailable.', $text);
         $this->assertStringContainsString('data-mfd-retry="weather"', $html);
         $this->assertStringContainsString("Today's Highlights", $text);                          // the other sections keep working
         $this->assertStringContainsString('Check the advisories before field work', $text);

@@ -280,7 +280,7 @@
                     $('[data-mao-refreshed]').textContent = data.refreshed_at;
                     ok = map.ok !== false;
                     status.classList.toggle('is-error', !ok);
-                    if (!quiet) $('[data-mao-result]').textContent = ok ? (map.refreshQueued ? ' · Updated. New risk ratings are being calculated in the background.' : ' · Updated.') : ' · Updated, but the risk map could not be reloaded.';
+                    if (!quiet) $('[data-mao-result]').textContent = ok ? (map.refreshQueued ? ' · Updated. New risk ratings are being calculated in the background.' : ' · Updated.') : ' · Updated, but the heat map could not be reloaded.';
                 } catch (e) {
                     ok = false;
                     status.classList.add('is-error');

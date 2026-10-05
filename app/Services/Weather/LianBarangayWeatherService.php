@@ -575,7 +575,7 @@ class LianBarangayWeatherService
             'is_fresh' => false,
             'stale' => true,
             'age_minutes' => null,
-            'message' => 'Latest weather information is temporarily unavailable.',
+            'message' => 'Latest weather is temporarily unavailable.',
             'observed_at' => null,
             'fetched_at' => null,
             'next_refresh_at' => null,

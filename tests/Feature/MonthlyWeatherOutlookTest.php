@@ -87,13 +87,13 @@ class MonthlyWeatherOutlookTest extends TestCase
 
         $this->assertSame('monthly', $out['mode']);
         $this->assertNull($out['weekly']);
-        $this->assertSame('Model-Based Monthly Estimate', $m['type']);
+        $this->assertSame('iClimate Monthly Estimate', $m['type']);
         $this->assertSame('260.0', $values['Expected Rainfall']);
         $this->assertSame('28.3', $values['Expected Temperature']);
         $this->assertStringContainsString('E (90°)', $values['Expected Wind']);
         $this->assertSame('October 1–31, 2026 (the whole month, not a single day)', $m['period']);
-        $this->assertFalse(collect($m['rows'])->firstWhere('label', 'Rainfall Probability')['available']);
-        $this->assertFalse(collect($m['rows'])->firstWhere('label', 'Predominant Weather Condition')['available']);
+        $this->assertFalse(collect($m['rows'])->firstWhere('label', 'Chance of Rain')['available']);
+        $this->assertFalse(collect($m['rows'])->firstWhere('label', 'Main Weather')['available']);
         $this->assertStringContainsString('Above Normal rainfall', $values['Overall Weather Outlook']);
         $this->assertStringContainsString('iClimate monthly Random Forest model', $m['source']);
         $this->assertStringContainsString('2000-01 to 2025-12', $m['source']);
@@ -220,7 +220,7 @@ class MonthlyWeatherOutlookTest extends TestCase
         $this->assertSame('2 of 7 days', $w1['coverage']);
         $this->assertSame('15.5', $values['Expected Rainfall']);                 // Sep 30 (outside the month) excluded
         $this->assertSame('28.5', $values['Expected Temperature']);
-        $this->assertSame('up to 80%', $values['Rainfall Probability']);
+        $this->assertSame('up to 80%', $values['Chance of Rain']);
         $this->assertSame('20.0', $values['Strongest Daily Wind']);
         $this->assertSame('Mostly Light Rain', $values['Weather Outlook']);
         $this->assertSame(['Light Rain' => 2], $w1['conditions']);
@@ -231,7 +231,7 @@ class MonthlyWeatherOutlookTest extends TestCase
             $this->assertSame([], $empty['rows']);
             $this->assertSame('0 of '.$empty['days_in_week'].' days', $empty['coverage']);
         }
-        $this->assertSame('Open-Meteo Forecast API', $out['weekly']['source']);
+        $this->assertSame('Open-Meteo weather forecast', $out['weekly']['source']);
         $this->assertSame('Oct 2, 2026, 10:00 AM (Philippine time)', $out['weekly']['updated']);
     }
 
@@ -295,7 +295,7 @@ class MonthlyWeatherOutlookTest extends TestCase
         $out = $this->outlook(10, null, null, '2015-10-01');
         $h = $out['historical'];
 
-        $this->assertSame('Historical Climate Record', $h['type']);
+        $this->assertSame('Past Weather Records', $h['type']);
         $this->assertSame('200.0', collect($h['observed_rows'])->pluck('value', 'label')['Recorded Rainfall']);
         $this->assertSame(9, $h['years']);                                  // the selected year is excluded from the average
         $this->assertSame('2016–2024', $h['span']);
@@ -319,7 +319,7 @@ class MonthlyWeatherOutlookTest extends TestCase
             ->assertSee('Expected Rainfall')
             ->assertSee('Forecast Period')
             ->assertSee('Forecast Type')
-            ->assertSee('Data Source')
+            ->assertSee('Source')
             ->assertSee('Last Updated')
             ->assertSee('Not available for this period')
             ->assertSee('Seasonal &amp; Outlook Information', false)
@@ -328,14 +328,14 @@ class MonthlyWeatherOutlookTest extends TestCase
             ->assertSee('Temperature Outlook')
             ->assertSee('Historical comparison')
             ->assertSee('color: #0d1f18', false)
-            ->assertSee('PAGASA seasonal and monthly climate outlooks are not connected')
-            ->assertDontSee('No reliable forecast available for this period.');
+            ->assertSee('PAGASA monthly outlooks are not shown in iClimate')
+            ->assertDontSee('No forecast is available for this month yet.');
 
         $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => '2026-11']))
             ->assertOk()
             ->assertSee('data-outlook-month="2026-11"', false)
             ->assertSee('data-outlook-mode="none"', false)
-            ->assertSee('No reliable forecast available for this period.')
+            ->assertSee('No forecast is available for this month yet.')
             ->assertDontSee('Expected Rainfall');
     }
 
@@ -359,12 +359,28 @@ class MonthlyWeatherOutlookTest extends TestCase
             ->assertSee('data-outlook-mode="weekly"', false)
             ->assertSee('Weekly Weather Predictions')
             ->assertSee('Week 1')
-            ->assertSee('No data available')
+            ->assertSee('No forecast yet')
             ->assertSee('Moderate Rain')            // drizzle code 53 shown with rain wording
             ->assertDontSee('Drizzle')
-            ->assertDontSee('No reliable forecast available for this period.')
+            ->assertDontSee('No forecast is available for this month yet.')
             ->getContent();
 
         $this->assertSame(count(MonthlyWeatherOutlookService::weekRanges($date->startOfMonth())), substr_count($html, 'data-week-start='));
+    }
+
+    public function test_unconfirmed_model_wind_is_shown_only_to_it(): void
+    {
+        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
+        $this->mock(PredictionOrchestrator::class, function ($mock) {
+            $mock->shouldReceive('monthlyWeatherForecast')->andReturnUsing(fn () => $this->model());
+        });
+        $page = fn (string $role) => $this->actingAs(User::factory()->create(['role' => $role]))
+            ->get(route('weather-predictions.index', ['calendar_month' => '2026-10']))->assertOk();
+
+        // The model's wind has no confirmed unit: a number a farmer cannot safely read is not shown.
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
+            $page($role)->assertSee('Expected Rainfall')->assertDontSee('Expected Wind')->assertDontSee('unit not confirmed');
+        }
+        $page(User::ROLE_IT_EXPERT)->assertSee('Expected Wind')->assertSee('(unit not confirmed)');
     }
 }

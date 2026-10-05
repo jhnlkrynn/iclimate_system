@@ -22,7 +22,7 @@ const DATA_TYPES = {
     historical: 'Historical (recorded in the past)',
     observed: 'Observed (measured / actually recorded)',
     calculated: 'Calculated (worked out from stored records)',
-    predicted: 'Predicted (a forecast or model estimate, not a measurement)',
+    predicted: 'Predicted (a forecast, not a measurement)',
     mixed: 'Historical records plus predicted values',
     count: 'Count of stored records',
 };
@@ -34,7 +34,7 @@ const pick = (value, role) => (value && typeof value === 'object' ? (value[role]
 const REGISTRY = {
     'yield-by-year': {
         title: 'Average Yield by Year', unit: 't/ha', type: 'historical',
-        source: 'iClimate rice production records (municipal iClimate modeling dataset)',
+        source: 'iClimate rice production records (municipal)',
         method: 'Each point is the mean of that year\'s monthly average yields.',
         shows: { farmer: 'How much rice was harvested per hectare, on average, in each year.', default: 'The average rice yield for each year on record.' },
         read: { farmer: 'A higher point means a better harvest that year.', default: 'Each point is one year. Higher points mean higher average rice yield (t/ha).' },
@@ -46,7 +46,7 @@ const REGISTRY = {
     },
     'yield-by-month': {
         title: 'Average Yield by Month', unit: 't/ha', type: 'historical',
-        source: 'iClimate rice production records (municipal monthly averages, iClimate modeling dataset)',
+        source: 'iClimate rice production records (municipal monthly averages)',
         method: 'Monthly average yield across the municipality for the selected year.',
         shows: { farmer: 'How much rice was harvested per hectare, on average, in each month.', default: 'The average rice yield recorded for each month of the selected year.' },
         read: 'Higher bars mean higher average rice yield for that month. Months without a bar have no record.',
@@ -58,8 +58,8 @@ const REGISTRY = {
     },
     'yield-trend': {
         title: 'Rice Yield Trend', unit: 't/ha', type: 'mixed',
-        source: 'iClimate rice production records; predicted value from the yield model when present',
-        method: 'Yearly mean of monthly average yields. A separate marker, when shown, is a model prediction.',
+        source: 'iClimate rice production records; a predicted value is shown when available',
+        method: 'Yearly mean of monthly average yields. A separate marker, when shown, is a predicted value.',
         shows: { farmer: 'How rice harvests have changed from year to year, and what is expected next.', default: 'Yearly average rice yield over time, with the model\'s prediction shown separately.' },
         read: 'The line joins recorded yearly yields. Dashed lines or different markers are predictions, not recorded harvests.',
         meaning: {
@@ -94,7 +94,7 @@ const REGISTRY = {
     },
     'monthly-rainfall': {
         title: 'Monthly Rainfall', unit: 'mm', type: 'mixed',
-        source: 'Ambulong climate records; lighter bars are model forecasts',
+        source: 'Ambulong weather records; lighter bars are forecasts',
         method: 'Monthly rainfall totals. Recorded and forecast months are separate series.',
         shows: { farmer: 'How much rain fell each month, and how much is expected.', default: 'Recorded monthly rainfall, with model forecasts shown as lighter bars.' },
         read: 'Taller bars mean more rain (millimetres). Lighter bars are forecasts, not measurements.',
@@ -106,7 +106,7 @@ const REGISTRY = {
     },
     'weather-trend': {
         title: 'Weather Trend', unit: '', type: 'mixed',
-        source: 'Ambulong monthly climate records; dashed lines are model forecasts',
+        source: 'Ambulong monthly weather records; dashed lines are forecasts',
         method: 'Monthly values per measure. Each measure keeps its own scale; forecasts are drawn dashed.',
         shows: 'How the weather measures change through the months.',
         read: 'Solid lines are recorded values. Dashed lines with diamond markers are forecasts. Check each axis for its unit.',
@@ -168,7 +168,7 @@ const REGISTRY = {
         meaning: {
             farmer: 'If your barangay is in a higher-risk group, follow advisories closely.',
             mao: 'Prioritise monitoring and support for barangays in high or severe levels.',
-            it: 'One rating per barangay from the risk-map service; barangays without a rating are excluded.',
+            it: 'One rating per barangay from the Heat Map; barangays without a rating are excluded.',
         },
     },
     'users-by-role': {

@@ -689,7 +689,7 @@
 
         <div class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
             <button type="button" class="dashboard-tab active" data-tab="overview" role="tab" aria-selected="true">Overview</button>
-            <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Risk Map &amp; Forecast</button>
+            <button type="button" class="dashboard-tab" data-tab="heatmap" role="tab" aria-selected="false">Heat Map &amp; Forecast</button>
             <button type="button" class="dashboard-tab" data-tab="production" role="tab" aria-selected="false">Monitoring &amp; Production</button>
             <button type="button" class="dashboard-tab" data-tab="fieldreports" role="tab" aria-selected="false">Field Reports</button>
             <button type="button" class="dashboard-tab" data-tab="publishing" role="tab" aria-selected="false">Publishing &amp; Activity</button>
@@ -821,7 +821,7 @@
             <div class="mao-panel-header">
                 <div>
                     <h2 class="mao-panel-title">Barangays to Watch</h2>
-                    <p class="mao-panel-sub">Barangays with a High or Severe farm risk. The Risk Map tab shows all 19.</p>
+                    <p class="mao-panel-sub">Barangays with a High or Severe farm risk. The Heat Map tab shows all 19.</p>
                 </div>
                 <a class="btn btn-sm btn-outline-primary" href="#" onclick="document.querySelector('[data-tab=heatmap]')?.click(); return false;">View Details</a>
             </div>
@@ -908,7 +908,7 @@
         <section class="mao-panel">
             <div class="mao-panel-body">
                 @include('partials.barangay-risk-map', [
-                    'heading' => 'Lian Municipality Risk Map',
+                    'heading' => 'Lian Municipality Heat Map',
                     'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
                     'showRefresh' => true,
                 ])

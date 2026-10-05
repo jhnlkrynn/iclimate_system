@@ -29,7 +29,8 @@
     @if($mode === 'monthly')
         <div class="wp-outlook-block">
             <div class="wp-outlook-tag is-model">{{ $m['type'] }}</div>
-            <div class="wp-outlook-grid">{{ $rowsList($m['rows']) }}</div>
+            {{-- The model's wind has no confirmed unit, so only IT sees it; a number without a unit is not safe to read. --}}
+            <div class="wp-outlook-grid">{{ $rowsList(($isTechnical ?? false) ? $m['rows'] : array_values(array_filter($m['rows'], fn ($r) => $r['label'] !== 'Expected Wind'))) }}</div>
 
             @php $c = $m['cards']; @endphp
             <h4 class="wp-outlook-subtitle">Seasonal &amp; Outlook Information</h4>
@@ -63,17 +64,17 @@
                     </article>
                 @endforeach
             </div>
-            <p class="wp-outlook-fineprint">These outlooks compare the model estimate with past records for the same month. Historical averages are not current weather, and this comparison is iClimate&rsquo;s own, not an official forecast.</p>
+            <p class="wp-outlook-fineprint">These compare iClimate&rsquo;s estimate with past records for the same month. Past averages are not today&rsquo;s weather. This is not an official forecast.</p>
             <dl class="wp-outlook-meta">
                 <div><dt>Forecast Period</dt><dd>{{ $m['period'] }}</dd></div>
                 <div><dt>Forecast Type</dt><dd>{{ $m['type'] }} (not an official forecast)</dd></div>
-                <div><dt>Data Source</dt><dd>{{ $m['source'] }}</dd></div>
+                <div><dt>Source</dt><dd>{{ $m['source'] }}</dd></div>
                 <div><dt>Last Updated</dt><dd>{{ $m['updated'] }}</dd></div>
-                <div><dt>Uncertainty</dt><dd>{{ $m['uncertainty'] }}</dd></div>
+                <div><dt>How sure is this?</dt><dd>{{ $m['uncertainty'] }}</dd></div>
             </dl>
         </div>
     @elseif($mode === 'weekly')
-        <p class="small text-muted mb-2">A reliable estimate for the whole month is not available, so these are weekly summaries built from the real daily forecast that exists.</p>
+        <p class="small text-muted mb-2">No estimate for the whole month yet, so these are weekly summaries of the daily forecast.</p>
         <div class="wp-outlook-weeks">
             @foreach($w['weeks'] as $week)
                 <article class="wp-outlook-week {{ $week['has_data'] ? '' : 'is-empty' }}" data-week-start="{{ $week['start'] }}" data-week-end="{{ $week['end'] }}">
@@ -83,27 +84,27 @@
                     </div>
                     <div class="small text-muted mb-2">Forecast period: {{ $week['period'] }} &middot; Coverage: {{ $week['coverage'] }}</div>
                     @if($week['has_data'])
-                        <div class="wp-outlook-grid is-compact">{{ $rowsList($week['rows'], 'No data available') }}</div>
+                        <div class="wp-outlook-grid is-compact">{{ $rowsList($week['rows'], 'No forecast yet') }}</div>
                         @if($week['conditions'])
-                            <p class="small mb-0 mt-2"><strong>Available forecast conditions:</strong>
+                            <p class="small mb-0 mt-2"><strong>Forecast weather:</strong>
                                 {{ collect($week['conditions'])->map(fn ($n, $c) => $c.' ('.$n.' '.($n === 1 ? 'day' : 'days').')')->implode(', ') }}</p>
                         @endif
                     @else
-                        <p class="wp-outlook-empty mb-0">No data available</p>
+                        <p class="wp-outlook-empty mb-0">No forecast yet</p>
                     @endif
                 </article>
             @endforeach
         </div>
         <dl class="wp-outlook-meta">
             <div><dt>Forecast Type</dt><dd>{{ $w['type'] }}</dd></div>
-            <div><dt>Data Source</dt><dd>{{ $w['source'] }}</dd></div>
+            <div><dt>Source</dt><dd>{{ $w['source'] }}</dd></div>
             <div><dt>Last Updated</dt><dd>{{ $w['updated'] }}</dd></div>
         </dl>
         <p class="wp-outlook-missing">{{ $w['note'] }}</p>
     @else
         <div class="wp-outlook-block">
-            <p class="wp-outlook-empty mb-1">No reliable forecast available for this period.</p>
-            @if($monthlyOutlook['model_message'])<p class="text-muted small mb-0">{{ $monthlyOutlook['model_message'] }}</p>@endif
+            <p class="wp-outlook-empty mb-1">No forecast is available for this month yet.</p>
+            @if($monthlyOutlook['model_message'] && ($isTechnical ?? false))<p class="text-muted small mb-0">{{ $monthlyOutlook['model_message'] }}</p>@endif
         </div>
     @endif
 

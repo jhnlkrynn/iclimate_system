@@ -283,7 +283,7 @@ return [
         'chance_short' => ':percent% rain',
         'view_full' => 'View Full Forecast',
         'empty' => 'The forecast for the coming days is being updated. Check back soon.',
-        'error' => 'Weather information is temporarily unavailable.',
+        'error' => 'Latest weather is temporarily unavailable.',
     ],
 
     'week' => [

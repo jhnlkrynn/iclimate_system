@@ -41,7 +41,7 @@ class ClimateRecordController extends CrudController
      */
     public const AMBULONG_ROW_LABEL = 'Lian Climate Reference';
 
-    public const AMBULONG_FILTER_LABEL = 'Lian Historical Climate Data';
+    public const AMBULONG_FILTER_LABEL = 'Lian Past Weather Records';
 
     private const FARMER_PER_PAGE = 20;
 

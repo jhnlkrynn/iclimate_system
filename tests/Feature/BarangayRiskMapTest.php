@@ -482,7 +482,7 @@ class BarangayRiskMapTest extends TestCase
         $response->assertSee('id="riskMapLegend"', false);
         $response->assertDontSee('id="riskMeaningTitle"', false);
         $response->assertDontSee('class="risk-map-meaning"', false);
-        $response->assertSee('Lian Municipality Risk Map');
+        $response->assertSee('Lian Municipality Heat Map');
     }
 
     /**
@@ -580,7 +580,7 @@ class BarangayRiskMapTest extends TestCase
         $response->assertSee('id="riskMapLegend"', false);
         $response->assertDontSee('id="riskMeaningTitle"', false);
         $response->assertDontSee('class="risk-map-meaning"', false);
-        $response->assertSee('Lian Municipality Risk Map');
+        $response->assertSee('Lian Municipality Heat Map');
         // Same read-only endpoints MAO/Admin use — proves there is no
         // separate, farmer-only, single-barangay map data source.
         $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
@@ -625,7 +625,7 @@ class BarangayRiskMapTest extends TestCase
 
             $this->actingAs($user)->get(route('heat-map.index'))
                 ->assertOk()
-                ->assertSee('Lian Municipality Risk Map')
+                ->assertSee('Lian Municipality Heat Map')
                 ->assertSee('id="barangayRiskMap"', false)
                 ->assertSee('id="riskMapLegend"', false)
                 ->assertDontSee('id="riskMeaningTitle"', false)

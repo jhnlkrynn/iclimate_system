@@ -144,9 +144,9 @@ class BarangayRiskForecastTest extends TestCase
 
         $this->actingAs($farmer)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertSee('Barangay Climate Risk Map')
-            ->assertSee('Current and monthly rice-farming risk conditions across Lian, Batangas.')
-            ->assertSee('Monthly weather forecasts apply to Lian, Batangas as a whole.')
+            ->assertSee('Barangay Heat Map')
+            ->assertSee('Farm risk for rice in each Lian barangay, today and by month.')
+            ->assertSee('The monthly forecast covers all of Lian.')
             ->assertSee('ABOUT THIS FORECAST')
             ->assertSee('Forecast Source')
             ->assertSee('iClimate')

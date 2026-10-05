@@ -150,7 +150,7 @@ class WeatherPredictionController extends Controller
         $liveWeatherError = match (true) {
             ! $location['coordinates'] => 'Your saved barangay is not recognized as one of Lian’s 19 barangays. Update your profile location.',
             ! $liveWeather && $isTechnical => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
-            ! $liveWeather => 'Forecast Temporarily Unavailable. Please try again later.',
+            ! $liveWeather => 'The forecast is not available right now. Please try again later.',
             default => null,
         };
 

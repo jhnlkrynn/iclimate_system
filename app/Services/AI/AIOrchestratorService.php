@@ -709,7 +709,10 @@ class AIOrchestratorService
 
         $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if (! $tool['success']) {
-                return $this->translate($language, 'I could not generate the iClimate monthly weather model prediction right now. '.$tool['message'], 'Hindi ko magenerate ngayon ang iClimate monthly weather model prediction. '.$tool['message']);
+                // Farmers get the plain message; staff also see why the forecast could not be made.
+                $why = $user->role === User::ROLE_FARMER ? '' : ' '.$tool['message'];
+
+                return $this->translate($language, 'I cannot get the monthly weather forecast right now. Please try again later.'.$why, 'Hindi ko makuha ngayon ang buwanang forecast ng panahon. Subukan ulit mamaya.'.$why);
             }
 
             $data = $tool['data'];

@@ -177,7 +177,7 @@ class PredictionTabsTest extends TestCase
         }
         $this->assertStringNotContainsString('open-meteo', $body);
         $this->assertStringNotContainsString('technical details', $body);
-        $this->assertStringContainsString('prediction reliability', $body);
+        $this->assertStringContainsString('forecast reliability', $body);
         $this->assertStringNotContainsString('100% accurate', $body);
     }
 

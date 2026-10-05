@@ -60,9 +60,9 @@ class ClimateRecordsFarmerTest extends TestCase
         $html = $this->actingAs($this->farmer())->get(route('climate-records.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('<h1>Climate Records for Lian, Batangas</h1>', $html);
-        $this->assertStringContainsString('Review historical climate information used by iClimate for Lian, Batangas.', $html);
+        $this->assertStringContainsString('Past weather records iClimate uses for Lian, Batangas.', $html);
         $this->assertStringContainsString('Lian, Batangas Climate Records', $html);              // data reference label
-        $this->assertStringContainsString('Historical source: PAGASA Ambulong Station, Tanauan, Batangas.', $html);
+        $this->assertStringContainsString('Source: PAGASA Ambulong Station, Tanauan, Batangas.', $html);
         $this->assertStringContainsString('>'.ClimateRecordController::AMBULONG_ROW_LABEL.'<', $html);
         // The filter shows the Lian label but still submits the real stored source.
         $this->assertMatchesRegularExpression('/<option value="'.preg_quote(e(ClimateRecordController::AMBULONG_SOURCE), '/').'"\s*>'.ClimateRecordController::AMBULONG_FILTER_LABEL.'<\/option>/', $html);

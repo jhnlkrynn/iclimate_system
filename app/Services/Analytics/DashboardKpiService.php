@@ -464,7 +464,7 @@ class DashboardKpiService
             $riskFailures = BarangayRiskMapService::failuresToday();
             $kpis[] = [
                 'key' => 'risk-freshness',
-                'label' => 'Risk Map Freshness',
+                'label' => 'Heat Map Freshness',
                 'value' => number_format($current),
                 'unit' => 'of '.$totalBarangays,
                 'note' => 'Barangays refreshed in the last '.HeatmapArea::CURRENT_WINDOW_HOURS.' hours'

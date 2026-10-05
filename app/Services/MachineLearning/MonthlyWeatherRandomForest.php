@@ -1529,7 +1529,7 @@ class MonthlyWeatherRandomForest
             ) > 300
         ) {
             $insights[] =
-                'Rainfall is elevated; prioritize drainage and flood monitoring.';
+                'Heavy rain is likely. Check drainage and watch for flooding.';
         } elseif (
             (
                 $predictions[
@@ -1539,10 +1539,10 @@ class MonthlyWeatherRandomForest
             ) < 100
         ) {
             $insights[] =
-                'Rainfall is low; rainfed farms may need additional water support.';
+                'Rain may be low. Rainfed farms may need more water.';
         } else {
             $insights[] =
-                'Rainfall is within a moderate planning range.';
+                'Rainfall looks normal for farm work.';
         }
 
         if (
@@ -1554,7 +1554,7 @@ class MonthlyWeatherRandomForest
             ) >= 32
         ) {
             $insights[] =
-                'Maximum temperature may cause heat stress during sensitive rice growth stages.';
+                'Hot days may stress young or flowering rice.';
         }
 
         if (
@@ -1566,7 +1566,7 @@ class MonthlyWeatherRandomForest
             ) >= 88
         ) {
             $insights[] =
-                'High humidity may increase pest and disease pressure.';
+                'Humid air may bring more pests and rice diseases.';
         }
 
         if (
@@ -1578,7 +1578,7 @@ class MonthlyWeatherRandomForest
             ) >= 18
         ) {
             $insights[] =
-                'Elevated wind speed may increase lodging or storm-related risk.';
+                'Strong wind may knock down rice plants.';
         }
 
         if (

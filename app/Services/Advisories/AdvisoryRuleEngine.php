@@ -204,7 +204,7 @@ class AdvisoryRuleEngine
             'advisory_type' => PlantingAdvisory::TYPE_CLIMATE,
             'summary' => "{$label} outlook: No severe iClimate rule was triggered, but farmers should keep monitoring current Lian, Batangas weather.",
             'message' => $this->baselineMessage($metrics, $context),
-            'recommended_action' => 'Continue normal farm planning, check actual field conditions, monitor updated advisories, and follow MAO, LGU, or PAGASA online guidance if conditions change.',
+            'recommended_action' => 'Continue normal farm work. Check your field, and follow MAO, LGU or PAGASA advice if conditions change.',
             'severity' => PlantingAdvisory::SEVERITY_INFORMATION,
             'priority' => 20,
             'target_barangay' => null,

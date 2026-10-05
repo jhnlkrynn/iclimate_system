@@ -23,7 +23,7 @@ class WarmDashboardCaches extends Command
             if ($age === null || $age >= 10) {
                 $started = microtime(true);
                 $riskMap->refreshCache();
-                $this->line('Refreshed risk map in '.round(microtime(true) - $started, 1).'s');
+                $this->line('Refreshed heat map in '.round(microtime(true) - $started, 1).'s');
             }
 
             foreach ($dashboards->warmSharedDashboards() as $name => $seconds) {
