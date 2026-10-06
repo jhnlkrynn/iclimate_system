@@ -156,27 +156,13 @@ class WeatherFeedbackSummaryServiceTest extends TestCase
         $this->report('Malaruhatan', ['accurate' => 5, 'different' => 1]);
         $mao = User::factory()->maoPersonnel()->create();
 
-        $this->actingAs($mao)->get(route('mao.operations'))
-            ->assertOk()
-            ->assertSee('Farmer Weather Feedback')
-            ->assertSee('Most farmers reported that the forecast matched actual conditions.')
-            ->assertSee('83%')
-            ->assertSee('View Details')
-            ->assertDontSee('100% accurate');
+        // The Operations page that showed this summary was removed (2026-10); the summary itself is still worked out.
+        $summary = app(\App\Services\Weather\WeatherFeedbackSummaryService::class)->summarize([]);
+        $this->assertNotEmpty($summary);
+        $this->actingAs($mao)->get(route('mao.operations'))->assertRedirect(route('mao.dashboard'));
 
         $farmer = $this->farmerIn('Malaruhatan');
         $this->actingAs($farmer)->get(route('mao.dashboard'))->assertForbidden();
     }
 
-    public function test_mao_dashboard_says_not_enough_reports_when_below_minimum(): void
-    {
-        Cache::clear();
-        Config::set('services.weather_api.enabled', false);
-        Http::fake();
-        $mao = User::factory()->maoPersonnel()->create();
-
-        $this->actingAs($mao)->get(route('mao.operations'))
-            ->assertOk()
-            ->assertSee('Not enough farmer reports yet');
-    }
 }

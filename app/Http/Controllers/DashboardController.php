@@ -25,6 +25,7 @@ use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\ItDashboardInsights;
 use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
+use App\Services\Analytics\MaoHomeService;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\Risk\HeatMapPanel;
 use App\Services\SystemAuditLogger;
@@ -36,6 +37,7 @@ use App\Support\BusinessClock;
 use App\Support\DashboardData;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
+use App\Support\RiskMapInitialData;
 use App\Support\StaleCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -83,11 +85,12 @@ class DashboardController extends Controller
     ];
 
     /** MAO overview: shared payload (cached briefly) plus what depends on who is signed in. */
-    public function mao(Request $request, MaoDashboardService $mao): View
+    /** MAO Dashboard (2026-10): four KPI tiles, "Kailangan ng Aksyon", a Heat Map preview and one chart, from saved data. */
+    public function mao(Request $request, MaoHomeService $home): View
     {
-        $payload = StaleCache::remember($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, fn (): array => $mao->payload());
-
-        return view('dashboards.mao', ['mao' => $mao->forUser($payload, $request->user())]);
+        return view('dashboards.mao', [
+            'mao' => StaleCache::remember($this->maoHomeCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, fn (): array => $home->payload()),
+        ]);
     }
 
     /** Refresh button: rebuilds the live sections (weather is re-fetched) and returns each section's HTML. */
@@ -115,8 +118,12 @@ class DashboardController extends Controller
     {
         $timings = [];
 
+        // First, because it may store ratings (which retires the dashboard copies made before it): the IT dashboard's
+        // map reads the stored barangay ratings, which the old MAO dashboard used to load as a side effect of its warm-up.
+        rescue(fn () => RiskMapInitialData::payloads(false), null, false);
+
         $started = microtime(true);
-        StaleCache::put($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, app(MaoDashboardService::class)->payload());
+        StaleCache::put($this->maoHomeCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, app(MaoHomeService::class)->payload());
         $timings['MAO'] = round(microtime(true) - $started, 1);
 
         $started = microtime(true);
@@ -126,6 +133,11 @@ class DashboardController extends Controller
         $timings['IT'] = round(microtime(true) - $started, 1);
 
         return $timings;
+    }
+
+    private function maoHomeCacheKey(): string
+    {
+        return 'dashboard:mao:home:v'.DashboardData::version();
     }
 
     private function maoOverviewCacheKey(): string

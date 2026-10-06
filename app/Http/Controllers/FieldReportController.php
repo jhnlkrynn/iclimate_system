@@ -44,6 +44,18 @@ class FieldReportController extends CrudController
         ];
     }
 
+    /** ?unresolved=1 lists everything not yet Resolved (the dashboard's "Unresolved field reports" opens it). */
+    protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::baseQuery($request)
+            ->when($request->routeIs('field-reports.index') && $request->boolean('unresolved'), fn ($query) => $query->where('status', '!=', FieldReport::STATUS_RESOLVED));
+    }
+
+    public function index(Request $request): \Illuminate\View\View
+    {
+        return parent::index($request)->with('unresolvedCount', FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count());
+    }
+
     protected function rules(Request $request, ?int $id = null): array
     {
         return [

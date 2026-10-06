@@ -404,14 +404,13 @@ class DashboardOverviewTest extends TestCase
         $this->rice('Binubusan', 2023, 10, 40);
         $this->rice('Binubusan', 2024, 10, 50);
 
+        // MAO Dashboard (2026-10): four tiles and one chart; no shared overview strip and no year filter.
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('mao.operations', ['year' => 2023]))
+        $this->actingAs($mao)->get(route('mao.dashboard'))
             ->assertOk()
-            ->assertSee('data-dashboard-overview="mao"', false)
-            ->assertSee('Rice Production Trend')
-            ->assertSee('Total Rice Production (2023)')
-            ->assertSee('Data sources &amp; last updated', false)
-            ->assertSee('Rice yield history')
+            ->assertSee('data-mao-kpis', false)
+            ->assertSee('Rice Yield by Year')
+            ->assertDontSee('data-dashboard-overview="mao"', false)
             ->assertDontSee('id="dashYear"', false)
             ->assertDontSee('Figures last calculated');
 

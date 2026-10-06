@@ -1652,3 +1652,13 @@ html[data-theme="dark"] .ic-skel-lines > span:not(.visually-hidden) { background
 html[data-theme="dark"] .ic-updated { color: #9fb5aa; }
 html[data-theme="dark"] .ic-no-data { background: #1c2924; color: #b8c9c0; }
 html[data-theme="dark"] .ic-no-data strong { color: #e4ece7; }
+
+/* Tabs above a staff list (Records: Climate Records / Rice Production; Field Reports: All / Unresolved). */
+.ic-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ic-tab { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem 1.1rem; border: 1px solid #cfdad4; border-radius: 999px; background: #fff; color: #1f2d27; font-weight: 700; text-decoration: none; }
+.ic-tab:hover { border-color: #14532d; color: #14532d; }
+.ic-tab.is-active { background: #14532d; border-color: #14532d; color: #fff; }
+.ic-tab-count { font-size: .8rem; font-weight: 800; padding: 0 .5rem; border-radius: 999px; background: rgba(0, 0, 0, .08); }
+.ic-tab.is-active .ic-tab-count { background: rgba(255, 255, 255, .22); }
+html[data-theme="dark"] .ic-tab { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
+html[data-theme="dark"] .ic-tab.is-active { background: #2f7d54; border-color: #2f7d54; color: #fff; }

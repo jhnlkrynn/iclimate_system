@@ -165,11 +165,8 @@ class DashboardKpiTest extends TestCase
             ->assertSee('No data yet');
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))
-            ->assertOk()
-            ->assertSee('Agriculture at a Glance')
-            ->assertSee('data-kpi="yield"', false)
-            ->assertSee('Total Rice Production (2024)');
+        // The Operations page was removed (2026-10): its address opens the dashboard.
+        $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))->assertRedirect(route('mao.dashboard'));
 
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
         $this->actingAs($it)->get(route('admin.dashboard'))

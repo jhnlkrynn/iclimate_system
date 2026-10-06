@@ -5,7 +5,7 @@
     {{-- Staff accounts (IT and MAO) get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
     <div @class(['feed-wrap', 'mfd itd itp' => $isStaffFeed])>
         @if($isStaffFeed)
-            <x-it.page-header kicker="Community and Updates" title="Community Feed" lede="MAO news and farmer discussions. Read MAO posts, react, and leave comments.">
+            <x-it.page-header kicker="Community and Updates" title="Announcements" lede="MAO news and activities for farmers. Farmers read these on their Advisories page.">
                 <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>MAO Updates</span></span>
                 <div class="itd-header-actions">
                     <a href="{{ route('messages.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'message'])Open Messages</a>

@@ -266,14 +266,7 @@ class FarmerDashboardWeatherTest extends TestCase
 
         $user = User::factory()->maoPersonnel()->create();
 
-        $this->actingAs($user)
-            ->get(route('mao.operations'))
-            ->assertOk()
-            ->assertSee('data-mao-weather-root', false)
-            ->assertSee('MAO_WEATHER_POLL_INTERVAL = 60000', false)
-            ->assertSee('refreshMaoWeather', false)
-            ->assertSee('Live weather for Lian, Batangas');
-
+        // The Operations page that polled this endpoint was removed (2026-10); the endpoint still answers from saved data.
         $this->actingAs($user)
             ->getJson(route('mao.dashboard.weather'))
             ->assertOk()
@@ -281,43 +274,6 @@ class FarmerDashboardWeatherTest extends TestCase
             ->assertJsonPath('weather.source', 'Open-Meteo')
             ->assertJsonPath('weather.current_temperature_c', 25.5)
             ->assertJsonPath('source_label', 'Open-Meteo live weather for Lian, Batangas');
-    }
-
-    public function test_mao_dashboard_chart_labels_render_horizontally_and_wrap(): void
-    {
-        Http::fake([
-            'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
-        ]);
-        // Pages never call the provider; the scheduled refresh stores the reading they show.
-        $this->artisan('iclimate:refresh-weather-cache');
-
-        $user = User::factory()->maoPersonnel()->create();
-        $response = $this->actingAs($user)->get(route('mao.operations'));
-        $content = $response->getContent();
-
-        // The page's styles live in their own file since 2026-10-06 (they used to be a <style> block in the view).
-        $css = (string) file_get_contents(resource_path('css/pages/mao-operations.css'));
-        $this->assertStringContainsString('grid-template-columns: repeat(3, minmax(0, 1fr))', $css);
-        $this->assertStringContainsString('grid-template-columns: repeat(2, minmax(0, 1fr))', $css);
-        $this->assertMatchesRegularExpression('/<link[^>]+mao-operations[^">]*\.css/', $content);
-
-        $response->assertOk()
-            ->assertSee('horizontalCategoryTicks', false)
-            ->assertSee('iClimateVisualsReady', false)
-            ->assertSee('Loading real weather data...', false)
-            ->assertSee('No weather records found for this chart.', false)
-            ->assertSee('context.parsed.y', false)
-            ->assertSee('display: false', false)
-            ->assertSee('maxRotation: 0', false)
-            ->assertSee('minRotation: 0', false)
-            ->assertDontSee("indexAxis: 'y'", false)
-            ->assertDontSee('maxRotation: 45', false)
-            ->assertDontSee('minRotation: 45', false);
-
-        $this->assertSame(1, substr_count($content, "rainfall: { id: 'rainfallChart'"));
-        $this->assertSame(1, substr_count($content, "temperature: { id: 'temperatureChart'"));
-        $this->assertSame(1, substr_count($content, "humidity: { id: 'humidityChart'"));
-        $this->assertSame(1, substr_count($content, "windSpeed: { id: 'windSpeedChart'"));
     }
 
     /**

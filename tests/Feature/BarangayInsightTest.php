@@ -310,8 +310,8 @@ class BarangayInsightTest extends TestCase
             ->assertSee('data-heat-map-panel', false)
             ->assertDontSee('data-insight-url', false);
 
-        // The pop-up stays where it was not replaced: the MAO dashboard's map.
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('mao.dashboard'))
+        // The pop-up stays where it was not replaced: the IT dashboard's map.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('data-insight-url="'.url('/heat-map/insight').'"', false);
     }

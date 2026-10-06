@@ -126,6 +126,8 @@
 
         @if ($isFarmer)
             @include('advisories._announcements', ['announcements' => $announcements ?? collect()])
+        @elseif ($checkIns !== null)
+            @include('advisories._check-ins', ['checkIns' => $checkIns])
         @endif
     </div>
 

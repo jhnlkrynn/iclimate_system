@@ -420,7 +420,7 @@ class PagePerformanceTest extends TestCase
         \App\Models\FarmerProfile::factory()->count(3)->create();
 
         $after = $this->actingAs($mao)->get('/mao/dashboard')->assertOk()->viewData('mao')['farmers'];
-        $this->assertSame(3, $after['farmers'] - ($before['farmers'] ?? 0));
+        $this->assertSame(3, $after - $before);                             // "Registered farmers" (a plain count since 2026-10)
     }
 
     public function test_page_cache_scopes_never_mix(): void
