@@ -201,10 +201,10 @@ class PagePerformanceTest extends TestCase
 
         $this->get('/_probe/weather')->assertOk();
 
-        $this->assertSame(1, $attempts, 'one attempt, no retries, when a person is waiting');
+        $this->assertSame(0, $attempts, 'a page never calls the provider; the scheduled refresh does');
     }
 
-    public function test_pages_use_stored_weather_but_live_widgets_ask_for_fresh(): void
+    public function test_pages_and_live_widgets_use_stored_weather_and_only_an_explicit_refresh_calls_out(): void
     {
         Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
         $service = app(FarmerDashboardWeatherService::class);
@@ -221,8 +221,12 @@ class PagePerformanceTest extends TestCase
         $this->get('/_probe/weather-page')->assertOk()->assertJsonPath('t', 26);
         Http::assertNothingSent();
 
-        // ...a live widget polling in the background wants the provider's current reading.
-        $this->getJson('/_probe/weather-page')->assertOk();
+        // ...so does a live widget polling in the background...
+        $this->getJson('/_probe/weather-page')->assertOk()->assertJsonPath('t', 26);
+        Http::assertNothingSent();
+
+        // ...and only an explicit refresh (a Refresh button, or the scheduled job) asks the provider.
+        app(FarmerDashboardWeatherService::class)->current(force: true);
         Http::assertSentCount(1);
     }
 
@@ -360,16 +364,16 @@ class PagePerformanceTest extends TestCase
     {
         Http::fake();
         $mao = $this->user(User::ROLE_MAO);
-        FarmerProfile::factory()->count(23)->create(); // 23 profiles: pages of 10, 10 and 3
+        FarmerProfile::factory()->count(53)->create(); // 53 profiles: pages of 25, 25 and 3
 
         $first = $this->actingAs($mao)->get('/farmer-profiles');
         $second = $this->actingAs($mao)->get('/farmer-profiles?page=3');
 
         $first->assertOk();
         $second->assertOk();
-        $this->assertCount(10, $first->viewData('records')->items());
-        $this->assertSame(10, $first->viewData('records')->perPage());
-        $this->assertCount(3, $second->viewData('records')->items(), 'page 3 holds the last 3 of 23 profiles');
+        $this->assertCount(25, $first->viewData('records')->items());
+        $this->assertSame(25, $first->viewData('records')->perPage());
+        $this->assertCount(3, $second->viewData('records')->items(), 'page 3 holds the last 3 of 53 profiles');
     }
 
     // ---------------------------------------------------------------- cache safety

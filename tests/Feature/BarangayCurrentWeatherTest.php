@@ -76,7 +76,7 @@ class BarangayCurrentWeatherTest extends TestCase
         $this->assertFalse(app(LianBarangayWeatherService::class)->isDue());
     }
 
-    public function test_expired_weather_is_served_immediately_and_refreshed_after_the_response(): void
+    public function test_expired_weather_is_served_immediately_and_the_page_never_refreshes_it(): void
     {
         app(LianBarangayWeatherService::class)->refreshAll();
         [$lat] = LianBarangays::coordinateFor('Bagong Pook');
@@ -89,13 +89,16 @@ class BarangayCurrentWeatherTest extends TestCase
         $entry = collect($response->json('barangays'))->firstWhere('barangay', 'Bagong Pook');
         $this->assertSame('recent', $entry['weather']['status']);
         $this->assertSame($this->temperatureFor($lat) - 1.0, $entry['weather']['temperature_c']);
-        $this->assertTrue($response->json('weather_refresh_scheduled'));
+        $this->assertFalse($response->json('weather_refresh_scheduled'));
 
-        // …and the refresh that ran after the response replaced it with the new reading.
+        // …and the request does not fetch: the stored reading stays until iclimate:refresh-barangay-weather runs.
+        $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Bagong Pook');
+        $this->assertSame($this->temperatureFor($lat) - 1.0, $record['temperature_c']);
+
+        $this->artisan('iclimate:refresh-barangay-weather');
         $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Bagong Pook');
         $this->assertSame('fresh', $record['status']);
         $this->assertSame($this->temperatureFor($lat), $record['temperature_c']);
-        $this->assertSame(now()->toIso8601String(), $record['fetched_at']);
     }
 
     public function test_successful_refresh_updates_values_and_timestamp(): void

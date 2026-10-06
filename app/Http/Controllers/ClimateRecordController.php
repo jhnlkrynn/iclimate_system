@@ -37,7 +37,7 @@ class ClimateRecordController extends CrudController
 
     public const AMBULONG_FILTER_LABEL = ClimateRecordHistory::AMBULONG_FILTER_LABEL;
 
-    private const FARMER_PER_PAGE = 20;
+    private const FARMER_PER_PAGE = CrudController::PER_PAGE;
 
     /**
      * Everyone sees the stored climate history: the Ambulong monthly record (database/data/Ambulong Monthly Data.csv,

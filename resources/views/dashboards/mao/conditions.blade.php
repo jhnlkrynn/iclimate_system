@@ -6,15 +6,13 @@
             <p class="mtd-sub">Live weather conditions for {{ $w['state'] === 'ok' ? $w['location'] : 'Lian, Batangas' }}.</p>
         </div>
         <div class="mtd-head-actions">
-            @if ($w['state'] === 'ok' && $w['updated_at'])<span class="mtd-updated">Last updated: {{ $w['updated_at']->format('g:i A') }}</span>@endif
+            @if ($w['state'] === 'ok' && $w['updated_at'])<x-updated-at class="mtd-updated" :at="$w['updated_at']" />@endif
             <a class="mtd-btn is-quiet" href="{{ route('weather-predictions.index') }}">View Weather Forecast</a>
         </div>
     </div>
     @if ($w['state'] !== 'ok')
-        <div class="mtd-soft-error" role="status">
-            <span>Live weather is temporarily unavailable.</span>
-            <button type="button" class="mtd-btn is-quiet" data-mao-retry>Try again</button>
-        </div>
+        {{-- No saved reading at all yet: a calm note (the scheduled refresh stores one every few minutes). --}}
+        <x-no-data note="The weather appears here after the next scheduled update." />
     @else
         <div class="mtd-tiles">
             @if ($w['rain'] !== null)

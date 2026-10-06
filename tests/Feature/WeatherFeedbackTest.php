@@ -223,6 +223,7 @@ class WeatherFeedbackTest extends TestCase
 
     public function test_feedback_never_writes_climate_records_forecasts_or_dispatches_retraining(): void
     {
+        $farmer = $this->farmer();                      // made first: a new farmer profile queues its own yield estimate
         Bus::fake();
         Queue::fake();
         $forecast = $this->forecastFor($this->pastMonth);
@@ -230,7 +231,7 @@ class WeatherFeedbackTest extends TestCase
         $climateBefore = ClimateRecord::query()->count();
         $forecastBefore = $forecast->fresh()->only(['rainfall', 'temperature_average', 'humidity', 'weather_model', 'status']);
 
-        $this->submitFeedback($this->farmer(), [
+        $this->submitFeedback($farmer, [
             'forecast_date' => $this->pastMonth->toDateString(),
             'accuracy' => 'different',
             'observed_condition' => 'Sunny',

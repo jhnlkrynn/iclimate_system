@@ -11,6 +11,9 @@
 
     {{-- Same design system as the farmer dashboard: the wrapper is .mfd, the shared parts are .mfd-* (farmer-dashboard.css)
          and only the IT-only parts (tabs, tables, filters, heatmap) are .itd-* in it-dashboard.css. --}}
+    @if (! empty($activityInitial))
+        <script type="application/json" id="itdActivityInitial">@json($activityInitial)</script>
+    @endif
     <div class="mfd itd" data-it-dashboard data-live-url="{{ route('admin.dashboard.live') }}" data-activity-url="{{ route('admin.dashboard.activity') }}" data-recent-url="{{ route('admin.dashboard.recent') }}" data-logs-url="{{ route('system-logs.index') }}">
         {{-- Header --}}
         <header class="mfd-header">
@@ -166,6 +169,13 @@
             root.addEventListener('submit', (e) => { const msg = e.target.dataset && e.target.dataset.confirm; if (msg && !window.confirm(msg)) e.preventDefault(); });
 
             // ---- System Activity chart
+            function takeInitialActivity() {
+                const node = document.getElementById('itdActivityInitial');
+                if (!node) return null;
+                node.remove();
+                try { return JSON.parse(node.textContent) || null; } catch (e) { return null; }
+            }
+
             async function loadActivity() {
                 if (activityLoaded && activity) return;
                 const state = $('[data-activity-state]'); const box = $('[data-activity-chart]');
@@ -174,9 +184,13 @@
                 root.querySelectorAll('.itd-range button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.range) === range)));
                 const message = (text) => { box.classList.remove('is-loading'); state.textContent = text; };
                 try {
-                    const res = await fetch(root.dataset.activityUrl + '?range=' + range, { headers: { Accept: 'application/json' } });
-                    if (!res.ok) throw new Error('bad status');
-                    const data = await res.json();
+                    // The default 30 days arrive with the page (#itdActivityInitial); other ranges are fetched when chosen.
+                    let data = range === 30 ? takeInitialActivity() : null;
+                    if (!data) {
+                        const res = await fetch(root.dataset.activityUrl + '?range=' + range, { headers: { Accept: 'application/json' } });
+                        if (!res.ok) throw new Error('bad status');
+                        data = await res.json();
+                    }
                     $('[data-activity-updated]').textContent = clock();
                     if (data.state === 'error') { message(data.message); return; }
                     if (data.state === 'empty') { if (activity) { activity.destroy(); activity = null; } message('Activity for this period will show here as people sign in and use the system.'); return; }

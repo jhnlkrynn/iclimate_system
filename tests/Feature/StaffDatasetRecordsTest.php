@@ -51,7 +51,7 @@ class StaffDatasetRecordsTest extends TestCase
         $label = fn ($o) => Carbon::create($o['year'], $o['month'], 1)->format('M Y');
 
         $html = $this->actingAs($this->it())->get(route('climate-records.index'))->assertOk()
-            ->assertSee("Showing 1-10 of {$total}")
+            ->assertSee("Showing 1-25 of {$total}")
             ->assertDontSee('No records found')
             ->assertSee(ClimateRecordController::AMBULONG_SOURCE)                    // the true station, not "Lian"
             ->assertSee('title="iClimate weather reference for Lian · read-only"', false)
@@ -66,7 +66,7 @@ class StaffDatasetRecordsTest extends TestCase
         $this->assertStringContainsString($this->number($newest['humidity']).'%', $html);
 
         $this->actingAs($this->it())->get(route('climate-records.index', ['sort' => 'oldest']))->assertOk()->assertSee($label($oldest));
-        $this->actingAs($this->it())->get(route('climate-records.index', ['page' => 2]))->assertOk()->assertSee("Showing 11-20 of {$total}");
+        $this->actingAs($this->it())->get(route('climate-records.index', ['page' => 2]))->assertOk()->assertSee("Showing 26-50 of {$total}");
     }
 
     public function test_climate_search_season_and_source_filters_use_the_combined_records(): void
@@ -102,7 +102,7 @@ class StaffDatasetRecordsTest extends TestCase
         ClimateRecord::query()->create(['record_date' => '2025-12-05', 'rainfall' => 3, 'temperature' => 27, 'humidity' => 80, 'season' => 'Dry', 'source' => 'MAO field log']);
 
         // The copy replaces its station month (no duplicate); the other source is a separate record.
-        $html = $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-10 of '.($total + 1))->getContent();
+        $html = $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
         $this->assertStringContainsString(route('climate-records.edit', $copy->id), $html);
 
         // Dataset rows have no View / Edit / Delete: only the two entered rows (newest, so on page 1) have Edit
@@ -130,7 +130,7 @@ class StaffDatasetRecordsTest extends TestCase
 
         $newest = $rows->sortByDesc(fn ($r) => $r['year'] * 100 + $r['month'])->first();
         $html = $this->actingAs($this->it())->get(route('rice-productions.index'))->assertOk()
-            ->assertSee("Showing 1-10 of {$total}")
+            ->assertSee("Showing 1-25 of {$total}")
             ->assertDontSee('No records found')
             ->assertSee(RiceProductionController::DATASET_SCOPE)
             ->assertSee(Carbon::create($newest['year'], $newest['month'], 1)->format('M Y'))
@@ -164,7 +164,7 @@ class StaffDatasetRecordsTest extends TestCase
         $this->actingAs($it)->get(route('rice-productions.index'))->assertOk()
             ->assertSee('<option value="Irrigated"', false)
             ->assertDontSee('<option value="Rainfed"', false)
-            ->assertSee('Showing 1-10 of '.($rows->count() + 1));
+            ->assertSee('Showing 1-25 of '.($rows->count() + 1));
     }
 
     public function test_farmers_keep_their_own_page_design(): void

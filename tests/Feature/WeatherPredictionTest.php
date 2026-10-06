@@ -76,6 +76,8 @@ class WeatherPredictionTest extends TestCase
 
         $futureMonth = Carbon::now()->addMonthsNoOverflow(2)->format('Y-m');
 
+        $this->artisan('iclimate:refresh-weather-cache');                       // what the scheduler stores; pages only read it
+
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['target_month' => $futureMonth]))
             ->assertOk()
@@ -104,6 +106,15 @@ class WeatherPredictionTest extends TestCase
             'barangay' => null,
         ]);
 
+        // The scheduled refresh fetches the shared Lian forecast and reading...
+        $this->artisan('iclimate:refresh-weather-cache');
+        Http::assertSent(function ($request): bool {
+            return str_contains($request->url(), 'api.open-meteo.com/v1/forecast')
+                && (float) $request['latitude'] === (float) config('services.weather.latitude')
+                && (float) $request['longitude'] === (float) config('services.weather.longitude');
+        });
+        $sent = count(Http::recorded());
+
         $first = $this->actingAs($user)->get(route('weather-predictions.index'));
 
         $first->assertOk()
@@ -112,17 +123,9 @@ class WeatherPredictionTest extends TestCase
             ->assertSee('Light Rain')
             ->assertDontSee('Add a Lian barangay to your profile');
 
-        // Uses the one shared Lian location the dashboards use.
-        Http::assertSent(function ($request): bool {
-            return str_contains($request->url(), 'api.open-meteo.com/v1/forecast')
-                && (float) $request['latitude'] === (float) config('services.weather.latitude')
-                && (float) $request['longitude'] === (float) config('services.weather.longitude');
-        });
-
-        // Forecast + shared current reading on the first load; fully cached after.
-        Http::assertSentCount(2);
+        // ...and the page shows that one shared Lian forecast without calling the provider.
         $this->actingAs($user)->get(route('weather-predictions.index'))->assertOk();
-        Http::assertSentCount(2);
+        Http::assertSentCount($sent);
     }
 
     public function test_user_without_barangay_can_still_queue_weather_ml_prediction(): void
@@ -133,6 +136,8 @@ class WeatherPredictionTest extends TestCase
             'barangay' => null,
         ]);
         $futureDate = Carbon::now()->addMonthsNoOverflow(2)->format('Y-m-d');
+
+        $this->artisan('iclimate:refresh-weather-cache');                       // what the scheduler stores; pages only read it
 
         $this->actingAs($user)
             ->post(route('weather-predictions.predict'), [
@@ -153,6 +158,8 @@ class WeatherPredictionTest extends TestCase
     public function test_calendar_uses_municipal_location_real_dates_and_leaves_missing_data_cells_blank(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_MAO, 'barangay' => 'Malaruhatan']);
+
+        $this->artisan('iclimate:refresh-weather-cache');                       // what the scheduler stores; pages only read it
 
         $this->actingAs($user)
             ->get(route('weather-predictions.index', ['calendar_month' => '2026-09']))
@@ -204,6 +211,8 @@ class WeatherPredictionTest extends TestCase
     public function test_barangay_reading_is_shown_beside_the_lian_wide_dashboard_reading(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Matabungkay']);
+
+        $this->artisan('iclimate:refresh-weather-cache');                       // what the scheduler stores; pages only read it
 
         $this->actingAs($user)
             ->get(route('weather-predictions.index'))
@@ -434,6 +443,8 @@ class WeatherPredictionTest extends TestCase
         $futureDate = Carbon::now()->addMonthsNoOverflow(2)->format('Y-m-d');
 
         Queue::fake();
+
+        $this->artisan('iclimate:refresh-weather-cache');                       // what the scheduler stores; pages only read it
 
         $this->actingAs($user)
             ->post(route('weather-predictions.predict'), [

@@ -170,14 +170,14 @@ class SystemLogsPageTest extends TestCase
         $this->page($it, ['search' => 'zzz-nothing'])->assertSee('No activity matches your filters.');
     }
 
-    public function test_pagination_is_15_per_page(): void
+    public function test_pagination_is_25_per_page(): void
     {
         $admin = $this->admin();
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             $this->log($admin, 'Updated Thing');
         }
 
-        $this->page($admin)->assertViewHas('rows', fn ($r) => $r->count() === 15)->assertSee('Showing 1–15 of 20 activities');
+        $this->page($admin)->assertViewHas('rows', fn ($r) => $r->count() === 25)->assertSee('Showing 1–25 of 30 activities');
         $this->page($admin, ['page' => 2])->assertViewHas('rows', fn ($r) => $r->count() === 5);
     }
 

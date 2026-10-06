@@ -37,6 +37,8 @@ class WeatherCalendarLayoutTest extends TestCase
                 'relative_humidity_2m_mean' => [$humidity],
             ],
         ])]);
+        // Pages never call the provider; the scheduled refresh stores the forecast the calendar shows.
+        $this->artisan('iclimate:refresh-weather-cache');
     }
 
     private function xpath(string $html): DOMXPath

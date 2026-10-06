@@ -354,6 +354,8 @@ class MonthlyWeatherOutlookTest extends TestCase
         $this->mock(PredictionOrchestrator::class, function ($mock) {
             $mock->shouldReceive('monthlyWeatherForecast')->andReturn(['ready' => false, 'message' => 'n/a', 'predictions' => []]);
         });
+        // Pages never call the provider; the scheduled refresh stores the forecast they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $html = $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => $date->format('Y-m')]))
             ->assertOk()

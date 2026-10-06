@@ -113,7 +113,7 @@ class PlantingAdvisoryController extends Controller
         }
 
         return [
-            'advisories' => $isFarmer ? collect() : $query->latest('valid_from')->paginate(10)->withQueryString(),
+            'advisories' => $isFarmer ? collect() : $query->latest('valid_from')->paginate(CrudController::PER_PAGE)->withQueryString(),
             'myBarangayAdvisories' => $myBarangayAdvisories,
             'lianWideAdvisories' => $lianWideAdvisories,
             'officialPagasaAdvisories' => $officialPagasaAdvisories,
@@ -185,7 +185,7 @@ class PlantingAdvisoryController extends Controller
         $this->authorizeManage($request);
 
         return view('advisories.management', [
-            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(10)->withQueryString(),
+            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(CrudController::PER_PAGE)->withQueryString(),
             ...$this->advisorySummary(),
             'types' => self::TYPES,
             'severities' => self::SEVERITIES,

@@ -223,7 +223,7 @@ html[data-theme="dark"] body .candidate-warning { border-color: color-mix(in srg
 html[data-theme="dark"] body .badge-green { border-color: color-mix(in srgb, #33cc6b 30%, var(--dk-border)); }
 html[data-theme="dark"] body .badge-yellow { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
 
-/* ---- css/app.css (72) */
+/* ---- css/app.css (76) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
 html[data-theme="dark"] body .ic-skeleton { background-color: var(--dk-surface-2); }
@@ -310,6 +310,10 @@ html[data-theme="dark"] body .rf-leaflet-popup .rf-updated { color: var(--dk-mut
 @media (max-width: 991.98px) {
 html[data-theme="dark"] body .risk-forecast-toolbar .risk-forecast-select label { color: #a4e0cb; }
 }
+html[data-theme="dark"] body .ic-skel-lines > span:not(.visually-hidden) { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .ic-updated { color: var(--dk-muted); }
+html[data-theme="dark"] body .ic-no-data { background: var(--dk-surface-2); color: var(--dk-muted); }
+html[data-theme="dark"] body .ic-no-data strong { color: var(--dk-ink-mid); }
 
 /* ---- css/ui-refresh.css (47) */
 html[data-theme="dark"] body .card:hover,

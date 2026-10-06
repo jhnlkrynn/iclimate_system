@@ -77,7 +77,7 @@ class SystemLogController extends CrudController
             $query->where('created_at', '>=', $start)->where('created_at', '<', $start->copy()->addDay());
         }
 
-        $logs = $query->latest('id')->paginate(15)->withQueryString();
+        $logs = $query->latest('id')->paginate(CrudController::PER_PAGE)->withQueryString();
         $rows = $logs->getCollection()->map(fn (SystemLog $log) => SystemLogPresenter::present($log));
 
         return view('system-logs.index', [

@@ -118,7 +118,7 @@
         @if($isRunLoading && $runIsYield)
         <div class="wp-panel wp-state mb-4" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
             <div class="wp-state-copy">
-                <div class="spinner-border text-success mb-3" role="status"><span class="visually-hidden">Loading</span></div>
+                <div class="ic-skel-lines mb-3" role="status"><span></span><span></span><span></span><span class="visually-hidden">Loading</span></div>
                 <h2 class="h5 fw-bold">Estimating your harvest</h2>
                 <p class="text-muted mb-0" data-analytics-message>This page will update on its own.</p>
             </div>
@@ -229,7 +229,7 @@
         @if ($isRunLoading && ! $runIsYield)
             <div class="wp-panel wp-state mb-4" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
                 <div class="wp-state-copy">
-                    <div class="spinner-border text-success mb-3" role="status"><span class="visually-hidden">Loading</span></div>
+                    <div class="ic-skel-lines mb-3" role="status"><span></span><span></span><span></span><span class="visually-hidden">Loading</span></div>
                     <h2 class="h5 fw-bold">Checking the weather</h2>
                     <p class="text-muted mb-0" data-analytics-message>This page will update on its own.</p>
                 </div>
@@ -291,14 +291,11 @@
                     <div class="small text-muted">{{ $liveWeatherLocation }}</div>
                 </div>
                 @if($liveWeatherAvailable)
-                    <div class="small text-muted text-lg-end">Updated {{ $liveWeatherFetchedAt?->format('M j, Y g:i A') ?? 'recently' }}</div>
+                    <div class="small text-muted text-lg-end"><x-updated-at :at="$liveWeatherFetchedAt" /></div>
                 @endif
             </div>
             <div class="wp-panel-body">
                 @if($liveWeatherAvailable)
-                    @if(! empty($liveWeather['is_cached_fallback']))
-                        <div class="alert alert-warning py-2" role="status">Showing the most recent saved weather update.</div>
-                    @endif
                     <div class="row g-3">
                         <div class="col-6 col-xl"><div class="wp-result-card h-100" data-weather-mood-root><div class="wp-label">Condition</div><div class="wp-card-value" data-weather-mood-source>{{ $liveWeatherCondition }}</div></div></div>
                         <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Rainfall</div><div class="wp-card-value">{{ is_numeric($liveWeather['current_rainfall_mm'] ?? null) ? number_format((float) $liveWeather['current_rainfall_mm'], 2).' mm' : '—' }}</div></div></div>
@@ -319,12 +316,13 @@
                                 <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Humidity</div><div class="wp-card-value">{{ is_numeric($lianNow['humidity'] ?? null) ? number_format((float) $lianNow['humidity']).'%' : '—' }}</div></div></div>
                                 <div class="col-6 col-xl"><div class="wp-result-card h-100"><div class="wp-label">Wind</div><div class="wp-card-value">{{ is_numeric($lianNow['wind_speed'] ?? null) ? number_format((float) $lianNow['wind_speed'], 1).' km/h' : '—' }}</div></div></div>
                             </div>
-                            <div class="small text-muted mt-2">Your barangay's reading is for its own location, so it can differ slightly from the Lian-wide reading. Both were updated at the same time.</div>
+                            <div class="small text-muted mt-2">Your barangay's reading is for its own location, so it can differ slightly from the Lian-wide reading. <x-updated-at :at="data_get($lianWeather, 'timestamps.server_fetched_at') ?? data_get($lianWeather, 'server_fetched_at')" label="Lian-wide updated" /></div>
                         </div>
                     @endif
                     @if($isTechnical)<div class="small text-muted mt-3">Source (IT only): {{ $liveWeather['source_name'] ?? 'Open-Meteo Forecast API' }}. Responses are cached for {{ $liveWeatherCacheMinutes }} minutes.</div>@endif
                 @else
-                    <div class="alert alert-warning mb-0" role="alert"><strong>Forecast Not Available Yet.</strong> {{ $liveWeatherError ?? 'Please try again later.' }}</div>
+                    {{-- No saved reading yet (the scheduled refresh has not stored one): a calm note, never an error. --}}
+                    <x-no-data :note="$liveWeatherError ?? 'The weather appears here after the next scheduled update.'" />
                 @endif
             </div>
         </div>
@@ -400,7 +398,7 @@
                 </div>
                 <div class="wp-calendar-loading" data-calendar-loading hidden role="status" aria-live="polite">
                     <div>
-                        <div class="spinner-border text-success mb-3" aria-hidden="true"></div>
+                        <div class="ic-skel-lines mb-3" aria-hidden="true"><span></span><span></span><span></span></div>
                         <div class="h5 fw-bold">Loading weather calendar</div>
                     </div>
                 </div>

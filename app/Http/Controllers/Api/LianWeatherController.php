@@ -11,13 +11,11 @@ class LianWeatherController extends Controller
 {
     public function __invoke(Request $request, LianBarangayWeatherService $weather): JsonResponse
     {
-        // The shared records are returned straight from the cache; a due refresh runs after the response.
+        // The shared records are returned straight from the cache; iclimate:refresh-barangay-weather keeps them current.
         $records = rescue(function () use ($request, $weather): array {
             if ($request->boolean('refresh')) {
                 return $weather->refreshUnlessJustChecked();
             }
-
-            $weather->refreshIfDue();
 
             return $weather->snapshot();
         }, [], false);

@@ -13,6 +13,10 @@
  *     (background polling/timers never show the overlay)
  *   - any other page unload (location.href = ..., reloads)
  *
+ * What it shows: page navigation (links, reloads, GET filter forms) shows a thin top bar and gray
+ * skeleton blocks over the content; saves and other requests show a small box with a progress bar
+ * and a message. No spinners.
+ *
  * Opt-outs / overrides:
  *   - data-no-loader on a link, form, button or container skips it
  *   - data-loader-text="Saving..." on a link, form or submit button sets the message
@@ -38,20 +42,6 @@
 
     var DOWNLOAD_PATTERN = /\/(export|download)s?(\/|\?|$)|\/storage\/|\.(csv|xlsx?|pdf|zip|docx?)(\?|#|$)/i;
     var ACTIONABLE = 'a[href], button, [role="button"], input[type="submit"], input[type="button"], input[type="checkbox"], input[type="radio"], select, summary';
-
-    var RICE_ICON =
-        '<svg class="icl-rice" viewBox="0 0 32 32" focusable="false">' +
-            '<path class="icl-rice-leaf" fill="currentColor" d="M16 27.6c-3.7-1.8-6-5.2-6.6-10 3.3 1.5 5.6 4.5 6.8 8.2z"/>' +
-            '<path class="icl-rice-leaf" fill="currentColor" opacity=".8" d="M16.3 24.8c2.1-1.7 4.4-2.4 7.1-2.3-1.6 2.1-3.9 3.2-7 3.4z"/>' +
-            '<path class="icl-rice-stem" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M16 29.6C16 21 16.8 13 20.4 5.2"/>' +
-            '<ellipse class="icl-rice-grain" cx="21" cy="3.6" rx="1.35" ry="2.4" transform="rotate(24 21 3.6)"/>' +
-            '<ellipse class="icl-rice-grain" cx="17.9" cy="7.2" rx="1.35" ry="2.4" transform="rotate(-34 17.9 7.2)"/>' +
-            '<ellipse class="icl-rice-grain" cx="21.1" cy="8.6" rx="1.35" ry="2.4" transform="rotate(50 21.1 8.6)"/>' +
-            '<ellipse class="icl-rice-grain" cx="16.6" cy="11.1" rx="1.35" ry="2.4" transform="rotate(-34 16.6 11.1)"/>' +
-            '<ellipse class="icl-rice-grain" cx="19.8" cy="12.5" rx="1.35" ry="2.4" transform="rotate(50 19.8 12.5)"/>' +
-            '<ellipse class="icl-rice-grain" cx="15.7" cy="15.2" rx="1.35" ry="2.4" transform="rotate(-34 15.7 15.2)"/>' +
-            '<ellipse class="icl-rice-grain" cx="18.8" cy="16.4" rx="1.35" ry="2.4" transform="rotate(48 18.8 16.4)"/>' +
-        '</svg>';
 
     var overlay = null;
     var textEl = null;
@@ -80,14 +70,15 @@
         overlay.id = 'iclimateLoader';
         overlay.setAttribute('aria-hidden', 'true');
         overlay.innerHTML =
+            '<div class="icl-bar"></div>' +
+            '<div class="icl-skeleton">' +
+                '<div class="icl-sk icl-sk-title"></div>' +
+                '<div class="icl-sk icl-sk-line"></div>' +
+                '<div class="icl-sk-grid"><div class="icl-sk icl-sk-card"></div><div class="icl-sk icl-sk-card"></div><div class="icl-sk icl-sk-card"></div></div>' +
+                '<div class="icl-sk icl-sk-block"></div>' +
+            '</div>' +
             '<div class="icl-box">' +
-                '<div class="icl-spinner">' +
-                    '<svg class="icl-ring" viewBox="0 0 50 50" focusable="false">' +
-                        '<circle class="icl-ring-track" cx="25" cy="25" r="22"/>' +
-                        '<circle class="icl-ring-arc" cx="25" cy="25" r="22"/>' +
-                    '</svg>' +
-                    RICE_ICON +
-                '</div>' +
+                '<div class="icl-progress"></div>' +
                 '<p class="icl-text"></p>' +
             '</div>';
         textEl = overlay.querySelector('.icl-text');
@@ -105,6 +96,13 @@
         return true;
     }
 
+    // Skeleton mode only while every pending entry is a page navigation; any save or request shows the message box.
+    function applyMode() {
+        var page = tokens.size > 0;
+        tokens.forEach(function (entry) { if (entry.kind !== 'page') page = false; });
+        overlay.classList.toggle('is-page', page);
+    }
+
     function currentMessage() {
         var message = 'Loading...';
         tokens.forEach(function (entry) { message = entry.message; });
@@ -118,6 +116,7 @@
         var message = currentMessage();
         textEl.textContent = message;
         liveEl.textContent = message;
+        applyMode();
         overlay.classList.add('is-visible');
         visible = true;
         visibleAt = now();
@@ -144,6 +143,7 @@
             var message = currentMessage();
             textEl.textContent = message;
             liveEl.textContent = message;
+            applyMode();
             return;
         }
 
@@ -163,7 +163,7 @@
         visible = false;
 
         if (overlay) {
-            overlay.classList.remove('is-visible', 'is-active');
+            overlay.classList.remove('is-visible', 'is-active', 'is-page');
             liveEl.textContent = '';
         }
         if (document.body) document.body.removeAttribute('aria-busy');
@@ -199,7 +199,7 @@
     function show(message, options) {
         options = options || {};
         var id = ++seq;
-        var entry = { message: message || 'Loading...', timer: null };
+        var entry = { message: message || 'Loading...', timer: null, kind: options.kind || 'action' };
         var timeout = options.timeout === undefined ? SAFETY_MS : options.timeout;
 
         if (timeout) {
@@ -218,7 +218,10 @@
         tokens.delete(id);
 
         if (tokens.size) {
-            if (visible) textEl.textContent = liveEl.textContent = currentMessage();
+            if (visible) {
+                textEl.textContent = liveEl.textContent = currentMessage();
+                applyMode();
+            }
             return;
         }
         finish();
@@ -381,7 +384,7 @@
             return;
         }
 
-        show(text || messageFor(href, 'GET'));
+        show(text || messageFor(href, 'GET'), { kind: 'page', delay: REQUEST_DELAY });
     }
 
     // Bubble phase on window runs after page handlers, so cancelled clicks
@@ -423,7 +426,7 @@
     // Anything else that leaves the page (location.href = ..., reloads).
     window.addEventListener('beforeunload', function () {
         if (tokens.size || now() < ignoreUnloadUntil) return;
-        show('Loading...', { timeout: 20000 });
+        show('Loading...', { timeout: 20000, kind: 'page', delay: REQUEST_DELAY });
     });
 
     // Coming back with the Back button restores this page from cache: start clean.
@@ -496,7 +499,8 @@
         }
 
         form.dataset.iclSubmitting = 'true';
-        show(message);
+        // A GET form (filters, search, month pickers) opens another page: skeleton, like a link.
+        show(message, method === 'GET' ? { kind: 'page', delay: REQUEST_DELAY } : {});
         lockButtons(form);
     }
 

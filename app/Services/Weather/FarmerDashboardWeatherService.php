@@ -66,6 +66,13 @@ class FarmerDashboardWeatherService
      */
     public function current(bool $force = false, ?float $budgetSeconds = null): array
     {
+        // A page or API request never calls the provider unless it asked for a refresh (a Refresh button): it shows the
+        // stored reading, whatever its age, marked as delayed when older than the dashboard's stale limit.
+        // iclimate:refresh-weather-cache keeps it current every 3 minutes. The chatbot passes a budget and keeps its own rule.
+        if (! $force && $budgetSeconds === null && \App\Support\InteractiveRequest::isPageRequest()) {
+            return $this->storedReading();
+        }
+
         // Who is waiting decides how patient this call may be (see InteractiveRequest). An explicit
         // budget (the chatbot) is always strict and may use a recent stored reading.
         $mode = $budgetSeconds !== null
@@ -126,6 +133,34 @@ class FarmerDashboardWeatherService
 
             return $this->unavailable();
         }
+    }
+
+    /** The stored reading for a page request: the cached one, else the last good one (marked delayed when old), else unavailable. */
+    private function storedReading(): array
+    {
+        $cacheKey = $this->cacheKey();
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            $cached['cached'] = true;
+
+            return $cached;
+        }
+
+        $last = Cache::get($cacheKey.'.last_successful') ?? $this->latestStoredSnapshot();
+
+        if (! is_array($last)) {
+            return $this->unavailable();
+        }
+
+        $last['cached'] = true;
+        if (! $this->youngerThan($last, (int) config('farmer_dashboard.weather.stale_after_minutes', 60))) {
+            $last['stale'] = true;
+            $last['status'] = 'stale';
+            $last['message'] = 'Weather update is delayed. Showing the last available weather.';
+        }
+
+        return $last;
     }
 
     /**

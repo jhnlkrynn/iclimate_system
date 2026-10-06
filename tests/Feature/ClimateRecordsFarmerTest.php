@@ -115,16 +115,16 @@ class ClimateRecordsFarmerTest extends TestCase
 
     public function test_pages_keep_the_filters(): void
     {
-        // Three years: the dry season (Jan–Apr, Oct–Dec) gives 21 records, one more than a page holds.
-        $this->useAmbulongCsv(collect([2022, 2023, 2024])->flatMap(fn (int $y) => collect(range(1, 12))->map(fn (int $m) => "{$y},{$m},10,30,20,80,2,40"))->implode("\n")."\n");
+        // Four years: the dry season (Jan–Apr, Oct–Dec) gives 28 records, three more than a page (25) holds.
+        $this->useAmbulongCsv(collect([2021, 2022, 2023, 2024])->flatMap(fn (int $y) => collect(range(1, 12))->map(fn (int $m) => "{$y},{$m},10,30,20,80,2,40"))->implode("\n")."\n");
 
         $first = $this->actingAs($this->farmer())->get(route('climate-records.index', ['season' => 'Dry']))->getContent();
-        $this->assertStringContainsString('Showing 1–20 of 21', $first);
+        $this->assertStringContainsString('Showing 1–25 of 28', $first);
         $this->assertStringContainsString('season=Dry&amp;page=2', $first);                 // page links keep the filter
 
         $second = $this->actingAs($this->farmer())->get(route('climate-records.index', ['season' => 'Dry', 'page' => 2]))->getContent();
-        $this->assertStringContainsString('Showing 21–21 of 21', $second);
-        $this->assertStringContainsString('<th scope="row">Jan 2022</th>', $second);           // newest first, so the oldest is last
-        $this->assertStringContainsString('<p class="frec-kpi-value">21</p>', $second);       // figures cover all matches, not one page
+        $this->assertStringContainsString('Showing 26–28 of 28', $second);
+        $this->assertStringContainsString('<th scope="row">Jan 2021</th>', $second);           // newest first, so the oldest is last
+        $this->assertStringContainsString('<p class="frec-kpi-value">28</p>', $second);       // figures cover all matches, not one page
     }
 }

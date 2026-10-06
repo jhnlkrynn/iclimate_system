@@ -84,6 +84,8 @@ class DashboardController extends Controller
         'weather' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'highlights', 'weather']],
         'today' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'highlights', 'weather']],
         'harvest' => ['refresh' => ['harvest'], 'slots' => ['harvest', 'today']],
+        // A placeholder card asking whether the background estimate is stored yet (never runs the model).
+        'harvest-check' => ['refresh' => [], 'slots' => ['harvest', 'today'], 'defer_harvest' => true],
         'risk' => ['refresh' => ['risk'], 'slots' => ['risk', 'today', 'highlights']],
         // After a dashboard pop-up saves: the sections that read what it changed. The profile and map ones leave the slow
         // harvest card out (the page asks for it separately when the profile changed).
@@ -132,6 +134,8 @@ class DashboardController extends Controller
 
         $started = microtime(true);
         StaleCache::put($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, app(ItDashboardService::class)->payload(), self::ADMIN_LATEST_KEY);
+        // The Overview's 30-day activity chart comes with the page (see admin()): prepared here too.
+        app(ItDashboardService::class)->activity(30);
         $timings['IT'] = round(microtime(true) - $started, 1);
 
         return $timings;
@@ -204,8 +208,9 @@ class DashboardController extends Controller
 
         $slots = [];
         foreach ($retry['slots'] ?? self::FARMER_LIVE_SLOTS as $slot) {
-            // A timed refresh leaves a finished harvest card alone, and a placeholder is never pushed over it.
-            if ($slot === 'harvest' && ($payload['harvest']['state'] ?? null) === 'loading') {
+            // A timed refresh leaves a finished harvest card alone, and a placeholder is never pushed over it; the card's
+            // own Try again (which queued a new estimate) does show the placeholder.
+            if ($slot === 'harvest' && ($payload['harvest']['state'] ?? null) === 'loading' && $request->query('retry') !== 'harvest') {
                 continue;
             }
             $slots[$slot] = view('dashboards.farmer.'.$slot, ['f' => $payload])->render();
@@ -482,7 +487,12 @@ class DashboardController extends Controller
 
         $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
 
-        return view('dashboards.it-expert', ['it' => $payload, 'tab' => $tab]);
+        return view('dashboards.it-expert', [
+            'it' => $payload,
+            'tab' => $tab,
+            // The Overview's 30-day activity chart comes with the page, so opening the dashboard is one request.
+            'activityInitial' => $tab === 'overview' ? rescue(fn (): array => $it->activity(30), null, false) : null,
+        ]);
     }
 
     /** Refresh button: rebuilds the live sections and returns each section's HTML. */

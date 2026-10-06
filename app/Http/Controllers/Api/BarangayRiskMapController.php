@@ -113,8 +113,8 @@ class BarangayRiskMapController extends Controller
 
     /**
      * Refresh Weather (?refresh=1) fetches all 19 now in one batched request (bounded by a short timeout), so
-     * the response already carries the new readings. Any other request only schedules a due refresh to run
-     * after the response is sent. ?priority= names the farmer's own barangay, which is requested first.
+     * the response already carries the new readings. Any other request reads the stored readings only (the
+     * scheduler keeps them current). ?priority= names the farmer's own barangay, which is requested first.
      */
     private function refreshWeather(Request $request): bool
     {
@@ -128,7 +128,7 @@ class BarangayRiskMapController extends Controller
                 return true;
             }
 
-            $this->weatherRefreshScheduled = $this->weatherService->refreshIfDue($priority);
+            // Any other request only reads: iclimate:refresh-barangay-weather fetches all 19 every 10 minutes.
         } catch (Throwable $exception) {
             Log::warning('Barangay weather refresh could not start.', ['message' => $exception->getMessage()]);
         }

@@ -21,6 +21,8 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading the dashboard shows.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $this->actingAs($farmer)
             ->get(route('farmer.dashboard'))

@@ -870,6 +870,8 @@ class BarangayRiskMapTest extends TestCase
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        // Pages never call the provider; the scheduled refresh stores the reading the dashboard shows.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 

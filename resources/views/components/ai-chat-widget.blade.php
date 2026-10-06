@@ -596,7 +596,7 @@
                 <div class="ic-ai-msg assistant">
                     <div class="ic-ai-msg-col">
                         <div class="ic-ai-bubble">{{ $icAiGreeting }}</div>
-                        <div class="ic-ai-msg-time" data-now-time>{{ now()->shortTime() }}</div>
+                        <div class="ic-ai-msg-time" data-now-time>{{ \App\Support\BusinessClock::now()->shortTime() }}</div>
                     </div>
                 </div>
             @endforelse
@@ -634,7 +634,8 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // Runs at once when the widget is added after the page loaded (it is fetched on the launcher's first click).
+    (() => { const icAiInit = () => {
         if (window.iClimateAiWidgetInitialized) return;
         window.iClimateAiWidgetInitialized = true;
 
@@ -957,5 +958,5 @@
 
         panel?.setAttribute('hidden', 'hidden');
         scrollMessages();
-    });
+    }; document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', icAiInit) : icAiInit(); })();
 </script>

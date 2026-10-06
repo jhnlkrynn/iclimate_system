@@ -61,7 +61,7 @@ class FarmerRiceProductionTest extends TestCase
         $this->assertStringContainsString('No area record is available.', $html);
         $this->assertStringNotContainsString('<small>t</small>', $html, 'No production total is made up.');
         $this->assertStringNotContainsString('<small>ha</small>', $html, 'No area total is made up.');
-        $this->assertStringContainsString("Showing 1–10 of {$total}", $html);
+        $this->assertStringContainsString("Showing 1–".min(25, $total)." of {$total}", $html);
         $this->assertStringNotContainsString('No rice production records found.', $html);
 
         // Newest first, labelled as Lian's average, read-only, missing fields "Not available".
@@ -80,9 +80,9 @@ class FarmerRiceProductionTest extends TestCase
         $farmer = $this->farmer();
         $seen = collect();
 
-        for ($page = 1; $page <= (int) ceil($rows->count() / 10); $page++) {
+        for ($page = 1; $page <= (int) ceil($rows->count() / 25); $page++) {
             $html = $this->page($farmer, ['page' => $page]);
-            foreach ($rows->forPage($page, 10) as $row) {
+            foreach ($rows->forPage($page, 25) as $row) {
                 // Each month on its own page, in newest-first order, with its season and exact yield.
                 $this->assertStringContainsString($this->monthLabel($row), $html);
                 $this->assertStringContainsString(number_format($row['yield'], 2), $html);
@@ -125,7 +125,7 @@ class FarmerRiceProductionTest extends TestCase
         $this->assertStringNotContainsString('Lian Municipal Average</th>', $html);
         $this->assertStringContainsString('Sep 2024', $html);
         $all = $this->page($this->farmer('San Diego'));
-        $this->assertStringContainsString('Showing 1–10 of '.($total + 2), $all);
+        $this->assertStringContainsString('Showing 1–'.min(25, $total + 2).' of '.($total + 2), $all);
     }
 
     public function test_season_and_irrigation_filters_use_both_sources_without_inventing_irrigation(): void

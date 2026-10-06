@@ -732,6 +732,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         );
 
 
+        // The chat widget, loaded only when the Climora button is first clicked.
+        Route::get(
+            'ai-farming-assistant/widget',
+            [AIChatController::class, 'widget']
+        )->name(
+            'ai-chat.widget'
+        );
+
+
         Route::post(
             'ai-farming-assistant/message',
             [AIChatController::class, 'message']

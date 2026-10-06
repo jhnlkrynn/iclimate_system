@@ -7,6 +7,7 @@ use App\Models\FarmerProfile;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
+use App\Jobs\PrepareFarmerYieldEstimate;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\FarmerKpiService;
 use App\Services\Prediction\RiceYieldPredictionService;
@@ -19,6 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class FarmerDashboardTest extends TestCase
@@ -33,6 +35,8 @@ class FarmerDashboardTest extends TestCase
             'services.weather.latitude' => 14.033, 'services.weather.longitude' => 120.650, 'services.weather.timezone' => 'Asia/Manila',
             'services.weather.cache_minutes' => 5, 'services.weather.forecast_days' => 7, 'services.weather.provider' => 'openmeteo',
             'services.weatherapi.key' => null,
+            // The yield estimate is made by a queued job (PrepareFarmerYieldEstimate); run here at once, as if the job had finished.
+            'services.farming_ai.queue_connection' => 'sync',
         ]);
         $this->fakeWeather();
         // The municipality-wide risk calculation and the yield model are slow and external; tests opt in through mockRisk()/mockPrediction().
@@ -109,11 +113,20 @@ class FarmerDashboardTest extends TestCase
         return $user;
     }
 
+    /** What iclimate:refresh-weather-cache stores and the page only reads. */
+    private function prepareStored(): void
+    {
+        app(FarmerDashboardWeatherService::class)->current(force: true);
+        app(\App\Services\WeatherApiService::class)->forecast(refresh: true);
+    }
+
     private function page(?User $as = null)
     {
         Cache::flush();
+        $as ??= $this->farmer();
+        $this->prepareStored();
 
-        return $this->actingAs($as ?? $this->farmer())->get(route('farmer.dashboard'))->assertOk();
+        return $this->actingAs($as)->get(route('farmer.dashboard'))->assertOk();
     }
 
     /** What the page was built from (the slow harvest estimate is filled in by a second request, so it is a placeholder here). */
@@ -133,6 +146,8 @@ class FarmerDashboardTest extends TestCase
     /** One section's HTML from the live endpoint (what the script puts on the page). */
     private function slot(User $farmer, string $slot, array $query = ['refresh' => 1]): string
     {
+        $this->prepareStored();
+
         return $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', $query))->assertOk()->json('slots.'.$slot) ?? '';
     }
 
@@ -367,9 +382,12 @@ class FarmerDashboardTest extends TestCase
     public function test_the_weather_shows_its_real_fetch_time_and_how_old_it_is(): void
     {
         $farmer = $this->farmer();
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();                  // fetched now
+        $this->prepareStored();                                                                  // the scheduled refresh fetched now
+        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();
 
         $this->travel(21)->minutes();
+        $this->prepareStored();                                                                  // it runs every 3 minutes
+        Cache::forget(FarmerDashboardService::cacheKey($farmer));
         $f = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->viewData('f');
         $this->assertFalse($f['weather']['stale']);
         $this->assertLessThanOrEqual(21, $f['weather']['age_minutes']);                       // a fresh fetch (cache is under 30 minutes)
@@ -377,6 +395,8 @@ class FarmerDashboardTest extends TestCase
         // The provider stops answering: the last good reading is shown and, past 60 minutes, called old.
         $this->replaceWeather(Http::response([], 500));
         $this->travel(90)->minutes();
+        $this->prepareStored();                                                                  // the refresh fails and keeps the last good reading
+        Cache::forget(FarmerDashboardService::cacheKey($farmer));
         $response = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();
         $old = $response->viewData('f');
         $html = $response->getContent();
@@ -827,8 +847,9 @@ class FarmerDashboardTest extends TestCase
 
     // ------------------------------------------------------------ expected harvest
 
-    public function test_the_harvest_card_loads_after_the_page_so_the_slow_model_never_blocks_it(): void
+    public function test_the_harvest_card_never_runs_the_model_and_queues_it_when_nothing_is_stored(): void
     {
+        Queue::fake();
         $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldNotReceive('predictForUser'));
         $farmer = $this->farmer([], 2.0);
 
@@ -837,7 +858,10 @@ class FarmerDashboardTest extends TestCase
         $this->assertStringContainsString('data-mfd-load="harvest"', $html);                     // a placeholder in the card's shape
         $this->assertStringContainsString('mfd-skel', $html);
         $this->assertSame('loading', $this->data($farmer)['harvest']['state']);
-        $this->assertStringContainsString("if (\$('[data-mfd-load=\"harvest\"]')) refresh({ retry: 'harvest' })", file_get_contents(resource_path('js/farmer-dashboard.js')));
+        Queue::assertPushed(PrepareFarmerYieldEstimate::class, fn (PrepareFarmerYieldEstimate $job) => $job->userId === $farmer->id);
+        // The page looks once more later, reading only what is stored.
+        $this->assertStringContainsString("refresh({ retry: 'harvest-check' })", file_get_contents(resource_path('js/farmer-dashboard.js')));
+        $this->assertStringNotContainsString("refresh({ retry: 'harvest' })", file_get_contents(resource_path('js/farmer-dashboard.js')));
     }
 
     public function test_the_harvest_card_shows_tons_per_hectare_a_range_total_tons_and_when_it_was_made(): void
@@ -1020,6 +1044,7 @@ class FarmerDashboardTest extends TestCase
     public function test_the_farmers_yield_estimate_is_recomputed_after_the_profile_or_schedule_changes(): void
     {
         $farmer = $this->farmer([], 2.0);
+        Queue::fake();
         $calls = 0;
         $this->mock(RiceYieldPredictionService::class, function ($mock) use (&$calls): void {
             $mock->shouldReceive('predictForUser')->andReturnUsing(function () use (&$calls) {
@@ -1031,14 +1056,16 @@ class FarmerDashboardTest extends TestCase
         });
         $key = FarmerDashboardService::predictionCacheKey($farmer->id);
 
-        $this->slot($farmer, 'harvest', ['retry' => 'harvest']);
+        app(FarmerDashboardService::class)->prepareYieldEstimate($farmer);                      // what the queued job does
         $this->assertSame(1, $calls);
         $this->assertTrue(Cache::has($key));
 
         $farmer->farmerProfile->update(['farm_area' => 3.5]);
         $this->assertFalse(Cache::has($key), 'editing the farm area must drop the cached estimate');
+        Queue::assertPushed(PrepareFarmerYieldEstimate::class, 1);                                // and queue a new one
 
-        $this->slot($farmer, 'harvest', ['retry' => 'harvest']);
+        app(FarmerDashboardService::class)->prepareYieldEstimate($farmer);
+        $this->assertSame(2, $calls);
         $this->assertTrue(Cache::has($key));
 
         FarmerPlantingSchedule::query()->create([
@@ -1050,6 +1077,7 @@ class FarmerDashboardTest extends TestCase
 
     public function test_the_cached_estimate_is_dropped_for_every_kind_of_profile_or_schedule_change(): void
     {
+        Queue::fake();                                                                          // the new estimate is queued, not made here
         $farmer = $this->farmer([], 2.0);
         $other = $this->farmer(['email' => 'other@example.test'], 1.0);
         $key = FarmerDashboardService::predictionCacheKey($farmer->id);
@@ -1790,6 +1818,7 @@ class FarmerDashboardTest extends TestCase
 
     public function test_the_timed_refresh_never_waits_for_the_harvest_model(): void
     {
+        Queue::fake();
         $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldNotReceive('predictForUser'));
 
         $json = $this->actingAs($this->farmer())->getJson(route('farmer.dashboard.live'))->assertOk()->json();

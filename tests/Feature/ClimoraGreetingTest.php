@@ -13,7 +13,9 @@ class ClimoraGreetingTest extends TestCase
 
     private function greetingFor(User $user): string
     {
-        $html = $this->actingAs($user)->get(route('profile.edit'))->assertOk()->getContent();
+        // The assistant is loaded when its button is first clicked (components/ai-chat-launcher), from this route.
+        $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee('data-ai-launch', false);
+        $html = $this->get(route('ai-chat.widget'))->assertOk()->getContent();
 
         $this->assertMatchesRegularExpression('#<div class="ic-ai-bubble">(.*?)</div>#s', $html);
         preg_match('#<div class="ic-ai-bubble">(.*?)</div>#s', $html, $m);
@@ -60,7 +62,7 @@ class ClimoraGreetingTest extends TestCase
     {
         $user = User::factory()->farmer()->create(['name' => '<script>alert(1)</script> Luke']);
 
-        $html = $this->actingAs($user)->get(route('profile.edit'))->assertOk()->getContent();
+        $html = $this->actingAs($user)->get(route('ai-chat.widget'))->assertOk()->getContent();
 
         $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
     }
@@ -68,6 +70,7 @@ class ClimoraGreetingTest extends TestCase
     public function test_guests_do_not_get_the_widget_or_a_greeting(): void
     {
         $this->get(route('profile.edit'))->assertRedirect(route('login'));
+        $this->get(route('ai-chat.widget'))->assertRedirect(route('login'));
         $this->get(route('login'))->assertOk()->assertDontSee('ic-ai-bubble', false);
     }
 }

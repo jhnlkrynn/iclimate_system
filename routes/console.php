@@ -187,6 +187,14 @@ Schedule::command('iclimate:warm-prediction-cache')
     ->withoutOverlapping(60)
     ->appendOutputTo($automationLog('iclimate:warm-prediction-cache'));
 
+// Each farmer's expected rice yield (the Python model) is made here and stored, so the Farmer dashboard only reads it.
+// Every 3 hours at :40 (after the 02:15 forecast warm-up on the 02:40 run); a profile or schedule edit queues that
+// farmer's estimate at once (PrepareFarmerYieldEstimate).
+Schedule::command('iclimate:warm-farmer-yields')
+    ->cron('40 2-23/3 * * *')
+    ->withoutOverlapping(60)
+    ->appendOutputTo($automationLog('iclimate:warm-farmer-yields'));
+
 // Times of day in this file are Philippine time (config app.schedule_timezone), not UTC.
 // Daily database backup (mysqldump for MySQL/MariaDB, pg_dump for PostgreSQL) during low activity (after the 01:30 dataset and
 // 02:00 prediction jobs), followed by cleanup of backups past the retention window.

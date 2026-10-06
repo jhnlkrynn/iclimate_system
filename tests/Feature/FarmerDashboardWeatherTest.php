@@ -73,6 +73,8 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $user = User::factory()->create();
         Notification::factory()->create([
@@ -118,6 +120,8 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $user = User::factory()->create();
 
@@ -241,6 +245,8 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::fake([
             'api.weatherapi.com/*' => Http::response($this->weatherApiPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $user = User::factory()->create();
 
@@ -258,6 +264,8 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $user = User::factory()->maoPersonnel()->create();
 
@@ -283,6 +291,8 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading they show.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $user = User::factory()->maoPersonnel()->create();
         $response = $this->actingAs($user)->get(route('mao.operations'));

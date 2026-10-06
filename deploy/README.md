@@ -22,6 +22,52 @@ other visitor wait. For real use, serve the app with Apache or Nginx.
 3. Run `start-services.bat install-autostart` once so everything starts when you sign in to Windows.
 4. `start-services.bat status` shows what is running. Logs are in `storage/logs`.
 
+### Keeping the scheduler and queue worker running (Windows)
+
+Pages only read saved data (weather, risk, yield estimates); the scheduler and the queue worker are what keep it
+current, so both must run all the time.
+
+**Recommended (what this machine uses):** the supervisor in `scripts/iclimate-services.ps1` runs
+`php artisan schedule:work` (one run every minute) and
+`php artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600`, and restarts either one
+if it stops.
+
+1. Open a terminal in the project folder and run `start-services.bat install-autostart` once. This adds the Windows
+   Task Scheduler task **"iClimate Services"**, which starts everything when you sign in to Windows.
+2. Check it: `start-services.bat status` must show `scheduler  running` and `queue  running`.
+3. After changing PHP or Python code: `start-services.bat restart` (or, for queue code only,
+   `php artisan queue:restart`; the supervisor starts a fresh worker).
+4. In Task Scheduler (`taskschd.msc`) the task must be **Ready** or **Running**. If the computer is shared, open the
+   task, choose **Run whether user is logged on or not**, and enter the Windows password, so it also runs before
+   anyone signs in.
+
+**Without the supervisor (plain Task Scheduler):** create two tasks, with `C:\php85-cli\php.exe` as the program and
+the project folder as **Start in**:
+
+| Task | Arguments | Trigger |
+|---|---|---|
+| iClimate scheduler | `artisan schedule:run` | Daily, repeat every **1 minute** for **Indefinitely** |
+| iClimate queue | `artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600` | **At startup**; under Settings, "If the task fails, restart every 1 minute" and "If the task is already running: Do not start a new instance" |
+
+From a terminal (run as Administrator) the same tasks are:
+
+```
+schtasks /Create /TN "iClimate scheduler" /SC MINUTE /MO 1 /TR "cmd /c cd /d C:\xampp\htdocs\iclimate_system && C:\php85-cli\php.exe artisan schedule:run" /RU SYSTEM
+schtasks /Create /TN "iClimate queue" /SC ONSTART /TR "cmd /c cd /d C:\xampp\htdocs\iclimate_system && C:\php85-cli\php.exe artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600" /RU SYSTEM
+```
+
+Use one method only: running both the supervisor and these tasks would start two schedulers.
+
+**Linux:** cron `* * * * * cd /path/to/iclimate_system && php artisan schedule:run >> /dev/null 2>&1`, and a
+systemd service or Supervisor program for `php artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600`.
+
+### `config:cache` only on the live server
+
+Run `php artisan config:cache` (and `route:cache`, `view:cache`) **only on the live server**, never on a computer
+where `php artisan test` runs. With a cached configuration the tests ignore `phpunit.xml` (in-memory test database,
+array cache) and would run against the real database. On a development or test computer run
+`php artisan optimize:clear` instead.
+
 The Apache configuration is stand-alone: it does not change XAMPP's own `httpd.conf`, and XAMPP's PHP 8.0 is not
 used. Only `public/` is served, so `.env`, `storage/` and the source code cannot be downloaded.
 
@@ -69,7 +115,8 @@ start-services.bat restart      (Windows)   or   php artisan queue:restart  and 
 ```
 
 `php artisan config:cache` freezes `.env`: run it again after changing `.env`. Use `php artisan optimize:clear`
-to go back to reading `.env` directly.
+to go back to reading `.env` directly. These cache commands are for the live server only (see
+"`config:cache` only on the live server" above).
 
 Data and accounts:
 

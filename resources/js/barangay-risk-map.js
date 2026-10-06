@@ -146,7 +146,8 @@ function currentWeatherParts(entry) {
 
     const ago = agoText(minutes);
     const updatedTime = philippineTime(weather.fetched_at);
-    const notice = current ? (ago ? `Updated ${ago}` : 'Latest weather') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather is temporarily unavailable.';
+    // An older reading is shown with its time; with no reading at all the card says so calmly.
+    const notice = current ? (ago ? `Updated ${ago}` : 'Latest weather') : stale ? (updatedTime ? `Updated: ${updatedTime}` : 'Last saved weather') : 'Walang datos pa';
     // One short line for the popup and the barangay list, e.g. "29.4°C · Light rain".
     const line = hasValues ? [`${temperature}°C`, condition].filter(Boolean).join(' · ') : '';
     return {
@@ -375,6 +376,11 @@ export function initBarangayRiskMap() {
     const shell = mapElement.closest('[data-risk-map-shell]');
     const card = mapElement.closest('[data-risk-map-card]');
     const loading = shell?.querySelector('[data-risk-map-loading]');
+    // The first ratings and forecast arrive inside the page (App\Support\RiskMapInitialData); each is used once.
+    const initial = (() => {
+        const node = shell?.querySelector('[data-risk-map-initial]');
+        try { return node ? JSON.parse(node.textContent) || {} : {}; } catch (parseError) { return {}; }
+    })();
     const error = shell?.querySelector('[data-risk-map-error]');
     const details = card?.querySelector('[data-risk-map-details]');
     const refresh = card?.querySelector('[data-risk-map-refresh]');
@@ -497,7 +503,7 @@ export function initBarangayRiskMap() {
         // "Unavailable" only when no barangay has any reading; older readings are "delayed" and still shown.
         const parts = [current
             ? `Latest weather is available for ${current} of ${names.length} barangays.`
-            : delayed.length ? 'Weather update is temporarily delayed.' : 'Latest weather is temporarily unavailable.'];
+            : delayed.length ? 'Showing the last saved weather.' : 'Walang datos pa (no weather saved yet).'];
         if (delayed.length) parts.push(current
             ? `${delayed.length} ${delayed.length === 1 ? 'barangay is' : 'barangays are'} temporarily using their last available update (${delayed.join(', ')}).`
             : `Showing the last available update for ${delayed.length} of ${names.length} barangays.`);
@@ -633,9 +639,12 @@ export function initBarangayRiskMap() {
     };
     const loadForecast = () => {
         if (!forecastBox) return Promise.resolve(null);
-        // loader: false keeps the full-page iClimate overlay away; the map shows its own spinner.
-        forecastRequest ??= fetch(forecastBox.dataset.forecastUrl, { headers: { Accept: 'application/json' }, loader: false })
-            .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`Forecast request failed (${response.status})`))))
+        if (forecastRequest) return forecastRequest;
+        const embedded = initial.forecast;
+        initial.forecast = null;
+        // loader: false keeps the full-page iClimate overlay away; the map shows its own placeholder.
+        forecastRequest = (embedded ? Promise.resolve(embedded) : fetch(forecastBox.dataset.forecastUrl, { headers: { Accept: 'application/json' }, loader: false })
+            .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`Forecast request failed (${response.status})`)))))
             .then((data) => { forecastData = data; buildMonthControls(data); return data; })
             .catch((requestError) => {
                 console.error('iClimate could not load the barangay risk forecast.', requestError);
@@ -702,6 +711,11 @@ export function initBarangayRiskMap() {
         return problems;
     };
     const fetchRisk = async (forceRefresh) => {
+        if (!forceRefresh && initial.risk?.status === 'ok') {
+            const risk = initial.risk;
+            initial.risk = null;
+            return risk;
+        }
         // loader: false keeps the full-page iClimate overlay away; the button shows its own small loader.
         const response = await fetch(riskUrl(forceRefresh), { headers: { Accept: 'application/json' }, loader: false });
         if (!response.ok) throw new Error(`Heat map data request failed (${response.status})`);

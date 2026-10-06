@@ -20,7 +20,6 @@ use App\Support\PredictionWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -92,9 +91,8 @@ class WeatherPredictionController extends Controller
         $liveWeather = rescue(function () use ($location, $sharedWeather, $weatherApi, $weatherResult) {
             return match (true) {
                 // No usable barangay: show the Lian-wide reading instead of nothing.
-                ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($weatherApi->forecast(
-                    location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-                )) ?? data_get($weatherResult, 'live_weather'),
+                ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($this->municipalForecast($weatherApi))
+                    ?? data_get($weatherResult, 'live_weather'),
                 default => $weatherApi->forecast(
                     latitude: $location['coordinates'][0],
                     longitude: $location['coordinates'][1],
@@ -103,25 +101,13 @@ class WeatherPredictionController extends Controller
             };
         }, null, false);
 
-        // Keep both readings on the same update time: if they were fetched
-        // more than two minutes apart, refresh both together.
-        if (! $location['is_municipal_preview'] && $location['coordinates'] && $this->readingsOutOfSync($liveWeather, $lianWeather)) {
-            $liveWeather = rescue(fn () => $weatherApi->forecast(
-                refresh: true,
-                latitude: $location['coordinates'][0],
-                longitude: $location['coordinates'][1],
-                location: $location['label'],
-            ), null, false) ?? $liveWeather;
-            $lianWeather = rescue(fn () => $sharedWeather->current(force: true), null, false) ?? $lianWeather;
-        }
+        // Both readings are the stored ones (no provider call on page load); each shows its own update time.
         $calendarMonth = isset($validated['calendar_month'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $validated['calendar_month'].'-01')
             : \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         // Municipal calendar uses the shared Lian reading so its daily values
         // match the Farmer/MAO dashboards, login page and chatbot exactly.
-        $calendarWeather = rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast(
-            location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-        )), null, false);
+        $calendarWeather = rescue(fn () => $sharedWeather->alignForecast($this->municipalForecast($weatherApi)), null, false);
         // A single whole-month estimate (not per-day) from the same monthly
         // Random Forest model already used by the barangay risk map — shown
         // in the calendar as its own clearly-labeled "Monthly Prediction"
@@ -149,8 +135,8 @@ class WeatherPredictionController extends Controller
         $monthlyOutlook = $outlookService->build($weatherCalendar);
         $liveWeatherError = match (true) {
             ! $location['coordinates'] => 'Your saved barangay is not recognized as one of Lian’s 19 barangays. Update your profile location.',
-            ! $liveWeather && $isTechnical => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
-            ! $liveWeather => 'The forecast is not available right now. Please try again later.',
+            ! $liveWeather && $isTechnical => 'No saved forecast exists for this location yet; iclimate:refresh-weather-cache stores one every few minutes.',
+            ! $liveWeather => null,
             default => null,
         };
 
@@ -214,11 +200,14 @@ class WeatherPredictionController extends Controller
             ])->withInput();
         }
 
-        $liveWeather = $weatherApi->forecast(
-            latitude: $location['coordinates'][0],
-            longitude: $location['coordinates'][1],
-            location: $location['label'],
-        );
+        // The stored forecast for this place (the run is queued; nothing is fetched while the person waits).
+        $liveWeather = $location['is_municipal_preview']
+            ? $this->municipalForecast($weatherApi)
+            : $weatherApi->forecast(
+                latitude: $location['coordinates'][0],
+                longitude: $location['coordinates'][1],
+                location: $location['label'],
+            );
         $run = $analytics->dispatch('weather_prediction', [
             'prediction_type' => PredictionType::WEATHER->value,
             'target_date' => $targetDate->toDateString(),
@@ -333,21 +322,20 @@ class WeatherPredictionController extends Controller
         return $run;
     }
 
-    private function readingsOutOfSync(?array $barangayWeather, array $lianWeather): bool
-    {
-        $barangayFetchedAt = $barangayWeather['fetched_at'] ?? null;
-        $lianFetchedAt = $lianWeather['server_fetched_at'] ?? null;
-
-        if (! $barangayFetchedAt || ! $lianFetchedAt || ! empty($barangayWeather['is_cached_fallback']) || ($lianWeather['stale'] ?? false)) {
-            return false;
-        }
-
-        return abs(Carbon::parse($barangayFetchedAt)->diffInSeconds(Carbon::parse($lianFetchedAt))) > 120;
-    }
-
     /**
      * @return array{barangay: ?string, label: string, coordinates: ?array{0: float, 1: float}, is_municipal_preview: bool}
      */
+    /**
+     * The shared Lian forecast (the one iclimate:refresh-weather-cache stores for the dashboards), labelled as the
+     * municipal preview. Read under its own label it would be a separate cache entry nothing keeps current.
+     */
+    private function municipalForecast(WeatherApiService $weatherApi): ?array
+    {
+        $forecast = $weatherApi->forecast();
+
+        return $forecast === null ? null : array_merge($forecast, ['location' => self::LIAN_MUNICIPAL_PREVIEW_LABEL]);
+    }
+
     private function savedLocation(Request $request): array
     {
         $user = $request->user();

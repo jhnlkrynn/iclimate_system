@@ -720,7 +720,9 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ expected harvest — the Predictions page's own estimate
 
     /**
-     * The model's raw result (cached 6 hours per farmer, with the time it ran), or why there is none.
+     * The model's stored result for this farmer, or why there is none. A page never runs the model: with nothing
+     * stored it queues PrepareFarmerYieldEstimate and shows a placeholder. Successes are kept 6 hours, failures
+     * 30 minutes (so a farmer without enough records sees why instead of a placeholder that never fills).
      *
      * @param  Collection<int, FarmerPlantingSchedule>  $rows
      * @return array{state: string, result: ?array<string, mixed>}  state: ok | error | loading
@@ -731,39 +733,68 @@ final class FarmerDashboardService
         if ($refresh) {
             Cache::forget($key);
         }
-        if ($defer && ! Cache::has($key)) {
-            return ['state' => 'loading', 'result' => null];
+
+        $stored = Cache::get($key);
+        if (! is_array($stored)) {
+            if ($defer || \App\Support\InteractiveRequest::isPageRequest()) {
+                \App\Jobs\PrepareFarmerYieldEstimate::queueFor($user->id);
+                // A synchronous queue has already stored it.
+                $stored = Cache::get($key);
+                if (! is_array($stored)) {
+                    return ['state' => 'loading', 'result' => null];
+                }
+            } else {
+                $stored = $this->runYieldModel($user, $profile);
+            }
         }
 
+        if ($stored['failed'] ?? false) {
+            return ['state' => 'error', 'result' => null, 'cause' => ($stored['lacks_records'] ?? false) ? 'records' : 'service'];
+        }
+
+        $yield = $stored['yield_tons_per_hectare'] ?? $stored['predicted_yield'] ?? null;
+        if (! is_numeric($yield) || (float) $yield <= 0) {
+            return ['state' => 'error', 'result' => null, 'cause' => 'service'];
+        }
+
+        return ['state' => 'ok', 'result' => $stored];
+    }
+
+    /** Runs the yield model for this farmer now and stores the result (used by the background job and the warm-up command). */
+    public function prepareYieldEstimate(User $user): void
+    {
+        Cache::forget(self::predictionCacheKey($user->id));
+        $this->runYieldModel($user, $user->farmerProfile);
+        self::forgetCached($user);
+    }
+
+    /** @return array<string, mixed> the model's result with the time it ran, or ['failed' => true, 'lacks_records' => bool] */
+    private function runYieldModel(User $user, $profile): array
+    {
+        $key = self::predictionCacheKey($user->id);
         $farmType = $profile?->farm_type ?: \App\Models\FarmerProfile::FARM_TYPE_RAINFED;
-        $lacksRecords = false;                                          // the model answered, but it has too few weather records to estimate from
-        $result = Cache::remember($key, now()->addHours(6), function () use ($user, $farmType, &$lacksRecords) {
-            try {
-                $prediction = $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, null, $user, [], PredictionType::RICE_YIELD->value);
 
-                // A failed run is not cached (null is never stored), so the next load retries the model.
-                if (! ($prediction['success'] ?? false)) {
-                    Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
-                    $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
+        try {
+            $prediction = $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, null, $user, [], PredictionType::RICE_YIELD->value);
 
-                    return null;
-                }
+            if ($prediction['success'] ?? false) {
                 $prediction['ran_at'] = CarbonImmutable::now(self::TIMEZONE)->toIso8601String();
+                Cache::put($key, $prediction, now()->addHours(6));
 
                 return $prediction;
-            } catch (Throwable $e) {
-                Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'exception' => $e::class, 'message' => $e->getMessage()]);
-
-                return null;
             }
-        });
 
-        $yield = is_array($result) ? ($result['yield_tons_per_hectare'] ?? $result['predicted_yield'] ?? null) : null;
-        if (! is_numeric($yield) || (float) $yield <= 0) {
-            return ['state' => 'error', 'result' => null, 'cause' => $lacksRecords ? 'records' : 'service'];
+            Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
+            $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
+        } catch (Throwable $e) {
+            Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'exception' => $e::class, 'message' => $e->getMessage()]);
+            $lacksRecords = false;
         }
 
-        return ['state' => 'ok', 'result' => $result];
+        $failed = ['failed' => true, 'lacks_records' => $lacksRecords];
+        Cache::put($key, $failed, now()->addMinutes(30));
+
+        return $failed;
     }
 
     /**

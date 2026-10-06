@@ -37,6 +37,9 @@
              configured port would make tests silently hit it for real instead of
              getting a fast connection-refused. -->
         <env name="FARMING_AI_API_URL" value="http://127.0.0.1:19999"/>
+        <!-- Tests compile Blade views into their own folder. Sharing storage/framework/views with the running site made a
+             test fail with "rename(...): Access is denied" when both compiled the same template at once (Windows file lock). -->
+        <env name="VIEW_COMPILED_PATH" value="storage/framework/testing/views"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

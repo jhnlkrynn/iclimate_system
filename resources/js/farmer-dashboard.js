@@ -136,8 +136,8 @@ export function initFarmerDashboard() {
             setBusy(false, busyNames);
             if (refocus && (!document.activeElement || document.activeElement === document.body)) $(refocus)?.focus();
         }
-        // The slow yield forecast was left as a placeholder (a timed refresh never waits for it): fill it in on its own.
-        if (retry !== 'harvest' && $('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest' });
+        // The harvest card's Try again queued a new estimate: read it once it has had time to finish.
+        if (retry === 'harvest' && $('[data-mfd-load="harvest"]')) setTimeout(() => { if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest-check' }); }, 20000);
     }
 
     // ------------------------------------------------------------------ language (English / Filipino)
@@ -330,7 +330,8 @@ export function initFarmerDashboard() {
                 announce(saved.message);
                 while (refreshing) await new Promise((done) => setTimeout(done, 200));     // let a refresh already under way finish first
                 await refresh({ retry: hooks.retry });
-                if (hooks.thenHarvest) refresh({ retry: 'harvest' });   // the slow estimate follows on its own
+                // The save queued a new yield estimate (PrepareFarmerYieldEstimate): read it once it has had time to finish.
+                if (hooks.thenHarvest) setTimeout(() => { if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest-check' }); }, 20000);
                 // The button that opened the pop-up is gone once its card is redrawn: keyboard focus goes to the updated part.
                 if (!document.activeElement || document.activeElement === document.body) {
                     const target = root.querySelector(hooks.focusAfter) || root.querySelector('h1');
@@ -659,8 +660,9 @@ export function initFarmerDashboard() {
         initLanguage();
         tickClock();
         tickAge();
-        // The harvest model is slow, so the page opens with a placeholder and fills the card in here.
-        if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest' });
+        // The harvest estimate is made in the background (PrepareFarmerYieldEstimate). With none stored yet the card is a
+        // placeholder: look once more after half a minute, reading only what is stored (the model never runs from here).
+        if ($('[data-mfd-load="harvest"]')) setTimeout(() => { if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest-check' }); }, 30000);
     };
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
 }

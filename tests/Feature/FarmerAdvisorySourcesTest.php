@@ -213,11 +213,12 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->assertNotEmpty(Cache::get('pagasa-advisories:status')['errors']);
     }
 
-    public function test_first_visit_checks_in_the_background_instead_of_displaying_a_confirmed_empty_state(): void
+    public function test_first_visit_before_any_scheduled_check_does_not_display_a_confirmed_empty_state(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => null]);
+        // Opening the page never starts a check (the scheduler fetches PAGASA and the weather); it says nothing is checked yet.
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
-            ->assertSee('data-fad-auto-refresh', false)->assertSee('Checking the latest advisories')
+            ->assertDontSee('data-fad-auto-refresh', false)->assertSee('Checking the latest advisories')
             ->assertDontSee('No Active Advisories for Lian');
         Http::assertNothingSent();
     }
@@ -244,7 +245,7 @@ class FarmerAdvisorySourcesTest extends TestCase
         $requests = count(Http::recorded());
         $farmer = User::factory()->farmer()->create(['barangay' => 'San Diego']);
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
-            ->assertSee('data-fad-auto-refresh', false);
+            ->assertDontSee('data-fad-auto-refresh', false);
         $this->assertSame($requests, count(Http::recorded()), 'A GET still only reads prepared data.');
         $this->postJson(route('planting-advisories.refresh-pagasa'))->assertOk();
         $this->assertSame($requests + 1, count(Http::recorded()), 'Only the missing barangay weather is fetched.');
