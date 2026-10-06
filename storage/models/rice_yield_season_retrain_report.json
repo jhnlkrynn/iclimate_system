@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-10-06T16:33:28.140084+00:00",
+  "model": "Random Forest Regressor (10-feature candidate)",
+  "dataset": "storage/datasets/iClimate_Modeling_Ready_TimeAware.csv",
+  "dataset_sha256": "e49e3727c239cceb32b368f3ed39af5da48de895f168ed448f92fdbfdf74b8c3",
+  "rows": 60,
+  "features": [
+    "MONTH_SIN",
+    "MONTH_COS",
+    "SEASON_WET",
+    "RAINFALL",
+    "TMAX",
+    "TMIN",
+    "RH",
+    "WIND_SPEED",
+    "WIND_DIR_SIN",
+    "WIND_DIR_COS"
+  ],
+  "target": "AVERAGE_YIELD",
+  "hyperparameters": {
+    "n_estimators": 500,
+    "max_depth": 2,
+    "min_samples_leaf": 2,
+    "max_features": "sqrt",
+    "random_state": 42
+  },
+  "training_years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "test_year": 2025,
+  "change": {
+    "before": "Wet = May to September (the dataset's SEASON_WET column; October is Dry)",
+    "after": "Wet = May to October (October is Wet)",
+    "rows_changed": 5,
+    "rows_changed_months": [
+      "2020-10",
+      "2021-10",
+      "2022-10",
+      "2023-10",
+      "2024-10"
+    ]
+  },
+  "holdout_2025": {
+    "before": {
+      "rmse": 0.469,
+      "mae": 0.3944,
+      "r2": -1.1043,
+      "train_rows": 52,
+      "test_rows": 8
+    },
+    "after": {
+      "rmse": 0.4584,
+      "mae": 0.3847,
+      "r2": -1.0105,
+      "train_rows": 52,
+      "test_rows": 8
+    }
+  },
+  "leave_one_year_out": {
+    "before": {
+      "rmse": 0.7114,
+      "mae": 0.5104,
+      "r2": -0.1611,
+      "rows": 60,
+      "years": 6
+    },
+    "after": {
+      "rmse": 0.7155,
+      "mae": 0.5137,
+      "r2": -0.1745,
+      "rows": 60,
+      "years": 6
+    }
+  },
+  "reproduces_recorded_candidate": true,
+  "recorded_candidate_metrics": {
+    "MAE": 0.3944,
+    "RMSE": 0.469,
+    "R2": -1.1043
+  },
+  "deployed_model": {
+    "path": "storage/models/rice_yield_model_final.pkl",
+    "retrained": false,
+    "reason": "Its training dataset (with a farm Area column) and training script are not in the repository."
+  },
+  "retrained_model": {
+    "path": "storage/models/rice_yield_model_candidate_oct_wet.pkl",
+    "sha256": "cbe600a6b37b436d5d06d45952afad346ae35ce00e58b2188edcaf9f95df1581",
+    "activated": false
+  }
+}

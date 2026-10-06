@@ -100,6 +100,15 @@ html[data-theme="dark"] body .farmer-org-legend-item:hover { background: var(--d
 html[data-theme="dark"] body .farmer-org-legend-count { color: var(--dk-ink); }
 html[data-theme="dark"] body .farmer-org-chart-status { color: var(--dk-ink); }
 
+/* ---- views/crud/print.blade.php (4) */
+html[data-theme="dark"] body { color: var(--dk-ink); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .print-actions button,
+html[data-theme="dark"] body .print-actions a { background: var(--dk-surface-2); color: #9de7ba; }
+html[data-theme="dark"] body thead th { background: var(--dk-surface-2); }
+@media print {
+html[data-theme="dark"] body thead th { background: var(--dk-surface-2) !important; }
+}
+
 /* ---- views/farm-boundaries/edit.blade.php (1) */
 html[data-theme="dark"] body .boundary-point { border-color: var(--dk-border-strong); }
 
@@ -219,7 +228,7 @@ html[data-theme="dark"] body .candidate-warning { border-color: color-mix(in srg
 html[data-theme="dark"] body .badge-green { border-color: color-mix(in srgb, #33cc6b 30%, var(--dk-border)); }
 html[data-theme="dark"] body .badge-yellow { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
 
-/* ---- css/app.css (78) */
+/* ---- css/app.css (79) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
 html[data-theme="dark"] body .ic-skeleton { background-color: var(--dk-surface-2); }
@@ -312,6 +321,10 @@ html[data-theme="dark"] body .ic-no-data { background: var(--dk-surface-2); colo
 html[data-theme="dark"] body .ic-no-data strong { color: var(--dk-ink-mid); }
 html[data-theme="dark"] body .ic-tab { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
 html[data-theme="dark"] body .ic-tab:hover { color: #9de7ba; }
+@media print {
+html[data-theme="dark"] body,
+html[data-theme="dark"] body .page-shell { background: var(--dk-surface-2) !important; }
+}
 
 /* ---- css/ui-refresh.css (47) */
 html[data-theme="dark"] body .card:hover,
@@ -490,7 +503,7 @@ html[data-theme="dark"] body .fpred .btn-outline-success,
 html[data-theme="dark"] body .fpred .btn-outline-primary,
 html[data-theme="dark"] body .fpred .btn-outline-secondary { background: var(--dk-surface-2); }
 
-/* ---- css/it-dashboard.css (9) */
+/* ---- css/it-dashboard.css (10) */
 html[data-theme="dark"] body .itd-meter { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-table.is-roles tbody tr:hover th { background: var(--dk-surface-3); }
 html[data-theme="dark"] body .itd-table tbody tr:hover td { background: var(--dk-surface-3); }
@@ -501,6 +514,7 @@ html[data-theme="dark"] body .itd-filters input { background: var(--dk-surface-2
 html[data-theme="dark"] body .itd-range button { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-chart-state { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-heat td { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .itd .itd-section-title { color: var(--dk-ink); }
 
 /* ---- css/it-pages.css (17) */
 html[data-theme="dark"] body .mfd.itd.itp .btn:is(.btn-light, .btn-outline-primary, .btn-outline-success, .btn-outline-secondary, .btn-outline-dark) { background: var(--dk-surface-2) !important; }

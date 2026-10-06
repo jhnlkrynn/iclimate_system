@@ -129,7 +129,7 @@ class PlantingAdvisoryController extends Controller
             'types' => $types,
             'type' => $type,
             'show' => $show,
-            'pendingCount' => $canManage ? PlantingAdvisory::query()->pendingReview()->count() : 0,
+            'pendingCount' => $isFarmer ? 0 : PlantingAdvisory::query()->pendingReview()->count(),
             'barangay' => $barangay,
             'barangays' => LianBarangays::all(),
             'farmerBarangay' => $farmerBarangay,
@@ -143,7 +143,7 @@ class PlantingAdvisoryController extends Controller
             'analyticsRun' => $this->requestedAnalyticsRun($request),
             'check' => $this->lastCheck(),
             // Typhoon Safety Check-Ins (moved here from the former Operations page): staff only.
-            'checkIns' => $canManage ? $this->typhoonCheckIns() : null,
+            'checkIns' => $isFarmer ? null : $this->typhoonCheckIns(),
         ];
     }
 
@@ -772,9 +772,10 @@ class PlantingAdvisoryController extends Controller
         return ['information' => 20, 'low' => 35, 'moderate' => 55, 'high' => 80, 'critical' => 100][$severity] ?? 50;
     }
 
+    /** Advisories are written, approved and published by the MAO. IT reads them (view-only since 2026-10). */
     private function canManage(Request $request): bool
     {
-        return in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true);
+        return $request->user()->role === User::ROLE_MAO;
     }
 
     private function authorizeManage(Request $request): void

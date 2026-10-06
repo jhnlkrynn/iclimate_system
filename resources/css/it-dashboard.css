@@ -222,3 +222,8 @@
     .itd-filters label { flex: 1 1 140px; }
     .itd-rows > div { align-items: flex-start; }
 }
+
+/* IT Dashboard (2026-10): four titled sections on one screen, no tabs. */
+.itd .itd-section { display: grid; gap: 16px; }
+.itd .itd-section-title { margin: 8px 0 0; font-size: 1.125rem; font-weight: 700; color: var(--ink, #1b1f1d); }
+.itd .itd-more { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; }

@@ -43,6 +43,9 @@ class SystemHealthController extends Controller
             'checks' => $result['checks'],
             'summary' => $health->summarize($result['checks']),
             'checkedAt' => $result['checkedAt'],
+            // Usage Patterns, Resources and the Data Pipeline moved here from the IT dashboard (2026-10): the overview
+            // that is already prepared, read only. Null until one exists; the checks above still show.
+            'it' => rescue(fn (): ?array => app(DashboardController::class)->preparedItOverview(), null, false),
         ]);
     }
 }

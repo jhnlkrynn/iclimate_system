@@ -1662,3 +1662,12 @@ html[data-theme="dark"] .ic-no-data strong { color: #e4ece7; }
 .ic-tab.is-active .ic-tab-count { background: rgba(255, 255, 255, .22); }
 html[data-theme="dark"] .ic-tab { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
 html[data-theme="dark"] .ic-tab.is-active { background: #2f7d54; border-color: #2f7d54; color: #fff; }
+
+/* Paper (2026-10): a staff list printed straight from the browser (Ctrl+P) leaves out the sidebar, top bar, buttons,
+   filters and paging. The Print button opens the full print page instead (crud/print.blade.php: every filtered row). */
+@media print {
+    .ic-sidebar, nav.topbar, #icAiLauncher, #icAiWidget, .ic-tabs, .ic-collapse, .action-cluster, .pagination,
+    .page-shell .btn, .page-shell form[data-ic-confirm] { display: none !important; }
+    .app-main { margin-left: 0 !important; }
+    body, .page-shell { background: #fff !important; }
+}

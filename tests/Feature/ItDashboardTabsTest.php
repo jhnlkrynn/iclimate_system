@@ -48,57 +48,6 @@ class ItDashboardTabsTest extends TestCase
 
     // ------------------------------------------------------------ tabs
 
-    public function test_each_tab_is_selected_from_the_url_and_defaults_to_overview(): void
-    {
-        $it = $this->it();
-        foreach (['overview' => 'Overview', 'heatmap' => 'Heat Map', 'security' => 'Security', 'users' => 'Users & Usage', 'resources' => 'Resources & Data', 'activity' => 'Activity Log'] as $key => $label) {
-            $html = $this->actingAs($it)->get(route('admin.dashboard', ['tab' => $key]))->assertOk()->assertViewHas('tab', $key)->getContent();
-
-            $this->assertMatchesRegularExpression('/data-tab="'.$key.'"[^>]*aria-selected="true"/', $html, $key);
-            $this->assertMatchesRegularExpression('/data-panel="'.$key.'"[^>]*aria-labelledby="itd-tab-'.$key.'"\s*>/', $html, "$key panel is visible");
-            $this->assertStringContainsString(e($label), $html);
-        }
-
-        $this->actingAs($it)->get(route('admin.dashboard', ['tab' => 'nonsense']))->assertViewHas('tab', 'overview');
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertViewHas('tab', 'overview');
-    }
-
-    public function test_sections_live_in_the_tab_the_brief_gives_them(): void
-    {
-        $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
-        $panel = function (string $name) use ($html): string {
-            $start = strpos($html, 'data-panel="'.$name.'"');
-            $next = preg_match('/data-panel="/', $html, $m, PREG_OFFSET_CAPTURE, $start + 10) ? $m[0][1] : strlen($html);
-
-            return substr($html, $start, $next - $start);
-        };
-
-        foreach (['data-it-health', 'data-it-activity', 'data-it-brief'] as $marker) {
-            $this->assertStringContainsString($marker, $panel('overview'), $marker);
-        }
-        foreach (['Failed logins by IP', 'Admin actions by user', 'Accounts that never logged in', 'Dormant accounts'] as $text) {
-            $this->assertStringContainsString($text, $panel('security'), $text);
-        }
-        foreach (['data-it-roles', 'data-it-usage', 'data-it-ai', 'Login activity heatmap', 'New registrations per week'] as $text) {
-            $this->assertStringContainsString($text, $panel('users'), $text);
-        }
-        foreach (['Largest tables', 'Uploads added', 'data-it-integrity', 'data-it-pipeline', 'data-it-scheduler', 'data-it-app-errors', 'data-it-failed-jobs'] as $text) {
-            $this->assertStringContainsString($text, $panel('resources'), $text);
-        }
-        $this->assertStringContainsString('data-it-recent', $panel('activity'));
-    }
-
-    public function test_every_section_has_a_subtitle_and_a_last_updated_label(): void
-    {
-        $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
-
-        foreach (['data-it-health', 'data-it-brief', 'data-it-failed-jobs', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-usage', 'data-it-ai', 'data-it-resources', 'data-it-integrity', 'data-it-ops', 'data-it-recent'] as $marker) {
-            $section = substr($html, strpos($html, $marker), 6000);
-            $this->assertStringContainsString('itd-sub', $section, "$marker subtitle");
-            $this->assertStringContainsString('Last updated', $section, "$marker last updated");
-        }
-    }
-
     // ------------------------------------------------------------ System Health wording
 
     public function test_the_overview_has_no_attention_banner_and_a_working_system_reads_healthy(): void
@@ -208,14 +157,17 @@ class ItDashboardTabsTest extends TestCase
         $this->assertSame(2, $s['streak']);
         $this->assertStringContainsString('[url]', $s['last_error']);
 
-        $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('Weather API reliability')->assertSee('2 in a row')->getContent();
+        // The Data Pipeline card is on System Health since 2026-10; it reads the overview the dashboard prepares.
+        $this->actingAs($this->it())->get(route('admin.dashboard'))->assertOk()->assertDontSee('Weather API reliability');
+        $html = $this->actingAs($this->it())->get(route('system-health.index'))->assertSee('Weather API reliability')->assertSee('2 in a row')->getContent();
         $this->assertStringContainsString('625', $html);
     }
 
     public function test_weather_fetch_stats_have_an_empty_state(): void
     {
         $this->assertSame(0, app(ItDashboardInsights::class)->weatherFetchStats()['total']);
-        $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('No weather fetch attempts have been logged yet');
+        $this->actingAs($this->it())->get(route('admin.dashboard'))->assertOk();
+        $this->actingAs($this->it())->get(route('system-health.index'))->assertSee('No weather fetch attempts have been logged yet');
     }
 
     // ------------------------------------------------------------ retry button

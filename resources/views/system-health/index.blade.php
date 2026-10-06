@@ -81,5 +81,43 @@
                 @endforeach
             </div>
         </section>
+
+        {{-- Moved here from the IT dashboard (2026-10): Usage Patterns, Resources and the Data Pipeline. --}}
+        @if ($it ?? null)
+            <section class="itp-section" aria-labelledby="shUsageTitle" data-health-section="usage">
+                <div class="itp-section-head">
+                    <h2 id="shUsageTitle">Usage Patterns</h2>
+                    <p>How people use the system, and how the chatbot is used.</p>
+                </div>
+                <div class="itd-row"><div class="itd-cell" id="itd-usage">@include('dashboards.it.usage')</div></div>
+                <div class="itd-row"><div class="itd-cell" id="itd-ai">@include('dashboards.it.ai')</div></div>
+            </section>
+
+            <section class="itp-section" aria-labelledby="shResourcesTitle" data-health-section="resources">
+                <div class="itp-section-head">
+                    <h2 id="shResourcesTitle">Resources</h2>
+                    <p>Storage, uploads and the counts of the main records.</p>
+                </div>
+                <div class="itd-row r-50-50">
+                    <div class="itd-cell" id="itd-resources">@include('dashboards.it.resources')</div>
+                    <div class="itd-cell" id="itd-integrity">@include('dashboards.it.integrity')</div>
+                </div>
+            </section>
+
+            <section class="itp-section" aria-labelledby="shPipelineTitle" data-health-section="pipeline">
+                <div class="itp-section-head">
+                    <h2 id="shPipelineTitle">Data Pipeline</h2>
+                    <p>When each data source was last updated.</p>
+                </div>
+                <div class="itd-row"><div class="itd-cell" id="itd-pipeline">@include('dashboards.it.pipeline')</div></div>
+            </section>
+        @else
+            <section class="itp-section" aria-labelledby="shMoreTitle" data-health-section="not-prepared">
+                <div class="itp-section-head">
+                    <h2 id="shMoreTitle">Usage Patterns, Resources and Data Pipeline</h2>
+                </div>
+                <x-no-data note="These appear after the next scheduled update, or after the IT Dashboard is opened." />
+            </section>
+        @endif
     </div>
 </x-app-layout>

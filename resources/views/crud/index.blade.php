@@ -31,6 +31,10 @@
                         <button class="btn btn-outline-primary" type="submit" data-loading-text="Updating...">Mark All Read</button>
                     </form>
                 @endif
+                @if ($printable ?? false)
+                    {{-- Opens the print page with every row that matches the current search and filters. --}}
+                    <a class="btn btn-outline-light" href="{{ route($routeName.'.index', array_merge(request()->except(['page', 'print']), ['print' => 1])) }}" target="_blank" rel="noopener" data-print-list data-fast-nav-bound="true">Print</a>
+                @endif
                 @if ($canManage)
                     <a class="btn btn-light" href="{{ route($routeName.'.create') }}">Create {{ $title }}</a>
                 @endif

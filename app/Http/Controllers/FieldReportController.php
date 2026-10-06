@@ -16,6 +16,8 @@ class FieldReportController extends CrudController
 
     protected string $title = 'Field Report';
 
+    protected bool $printable = true;
+
     protected array $columns = [
         'title' => 'Title',
         'barangay' => 'Barangay',
@@ -49,6 +51,12 @@ class FieldReportController extends CrudController
     {
         return parent::baseQuery($request)
             ->when($request->routeIs('field-reports.index') && $request->boolean('unresolved'), fn ($query) => $query->where('status', '!=', FieldReport::STATUS_RESOLVED));
+    }
+
+    /** The Unresolved tab is a filter too: the print page names it. */
+    protected function printFilters(Request $request): array
+    {
+        return $request->boolean('unresolved') ? ['Status' => 'Unresolved (not yet Resolved)'] : [];
     }
 
     public function index(Request $request): \Illuminate\View\View
