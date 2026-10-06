@@ -8,9 +8,14 @@
 @endphp
 <header class="mfd-header">
     <div class="mfd-header-main">
-        <span class="mfd-kicker">{{ __('farmer.header.kicker') }}</span>
         <h1>{{ $f['greeting'] }}</h1>
+    </div>
+    <div class="mfd-header-top">
+        <span class="mfd-kicker">{{ __('farmer.header.kicker') }}</span>
+    </div>
+    <div class="mfd-header-meta">
         <p class="mfd-place">@include('dashboards.mao.icon', ['name' => 'map']){{ $f['place'] }}</p>
+        <span class="mfd-meta-separator" aria-hidden="true">•</span>
         <p class="mfd-date" data-mfd-clock>{{ $now->format('l, F j, Y') }} • {{ $now->format('g:i A') }}</p>
     </div>
     <div class="mfd-header-side">
@@ -28,7 +33,8 @@
         <button type="button" class="mfd-btn is-quiet" data-mfd-refresh aria-label="{{ __('farmer.header.refresh_label') }}">@include('dashboards.mao.icon', ['name' => 'refresh'])<span data-mfd-refresh-text>{{ __('farmer.header.refresh') }}</span></button>
         <p class="mfd-fresh">
             @if ($ok)
-                <span>{{ __('farmer.header.last_updated', ['time' => $w['updated_label'] ?? '—']) }}</span>
+                <span class="mfd-fresh-updated" aria-label="{{ __('farmer.header.last_updated', ['time' => $w['updated_label'] ?? '—']) }}">{{ __('farmer.header.updated_at', ['time' => $w['updated_label'] ?? '—']) }}</span>
+                <span aria-hidden="true">•</span>
                 <span class="mfd-age" data-mfd-age data-updated="{{ $w['updated_at']?->toIso8601String() }}">{{ $w['age_text'] }}</span>
                 @if ($w['stale'])@include('dashboards.farmer._status', ['level' => 'watch', 'label' => __('farmer.header.old_data')])@endif
             @else

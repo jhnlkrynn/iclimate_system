@@ -122,12 +122,19 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
  * Same header as the Advisories, Calendar and other farmer pages (.fad-hero in farmer-advisories.css):
  * dark green band, light-green kicker, white Georgia title, white Refresh button. */
 .mfd-header {
-    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px;
-    padding: 28px; background: var(--brand); border: 0; border-radius: var(--radius); color: #fff;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px;
+    padding: 24px 28px; background: var(--brand); border: 0; border-radius: var(--radius); color: #fff;
 }
+.mfd-header-top { display: contents; }
+.mfd-header-main { grid-column: 1 / -1; min-width: 0; width: 100%; }
+.mfd-header-main h1 { white-space: nowrap; }
+.mfd-header-meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.mfd-meta-separator { color: rgba(255, 255, 255, .5); }
 .mfd .mfd-header h1 { color: #fff; }
 .mfd-kicker { display: block; margin-bottom: 8px; color: var(--brand-ink, var(--brand)); }
 .mfd-header .mfd-kicker { color: #b9e4cb; }
+.mfd-header .mfd-kicker { grid-column: 1; grid-row: 1; align-self: center; }
+.mfd-header .mfd-place, .mfd-header .mfd-date { margin-top: 0 !important; }
 .mfd-place { display: flex; align-items: center; gap: 8px; margin-top: 12px !important; font-size: 1rem; font-weight: 600; color: #fff; }
 .mfd-place .mtd-svg { width: 18px; height: 18px; color: #b9e4cb; }
 .mfd-date { margin-top: 4px !important; font-size: .9375rem; font-weight: 400; color: rgba(255, 255, 255, .86); }
@@ -260,14 +267,22 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
  * Scoped to .mfd[data-farmer-dashboard]: the MAO and IT dashboards use some of the same class names (.mfd-kpi,
  * .mfd-facts, .mfd-note, …) and keep their own look. */
 /* header, right side: language, Refresh, when the weather was fetched */
-.mfd[data-farmer-dashboard] .mfd-header-side { flex: 0 1 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; max-width: 100%; }
-.mfd[data-farmer-dashboard] .mfd-header-side .mfd-fresh { flex: 1 1 100%; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; margin: 0; font-size: .875rem; color: rgba(255, 255, 255, .86); }
+.mfd[data-farmer-dashboard] .mfd-header-side {
+    grid-column: 2; grid-row: 1;
+    min-width: 0; width: max-content; max-width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: flex-end;
+    gap: 8px 12px; margin-left: auto; white-space: nowrap;
+}
+.mfd[data-farmer-dashboard] .mfd-header-side .mfd-fresh {
+    display: none;
+    font-size: .8125rem; line-height: 1.35; text-align: right; color: rgba(255, 255, 255, .86);
+}
 .mfd[data-farmer-dashboard] .mfd-lang { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
 .mfd[data-farmer-dashboard] .mfd-lang label { font-size: .875rem; font-weight: 600; color: #b9e4cb; }
 .mfd[data-farmer-dashboard] .mfd-lang select {
-    min-height: 44px; padding: 6px 36px 6px 12px; border: 1px solid #fff; border-radius: 4px; background-color: #fff; color: var(--brand);
-    font-size: .9375rem; font-weight: 600; cursor: pointer;
+    min-height: 38px; padding: 5px 30px 5px 10px; border: 1px solid #fff; border-radius: 4px; background-color: #fff; color: var(--brand);
+    font-size: .875rem; font-weight: 600; cursor: pointer;
 }
+.mfd[data-farmer-dashboard] .mfd-header-side > .mfd-btn { min-height: 38px; padding: 6px 12px; font-size: .875rem; }
 .mfd[data-farmer-dashboard] .mfd-lang select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .mfd[data-farmer-dashboard] .mfd-lang select:disabled { opacity: .7; cursor: progress; }
 
@@ -478,8 +493,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     .mfd[data-farmer-dashboard] .mfd-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 @media (min-width: 1400px) {
-    .mfd[data-farmer-dashboard] .mfd-place, .mfd[data-farmer-dashboard] .mfd-date { display: inline-flex; vertical-align: middle; margin-top: 8px !important; }
-    .mfd[data-farmer-dashboard] .mfd-date::before { content: "•"; margin: 0 10px 0 6px; color: rgba(255, 255, 255, .5); }
+    .mfd[data-farmer-dashboard] .mfd-place, .mfd[data-farmer-dashboard] .mfd-date { margin-top: 0 !important; }
 }
 /* tablets: two across */
 @media (max-width: 991px) {
@@ -487,10 +501,14 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     .mfd[data-farmer-dashboard] .mfd-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mfd[data-farmer-dashboard] .mfd-update-grid { grid-template-columns: minmax(0, 1fr); }
 }
+@media (min-width: 761px) and (max-width: 900px) {
+    .mfd[data-farmer-dashboard] .mfd-header-side { flex-wrap: wrap; width: 100%; white-space: normal; }
+}
 @media (max-width: 760px) {
+    .mfd[data-farmer-dashboard] .mfd-header { grid-template-columns: minmax(0, 1fr); }
     .mfd[data-farmer-dashboard] .mfd-days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .mfd[data-farmer-dashboard] .mfd-header-side { justify-content: flex-start; }
-    .mfd[data-farmer-dashboard] .mfd-header-side .mfd-fresh { justify-content: flex-start; }
+    .mfd[data-farmer-dashboard] .mfd-header-side { grid-column: 1; grid-row: auto; align-items: flex-start; width: 100%; max-width: none; margin-left: 0; white-space: normal; }
+    .mfd[data-farmer-dashboard] .mfd-header-main h1 { white-space: normal; }
 }
 
 /* ---------------------------------------------------------------- phones: one column */

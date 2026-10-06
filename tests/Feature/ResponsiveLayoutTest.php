@@ -66,4 +66,17 @@ class ResponsiveLayoutTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/^(<<<<<<<|=======|>>>>>>>) /m', $content, $path);
         }
     }
+
+    public function test_shared_sidebar_docks_controls_and_leaves_scrolling_to_the_content_column(): void
+    {
+        $sidebarCss = file_get_contents(resource_path('css/sidebar.css'));
+
+        $this->assertStringContainsString('height: 100dvh;', $sidebarCss);
+        $this->assertStringContainsString('overflow-y: hidden;', $sidebarCss);
+        $this->assertStringContainsString('html body .app-main {', $sidebarCss);
+        $this->assertStringContainsString('overflow-y: auto;', $sidebarCss);
+        $this->assertStringContainsString('html body #mobileSidebar .ic-sb-nav', $sidebarCss);
+        $this->assertStringContainsString('data-theme-set="light"', file_get_contents(resource_path('views/layouts/sidebar.blade.php')));
+        $this->assertStringContainsString('data-theme-set="dark"', file_get_contents(resource_path('views/layouts/sidebar.blade.php')));
+    }
 }

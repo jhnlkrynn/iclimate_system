@@ -19,6 +19,7 @@ return [
 
     'header' => [
         'kicker' => 'Farmer Dashboard',
+        'updated_at' => 'Na-update :time',
         'updated' => 'Na-update :age',
         'minutes_ago' => '{0} ngayon lang|{1} 1 minuto na ang nakalipas|[2,*] :count minuto na ang nakalipas',
         'hours_ago' => '{0} ngayon lang|{1} 1 oras na ang nakalipas|[2,*] :count oras na ang nakalipas',
