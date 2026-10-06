@@ -86,12 +86,17 @@ class LianBarangayWeatherService
     ];
 
     private const DAILY = [
+        'weather_code',
         'precipitation_sum',
         'rain_sum',
         'temperature_2m_max',
         'temperature_2m_min',
         'precipitation_probability_max',
+        'wind_speed_10m_max',
     ];
+
+    /** Days of forecast kept on each record (the Predictions page's "Next 2 Weeks"); risk still uses the first 7. */
+    public const FORECAST_DAYS = 16;
 
     private bool $refreshScheduled = false;
 
@@ -435,7 +440,7 @@ class LianBarangayWeatherService
             'hourly' => implode(',', self::HOURLY),
             'daily' => implode(',', self::DAILY),
             'timezone' => config('services.open_meteo.timezone', 'Asia/Manila'),
-            'forecast_days' => 7,
+            'forecast_days' => self::FORECAST_DAYS,
         ];
     }
 
@@ -468,7 +473,7 @@ class LianBarangayWeatherService
         $probabilitySeries = $hourly['precipitation_probability'] ?? [];
         $rain24h = $this->sum($this->next24Hours($hourly['time'] ?? [], $rainSeries, $current['time'] ?? null))
             ?? $this->number(($daily['precipitation_sum'] ?? $daily['rain_sum'] ?? [])[0] ?? null);
-        $rain7d = $this->sum($daily['precipitation_sum'] ?? $daily['rain_sum'] ?? []);
+        $rain7d = $this->sum(array_slice($daily['precipitation_sum'] ?? $daily['rain_sum'] ?? [], 0, 7));
         $probability = $this->max($this->next24Hours($hourly['time'] ?? [], $probabilitySeries, $current['time'] ?? null))
             ?? $this->number(($daily['precipitation_probability_max'] ?? [])[0] ?? null);
         $code = isset($current['weather_code']) && is_numeric($current['weather_code']) ? (int) $current['weather_code'] : null;
@@ -505,6 +510,7 @@ class LianBarangayWeatherService
             'weather_condition' => $condition,
             'condition' => $condition,
             'next_hours' => $this->nextHours($hourly, $current['time'] ?? null),
+            'daily' => $this->dailyList($daily),
             'forecast_period' => 'next_24_hours',
             'observed_at' => $observedAt->toIso8601String(),
             'fetched_at' => $fetchedAt->toIso8601String(),
@@ -598,6 +604,31 @@ class LianBarangayWeatherService
             'next_hours' => [],
             'forecast_period' => 'next_24_hours',
         ];
+    }
+
+    /**
+     * The barangay's day-by-day forecast (up to FORECAST_DAYS), in the shape the Predictions page reads.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function dailyList(array $daily): array
+    {
+        $days = [];
+        foreach ((array) ($daily['time'] ?? []) as $i => $date) {
+            $code = $this->number(($daily['weather_code'] ?? [])[$i] ?? null);
+            $days[] = [
+                'date' => (string) $date,
+                'weather_code' => $code !== null ? (int) $code : null,
+                'condition' => $code !== null ? app(WeatherIconMapper::class)->map((int) $code, true)['condition'] : null,
+                'rainfall' => $this->number(($daily['precipitation_sum'] ?? $daily['rain_sum'] ?? [])[$i] ?? null),
+                'precipitation_probability' => $this->number(($daily['precipitation_probability_max'] ?? [])[$i] ?? null),
+                'temperature_max' => $this->number(($daily['temperature_2m_max'] ?? [])[$i] ?? null),
+                'temperature_min' => $this->number(($daily['temperature_2m_min'] ?? [])[$i] ?? null),
+                'wind_speed_max' => $this->number(($daily['wind_speed_10m_max'] ?? [])[$i] ?? null),
+            ];
+        }
+
+        return $days;
     }
 
     private function isRecordDue(?array $record): bool

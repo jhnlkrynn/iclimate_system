@@ -716,3 +716,6 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd[data-farmer-dashboard] .fh-typhoon-form textarea { width: 100%; border: 1px solid var(--rule); border-radius: 8px; padding: 10px; font-size: 1rem; }
 .mfd[data-farmer-dashboard] .fh-typhoon-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .mfd[data-farmer-dashboard] .mfd-btn.is-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* "Ngayon:" / "Buong araw:" before a weather word, so the current condition and today's rain never read as a conflict. */
+.mfd[data-farmer-dashboard] .fh-when { font-weight: 600; color: var(--muted); }

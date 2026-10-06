@@ -740,9 +740,9 @@ return [
 
     // ------------------------------------------------------------------ 2026-10 simpleng mga pahina ng magsasaka (Phase 2)
     'nav' => [
-        'home' => 'Home',
-        'forecast' => 'Forecast',
-        'heat_map' => 'Heat Map',
+        'home' => 'Tahanan',
+        'forecast' => 'Taya ng Panahon',
+        'heat_map' => 'Mapa ng Panganib',
         'advisories' => 'Payo',
         'my_farm' => 'Aking Bukid',
         'messages' => 'Mensahe',
@@ -769,6 +769,8 @@ return [
         ],
         'weather' => [
             'title' => 'Panahon Ngayon',
+            'now' => 'Ngayon',
+            'all_day' => 'Buong araw',
         ],
         'rain' => [
             'none' => 'Walang ulan',
@@ -872,5 +874,40 @@ return [
     'profile_setup' => [
         'title' => 'Kumpletuhin ang Impormasyon ng Bukid',
         'done' => 'Kumpleto na ang impormasyon ng inyong bukid.',
+    ],
+
+    // ------------------------------------------------------------------ Pahina ng Predictions (Phase 3, lahat ng role)
+    'predictions' => [
+        'title' => 'Taya ng Panahon at Ani',
+        'intro' => 'Ang panahon sa mga susunod na araw at ang inaasahang ani ngayong season.',
+        'this_week' => 'Ngayong Linggo',
+        'two_weeks' => 'Susunod na 2 Linggo',
+        'weather_title' => 'Panahon',
+        'for_place' => 'Para sa :place',
+        'estimate' => 'Tantiya',
+        'estimate_badge' => 'Tantiya',
+        'estimate_note' => 'Ang mga araw na may "Tantiya" ay tantiya mula sa buwanang forecast; hindi pa ito abot ng arawang forecast.',
+        'today' => 'Ngayon',
+        'rain' => 'Ulan',
+        'chance' => 'Tsansa ng ulan',
+        'temp' => 'Pinakamainit / Pinakamalamig',
+        'wind' => 'Hangin',
+        'barangay' => 'Barangay',
+        'all_lian' => 'Buong Lian',
+        'show' => 'Ipakita',
+        'yield_title' => 'Inaasahang Ani Ngayong Season',
+        'yield_profile' => 'Batay sa laki ng bukid (:area ektarya) at uri ng bukid (:type) sa inyong profile.',
+        'yield_average' => 'Karaniwan ng naka-save na tantiya ng :count magsasaka.',
+        'yield_none_staff' => 'Wala pang naka-save na tantiya ng magsasaka para sa lugar na ito.',
+        'edit_profile' => 'Baguhin sa Profile',
+        'tech_toggle' => 'Ipakita ang teknikal na detalye',
+        'tech_weather' => 'Weather model',
+        'tech_yield' => 'Rice yield model',
+        'tech_model' => 'Model',
+        'tech_version' => 'Version',
+        'tech_last_run' => 'Huling run',
+        'tech_confidence' => 'Confidence',
+        'tech_training' => 'Training period',
+        'not_recorded' => 'Hindi naitala',
     ],
 ];

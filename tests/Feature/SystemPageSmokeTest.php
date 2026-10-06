@@ -24,6 +24,7 @@ class SystemPageSmokeTest extends TestCase
     private const REDIRECTS = [
         '/ai-farming-assistant',      // Climora lives in the widget on every page
         '/announcements',             // announcements are part of the Community Feed
+        '/testing/candidate-rice-yield', // the candidate model test page moved to Model Evaluation (2026-10)
     ];
 
     protected function setUp(): void
@@ -91,7 +92,7 @@ class SystemPageSmokeTest extends TestCase
             '/farmer/my-farm' => 'My Farm',
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',
-            '/weather-predictions' => 'Prediction',
+            '/weather-predictions' => 'Forecast',             // the farmer's Forecast page (2026-10)
             '/profile' => 'Profile',
             '/ai-farming-assistant' => '',
         ]);

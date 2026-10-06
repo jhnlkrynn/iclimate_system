@@ -52,6 +52,7 @@ class RoleAuthorizationTest extends TestCase
 
         $this->actingAs($farmer)->get(route('testing.candidate-rice-yield'))->assertForbidden();
         $this->actingAs($mao)->get(route('testing.candidate-rice-yield'))->assertForbidden();
-        $this->actingAs($itExpert)->get(route('testing.candidate-rice-yield'))->assertOk();
+        // The candidate model test page moved to Model Evaluation (2026-10): the old URL opens it.
+        $this->actingAs($itExpert)->get(route('testing.candidate-rice-yield'))->assertRedirect(route('model-evaluation.index'));
     }
 }

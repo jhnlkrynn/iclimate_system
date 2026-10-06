@@ -68,18 +68,17 @@ class FarmerPagesDesignTest extends TestCase
         $this->actingAs($mao)->get(route('messages.index'))->assertOk()->assertDontSee('fad fmsg', false)->assertSee('<h1>Messages</h1>', false);
     }
 
-    public function test_predictions_use_the_farmer_header_and_keep_the_confirm_dialog_outside_it(): void
+    public function test_predictions_use_the_farmer_header_and_staff_keep_theirs(): void
     {
-        $html = $this->actingAs($this->farmer())->get(route('weather-predictions.index', ['tab' => 'rice-yield']))->assertOk()->getContent();
+        // One Predictions page (2026-10): farmers get the farmer page header; staff keep the staff header.
+        $html = $this->actingAs($this->farmer())->get(route('weather-predictions.index'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('<div class="fad fpred">', $html);
-        $this->assertStringContainsString('<h1>Predictions</h1>', $html);
-        foreach (['id="rice-yield-tab"', 'id="weather-forecast-tab"', 'id="yieldPredictionForm"', 'id="yieldConfirmModal"'] as $hook) {
-            $this->assertStringContainsString($hook, $html, $hook);
-        }
+        $this->assertStringContainsString('<header class="fad-hero">', $html);
+        $this->assertStringContainsString('<h1>Weather and Rice Yield Forecast</h1>', $html);
+        $this->assertStringNotContainsString('mfd itd itp', $html);
 
         $this->actingAs(User::factory()->maoPersonnel()->create())->get(route('weather-predictions.index'))
-            ->assertOk()->assertDontSee('fad fpred', false);
+            ->assertOk()->assertDontSee('<header class="fad-hero">', false)->assertSee('mfd itd itp', false);
     }
 
     private function farmer(): User

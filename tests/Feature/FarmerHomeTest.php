@@ -208,6 +208,33 @@ class FarmerHomeTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/\d\s*mm\b/', $text);
     }
 
+    public function test_the_current_condition_and_todays_rain_say_which_is_which(): void
+    {
+        $this->fakeWeather([12.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], wind: 16.0);       // drizzle now, moderate rain over the whole day
+        $html = $this->home()->getContent();
+        $weather = $this->section($html, 'data-fh-weather');
+
+        $this->assertStringContainsString('<span class="fh-when">Now:</span> ', $weather);
+        $this->assertStringContainsString('<span class="fh-when">All day:</span> Moderate rain', $weather);
+        $this->assertStringContainsString('<span class="fh-when">Now:</span> Windy', $weather);
+
+        $fil = $this->section($this->home($this->farmer(attributes: ['email' => 'fil@example.test', 'preferred_language' => 'fil']))->getContent(), 'data-fh-weather');
+        $this->assertStringContainsString('<span class="fh-when">Ngayon:</span>', $fil);
+        $this->assertStringContainsString('<span class="fh-when">Buong araw:</span> Katamtamang ulan', $fil);
+    }
+
+    public function test_a_forecast_day_never_names_two_different_rains(): void
+    {
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        $payload = $this->weatherPayload([4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0], code: 65);  // "Heavy Rain" code, 4 mm in the day
+        Http::fake(['api.open-meteo.com/*' => Http::response($payload, 200), '*' => Http::response([], 500)]);
+
+        $week = strip_tags($this->section($this->home()->getContent(), 'data-fh-week'));
+
+        $this->assertStringContainsString('Light rain', $week);
+        $this->assertStringNotContainsString('Heavy Rain', $week);
+    }
+
     public function test_filipino_words_for_rain_wind_and_risk(): void
     {
         $farmer = $this->farmer(attributes: ['preferred_language' => 'fil']);

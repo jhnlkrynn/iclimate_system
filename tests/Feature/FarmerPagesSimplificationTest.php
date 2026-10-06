@@ -61,7 +61,7 @@ class FarmerPagesSimplificationTest extends TestCase
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->getContent();
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', substr($html, strpos($html, 'class="ic-sidebar'), 6000), $m);
-        $this->assertSame(['Home', 'Forecast', 'Heat Map', 'Payo', 'Aking Bukid', 'Mensahe'], array_slice($m[1], 0, 6));
+        $this->assertSame(['Tahanan', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mensahe'], array_slice($m[1], 0, 6));
     }
 
     // ------------------------------------------------------------ Aking Bukid

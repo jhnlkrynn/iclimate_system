@@ -621,198 +621,29 @@ html[data-theme="dark"] body .mao-panel { border-color: var(--dk-border-strong);
 html[data-theme="dark"] body .mao-panel-header,
 html[data-theme="dark"] body .mao-modal-header { background: var(--dk-surface-2); }
 
-/* ---- css/pages/weather-predictions.css (133) */
-html[data-theme="dark"] body .wp-eyebrow { color: #a9dbc5; }
-html[data-theme="dark"] body .wp-tabs { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-tab-button { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-tab-button.active { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-state-icon { color: #a9dbc5; background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); }
-html[data-theme="dark"] body .wp-panel,
-html[data-theme="dark"] body .wp-metric,
-html[data-theme="dark"] body .wp-input-card,
-html[data-theme="dark"] body .wp-result-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-panel-header { border-bottom-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-label { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-value { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-unit { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-card-value { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-note { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-guide-step { border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .wp-status { color: #a9dbc5; background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); }
-html[data-theme="dark"] body .wp-area-group .input-group-text { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-help { color: var(--dk-muted); }
-html[data-theme="dark"] body #advancedWeatherInputs .form-control,
-html[data-theme="dark"] body #advancedWeatherInputs .form-select { border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body #advancedWeatherInputs .form-select option { color: var(--dk-ink); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-advisory { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-feature-pill { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #9fe4c4; }
-html[data-theme="dark"] body .wp-score-bar { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .ds-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .ds-card.primary { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .ds-title { color: var(--dk-muted); }
-html[data-theme="dark"] body .ds-value { color: var(--dk-ink); }
-html[data-theme="dark"] body .ds-note { color: var(--dk-muted); }
-html[data-theme="dark"] body .ds-pill { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #a9dbc5; }
-html[data-theme="dark"] body .ds-notifications li { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .smart-list li { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
-html[data-theme="dark"] body .stress-chip { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-outlook { border-color: color-mix(in srgb, #55aa75 30%, var(--dk-border)); background: var(--dk-surface-2); color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook .text-muted,
-html[data-theme="dark"] body .wp-outlook small { color: var(--dk-ink-mid) !important; }
-html[data-theme="dark"] body .wp-outlook-head h3 { color: #9de7cb; }
-html[data-theme="dark"] body .wp-outlook-period { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-block { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-outlook-tag.is-model { background: color-mix(in srgb, #bd9928 18%, var(--dk-surface)); color: #e7cc9d; }
-html[data-theme="dark"] body .wp-outlook-tag.is-daily { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #a4dfc7; }
-html[data-theme="dark"] body .wp-outlook-tag.is-history { background: color-mix(in srgb, #306bb5 18%, var(--dk-surface)); color: #a3bbe0; }
-html[data-theme="dark"] body .wp-outlook-row { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .wp-outlook-k { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-v { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-v small { color: var(--dk-ink-mid) !important; }
-html[data-theme="dark"] body .wp-outlook-row.is-unavailable { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-outlook-row.is-unavailable .wp-outlook-v { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-outlook-subtitle { color: #9de7cb; }
-html[data-theme="dark"] body .wp-ocard { border-color: color-mix(in srgb, #55aa75 30%, var(--dk-border)); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-ocard-title { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-ocard-status { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #9de7cc; }
-html[data-theme="dark"] body .wp-ocard-status.is-above-normal { background: color-mix(in srgb, #bd9928 18%, var(--dk-surface)); color: #e7cc9d; }
-html[data-theme="dark"] body .wp-ocard-status.is-below-normal { background: color-mix(in srgb, #306bb5 18%, var(--dk-surface)); color: #a3bbe0; }
-html[data-theme="dark"] body .wp-ocard-value { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-ocard-caption { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-ocard-basis { border-top-color: var(--dk-border-strong); color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-ocard-none { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-season { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-season.is-active { background: color-mix(in srgb, #36af48 26%, var(--dk-surface)); }
-html[data-theme="dark"] body .wp-season strong { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-season span:not(.wp-season-icon) { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-season em { color: #9de7cc; }
-html[data-theme="dark"] body .wp-panel .text-muted,
-html[data-theme="dark"] body .wp-panel-body .text-muted { color: var(--dk-ink-mid) !important; }
-html[data-theme="dark"] body .wp-outlook-fineprint { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-outlook-meta dt { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-outlook-meta dd { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-missing,
-html[data-theme="dark"] body .wp-outlook-pagasa { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-outlook-empty { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-week { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-week.is-empty { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-outlook-week-head { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-outlook-week-head span { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-calendar-bar { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-calendar-arrow { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: #a4e0cb; }
-html[data-theme="dark"] body .wp-calendar-arrow:hover,
-html[data-theme="dark"] body .wp-calendar-arrow:focus-visible { background: var(--dk-surface-3); color: #9de7cb; }
-html[data-theme="dark"] body .wp-calendar-today { color: #a4e0cb; background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-calendar-daynum { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-calendar-dow { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-calendar-day.outside-month .wp-calendar-daynum { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-calendar-month { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-calendar-day.no-forecast { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-calendar-day.has-forecast { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-calendar-weekday { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .wp-calendar-day { color: var(--dk-ink); border-color: var(--dk-border-strong); border-top-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-calendar-day.outside-month { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-calendar-day.outside-month .wp-calendar-values,
-html[data-theme="dark"] body .wp-calendar-day.outside-month .wp-calendar-condition { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-calendar-day.risk-moderate { border-top-color: color-mix(in srgb, #cc9e33 30%, var(--dk-border)); }
-html[data-theme="dark"] body .wp-calendar-risk { background: var(--dk-surface-2); color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .risk-low .wp-calendar-risk { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #9de7cc; }
-html[data-theme="dark"] body .risk-moderate .wp-calendar-risk { background: color-mix(in srgb, #c39c22 16%, var(--dk-surface)); color: #e7cc9d; }
-html[data-theme="dark"] body .risk-high .wp-calendar-risk,
-html[data-theme="dark"] body .risk-severe .wp-calendar-risk { background: color-mix(in srgb, #c34322 16%, var(--dk-surface)); color: #e7a69d; }
-html[data-theme="dark"] body .wp-calendar-condition { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-calendar-values { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-calendar-values strong { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-calendar-unavailable { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-risk-legend { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-risk-legend-item { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-monthly-prediction { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .wp-monthly-prediction-title { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-monthly-prediction-note { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-monthly-prediction-grid { color: var(--dk-ink-mid); }
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-period { color: var(--dk-muted); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-block { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-tag.is-model { background: color-mix(in srgb, #bd9b28 18%, var(--dk-surface)); color: #e7cd9d; }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-tag.is-daily { background: color-mix(in srgb, #36af48 18%, var(--dk-surface)); color: #a9dbc5; }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-tag.is-history { background: var(--dk-surface-2); color: #a6bcde; }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-row { background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-k { color: var(--dk-muted); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-v { color: var(--dk-ink); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-v small { color: var(--dk-muted); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-meta dt { color: var(--dk-muted); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-missing,
-html[data-theme="dark"] body .wp-outlook-pagasa { color: var(--dk-muted); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-week { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-week.is-empty { background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-week-head { color: var(--dk-ink); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-week-head span { color: #a9dbc5; }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-row.is-unavailable { background: var(--dk-surface-2); }
-}
-@media (max-width: 767.98px) {
-html[data-theme="dark"] body .wp-outlook-row.is-unavailable .wp-outlook-v { color: var(--dk-muted); }
-}
-html[data-theme="dark"] body .wp-source-line { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-guide-step { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-guide-step strong { color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-guide-step span { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body #advancedWeatherInputs .form-label { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body #advancedWeatherInputs .form-control,
-html[data-theme="dark"] body #advancedWeatherInputs .form-select { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-panel,
-html[data-theme="dark"] body .wp-metric,
-html[data-theme="dark"] body .wp-input-card,
-html[data-theme="dark"] body .wp-result-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .wp-panel-header { background: var(--dk-surface-2); color: var(--dk-ink); }
-html[data-theme="dark"] body .wp-panel-header h1,
-html[data-theme="dark"] body .wp-panel-header h2,
-html[data-theme="dark"] body .wp-panel-header h3,
-html[data-theme="dark"] body .wp-panel-header h4,
-html[data-theme="dark"] body .wp-panel-header h5,
-html[data-theme="dark"] body .wp-panel-header h6 { color: var(--dk-ink); }
-html[data-theme="dark"] body details.wp-panel[open] > summary { border-bottom-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .wp-page { --wp-ink: var(--dk-ink); --wp-ink-2: var(--dk-ink); --wp-ink-3: var(--dk-ink-mid); --wp-green: #9de7cb; }
-html[data-theme="dark"] body .wp-page .wp-ocard-title { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-page .wp-season em { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-page .wp-outlook-meta { border-top-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .wp-page .wp-outlook-week-head span { color: #a4e0cb; }
-html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month,
-html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calendar-values,
-html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calendar-condition { color: var(--dk-muted); }
-html[data-theme="dark"] body .wp-page .wp-calendar-day.outside-month .wp-calendar-daynum { color: var(--dk-muted); }
+/* ---- css/pages/weather-predictions.css (21) */
+html[data-theme="dark"] body .wpx .wpx-panel h2 { color: var(--dk-ink); }
+html[data-theme="dark"] body .wpx .wpx-range { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .wpx .wpx-range a { color: #9de7c4; background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-range a + a { border-left-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .wpx .wpx-filter select { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-day { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-day.is-today { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
+html[data-theme="dark"] body .wpx .wpx-day.is-estimate { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-day-icon { color: #9dc4e7; }
+html[data-theme="dark"] body .wpx .wpx-day-rain { color: #9dc4e7; }
+html[data-theme="dark"] body .wpx .wpx-day-temp,
+html[data-theme="dark"] body .wpx .wpx-day-wind { color: var(--dk-muted); }
+html[data-theme="dark"] body .wpx .wpx-badge { background: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); color: #e7ca9d; }
+html[data-theme="dark"] body .wpx .wpx-day-numbers { border-top-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .wpx .wpx-day-numbers dt { color: var(--dk-muted); }
+html[data-theme="dark"] body .wpx .wpx-big { color: var(--dk-ink); }
+html[data-theme="dark"] body .wpx .wpx-big small { color: var(--dk-muted); }
+html[data-theme="dark"] body .wpx .wpx-compare { background: var(--dk-surface-2); color: #9dc4e7; }
+html[data-theme="dark"] body .wpx .wpx-compare.is-good { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); color: #9de7c4; }
+html[data-theme="dark"] body .wpx .wpx-compare.is-watch { background: color-mix(in srgb, #c38f22 16%, var(--dk-surface)); color: #e7ca9d; }
+html[data-theme="dark"] body .wpx .wpx-tech summary { color: #9de7c4; }
+html[data-theme="dark"] body .wpx .wpx-tech-grid dt { color: var(--dk-muted); }
 
 /* ---- css/pages/community-feed.css (112) */
 html[data-theme="dark"] body .feed-wrap { --feed-ink: var(--dk-ink); --feed-muted: var(--dk-muted); --feed-line: var(--dk-border-strong); --feed-green: #a4e0cb; }

@@ -282,9 +282,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |
     */
 
+    // The candidate model test page moved to Model Evaluation (2026-10); both URLs open it. Its features join Model
+    // Evaluation in Phase 8; CandidatePredictionController is kept until the end-of-plan cleanup.
     Route::get(
         '/testing/candidate-rice-yield',
-        [CandidatePredictionController::class, 'index']
+        fn () => redirect()->route('model-evaluation.index')
     )
         ->middleware(
             'role:'.User::ROLE_IT_EXPERT
@@ -296,7 +298,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post(
         '/testing/candidate-rice-yield/predict',
-        [CandidatePredictionController::class, 'predict']
+        fn () => redirect()->route('model-evaluation.index', [], 303)
     )
         ->middleware([
             'role:'.User::ROLE_IT_EXPERT,
@@ -788,7 +790,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get(
             'weather-predictions',
             [WeatherPredictionController::class, 'index']
-        )->name(
+        )->middleware('farmer.language')->name(
             'weather-predictions.index'
         );
 
@@ -831,9 +833,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
 
+        // The Predictions page has no forms since 2026-10 (it shows saved forecasts and estimates); old form posts open it.
         Route::post(
             'weather-predictions/predict',
-            [WeatherPredictionController::class, 'predict']
+            fn () => redirect()->route('weather-predictions.index', [], 303)
         )
             ->middleware('throttle:20,1,post-weather-predictions-predict')
             ->name(
@@ -853,7 +856,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post(
             'rice-yield-predictions/predict',
-            [RiceYieldPredictionController::class, 'predict']
+            fn () => redirect()->to(route('weather-predictions.index').'#yield', 303)
         )
             ->middleware('throttle:20,1,post-rice-yield-predictions-predict')
             ->name(

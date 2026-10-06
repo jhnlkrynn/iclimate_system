@@ -7,14 +7,13 @@ use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Services\Prediction\RiceYieldPredictionService;
+use App\Services\Prediction\SeasonYield;
 use App\Services\Risk\BarangayRiskMapService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Support\DashboardData;
 use App\Support\FarmerAdvisoryView;
 use App\Support\FarmerLanguage;
-use App\Support\ProjectYieldDataset;
-use App\Support\RiceSeason;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
 use App\Support\WeatherConditionLabel;
@@ -67,8 +66,7 @@ final class FarmerDashboardService
         private readonly BarangayRiskMapService $risk,
         private readonly RiceYieldPredictionService $riceYield,
         private readonly TyphoonSafetyService $typhoon,
-        private readonly ProjectYieldDataset $yields,
-        private readonly FarmerKpiService $kpi,
+        private readonly SeasonYield $seasonYield,
     ) {}
 
     /** The page is cached per farmer AND per language: the numbers are the same, the words are not. */
@@ -196,11 +194,14 @@ final class FarmerDashboardService
             $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
             $chance = is_numeric($day['precipitation_probability'] ?? null) ? (float) $day['precipitation_probability'] : null;
             $wind = is_numeric($day['wind_speed_max'] ?? null) ? (float) $day['wind_speed_max'] : null;
+            $rainKey = self::rainKey($rain, $chance);
+            $words = self::dayWords($condition, $rainKey);
             $days[] = [
                 'date' => CarbonImmutable::parse($day['date'], self::TIMEZONE),
-                'condition' => $condition !== '' ? self::conditionText($condition) : __('farmer.weather.unknown'),
+                'condition' => $words['condition'],
+                'rain_words' => $words['rain'],
                 'icon' => $this->iconFor($condition, true),
-                'rain_key' => $this->rainKey($rain, $chance),
+                'rain_key' => $rainKey,
                 'heavy' => $rain !== null && $rain >= self::HEAVY_RAIN_MM,
                 'strong_wind' => $wind !== null && $wind >= (float) config('farmer_dashboard.strong_wind_kmh', self::STRONG_WIND_KMH),
             ];
@@ -209,7 +210,7 @@ final class FarmerDashboardService
         $today = collect($days)->first(fn (array $d) => $d['date']->isSameDay($now));
         $todayTotals = is_array($w['today'] ?? null) ? $w['today'] : [];
         $conditionEn = (string) (WeatherConditionLabel::display($current['condition'] ?? null) ?: '');
-        $rainKey = $today['rain_key'] ?? $this->rainKey(
+        $rainKey = $today['rain_key'] ?? self::rainKey(
             is_numeric($todayTotals['rainfall'] ?? null) ? (float) $todayTotals['rainfall'] : null,
             is_numeric($todayTotals['precipitation_probability'] ?? null) ? (float) $todayTotals['precipitation_probability'] : null,
         );
@@ -227,7 +228,7 @@ final class FarmerDashboardService
             'temperature' => (float) $current['temperature'],
             'rain_key' => $rainKey,
             'rain' => $rainKey ? __('farmer.home.rain.'.$rainKey) : null,
-            'wind' => $this->windWords($wind),
+            'wind' => self::windWords($wind),
             'updated_at' => $updated,
             'stale' => (bool) ($w['stale'] ?? false) || $updated === null
                 || $updated->diffInMinutes($now) > (int) config('farmer_dashboard.weather.stale_after_minutes', 60),
@@ -236,7 +237,7 @@ final class FarmerDashboardService
     }
 
     /** Rain in words for a day: none, light, moderate or heavy (from the amount, else the chance). Null without either. */
-    private function rainKey(?float $mm, ?float $chance): ?string
+    public static function rainKey(?float $mm, ?float $chance): ?string
     {
         if ($mm !== null) {
             return match (true) {
@@ -251,8 +252,24 @@ final class FarmerDashboardService
         return $chance === null ? null : ($chance >= self::RAIN_CHANCE_PERCENT ? 'light' : 'none');
     }
 
+    /**
+     * A day's words: the provider's condition word, unless it is a kind of rain — then only the day's rain words
+     * (from the day's total), so "Heavy Rain" never sits next to "Moderate rain".
+     *
+     * @return array{condition: string, rain: ?string}
+     */
+    public static function dayWords(string $conditionEn, ?string $rainKey): array
+    {
+        $rain = $rainKey ? __('farmer.home.rain.'.$rainKey) : null;
+        if ($rain !== null && preg_match('/rain|shower|drizzle/i', $conditionEn)) {
+            return ['condition' => $rain, 'rain' => null];
+        }
+
+        return ['condition' => $conditionEn !== '' ? self::conditionText($conditionEn) : __('farmer.weather.unknown'), 'rain' => $rain];
+    }
+
     /** "Mahangin" or "Malakas na hangin"; calm wind needs no words. */
-    private function windWords(?float $kmh): ?string
+    public static function windWords(?float $kmh): ?string
     {
         return match (true) {
             $kmh === null => null,
@@ -290,7 +307,7 @@ final class FarmerDashboardService
         $days = array_map(fn (array $d) => $d + [
             'is_today' => $d['date']->isSameDay($now),
             'label' => $d['date']->isSameDay($now) ? __('farmer.home.week.today') : $d['date']->locale(app()->getLocale())->translatedFormat('D'),
-            'rain' => $d['rain_key'] ? __('farmer.home.rain.'.$d['rain_key']) : null,
+            'rain' => $d['rain_words'],
         ], array_slice($days, 0, self::WEEK_DAYS));
 
         return ['state' => $days === [] ? 'nodata' : 'ok', 'days' => $days];
@@ -482,11 +499,7 @@ final class FarmerDashboardService
      */
     private function harvest(array $prediction, $profile, CarbonImmutable $now): array
     {
-        $season = RiceSeason::window($now);
-        $seasonLabel = __('farmer.home.harvest.season.'.strtolower($season['season']), [
-            'year' => $season['start']->year,
-            'years' => $season['start']->year.'–'.$season['end']->year,
-        ]);
+        $seasonLabel = $this->seasonYield->seasonLabel($now);
         $missingArea = (float) ($profile?->farm_area ?? 0) <= 0;
 
         if ($prediction['state'] === 'loading') {
@@ -506,37 +519,26 @@ final class FarmerDashboardService
         }
 
         $result = $prediction['result'];
-        $yield = (float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']);
         $month = ! empty($result['target_month']) ? CarbonImmutable::parse($result['target_month'].'-01') : $now;
-        $usual = $this->usualYield((int) $month->month);
-        $compare = $usual ? $this->kpi->yieldAgainstTypical(round(($yield - $usual) / $usual * 100)) : null;
 
-        return [
-            'state' => 'ok',
-            'season' => $seasonLabel,
-            'yield' => round($yield, 2),
-            'usual' => $usual !== null ? round($usual, 2) : null,
-            'compare' => $compare,                                       // typical | above | below
-            'compare_label' => $compare ? __('farmer.home.harvest.compare.'.$compare) : null,
-            'ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null,
-        ];
+        return ['state' => 'ok', 'season' => $seasonLabel]
+            + $this->seasonYield->describe((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), (int) $month->month)
+            + ['ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null];
     }
 
-    /** Lian's usual yield (t/ha): the same calendar month in past years, or all months when that month has no records. */
-    private function usualYield(int $month): ?float
+    /** This farmer's expected yield this season, the same card data Farmer Home shows (the Predictions page uses it too). */
+    public function seasonEstimate(User $user): array
     {
-        try {
-            $latest = $this->yields->years()->first();
-            $rows = $latest ? $this->yields->rows()->where('year', '<=', (int) $latest) : collect();
-        } catch (Throwable $e) {
-            Log::warning('Farmer dashboard yield history failed.', ['source' => 'project yield dataset', 'message' => $e->getMessage()]);
+        return $this->harvest($this->prediction($user, false), $user->farmerProfile, CarbonImmutable::now(self::TIMEZONE));
+    }
 
-            return null;
-        }
-        $sameMonth = $rows->where('month', $month);
-        $mean = ($sameMonth->isNotEmpty() ? $sameMonth : $rows)->avg('yield');
+    /** The stored estimate for one farmer, or null when none is saved (the Predictions page reads farmers' estimates). */
+    public static function storedEstimate(int $userId): ?array
+    {
+        $stored = Cache::get(self::predictionCacheKey($userId));
+        $yield = is_array($stored) && ! ($stored['failed'] ?? false) ? ($stored['yield_tons_per_hectare'] ?? $stored['predicted_yield'] ?? null) : null;
 
-        return $mean && $mean > 0 ? (float) $mean : null;
+        return is_numeric($yield) && (float) $yield > 0 ? $stored : null;
     }
 
     // ------------------------------------------------------------------ 5b. latest planting advisory

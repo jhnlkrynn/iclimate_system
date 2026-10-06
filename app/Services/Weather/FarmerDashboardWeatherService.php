@@ -38,6 +38,9 @@ class FarmerDashboardWeatherService
         'weather_code',
     ];
 
+    /** Days asked for in the same request, kept as 'forecast_extended' for the Predictions page (the provider's maximum). */
+    public const EXTENDED_FORECAST_DAYS = 16;
+
     private const OPEN_METEO_DAILY = [
         'weather_code',
         'temperature_2m_max',
@@ -417,7 +420,7 @@ class FarmerDashboardWeatherService
                 'hourly' => implode(',', self::OPEN_METEO_HOURLY),
                 'daily' => implode(',', self::OPEN_METEO_DAILY),
                 'timezone' => $this->timezone(),
-                'forecast_days' => (int) config('services.weather.forecast_days', 7),
+                'forecast_days' => max(self::EXTENDED_FORECAST_DAYS, (int) config('services.weather.forecast_days', 7)),
             ]);
 
         if (! $response->successful()) {
@@ -577,7 +580,9 @@ class FarmerDashboardWeatherService
                 'sunrise' => $daily['sunrise'][0] ?? null,
                 'sunset' => $daily['sunset'][0] ?? null,
             ],
-            'forecast' => $this->forecast($daily),
+            // The usual short list (dashboards, chatbot) and the longer one for the Predictions page.
+            'forecast' => $this->forecast($daily, (int) config('services.weather.forecast_days', 7)),
+            'forecast_extended' => $this->forecast($daily, self::EXTENDED_FORECAST_DAYS),
             'icon' => $mapped['icon'],
             'fetched_at' => $providerUpdatedAt,
             'fetched_at_label' => $providerUpdatedAt ? $this->displayTime($providerUpdatedAt) : 'Update time not available',
@@ -629,10 +634,10 @@ class FarmerDashboardWeatherService
         return $days;
     }
 
-    private function forecast(array $daily): array
+    private function forecast(array $daily, int $limit = 7): array
     {
         $days = [];
-        $times = array_slice($daily['time'] ?? [], 0, 7);
+        $times = array_slice($daily['time'] ?? [], 0, max(1, $limit));
 
         foreach ($times as $index => $date) {
             $code = $this->number($daily['weather_code'][$index] ?? null);

@@ -32,10 +32,15 @@ class SavedDataStatesTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Binubusan']);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        foreach ([[$mao, '/mao/dashboard'], [$mao, '/weather-predictions'], [$farmer, '/weather-predictions'], [$farmer, '/planting-advisories']] as [$user, $path]) {
+        $filipinoFarmer = User::factory()->farmer()->create(['barangay' => 'Prenza', 'preferred_language' => 'fil']);
+        FarmerProfile::factory()->create(['user_id' => $filipinoFarmer->id, 'barangay' => 'Prenza']);
+
+        // Staff pages say "Walang datos pa"; a farmer's Predictions page says it in the farmer's own language.
+        foreach ([[$mao, '/mao/dashboard', 'walang datos pa'], [$mao, '/weather-predictions', 'walang datos pa'], [$farmer, '/weather-predictions', 'no data yet'],
+            [$filipinoFarmer, '/weather-predictions', 'walang datos pa'], [$farmer, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
             $text = $this->visible($this->actingAs($user)->get($path)->assertOk()->getContent());
 
-            $this->assertStringContainsString('walang datos pa', $text, $path);
+            $this->assertStringContainsString($words, $text, $path);
             foreach (['weather is temporarily unavailable', 'forecast is not available right now', 'please try again later'] as $error) {
                 $this->assertStringNotContainsString($error, $text, "{$path}: {$error}");
             }

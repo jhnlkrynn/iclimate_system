@@ -95,28 +95,6 @@ class PredictionParityTest extends TestCase
         }
     }
 
-    public function test_prediction_page_queues_standardized_python_input(): void
-    {
-        Queue::fake();
-        $user = $this->farmer(2.5, FarmerProfile::FARM_TYPE_RAINFED);
-        $targetDate = PredictionDateValidator::defaultTargetDate();
-
-        $pageResponse = $this->actingAs($user)->post(route('rice-yield-predictions.predict'), [
-            'prediction_type' => 'rice_yield',
-            'prediction_date' => $targetDate->toDateString(),
-            'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
-            'area' => 2.5,
-        ]);
-
-        $pageResponse->assertRedirect();
-        $run = AnalyticsRun::query()->latest('id')->firstOrFail();
-        $this->assertSame('rice_yield_prediction', $run->type);
-        $this->assertSame($targetDate->toDateString(), data_get($run->input, 'target_date'));
-        $this->assertSame(FarmerProfile::FARM_TYPE_RAINFED, data_get($run->input, 'farm_type'));
-        $this->assertSame(2.5, data_get($run->input, 'area'));
-        Queue::assertPushed(RunPythonAnalytics::class, fn (RunPythonAnalytics $job): bool => $job->analyticsRunId === $run->id);
-    }
-
     public function test_shared_service_exposes_exact_model_feature_order(): void
     {
         $this->assertSame([
