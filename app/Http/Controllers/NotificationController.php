@@ -22,6 +22,9 @@ class NotificationController extends CrudController
 
     protected string $title = 'Notification';
 
+    /** Notifications to farmers are sent and edited by the MAO; IT views its own list (2026-10). */
+    protected array $manageableRoles = [\App\Models\User::ROLE_MAO];
+
     protected array $columns = ['title' => 'Title', 'user.name' => 'Recipient', 'type' => 'Type', 'is_read' => 'Read'];
 
     protected array $searchable = ['title', 'message', 'type'];

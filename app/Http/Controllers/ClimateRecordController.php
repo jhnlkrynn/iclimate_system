@@ -19,6 +19,9 @@ class ClimateRecordController extends CrudController
 
     protected string $title = 'Climate Record';
 
+    /** Climate data is the MAO's to enter and correct; IT views it (2026-10). */
+    protected array $manageableRoles = [User::ROLE_MAO];
+
     protected bool $printable = true;
 
     protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'wind_speed' => 'Wind Speed', 'season' => 'Season', 'source' => 'Source'];

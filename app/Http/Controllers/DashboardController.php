@@ -475,14 +475,27 @@ class DashboardController extends Controller
         // ~80 Supabase round trips, longer than a request may run).
         $payload = StaleCache::remember($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, fn (): array => $it->payload(), self::ADMIN_LATEST_KEY, self::IT_MAX_STALE_SECONDS);
 
-        $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
+        // IT Dashboard (2026-10): one screen — System Status, Users by Role, Errors and Failed Jobs, Security. No tabs.
+        return view('dashboards.it-expert', ['it' => $payload]);
+    }
 
-        return view('dashboards.it-expert', [
-            'it' => $payload,
-            'tab' => $tab,
-            // The Overview's 30-day activity chart comes with the page, so opening the dashboard is one request.
-            'activityInitial' => $tab === 'overview' ? rescue(fn (): array => $it->activity(30), null, false) : null,
-        ]);
+    /**
+     * The IT overview that is already prepared (by the scheduled warm-up, the IT dashboard or its Refresh button),
+     * for the System Health page, which carries Usage Patterns, Resources and the Data Pipeline since 2026-10.
+     * Read only: it never builds the overview, so that page calls no service and queues nothing. Null when no copy
+     * has been prepared yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function preparedItOverview(): ?array
+    {
+        $fresh = Cache::get($this->adminCacheKey());
+        if (is_array($fresh)) {
+            return $fresh;
+        }
+        $latest = Cache::get(self::ADMIN_LATEST_KEY);
+
+        return is_array($latest) && is_array($latest['value'] ?? null) ? $latest['value'] : null;
     }
 
     /** Refresh button: rebuilds the live sections and returns each section's HTML. */

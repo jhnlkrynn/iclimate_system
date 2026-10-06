@@ -126,8 +126,9 @@ class ItDashboardTest extends TestCase
     public function test_page_follows_the_layout_in_order_and_has_no_removed_sections(): void
     {
         $html = $this->page()->getContent();
-        $order = ['IT Personnel Dashboard', 'data-it-kpis', 'data-it-health', 'data-it-activity', 'data-it-brief',
-            'data-it-security', 'data-it-roles', 'data-it-ai', 'data-it-usage', 'data-it-resources', 'data-it-integrity', 'data-it-pipeline', 'data-it-ops', 'data-it-failed-jobs', 'data-it-recent'];
+        // IT Dashboard (2026-10): System Status, Users by Role, Errors and Failed Jobs (with retry), Security.
+        $order = ['IT Personnel Dashboard', 'data-it-section="status"', 'data-it-kpis', 'data-it-health', 'data-it-section="users"', 'data-it-roles',
+            'data-it-section="errors"', 'data-it-failed-jobs', 'data-it-ops', 'data-it-section="security"', 'data-it-security'];
 
         $last = -1;
         foreach ($order as $marker) {
@@ -136,8 +137,14 @@ class ItDashboardTest extends TestCase
             $this->assertGreaterThan($last, $pos, "Section out of order: $marker");
             $last = $pos;
         }
-        foreach (['Users, system health and recent activity at a glance', 'Updated at', 'System Health', 'Recent System Activity'] as $text) {
+        $this->assertSame(4, substr_count($html, 'data-it-section='));
+        foreach (['System status, users, errors and security at a glance', 'Updated at', 'System Status', 'Errors and Failed Jobs'] as $text) {
             $this->assertStringContainsString($text, $html);
+        }
+        // No tabs, no activity chart, no heat map, and nothing that moved to System Health or System Logs.
+        foreach (['role="tablist"', 'data-panel=', 'itSystemActivityTrendChart', 'id="barangayRiskMap"', 'data-it-activity', 'data-it-brief', 'data-it-ai', 'data-it-usage',
+            'data-it-resources', 'data-it-integrity', 'data-it-pipeline', 'data-it-recent', 'Recent System Activity'] as $gone) {
+            $this->assertStringNotContainsString($gone, $html, $gone);
         }
         // The simpler dashboard has no attention banner, no alert list and no second row of cards.
         foreach (['Quick Actions', 'Farmer Database', 'User Distribution', 'Average Farm Size', 'itUsersByRoleChart', 'data-it-summary', 'data-it-alerts', 'Attention Required', 'Needs your attention', 'Data Sources Overdue'] as $gone) {
@@ -282,7 +289,8 @@ class ItDashboardTest extends TestCase
         $this->assertSame(3, $data['integrity']['farmer_accounts']);
         $this->assertSame(1, $data['integrity']['farmer_profiles']);
         $this->assertSame(2, $data['integrity']['without_profile']);
-        $this->actingAs($this->it())->get(route('admin.dashboard'))->assertSee('data-integrity-gap', false)->assertSee('3 farmer accounts but 1 farmer profile records');
+        // The data integrity card is on System Health since 2026-10 (it reads the overview prepared by the dashboard).
+        $this->actingAs($this->it())->get(route('system-health.index'))->assertSee('data-integrity-gap', false)->assertSee('3 farmer accounts but 1 farmer profile records');
     }
 
     public function test_no_gap_warning_when_accounts_and_profiles_match(): void

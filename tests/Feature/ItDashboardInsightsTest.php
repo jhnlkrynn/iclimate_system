@@ -64,9 +64,8 @@ class ItDashboardInsightsTest extends TestCase
     {
         $html = $this->actingAs($this->it())->get('/admin/dashboard')->assertOk()->assertViewIs('dashboards.it-expert')->getContent();
 
-        foreach (['Usage Patterns', 'Login activity heatmap', 'New registrations per week', 'Accounts that never logged in', 'Background Jobs to Retry',
-            'Scheduled tasks', 'Application errors', 'Failed logins by IP', 'Admin actions by user', 'Largest tables', 'Uploads added',
-            'Queries per day', 'Last run duration', 'Weather API reliability'] as $title) {
+        // IT Dashboard (2026-10): System Status, Users by Role, Errors and Failed Jobs, Security.
+        foreach (['Background Jobs to Retry', 'Scheduled tasks', 'Application errors', 'Failed logins by IP', 'Admin actions by user', 'Accounts that never logged in'] as $title) {
             $this->assertStringContainsString($title, $html, $title);
         }
         // Same two families as the farmer dashboard (Georgia titles, Inter text); the page no longer defines its own.
@@ -75,11 +74,23 @@ class ItDashboardInsightsTest extends TestCase
         foreach (['--itd-display', '--itd-sans', '--itd-mono-font'] as $font) {
             $this->assertStringNotContainsString($font, $html, $font);
         }
-        // Each section is on the page once.
-        foreach (['data-it-kpis', 'data-it-brief', 'data-it-failed-jobs', 'data-it-health', 'data-it-pipeline', 'data-it-security', 'data-it-roles', 'data-it-activity', 'data-it-resources', 'data-it-integrity', 'data-it-recent', 'data-it-ai'] as $marker) {
+        // Each kept section is on the page once; the moved ones are not on it at all.
+        foreach (['data-it-kpis', 'data-it-failed-jobs', 'data-it-health', 'data-it-security', 'data-it-roles', 'data-it-ops'] as $marker) {
             $this->assertSame(1, preg_match_all('/'.preg_quote($marker, '/').'(?![-\w])/', $html), $marker);
         }
+        foreach (['data-it-brief', 'data-it-pipeline', 'data-it-activity', 'data-it-resources', 'data-it-integrity', 'data-it-recent', 'data-it-ai', 'data-it-usage'] as $marker) {
+            $this->assertSame(0, preg_match_all('/'.preg_quote($marker, '/').'(?![-\w])/', $html), $marker);
+        }
         $this->assertSame(['total-users', 'active-users', 'status', 'database', 'api'], array_column($this->actingAs($this->it())->get('/admin/dashboard')->viewData('it')['kpis'], 'key'));
+
+        // Usage Patterns, Resources and the Data Pipeline are on System Health (it reads the overview prepared above).
+        $health = $this->actingAs($this->it())->get('/system-health')->assertOk()->getContent();
+        foreach (['Usage Patterns', 'Login activity heatmap', 'New registrations per week', 'Largest tables', 'Uploads added', 'Queries per day', 'Last run duration', 'Weather API reliability'] as $title) {
+            $this->assertStringContainsString($title, $health, $title);
+        }
+        foreach (['data-it-usage', 'data-it-ai', 'data-it-resources', 'data-it-integrity', 'data-it-pipeline'] as $marker) {
+            $this->assertSame(1, preg_match_all('/'.preg_quote($marker, '/').'(?![-\w])/', $health), $marker);
+        }
     }
 
     public function test_active_users_card_says_who_is_online_only_when_sessions_can_be_counted(): void
