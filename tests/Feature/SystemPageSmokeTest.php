@@ -84,7 +84,7 @@ class SystemPageSmokeTest extends TestCase
         $this->assertPagesOpen($farmer, $pages = [
             // The redesigned Farmer Dashboard's barangay risk card.
             '/farmer/dashboard' => 'Farm Condition in Your Barangay',
-            '/heat-map' => 'Risk Map',
+            '/heat-map' => 'Heat Map',
             '/planting-advisories' => 'Advisories',
             '/calendar' => 'Calendar',
             '/community-feed' => 'Community',
@@ -116,7 +116,7 @@ class SystemPageSmokeTest extends TestCase
         $this->assertPagesOpen($this->user(User::ROLE_MAO), [
             '/mao/dashboard' => 'Municipal Risk Overview',
             '/mao/operations' => 'Barangay',
-            '/heat-map' => 'Risk Map',
+            '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',
             '/planting-advisories' => 'Advisories',
@@ -149,7 +149,7 @@ class SystemPageSmokeTest extends TestCase
             '/system-health' => 'Health',
             '/system-health/model-registry' => 'Model',
             '/model-evaluation' => 'Model',
-            '/heat-map' => 'Risk Map',
+            '/heat-map' => 'Heat Map',
             '/ai-admin/topics' => 'Topic',
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',

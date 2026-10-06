@@ -3,7 +3,7 @@
     <section class="mtd-card" aria-labelledby="mtdWatchTitle" data-mao-watch>
         <div class="mtd-card-head">
             <h2 id="mtdWatchTitle">Barangays to Watch</h2>
-            <a class="mtd-btn is-quiet" href="#mtdRiskMap">View Risk Map</a>
+            <a class="mtd-btn is-quiet" href="#mtdRiskMap">View Heat Map</a>
         </div>
         <ul class="mtd-watch">
             @foreach ($watch['items'] as $item)
@@ -23,6 +23,6 @@
             <p class="mtd-allgood">@include('dashboards.mao.icon', ['name' => 'check']) No high-risk barangays detected</p>
             <small>All monitored barangays are currently below the high-risk threshold.</small>
         </div>
-        <a class="mtd-btn is-quiet" href="#mtdRiskMap">View Risk Map</a>
+        <a class="mtd-btn is-quiet" href="#mtdRiskMap">View Heat Map</a>
     </section>
 @endif

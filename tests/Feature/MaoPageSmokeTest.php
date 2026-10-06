@@ -41,7 +41,7 @@ class MaoPageSmokeTest extends TestCase
         $routes = [
             '/mao/dashboard' => 'Municipal Risk Overview',
             '/mao/operations' => 'Barangay',
-            '/heat-map' => 'Risk Map',
+            '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',
             '/planting-advisories' => 'Advisories',

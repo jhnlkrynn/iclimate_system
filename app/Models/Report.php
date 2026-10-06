@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Climate\ClimateRecordHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,11 @@ class Report extends Model
         'advisory' => 'Advisory Report',
         'community_feed' => 'Community Feed Report',
     ];
+
+    /** Record Type values in a climate report: the two groups are summarised separately, never together. */
+    public const CLIMATE_HISTORICAL = 'Historical Weather';
+
+    public const CLIMATE_ENTERED = 'Entered Record';
 
     protected $fillable = [
         'report_type',
@@ -92,24 +98,24 @@ class Report extends Model
     /**
      * A short, type-specific summary of the saved rows, computed on demand
      * from the already-persisted payload — no extra query, no Python
-     * round-trip. Returns [] when there are no rows to summarize.
+     * round-trip. Returns [] when there are no rows to summarize (a climate
+     * report always explains both of its groups, even when one is empty).
      *
-     * @return array<int, array{label: string, value: string}>
+     * @return array<int, array{label?: string, value?: string, group?: string, source?: string, note?: string}>
      */
     public function summary(): array
     {
         $rows = collect($this->savedRecords());
+
+        if ($this->typeKey() === 'climate_records') {
+            return $this->climateSummary($rows);
+        }
 
         if ($rows->isEmpty()) {
             return [];
         }
 
         return match ($this->typeKey()) {
-            'climate_records' => [
-                ['label' => 'Average Rainfall', 'value' => number_format($rows->avg('rainfall'), 1).' mm'],
-                ['label' => 'Average Temperature', 'value' => number_format($rows->avg('temperature'), 1).'°C'],
-                ['label' => 'Average Humidity', 'value' => number_format($rows->avg('humidity'), 1).'%'],
-            ],
             'rice_production' => [
                 ['label' => 'Total Production', 'value' => number_format($rows->sum('total_production'), 2).' tons'],
                 ['label' => 'Average Yield', 'value' => number_format($rows->avg('yield_per_hectare'), 2).' t/ha'],
@@ -130,5 +136,53 @@ class Report extends Model
             ],
             default => [],
         };
+    }
+
+    /**
+     * Historical station months and entered records each get their own summary; nothing is averaged across them
+     * (a month's rainfall total and one day's reading are not the same measure). A row is historical when the
+     * report marked it so, or when its date is a month ("2024-01"); older reports, made only from entered
+     * records, are therefore summarised as entered records. Missing values are left out, never counted as 0.
+     *
+     * @param  \Illuminate\Support\Collection<int, mixed>  $rows
+     * @return list<array<string, string>>
+     */
+    private function climateSummary(\Illuminate\Support\Collection $rows): array
+    {
+        [$historical, $entered] = $rows->partition(fn ($row): bool => data_get($row, 'record_type') === self::CLIMATE_HISTORICAL
+            || (data_get($row, 'record_type') === null && strlen((string) data_get($row, 'record_date')) === 7));
+        $value = fn (?float $number, string $unit, int $decimals = 1): string => $number === null ? 'Not available' : number_format($number, $decimals).$unit;
+        $historicalGroup = ['group' => 'Historical Weather', 'source' => ClimateRecordHistory::AMBULONG_SOURCE.' · used by iClimate as the weather reference for Lian'];
+        $enteredGroup = ['group' => 'Entered Records', 'source' => 'iClimate staff records'];
+        $items = [];
+
+        if ($h = ClimateRecordHistory::historicalSummary($historical)) {
+            $range = $h['first'] === $h['last'] ? $h['first'] : $h['first'].' – '.$h['last'];
+            $temperatureRange = $h['max_temperature'] === null ? 'Not available' : number_format($h['max_temperature'], 1).'°C / '.number_format($h['min_temperature'], 1).'°C';
+            array_push($items,
+                $historicalGroup + ['label' => 'Months Included', 'value' => $h['months'].' ('.$range.')'],
+                $historicalGroup + ['label' => 'Total Rainfall', 'value' => $value($h['total_rainfall'], ' mm')],
+                $historicalGroup + ['label' => 'Average Monthly Rainfall', 'value' => $value($h['avg_monthly_rainfall'], ' mm')],
+                $historicalGroup + ['label' => 'Average Temperature', 'value' => $value($h['avg_temperature'], '°C')],
+                $historicalGroup + ['label' => 'Highest / Lowest Monthly Temperature', 'value' => $temperatureRange],
+                $historicalGroup + ['label' => 'Average Humidity', 'value' => $value($h['avg_humidity'], '%')],
+            );
+        } else {
+            $items[] = $historicalGroup + ['note' => 'No historical weather months for this period.'];
+        }
+
+        if ($e = ClimateRecordHistory::enteredSummary($entered)) {
+            $range = $e['first'] === $e['last'] ? $e['first'] : $e['first'].' – '.$e['last'];
+            array_push($items,
+                $enteredGroup + ['label' => 'Records', 'value' => $e['records'].' ('.$range.')'],
+                $enteredGroup + ['label' => 'Average Rainfall per Record', 'value' => $value($e['avg_rainfall'], ' mm')],
+                $enteredGroup + ['label' => 'Average Temperature', 'value' => $value($e['avg_temperature'], '°C')],
+                $enteredGroup + ['label' => 'Average Humidity', 'value' => $value($e['avg_humidity'], '%')],
+            );
+        } else {
+            $items[] = $enteredGroup + ['note' => 'No entered climate records for this period.'];
+        }
+
+        return $items;
     }
 }

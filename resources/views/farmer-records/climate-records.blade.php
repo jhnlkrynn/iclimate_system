@@ -10,7 +10,7 @@
             <div class="fad-hero-text">
                 <span class="fad-kicker">Climate Records</span>
                 <h1>Climate Records for Lian, Batangas</h1>
-                <p>Review historical climate information used by iClimate for Lian, Batangas.</p>
+                <p>Past weather records iClimate uses for Lian, Batangas.</p>
             </div>
         </header>
 
@@ -33,7 +33,7 @@
             <article class="frec-kpi">
                 <h2 class="fad-label">Average Humidity</h2>
                 <p class="frec-kpi-value">{{ $num($stats->avg_humidity, 0) }}@if($stats->avg_humidity !== null)<small>%</small>@endif</p>
-                <p class="fad-support">Relative humidity</p>
+                <p class="fad-support">Average of the records shown</p>
             </article>
         </section>
 
@@ -91,7 +91,7 @@
                                     <td class="is-num">{{ $num($record->temperature) }}</td>
                                     <td class="is-num">{{ $num($record->humidity, 0) }}</td>
                                     <td>@if($record->season)<span class="fad-badge {{ $record->season === 'Wet' ? 'is-info' : 'is-watch' }}">{{ $record->season }}</span>@else — @endif</td>
-                                    <td @if($record->source !== $record->source_label) title="Historical source: {{ $record->source }}" @endif>{{ $record->source_label ?: '—' }}</td>
+                                    <td @if($record->source !== $record->source_label) title="Source: {{ $record->source }}" @endif>{{ $record->source_label ?: '—' }}</td>
                                     <td class="is-end">@if($record->id)<a class="fad-btn is-quiet is-compact" href="{{ route('climate-records.show', $record->id) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog" aria-label="View record for {{ $record->date_label }}">View</a>@endif</td>
                                 </tr>
                             @endforeach
@@ -109,7 +109,7 @@
                                 <div><dt>Rainfall</dt><dd>@if($record->rainfall !== null){{ $num($record->rainfall) }} mm @else — @endif</dd></div>
                                 <div><dt>Temperature</dt><dd>@if($record->temperature !== null){{ $num($record->temperature) }} °C @else — @endif</dd></div>
                                 <div><dt>Humidity</dt><dd>@if($record->humidity !== null){{ $num($record->humidity, 0) }} % @else — @endif</dd></div>
-                                <div><dt>Source</dt><dd @if($record->source !== $record->source_label) title="Historical source: {{ $record->source }}" @endif>{{ $record->source_label ?: '—' }}</dd></div>
+                                <div><dt>Source</dt><dd @if($record->source !== $record->source_label) title="Source: {{ $record->source }}" @endif>{{ $record->source_label ?: '—' }}</dd></div>
                             </dl>
                             @if($record->id)<a class="fad-btn is-quiet" href="{{ route('climate-records.show', $record->id) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog">View Record</a>@endif
                         </li>
@@ -141,9 +141,9 @@
                 $otherSources = $sources->reject(fn ($s) => $s === \App\Http\Controllers\ClimateRecordController::AMBULONG_SOURCE)->values();
             @endphp
             @if($hasAmbulong)
-                <p class="fad-support">These historical climate records are used by iClimate as a weather reference for Lian, Batangas. Each record covers one month; its temperature is the average of the month's highs and lows.</p>
-                <p class="frec-reference"><span class="fad-label">Data Reference</span> <strong>Lian, Batangas Climate Records</strong></p>
-                <p class="frec-provenance">Historical source: PAGASA Ambulong Station, Tanauan, Batangas.</p>
+                <p class="fad-support">iClimate uses these past weather records for Lian, Batangas. Each record is one month. Temperature is the average of the month's highs and lows.</p>
+                <p class="frec-reference"><span class="fad-label">About These Records</span> <strong>Lian, Batangas Climate Records</strong></p>
+                <p class="frec-provenance">Source: PAGASA Ambulong Station, Tanauan, Batangas.</p>
             @endif
             @if($otherSources->isNotEmpty())
                 <p class="fad-support">{{ $hasAmbulong ? 'Other records come from' : 'Source:' }} {{ $otherSources->join(', ') }}.</p>

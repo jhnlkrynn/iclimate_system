@@ -19,8 +19,8 @@ export const LEVEL_COLORS = { Low: '#2e7d32', Moderate: '#c98a12', High: '#c4471
 const COPY = {
     staff: {
         monitored: {
-            meaning: 'These are the official barangays of Lian, Batangas included in the municipal climate and farm-risk monitoring dataset. Each one is rated from the same live weather, expected rice yield and barangay exposure information, and the same ratings colour the Lian Municipality Risk Map.',
-            action: 'Use the list to see which barangays need a closer look, then open the risk map below to inspect a location.',
+            meaning: 'These are the official barangays of Lian, Batangas in the municipal farm-risk list. Each one is rated from the same live weather, expected rice yield and barangay exposure information, and the same ratings colour the Lian Municipality Heat Map.',
+            action: 'Use the list to see which barangays need a closer look, then open the Heat Map below to inspect a location.',
         },
         low: {
             meaning: 'Weather, expected yield and barangay exposure are all within normal ranges for rice farming. The combined risk score is below 0.45 on a 0–1 scale, so no factor is currently expected to harm the crop.',
@@ -33,7 +33,7 @@ const COPY = {
         high: {
             meaning: 'High (score 0.68–0.84): conditions are likely to reduce yield or damage crops unless farmers act. Severe (0.85 or more): a serious threat to standing crops. Both need early attention from the MAO.',
             action: 'Prioritise field validation in these barangays, issue a targeted advisory, and coordinate with the MDRRMO if conditions worsen.',
-            empty: 'No barangays are currently classified under High / Severe Risk.',
+            empty: 'No barangays are at High / Severe Risk right now.',
         },
         nodata: {
             meaning: 'These barangays are monitored but do not have a rating yet, usually because the background update is still running. They are never counted as Low.',
@@ -46,17 +46,17 @@ const COPY = {
             action: 'Find your barangay in the list, then look at the map below for the area around your farm.',
         },
         low: {
-            meaning: 'Conditions are generally okay for rice farming.',
-            action: 'Continue normal farm activities and monitor weather updates.',
+            meaning: 'Conditions are generally good.',
+            action: 'Continue normal farm work. Watch for weather updates.',
         },
         moderate: {
-            meaning: 'Some weather conditions may affect the rice field.',
-            action: 'Keep monitoring the weather and your field.',
+            meaning: 'Conditions need some attention.',
+            action: 'Check the soil before watering.',
         },
         high: {
-            meaning: 'Weather may strongly affect rice farming.',
-            action: 'Prepare to take action and follow official advisories.',
-            empty: 'No barangays are currently classified under High / Severe Risk.',
+            meaning: 'Conditions may affect farm work. Severe means they need close attention.',
+            action: 'Check drainage and your field. Follow official advisories.',
+            empty: 'No barangays are at High / Severe Risk right now.',
         },
         nodata: {
             meaning: 'The farm risk for these barangays is not available yet.',
@@ -100,7 +100,7 @@ export function renderOverview(root, { counts, monitored, forLine }) {
     const sum = values.low + values.moderate + values.high + values.nodata;
     root.querySelector('[data-risk-overview-check]').textContent = sum === monitored
         ? `${parts.join(' + ')} = ${monitored} barangays monitored. The same ratings colour the map below.`
-        : `Counts do not add up (${parts.join(' + ')} ≠ ${monitored}). Please refresh the data.`;
+        : `Counts do not add up (${parts.join(' + ')} ≠ ${monitored}). Please refresh.`;
 
     // Donut: one arc per non-empty category, in risk order, with a small gap between arcs.
     const svg = root.querySelector('[data-risk-donut]');
@@ -165,7 +165,7 @@ export function openRiskCategory(category, trigger, ctx) {
     const insightRows = !month && typeof ctx.openInsight === 'function';
     let list;
     if (!count) {
-        list = `<div class="fad-m-note is-good" role="status"><strong>${escapeHtml(copy.empty || `No barangays are currently classified under ${meta.title}.`)}</strong>${category === 'high' ? '<span>This is a good sign. The category is explained above so it is easy to recognise if it appears later.</span>' : ''}</div>`;
+        list = `<div class="fad-m-note is-good" role="status"><strong>${escapeHtml(copy.empty || `No barangays are at ${meta.title} right now.`)}</strong>${category === 'high' ? '<span>This is a good sign. The category is explained above so it is easy to recognise if it appears later.</span>' : ''}</div>`;
     } else {
         const head = ['Barangay', 'Risk', ...(staff && !month ? ['Score'] : []), month ? 'Forecast Period' : 'Current Weather', ...(month ? [] : ['Updated'])];
         list = `<div class="ic-risk-table-wrap"><table class="ic-risk-table"><caption class="ic-sr">${escapeHtml(meta.title)} barangays</caption>
@@ -240,8 +240,8 @@ export function openRiskCategory(category, trigger, ctx) {
         size: 'wide',
         trigger,
         body,
-        note: `${icon('clock')} Risk calculated: ${escapeHtml(ctx.generatedAt || 'not available')}${!month && ctx.weatherCheckedAt ? ` · Weather checked: ${escapeHtml(ctx.weatherCheckedAt)}` : ''}`,
-        actions: ctx.mapAnchor ? `<button type="button" class="fad-btn is-quiet" data-ic-close data-risk-goto-map>View on the risk map</button>` : '',
+        note: `${icon('clock')} Risk updated: ${escapeHtml(ctx.generatedAt || 'not available')}${!month && ctx.weatherCheckedAt ? ` · Weather checked: ${escapeHtml(ctx.weatherCheckedAt)}` : ''}`,
+        actions: ctx.mapAnchor ? `<button type="button" class="fad-btn is-quiet" data-ic-close data-risk-goto-map>View on Heat Map</button>` : '',
     });
     // The whole row is the touch target; its name button keeps it reachable by keyboard. The body is new on every
     // opening, so this listener never piles up.

@@ -1,4 +1,4 @@
-// Fresh Leaflet implementation for the shared Lian Municipality Risk Map.
+// Fresh Leaflet implementation for the shared Lian Municipality Heat Map.
 // Data and risk calculations remain server-owned; this module only renders
 // the existing API response and GeoJSON boundary data.
 
@@ -41,18 +41,18 @@ function detailMarkup(name, entry) {
 function timestampsMarkup(entry, weather) {
     const lines = [
         weather.updatedLong ? `Weather updated: ${weather.updatedLong}${weather.ago ? ` (${weather.ago})` : ''} · Source: ${weather.provider}` : null,
-        `Risk calculated: ${philippineDateTime(entry?.risk_calculated_at) || 'not available yet'}`,
+        `Risk updated: ${philippineDateTime(entry?.risk_calculated_at) || 'not available yet'}`,
         // A last verified rating kept while a newer one is made says so, next to its own (older) time.
-        entry?.last_known_good && riskLevel(entry) !== 'No Data' ? 'Risk assessment is being refreshed.' : null,
+        entry?.last_known_good && riskLevel(entry) !== 'No Data' ? 'Risk is being updated.' : null,
     ].filter(Boolean);
     return `<p class="rf-small">${lines.map(escapeHtml).join('<br>')}</p>`;
 }
 
 const CURRENT_RISK_MEANING = {
-    Low: 'Conditions are generally okay.',
-    Moderate: 'Keep monitoring the weather and your rice field.',
-    High: 'Weather may affect your rice field. Prepare to take action.',
-    Severe: 'Conditions may seriously affect farming. Follow official advisories.',
+    Low: 'Conditions are generally good.',
+    Moderate: 'Conditions need some attention.',
+    High: 'Conditions may affect farm work.',
+    Severe: 'Conditions need close attention.',
     'No Data': 'The current farm risk is not available yet.',
 };
 
@@ -124,10 +124,10 @@ function currentWeatherParts(entry) {
     }
 
     let effect = 'No major weather problem is affecting the rice field right now.';
-    let action = 'Continue normal farm work and monitor weather updates.';
+    let action = 'Continue normal farm work. Watch for weather updates.';
     if (rainfallStatus.toLowerCase().includes('high') || (rainfall != null && rainfall >= 80)) {
         effect = 'Too much water may collect in rice fields.';
-        action = 'Check drainage and monitor water levels.';
+        action = 'Check drainage and watch the water level.';
     } else if (rainfallStatus.toLowerCase().includes('low') || (rainfall != null && rainfall < 25)) {
         effect = 'Rice fields may need more water.';
         action = 'Check water levels and prepare irrigation if needed.';
@@ -140,13 +140,13 @@ function currentWeatherParts(entry) {
     }
     if (!current) {
         // Only a current reading describes today's effect; an older one is never presented as today's conditions.
-        effect = 'The effect on your rice field will be checked again after the next weather update.';
+        effect = 'This will be checked again after the next weather update.';
         action = 'Check your field conditions and wait for the next update.';
     }
 
     const ago = agoText(minutes);
     const updatedTime = philippineTime(weather.fetched_at);
-    const notice = current ? (ago ? `Updated ${ago}` : 'Latest weather') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.';
+    const notice = current ? (ago ? `Updated ${ago}` : 'Latest weather') : stale ? 'Weather update is temporarily delayed.' : 'Latest weather is temporarily unavailable.';
     // One short line for the popup and the barangay list, e.g. "29.4°C · Light rain".
     const line = hasValues ? [`${temperature}°C`, condition].filter(Boolean).join(' · ') : '';
     return {
@@ -267,9 +267,9 @@ const PLAIN_EFFECT = {
 };
 const PLAIN_ACTION = {
     'Increase irrigation or provide supplemental water support.': 'Give the rice field enough water.',
-    'Monitor soil moisture closely.': 'Check often that the soil stays moist.',
+    'Monitor soil moisture closely.': 'Check the soil often. Keep it moist.',
     'Irrigation is not necessary right now.': 'No need to irrigate for now.',
-    'Reduce irrigation to avoid waterlogging.': 'Use less irrigation water so the field does not flood.',
+    'Reduce irrigation to avoid waterlogging.': 'Use less water so the field does not flood.',
     'Maintain the irrigation schedule.': 'Keep your usual irrigation schedule.',
     'Maintain normal irrigation monitoring.': 'Keep checking your irrigation as usual.',
     'Ideal planting period.': 'This is a good time to plant.',
@@ -281,7 +281,7 @@ const PLAIN_ACTION = {
     'Continue normal farm work and watch PAGASA/local weather advisories.': 'Continue normal farm work and watch for weather advisories.',
 };
 const CONFIDENCE_HINT = { Low: 'A rough guide only; it may change.', Moderate: 'Useful, but may still change.', High: 'Fairly reliable, but may still change.' };
-const LEVEL_HINT = { Low: 'Conditions are generally okay.', Moderate: 'Keep monitoring the weather.', High: 'Weather may affect rice farming.', Severe: 'Take extra care and follow advisories.' };
+const LEVEL_HINT = { Low: 'Conditions are generally good.', Moderate: 'Conditions need some attention.', High: 'Conditions may affect farm work.', Severe: 'Conditions need close attention.' };
 
 const plainActions = (action) => [...new Set(String(action || '').split(/(?<=\.)\s+/).map((sentence) => sentence.trim()).filter(Boolean).map((sentence) => PLAIN_ACTION[sentence] || sentence))];
 
@@ -329,7 +329,7 @@ function farmerPopupMarkup(name, entry, month, months, fit) {
     const parts = farmerParts(entry, month, months);
     const weather = farmerPopupWeather(parts);
     return farmerPopupShell(name, parts.level, ''
-        + farmerBlock(`Lian forecast · ${month?.label || ''}`, `<p>${escapeHtml(weather || 'Forecast weather is not available for this month.')}</p>`)
+        + farmerBlock(`Lian forecast · ${month?.label || ''}`, `<p>${escapeHtml(weather || 'No forecast for this month yet.')}</p>`)
         + farmerBlock('Possible Effect', parts.effect ? `<p>${escapeHtml(parts.effect)}</p>` : '')
         + farmerBlock('What You Can Do', parts.actions.length ? `<p>${escapeHtml(parts.actions.join(' '))}</p>` : ''), fit);
 }
@@ -497,7 +497,7 @@ export function initBarangayRiskMap() {
         // "Unavailable" only when no barangay has any reading; older readings are "delayed" and still shown.
         const parts = [current
             ? `Latest weather is available for ${current} of ${names.length} barangays.`
-            : delayed.length ? 'Weather update is temporarily delayed.' : 'Latest weather information is temporarily unavailable.'];
+            : delayed.length ? 'Weather update is temporarily delayed.' : 'Latest weather is temporarily unavailable.'];
         if (delayed.length) parts.push(current
             ? `${delayed.length} ${delayed.length === 1 ? 'barangay is' : 'barangays are'} temporarily using their last available update (${delayed.join(', ')}).`
             : `Showing the last available update for ${delayed.length} of ${names.length} barangays.`);
@@ -515,7 +515,7 @@ export function initBarangayRiskMap() {
             monitored: layers.size,
             forLine: month
                 ? `Monthly forecast · ${month.label}`
-                : `Current conditions · risk calculated ${generatedText || 'not yet'}${refreshQueued || riskRefreshing ? ' · risk assessment is being refreshed' : ''}`,
+                : `Current conditions · risk updated ${generatedText || 'not yet'}${refreshQueued || riskRefreshing ? ' · risk is being updated' : ''}`,
         });
         // Monthly forecast values are predictions, so the current-weather health line only shows for "Now".
         if (weatherHealth) { weatherHealth.textContent = month ? '' : weatherHealthText(); weatherHealth.hidden = Boolean(month) || !weatherHealth.textContent; }
@@ -612,7 +612,7 @@ export function initBarangayRiskMap() {
         if (forLabel) forLabel.innerHTML = month
             ? `<span class="risk-mode-badge is-forecast">Monthly Forecast</span> Forecast for: <strong>${escapeHtml(month.label)}</strong>`
             : '<span class="risk-mode-badge">Current Conditions</span> Today\'s risk · latest weather';
-        if (aboutConfidence) aboutConfidence.textContent = month?.confidence_level ? `${month.confidence_level} (${month.label})` : 'Shown when a forecast month is selected';
+        if (aboutConfidence) aboutConfidence.textContent = month?.confidence_level ? `${month.confidence_level} (${month.label})` : 'Shown when you pick a forecast month';
         if (legendTitle) legendTitle.textContent = month ? 'Forecast risk' : 'Farm risk';
         if (overview) { overview.hidden = !month; overview.innerHTML = month ? overviewMarkup(month) : ''; }
         if (monthSelect) monthSelect.value = activeMonth || '';
@@ -704,9 +704,9 @@ export function initBarangayRiskMap() {
     const fetchRisk = async (forceRefresh) => {
         // loader: false keeps the full-page iClimate overlay away; the button shows its own small loader.
         const response = await fetch(riskUrl(forceRefresh), { headers: { Accept: 'application/json' }, loader: false });
-        if (!response.ok) throw new Error(`Risk map data request failed (${response.status})`);
+        if (!response.ok) throw new Error(`Heat map data request failed (${response.status})`);
         const risk = await response.json();
-        if (risk.status !== 'ok') throw new Error('Risk map data is unavailable');
+        if (risk.status !== 'ok') throw new Error('Heat map data is unavailable');
         return risk;
     };
     const render = async (forceRefresh = false) => {
@@ -719,9 +719,9 @@ export function initBarangayRiskMap() {
                 fetch(mapElement.dataset.boundaryUrl, { headers: { Accept: 'application/json' } }),
                 fetchRisk(forceRefresh),
             ]);
-            if (!boundaryResponse.ok) throw new Error('Risk map data request failed');
+            if (!boundaryResponse.ok) throw new Error('Heat map data request failed');
             const boundary = await boundaryResponse.json();
-            if (!Array.isArray(boundary.features)) throw new Error('Risk map data is unavailable');
+            if (!Array.isArray(boundary.features)) throw new Error('Heat map data is unavailable');
             const problems = applyRisk(risk);
             const featureNames = new Set();
             const acceptFeature = (feature) => {
@@ -781,15 +781,15 @@ export function initBarangayRiskMap() {
                 if (!layers.has(name)) problems.push(`${name} has no boundary polygon`);
                 if (!entries.has(name)) problems.push(`${name} has no risk record (shown as No Data)`);
             });
-            if (layers.size !== EXPECTED_BARANGAYS || problems.length) console.warn(`Lian risk map: ${layers.size} of ${EXPECTED_BARANGAYS} barangays rendered.`, problems);
+            if (layers.size !== EXPECTED_BARANGAYS || problems.length) console.warn(`Lian heat map: ${layers.size} of ${EXPECTED_BARANGAYS} barangays rendered.`, problems);
             const bounds = geoLayer.getBounds();
             if (bounds.isValid() && !mapElement.dataset.fitted) { map.fitBounds(bounds, { padding: [20, 20] }); mapElement.dataset.fitted = 'true'; }
             ok = true;
         } catch (requestError) {
-            console.error('iClimate could not load the Lian risk map.', requestError);
-            if (error) { error.textContent = 'The risk map could not be loaded. Please try again.'; error.hidden = false; }
+            console.error('iClimate could not load the Lian heat map.', requestError);
+            if (error) { error.textContent = 'The heat map could not be loaded. Please try again.'; error.hidden = false; }
             const forLine = overviewRoot?.querySelector('[data-risk-overview-for]');
-            if (forLine) forLine.textContent = 'The latest ratings could not be loaded. Showing the last loaded values, if any.';
+            if (forLine) forLine.textContent = 'The latest ratings could not load. Showing the last ones, if any.';
         } finally {
             document.dispatchEvent(new CustomEvent('iclimate:risk-map-rendered', { detail: { ok, refreshQueued } }));
             loading?.setAttribute('hidden', 'hidden');
@@ -810,7 +810,7 @@ export function initBarangayRiskMap() {
             .then((risk) => {
                 const problems = applyRisk(risk);
                 OFFICIAL_NAMES.forEach((name) => { if (layers.has(name) && !entries.has(name)) problems.push(`${name} has no risk record (shown as No Data)`); });
-                if (problems.length) console.warn('Lian risk map: coverage problems after update.', problems);
+                if (problems.length) console.warn('Lian heat map: coverage problems after update.', problems);
                 layers.forEach((layer, name) => {
                     layer.setStyle(styleFor(name, name === selectedName));
                     if (layer.isPopupOpen()) layer.getPopup().update();
@@ -823,9 +823,9 @@ export function initBarangayRiskMap() {
                 ok = true;
             })
             .catch((requestError) => {
-                console.error('iClimate could not update the Lian risk map.', requestError);
+                console.error('iClimate could not update the Lian heat map.', requestError);
                 // The last loaded ratings and weather stay on the map; only an explicit refresh reports the failure.
-                if (forceRefresh && error) { error.textContent = 'The latest weather could not be loaded. Showing the last loaded values.'; error.hidden = false; }
+                if (forceRefresh && error) { error.textContent = 'The latest weather could not load. Showing the last readings.'; error.hidden = false; }
             })
             .finally(() => {
                 riskRequest = null;

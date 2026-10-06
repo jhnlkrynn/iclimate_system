@@ -103,7 +103,7 @@ class OpenMeteoService
                 'records' => $fallback,
                 'records_saved' => 0,
                 'fetched_at' => $fallback->first()?->fetched_at,
-                'message' => 'The online forecast service is temporarily unavailable. The system is using the last successful weather update.',
+                'message' => 'Latest weather is temporarily unavailable. Showing the last weather update.',
                 'error' => 'Unable to update weather data.',
             ];
         }

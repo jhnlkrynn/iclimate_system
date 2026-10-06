@@ -58,7 +58,9 @@ class FarmerPagesDesignTest extends TestCase
         $this->assertStringContainsString('<h1>Rice Production</h1>', $html);
         $this->assertStringContainsString('1 from your barangay (Prenza)', $html);
         $this->assertStringContainsString('23.0<small>t</small>', $html);             // 8 + 15
-        $this->assertStringContainsString('4.50<small>t/ha</small>', $html);
+        // Average yield covers every record with a yield: the two entered rows and the Lian Municipal Average months.
+        $yields = app(\App\Support\ProjectYieldDataset::class)->rows()->pluck('yield')->concat([4.0, 5.0]);
+        $this->assertStringContainsString(number_format($yields->avg(), 2).'<small>t/ha</small>', $html);
         $this->assertStringNotContainsString('Add Production Record', $html);         // farmers cannot add records
         $this->assertStringNotContainsString(route('rice-productions.create'), $html);
         $this->actingAs($this->farmer())->get(route('rice-productions.create'))->assertForbidden();

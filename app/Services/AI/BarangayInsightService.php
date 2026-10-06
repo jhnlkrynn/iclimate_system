@@ -32,17 +32,17 @@ class BarangayInsightService
     /** A failed or rejected explanation is retried after this long, not on every click. */
     private const FAILURE_TTL_SECONDS = 60;
 
-    public const MAX_INSIGHT_SENTENCES = 2;
+    public const MAX_INSIGHT_SENTENCES = 1;
 
-    public const MAX_ACTION_SENTENCES = 2;
+    public const MAX_ACTION_SENTENCES = 1;
 
-    public const MAX_INSIGHT_WORDS = 40;
+    public const MAX_INSIGHT_WORDS = 25;
 
-    public const MAX_ACTION_WORDS = 30;
+    public const MAX_ACTION_WORDS = 20;
 
     public const MAX_NUMBERS = 2;
 
-    private const TECHNICAL_WORDS = '/\b(meteorolog\w*|precipitation|evapotranspiration|probabilit\w*|inference|models?|confidence|classif\w*|normali[sz]\w*|algorithms?|random\s+forest|dataset|data|anomal\w*)\b/iu';
+    private const TECHNICAL_WORDS = '/\b(meteorolog\w*|precipitation|evapotranspiration|probabilit\w*|inference|models?|confidence|classif\w*|normali[sz]\w*|algorithms?|random\s+forest|machine\s+learning|training|dataset|data|api|cache|query|synchroni[sz]\w*|aggregat\w*|computation|anomal\w*)\b/iu';
 
     /** Topics the supplied data never contains, so any mention would be invented. */
     private const INVENTED_TOPICS = '/\b(typhoons?|bagyo|floods?|flooding|baha|bumaha|pagbaha|droughts?|tagtuyot|diseases?|sakit|pests?|peste|insects?|insekto|yields?|ani|aanihin|january|february|march|april|june|july|august|september|october|november|december|enero|pebrero|marso|abril|mayo|hunyo|hulyo|agosto|setyembre|oktubre|nobyembre|disyembre)\b/iu';
@@ -61,17 +61,17 @@ class BarangayInsightService
     /** iClimate's own short action for each verified risk level, shown when no AI explanation is available. */
     private const ACTION = [
         'en' => [
-            'Low' => 'Continue normal field monitoring.',
+            'Low' => 'Continue normal farm work.',
             'Moderate' => 'Check your field before watering or doing major farm work.',
             'High' => 'Check drainage and field conditions before continuing work.',
             'Severe' => 'Check official advisories and inspect your field before doing farm work.',
             '' => 'Check your field and wait for the next update.',
         ],
         'fil' => [
-            'Low' => 'Ituloy ang karaniwang pagbabantay sa bukid.',
-            'Moderate' => 'Suriin muna ang bukid bago magdilig o gumawa ng malaking trabaho sa bukid.',
-            'High' => 'Suriin ang daluyan ng tubig at ang bukid bago ituloy ang trabaho.',
-            'Severe' => 'Sundan ang opisyal na abiso at suriin ang bukid bago magtrabaho.',
+            'Low' => 'Ituloy ang karaniwang trabaho sa bukid.',
+            'Moderate' => 'Suriin muna ang lupa bago magdilig o gumawa ng malaking trabaho.',
+            'High' => 'Silipin ang kanal at ang bukid bago ituloy ang trabaho.',
+            'Severe' => 'Sundin ang opisyal na abiso at silipin ang bukid bago magtrabaho.',
             '' => 'Suriin ang bukid at hintayin ang susunod na update.',
         ],
     ];
@@ -163,7 +163,7 @@ class BarangayInsightService
         return array_values(array_filter([
             $data['weather_status'] === 'delayed' ? 'Based on the last available weather update.' : null,
             $data['weather_status'] === 'unavailable' ? 'Latest weather is temporarily unavailable.' : null,
-            $data['risk_status'] !== 'current' ? 'Risk assessment is being refreshed.' : null,
+            $data['risk_status'] !== 'current' ? 'Risk is being updated.' : null,
         ]));
     }
 
@@ -248,9 +248,11 @@ class BarangayInsightService
     }
 
     /**
-     * The farmer-language check every AI reply passes before it is shown: short (at most 2 sentences each), plain
-     * words, no invented topics or dates, numbers exactly as supplied, and the risk level exactly as iClimate rated
-     * it. Returns the cleaned {insight, action}, or null to reject the reply.
+     * The farmer-language check every AI reply passes before it is shown. A reply that is only too long is shortened
+     * to its first sentence (or first clause); it is rejected only when it is unusable (a list, headings, or one
+     * sentence too long to cut cleanly) or unsafe anywhere, including the part cut off: technical words, invented
+     * topics or dates, numbers not supplied, or a risk level other than the one iClimate rated. Returns the
+     * {insight, action} to show, or null.
      *
      * @param  array{insight: string, action: string}  $reply
      * @param  array<string, mixed>  $context
@@ -259,25 +261,29 @@ class BarangayInsightService
     public static function check(array $reply, array $context): ?array
     {
         $parts = [];
+        $whole = [];
 
-        foreach (['insight' => [self::MAX_INSIGHT_SENTENCES, self::MAX_INSIGHT_WORDS], 'action' => [self::MAX_ACTION_SENTENCES, self::MAX_ACTION_WORDS]] as $field => [$maxSentences, $maxWords]) {
-            $raw = (string) ($reply[$field] ?? '');
+        foreach (['insight' => self::MAX_INSIGHT_WORDS, 'action' => self::MAX_ACTION_WORDS] as $field => $maxWords) {
+            $raw = trim((string) ($reply[$field] ?? ''));
 
-            // Lists, headings, several paragraphs or semicolon-joined clauses are an essay, not a short explanation.
-            if (preg_match('/[*#•;\n]/u', trim($raw))) {
+            // Lists, headings or several paragraphs ignore the format entirely: there is no one sentence to keep.
+            if (preg_match('/[*#•\n]/u', $raw)) {
                 return null;
             }
 
             $text = trim(preg_replace('/\s+/u', ' ', $raw), " \t\"'“”‘’");
+            $short = self::shorten($text, $maxWords);
 
-            if ($text === '' || self::sentenceCount($text) > $maxSentences || self::wordCount($text) > $maxWords) {
+            if ($short === null) {
                 return null;
             }
 
-            $parts[$field] = $text;
+            $whole[] = $text;
+            $parts[$field] = $short;
         }
 
-        $all = $parts['insight'].' '.$parts['action'];
+        // Safety is judged on the whole reply: a made-up claim in a sentence that is cut off still means it is not trusted.
+        $all = implode(' ', $whole);
 
         if (preg_match(self::TECHNICAL_WORDS, $all) || preg_match(self::INVENTED_TOPICS, $all)) {
             return null;
@@ -292,12 +298,28 @@ class BarangayInsightService
             return null;
         }
 
+        // The cards already show the values; an explanation that lists them is a data dump, not plain words.
+        if (preg_match_all('/\d+(?::\d+|\.\d+)?/u', $parts['insight'].' '.$parts['action']) > self::MAX_NUMBERS) {
+            return null;
+        }
+
         return $parts;
     }
 
-    private static function sentenceCount(string $text): int
+    /**
+     * One short sentence from a longer reply: the first sentence, or the first clause of a semicolon-joined one,
+     * ending with a full stop. Null when it is empty or still longer than $maxWords (cutting it would break it).
+     */
+    private static function shorten(string $text, int $maxWords): ?string
     {
-        return count(array_filter(preg_split('/(?<=[.!?])\s+/u', $text), fn (string $sentence) => trim($sentence) !== ''));
+        $first = trim((string) (preg_split('/(?<=[.!?])\s+/u', $text)[0] ?? ''));
+        $first = trim(explode(';', $first)[0]);
+
+        if ($first === '' || self::wordCount($first) > $maxWords) {
+            return null;
+        }
+
+        return preg_match('/[.!?]$/u', $first) ? $first : rtrim($first, ',: ').'.';
     }
 
     private static function wordCount(string $text): int
@@ -323,11 +345,6 @@ class BarangayInsightService
         }
 
         preg_match_all('/\d+(?::\d+|\.\d+)?/u', $text, $matches);
-
-        // The cards already show the values; an explanation that lists them is a data dump, not plain words.
-        if (count($matches[0]) > self::MAX_NUMBERS) {
-            return false;
-        }
 
         foreach ($matches[0] as $number) {
             if (! in_array($number, $allowed, true)) {

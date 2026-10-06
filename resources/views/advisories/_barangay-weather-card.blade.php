@@ -37,7 +37,7 @@
 
         <h4 class="fad-label">Expected Next 24 Hours</h4>
         <dl class="fad-acard-facts">
-            <div><dt>Rain probability</dt><dd>{{ $value($weather['rain_probability_percent'] ?? $weather['precip_probability_percent'] ?? null, '%') }}</dd></div>
+            <div><dt>Chance of rain</dt><dd>{{ $value($weather['rain_probability_percent'] ?? $weather['precip_probability_percent'] ?? null, '%') }}</dd></div>
             <div><dt>Expected rainfall</dt><dd>{{ $value($weather['rainfall_24h_mm'] ?? null, ' mm') }}</dd></div>
         </dl>
 

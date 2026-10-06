@@ -185,18 +185,26 @@ class BarangayInsightTest extends TestCase
         $check = fn (string $insight, string $action, array $overrides = []) => BarangayInsightService::check(['insight' => $insight, 'action' => $action], $overrides + $context);
 
         // Short, plain, true to the data.
-        $this->assertNotNull($check('Conditions need some attention. Humidity is high at 91%.', 'Check soil moisture before watering.'));
+        $this->assertNotNull($check('Humidity is high at 91%, so the field may stay wet longer.', 'Check soil moisture before watering.'));
         $this->assertNotNull($check('Moderate risk today, with about 8.8 mm of rain in the next 24 hours.', 'Check your field before watering.'));
-        $this->assertNotNull($check('Kailangang bantayan nang kaunti ang kondisyon. Mataas ang humidity na 91%.', 'Suriin muna ang lupa bago magdilig.'));
+        $this->assertNotNull($check('Mataas ang humidity na 91%, kaya puwedeng manatiling basa ang bukid.', 'Suriin muna ang lupa bago magdilig.'));
         $this->assertNotNull($check('“Conditions need some attention.”', '"Check soil moisture before watering."'), 'Wrapping quotes are removed.');
 
-        // Too long: more than 2 sentences, too many words, a list.
-        $this->assertNull($check('Conditions need attention. Humidity is high. Rain is low.', 'Check the soil.'));
+        // Too long but usable: shortened to the first sentence or clause, not rejected.
+        $this->assertSame(['insight' => 'Conditions need attention.', 'action' => 'Check the soil.'], $check('Conditions need attention. Humidity is high.', 'Check the soil.'));
+        $this->assertSame(['insight' => 'Conditions need attention.', 'action' => 'Check the soil.'], $check('Conditions need attention. Humidity is high. Rain is low.', 'Check the soil. Then water. Then rest.'));
+        $this->assertSame('Mainit na 25.8°C, maalinsangan.', $check('Mainit na 25.8°C, maalinsangan; kaunting ulan.', 'Suriin ang lupa.')['insight'], 'Semicolon-joined clauses keep the first.');
+        $this->assertSame('Check the soil, then wait.', $check('Conditions need attention.', 'Check the soil, then wait')['action'] ?? null, 'A missing full stop is added.');
+
+        // Unusable: one sentence too long to cut, a list, a list of values.
         $this->assertNull($check(str_repeat('Rain is light and the air is very damp around the field today ', 4).'.', 'Check the soil.'));
         $this->assertNull($check('Conditions need attention.', "Do this:\n- check the soil\n- check drainage"));
-        $this->assertNull($check('Conditions need attention.', 'Check the soil. Then water. Then rest.'));
-        $this->assertNull($check('Mainit na 25.8°C, maalinsangan; kaunting ulan.', 'Suriin ang lupa.'), 'Semicolon-joined clauses.');
         $this->assertNull($check('It is 25.8°C with 91% humidity and 8.8 mm of rain.', 'Check the soil.'), 'A list of values, not plain words.');
+
+        // Unsafe in a part that would be cut off still rejects the whole reply.
+        $this->assertNull($check('Conditions need attention. A typhoon may come.', 'Check the soil.'), 'Invented topic after the first sentence.');
+        $this->assertNull($check('Conditions need attention. The model is unsure.', 'Check the soil.'), 'Technical word after the first sentence.');
+        $this->assertNull($check('Conditions need attention. Humidity is 75%.', 'Check the soil.'), 'Unsupplied number after the first sentence.');
 
         // Technical words or invented topics.
         $this->assertNull($check('The model shows moderate risk.', 'Check the soil.'));
@@ -257,7 +265,7 @@ class BarangayInsightTest extends TestCase
 
         $this->assertNull($response->json('data.risk_level'));
         $this->assertSame('unavailable', $response->json('data.risk_status'));
-        $this->assertContains('Risk assessment is being refreshed.', $response->json('notices'));
+        $this->assertContains('Risk is being updated.', $response->json('notices'));
         $this->assertSame('latest_available', $response->json('freshness'));
         $this->assertNull(end($this->groqContexts)['risk_level']);
     }
@@ -315,8 +323,8 @@ class BarangayInsightTest extends TestCase
         $humidity = $context['humidity_percent'];
 
         $reply = $this->groqReply ?? ($filipino
-            ? ['insight' => "Kailangang bantayan ang kondisyon. Mataas ang humidity na {$humidity}%.", 'action' => 'Suriin muna ang lupa bago magdilig.']
-            : ['insight' => "Conditions need some attention. Humidity is {$humidity}%.", 'action' => 'Check soil moisture before watering.']);
+            ? ['insight' => "Mataas ang humidity na {$humidity}%, kaya kailangang bantayan ang bukid.", 'action' => 'Suriin muna ang lupa bago magdilig.']
+            : ['insight' => "Humidity is {$humidity}%, so conditions need some attention.", 'action' => 'Check soil moisture before watering.']);
 
         return Http::response(['choices' => [['message' => ['content' => json_encode($reply)]]], 'usage' => []]);
     }

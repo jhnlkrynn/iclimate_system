@@ -142,7 +142,7 @@ class BarangayRiskMapController extends Controller
 
         return response()->json([
             'status' => 'unavailable',
-            'message' => 'The barangay risk map is temporarily unavailable. Please try again shortly.',
+            'message' => 'The barangay heat map is temporarily unavailable. Please try again shortly.',
             'legend' => ['Low', 'Moderate', 'High', 'Severe', 'No Data'],
             'barangays' => [],
         ]);
