@@ -557,10 +557,8 @@ function bindStatDrawers() {
 }
 
 // The centered overlay itself comes from the global iClimate loader
-// (public/js/iclimate-loader.js); this only warms links and dims the page.
+// (public/js/iclimate-loader.js); this only dims the page while navigation submits.
 function bindFastNavigation() {
-    const prefetched = new Set();
-    const maxPrefetches = 10;
     const samePage = (link) => {
         const url = new URL(link.href, window.location.href);
 
@@ -578,24 +576,10 @@ function bindFastNavigation() {
 
         return url.origin === window.location.origin;
     };
-    const warmLink = (link) => {
-        if (!canWarm(link) || prefetched.size >= maxPrefetches || prefetched.has(link.href)) return;
-
-        prefetched.add(link.href);
-        const prefetch = document.createElement('link');
-        prefetch.rel = 'prefetch';
-        prefetch.href = link.href;
-        prefetch.as = 'document';
-        document.head.appendChild(prefetch);
-    };
-
     document.querySelectorAll('a[href]').forEach((link) => {
         if (link.dataset.fastNavBound === 'true') return;
         link.dataset.fastNavBound = 'true';
 
-        link.addEventListener('mouseenter', () => warmLink(link), { passive: true });
-        link.addEventListener('focus', () => warmLink(link), { passive: true });
-        link.addEventListener('touchstart', () => warmLink(link), { passive: true });
         link.addEventListener('click', () => {
             if (!canWarm(link)) return;
 
