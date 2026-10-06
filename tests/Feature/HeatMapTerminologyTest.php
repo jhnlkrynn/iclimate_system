@@ -72,9 +72,9 @@ class HeatMapTerminologyTest extends TestCase
     {
         $this->actingAs($this->user(User::ROLE_MAO))->get('/heat-map')
             ->assertOk()
-            ->assertSee('Barangay Heat Map')
-            ->assertSee('Lian Municipality Heat Map')
-            ->assertSee('Barangay Risk Assessment');
+            // Heat Map page (2026-10): the page title, and the legend's result label.
+            ->assertSee('<h1 class="visually-hidden">Heat Map</h1>', false)
+            ->assertSee('Farm risk');
 
         $this->actingAs($this->user(User::ROLE_MAO))->get('/mao/operations')
             ->assertOk()

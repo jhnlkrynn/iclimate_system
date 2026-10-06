@@ -70,6 +70,7 @@ Route::get(
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/heat-map', [DashboardController::class, 'heatMap'])
+        ->middleware('farmer.language')
         ->name('heat-map.index');
 
     // Barangay AI Insight pop-up (Heat Map's Barangays Monitored list, and the MAO dashboard's).

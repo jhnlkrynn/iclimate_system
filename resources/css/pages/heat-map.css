@@ -1,0 +1,87 @@
+/* Heat Map page (resources/views/heat-map/index.blade.php): the map on the left, one panel on the right.
+   The map fills the screen under the top bar; on a phone the panel sits under the map. */
+.hmx { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1rem; align-items: stretch; height: calc(100vh - 74px - 2.5rem); height: calc(100dvh - 74px - 2.5rem); min-height: 460px; }
+
+.hmx-map { position: relative; min-width: 0; border-radius: 16px; overflow: hidden; border: 1px solid #d8e2dc; background: #f4f7f5; }
+.hmx-canvas { position: absolute; inset: 0; z-index: 0; }
+.hmx-canvas.leaflet-container { background: #f4f7f5; font: inherit; }
+/* The layout caps images and SVGs at their parent's width; Leaflet's own panes are zero-sized, so lift the cap inside the map. */
+.hmx-canvas .leaflet-pane svg, .hmx-canvas .leaflet-pane img { max-width: none !important; max-height: none !important; }
+
+.hmx-toggle { position: absolute; top: .75rem; right: .75rem; z-index: 500; display: inline-flex; padding: .2rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); }
+.hmx-toggle-btn { padding: .45rem 1rem; border: 0; background: transparent; cursor: pointer; border-radius: 999px; font-size: .9rem; font-weight: 700; color: #2c3d35; text-decoration: none; white-space: nowrap; }
+.hmx-toggle-btn:hover { color: #14532d; background: #eef4f0; }
+.hmx-toggle-btn.is-active { background: #14532d; color: #fff; }
+.hmx-toggle-btn:focus-visible, .hmx-row:focus-visible, .hmx-own:focus-visible, .hmx-back:focus-visible { outline: 3px solid #1d6fd8; outline-offset: 2px; }
+
+.hmx-legend { position: absolute; left: .75rem; bottom: 1.6rem; z-index: 500; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; padding: .5rem .8rem; border-radius: 12px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); font-size: .85rem; font-weight: 600; color: #2c3d35; max-width: calc(100% - 1.5rem); }
+.hmx-legend-title { font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #5f7569; }
+.hmx-legend-item { display: inline-flex; align-items: center; gap: .4rem; }
+.hmx-dot { display: inline-block; flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; background: var(--hmx-color, #8a939b); border: 1px solid rgba(0, 0, 0, .25); }
+
+.hmx-panel { min-width: 0; overflow-y: auto; padding: 1.1rem 1.15rem; border-radius: 16px; background: #fff; border: 1px solid #d8e2dc; color: #1f2d27; }
+.hmx-view[hidden] { display: none; }
+.hmx-title { margin: 0 0 .6rem; font-size: 1.3rem; font-weight: 800; line-height: 1.25; color: #14261e; }
+.hmx-sub { margin: 1.1rem 0 .3rem; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5f7569; }
+.hmx-text { margin: 0 0 .45rem; font-size: 1rem; line-height: 1.5; }
+.hmx-action { padding: .7rem .85rem; border-radius: 12px; background: #eef6f1; border-left: 4px solid #14532d; font-weight: 600; }
+.hmx-when { margin: .35rem 0 0; font-size: .85rem; font-weight: 600; color: #5f7569; }
+.hmx-hint { margin: .9rem 0 0; font-size: .9rem; color: #4b5f55; }
+.hmx-source { margin: .6rem 0 0; font-size: .78rem; color: #5f7569; }
+.hmx-panel .ic-updated { margin-top: .9rem; }
+
+.hmx-counts { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.hmx-counts li { display: flex; align-items: center; gap: .55rem; font-size: 1rem; font-weight: 600; }
+.hmx-counts li.is-high { font-size: 1.1rem; font-weight: 800; }
+
+.hmx-badge { display: inline-block; margin: 0; padding: .35rem .85rem; border-radius: 999px; font-size: .95rem; font-weight: 800; }
+.hmx-badge.is-low { background: #dff1e3; color: #14532d; }
+.hmx-badge.is-moderate { background: #fdefc8; color: #6b4a00; }
+.hmx-badge.is-high { background: #fbdcdc; color: #8a1616; }
+.hmx-badge.is-nodata { background: #e6eaed; color: #3f4a52; }
+
+.hmx-own { display: grid; grid-template-columns: 1fr auto; gap: .1rem .6rem; align-items: center; width: 100%; margin-top: .9rem; padding: .7rem .85rem; border-radius: 12px; border: 2px solid #0d47a1; background: #f2f7ff; text-align: left; color: #14261e; cursor: pointer; }
+.hmx-own-label { grid-column: 1 / -1; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #0d47a1; }
+.hmx-own strong { font-size: 1.02rem; }
+
+.hmx-list { list-style: none; margin: 0; padding: 0; }
+.hmx-row { display: flex; align-items: center; gap: .55rem; width: 100%; padding: .5rem .35rem; border: 0; border-bottom: 1px solid #e6ece8; background: transparent; text-align: left; font-size: .95rem; color: #1f2d27; cursor: pointer; }
+.hmx-row:hover { background: #f3f7f4; }
+.hmx-row-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.hmx-row-level { flex: 0 0 auto; font-size: .85rem; color: #4b5f55; }
+
+.hmx-back { margin: 0 0 .7rem; padding: .3rem .1rem; border: 0; background: transparent; font-size: .88rem; font-weight: 700; color: #14532d; cursor: pointer; }
+.hmx-back:hover { text-decoration: underline; }
+
+.hmx-numbers { margin: 0; display: grid; gap: .3rem; }
+.hmx-numbers div { display: flex; justify-content: space-between; gap: .75rem; font-size: .92rem; }
+.hmx-numbers dt { font-weight: 500; color: #4b5f55; }
+.hmx-numbers dd { margin: 0; font-weight: 700; }
+
+@media (min-width: 1400px) { .hmx { height: calc(100dvh - 74px - 3.5rem); grid-template-columns: minmax(0, 1fr) 400px; } }
+
+/* Tablet and phone: the map first (most of the screen), the panel under it. */
+@media (max-width: 991.98px) {
+    .hmx { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; }
+    .hmx-map { height: 62vh; height: 62dvh; min-height: 340px; }
+    .hmx-panel { overflow: visible; scroll-margin-top: 76px; }
+}
+@media (max-width: 575.98px) {
+    .hmx-toggle-btn { padding: .45rem .8rem; font-size: .85rem; }
+    .hmx-legend { font-size: .78rem; gap: .25rem .65rem; padding: .4rem .6rem; }
+}
+
+html[data-theme="dark"] .hmx-map { border-color: #2b3b34; background: #16211c; }
+html[data-theme="dark"] .hmx-panel { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
+html[data-theme="dark"] .hmx-title { color: #f1f6f3; }
+html[data-theme="dark"] .hmx-sub, html[data-theme="dark"] .hmx-when, html[data-theme="dark"] .hmx-source, html[data-theme="dark"] .hmx-hint, html[data-theme="dark"] .hmx-row-level, html[data-theme="dark"] .hmx-numbers dt { color: #a9bdb2; }
+html[data-theme="dark"] .hmx-action { background: #1f3329; border-left-color: #6fcf97; }
+html[data-theme="dark"] .hmx-row { color: #e2ebe6; border-bottom-color: #2b3b34; }
+html[data-theme="dark"] .hmx-row:hover { background: #1f2e27; }
+html[data-theme="dark"] .hmx-back { color: #8fdcae; }
+html[data-theme="dark"] .hmx-own { background: #17263d; border-color: #6ea8ff; color: #e2ebe6; }
+html[data-theme="dark"] .hmx-own-label { color: #9cc3ff; }
+html[data-theme="dark"] .hmx-badge.is-low { background: #1e4a2c; color: #c9f1d5; }
+html[data-theme="dark"] .hmx-badge.is-moderate { background: #57430c; color: #ffe6a3; }
+html[data-theme="dark"] .hmx-badge.is-high { background: #5c1c1c; color: #ffd0d0; }
+html[data-theme="dark"] .hmx-badge.is-nodata { background: #2c363c; color: #d5dde2; }

@@ -300,14 +300,20 @@ class BarangayInsightTest extends TestCase
         $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Calatagan']))->assertNotFound()->assertJson(['status' => 'not_found']);
     }
 
-    public function test_the_heat_map_page_offers_the_insight_to_the_signed_in_user(): void
+    public function test_the_heat_map_page_uses_its_panel_instead_of_the_insight_pop_up(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'San Diego']);
 
+        // Heat Map page (2026-10): a clicked barangay opens in the panel beside the map, not in the AI Insight pop-up.
         $this->actingAs($farmer)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertSee('data-insight-url="'.url('/heat-map/insight').'"', false)
-            ->assertSee('data-insight-language="en"', false);
+            ->assertSee('data-heat-map-panel', false)
+            ->assertDontSee('data-insight-url', false);
+
+        // The pop-up stays where it was not replaced: the MAO dashboard's map.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('mao.dashboard'))
+            ->assertOk()
+            ->assertSee('data-insight-url="'.url('/heat-map/insight').'"', false);
     }
 
     private function groqAnswer(Request $request)

@@ -137,68 +137,20 @@ class BarangayRiskForecastTest extends TestCase
         Bus::assertNothingDispatched();
     }
 
-    public function test_heat_map_page_says_the_weather_forecast_covers_lian_as_a_whole(): void
-    {
-        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-
-        $this->actingAs($farmer)->get(route('heat-map.index'))
-            ->assertOk()
-            ->assertSee('Barangay Heat Map')
-            ->assertSee('Farm risk for rice in each Lian barangay, today and by month.')
-            ->assertSee('The monthly forecast covers all of Lian.')
-            ->assertSee('ABOUT THIS FORECAST')
-            ->assertSee('Forecast Source')
-            ->assertSee('iClimate')
-            ->assertSee('Coverage')
-            ->assertSee('Lian, Batangas')
-            ->assertSee('For official warnings, follow PAGASA and the Municipal Agriculture Office.')
-            ->assertSee('WHY ARE BARANGAY RISKS DIFFERENT?')
-            ->assertSee('All barangays use the same Lian weather forecast.')
-            ->assertSee('Current Conditions')
-            // The placeholder exposure rating is never presented as a validated hazard figure.
-            ->assertDontSee('Hazard Score')
-            ->assertDontSee('Vulnerability Rating')
-            ->assertDontSee('Barangay Weather Forecast');
-    }
-
-    public function test_farmers_get_the_simple_forecast_panel_and_staff_keep_the_detailed_one(): void
-    {
-        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
-
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $this->actingAs($farmer)->get(route('heat-map.index'))
-            ->assertOk()
-            ->assertSee('data-forecast-audience="farmer"', false)
-            ->assertSee('id="riskMapLegend"', false)
-            ->assertDontSee('id="riskMeaningTitle"', false)
-            ->assertDontSee('class="risk-map-meaning"', false)
-            ->assertSee('data-risk-overview data-audience="farmer"', false)
-            ->assertDontSee('data-risk-meaning-overlay', false);
-
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
-            $this->actingAs(User::factory()->create(['role' => $role]))->get(route('heat-map.index'))
-                ->assertOk()
-                ->assertSee('data-forecast-audience="staff"', false)
-                ->assertSee('id="riskMapLegend"', false)
-                ->assertDontSee('id="riskMeaningTitle"', false)
-                ->assertDontSee('class="risk-map-meaning"', false)
-                ->assertDontSee('Conditions are generally okay for rice farming.');
-        }
-    }
-
-    public function test_heat_map_page_shows_forecast_controls_but_dashboard_maps_do_not(): void
+    public function test_neither_the_heat_map_page_nor_the_dashboard_shows_monthly_forecast_controls(): void
     {
         Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'San Diego']);
 
+        // Heat Map page (2026-10): [This Week] / [2 Weeks] from the saved daily forecast replaced the month selector.
         $this->actingAs($farmer)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertSee('data-risk-forecast', false)
-            ->assertSee('data-forecast-url="'.url('/api/lian/risk-forecast').'"', false)
-            ->assertSee('Forecast Month')
-            ->assertSee('data-highlight-barangay="San Diego"', false);
+            ->assertDontSee('data-risk-forecast', false)
+            ->assertDontSee('Forecast Month')
+            ->assertSee('data-heat-map-range="week"', false)
+            ->assertSee('data-heat-map-range="2weeks"', false)
+            ->assertSee('data-own-barangay="San Diego"', false);
 
         // The redesigned dashboard only summarizes the barangay's rating and links to the Heat Map page, which is
         // the one place with the map and the forecast controls. An old ?tab=heatmap link opens the same overview.

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\WeatherApiService;
@@ -121,10 +122,15 @@ class FarmerHomeTest extends TestCase
         ]));
     }
 
+    /** The Home badge is the Heat Map's [This Week] rating (2026-10); the planting rule still comes from the barangay record. */
     private function mockRisk(string $level, string $planting = 'Maintain normal irrigation monitoring.'): void
     {
         $this->mock(BarangayRiskMapService::class, fn ($mock) => $mock->shouldReceive('detailFor')->andReturn(
             ['risk_level' => $level, 'barangay' => 'Binubusan', 'advisory' => ['planting' => $planting], 'updated_at' => now()->toIso8601String()]
+        ));
+        $week = ['Low' => 'low', 'Moderate' => 'moderate', 'High' => 'high'][$level] ?? 'nodata';
+        $this->mock(BarangayWeekRiskService::class, fn ($mock) => $mock->shouldReceive('forBarangay')->andReturn(
+            ['barangay' => 'Binubusan', 'level' => $week, 'reason' => 'calm', 'reasons' => [], 'updated_at' => now('Asia/Manila')->toImmutable()]
         ));
     }
 
@@ -291,9 +297,9 @@ class FarmerHomeTest extends TestCase
 
     // ------------------------------------------------------------ 3. barangay risk
 
-    public function test_risk_is_one_badge_and_severe_reads_as_high(): void
+    public function test_risk_is_one_badge_with_the_heat_maps_week_rating(): void
     {
-        foreach (['Low' => ['Low', 'is-good'], 'Moderate' => ['Moderate', 'is-watch'], 'High' => ['High', 'is-danger'], 'Severe' => ['High', 'is-danger']] as $level => [$label, $tone]) {
+        foreach (['Low' => ['Low', 'is-good'], 'Moderate' => ['Moderate', 'is-watch'], 'High' => ['High', 'is-danger']] as $level => [$label, $tone]) {
             $this->mockRisk($level);
             $html = $this->home($this->farmer(attributes: ['email' => strtolower($level).'@example.test']))->getContent();
             $this->assertMatchesRegularExpression('#<p class="fh-risk-badge '.$tone.'">'.$label.'</p>#', $html, $level);
