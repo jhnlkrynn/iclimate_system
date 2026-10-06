@@ -138,11 +138,13 @@ class PlantingAdvisoriesReliabilityTest extends TestCase
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Binubusan']);
-        PlantingAdvisory::factory()->create(['status' => PlantingAdvisory::STATUS_PUBLISHED, 'target_barangay' => null, 'title' => 'Readable advisory']);
+        // Both are planting advisories, so both are in the list the page opens on (the factory picks a kind at random).
+        PlantingAdvisory::factory()->create(['status' => PlantingAdvisory::STATUS_PUBLISHED, 'target_barangay' => null, 'title' => 'Readable advisory', 'type' => 'Planting']);
         // As an older writer or a hand edit could leave a row: empty metadata text, no dates, no summary.
-        $broken = PlantingAdvisory::factory()->create(['status' => PlantingAdvisory::STATUS_PUBLISHED, 'target_barangay' => null, 'title' => 'Half-written advisory']);
+        $broken = PlantingAdvisory::factory()->create(['status' => PlantingAdvisory::STATUS_PUBLISHED, 'target_barangay' => null, 'title' => 'Half-written advisory', 'type' => 'Planting']);
         DB::table('planting_advisories')->where('id', $broken->id)->update(['metadata' => '', 'content' => '', 'valid_from' => null, 'valid_until' => null]);
 
-        $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee('Readable advisory');
+        $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee('Readable advisory')
+            ->assertSee('Half-written advisory');                             // the broken row is listed too, without an error
     }
 }

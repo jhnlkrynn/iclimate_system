@@ -10,10 +10,6 @@
  */
 
 
-/* ---- views/advisories/index.blade.php (2) */
-html[data-theme="dark"] body .advisory-safety-card { border-color: color-mix(in srgb, #cc9e33 30%, var(--dk-border)); }
-html[data-theme="dark"] body .advisory-safety-note { border-color: var(--dk-border-strong); }
-
 /* ---- views/advisories/show.blade.php (2) */
 html[data-theme="dark"] body .advisory-back-btn { border-color: var(--dk-border-strong) !important; }
 html[data-theme="dark"] body .advisory-back-btn:hover,
@@ -446,7 +442,7 @@ html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-watch { 
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-danger { border-color: color-mix(in srgb, #cc4533 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-risk-badge.is-watch { color: var(--dk-ink); }
 
-/* ---- css/farmer-advisories.css (10) */
+/* ---- css/farmer-advisories.css (13) */
 html[data-theme="dark"] body .fad,
 html[data-theme="dark"] body .fad-modal { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --rule: var(--dk-border-strong); --line: var(--dk-border-strong); --field: var(--dk-surface-2); --ink: var(--dk-ink); --muted: var(--dk-muted); --head-bg: var(--dk-surface-2); --good-bg: var(--dk-surface-2); --good-line: color-mix(in srgb, #55aa79 30%, var(--dk-border)); --watch-ink: #e7ca9d; --watch-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --watch-line: color-mix(in srgb, #cc9833 30%, var(--dk-border)); --danger-ink: #e7a49d; --danger-bg: var(--dk-surface-2); --danger-line: color-mix(in srgb, #cc4533 30%, var(--dk-border)); --info-ink: #9dc4e7; --info-bg: var(--dk-surface-2); --info-line: color-mix(in srgb, #3885c7 30%, var(--dk-border)); }
 html[data-theme="dark"] body .fad-btn.is-quiet { background: var(--dk-surface-2); }
@@ -458,6 +454,9 @@ html[data-theme="dark"] body :is(.fad, .fad-modal) .fad-input::placeholder { col
 html[data-theme="dark"] body .fad-m-x { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .fad-btn.is-vote { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .fad-skel { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .fad.adv .adv-sev { background: var(--dk-surface-2); color: #9de7ba; }
+html[data-theme="dark"] body .fad.adv .adv-sev.is-moderate { background: color-mix(in srgb, #c39922 16%, var(--dk-surface)); color: #e7d09d; }
+html[data-theme="dark"] body .fad.adv .adv-sev.is-high { background: color-mix(in srgb, #c32222 16%, var(--dk-surface)); color: #e79d9d; }
 
 /* ---- css/farmer-calendar.css (4) */
 html[data-theme="dark"] body .fcal-day { background: var(--dk-surface-2); }

@@ -400,10 +400,14 @@ class PagePerformanceTest extends TestCase
         $there = $this->user(User::ROLE_FARMER, ['barangay' => 'Matabungkay']);
         PlantingAdvisory::factory()->create(['title' => 'ADVISORY-FOR-BAGONG-POOK', 'status' => 'published', 'target_scope' => 'barangay', 'target_barangay' => 'Bagong Pook', 'valid_from' => now()->subDay(), 'valid_until' => now()->addWeek()]);
 
+        // The Calendar shows planning only (2026-10): a farmer's own dates there, never another farmer's.
+        \App\Models\FarmerPlantingSchedule::query()->create(['user_id' => $here->id, 'planting_date' => now()->addDays(3)->toDateString(),
+            'scheduled_harvest_date' => now()->addDays(110)->toDateString(), 'season' => 'Wet', 'farm_type' => 'Irrigated', 'barangay' => 'PLAN-OF-BAGONG-POOK']);
+
         $this->actingAs($here)->get('/planting-advisories')->assertSee('ADVISORY-FOR-BAGONG-POOK');
         $this->actingAs($there)->get('/planting-advisories')->assertDontSee('ADVISORY-FOR-BAGONG-POOK');
-        $this->actingAs($here)->get('/calendar')->assertSee('ADVISORY-FOR-BAGONG-POOK');
-        $this->actingAs($there)->get('/calendar')->assertDontSee('ADVISORY-FOR-BAGONG-POOK');
+        $this->actingAs($here)->get('/calendar')->assertSee('PLAN-OF-BAGONG-POOK')->assertDontSee('ADVISORY-FOR-BAGONG-POOK');
+        $this->actingAs($there)->get('/calendar')->assertDontSee('PLAN-OF-BAGONG-POOK');
     }
 
     public function test_a_data_change_shows_on_the_very_next_visit(): void

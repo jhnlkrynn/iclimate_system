@@ -321,3 +321,37 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
     .fad-pages { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { :is(.fad, .fad-modal) *, :is(.fad, .fad-modal) *::before, :is(.fad, .fad-modal) *::after { transition: none !important; animation: none !important; } }
+
+/* ------------------------------------------------------------------ Advisories list (2026-10)
+   One list: each item has a severity colour on its left edge, the barangay, the valid dates, one sentence of
+   recommendation and one "What to do". */
+.fad.adv .adv-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.fad.adv .adv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fad.adv .adv-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card); color: var(--ink); font-size: .9375rem; font-weight: 600; text-decoration: none; }
+.fad.adv .adv-chip:hover { border-color: var(--brand); }
+.fad.adv .adv-chip.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.fad.adv .adv-chip-count { font-size: .8125rem; font-weight: 700; opacity: .75; }
+.fad.adv .adv-filter { display: flex; align-items: center; gap: 8px; }
+.fad.adv .adv-filter .fad-input { min-width: 200px; }
+.fad.adv .adv-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.fad.adv .adv-item { display: grid; gap: 8px; padding: 16px 20px; background: var(--card); border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; }
+.fad.adv .adv-item.is-moderate { border-left-color: #f2b134; }
+.fad.adv .adv-item.is-high { border-left-color: #c62828; }
+.fad.adv .adv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.fad.adv .adv-sev { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .8125rem; font-weight: 800; background: #dff1e3; color: #14532d; }
+.fad.adv .adv-sev.is-moderate { background: #fdefc8; color: #6b4a00; }
+.fad.adv .adv-sev.is-high { background: #fbdcdc; color: #8a1616; }
+.fad.adv .adv-area { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.fad.adv .adv-valid { font-size: .9375rem; color: var(--muted); }
+.fad.adv .adv-valid-label { font-weight: 600; }
+.fad.adv .adv-status { margin-left: auto; }
+.fad.adv .adv-rec { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink); }
+.fad.adv .adv-do, .fad.adv .adv-activity { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--ink); }
+.fad.adv .adv-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-top: 4px; }
+.fad.adv .adv-source { font-size: .875rem; color: var(--muted); }
+.fad.adv .adv-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+html[data-theme="dark"] .fad.adv .adv-sev { background: #1e4a2c; color: #c9f1d5; }
+html[data-theme="dark"] .fad.adv .adv-sev.is-moderate { background: #57430c; color: #ffe6a3; }
+html[data-theme="dark"] .fad.adv .adv-sev.is-high { background: #5c1c1c; color: #ffd0d0; }
+.fad.adv .adv-filter .fad-label { margin: 0; white-space: nowrap; }
+.fad.adv .adv-filter .fad-input { width: auto; flex: 0 1 240px; }
