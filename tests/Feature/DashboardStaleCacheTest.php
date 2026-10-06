@@ -149,20 +149,19 @@ class DashboardStaleCacheTest extends TestCase
 
     public function test_after_a_data_change_a_versioned_value_is_rebuilt_not_shown_stale(): void
     {
-        $key = fn () => 'versioned:v'.\App\Support\DashboardData::version();
-        Route::get('/_stale-versioned', function () use ($key) {
-            return StaleCache::remember($key(), 60, function () {
+        Route::get('/_stale-versioned', function () {
+            return StaleCache::scoped('mao-dashboard', fn (string $token): string => 'versioned:'.$token, 60, function () {
                 self::$events[] = 'build';
 
-                return 'value for v'.\App\Support\DashboardData::version();
+                return 'value for '.\App\Support\CacheScope::token('mao-dashboard');
             });
         })->middleware('web');
 
         $this->get('/_stale-versioned')->assertOk();
-        \App\Support\DashboardData::bump();
+        \App\Support\CacheScope::bump('rice');                     // data the MAO dashboard reads
         self::$events = [];
 
-        $this->get('/_stale-versioned')->assertOk()->assertSee('value for v'.\App\Support\DashboardData::version());
-        $this->assertSame(['build'], self::$events);
+        $this->get('/_stale-versioned')->assertOk()->assertSee('value for '.\App\Support\CacheScope::token('mao-dashboard'));
+        $this->assertSame(['build'], self::$events, 'rebuilt at once, not served from the last good copy');
     }
 }

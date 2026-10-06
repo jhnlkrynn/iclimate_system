@@ -12,9 +12,10 @@ use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
-use App\Support\DashboardData;
+use App\Support\CacheScope;
 use App\Support\FarmerAdvisoryView;
 use App\Support\FarmerLanguage;
+use App\Support\PageCache;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
 use App\Support\WeatherConditionLabel;
@@ -71,10 +72,15 @@ final class FarmerDashboardService
         private readonly SeasonYield $seasonYield,
     ) {}
 
-    /** The page is cached per farmer AND per language: the numbers are the same, the words are not. */
-    public static function cacheKey(User $user, ?string $locale = null): string
+    /**
+     * The page is cached per farmer AND per language: the numbers are the same, the words are not. The key changes when
+     * the shared data the page reads changes (CacheScope 'farmer-dashboard') or when the farmer's own rows do
+     * (notifications, profile, plans, farm outline: PageCache::flushUser).
+     */
+    public static function cacheKey(User $user, ?string $locale = null, ?string $token = null): string
     {
-        return 'dashboard:farmer:home:'.$user->id.':'.($locale ?? app()->getLocale()).':v'.DashboardData::version();
+        return 'dashboard:farmer:home:'.$user->id.':'.($locale ?? app()->getLocale())
+            .':u'.PageCache::userVersion((int) $user->id).':'.($token ?? CacheScope::token('farmer-dashboard'));
     }
 
     /** Drops the stored page in every language (after the farmer changes something it shows). */

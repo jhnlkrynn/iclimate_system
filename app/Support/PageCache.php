@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\Cache;
  *               The user id is part of the key, so one person's data can
  *               never be served to another.
  *
- * Every scope has a version number inside its key. Bumping the version
- * (flushShared / flushUser) invalidates everything in the scope at once
- * without listing or deleting keys, so a data change shows up on the very next
- * page load instead of after the time-to-live.
+ * The name is a CacheScope consumer: its key carries the versions of the data
+ * areas that page reads, so a change to that data shows up on the very next
+ * load, while changes to unrelated data leave the entry warm. Private entries
+ * also carry the person's own version (flushUser).
  *
  * Why it exists: each database round trip to Supabase costs hundreds of
  * milliseconds, so a page that repeats the same queries on every load is
@@ -25,9 +25,6 @@ use Illuminate\Support\Facades\Cache;
  */
 class PageCache
 {
-    /** > 0 while a page is being built. Its own writes (a weather snapshot, a derived score) must not invalidate it. */
-    private static int $building = 0;
-
     /**
      * @template T
      *
@@ -37,9 +34,7 @@ class PageCache
      */
     public static function shared(string $name, int $ttlSeconds, Closure $build, array $vary = []): mixed
     {
-        $key = 'page:shared:v'.self::version('page:shared:version').':'.$name.self::suffix($vary);
-
-        return self::remember($key, $ttlSeconds, $build);
+        return self::remember(fn (string $token): string => 'page:shared:'.$name.':'.$token.self::suffix($vary), $name, $ttlSeconds, $build);
     }
 
     /**
@@ -51,11 +46,11 @@ class PageCache
      */
     public static function forUser(int $userId, string $name, int $ttlSeconds, Closure $build, array $vary = []): mixed
     {
-        // Also keyed by the shared version: a page for one person is built partly from shared data
-        // (counts, recent records), so a shared change must rebuild it too. The reverse never happens.
-        $key = 'page:user:'.$userId.':v'.self::version('page:user:'.$userId.':version').':s'.self::version('page:shared:version').':'.$name.self::suffix($vary);
+        // Also keyed by the shared data the page reads: a page for one person is built partly from shared data
+        // (counts, recent records), so a change there must rebuild it too. The reverse never happens.
+        $prefix = 'page:user:'.$userId.':v'.self::userVersion($userId).':'.$name.':';
 
-        return self::remember($key, $ttlSeconds, $build);
+        return self::remember(fn (string $token): string => $prefix.$token.self::suffix($vary), $name, $ttlSeconds, $build);
     }
 
     /**
@@ -70,26 +65,34 @@ class PageCache
      */
     public static function refreshShared(string $name, int $ttlSeconds, Closure $build, array $vary = []): mixed
     {
-        $key = 'page:shared:v'.self::version('page:shared:version').':'.$name.self::suffix($vary);
-        $value = self::building($build);
+        $snapshot = CacheScope::snapshot($name);
+        $value = $build();
 
         if ($ttlSeconds > 0) {
-            Cache::put($key, ['v' => $value], $ttlSeconds);
+            Cache::put('page:shared:'.$name.':'.CacheScope::settledToken($snapshot).self::suffix($vary), ['v' => $value], $ttlSeconds);
         }
 
         return $value;
     }
 
-    /** Everything cached with shared() is rebuilt on its next read. */
+    /** Everything cached with shared() is rebuilt on its next read (a deliberate full reset). */
     public static function flushShared(): void
     {
-        self::bump('page:shared:version');
+        CacheScope::bumpAll();
     }
 
     /** Everything cached with forUser() for this person is rebuilt on its next read. */
     public static function flushUser(int $userId): void
     {
-        self::bump('page:user:'.$userId.':version');
+        $key = 'page:user:'.$userId.':version';
+        Cache::add($key, 1);
+        Cache::increment($key);
+    }
+
+    /** The cache-key part for one person's private data (their own rows: notifications, profile, plans). */
+    public static function userVersion(int $userId): int
+    {
+        return (int) Cache::get('page:user:'.$userId.':version', 1);
     }
 
     /**
@@ -115,21 +118,25 @@ class PageCache
         return $vary;
     }
 
-    private static function remember(string $key, int $ttlSeconds, Closure $build): mixed
+    /** @param Closure(string): string $keyFor  the key for a CacheScope token */
+    private static function remember(Closure $keyFor, string $consumer, int $ttlSeconds, Closure $build): mixed
     {
         if ($ttlSeconds <= 0) {
             return $build();
         }
 
+        $snapshot = CacheScope::snapshot($consumer);
+
         // Cache::remember can not tell "cached null" from "missing", so wrap the value.
-        $hit = Cache::get($key);
+        $hit = Cache::get($keyFor(CacheScope::tokenAt($snapshot)));
 
         if (is_array($hit) && array_key_exists('v', $hit)) {
             return $hit['v'];
         }
 
-        $value = self::building($build);
-        Cache::put($key, ['v' => $value], $ttlSeconds);
+        $value = $build();
+        // Stored under the token that includes the build's own writes (a weather snapshot), so the next request finds it.
+        Cache::put($keyFor(CacheScope::settledToken($snapshot)), ['v' => $value], $ttlSeconds);
 
         return $value;
     }
@@ -137,31 +144,5 @@ class PageCache
     private static function suffix(array $vary): string
     {
         return $vary === [] ? '' : ':'.md5(json_encode($vary));
-    }
-
-    private static function version(string $key): int
-    {
-        return (int) Cache::get($key, 1);
-    }
-
-    private static function building(Closure $build): mixed
-    {
-        self::$building++;
-
-        try {
-            return $build();
-        } finally {
-            self::$building--;
-        }
-    }
-
-    private static function bump(string $key): void
-    {
-        if (self::$building > 0) {
-            return;
-        }
-
-        Cache::add($key, 1);
-        Cache::increment($key);
     }
 }
