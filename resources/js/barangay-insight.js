@@ -41,7 +41,7 @@ const signatureOf = (data) => `${data.weather_updated_at || '-'}|${data.risk_cal
 const noticesFor = (data) => [
     data.weather_status === 'delayed' ? 'Based on the last available weather update.' : null,
     data.weather_status === 'unavailable' ? 'Latest weather is temporarily unavailable.' : null,
-    data.risk_status !== 'current' ? 'Risk assessment is being refreshed.' : null,
+    data.risk_status !== 'current' ? 'Risk is being updated.' : null,
 ].filter(Boolean);
 
 const isCurrent = (data) => data.weather_status === 'current' && data.risk_status === 'current';
@@ -90,7 +90,7 @@ function bodyMarkup(name, data, insight, { loading, own, back }) {
 function noteMarkup(data, timeFor) {
     const weather = timeFor(data.weather_updated_at);
     const risk = timeFor(data.risk_calculated_at);
-    return `${icon('clock')} Weather updated: ${escapeHtml(weather || 'not available')} · Risk calculated: ${escapeHtml(risk || 'not available')}<br>Weather source: ${escapeHtml(data.weather_source || 'Open-Meteo')} · Risk assessment: iClimate`;
+    return `${icon('clock')} Weather updated: ${escapeHtml(weather || 'not available')} · Risk updated: ${escapeHtml(risk || 'not available')}<br>Weather source: ${escapeHtml(data.weather_source || 'Open-Meteo')} · Risk assessment: iClimate`;
 }
 
 const kickerFor = (data) => (isCurrent(data) ? 'Current AI Insight' : 'Latest Available AI Insight');
@@ -149,7 +149,7 @@ export function openBarangayInsight(name, trigger, ctx) {
         trigger,
         body: bodyMarkup(name, data, null, { loading: true, own: state.own, back: Boolean(ctx.onBack) }),
         note: noteMarkup(data, ctx.timeFor),
-        actions: '<button type="button" class="fad-btn" data-bi-map>View on Map</button>',
+        actions: '<button type="button" class="fad-btn" data-bi-map>View on Heat Map</button>',
     });
     const opened = state;
     // Bound to this opening's body and footer, which the next pop-up replaces, so listeners never pile up.

@@ -22,7 +22,7 @@ class ReportTypeCatalog
 
     private const ENTRIES = [
         'climate_records' => [
-            'purpose' => 'Lists the rainfall, temperature, humidity, and wind readings recorded for the selected date range and season.',
+            'purpose' => 'Lists the historical monthly weather from PAGASA Ambulong Station (Tanauan, Batangas), which iClimate uses as the weather reference for Lian, and the climate records entered by staff, for the selected date range and season. The two are summarized separately.',
             'good_for' => 'Checking recent weather trends, verifying a specific reading, or preparing the evidence behind a planting or irrigation advisory.',
         ],
         'rice_production' => [

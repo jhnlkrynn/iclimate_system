@@ -133,6 +133,28 @@ class FarmBoundaryTest extends TestCase
     }
 
     /** @return array<int, array{lat: float, lng: float}> */
+    /**
+     * Leaflet's default marker images used to 404 under Vite (hashed file names), showing broken images with
+     * "Marker" alt text. Boundary points are small handles, and default markers use the bundled images.
+     */
+    public function test_boundary_points_are_handles_and_default_markers_use_bundled_images(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        FarmerProfile::factory()->create(['user_id' => $farmer->id]);
+
+        $html = $this->actingAs($farmer)->get(route('farmer.boundary.edit'))->assertOk()->getContent();
+        $this->assertStringContainsString("divIcon({ className: 'boundary-point'", $html);
+        $this->assertStringContainsString('icon: pointIcon', $html);
+        $this->assertStringNotContainsString('{ draggable: true }).addTo(map)', $html);   // the old default-image marker
+
+        $app = file_get_contents(resource_path('js/app.js'));
+        foreach (['marker-icon.png', 'marker-icon-2x.png', 'marker-shadow.png'] as $image) {
+            $this->assertStringContainsString("import('leaflet/dist/images/{$image}')", $app);
+        }
+        $this->assertStringContainsString('delete Leaflet.Icon.Default.prototype._getIconUrl', $app);
+        $this->assertStringContainsString('Leaflet.Icon.Default.mergeOptions(', $app);
+    }
+
     private function points(): array
     {
         return [

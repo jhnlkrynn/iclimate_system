@@ -9,7 +9,7 @@ class RefreshBarangayAgriculturalRisk extends Command
 {
     protected $signature = 'iclimate:refresh-barangay-risk';
 
-    protected $description = 'Recompute and persist the 19-barangay Lian agricultural risk map from live weather, real recorded yield, and AgriculturalRiskScorer.';
+    protected $description = 'Recompute and persist the 19-barangay Lian agricultural heat map from live weather, real recorded yield, and AgriculturalRiskScorer.';
 
     public function handle(BarangayRiskMapService $riskMapService): int
     {
@@ -17,7 +17,7 @@ class RefreshBarangayAgriculturalRisk extends Command
 
         $counts = collect($map['barangays'])->countBy('risk_level');
 
-        $this->info('Refreshed barangay agricultural risk map for '.count($map['barangays']).' barangay(s).');
+        $this->info('Refreshed barangay agricultural heat map for '.count($map['barangays']).' barangay(s).');
         foreach ($counts as $level => $count) {
             $this->line("  {$level}: {$count}");
         }

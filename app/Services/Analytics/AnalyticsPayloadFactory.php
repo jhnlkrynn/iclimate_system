@@ -8,7 +8,9 @@ use App\Models\ExternalWeatherData;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
+use App\Models\Report;
 use App\Models\RiceProduction;
+use App\Services\Climate\ClimateRecordHistory;
 use App\Support\ClimateHistory;
 
 class AnalyticsPayloadFactory
@@ -83,7 +85,7 @@ class AnalyticsPayloadFactory
     private function report(array $input): array
     {
         $rows = match ($input['report_type']) {
-            'climate_records' => ClimateRecord::query()->get()->toArray(),
+            'climate_records' => $this->climateReportRows(),
             'rice_production' => RiceProduction::query()->get()->toArray(),
             'farmer_registration' => FarmerProfile::query()->get()->toArray(),
             'advisory' => PlantingAdvisory::query()->get()->toArray(),
@@ -108,6 +110,31 @@ class AnalyticsPayloadFactory
 
         // An empty filter list must reach Python as an object ({}), not a list ([]): every unfiltered report failed.
         return ['filters' => (object) ($input['filters'] ?? [])] + $input + ['source_rows' => $rows];
+    }
+
+    /**
+     * The climate report lists the same records as Climate Records, each marked with its group so the report never
+     * mixes them: historical PAGASA Ambulong months (date "2024-01", rainfall = the month's total) and entered
+     * records (one date each).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function climateReportRows(): array
+    {
+        [$rows] = app(ClimateRecordHistory::class)->records(plausibleOnly: false);
+
+        return $rows->map(fn (object $row): array => [
+            'record_type' => $row->group === ClimateRecordHistory::HISTORICAL ? Report::CLIMATE_HISTORICAL : Report::CLIMATE_ENTERED,
+            'record_date' => $row->period === 'month' ? $row->record_date->format('Y-m') : $row->record_date->format('Y-m-d'),
+            'period' => $row->period,
+            'rainfall' => $row->rainfall,
+            'temperature' => $row->temperature,
+            'humidity' => $row->humidity,
+            // The station's wind figure has no confirmed unit, so the report does not give it as a number.
+            'wind_speed' => $row->group === ClimateRecordHistory::HISTORICAL ? ($row->wind_speed !== null ? 'Unit not confirmed' : null) : $row->wind_speed,
+            'season' => $row->season,
+            'source' => $row->source,
+        ])->values()->all();
     }
 
     private function dataset(array $input): array

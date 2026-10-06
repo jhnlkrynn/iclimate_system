@@ -75,12 +75,12 @@
                     <section class="itd-card" aria-labelledby="itdHeatMapTitle">
                         <div class="itd-card-head">
                             <div>
-                                <h2 id="itdHeatMapTitle">Lian Municipality Risk Map</h2>
+                                <h2 id="itdHeatMapTitle">Lian Municipality Heat Map</h2>
                                 <p class="itd-sub">All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.</p>
                             </div>
                         </div>
                         @include('partials.barangay-risk-map', [
-                            'heading' => 'Lian Municipality Risk Map',
+                            'heading' => 'Lian Municipality Heat Map',
                             'subheading' => 'All 19 barangays at a glance, using the same live weather and recorded rice yield data used municipality-wide. Click any barangay for details.',
                             'showRefresh' => true,
                         ])

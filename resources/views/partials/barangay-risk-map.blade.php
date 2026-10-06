@@ -1,6 +1,6 @@
 @php
-    $heading = $heading ?? 'Lian Municipality Risk Map';
-    $subheading = $subheading ?? 'All 19 barangays at a glance, using the same latest barangay weather and recorded rice yield data used municipality-wide. Click any barangay for details.';
+    $heading = $heading ?? 'Lian Municipality Heat Map';
+    $subheading = $subheading ?? 'All 19 barangays at a glance. Click any barangay for details.';
     $showRefresh = $showRefresh ?? true;
     // A canonical barangay name (normalize with \App\Support\LianBarangays::canonicalName()) to
     // highlight as the farmer's own. It never hides or filters any of the other 18 barangays.
@@ -28,7 +28,7 @@
 
     <div class="risk-map-card-heading">
         <div>
-            <div class="risk-map-section-label">LIAN MUNICIPALITY RISK MAP</div>
+            <div class="risk-map-section-label">LIAN MUNICIPALITY HEAT MAP</div>
             <h2 id="riskMapTitle" class="risk-map-title">{{ $heading }}</h2>
             <p class="risk-map-subtitle">{{ $subheading }}</p>
         </div>
@@ -46,7 +46,7 @@
                     <dl class="risk-forecast-facts">
                         <div><dt>Forecast Source</dt><dd>iClimate</dd></div>
                         <div><dt>Coverage</dt><dd>Lian, Batangas</dd></div>
-                        <div><dt>Confidence</dt><dd data-forecast-about-confidence>Shown when a forecast month is selected</dd></div>
+                        <div><dt>Reliability</dt><dd data-forecast-about-confidence>Shown when you pick a forecast month</dd></div>
                     </dl>
                     <p class="risk-forecast-note">For official warnings, follow PAGASA and the Municipal Agriculture Office.</p>
                 </div>
@@ -81,7 +81,7 @@
             </div>
             <div class="risk-forecast-empty" data-risk-forecast-empty hidden>
                 <strong>Forecast Not Available</strong>
-                <span>Climate forecast information for this period is currently unavailable.</span>
+                <span>No forecast is available for this month yet.</span>
             </div>
         @endif
         <div class="risk-map-shell" data-risk-map-shell>
@@ -91,7 +91,7 @@
                 @if($highlightBarangay) data-highlight-barangay="{{ $highlightBarangay }}" @endif
                 {{-- Barangay AI Insight: farmers start in their saved English/Filipino choice; staff start in English. --}}
                 @auth data-insight-url="{{ url('/heat-map/insight') }}" data-insight-language="{{ auth()->user()->role === \App\Models\User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve(request()) : 'en' }}" @endauth
-                role="application" aria-label="Interactive risk map of all 19 barangays in Lian, Batangas"></div>
+                role="application" aria-label="Interactive heat map of all 19 barangays in Lian, Batangas"></div>
             <div class="risk-map-loading" data-risk-map-loading aria-live="polite">Loading the 19 barangays…</div>
             <div class="risk-map-error" data-risk-map-error hidden></div>
             @if($forecast)

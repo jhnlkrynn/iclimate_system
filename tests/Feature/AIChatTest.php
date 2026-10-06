@@ -440,8 +440,8 @@ class AIChatTest extends TestCase
             ->assertJsonPath('chat.source_type', 'Knowledge Base');
 
         $answer = $response->json('chat.answer');
-        $this->assertStringContainsString('Hinuhulaan ng iClimate', $answer);
-        $this->assertStringContainsString('Hindi ako gumagawa ng sariling prediction values', $answer);
+        $this->assertStringContainsString('Tinatantiya ng iClimate', $answer);
+        $this->assertStringContainsString('Hindi siya gumagawa ng sariling numero', $answer);
 
         Http::assertNotSent(fn ($request): bool => str_contains((string) $request->url(), '/predict')
             || str_contains((string) $request->url(), '/analytics/'));

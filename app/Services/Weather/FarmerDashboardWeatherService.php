@@ -119,7 +119,7 @@ class FarmerDashboardWeatherService
                 $fallback['stale'] = true;
                 $fallback['success'] = true;
                 $fallback['status'] = 'stale';
-                $fallback['message'] = 'Weather temporarily unavailable - showing last available data.';
+                $fallback['message'] = 'Weather update is delayed. Showing the last available weather.';
 
                 return $fallback;
             }
@@ -167,7 +167,7 @@ class FarmerDashboardWeatherService
             return [
                 'title' => 'iClimate Weather Guidance',
                 'topic' => 'humidity',
-                'message' => 'High humidity may increase fungal disease risk. Monitor rice crops closely for symptoms.',
+                'message' => 'Humid air may bring rice diseases. Check your rice plants for signs.',
             ];
         }
 
@@ -200,7 +200,7 @@ class FarmerDashboardWeatherService
         return [
             'title' => 'iClimate Weather Guidance',
             'topic' => 'normal',
-            'message' => 'Weather conditions are within normal monitoring range. Keep checking advisories before field work.',
+            'message' => 'Weather looks normal. Check advisories before field work.',
         ];
     }
 
@@ -461,7 +461,7 @@ class FarmerDashboardWeatherService
             'forecast' => $this->weatherApiForecast($forecastDays),
             'icon' => $mapped['icon'],
             'fetched_at' => $providerUpdatedAt,
-            'fetched_at_label' => $providerUpdatedAt ? $this->displayTime($providerUpdatedAt) : 'Provider observation time unavailable',
+            'fetched_at_label' => $providerUpdatedAt ? $this->displayTime($providerUpdatedAt) : 'Update time not available',
             'server_fetched_at' => $serverFetchedAt,
             'server_fetched_at_label' => $this->displayTime($serverFetchedAt),
             'timestamps' => [
@@ -545,7 +545,7 @@ class FarmerDashboardWeatherService
             'forecast' => $this->forecast($daily),
             'icon' => $mapped['icon'],
             'fetched_at' => $providerUpdatedAt,
-            'fetched_at_label' => $providerUpdatedAt ? $this->displayTime($providerUpdatedAt) : 'Provider observation time unavailable',
+            'fetched_at_label' => $providerUpdatedAt ? $this->displayTime($providerUpdatedAt) : 'Update time not available',
             'server_fetched_at' => $serverFetchedAt,
             'server_fetched_at_label' => $this->displayTime($serverFetchedAt),
             'timestamps' => [
@@ -768,7 +768,7 @@ class FarmerDashboardWeatherService
                 'provider_updated_at' => null,
                 'server_fetched_at' => null,
             ],
-            'message' => 'Weather data temporarily unavailable.',
+            'message' => 'Latest weather is temporarily unavailable.',
         ];
     }
 

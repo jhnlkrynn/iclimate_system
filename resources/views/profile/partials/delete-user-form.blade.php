@@ -5,7 +5,7 @@
         </h2>
 
         <p class="mt-1 text-sm text-[#44604E]">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+            {{ __('Deleting your account removes all your information for good. Save anything you want to keep first.') }}
         </p>
     </header>
 
@@ -24,7 +24,7 @@
             </h2>
 
             <p class="mt-1 text-sm text-[#44604E]">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
+                {{ __('Deleting your account removes all your information for good. Enter your password to confirm.') }}
             </p>
 
             <div class="mt-6">

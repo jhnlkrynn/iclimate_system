@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -89,6 +91,59 @@ abstract class CrudController extends Controller
         return view('crud.index', $data + [
             'records' => $query->latest('id')->paginate(10)->withQueryString(),
         ]);
+    }
+
+    /**
+     * The staff list (crud.index) for a module whose records also come from a read-only source dataset. $rows are
+     * display rows: the column fields plus search_text, sort_key, id (null for a dataset row) and is_source_dataset.
+     * Search, filters, order (?sort=oldest, newest by default) and paging work on all rows together, so the count
+     * is the real count for the current filters.
+     *
+     * @param  Collection<int, object>  $rows
+     * @param  array<string, array<string, string>>  $filterable  field => [value => label]
+     */
+    protected function staffRowsIndex(Request $request, Collection $rows, array $filterable): View
+    {
+        $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
+        $needle = mb_strtolower($search);
+        $filters = collect(array_keys($filterable))
+            ->mapWithKeys(fn (string $field) => [$field => $request->query($field)])
+            ->filter(fn ($value) => is_string($value) && $value !== '');
+
+        $filtered = $rows
+            ->filter(fn (object $row): bool => ($needle === '' || str_contains($row->search_text, $needle))
+                && $filters->every(fn (string $value, string $field): bool => (string) ($row->{$field} ?? '') === $value))
+            ->sortBy(fn (object $row): string => $row->sort_key, SORT_STRING, $request->query('sort') !== 'oldest')
+            ->values();
+
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        return view('crud.index', [
+            'title' => $this->title,
+            'routeName' => $this->routeName,
+            'columns' => $this->columns,
+            'search' => $search,
+            'filterable' => $filterable,
+            'canManage' => $this->canManage($request),
+            'viewOnly' => $this->viewOnly,
+            'records' => new LengthAwarePaginator($filtered->forPage($page, $perPage)->values(), $filtered->count(), $perPage, $page, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]),
+        ]);
+    }
+
+    /** A stored number as written, without trailing zeros ("114", "25.1", "26.95"), or null when missing. */
+    protected static function plainNumber(mixed $value, string $unit = ''): ?string
+    {
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        $number = rtrim(rtrim(number_format((float) $value, 2, '.', ','), '0'), '.');
+
+        return $unit === '' ? $number : $number.$unit;
     }
 
     protected function usesFarmerPages(Request $request): bool

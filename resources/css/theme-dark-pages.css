@@ -104,6 +104,9 @@ html[data-theme="dark"] body .farmer-org-legend-item:hover { background: var(--d
 html[data-theme="dark"] body .farmer-org-legend-count { color: var(--dk-ink); }
 html[data-theme="dark"] body .farmer-org-chart-status { color: var(--dk-ink); }
 
+/* ---- views/farm-boundaries/edit.blade.php (1) */
+html[data-theme="dark"] body .boundary-point { border-color: var(--dk-border-strong); }
+
 /* ---- views/layouts/app.blade.php (10) */
 html[data-theme="dark"] body .form-control:hover,
 html[data-theme="dark"] body .form-select:hover { background-color: var(--dk-surface-3); }
@@ -308,7 +311,7 @@ html[data-theme="dark"] body .rf-leaflet-popup .rf-updated { color: var(--dk-mut
 html[data-theme="dark"] body .risk-forecast-toolbar .risk-forecast-select label { color: #a4e0cb; }
 }
 
-/* ---- css/ui-refresh.css (46) */
+/* ---- css/ui-refresh.css (47) */
 html[data-theme="dark"] body .card:hover,
 html[data-theme="dark"] body .glass-card:hover,
 html[data-theme="dark"] body .module-tile:hover,
@@ -407,6 +410,7 @@ html[data-theme="dark"] body .it-card:hover,
 html[data-theme="dark"] body .feed-post-card:hover,
 html[data-theme="dark"] body .variable-info-card:hover { border-color: color-mix(in srgb, #3ec18f 30%, var(--dk-border)) !important; }
 html[data-theme="dark"] body .quick-action:hover { background-color: var(--dk-surface-3) !important; }
+html[data-theme="dark"] body .ic-table-scroll-hint { color: var(--dk-muted); }
 
 /* ---- css/farmer-dashboard.css (23) */
 html[data-theme="dark"] body .mfd { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --line: var(--dk-border-strong); --rule: var(--dk-border-strong); --ink: var(--dk-ink); --muted: var(--dk-muted); --good-ink: #9de7c4; --good-bg: var(--dk-surface-2); --watch-ink: #e7ca9d; --watch-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --danger-ink: #e7a49d; --danger-bg: var(--dk-surface-2); --info-ink: #9dc4e7; --info-bg: var(--dk-surface-2); }

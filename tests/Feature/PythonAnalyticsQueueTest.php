@@ -69,8 +69,13 @@ class PythonAnalyticsQueueTest extends TestCase
         $this->assertSame('2026-09-10', data_get(Report::query()->firstOrFail()->payload, 'records.0.record_date'));
 
         Http::assertSent(function (Request $request): bool {
+            // The climate report gets the same records as Climate Records: the entered row and the historical
+            // station months, each marked with its group.
+            $rows = collect(data_get($request->data(), 'source_rows'));
+
             return $request->url() === 'http://python.test/analytics/report_analytics'
-                && data_get($request->data(), 'source_rows.0.source') === 'PAGASA';
+                && $rows->contains(fn ($row) => $row['source'] === 'PAGASA' && $row['record_type'] === Report::CLIMATE_ENTERED)
+                && $rows->contains(fn ($row) => $row['record_type'] === Report::CLIMATE_HISTORICAL && strlen($row['record_date']) === 7);
         });
     }
 

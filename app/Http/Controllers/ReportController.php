@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AnalyticsRun;
-use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
 use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Services\Analytics\AnalyticsDispatcher;
+use App\Services\Climate\ClimateRecordHistory;
 use App\Services\SystemAuditLogger;
 use App\Support\ReportTypeCatalog;
 use Illuminate\Database\Eloquent\Builder;
@@ -256,11 +256,10 @@ class ReportController extends CrudController
     }
 
     /**
-     * For non-climate report types with an explicit date range filter, shows
-     * the rainfall/temperature conditions during that same period as
-     * supporting context — the "what was the weather doing" behind the
-     * report, without re-querying anything beyond the existing ClimateRecord
-     * table.
+     * For non-climate report types with an explicit date range filter, shows the weather during that same period as
+     * supporting context — the "what was the weather doing" behind the report. It uses the same records as Climate
+     * Records, in two separate parts: the historical PAGASA Ambulong months and the entered climate records. Their
+     * figures are never averaged together (a month's rainfall total is not one day's reading).
      */
     private function weatherBasis(Report $report): ?array
     {
@@ -281,29 +280,14 @@ class ReportController extends CrudController
             return null;
         }
 
-        $query = ClimateRecord::query();
-        if ($from) {
-            $query->whereDate('record_date', '>=', $from);
-        }
-        if ($to) {
-            $query->whereDate('record_date', '<=', $to);
-        }
-
-        $stats = $query->selectRaw('AVG(rainfall) as avg_rainfall, AVG(temperature) as avg_temperature, COUNT(*) as record_count')->first();
-
-        if (! $stats || (int) $stats->record_count === 0) {
-            return [
-                'has_data' => false,
-                'range_label' => $this->dateRangeLabel($from, $to),
-            ];
-        }
+        [$rows] = app(ClimateRecordHistory::class)->records(plausibleOnly: false);
+        $inRange = ClimateRecordHistory::inRange($rows, $from, $to);
 
         return [
-            'has_data' => true,
             'range_label' => $this->dateRangeLabel($from, $to),
-            'avg_rainfall' => round((float) $stats->avg_rainfall, 1),
-            'avg_temperature' => round((float) $stats->avg_temperature, 1),
-            'record_count' => (int) $stats->record_count,
+            'historical_source' => ClimateRecordHistory::AMBULONG_SOURCE,
+            'historical' => ClimateRecordHistory::historicalSummary($inRange->where('group', ClimateRecordHistory::HISTORICAL)),
+            'entered' => ClimateRecordHistory::enteredSummary($inRange->where('group', ClimateRecordHistory::ENTERED)),
         ];
     }
 
@@ -367,7 +351,8 @@ class ReportController extends CrudController
     private function sourceStats(): array
     {
         return Cache::remember('reports:source-stats', now()->addMinutes(5), fn (): array => [
-            'climate_records' => ClimateRecord::query()->count(),
+            // The same records Climate Records lists: the historical station months plus the entered records.
+            'climate_records' => app(ClimateRecordHistory::class)->records(plausibleOnly: false)[0]->count(),
             'rice_production' => RiceProduction::query()->count(),
             'farmers' => FarmerProfile::query()->count(),
             'advisories' => PlantingAdvisory::query()->count(),

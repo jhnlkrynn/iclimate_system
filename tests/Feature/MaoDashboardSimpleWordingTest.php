@@ -37,7 +37,7 @@ class MaoDashboardSimpleWordingTest extends TestCase
         $this->assertStringContainsString('planning guide', $html);
         $this->assertStringContainsString('id="barangayRiskMap"', $html);
         $this->assertStringContainsString('No Data', $html);
-        $this->assertStringContainsString('not Low risk', $html);
+        $this->assertStringContainsString('not Low.', $html);
     }
 
     public function test_feedback_section_shows_minimum_report_message_on_the_operations_page_only(): void

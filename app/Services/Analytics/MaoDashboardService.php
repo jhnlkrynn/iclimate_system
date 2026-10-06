@@ -237,7 +237,7 @@ final class MaoDashboardService
     // ------------------------------------------------------------------ farm risk
 
     /**
-     * Farm risk from the one source the Lian Municipality Risk Map draws (BarangayRiskMapService::snapshot(), the
+     * Farm risk from the one source the Lian Municipality Heat Map draws (BarangayRiskMapService::snapshot(), the
      * same ratings /api/lian/risk-map serves), so the KPI, the Municipal Risk Overview and the map colours can never
      * show different counts. "Monitored" is every barangay in that dataset; a barangay still without a rating is
      * counted as No Data, never left out.
@@ -565,7 +565,7 @@ final class MaoDashboardService
                     ? number_format($risk['rated']).' rated · '.number_format($risk['no_data']).' awaiting data'
                     : 'Municipality-wide farm risk monitoring',
                 'trend' => null, 'href' => '#mtdRiskMap', 'risk_category' => 'monitored',
-                'tip' => 'Official Lian barangays in the municipal farm-risk dataset. The same ratings colour the Lian Municipality Risk Map.',
+                'tip' => 'Official Lian barangays in the municipal farm-risk dataset. The same ratings colour the Lian Municipality Heat Map.',
             ];
         }
 
@@ -602,7 +602,7 @@ final class MaoDashboardService
                 $items[] = ['severity' => $severe > 0 ? 'urgent' : 'action', 'icon' => 'map',
                     'title' => number_format($high).' '.($high === 1 ? 'Barangay' : 'Barangays').' Under High Farm Risk',
                     'detail' => ($severe > 0 ? number_format($severe).' at Severe level. ' : '').'Planning indicator, not an official hazard assessment.',
-                    'action' => 'View Risk Map', 'href' => '#mtdRiskMap'];
+                    'action' => 'View Heat Map', 'href' => '#mtdRiskMap'];
             }
         }
 

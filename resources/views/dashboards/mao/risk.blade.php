@@ -1,12 +1,12 @@
-{{-- Municipal Risk: the Municipal Risk Overview (donut + clickable categories) and the Lian Municipality Risk Map,
+{{-- Municipal Risk: the Municipal Risk Overview (donut + clickable categories) and the Lian Municipality Heat Map,
      in one card, both drawn by resources/js/barangay-risk-map.js from the same ratings (/api/lian/risk-map, the source
      MaoDashboardService::risk() also reads). Not a live slot: re-rendering it would rebuild the map; Refresh Data asks
      the map to reload instead. --}}
 @php $r = $mao['risk']; @endphp
 @if (($r['state'] ?? null) === 'ok')
-    <section class="mtd-card" id="mtdRiskMap" aria-label="Municipal risk overview and risk map" data-mao-risk>
+    <section class="mtd-card" id="mtdRiskMap" aria-label="Municipal risk overview and heat map" data-mao-risk>
         @include('partials.barangay-risk-map', [
-            'heading' => 'Lian Municipality Risk Map',
+            'heading' => 'Lian Municipality Heat Map',
             'subheading' => 'All 19 barangays at a glance. Click a barangay for its weather, farm risk and advice.',
             'showRefresh' => true,
             'overview' => true,

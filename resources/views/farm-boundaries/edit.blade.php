@@ -6,6 +6,9 @@
         .boundary-stat strong { display: block; color: var(--ic-ink); font-size: 1.15rem; }
         .boundary-stat span { color: var(--ic-ink-mid); font-size: .85rem; }
         @media (max-width: 767.98px) { .boundary-map { min-height: 420px; } }
+        /* Boundary points: a small green handle, not Leaflet's large pin image. */
+        .boundary-point { border: 3px solid #fff; border-radius: 50%; background: #1f5a46; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+        .boundary-point:active { cursor: grabbing; }
     </style>
 
     <section class="page-hero">
@@ -149,8 +152,10 @@
                 calculatedPerimeter.textContent = measurements ? `${measurements.perimeter.toFixed(2)} m` : 'Not calculated';
             };
 
+            // 18px: small on the map, still easy to drag with a finger.
+            const pointIcon = Leaflet.divIcon({ className: 'boundary-point', iconSize: [18, 18], iconAnchor: [9, 9] });
             const addMarker = (point) => {
-                const marker = Leaflet.marker([point.lat, point.lng], { draggable: true }).addTo(map);
+                const marker = Leaflet.marker([point.lat, point.lng], { draggable: true, icon: pointIcon }).addTo(map);
                 marker.on('drag', redraw);
                 marker.on('contextmenu', () => {
                     marker.remove();

@@ -27,11 +27,14 @@
         };
     };
 
+    // Second element: every route that keeps the item highlighted. A page that has no menu item of its own (it is
+    // opened from a button on another page) is listed under the item it is opened from, so one item is always
+    // highlighted and people can see where they are.
     $routeDefs = [
-        'dashboard' => [$dashboardRoute, [$dashboardRoute]],
+        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'field-reports.*', 'admin.dashboard.*']],
         'heatmap' => ['heat-map.index', ['heat-map.*']],
-        'advisories' => ['planting-advisories.index', ['planting-advisories.*']],
-        'calendar' => ['calendar.index', ['calendar.*']],
+        'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
+        'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],
@@ -42,7 +45,7 @@
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
         'system-logs' => ['system-logs.index', ['system-logs.*']],
-        'system-health' => ['system-health.index', ['system-health.*']],
+        'system-health' => ['system-health.index', ['system-health.*', 'model-registry.*', 'model-evaluation.*', 'testing.*']],
         'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
     ];
 

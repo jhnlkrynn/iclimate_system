@@ -1,4 +1,4 @@
-{{-- Municipal Risk Overview: a donut and four category rows above the Lian Municipality Risk Map. Every number is
+{{-- Municipal Risk Overview: a donut and four category rows above the Lian Municipality Heat Map. Every number is
      filled by resources/js/barangay-risk-map.js from the same ratings that colour the map (one count, never typed in),
      and follows the selected forecast month. Each row, the donut centre and each donut segment opens the shared
      information pop-up with the category's meaning and barangays. Without JavaScript the rows simply show "–". --}}
@@ -50,7 +50,7 @@
             <li data-risk-overview-nodata hidden>
                 <button type="button" class="risk-overview-item" style="--risk-color: #8a939b" data-risk-category="nodata" aria-haspopup="dialog">
                     <span class="risk-overview-icon is-level" aria-hidden="true">@include('dashboards.mao.icon', ['name' => 'clock'])</span>
-                    <span class="risk-overview-name">No Data Yet<small>Awaiting a rating</small></span>
+                    <span class="risk-overview-name">No Data Yet<small>Waiting for a rating</small></span>
                     <strong class="risk-overview-value" data-risk-overview-count="nodata">–</strong>
                     <span class="risk-overview-bar" aria-hidden="true"><span data-risk-overview-bar="nodata"></span></span>
                 </button>
@@ -61,5 +61,5 @@
     {{-- Current Conditions weather health (filled by barangay-risk-map.js): how many barangays have a current
          reading, which use their last available one, when the weather was last checked, and its source. --}}
     <p class="risk-overview-check risk-overview-weather" data-risk-weather-health role="status" aria-live="polite" hidden></p>
-    <p class="risk-overview-check">Farm risk is a planning guide based on available weather and agricultural data. A barangay without a rating is counted as No Data, not Low risk.</p>
+    <p class="risk-overview-check">Farm risk is a planning guide based on weather and farm records. A barangay with no rating yet shows No Data, not Low.</p>
 </section>

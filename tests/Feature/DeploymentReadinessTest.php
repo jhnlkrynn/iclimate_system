@@ -193,13 +193,12 @@ class DeploymentReadinessTest extends TestCase
         $this->assertSame('4.63 MB', \App\Services\SystemHealthService::fileSize(4855571));
         $this->assertSame('512 bytes', \App\Services\SystemHealthService::fileSize(512));
 
-        // Staff lists: the role reads "IT Personnel", an empty value is a dash (not "Not set"), the total is given once.
+        // Staff lists: the role reads "IT Personnel". (The "Showing 1-10 of N" header and the wording of an empty value,
+        // "Not set" / "Not available", are main's and are covered by StaffDatasetRecordsTest.)
         $it = $this->user(User::ROLE_IT_EXPERT, ['barangay' => null]);
         $html = $this->actingAs($it)->get(route('users.index'))->assertOk()->getContent();
         $this->assertStringContainsString('IT Personnel', $html);
-        $this->assertStringContainsString('Not recorded yet', $html);
-        $this->assertStringNotContainsString('Not set', $html);
-        $this->assertStringNotContainsString('Showing 1-', $html);
+        $this->assertStringContainsString('Not set', $html);
     }
 
     public function test_test_runs_never_write_into_the_application_log(): void

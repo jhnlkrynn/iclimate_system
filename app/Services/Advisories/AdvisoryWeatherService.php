@@ -46,7 +46,7 @@ class AdvisoryWeatherService
 
     public const ROWS = [
         'rainfall' => 'Expected rainfall',
-        'probability' => 'Rain probability',
+        'probability' => 'Chance of rain',
         'temperature' => 'Maximum temperature',
         'wind' => 'Strongest wind',
     ];
@@ -63,7 +63,7 @@ class AdvisoryWeatherService
             'kind' => 'Forecast',
             'location' => $location['label'],
             'window_note' => $windowNote,
-            'source' => 'Open-Meteo forecast (weather-model data) for '.$location['label'],
+            'source' => 'Open-Meteo weather forecast for '.$location['label'],
             'source_url' => 'https://open-meteo.com/',
             'issued' => 'Not provided by source',
             'updated' => null,

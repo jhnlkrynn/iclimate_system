@@ -19,6 +19,7 @@ return [
 
     'header' => [
         'kicker' => 'Farmer Dashboard',
+        'updated_at' => 'Na-update :time',
         'updated' => 'Na-update :age',
         'minutes_ago' => '{0} ngayon lang|{1} 1 minuto na ang nakalipas|[2,*] :count minuto na ang nakalipas',
         'hours_ago' => '{0} ngayon lang|{1} 1 oras na ang nakalipas|[2,*] :count oras na ang nakalipas',
@@ -29,7 +30,7 @@ return [
         'js_hours' => 'Na-update :count oras na ang nakalipas',
         'last_updated' => 'Huling update ng panahon: :time',
         'no_update' => 'Hindi namin alam kung kailan huling na-update ang panahon',
-        'old_data' => 'Lumang datos',
+        'old_data' => 'Lumang impormasyon',
         'refresh' => 'I-refresh',
         'refreshing' => 'Nire-refresh…',
         'refresh_label' => 'I-refresh ang dashboard',
@@ -64,9 +65,9 @@ return [
     'weather' => [
         'unknown' => 'Panahon',
         'humidity' => [
-            'very_wet' => 'Napakahalumigmig. Puwedeng kumalat ang sakit ng palay.',
-            'wet' => 'Mahalumigmig ang hangin.',
-            'comfortable' => 'Hindi masyadong mahalumigmig.',
+            'very_wet' => 'Napakataas ng humidity. Puwedeng kumalat ang sakit ng palay.',
+            'wet' => 'Mataas ang humidity.',
+            'comfortable' => 'Hindi masyadong mataas ang humidity.',
         ],
         'wind' => [
             'light' => 'Mahinang hangin. Puwedeng mag-spray.',
@@ -117,8 +118,8 @@ return [
         ],
         'humid' => [
             'title' => 'Tingnan kung may batik ang dahon ng palay',
-            'reason' => ':percent% ang halumigmig. Basang-basa ang hangin kaya puwedeng kumalat ang sakit ng palay.',
-            'ask' => ':percent% ang halumigmig ngayon. Anong mga senyales ng sakit ang dapat kong hanapin sa dahon ng palay?',
+            'reason' => ':percent% ang humidity. Maraming moisture sa hangin kaya puwedeng kumalat ang sakit ng palay.',
+            'ask' => ':percent% ang humidity ngayon. Anong mga senyales ng sakit ang dapat kong hanapin sa dahon ng palay?',
         ],
         'wind' => [
             'title' => 'Huwag mag-spray kapag malakas ang hangin',
@@ -224,7 +225,7 @@ return [
         'yield_missing' => 'Wala pang tantiya ng ani.',
         'not_available' => 'Wala Pa',
         'updating' => 'Ina-update pa',
-        'weather_updating' => 'Parating na ang pinakabagong datos ng panahon. Pindutin ang Subukan Ulit o bumalik pagkalipas ng ilang minuto.',
+        'weather_updating' => 'Parating na ang pinakabagong impormasyon tungkol sa panahon. Pindutin ang Subukan Ulit o bumalik pagkalipas ng ilang minuto.',
         'add_planting' => 'Ilagay ang Petsa ng Pagtatanim',
         'yield_past' => 'Huling naitalang ani sa :barangay (:when)',
         'yield_usual' => 'Karaniwang ani sa Lian tuwing :month',
@@ -285,7 +286,7 @@ return [
     // ------------------------------------------------------------------ Panahon sa Lian
     'weather_card' => [
         'title' => 'Panahon sa Lian, Batangas',
-        'humidity' => 'Halumigmig',
+        'humidity' => 'Humidity',
         'wind' => 'Hangin',
         'heat' => 'Pinakamainit na pakiramdam ngayon',
         'scope' => 'Panahon para sa buong Lian, hindi sinukat mismo sa bukid mo.',
@@ -368,7 +369,7 @@ return [
     'schedule' => [
         'title' => 'Iskedyul ng Aking Bukid',
         'planting_date' => 'Petsa ng pagtatanim',
-        'stage' => 'Kasalukuyang yugto',
+        'stage' => 'Yugto ngayon',
         'day_of' => 'Ika-:day araw sa mga :total',
         'not_planted' => '{0} Magtatanim ngayon|{1} Magtatanim bukas|[2,*] Magtatanim sa loob ng :count araw',
         'now' => 'Gawin ngayon',
@@ -456,7 +457,7 @@ return [
         'unit' => 't/ha',
         'range' => 'Karaniwang nasa :low hanggang :high t/ha',
         'total' => 'Para sa :area ha mong bukid: mga :tons tonelada.',
-        'total_missing' => 'Ilagay ang laki ng bukid para makita kung ilang tonelada ang maaaring maani.',
+        'total_missing' => 'Ilagay ang laki ng bukid para makita kung ilang tonelada ang puwedeng maani.',
         'add_area' => 'Ilagay ang laki ng bukid',
         'typical_label' => 'Kumpara sa karaniwan:',
         'typical' => ['above' => 'Mas mataas sa karaniwan', 'typical' => 'Normal', 'below' => 'Mas mababa sa karaniwan'],
@@ -529,7 +530,7 @@ return [
         'progress' => ':done sa :total ang tapos',
         'barangay' => ['title' => 'Ilagay ang inyong barangay', 'short' => 'Barangay', 'benefit' => 'para makita ang panganib at payo para sa inyong lugar.', 'cta' => 'I-update ang profile'],
         'farm_type' => ['title' => 'Piliin ang pinagkukunan ng tubig', 'short' => 'Pinagkukunan ng tubig', 'benefit' => 'para tumugma ang tantiya ng ani sa paraan ng pagpapatubig sa bukid mo.', 'cta' => 'I-update ang profile'],
-        'farm_area' => ['title' => 'Ilagay ang laki ng bukid', 'short' => 'Laki ng bukid', 'benefit' => 'para makita kung ilang tonelada ang maaaring maani.', 'cta' => 'Ilagay ang laki'],
+        'farm_area' => ['title' => 'Ilagay ang laki ng bukid', 'short' => 'Laki ng bukid', 'benefit' => 'para makita kung ilang tonelada ang puwedeng maani.', 'cta' => 'Ilagay ang laki'],
         'boundary' => ['title' => 'Iguhit ang bukid sa mapa', 'short' => 'Mapa ng bukid', 'benefit' => 'para makuha ang laki ng bukid mula sa sarili mong mapa.', 'cta' => 'I-mapa ang bukid'],
         'harvest' => ['title' => 'Itala ang iyong ani', 'short' => 'Talaan ng ani', 'benefit' => 'para maikumpara ang tantiya sa sarili mong mga ani.', 'cta' => 'Itala ang ani'],
     ],
@@ -723,9 +724,9 @@ return [
     ],
 
     'reason' => [
-        'rain_records_missing' => 'May datos ng ulan lang kami para sa :found sa nakaraang 7 araw.',
-        'rain_records_missing_month' => 'May datos ng ulan lang kami para sa :found sa :needed araw ngayong buwan.',
-        'forecast_rain_missing' => 'Wala pang datos ng darating na ulan.',
+        'rain_records_missing' => 'May tala ng ulan lang kami para sa :found sa nakaraang 7 araw.',
+        'rain_records_missing_month' => 'May tala ng ulan lang kami para sa :found sa :needed araw ngayong buwan.',
+        'forecast_rain_missing' => 'Wala pang impormasyon tungkol sa darating na ulan.',
         'forecast_missing' => 'Hindi makuha ang darating na panahon ngayon.',
         'month_just_started' => 'Kasisimula pa lang ng buwan. Tingnan ulit bukas.',
         'no_normal' => 'Kulang pa ang mga nakaraang taon para masabi ang karaniwan.',

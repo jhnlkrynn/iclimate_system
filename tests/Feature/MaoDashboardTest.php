@@ -192,7 +192,7 @@ class MaoDashboardTest extends TestCase
             'Climate Records', 'Learn More', 'Barangays to Watch', 'Recent MAO Activity', 'MAO Attention Center'] as $removed) {
             $this->assertStringNotContainsString($removed, $body, $removed);
         }
-        foreach (['Risk Map &amp; Forecast', 'Monitoring &amp; Production', 'Field Reports', 'Publishing &amp; Activity'] as $tab) {
+        foreach (['Heat Map &amp; Forecast', 'Monitoring &amp; Production', 'Field Reports', 'Publishing &amp; Activity'] as $tab) {
             $this->assertStringNotContainsString($tab, $body, $tab);
         }
     }
@@ -213,7 +213,7 @@ class MaoDashboardTest extends TestCase
     {
         $html = $this->actingAs($this->mao())->get(route('mao.operations'))->assertOk()->getContent();
 
-        foreach (['Risk Map &amp; Forecast', 'Monitoring &amp; Production', 'Field Reports', 'Publishing &amp; Activity', 'MAO Operational Workflow', 'id="activity-log"'] as $kept) {
+        foreach (['Heat Map &amp; Forecast', 'Monitoring &amp; Production', 'Field Reports', 'Publishing &amp; Activity', 'MAO Operational Workflow', 'id="activity-log"'] as $kept) {
             $this->assertStringContainsString($kept, $html, $kept);
         }
     }

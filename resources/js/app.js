@@ -147,6 +147,7 @@ window.iClimateVisualsReady = (async () => {
             const { default: Leaflet } = await import('leaflet');
             window.L = Leaflet;
             keepMapsSized(Leaflet);
+            await useBundledMarkerIcons(Leaflet).catch((error) => console.error('iClimate could not load the map marker images.', error));
         } catch (error) {
             console.error('iClimate could not load Leaflet.', error);
         }
@@ -198,7 +199,25 @@ if (document.readyState === 'loading') {
 }
 
 /*
- * Every Leaflet map on any page (Map My Farm, the barangay risk map, MAO maps) is told when its box changes size:
+ * Leaflet finds its default marker images from a CSS url() that must end in "marker-icon.png". Vite renames the
+ * bundled file (marker-icon-<hash>.png), so Leaflet found no folder and asked for "marker-icon.png" next to the
+ * page (a 404, shown as a broken image with its "Marker" alt text). Point it at the bundled images instead.
+ */
+async function useBundledMarkerIcons(Leaflet) {
+    if (!Leaflet?.Icon?.Default || Leaflet.Icon.Default.__icBundled) return;
+    const [icon, icon2x, shadow] = await Promise.all([
+        import('leaflet/dist/images/marker-icon.png'),
+        import('leaflet/dist/images/marker-icon-2x.png'),
+        import('leaflet/dist/images/marker-shadow.png'),
+    ]);
+    // Otherwise Leaflet still puts its (empty or wrong) detected folder in front of each full URL.
+    delete Leaflet.Icon.Default.prototype._getIconUrl;
+    Leaflet.Icon.Default.mergeOptions({ iconUrl: icon.default, iconRetinaUrl: icon2x.default, shadowUrl: shadow.default });
+    Leaflet.Icon.Default.__icBundled = true;
+}
+
+/*
+ * Every Leaflet map on any page (Map My Farm, the barangay heat map, MAO maps) is told when its box changes size:
  * a pop-up or a folded section opening, the phone rotating, the window or the sidebar changing width. Without this
  * Leaflet keeps drawing for the old size and leaves grey tiles.
  */

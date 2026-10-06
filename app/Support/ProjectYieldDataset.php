@@ -37,7 +37,7 @@ class ProjectYieldDataset
     }
 
     /**
-     * @return Collection<int, array{year: int, month: int, yield: float, split: ?string}>
+     * @return Collection<int, array{year: int, month: int, yield: float, season: ?string, split: ?string}>
      */
     public function rows(): Collection
     {
@@ -48,7 +48,8 @@ class ProjectYieldDataset
         $path = $this->path();
 
         return Cache::rememberForever(
-            'project-yield-dataset:'.filemtime($path).':'.filesize($path),
+            // v2: rows carry the file's SEASON column (an older cached copy without it is never reused).
+            'project-yield-dataset:v2:'.filemtime($path).':'.filesize($path),
             fn (): Collection => $this->parse($path),
         );
     }
@@ -150,14 +151,14 @@ class ProjectYieldDataset
         ];
     }
 
-    /** @return Collection<int, array{year: int, month: int, yield: float, split: ?string}> */
+    /** @return Collection<int, array{year: int, month: int, yield: float, season: ?string, split: ?string}> */
     private function parse(string $path): Collection
     {
         $rows = collect();
 
         try {
             $handle = fopen($path, 'rb');
-            $header = array_map(fn ($h) => strtoupper(trim((string) $h, "\xEF\xBB\xBF \t\r\n")), (array) fgetcsv($handle));
+            $header = array_map(fn ($h) => strtoupper(trim((string) $h, "\xEF\xBB\xBF \t\r\n")), (array) fgetcsv($handle, escape: '\\'));
             $index = array_flip($header);
 
             foreach (['YEAR', 'MONTH', 'AVERAGE_YIELD'] as $required) {
@@ -168,7 +169,7 @@ class ProjectYieldDataset
                 }
             }
 
-            while (($line = fgetcsv($handle)) !== false) {
+            while (($line = fgetcsv($handle, escape: '\\')) !== false) {
                 $yield = $line[$index['AVERAGE_YIELD']] ?? '';
                 $year = (int) ($line[$index['YEAR']] ?? 0);
                 $month = (int) ($line[$index['MONTH']] ?? 0);
@@ -182,6 +183,8 @@ class ProjectYieldDataset
                     'year' => $year,
                     'month' => $month,
                     'yield' => (float) $yield,
+                    // Wet / Dry exactly as the file records it; a blank cell stays unknown.
+                    'season' => isset($index['SEASON']) ? trim((string) ($line[$index['SEASON']] ?? '')) ?: null : null,
                     'split' => isset($index['SPLIT']) ? trim((string) ($line[$index['SPLIT']] ?? '')) ?: null : null,
                 ]);
             }

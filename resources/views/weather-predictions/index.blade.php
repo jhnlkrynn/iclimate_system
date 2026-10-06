@@ -164,7 +164,7 @@
                     <div class="row g-2 mt-2">
                         <div class="col-md-4"><div class="wp-advisory h-100"><div class="wp-label mb-1">Farm Size Used</div><div class="wp-card-value">{{ number_format((float) ($mlResult['farm_area_hectares'] ?? 0), 2) }} hectares</div></div></div>
                         <div class="col-md-4"><div class="wp-advisory h-100"><div class="wp-label mb-1">Estimated Total Harvest</div><div class="wp-card-value">{{ number_format((float) ($mlResult['estimated_total_production_tons'] ?? 0), 2) }} tons</div></div></div>
-                        @if($yieldReliability)<div class="col-md-4"><div class="wp-advisory h-100"><div class="wp-label mb-1">Prediction Reliability</div><div class="wp-card-value">{{ $yieldReliability }}</div><div class="ds-note">A rough guide only, not a guarantee.</div></div></div>@endif
+                        @if($yieldReliability)<div class="col-md-4"><div class="wp-advisory h-100"><div class="wp-label mb-1">Forecast Reliability</div><div class="wp-card-value">{{ $yieldReliability }}</div><div class="ds-note">A rough guide only, not a guarantee.</div></div></div>@endif
                         @if(isset($mlResult['condition_score']))<div class="col-md-4"><div class="wp-advisory h-100"><div class="wp-label mb-1">Farm Condition Score</div><div class="wp-card-value">{{ number_format((float) $mlResult['condition_score']) }} / 100</div><div class="ds-note">Higher is better.</div></div></div>@endif
                     </div>
                 </details>
@@ -267,7 +267,7 @@
                         <div class="wp-card-value">{{ $farmTone[0] }}</div>
                         <div class="wp-note mt-1">{{ $farmTone[1] }}@if($weatherRecommendation) {{ $weatherRecommendation }}@endif</div>
                     </div>
-                    @if($weatherReliability)<div class="small text-muted mt-2">Prediction Reliability: <strong>{{ $weatherReliability }}</strong>. This is a forecast, not a guarantee.</div>@endif
+                    @if($weatherReliability)<div class="small text-muted mt-2">Forecast Reliability: <strong>{{ $weatherReliability }}</strong>. This is a forecast, not a guarantee.</div>@endif
                     @if($isTechnical)
                         <details class="ic-collapse mt-3">
                             <summary><span class="ic-collapse-title">Technical Details (IT only)</span></summary>
@@ -445,7 +445,7 @@
                             </div>
                         @endforeach
                     </div>
-                    <div class="small text-muted mt-3">Only dates with a real forecast show values; other dates are left blank. We never fill them in with invented values.</div>
+                    <div class="small text-muted mt-3">Only days with a forecast show values. Other days are left blank.</div>
                 </div>
 
                 @if(! empty($shortTermOutlook))

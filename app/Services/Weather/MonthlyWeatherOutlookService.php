@@ -55,8 +55,8 @@ final class MonthlyWeatherOutlookService
             'weekly' => $weekly,
             'historical' => $baseline,
             'model_message' => $calendar['monthly_prediction_message'] ?? null,
-            'pagasa_note' => 'PAGASA seasonal and monthly climate outlooks are not connected to iClimate, so none is shown here. '
-                .'For official guidance, follow PAGASA\'s own climate outlook. The model estimate above is not a PAGASA forecast.',
+            'pagasa_note' => 'PAGASA monthly outlooks are not shown in iClimate. For official guidance, follow PAGASA. '
+                .'The estimate above is iClimate\'s own, not a PAGASA forecast.',
         ];
     }
 
@@ -96,9 +96,9 @@ final class MonthlyWeatherOutlookService
             // Model wind has no confirmed unit, so none is claimed.
             $slot('Expected Wind', $wind, $mp['wind_speed_kmh'] !== null ? '(unit not confirmed)' : ''),
             // The monthly model does not estimate these two; they are shown as unavailable rather than guessed.
-            $slot('Rainfall Probability', null),
+            $slot('Chance of Rain', null),
             $slot('Overall Weather Outlook', $summary !== '' ? $summary : null),
-            $slot('Predominant Weather Condition', null),
+            $slot('Main Weather', null),
         ];
         $missing = [];
         $updated = null;
@@ -112,16 +112,16 @@ final class MonthlyWeatherOutlookService
         $training = $mp['training_from'] && $mp['training_to'] ? $mp['training_from'].' to '.$mp['training_to'] : null;
 
         return [
-            'type' => 'Model-Based Monthly Estimate',
+            'type' => 'iClimate Monthly Estimate',
             'rows' => $rows,
             'outlook' => $outlook,
             'cards' => $this->cards($mp, $baseline, $month),
             'missing' => $missing,
             'period' => $month->format('F j').'–'.$month->endOfMonth()->format('j, Y').' (the whole month, not a single day)',
-            'source' => $mp['source_name'].($training ? " (trained on records from {$training})" : ''),
+            'source' => $mp['source_name'].($training ? " (based on records from {$training})" : ''),
             'updated' => $updated ?? 'Not recorded',
             'uncertainty' => trim(($mp['confidence_label'] ? $mp['confidence_label'].'. ' : '')
-                .'This is a statistical estimate for the whole month, not a daily forecast. Real weather can differ, especially for later months.'),
+                .'This is an estimate for the whole month, not a daily forecast. Real weather can differ, especially for later months.'),
         ];
     }
 
@@ -138,12 +138,12 @@ final class MonthlyWeatherOutlookService
         $name = $month->format('F');
         $enough = $baseline && $baseline['years'] >= self::MIN_BASELINE_YEARS;
         $why = ! $baseline
-            ? 'No historical records are available to compare with.'
+            ? 'No past records to compare with.'
             : ($enough ? '' : "Only {$baseline['years']} past ".($baseline['years'] === 1 ? 'year' : 'years')." of {$name} records exist; at least ".self::MIN_BASELINE_YEARS.' are needed for a fair comparison.');
         $years = $enough ? $baseline['years'] : null;
         $span = $enough ? $baseline['span'] : null;
 
-        $rain = ['available' => false, 'reason' => $why ?: 'The model did not provide a rainfall estimate for this month.'];
+        $rain = ['available' => false, 'reason' => $why ?: 'No rainfall estimate for this month yet.'];
         if ($enough && $mp['rainfall_mm'] !== null && ($baseline['avg']['rainfall'] ?? 0) > 0) {
             $ratio = $mp['rainfall_mm'] / $baseline['avg']['rainfall'];
             $rain = [
@@ -155,7 +155,7 @@ final class MonthlyWeatherOutlookService
             ];
         }
 
-        $temp = ['available' => false, 'reason' => $why ?: 'The model did not provide a temperature estimate for this month.'];
+        $temp = ['available' => false, 'reason' => $why ?: 'No temperature estimate for this month yet.'];
         if ($enough && $mp['temperature_c'] !== null && ($baseline['avg']['temperature'] ?? null) !== null) {
             $diff = round($mp['temperature_c'] - $baseline['avg']['temperature'], 1);
             $temp = [
@@ -280,9 +280,9 @@ final class MonthlyWeatherOutlookService
         return [
             'type' => 'Weekly summary of the daily forecast',
             'weeks' => $weeks,
-            'source' => $calendar['source_name'] ?: 'Open-Meteo Forecast API',
+            'source' => str_replace('Forecast API', 'weather forecast', $calendar['source_name'] ?: 'Open-Meteo Forecast API'),
             'updated' => $this->fetched($calendar['fetched_at'] ?? null),
-            'note' => 'Built only from days that have a forecast. Days without one are left out, not counted as zero, so a week with partial coverage describes just its covered days.',
+            'note' => 'Only days with a forecast are counted. Days without one are left out, not counted as zero.',
         ];
     }
 
@@ -327,7 +327,7 @@ final class MonthlyWeatherOutlookService
             $slot('Expected Temperature', $means ? number_format($mean($means), 1) : null, '°C (average)'),
             $slot('Temperature Range', ($highs && $lows) ? number_format(min($lows), 1).' – '.number_format(max($highs), 1) : null, '°C (lowest – highest)'),
             $slot('Expected Humidity', $hum ? number_format($mean($hum), 1) : null, '% (average)'),
-            $slot('Rainfall Probability', $chance ? 'up to '.number_format(max($chance)).'%' : null, $chance ? '(average '.number_format($mean($chance)).'%)' : ''),
+            $slot('Chance of Rain', $chance ? 'up to '.number_format(max($chance)).'%' : null, $chance ? '(average '.number_format($mean($chance)).'%)' : ''),
             $slot('Strongest Daily Wind', $wind ? number_format(max($wind), 1) : null, 'km/h'),
             $slot('Weather Outlook', $outlook),
         ];
@@ -359,8 +359,8 @@ final class MonthlyWeatherOutlookService
         $averages = ['rainfall' => $avg('rainfall'), 'temperature' => $avg('temperature'), 'humidity' => $avg('humidity')];
 
         return [
-            'type' => 'Historical Climate Record',
-            'source' => 'Ambulong historical climate records (PAGASA-derived dataset in iClimate)',
+            'type' => 'Past Weather Records',
+            'source' => 'Past weather records from PAGASA Ambulong station',
             'years' => $past->count(),
             'span' => $past->isEmpty() ? '' : $past->min('year').'–'.$past->max('year'),
             'avg' => $averages,
