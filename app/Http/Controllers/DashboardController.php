@@ -26,6 +26,7 @@ use App\Services\Analytics\ItDashboardInsights;
 use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
 use App\Services\FarmerOrganizationSummaryService;
+use App\Services\Risk\HeatMapPanel;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
@@ -151,18 +152,24 @@ class DashboardController extends Controller
         return view('dashboards.farmer', ['f' => $payload]);
     }
 
-    /** Shared barangay heat map available from every authenticated account. */
-    public function heatMap(Request $request): View
+    /**
+     * Heat Map (2026-10): the map with one panel beside it. Both ranges ([This Week], [2 Weeks]) come with the page,
+     * from the saved daily forecast only, so the toggle and a barangay click never wait for a request.
+     */
+    public function heatMap(Request $request, HeatMapPanel $panel): View
     {
         $user = $request->user();
-        $barangay = $user?->role === User::ROLE_FARMER
-            ? $user->registeredBarangay()
-            : null;
+        $farmer = $user?->role === User::ROLE_FARMER;
+        $locale = $farmer ? FarmerLanguage::resolve($request) : 'en';
 
         return view('heat-map.index', [
-            'highlightBarangay' => $barangay ? LianBarangays::canonicalName($barangay) : null,
-            // Farmers get the short, plain-language forecast panel; MAO/IT keep the detailed one.
-            'forecastAudience' => $user?->role === User::ROLE_FARMER ? 'farmer' : 'staff',
+            'ranges' => $panel->ranges($locale),
+            'range' => $request->query('range') === '2weeks' ? '2weeks' : 'week',
+            'locale' => $locale,
+            // The farmer's own barangay is outlined; every role still sees and can click all 19.
+            'ownBarangay' => $farmer ? LianBarangays::canonicalName($user->registeredBarangay()) : null,
+            // Farmers read plain words; MAO/IT also get the forecast numbers.
+            'showNumbers' => ! $farmer,
         ]);
     }
 

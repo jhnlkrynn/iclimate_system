@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\Prediction\SeasonYield;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Support\DashboardData;
@@ -28,7 +29,7 @@ use Throwable;
  * lang/{en,fil}/farmer.php, section "home"):
  *   1. message  - "Mensahe Ngayon": one main message, from the parts below by fixed rules
  *   2. weather  - today: icon, words and °C; rain and wind in words, never millimetres (FarmerDashboardWeatherService)
- *   3. risk     - the barangay's Heat Map rating as Mababa / Katamtaman / Mataas (BarangayRiskMapService)
+ *   3. risk     - the barangay's Heat Map rating for this week as Mababa / Katamtaman / Mataas (BarangayWeekRiskService)
  *   4. harvest  - this season's expected yield in t/ha and Normal / Mas mataas / Mas mababa (stored model result)
  *   5. week     - the next 7 days' weather icons, and the latest planting advisory for the farmer's area
  * plus the Typhoon Safety Check-In, only while a typhoon advisory is in effect.
@@ -64,6 +65,7 @@ final class FarmerDashboardService
     public function __construct(
         private readonly FarmerDashboardWeatherService $weather,
         private readonly BarangayRiskMapService $risk,
+        private readonly BarangayWeekRiskService $weekRisk,
         private readonly RiceYieldPredictionService $riceYield,
         private readonly TyphoonSafetyService $typhoon,
         private readonly SeasonYield $seasonYield,
@@ -313,7 +315,7 @@ final class FarmerDashboardService
         return ['state' => $days === [] ? 'nodata' : 'ok', 'days' => $days];
     }
 
-    // ------------------------------------------------------------------ 3. barangay risk (the Heat Map's rating)
+    // ------------------------------------------------------------------ 3. barangay risk (the Heat Map's [This Week] rating)
 
     /** @return array<string, mixed> state: ok | nodata | nobarangay (payload() adds: unverified) */
     private function riskStatus(?string $barangay): array
@@ -321,34 +323,33 @@ final class FarmerDashboardService
         if (! $barangay) {
             return ['state' => 'nobarangay'];
         }
+        // The planting rule still comes from the stored barangay record (reading it also queues that record's refresh
+        // when it is missing or old); without it the main message simply skips the rule.
+        $r = rescue(fn () => $this->risk->detailFor($barangay, false), null, false) ?? [];
+
+        // The same rating the Heat Map opens with, so the badge here and the map there never disagree.
         try {
-            $r = $this->risk->detailFor($barangay, false);
+            $week = $this->weekRisk->forBarangay($barangay, 'week');
         } catch (Throwable $e) {
-            Log::warning('Farmer dashboard farm risk failed.', ['source' => 'barangay risk map', 'exception' => $e::class, 'message' => $e->getMessage()]);
+            Log::warning('Farmer dashboard farm risk failed.', ['source' => 'barangay week risk', 'exception' => $e::class, 'message' => $e->getMessage()]);
 
             return ['state' => 'nodata'];
         }
-        $level = $r['risk_level'] ?? null;
-        $key = match ($level) {
-            'Low' => 'low',
-            'Moderate' => 'moderate',
-            'High', 'Severe' => 'high',
-            default => null,
-        };
+        $key = in_array($week['level'] ?? null, ['low', 'moderate', 'high'], true) ? $week['level'] : null;
         if ($key === null) {
             return ['state' => 'nodata'];
         }
 
         return [
             'state' => 'ok',
-            'barangay' => $r['barangay'] ?? $barangay,
+            'barangay' => $week['barangay'] ?? $barangay,
             'key' => $key,
             'label' => __('farmer.home.risk.level.'.$key),
             'tone' => ['low' => 'good', 'moderate' => 'watch', 'high' => 'danger'][$key],
             'meaning' => __('farmer.home.risk.meaning.'.$key),
             // The Heat Map's planting rule as one key (DecisionSupportService::plantingAdvisory), for the main message.
             'planting_key' => $this->plantingKey((string) ($r['advisory']['planting'] ?? '')),
-            'updated_at' => ! empty($r['updated_at']) ? CarbonImmutable::parse($r['updated_at'])->timezone(self::TIMEZONE) : null,
+            'updated_at' => $week['updated_at'] ?? null,
         ];
     }
 

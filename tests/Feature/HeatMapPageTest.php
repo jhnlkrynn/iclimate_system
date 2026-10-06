@@ -1,0 +1,290 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\FarmerProfile;
+use App\Models\User;
+use App\Services\Risk\BarangayWeekRiskService;
+use App\Services\Weather\LianBarangayWeatherService;
+use App\Support\LianBarangays;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
+use Tests\TestCase;
+
+/**
+ * Heat Map (2026-10): the map opens straight away with one panel beside it. The panel shows the municipal summary,
+ * then the clicked barangay's risk level, plain explanation and recommended action. [This Week] / [2 Weeks] are rated
+ * from the saved daily forecast (BarangayWeekRiskService); the page never calls a provider.
+ */
+class HeatMapPageTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+        Queue::fake();
+        // Any provider call from the page would fail the test's expectations (nothing may be sent).
+        Http::fake(['*' => Http::response(['error' => 'down'], 500)]);
+    }
+
+    /** One calm forecast day; override rainfall, wind_speed_max or temperature_max. */
+    private function day(int $offset, array $values = []): array
+    {
+        return $values + [
+            'date' => CarbonImmutable::now('Asia/Manila')->startOfDay()->addDays($offset)->toDateString(),
+            'weather_code' => 3, 'condition' => 'Cloudy', 'rainfall' => 4.0, 'precipitation_probability' => 40,
+            'temperature_max' => 31.0, 'temperature_min' => 24.0, 'wind_speed_max' => 12.0,
+        ];
+    }
+
+    /**
+     * Saves a 16-day forecast for every barangay: calm, except the days given per barangay ([offset => values]).
+     *
+     * @param  array<string, array<int, array<string, mixed>>>  $hazards
+     */
+    private function storeForecasts(array $hazards = [], ?array $only = null): void
+    {
+        $records = [];
+        foreach ($only ?? LianBarangays::all() as $barangay) {
+            $records[$barangay] = [
+                'barangay' => $barangay, 'temperature_c' => 28.0, 'fetched_at' => now()->toIso8601String(), 'observed_at' => now()->toIso8601String(),
+                'daily' => array_map(fn (int $i) => $this->day($i, $hazards[$barangay][$i] ?? []), range(0, 15)),
+            ];
+        }
+        Cache::forever(LianBarangayWeatherService::STORE_KEY, ['records' => $records, 'status' => []]);
+    }
+
+    private function farmer(string $barangay = 'Prenza', string $language = 'en'): User
+    {
+        $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => $barangay, 'preferred_language' => $language]);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $barangay, 'farm_type' => 'Irrigated']);
+
+        return $user;
+    }
+
+    private function staff(string $role = User::ROLE_MAO): User
+    {
+        return User::factory()->create(['role' => $role]);
+    }
+
+    /** The visible words of one panel view (data-heat-map-view="<range>:<summary|barangay>"). */
+    private function panelView(string $html, string $key): string
+    {
+        $this->assertSame(1, preg_match('#<section class="hmx-view" data-heat-map-view="'.preg_quote($key, '#').'"[^>]*>(.*?)</section>#s', $html, $m), "panel view {$key}");
+
+        // Tags become spaces first, so a label and its value never run together.
+        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode((string) preg_replace('/<[^>]+>/', ' ', $m[1]))));
+    }
+
+    // ------------------------------------------------------------ layout
+
+    public function test_the_map_opens_first_with_nothing_above_it_and_the_panel_beside_it(): void
+    {
+        $this->storeForecasts();
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $start = strpos($html, 'data-heat-map ');
+        $this->assertNotFalse($start);
+        $map = strpos($html, 'id="heatMapCanvas"');
+        $panel = strpos($html, 'data-heat-map-panel');
+        $this->assertTrue($start < $map && $map < $panel, 'map first, then the panel');
+
+        // Nothing visible sits between the page's start and the map: only the screen-reader page title.
+        $before = substr($html, $start, $map - $start);
+        $this->assertSame('Heat Map', trim(strip_tags(substr($before, strpos($before, '>') + 1))));
+
+        // The old page's header, overview cards, forecast controls and AI Insight pop-up are gone from this page.
+        foreach (['fad-hero', 'data-risk-overview', 'data-risk-forecast', 'data-insight-url', 'Refresh weather', 'ABOUT THIS FORECAST', 'id="barangayRiskMap"'] as $gone) {
+            $this->assertStringNotContainsString($gone, $html, $gone);
+        }
+    }
+
+    public function test_the_toggle_is_this_week_and_2_weeks_and_the_legend_is_green_yellow_red(): void
+    {
+        $this->storeForecasts();
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('#data-heat-map-range="week" aria-pressed="true">This Week</button>#', $html);
+        $this->assertMatchesRegularExpression('#data-heat-map-range="2weeks" aria-pressed="false">2 Weeks</button>#', $html);
+
+        $this->assertSame(1, preg_match('#<div class="hmx-legend".*?</div>#s', $html, $m));
+        $this->assertSame('Farm risk Low Moderate High', trim((string) preg_replace('/\s+/', ' ', strip_tags($m[0]))));
+        foreach (['#2e7d32', '#f2b134', '#c62828'] as $color) {
+            $this->assertStringContainsString('--hmx-color: '.$color, $m[0]);
+        }
+
+        // ?range=2weeks opens on the second range.
+        $two = $this->actingAs($this->staff())->get(route('heat-map.index', ['range' => '2weeks']))->assertOk()->getContent();
+        $this->assertStringContainsString('data-heat-map data-range="2weeks"', $two);
+        $this->assertMatchesRegularExpression('#data-heat-map-view="2weeks:summary"\s*>#', $two);
+        $this->assertMatchesRegularExpression('#data-heat-map-view="week:summary"\s+hidden\s*>#', $two);
+    }
+
+    // ------------------------------------------------------------ the panel
+
+    public function test_before_a_click_the_panel_is_the_municipal_summary(): void
+    {
+        $this->storeForecasts([
+            'Matabungkay' => [1 => ['rainfall' => 60.0]],                                   // very heavy rain: High
+            'San Diego' => [2 => ['wind_speed_max' => 70.0]],                               // storm wind: High
+            'Cumba' => [3 => ['rainfall' => 30.0], 4 => ['rainfall' => 26.0], 5 => ['rainfall' => 40.0]], // 3 heavy days: High
+            'Prenza' => [2 => ['rainfall' => 30.0]],                                        // one heavy day: Moderate
+        ]);
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $summary = $this->panelView($html, 'week:summary');
+        $this->assertStringStartsWith('Lian this week 3 barangays are at high risk 1 barangay is at moderate risk 15 barangays are at low risk', $summary);
+        $this->assertStringContainsString('Click a barangay on the map to see what it means and what to do.', $summary);
+        $this->assertStringNotContainsString('no data', strtolower($summary));
+        // The summary is the only view shown at first; every barangay view waits for a click.
+        $this->assertSame(1, preg_match_all('#<section class="hmx-view" data-heat-map-view="[^"]+"\s*>#', $html));
+
+        // The map's colours are the same ratings the panel words come from.
+        $this->assertSame(1, preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', $html, $m));
+        $levels = json_decode($m[1], true)['levels'];
+        $this->assertCount(19, $levels['week']);
+        $this->assertSame(['Cumba', 'Matabungkay', 'San Diego'], array_keys(array_filter($levels['week'], fn ($l) => $l === 'high')));
+        $this->assertSame('moderate', $levels['week']['Prenza']);
+    }
+
+    public function test_a_barangay_view_has_name_level_meaning_and_action(): void
+    {
+        $this->storeForecasts(['Matabungkay' => [1 => ['rainfall' => 60.0]], 'Prenza' => [2 => ['rainfall' => 30.0]]]);
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+        $day = CarbonImmutable::now('Asia/Manila')->addDays(2)->format('D');
+
+        $prenza = $this->panelView($html, 'week:Prenza');
+        $this->assertStringContainsString('Prenza Moderate risk This Week', $prenza);
+        $this->assertStringContainsString("What it means Heavy rain is expected on {$day}. Low parts of the field may hold water.", $prenza);
+        $this->assertStringContainsString('What to do now Clear the drainage canals. Do not spray or apply fertilizer before the rainy days.', $prenza);
+
+        $high = $this->panelView($html, 'week:Matabungkay');
+        $this->assertStringContainsString('Matabungkay High risk', $high);
+        $this->assertStringContainsString('Fields may flood', $high);
+        $this->assertStringContainsString('Clear the drainage canals now.', $high);
+
+        $calm = $this->panelView($html, 'week:Balibago');
+        $this->assertStringContainsString('Balibago Low risk', $calm);
+        $this->assertStringContainsString('What it means No heavy rain, strong wind or extreme heat is expected in this period.', $calm);
+        $this->assertStringContainsString('What to do now Continue normal farm work.', $calm);
+    }
+
+    public function test_two_weeks_can_rate_a_barangay_higher_than_this_week(): void
+    {
+        // A heavy-rain day on day 10 is outside [This Week] and inside [2 Weeks].
+        $this->storeForecasts(['Kapito' => [9 => ['rainfall' => 55.0]]]);
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('Kapito Low risk This Week', $this->panelView($html, 'week:Kapito'));
+        $this->assertStringContainsString('Kapito High risk 2 Weeks', $this->panelView($html, '2weeks:Kapito'));
+        $this->assertStringStartsWith('Lian in the next 2 weeks 1 barangay is at high risk', $this->panelView($html, '2weeks:summary'));
+        // A day past the coming week is named by its date, since each weekday comes twice in two weeks.
+        $this->assertStringContainsString(CarbonImmutable::now('Asia/Manila')->addDays(9)->format('M j'), $this->panelView($html, '2weeks:Kapito'));
+    }
+
+    // ------------------------------------------------------------ roles and language
+
+    public function test_staff_see_the_forecast_numbers_and_farmers_read_plain_words(): void
+    {
+        $this->storeForecasts(['Prenza' => [2 => ['rainfall' => 30.0]]]);
+
+        $staff = $this->panelView($this->actingAs($this->staff(User::ROLE_IT_EXPERT))->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
+        $this->assertStringContainsString('Forecast numbers Rain in the period 54.0 mm Wettest day 30.0 mm Strongest wind 12 km/h Hottest day 31.0 °C', $staff);
+
+        $farmer = $this->panelView($this->actingAs($this->farmer())->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
+        $this->assertStringContainsString('Moderate risk', $farmer);
+        $this->assertStringNotContainsString('Forecast numbers', $farmer);
+        $this->assertDoesNotMatchRegularExpression('/\d\s?(mm|km\/h|°C)/', $farmer);
+    }
+
+    public function test_a_farmer_reads_the_panel_in_their_language_and_sees_their_own_barangay(): void
+    {
+        $this->storeForecasts(['Prenza' => [0 => ['rainfall' => 60.0]]]);
+        $html = $this->actingAs($this->farmer('Prenza', 'fil'))->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $summary = $this->panelView($html, 'week:summary');
+        $this->assertStringStartsWith('Lian ngayong linggo 1 barangay ang mataas ang panganib Walang barangay na katamtaman ang panganib 18 barangay ang mababa ang panganib', $summary);
+        $this->assertStringContainsString('Ang inyong barangay Prenza Mataas', $summary);
+        $this->assertStringContainsString('data-own-barangay="Prenza"', $html);
+        $this->assertMatchesRegularExpression('#aria-pressed="true">Ngayong Linggo</button>#', $html);
+
+        $prenza = $this->panelView($html, 'week:Prenza');
+        $this->assertStringContainsString('Mataas ang panganib', $prenza);
+        $this->assertStringContainsString('Ibig sabihin May inaasahang napakalakas o paulit-ulit na malakas na ulan (ngayon).', $prenza);
+        $this->assertStringContainsString('Gawin ngayon Linisin na ngayon ang mga kanal na daluyan ng tubig.', $prenza);
+
+        // The farmer still sees all 19 barangays, never only their own.
+        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', $html));
+
+        // English farmers get English; staff never get a "your barangay" line.
+        $english = $this->panelView($this->actingAs($this->farmer('Prenza', 'en'))->get(route('heat-map.index'))->getContent(), 'week:summary');
+        $this->assertStringContainsString('Your barangay Prenza High', $english);
+        $staff = $this->actingAs($this->staff())->get(route('heat-map.index'))->getContent();
+        $this->assertStringNotContainsString('data-own-barangay', $staff);
+        $this->assertStringNotContainsString('Your barangay Prenza', $this->panelView($staff, 'week:summary'));
+    }
+
+    public function test_every_role_opens_the_heat_map_and_guests_are_sent_to_login(): void
+    {
+        $this->storeForecasts();
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+            $user = $role === User::ROLE_FARMER ? $this->farmer() : $this->staff($role);
+            $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->assertSee('id="heatMapCanvas"', false);
+        }
+        auth()->logout();
+        $this->get(route('heat-map.index'))->assertRedirect(route('login'));
+    }
+
+    // ------------------------------------------------------------ saved data only
+
+    public function test_the_page_reads_saved_data_only_and_says_no_data_when_there_is_none(): void
+    {
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('Walang datos pa', $this->panelView($html, 'week:summary'));
+        $this->assertStringNotContainsString('low risk', $this->panelView($html, 'week:summary'));
+        Http::assertNothingSent();
+
+        // A farmer reads it in their language.
+        $farmer = $this->actingAs($this->farmer())->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('No data yet', $this->panelView($farmer, 'week:summary'));
+
+        // With saved forecasts the page shows them with their time, still without any provider call.
+        $this->storeForecasts();
+        $ready = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('Updated: ', $this->panelView($ready, 'week:summary'));
+        Http::assertNothingSent();
+    }
+
+    public function test_a_barangay_without_a_saved_forecast_is_no_data_never_low(): void
+    {
+        $this->storeForecasts(only: array_values(array_diff(LianBarangays::all(), ['Luyahan'])));
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('18 barangays are at low risk 1 barangay has no data yet', $this->panelView($html, 'week:summary'));
+        $luyahan = $this->panelView($html, 'week:Luyahan');
+        $this->assertStringContainsString('Luyahan No data', $luyahan);
+        $this->assertStringContainsString('There is no saved forecast for this barangay yet.', $luyahan);
+        $this->assertStringNotContainsString('Low risk', $luyahan);
+        // The legend gains its grey "No data" entry only when it is needed.
+        $this->assertSame(1, preg_match('#<div class="hmx-legend".*?</div>#s', $html, $m));
+        $this->assertStringContainsString('No data', strip_tags($m[0]));
+    }
+
+    public function test_the_farmer_home_badge_is_the_heat_maps_this_week_rating(): void
+    {
+        $this->storeForecasts(['Prenza' => [1 => ['rainfall' => 60.0]]]);
+        $farmer = $this->farmer('Prenza');
+
+        $home = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('#<p class="fh-risk-badge is-danger">High</p>#', $home);
+        $this->assertStringContainsString('Prenza High risk', $this->panelView($this->actingAs($farmer)->get(route('heat-map.index'))->getContent(), 'week:Prenza'));
+
+        $this->assertSame('high', app(BarangayWeekRiskService::class)->forBarangay('prenza')['level']);
+        $this->assertNull(app(BarangayWeekRiskService::class)->forBarangay('Not A Barangay'));
+    }
+}

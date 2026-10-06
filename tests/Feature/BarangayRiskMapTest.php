@@ -13,7 +13,9 @@ use App\Services\Climate\AmbulongHistoricalClimateDataset;
 use App\Services\DecisionSupportService;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Risk\BarangayWeekRiskService;
 use App\Support\LianBarangays;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -578,19 +580,15 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('id="riskMapLegend"', false);
-        $response->assertDontSee('id="riskMeaningTitle"', false);
-        $response->assertDontSee('class="risk-map-meaning"', false);
-        $response->assertSee('Lian Municipality Heat Map');
-        // Same read-only endpoints MAO/Admin use — proves there is no
-        // separate, farmer-only, single-barangay map data source.
-        $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
+        // Heat Map page (2026-10): its own map element with the panel beside it; the same 19 boundaries for every role.
+        $response->assertSee('id="heatMapCanvas"', false);
+        $response->assertSee('class="hmx-legend"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // Farmers get the plain-language panel and one refresh control: the latest weather, then the risk rated
-        // from it by the existing engine (no separate risk button).
-        $response->assertSee('data-forecast-audience="farmer"', false);
-        $response->assertSee('Refresh weather &amp; risk', false);
+        // All 19 barangays are in the farmer's page (one panel view each, per range), never only their own.
+        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
+        // The page reads saved data: it has no refresh control and no pop-up.
+        $response->assertDontSee('data-risk-map-refresh', false);
+        $response->assertDontSee('data-insight-url', false);
     }
 
     public function test_farmer_dashboard_always_opens_overview_without_a_tab_selector(): void
@@ -617,7 +615,7 @@ class BarangayRiskMapTest extends TestCase
 
         $this->actingAs($user)->get(route('heat-map.index'))
             ->assertOk()
-            ->assertSee('id="barangayRiskMap"', false);
+            ->assertSee('id="heatMapCanvas"', false);
     }
 
     public function test_shared_heat_map_page_is_available_to_every_account_role(): void
@@ -627,12 +625,11 @@ class BarangayRiskMapTest extends TestCase
 
             $this->actingAs($user)->get(route('heat-map.index'))
                 ->assertOk()
-                ->assertSee('Lian Municipality Heat Map')
-                ->assertSee('id="barangayRiskMap"', false)
-                ->assertSee('id="riskMapLegend"', false)
-                ->assertDontSee('id="riskMeaningTitle"', false)
-                ->assertDontSee('class="risk-map-meaning"', false)
-                ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false)
+                ->assertSee('Heat Map')
+                ->assertSee('id="heatMapCanvas"', false)
+                ->assertSee('class="hmx-legend"', false)
+                ->assertSee('data-heat-map-panel', false)
+                ->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false)
                 ->assertSee('href="'.route('heat-map.index').'"', false);
         }
     }
@@ -679,11 +676,11 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('data-highlight-barangay="Cumba"', false);
+        $response->assertSee('data-own-barangay="Cumba"', false);
         // Highlighting one barangay must not hide/remove any of the others —
-        // the map element and full legend are still the same shared markup.
-        $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('No Data');
+        // the map element and all 19 panel views are still there.
+        $response->assertSee('id="heatMapCanvas"', false);
+        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
     }
 
     public function test_farmers_barangay_highlight_normalizes_non_canonical_spelling(): void
@@ -702,7 +699,7 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('data-highlight-barangay="Barangay 1 (Pob.)"', false);
+        $response->assertSee('data-own-barangay="Barangay 1 (Pob.)"', false);
     }
 
     public function test_farmer_with_unresolvable_legacy_barangay_still_sees_full_map_without_crashing(): void
@@ -722,11 +719,11 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertDontSee('data-highlight-barangay', false);
+        $response->assertSee('id="heatMapCanvas"', false);
+        $response->assertDontSee('data-own-barangay', false);
     }
 
-    public function test_farmer_and_mao_render_the_same_shared_risk_map_component(): void
+    public function test_the_heat_map_page_and_the_mao_dashboard_map_draw_the_same_19_boundaries(): void
     {
         Cache::flush();
         $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
@@ -739,33 +736,39 @@ class BarangayRiskMapTest extends TestCase
         $farmerResponse = $this->actingAs($farmer)->get(route('heat-map.index'));
         $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
 
+        // Heat Map page (2026-10): its own map with the weekly rating; the MAO dashboard keeps the shared map
+        // component until its own redesign. Both draw the same boundary file, for every role.
+        $farmerResponse->assertOk()->assertSee('id="heatMapCanvas"', false);
+        $maoResponse->assertOk()->assertSee('id="barangayRiskMap"', false)
+            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
         foreach ([$farmerResponse, $maoResponse] as $response) {
-            $response->assertOk();
-            $response->assertSee('id="barangayRiskMap"', false);
-            // Every role points the same element at the exact same public
-            // API URLs — one BarangayRiskMapService-backed data source, not
-            // a per-role calculation.
-            $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
             $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-            // Legend/risk bands are identical everywhere.
             $response->assertSee('Low');
             $response->assertSee('Moderate');
             $response->assertSee('High');
-            $response->assertSee('Severe');
-            $response->assertSee('No Data');
         }
     }
 
     /**
-     * The farmer dashboard's server-rendered "Your Barangay" summary card
-     * (BarangayRiskMapService::detailFor()) and the MAO/Admin client-fetched
-     * choropleth (BarangayRiskMapService::riskMap()) must never disagree —
-     * both read the exact same cached service call for the same barangay.
+     * The farmer Home's barangay risk badge and the Heat Map page must never disagree: both read the same
+     * [This Week] rating (BarangayWeekRiskService) made from the saved daily forecast (2026-10).
      */
-    public function test_farmer_summary_card_matches_the_same_risk_map_api_data_mao_and_admin_use(): void
+    public function test_farmer_summary_card_matches_the_heat_maps_this_week_rating(): void
     {
         Cache::flush();
-        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
+        $today = CarbonImmutable::now('Asia/Manila')->startOfDay();
+        $payload = json_decode((string) $this->fakeFreshWeather(200, 28)->wait()->getBody(), true);
+        // A saved 7-day forecast with one very heavy rain day: High this week.
+        $payload['daily'] = [
+            'time' => array_map(fn (int $i) => $today->addDays($i)->toDateString(), range(0, 6)),
+            'weather_code' => array_fill(0, 7, 63),
+            'precipitation_sum' => [4, 60, 4, 4, 4, 4, 4],
+            'precipitation_probability_max' => array_fill(0, 7, 50),
+            'temperature_2m_max' => array_fill(0, 7, 31),
+            'temperature_2m_min' => array_fill(0, 7, 24),
+            'wind_speed_10m_max' => array_fill(0, 7, 12),
+        ];
+        Http::fake(['api.open-meteo.com/*' => Http::response($payload, 200)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
@@ -785,12 +788,13 @@ class BarangayRiskMapTest extends TestCase
         $farmerResponse = $this->actingAs($user)->get(route('farmer.dashboard'));
         $farmerResponse->assertOk();
 
-        $apiEntry = collect(app(BarangayRiskMapService::class)->riskMap()['barangays'])
-            ->firstWhere('barangay', 'Bagong Pook');
+        $week = app(BarangayWeekRiskService::class)->forBarangay('Bagong Pook');
 
-        $this->assertNotNull($apiEntry);
+        $this->assertSame('high', $week['level'] ?? null);
         $farmerResponse->assertSee('Bagong Pook, Lian, Batangas');
-        $farmerResponse->assertSee((string) $apiEntry['risk_level']);
+        $farmerResponse->assertSee('<p class="fh-risk-badge is-danger">High</p>', false);
+        $this->actingAs($user)->get(route('heat-map.index'))->assertOk()
+            ->assertSee('<span class="hmx-badge is-high">High</span>', false);
     }
 
     /**

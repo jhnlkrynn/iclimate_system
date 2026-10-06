@@ -1,0 +1,138 @@
+// Heat Map page (resources/views/heat-map/index.blade.php): the map on the left and one panel on the right.
+// Every rating and every sentence is already in the page for both ranges, so this module only colours the 19
+// barangays, switches [This Week] / [2 Weeks], and shows the clicked barangay's panel. No request on click.
+
+import { canonicalName, displayName } from './barangay-risk-map';
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+
+export function initHeatMap() {
+    const root = document.querySelector('[data-heat-map]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = 'true';
+
+    const canvas = root.querySelector('#heatMapCanvas');
+    const views = [...root.querySelectorAll('[data-heat-map-view]')];
+    let data = { levels: {}, colors: {}, labels: {}, yours: '' };
+    try {
+        data = JSON.parse(root.querySelector('[data-heat-map-levels]')?.textContent || '{}');
+    } catch (error) {
+        console.error('iClimate could not read the heat map ratings.', error);
+    }
+    const own = canonicalName(canvas?.dataset.ownBarangay);
+    const layers = new Map();
+    let range = root.dataset.range === '2weeks' ? '2weeks' : 'week';
+    let selected = null;
+
+    const levelOf = (name) => data.levels?.[range]?.[name] || 'nodata';
+    const styleFor = (name, hovered = false) => {
+        const level = levelOf(name);
+        const isSelected = name === selected;
+        return {
+            pane: 'hmxPolygons',
+            color: isSelected ? '#111c17' : name === own ? '#0d47a1' : '#26352f',
+            weight: isSelected ? 4 : name === own ? 3.5 : hovered ? 3 : 1.4,
+            opacity: 1,
+            fillColor: data.colors?.[level] || '#8a939b',
+            fillOpacity: isSelected ? 0.78 : 0.56,
+            dashArray: level === 'nodata' ? '4 4' : undefined,
+        };
+    };
+    const tooltipFor = (name) => `<strong>${escapeHtml(displayName(name))}</strong>${name === own ? ` <span class="your-barangay-pill">${escapeHtml(data.yours)}</span>` : ''}<br>${escapeHtml(data.labels?.[levelOf(name)] || '')}`;
+
+    const show = () => {
+        const key = `${range}:${selected || 'summary'}`;
+        views.forEach((view) => { view.hidden = view.dataset.heatMapView !== key; });
+        root.dataset.range = range;
+        root.querySelectorAll('[data-heat-map-range]').forEach((button) => {
+            const active = button.dataset.heatMapRange === range;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        layers.forEach((layer, name) => layer.setStyle(styleFor(name)));
+        if (selected) layers.get(selected)?.bringToFront();
+    };
+    const pick = (name, fromPanel = false) => {
+        selected = name && data.levels?.[range]?.[name] !== undefined ? name : null;
+        show();
+        // On a phone the panel sits under the map: bring the answer into view after a map click.
+        if (selected && !fromPanel && window.matchMedia('(max-width: 991.98px)').matches) {
+            root.querySelector('[data-heat-map-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    root.addEventListener('click', (event) => {
+        const rangeButton = event.target.closest('[data-heat-map-range]');
+        if (rangeButton) {
+            event.preventDefault();
+            range = rangeButton.dataset.heatMapRange === '2weeks' ? '2weeks' : 'week';
+            const url = new URL(window.location.href);
+            if (range === 'week') url.searchParams.delete('range'); else url.searchParams.set('range', range);
+            window.history.replaceState(null, '', url);
+            show();
+            return;
+        }
+        const pickButton = event.target.closest('[data-heat-map-pick]');
+        if (pickButton) pick(canonicalName(pickButton.dataset.heatMapPick), true);
+    });
+
+    if (!canvas || !window.L) return;
+    const L = window.L;
+    const map = L.map(canvas, { zoomControl: true, scrollWheelZoom: true, zoomSnap: 0.25, minZoom: 11, maxZoom: 18 });
+    // OSM base -> opaque mask outside Lian (so only Lian's own place names show) -> the 19 risk polygons.
+    map.createPane('hmxBase').style.zIndex = 200;
+    const maskPane = map.createPane('hmxOutside');
+    maskPane.style.zIndex = 350;
+    maskPane.style.pointerEvents = 'none';
+    map.createPane('hmxPolygons').style.zIndex = 400;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { pane: 'hmxBase', attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+    map.setView([14.02, 120.65], 12);
+    // A click on the map outside every barangay returns to the municipal summary.
+    map.on('click', () => pick(null));
+
+    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Boundary request failed'))))
+        .then((boundary) => {
+            const seen = new Set();
+            const geoLayer = L.geoJSON(boundary, {
+                pane: 'hmxPolygons',
+                filter: (feature) => {
+                    const props = feature?.properties || {};
+                    const name = canonicalName(props.brgy_name);
+                    if (!name || seen.has(name) || (props.city_name && props.city_name !== 'Lian')) return false;
+                    seen.add(name);
+                    return true;
+                },
+                style: (feature) => styleFor(canonicalName(feature?.properties?.brgy_name)),
+                onEachFeature: (feature, layer) => {
+                    const name = canonicalName(feature?.properties?.brgy_name);
+                    layers.set(name, layer);
+                    layer.bindTooltip(() => tooltipFor(name), { sticky: true, direction: 'top', className: name === own ? 'your-barangay-tooltip' : '' });
+                    layer.on({
+                        mouseover: () => layer.setStyle(styleFor(name, true)),
+                        mouseout: () => layer.setStyle(styleFor(name)),
+                        click: (event) => { L.DomEvent.stopPropagation(event); pick(name); },
+                    });
+                },
+            }).addTo(map);
+            const holes = [];
+            geoLayer.eachLayer((layer) => {
+                const rings = layer.getLatLngs();
+                (L.LineUtil.isFlat(rings[0]) ? [rings] : rings).forEach((polygon) => holes.push(polygon[0]));
+            });
+            L.polygon([[[15.5, 119], [15.5, 122.5], [12.5, 122.5], [12.5, 119]], ...holes], { pane: 'hmxOutside', interactive: false, stroke: false, fillColor: '#f4f7f5', fillOpacity: 1 }).addTo(map);
+            const ownLayer = own ? layers.get(own) : null;
+            if (ownLayer) {
+                ownLayer.bringToFront();
+                L.marker(ownLayer.getBounds().getCenter(), { icon: L.divIcon({ className: 'risk-home-pin', html: '<span></span>', iconSize: [16, 16], iconAnchor: [8, 8] }), interactive: false, keyboard: false }).addTo(map);
+            }
+            const bounds = geoLayer.getBounds();
+            if (bounds.isValid()) map.fitBounds(bounds, { padding: [16, 16] });
+            canvas.dataset.loaded = 'true';
+            show();
+        })
+        .catch((error) => {
+            console.error('iClimate could not load the Lian barangay boundaries.', error);
+            canvas.dataset.loaded = 'failed';
+        });
+}
