@@ -606,8 +606,8 @@ class BarangayRiskMapTest extends TestCase
         foreach ([[], ['tab' => 'overview'], ['tab' => 'heatmap']] as $query) {
             $this->actingAs($user)->get(route('farmer.dashboard', $query))
                 ->assertOk()
-                // The redesign's reading order: header, today, highlights, …, barangay risk, …, my farm.
-                ->assertSeeInOrder(['data-slot="header"', 'data-slot="today"', 'data-slot="highlights"', 'data-slot="risk"', 'data-slot="farm"'], false)
+                // Farmer Home's reading order (2026-10): message, weather, barangay risk, yield, the week.
+                ->assertSeeInOrder(['data-slot="message"', 'data-slot="weather"', 'data-slot="risk"', 'data-slot="harvest"', 'data-slot="week"'], false)
                 ->assertDontSee('id="barangayRiskMap"', false)
                 ->assertDontSee('mfd-tabs', false)
                 ->assertDontSee('mfd-tab', false)

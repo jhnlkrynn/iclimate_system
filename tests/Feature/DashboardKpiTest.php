@@ -154,20 +154,15 @@ class DashboardKpiTest extends TestCase
         $this->rice('Binubusan', 2024, 10, 50);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
-        // The redesigned "My Farm Today" strip: six numbers a rice farmer checks first, each from its own source.
+        // Farmer Home (2026-10): five plain parts instead of a KPI strip, in reading order.
         Http::fake(['*' => Http::response([], 500)]);
-        $page = $this->actingAs($farmer)->get(route('farmer.dashboard'))
+        $this->actingAs($farmer)->get(route('farmer.dashboard'))
             ->assertOk()
-            ->assertSee('My Farm Today')
-            ->assertSeeInOrder(['data-kpi="weather"', 'data-kpi="rain"', 'data-kpi="condition"', 'data-kpi="planting"', 'data-kpi="risk"', 'data-kpi="yield"'], false)
-            ->assertDontSee('data-kpi="historical-yield"', false)        // municipal history is not a farmer KPI
-            ->assertDontSee('My Farm at a Glance')
-            ->assertDontSee('data-kpi="users"', false);
-        // With the weather source down the weather number is an "updating" state with a retry, never a made-up 0
-        // and never a bare "Not Available".
-        $page->assertSee('class="mfd-kpi is-missing" data-kpi="weather"', false)
-            ->assertSee(__('farmer.today.updating'))
-            ->assertSee('data-mfd-retry="weather"', false);
+            ->assertSeeInOrder(['data-fh-message', 'data-fh-weather', 'data-fh-risk', 'data-fh-harvest', 'data-fh-week'], false)
+            ->assertDontSee('My Farm Today')
+            ->assertDontSee('data-kpi="users"', false)
+            // With nothing saved and the weather source down: "No data yet", never a made-up 0 or an error.
+            ->assertSee('No data yet');
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $this->actingAs($mao)->get(route('mao.operations', ['year' => 2024]))

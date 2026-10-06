@@ -416,7 +416,7 @@ html[data-theme="dark"] body .variable-info-card:hover { border-color: color-mix
 html[data-theme="dark"] body .quick-action:hover { background-color: var(--dk-surface-3) !important; }
 html[data-theme="dark"] body .ic-table-scroll-hint { color: var(--dk-muted); }
 
-/* ---- css/farmer-dashboard.css (23) */
+/* ---- css/farmer-dashboard.css (27) */
 html[data-theme="dark"] body .mfd { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --line: var(--dk-border-strong); --rule: var(--dk-border-strong); --ink: var(--dk-ink); --muted: var(--dk-muted); --good-ink: #9de7c4; --good-bg: var(--dk-surface-2); --watch-ink: #e7ca9d; --watch-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --danger-ink: #e7a49d; --danger-bg: var(--dk-surface-2); --info-ink: #9dc4e7; --info-bg: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-btn.is-quiet { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-pill.is-good { border-color: color-mix(in srgb, #55aa79 30%, var(--dk-border)); }
@@ -441,6 +441,10 @@ html[data-theme="dark"] body .mfd-pm-popup { color: var(--dk-ink); }
 html[data-theme="dark"] body .mfd-pm-place[data-state="ok"] { border-color: color-mix(in srgb, #53ac77 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mfd-pm-place[data-state="ok"] dd[data-mfd-map-status] { color: #9de7c4; }
 html[data-theme="dark"] body .mfd-toast { border-color: color-mix(in srgb, #53ac77 30%, var(--dk-border)); background: var(--dk-surface-2); color: var(--dk-ink); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-good { border-color: color-mix(in srgb, #50af76 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-watch { border-color: color-mix(in srgb, #cc9933 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-danger { border-color: color-mix(in srgb, #cc4533 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-risk-badge.is-watch { color: var(--dk-ink); }
 
 /* ---- css/farmer-advisories.css (10) */
 html[data-theme="dark"] body .fad,
@@ -461,13 +465,16 @@ html[data-theme="dark"] body .fcal-day.is-outside .fcal-day-number { color: var(
 html[data-theme="dark"] body .fcal-day.is-today { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
 html[data-theme="dark"] body .fad-badge.fcal-kind { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
 
-/* ---- css/farmer-records.css (6) */
+/* ---- css/farmer-records.css (9) */
 html[data-theme="dark"] body .frec-bar { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .frec-table tbody tr:nth-child(even) > * { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .frec-table tbody tr.is-mine > * { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
 html[data-theme="dark"] body .frec-card { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .frec-tab.is-active .fad-count { background: var(--dk-surface-3); }
 html[data-theme="dark"] body .frec-noteitem.is-unread { background: color-mix(in srgb, #3fa662 16%, var(--dk-surface)); }
+html[data-theme="dark"] body .fmf .fmf-facts dt { color: var(--dk-muted); }
+html[data-theme="dark"] body .fmf .fmf-facts dd { color: var(--dk-ink); }
+html[data-theme="dark"] body .fmf .fmf-events li { border-color: var(--dk-border-strong); }
 
 /* ---- css/farmer-messages.css (1) */
 html[data-theme="dark"] body .fmsg .thread-link.active { background: var(--dk-surface-3); }

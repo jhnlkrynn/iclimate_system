@@ -126,13 +126,15 @@ class PredictionEngine
         $temperature = $num($predictions['temperature'] ?? null);
         $humidity = $num($predictions['humidity'] ?? null);
         $windSpeed = $num($predictions['wind_speed'] ?? null);
-        $forecastSeason = $predictions['season'] ?? null;
-        $season = in_array($forecastSeason, ['Wet', 'Dry'], true) ? $forecastSeason : null;
+        // The deployed model's "season" input and its same-season months use the encoding it was trained with,
+        // worked out from the month (never a stored label), so the iClimate calendar can differ (App\Support\RiceSeason).
+        $season = \App\Support\RiceSeason::forTrainedYieldModel((int) $targetDate->format('n'));
+        $modelSeasonOf = static fn (object $row): ?string => ! empty($row->record_date) ? \App\Support\RiceSeason::forTrainedYieldModel((int) substr((string) $row->record_date, 5, 2)) : null;
 
         // Trailing windows are only valid when the whole window is present.
         $has6 = $recent->count() >= 6;
         $has3 = $recent->count() >= 3;
-        $inSeason = $season !== null ? $recent->where('season', $season) : collect();
+        $inSeason = $recent->filter(fn (object $row): bool => $modelSeasonOf($row) === $season);
         $temps = $recent->pluck('temperature')->filter(fn ($v) => $v !== null);
 
         $area = $areaOverride

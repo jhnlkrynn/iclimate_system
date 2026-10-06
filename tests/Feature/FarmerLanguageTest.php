@@ -23,8 +23,8 @@ class FarmerLanguageTest extends TestCase
     /** Words a farmer should never have to read. */
     private const TECHNICAL = '/\b(precipitation|meteorolog\w*|algorithms?|classification|inference|dataset|synchroni[sz]\w*|aggregat\w*|computation|probability distribution|model confidence|confidence score|random forest|machine learning|training data|prediction engine|API|cache|query)\b/i';
 
-    private const FARMER_PAGES = ['/farmer/dashboard', '/heat-map', '/planting-advisories', '/calendar', '/community-feed', '/messages',
-        '/notifications', '/climate-records', '/weather-predictions', '/rice-productions', '/profile'];
+    private const FARMER_PAGES = ['/farmer/dashboard', '/heat-map', '/planting-advisories', '/calendar', '/farmer/my-farm', '/messages',
+        '/notifications', '/weather-predictions', '/profile'];
 
     protected function setUp(): void
     {

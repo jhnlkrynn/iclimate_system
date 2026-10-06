@@ -257,6 +257,7 @@
                 'additionalPagasaInformation' => $additionalPagasaInformation,
                 'advisoryCheck' => $advisoryCheck,
             ])
+            @include('advisories._announcements', ['announcements' => $announcements ?? collect()])
         @else
         {{-- 4. Advisories: compact cards. "View" opens the full advisory in a popup (farmer-advisories.js);
              without JavaScript, or with Ctrl/Cmd-click, it is a normal link to the advisory page. --}}

@@ -53,16 +53,11 @@ class MonthlyWeatherRandomForest
     ];
 
     /**
-     * Must remain consistent with the candidate
-     * rice-yield Random Forest preprocessing.
+     * The iClimate season calendar (App\Support\RiceSeason). This model is trained on every run, so its own
+     * "is wet season" feature follows the calendar. Rice-yield model inputs are encoded separately
+     * (RiceSeason::forTrainedYieldModel) the way that model was trained.
      */
-    private const WET_SEASON_MONTHS = [
-        5,
-        6,
-        7,
-        8,
-        9,
-    ];
+    private const WET_SEASON_MONTHS = \App\Support\RiceSeason::WET_MONTHS;
 
     public function __construct(
         private readonly AmbulongHistoricalClimateDataset $dataset =

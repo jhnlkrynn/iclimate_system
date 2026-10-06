@@ -167,12 +167,12 @@ class StaffDatasetRecordsTest extends TestCase
             ->assertSee('Showing 1-25 of '.($rows->count() + 1));
     }
 
-    public function test_farmers_keep_their_own_page_design(): void
+    public function test_climate_records_and_rice_production_are_staff_pages_and_farmers_go_home(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
 
-        $this->actingAs($farmer)->get(route('climate-records.index'))->assertOk()->assertSee('<h1>Climate Records for Lian, Batangas</h1>', false);
-        // Farmers also see the Lian Municipal Average rows, on their own page (see FarmerRiceProductionTest).
-        $this->actingAs($farmer)->get(route('rice-productions.index'))->assertOk()->assertSee('<h1>Rice Production</h1>', false)->assertSee(RiceProductionController::DATASET_SCOPE);
+        // Removed from the farmer pages in 2026-10: a farmer who types the URL lands on Home.
+        $this->actingAs($farmer)->get(route('climate-records.index'))->assertRedirect(route('farmer.dashboard'));
+        $this->actingAs($farmer)->get(route('rice-productions.index'))->assertRedirect(route('farmer.dashboard'));
     }
 }

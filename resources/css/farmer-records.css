@@ -111,3 +111,26 @@
     .frec-kpi-value { font-size: 1.5rem; }
     .frec-tab { flex: 1 1 auto; justify-content: center; }
 }
+
+/* ------------------------------------------------------------------ "Aking Bukid" (farmer-records/my-farm). */
+.fmf .fmf-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 0; }
+.fmf .fmf-facts dt { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }
+.fmf .fmf-facts dd { margin: 4px 0 0; font-size: 1.2rem; font-weight: 700; color: #1b1f1d; }
+.fmf .fmf-events { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.fmf .fmf-events li { display: flex; gap: 14px; align-items: baseline; padding: 10px 12px; border: 1px solid #e3e8e5; border-radius: 8px; }
+.fmf .fmf-print-head { display: none; }
+html[data-theme="dark"] .fmf .fmf-facts dd { color: #e4ece7; }
+html[data-theme="dark"] .fmf .fmf-facts dt { color: #9fb5aa; }
+html[data-theme="dark"] .fmf .fmf-events li { border-color: #2a3b33; }
+
+/* Paper: the office header and the print date, no sidebar, buttons or calendar; every record is listed. */
+@media print {
+    .ic-sidebar, nav.topbar, #icAiLauncher, #icAiWidget, .fmf .fmf-no-print, .fmf .fad-hero-actions { display: none !important; }
+    body:has(.fmf) .app-main { margin-left: 0 !important; }
+    body:has(.fmf) .page-shell { padding: 0 !important; }
+    .fmf .fmf-print-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #000; }
+    .fmf .fmf-print-head strong { font-size: 16pt; }
+    .fmf .fad-hero { background: none !important; color: #000 !important; padding: 0 !important; }
+    .fmf .frec-table-wrap { overflow: visible !important; }
+    .fmf .frec-panel { break-inside: avoid; border: 0 !important; box-shadow: none !important; }
+}

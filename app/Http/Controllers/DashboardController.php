@@ -73,26 +73,12 @@ class DashboardController extends Controller
     /** Tabs of the IT dashboard (?tab=...). */
     private const IT_TABS = ['overview', 'heatmap', 'security', 'users', 'resources', 'activity'];
 
-    /** Sections the Farmer refresh button re-renders (partials under dashboards/farmer), in page order. */
-    private const FARMER_LIVE_SLOTS = ['header', 'today', 'highlights', 'weather', 'schedule', 'risk', 'harvest', 'advisories', 'farm', 'updates', 'quick'];
+    /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
+    public const FARMER_SLOTS = ['message', 'typhoon', 'weather', 'risk', 'harvest', 'week'];
 
-    /**
-     * A card's own "Try again" button: what to rebuild from its source, and which sections that changes.
-     * Weather feeds the header, the "My Farm Today" numbers, the highlights and the weather card; the others stand alone.
-     */
+    /** ?retry=harvest-check: the yield card's placeholder asks whether the background estimate is saved yet (reads only). */
     private const FARMER_RETRY = [
-        'weather' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'highlights', 'weather']],
-        'today' => ['refresh' => ['weather'], 'slots' => ['header', 'today', 'highlights', 'weather']],
-        'harvest' => ['refresh' => ['harvest'], 'slots' => ['harvest', 'today']],
-        // A placeholder card asking whether the background estimate is stored yet (never runs the model).
-        'harvest-check' => ['refresh' => [], 'slots' => ['harvest', 'today'], 'defer_harvest' => true],
-        'risk' => ['refresh' => ['risk'], 'slots' => ['risk', 'today', 'highlights']],
-        // After a dashboard pop-up saves: the sections that read what it changed. The profile and map ones leave the slow
-        // harvest card out (the page asks for it separately when the profile changed).
-        'planting' => ['refresh' => ['harvest'], 'slots' => ['today', 'highlights', 'schedule', 'harvest', 'farm', 'updates', 'quick']],
-        'profile' => ['refresh' => ['risk'], 'slots' => ['header', 'today', 'highlights', 'risk', 'advisories', 'farm', 'updates', 'quick'], 'defer_harvest' => true],
-        'map' => ['refresh' => [], 'slots' => ['farm', 'updates', 'quick'], 'defer_harvest' => true],
-        'all' => ['refresh' => ['weather'], 'slots' => self::FARMER_LIVE_SLOTS],
+        'harvest-check' => ['refresh' => [], 'slots' => ['harvest']],
     ];
 
     /** MAO overview: shared payload (cached briefly) plus what depends on who is signed in. */
@@ -151,18 +137,14 @@ class DashboardController extends Controller
         return 'dashboard:it:overview:3:v'.DashboardData::version();
     }
 
-    /**
-     * Simple, farmer-friendly overview. Everything comes from FarmerDashboardService; each card handles its own failure.
-     * The slow harvest model is not waited for: with no stored estimate the card is a placeholder the page fills in next.
-     */
+    /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $user = $request->user();
         $key = FarmerDashboardService::cacheKey($user);
         $payload = Cache::get($key);
         if (! is_array($payload)) {
-            $payload = $farmer->payload($user, deferHarvest: true);
-            // Kept even with a harvest placeholder: the page's follow-up request replaces it with the finished card (and this copy).
+            $payload = $farmer->payload($user);
             Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
@@ -185,32 +167,21 @@ class DashboardController extends Controller
     }
 
     /**
-     * Refresh button and each card's "Try again": rebuilds the live sections (weather is re-fetched) and returns each
-     * section's HTML. ?retry=<card> rebuilds only that card's source and the sections that depend on it.
+     * The page's timed refresh and the Refresh button (?refresh=1, which also asks for the latest weather): every part's
+     * HTML from saved data. ?retry=harvest-check returns only the yield card, never running the model.
      */
     public function farmerLive(Request $request, FarmerDashboardService $farmer): JsonResponse
     {
         $user = $request->user();
         $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
-        $forceAll = $request->boolean('refresh');
 
-        $payload = $farmer->payload(
-            $user,
-            forceWeather: $forceAll,
-            refresh: $retry['refresh'] ?? [],
-            // The page's own timed refresh must not stall on the harvest model; an explicit refresh or retry may.
-            deferHarvest: ! $forceAll && ($retry === null || ($retry['defer_harvest'] ?? false)),
-        );
-        // A timed refresh that deferred the harvest must not overwrite a finished card in the stored copy with a placeholder.
-        if (($payload['harvest']['state'] ?? null) !== 'loading') {
-            Cache::put(FarmerDashboardService::cacheKey($user), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
-        }
+        $payload = $farmer->payload($user, forceWeather: $request->boolean('refresh'), refresh: $retry['refresh'] ?? []);
+        Cache::put(FarmerDashboardService::cacheKey($user), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
 
         $slots = [];
-        foreach ($retry['slots'] ?? self::FARMER_LIVE_SLOTS as $slot) {
-            // A timed refresh leaves a finished harvest card alone, and a placeholder is never pushed over it; the card's
-            // own Try again (which queued a new estimate) does show the placeholder.
-            if ($slot === 'harvest' && ($payload['harvest']['state'] ?? null) === 'loading' && $request->query('retry') !== 'harvest') {
+        foreach ($retry['slots'] ?? self::FARMER_SLOTS as $slot) {
+            // A placeholder never replaces itself: the check only answers once the estimate is saved.
+            if ($slot === 'harvest' && $retry !== null && ($payload['harvest']['state'] ?? null) === 'loading') {
                 continue;
             }
             $slots[$slot] = view('dashboards.farmer.'.$slot, ['f' => $payload])->render();

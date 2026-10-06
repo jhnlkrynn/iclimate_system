@@ -95,9 +95,8 @@ class PlantingAdvisoryController extends Controller
                 ->sortBy(fn ($a) => ['municipality' => 1, 'province' => 2, 'regional' => 3][data_get($a->metadata, 'scope_type', 'municipality')] ?? 1)->values();
         }
         $barangayWeather = $selectedBarangay ? $barangayWeatherService->cachedForBarangay($selectedBarangay) : null;
-        $activeTyphoonSafetyEvent = $isFarmer
-            ? $typhoonSafety->activeEvent()
-            : null;
+        // The farmer's Typhoon Safety Check-In is on the Farmer Home page (only during a typhoon), not here.
+        $activeTyphoonSafetyEvent = null;
         $summary = Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']);
         $pagasaCheck = $pagasaSummary;
         $localCheck = Cache::get(LocalFarmGuidanceService::STATUS_KEY, []);
@@ -114,6 +113,10 @@ class PlantingAdvisoryController extends Controller
 
         return [
             'advisories' => $isFarmer ? collect() : $query->latest('valid_from')->paginate(CrudController::PER_PAGE)->withQueryString(),
+            // Farmers read MAO posts here as read-only Announcements (no reactions, comments or posting).
+            'announcements' => $isFarmer
+                ? \App\Models\FeedPost::query()->with('author:id,name')->whereNull('archived_at')->latest()->take(10)->get()
+                : collect(),
             'myBarangayAdvisories' => $myBarangayAdvisories,
             'lianWideAdvisories' => $lianWideAdvisories,
             'officialPagasaAdvisories' => $officialPagasaAdvisories,

@@ -634,3 +634,85 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd[data-farmer-dashboard] .mfd-climate .mfd-climate-head { margin: 0 !important; font-weight: 700; color: var(--ink); }
 .mfd[data-farmer-dashboard] .mfd-climate .mfd-foot { margin-top: 8px; }
 .mfd[data-farmer-dashboard] .mfd-yield-records { margin-top: 12px; }
+
+/* ------------------------------------------------------------------ Farmer Home (2026-10): five big, plain parts.
+ * Scoped to .mfd[data-farmer-dashboard] (the MAO and IT dashboards share .mfd). Weather, risk and yield sit side by
+ * side on wide screens; the message, the typhoon check-in and the week span the full width. */
+.mfd[data-farmer-dashboard] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+.mfd[data-farmer-dashboard] > :not([data-slot="weather"]):not([data-slot="risk"]):not([data-slot="harvest"]) { grid-column: 1 / -1; }
+.mfd[data-farmer-dashboard] > [data-slot] { min-width: 0; }
+.mfd[data-farmer-dashboard] > [data-slot="weather"],
+.mfd[data-farmer-dashboard] > [data-slot="risk"],
+.mfd[data-farmer-dashboard] > [data-slot="harvest"] { align-self: stretch; display: flex; }
+.mfd[data-farmer-dashboard] > [data-slot] > .fh-card { flex: 1; }
+@media (max-width: 991.98px) {
+    .mfd[data-farmer-dashboard] { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mfd[data-farmer-dashboard] .fh-header { flex-wrap: wrap; gap: 16px; }
+.mfd[data-farmer-dashboard] .fh-header .mfd-place { margin: 6px 0 0; display: flex; align-items: center; gap: 6px; }
+
+.mfd[data-farmer-dashboard] .fh-kicker { margin: 0 0 8px; font-size: .85rem !important; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-family: var(--mfd-sans) !important; }
+.mfd[data-farmer-dashboard] .fh-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+.mfd[data-farmer-dashboard] .fh-big { margin: 0; font-size: 2.4rem; font-weight: 700; line-height: 1.1; color: var(--ink); }
+.mfd[data-farmer-dashboard] .fh-big small { font-size: 1.1rem; font-weight: 600; color: var(--muted); }
+.mfd[data-farmer-dashboard] .fh-words { margin: 0; font-size: 1.15rem; line-height: 1.45; color: var(--ink); }
+.mfd[data-farmer-dashboard] .fh-muted { margin: 0; font-size: .95rem; color: var(--muted); }
+.mfd[data-farmer-dashboard] .fh-link { font-weight: 600; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; align-self: flex-start; }
+.mfd[data-farmer-dashboard] .ic-updated { font-size: .85rem; }
+
+/* 1. Mensahe Ngayon */
+.mfd[data-farmer-dashboard] .fh-message { display: flex; align-items: center; gap: 18px; padding: 22px 26px; border-radius: 14px; border: 1px solid var(--line); background: var(--info-bg); }
+.mfd[data-farmer-dashboard] .fh-message.is-good { background: var(--good-bg); border-color: #b9dfc8; }
+.mfd[data-farmer-dashboard] .fh-message.is-watch { background: var(--watch-bg); border-color: #edd29c; }
+.mfd[data-farmer-dashboard] .fh-message.is-danger { background: var(--danger-bg); border-color: #efbcb5; }
+.mfd[data-farmer-dashboard] .fh-message-icon { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--card); color: var(--brand); }
+.mfd[data-farmer-dashboard] .fh-message.is-watch .fh-message-icon { color: var(--watch-ink); }
+.mfd[data-farmer-dashboard] .fh-message.is-danger .fh-message-icon { color: var(--danger-ink); }
+.mfd[data-farmer-dashboard] .fh-message-icon svg { width: 30px; height: 30px; }
+.mfd[data-farmer-dashboard] .fh-message-text { margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
+
+/* 2. Weather today */
+.mfd[data-farmer-dashboard] .fh-weather-now { display: flex; align-items: center; gap: 16px; }
+.mfd[data-farmer-dashboard] .fh-weather-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 16px; background: var(--info-bg); color: var(--info-ink); }
+.mfd[data-farmer-dashboard] .fh-weather-icon svg { width: 36px; height: 36px; }
+.mfd[data-farmer-dashboard] .fh-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.mfd[data-farmer-dashboard] .fh-tags li { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--subtle); border: 1px solid var(--line); font-size: 1rem; font-weight: 600; }
+.mfd[data-farmer-dashboard] .fh-tags svg { width: 18px; height: 18px; }
+
+/* 3. Barangay risk: one big color badge */
+.mfd[data-farmer-dashboard] .fh-risk-badge { align-self: flex-start; margin: 0; padding: 10px 22px; border-radius: 999px; font-size: 1.6rem; font-weight: 800; color: #fff; background: var(--muted); }
+.mfd[data-farmer-dashboard] .fh-risk-badge.is-good { background: var(--good); }
+.mfd[data-farmer-dashboard] .fh-risk-badge.is-watch { background: #d99a1e; color: #2d1d00; }
+.mfd[data-farmer-dashboard] .fh-risk-badge.is-danger { background: var(--danger); }
+
+/* 4. Expected yield */
+.mfd[data-farmer-dashboard] .fh-badge { align-self: flex-start; margin: 0; padding: 4px 14px; border-radius: 999px; font-size: 1rem; font-weight: 700; background: var(--info-bg); color: var(--info-ink); }
+.mfd[data-farmer-dashboard] .fh-badge.is-good { background: var(--good-bg); color: var(--good-ink); }
+.mfd[data-farmer-dashboard] .fh-badge.is-watch { background: var(--watch-bg); color: var(--watch-ink); }
+.mfd[data-farmer-dashboard] .fh-badge.is-danger { background: var(--danger-bg); color: var(--danger-ink); }
+
+/* 5. Next 7 days and the latest planting advice */
+.mfd[data-farmer-dashboard] .fh-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.mfd[data-farmer-dashboard] .fh-day { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; background: var(--subtle); border: 1px solid var(--line); text-align: center; }
+.mfd[data-farmer-dashboard] .fh-day.is-today { border-color: var(--accent); background: var(--good-bg); }
+.mfd[data-farmer-dashboard] .fh-day-name { font-weight: 700; font-size: 1rem; }
+.mfd[data-farmer-dashboard] .fh-day-icon { color: var(--info-ink); }
+.mfd[data-farmer-dashboard] .fh-day-icon svg { width: 30px; height: 30px; }
+.mfd[data-farmer-dashboard] .fh-day-words { font-size: .9rem; line-height: 1.3; }
+.mfd[data-farmer-dashboard] .fh-day-rain { font-size: .82rem; font-weight: 600; color: var(--info-ink); }
+.mfd[data-farmer-dashboard] .fh-advice { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.mfd[data-farmer-dashboard] .fh-advice-title { margin: 0; font-size: 1.15rem; font-weight: 700; }
+@media (max-width: 767.98px) {
+    /* Phones: wide enough cells that a word such as "Thunderstorm" is never split. */
+    .mfd[data-farmer-dashboard] .fh-days { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+    .mfd[data-farmer-dashboard] .fh-day-words, .mfd[data-farmer-dashboard] .fh-day-rain { overflow-wrap: normal; word-break: normal; hyphens: none; }
+    .mfd[data-farmer-dashboard] .fh-message-text { font-size: 1.25rem; }
+}
+
+/* Typhoon Safety Check-In (only during a typhoon) */
+.mfd[data-farmer-dashboard] .fh-typhoon { border: 2px solid var(--danger); background: var(--danger-bg); }
+.mfd[data-farmer-dashboard] .fh-typhoon-form { display: flex; flex-direction: column; gap: 10px; }
+.mfd[data-farmer-dashboard] .fh-typhoon-form textarea { width: 100%; border: 1px solid var(--rule); border-radius: 8px; padding: 10px; font-size: 1rem; }
+.mfd[data-farmer-dashboard] .fh-typhoon-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.mfd[data-farmer-dashboard] .mfd-btn.is-danger { background: var(--danger); border-color: var(--danger); color: #fff; }

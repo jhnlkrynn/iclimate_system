@@ -70,7 +70,7 @@ final class MonthlyWeatherOutlookService
 
         $outlook = [];
         if (! empty($mp['season'])) {
-            $outlook[] = ['label' => 'Season', 'value' => $mp['season'], 'detail' => 'Wet season is May–September; dry season is October–April.'];
+            $outlook[] = ['label' => 'Season', 'value' => $mp['season'], 'detail' => 'Wet season is May–October; dry season is November–April.'];
         }
         $outlook = array_merge($outlook, $this->comparison($mp, $baseline, $month));
 
@@ -167,11 +167,11 @@ final class MonthlyWeatherOutlookService
             ];
         }
 
-        // Season labels follow the dataset's own definition (wet May–September, dry October–April).
+        // The iClimate season calendar (App\Support\RiceSeason): wet May–October, dry November–April.
         $activeSeason = ! empty($mp['season']) ? ucfirst(strtolower((string) $mp['season'])) : (\App\Models\ClimateRecord::seasonForMonth($month->month) === 'Wet' ? 'Wet' : 'Dry');
 
         return [
-            'season' => ['wet' => 'May–September', 'dry' => 'October–April', 'active' => $activeSeason, 'month' => $name],
+            'season' => ['wet' => 'May–October', 'dry' => 'November–April', 'active' => $activeSeason, 'month' => $name],
             'rainfall' => $rain,
             'temperature' => $temp,
         ];

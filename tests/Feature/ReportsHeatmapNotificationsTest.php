@@ -395,8 +395,9 @@ class ReportsHeatmapNotificationsTest extends TestCase
             'visibility' => 'All Farmers',
         ]);
 
+        // Farmers read them as Announcements on the Advisories page (2026-10); the feed itself is for MAO and IT.
         $this->actingAs($farmer)
-            ->get(route('community-feed.index'))
+            ->get(route('planting-advisories.index'))
             ->assertOk()
             ->assertSee('Visible Update')
             ->assertSee('General Update');

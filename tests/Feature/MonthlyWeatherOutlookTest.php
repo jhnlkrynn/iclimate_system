@@ -109,11 +109,13 @@ class MonthlyWeatherOutlookTest extends TestCase
 
     public function test_outlook_cards_are_computed_from_the_selected_month_and_real_history(): void
     {
-        $cards = $this->outlook(10, $this->model())['model']['cards'];
+        // The monthly model now labels October wet as well (it is retrained with the iClimate calendar).
+        $cards = $this->outlook(10, $this->model(['season' => 'Wet']))['model']['cards'];
 
-        $this->assertSame('Dry', $cards['season']['active']);
-        $this->assertSame('May–September', $cards['season']['wet']);
-        $this->assertSame('October–April', $cards['season']['dry']);
+        // App\Support\RiceSeason: wet May–October (so October is wet), dry November–April.
+        $this->assertSame('Wet', $cards['season']['active']);
+        $this->assertSame('May–October', $cards['season']['wet']);
+        $this->assertSame('November–April', $cards['season']['dry']);
 
         $this->assertTrue($cards['rainfall']['available']);
         $this->assertSame('Above Normal', $cards['rainfall']['status']);

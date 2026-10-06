@@ -51,7 +51,7 @@ class FarmerPlantingScheduleController extends Controller
         $schedule = $request->user()->plantingSchedules()->create($this->normalized($data));
         $predictions->refresh($schedule);
 
-        return redirect()->route('calendar.index')->with('success', 'Planting and harvest schedule saved.')
+        return redirect()->route('farmer.my-farm')->with('success', 'Planting and harvest schedule saved.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
     }
 
@@ -83,7 +83,7 @@ class FarmerPlantingScheduleController extends Controller
         $schedule->update($this->normalized($this->validated($request)));
         $predictions->refresh($schedule);
 
-        return redirect()->route('calendar.index')->with('success', 'Schedule updated.')
+        return redirect()->route('farmer.my-farm')->with('success', 'Schedule updated.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
     }
 
@@ -97,7 +97,7 @@ class FarmerPlantingScheduleController extends Controller
         $this->authorizeOwner($request, $schedule);
         $schedule->delete();
 
-        return redirect()->route('calendar.index')->with('success', 'Schedule deleted.');
+        return redirect()->route('farmer.my-farm')->with('success', 'Schedule deleted.');
     }
 
     /**
@@ -164,7 +164,7 @@ class FarmerPlantingScheduleController extends Controller
                 return $user->plantingSchedules()->create([
                     'planting_date' => $data['planting_date'],
                     'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
-                    // May to September plantings are the wet season crop, the rest the dry season crop.
+                    // May to October plantings are the wet season crop, the rest the dry season crop (App\Support\RiceSeason).
                     'season' => \App\Models\ClimateRecord::seasonForMonth($planting->month),
                     'farm_type' => $profile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED,
                     'barangay' => in_array($barangay, LianBarangays::all(), true) ? $barangay : null,
@@ -243,9 +243,10 @@ class FarmerPlantingScheduleController extends Controller
     {
         $warnings = [];
         $plantingMonth = $schedule->planting_date->month;
-        $expectedPlantingMonths = $schedule->season === 'Wet' ? [5, 6, 7] : [10, 11, 12];
+        // The first three months of each season (App\Support\RiceSeason: wet from May, dry from November).
+        $expectedPlantingMonths = $schedule->season === 'Wet' ? [5, 6, 7] : [11, 12, 1];
         if (! in_array($plantingMonth, $expectedPlantingMonths, true)) {
-            $warnings[] = $schedule->season.' season planting is normally scheduled in '.($schedule->season === 'Wet' ? 'May to July' : 'October to December').'. Your record was still saved.';
+            $warnings[] = $schedule->season.' season planting is normally scheduled in '.($schedule->season === 'Wet' ? 'May to July' : 'November to January').'. Your record was still saved.';
         }
 
         $harvestMonth = $schedule->harvestDateForPlanning()?->month;

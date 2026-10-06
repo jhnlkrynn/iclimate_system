@@ -427,8 +427,9 @@ class DashboardOverviewTest extends TestCase
         $this->actingAs($farmer)->get(route('farmer.dashboard'))
             ->assertOk()
             ->assertSee('data-farmer-dashboard', false)
-            ->assertSee('My Farm Today')
-            ->assertSee("Today's Highlights")
+            ->assertSee('Weather Today')
+            ->assertDontSee('My Farm Today')
+            ->assertDontSee("Today's Highlights")
             ->assertDontSee('Data sources &amp; last updated', false)     // replaced by a small information link
             ->assertDontSee('Users by Role')
             ->assertDontSee('Production by Barangay');

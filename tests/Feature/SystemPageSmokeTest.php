@@ -82,20 +82,16 @@ class SystemPageSmokeTest extends TestCase
     {
         $farmer = $this->user(User::ROLE_FARMER);
         $this->assertPagesOpen($farmer, $pages = [
-            // The redesigned Farmer Dashboard's barangay risk card.
-            '/farmer/dashboard' => 'Farm Condition in Your Barangay',
+            // Farmer Home's barangay risk card (2026-10). Community, Climate Records, Rice Production and the farm map
+            // are no longer farmer pages; they redirect (FarmerPagesSimplificationTest).
+            '/farmer/dashboard' => 'Barangay Risk',
             '/heat-map' => 'Heat Map',
             '/planting-advisories' => 'Advisories',
             '/calendar' => 'Calendar',
-            '/community-feed' => 'Community',
+            '/farmer/my-farm' => 'My Farm',
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',
-            '/climate-records' => 'Climate Records',
             '/weather-predictions' => 'Prediction',
-            '/rice-productions' => 'Rice',
-            // Field reports are staff-only (FieldReportAuthorizationTest checks a farmer gets 403).
-            '/announcements' => 'Announcements',
-            '/farmer/boundary' => 'farm',
             '/profile' => 'Profile',
             '/ai-farming-assistant' => '',
         ]);

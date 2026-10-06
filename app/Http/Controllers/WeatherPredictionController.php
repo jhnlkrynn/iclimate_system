@@ -13,7 +13,6 @@ use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Prediction\ShortTermOutlookService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\MonthlyWeatherCalendarService;
-use App\Services\Weather\WeatherFeedbackService;
 use App\Services\WeatherApiService;
 use App\Support\LianBarangays;
 use App\Support\PredictionWording;
@@ -35,7 +34,6 @@ class WeatherPredictionController extends Controller
         \App\Services\Weather\MonthlyWeatherOutlookService $outlookService,
         ShortTermOutlookService $shortTermOutlookService,
         PredictionOrchestrator $predictionOrchestrator,
-        WeatherFeedbackService $feedbackService,
         FarmerDashboardWeatherService $sharedWeather,
     ): View {
         $validated = $request->validate([
@@ -162,10 +160,9 @@ class WeatherPredictionController extends Controller
             'yieldSummary' => $mlResult
                 ? $this->yieldSummary($mlResult, $location['barangay'], $targetDate, $targetMonth)
                 : null,
-            'weatherCheck' => rescue(fn () => $feedbackService->pendingPrompt($request->user()), null, false),
-            'weatherCheckBarangayIssue' => $request->user()->role === User::ROLE_FARMER
-                ? rescue(fn () => $feedbackService->barangayFor($request->user())[1] ?? null, null, false)
-                : null,
+            // Weather forecast feedback was removed from the farmer pages (2026-10); saved feedback stays in the database.
+            'weatherCheck' => null,
+            'weatherCheckBarangayIssue' => null,
             'liveWeather' => $liveWeather,
             'lianWeather' => ($lianWeather['success'] ?? false) === true && $location['coordinates'] && ! $location['is_municipal_preview'] ? $lianWeather : null,
             'liveWeatherError' => $liveWeatherError,

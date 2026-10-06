@@ -96,17 +96,14 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertOk();
         $response->assertSee('Lian, Batangas');
         $response->assertSee('Light Rain');
-        $response->assertSee('Rain Today');
-        $response->assertSeeText('25.5°C');
+        $response->assertSee('Weather Today');
+        $response->assertSeeText('26°C');
         $response->assertDontSee('&deg;C', false);
         $response->assertDontSee('Â°C', false);
-        $response->assertSee('6.2 mm');
-        $response->assertSee("Today's Highlights");
-        // Live weather is labelled as Lian's current reading with its update time, and refreshes on its own.
-        $response->assertSee('Updated');
-        $response->assertSee('Weather for Lian');
+        $response->assertDontSee('6.2 mm');                                         // rain in words, never millimetres
+        // The saved reading shows its update time, and the page refreshes on its own.
+        $response->assertSee('Updated: ');
         $response->assertSee('data-mfd-refresh', false);
-        $response->assertSee('data-mfd-clock', false);
         $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
         $this->assertStringContainsString('const REFRESH_EVERY_MS = 300000;', $js);
         $this->assertStringContainsString("if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);", $js);

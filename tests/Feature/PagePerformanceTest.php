@@ -37,7 +37,7 @@ class PagePerformanceTest extends TestCase
     use RefreshDatabase;
 
     private const PAGES = [
-        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/community-feed', '/messages', '/notifications', '/weather-predictions', '/climate-records', '/rice-productions'],
+        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/weather-predictions'],
         User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/field-reports', '/calendar'],
         User::ROLE_IT_EXPERT => ['/admin/dashboard', '/users', '/system-logs', '/system-health', '/system-health/model-registry', '/model-evaluation', '/ai-admin/topics', '/reports'],
     ];
@@ -381,16 +381,16 @@ class PagePerformanceTest extends TestCase
     public function test_one_persons_cached_page_is_never_shown_to_another(): void
     {
         Http::fake();
-        // The farmer dashboard lists weather-category notifications as alerts; that is the private, per-person content under test.
+        // Farmer Home greets each farmer by name and shows their own barangay: that is the per-person content under test.
         $alice = $this->user(User::ROLE_FARMER);
         $bob = $this->user(User::ROLE_FARMER);
-        Notification::factory()->create(['user_id' => $alice->id, 'title' => 'ALICE-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
-        Notification::factory()->create(['user_id' => $bob->id, 'title' => 'BOB-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
+        $alice->forceFill(['name' => 'Alicenonly Santos', 'barangay' => 'Prenza'])->save();
+        $bob->forceFill(['name' => 'Bobonly Reyes', 'barangay' => 'Cumba'])->save();
 
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('ALICE-ONLY-NOTICE')->assertDontSee('BOB-ONLY-NOTICE');
-        $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('BOB-ONLY-NOTICE')->assertDontSee('ALICE-ONLY-NOTICE');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
+        $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('Bobonly')->assertDontSee('Alicenonly')->assertDontSee('Prenza, Lian');
         // and again, now that both copies exist
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('ALICE-ONLY-NOTICE')->assertDontSee('BOB-ONLY-NOTICE');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
     }
 
     public function test_advisories_and_calendars_are_cached_per_barangay_and_person(): void
