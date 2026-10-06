@@ -15,6 +15,7 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\PythonService;
 use App\Services\Risk\BarangayRiskMapService;
+use App\Support\Aggregates;
 use App\Support\DashboardData;
 use App\Support\LianBarangays;
 use Illuminate\Support\Carbon;
@@ -322,9 +323,28 @@ class DashboardKpiService
                 'href' => '#barangayRiskMap',
             ];
 
+            // Every count below in one statement (Performance Phase 4; same queries, same values).
+            $feedbackReady = \App\Support\SchemaCache::hasTable('advisory_feedback');
+            $ratings = $feedbackReady ? AdvisoryFeedback::query()->whereNotNull('is_helpful') : null;
+            $activeFarmers = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE);
+            $counts = Aggregates::fetch([
+                'active_advisories' => Aggregates::count(PlantingAdvisory::query()->active()),
+                'pending' => Aggregates::count(PlantingAdvisory::query()->pendingReview()),
+                'open' => Aggregates::count(FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)),
+                'new30' => Aggregates::count(FieldReport::query()->where('created_at', '>=', now()->subDays(30))),
+                'new_prior30' => Aggregates::count(FieldReport::query()->whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])),
+                ...($ratings ? [
+                    'rated' => Aggregates::count(clone $ratings),
+                    'helpful' => Aggregates::count((clone $ratings)->where('is_helpful', true)),
+                    'awaiting' => Aggregates::count((clone $ratings)->whereNull('mao_response')),
+                ] : []),
+                'active_farmers' => Aggregates::count(clone $activeFarmers),
+                'with_profile' => Aggregates::count((clone $activeFarmers)->whereHas('farmerProfile')),
+            ]);
+
             // Advisory pipeline.
-            $activeAdvisories = PlantingAdvisory::query()->active()->count();
-            $pending = PlantingAdvisory::query()->pendingReview()->count();
+            $activeAdvisories = $counts['active_advisories'];
+            $pending = $counts['pending'];
             $kpis[] = [
                 'key' => 'advisories',
                 'label' => 'Active Advisories',
@@ -338,9 +358,9 @@ class DashboardKpiService
             ];
 
             // Field reports: open queue + 30-day resolution.
-            $open = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
-            $new30 = FieldReport::query()->where('created_at', '>=', now()->subDays(30))->count();
-            $newPrior30 = FieldReport::query()->whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
+            $open = $counts['open'];
+            $new30 = $counts['new30'];
+            $newPrior30 = $counts['new_prior30'];
             $resolvedRecently = FieldReport::query()
                 ->where('status', FieldReport::STATUS_RESOLVED)
                 ->whereNotNull('resolved_at')
@@ -365,11 +385,10 @@ class DashboardKpiService
             ];
 
             // Farmer feedback on advisories.
-            if (\App\Support\SchemaCache::hasTable('advisory_feedback')) {
-                $ratings = AdvisoryFeedback::query()->whereNotNull('is_helpful');
-                $ratedCount = (clone $ratings)->count();
-                $helpful = (clone $ratings)->where('is_helpful', true)->count();
-                $awaiting = (clone $ratings)->whereNull('mao_response')->count();
+            if ($feedbackReady) {
+                $ratedCount = $counts['rated'];
+                $helpful = $counts['helpful'];
+                $awaiting = $counts['awaiting'];
                 $kpis[] = [
                     'key' => 'feedback',
                     'label' => 'Advisories Rated Helpful',
@@ -386,9 +405,8 @@ class DashboardKpiService
             }
 
             // Registry coverage: active farmer accounts that have a farm profile.
-            $activeFarmers = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE);
-            $activeFarmerCount = (clone $activeFarmers)->count();
-            $withProfile = (clone $activeFarmers)->whereHas('farmerProfile')->count();
+            $activeFarmerCount = $counts['active_farmers'];
+            $withProfile = $counts['with_profile'];
             $kpis[] = [
                 'key' => 'registry',
                 'label' => 'Farmers With Farm Profile',

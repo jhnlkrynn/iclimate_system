@@ -167,9 +167,10 @@ class SampleDataDetector
     public function implausibleClimateIds(): array
     {
         try {
-            $plausible = ClimateRecord::query()->plausible()->pluck('id')->all();
-
-            return ClimateRecord::query()->whereNotIn('id', $plausible)->pluck('id')->map(fn ($id) => (int) $id)->all();
+            // One query (the plausible ids as a sub-select), read once per dashboard build (Performance Phase 4).
+            return BuildMemo::remember('sample-data:implausible-climate', fn (): array => ClimateRecord::query()
+                ->whereNotIn('id', ClimateRecord::query()->plausible()->select('id'))
+                ->pluck('id')->map(fn ($id) => (int) $id)->all());
         } catch (Throwable) {
             return [];
         }
@@ -204,7 +205,7 @@ class SampleDataDetector
     public function summary(string $table): array
     {
         try {
-            $total = DB::table($table)->count();
+            $total = Aggregates::fetch(['total' => Aggregates::count(DB::table($table))])['total'];
         } catch (Throwable) {
             return ['total' => 0, 'sample' => 0, 'implausible' => 0, 'verified' => 0];
         }

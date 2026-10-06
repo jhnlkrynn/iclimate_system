@@ -16,6 +16,7 @@ use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
 use App\Services\SystemHealthService;
+use App\Support\Aggregates;
 use App\Support\DashboardData;
 use App\Support\LianBarangays;
 use App\Support\ProjectYieldDataset;
@@ -566,15 +567,23 @@ class DashboardOverviewService
 
         $areas = $this->data->currentRiskRatings();
         $withRecords = $current->pluck('barangay')->filter()->unique()->count();
-        $activeAdvisories = PlantingAdvisory::query()->active()->count();
-        $totalAdvisories = PlantingAdvisory::query()->count();
-        $pending = PlantingAdvisory::query()->pendingReview()->count();
-
-        $completedRuns = SampleData::without(AnalyticsRun::query(), 'analytics_runs')->where('type', 'rice_yield_prediction')->where('status', 'completed')->count();
         $flaggedRuns = count(app(\App\Support\SampleDataDetector::class)->excludedIds('analytics_runs'));
-        $schedulePredictions = \App\Support\SchemaCache::hasTable('farmer_planting_schedules')
-            ? FarmerPlantingSchedule::query()->whereNotNull('predicted_yield')->count()
-            : 0;
+        $schedulesReady = \App\Support\SchemaCache::hasTable('farmer_planting_schedules');
+        // Every count on this page in one statement (Performance Phase 4; same queries, same values).
+        $counts = Aggregates::fetch([
+            'active' => Aggregates::count(PlantingAdvisory::query()->active()),
+            'total' => Aggregates::count(PlantingAdvisory::query()),
+            'pending' => Aggregates::count(PlantingAdvisory::query()->pendingReview()),
+            'runs' => Aggregates::count(SampleData::without(AnalyticsRun::query(), 'analytics_runs')->where('type', 'rice_yield_prediction')->where('status', 'completed')),
+            ...($schedulesReady ? ['schedules' => Aggregates::count(FarmerPlantingSchedule::query()->whereNotNull('predicted_yield'))] : []),
+            'profiles' => Aggregates::count(\App\Models\FarmerProfile::query()),
+        ]);
+        $activeAdvisories = $counts['active'];
+        $totalAdvisories = $counts['total'];
+        $pending = $counts['pending'];
+
+        $completedRuns = $counts['runs'];
+        $schedulePredictions = $schedulesReady ? $counts['schedules'] : 0;
 
         $kpis = [
             [
@@ -624,7 +633,7 @@ class DashboardOverviewService
         $rainMonths = array_filter($weatherYear['rainfall'], fn ($v) => $v !== null);
         $tempMonths = array_filter($weatherYear['temperature'], fn ($v) => $v !== null);
         $riceAll = $this->rice();
-        $profiles = \App\Models\FarmerProfile::query()->count();
+        $profiles = $counts['profiles'];
 
         $kpis = $this->adaptKpis($kpis, [
             $this->kpi('production-records', 'Production Records', $riceAll->isNotEmpty() ? number_format($riceAll->count()) : null, null,
@@ -1095,6 +1104,12 @@ class DashboardOverviewService
      * @return array{actual: array<string, array<int, ?float>>, predicted: array<string, array<int, ?float>>}
      */
     private function monthlyWeather(?int $year): array
+    {
+        // Read once per dashboard build: several cards use the same year (Performance Phase 4).
+        return \App\Support\BuildMemo::remember('overview:monthly-weather:'.$year, fn (): array => $this->readMonthlyWeather($year));
+    }
+
+    private function readMonthlyWeather(?int $year): array
     {
         $metrics = ['rainfall' => 'rainfall', 'temperature' => 'temperature', 'humidity' => 'humidity'];
         $actual = array_fill_keys(array_keys($metrics), array_fill(0, 12, null));
