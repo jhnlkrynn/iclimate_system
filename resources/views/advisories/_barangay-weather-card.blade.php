@@ -19,12 +19,9 @@
     @if($weather && ($weather['status'] ?? null) !== 'unavailable')
         <div class="fad-acard-tags">
             @if($farmerView)<span class="fad-badge is-{{ $farmerView->farmerRiskTone() }}">{{ $farmerView->farmerRiskLevel() }}</span>@endif
-            <span class="fad-badge {{ ($weather['stale'] ?? false) ? 'is-watch' : 'is-good' }}">{{ ($weather['stale'] ?? false) ? 'Update delayed' : 'Latest weather update' }}</span>
+            <x-updated-at :at="$updated" />
         </div>
         <h4 class="fad-lead">{{ $barangayAdvisory?->title ?? ($weather['condition'] ?? 'Current Conditions') }}</h4>
-        @if($weather['stale'] ?? false)
-            <p class="fad-body">Weather update is temporarily delayed. These are the last available conditions for {{ $selectedBarangay }}.</p>
-        @endif
 
         <h4 class="fad-label">Current Conditions</h4>
         <dl class="fad-acard-facts">
@@ -46,7 +43,6 @@
         <p class="fad-meta">
             <span class="fad-source">Source: Open-Meteo + iClimate Local Guidance</span>
             <span>Coordinates: {{ $weather['latitude'] }}, {{ $weather['longitude'] }}</span>
-            <span>{{ ($weather['stale'] ?? false) ? 'Last available' : 'Updated' }}: {{ $updated?->format('M j, Y · g:i A') ?? 'Not available' }}</span>
             @if(!($weather['stale'] ?? false) && $nextRefresh)<span>Next refresh: {{ $nextRefresh->format('M j, Y · g:i A') }}</span>@endif
             @if($barangayAdvisory?->valid_until)<span>Valid until: {{ $barangayAdvisory->valid_until->copy()->timezone('Asia/Manila')->format('M j, Y · g:i A') }}</span>@endif
         </p>
@@ -54,9 +50,7 @@
             <a class="fad-btn is-primary fad-view" href="{{ route('planting-advisories.show', $barangayAdvisory) }}" data-fad-view data-fast-nav-bound="true" aria-haspopup="dialog">View Details</a>
         @endif
     @else
-        <div class="fad-empty" role="status">
-            <p class="fad-lead">Latest weather for {{ $selectedBarangay }} is temporarily unavailable.</p>
-            <p class="fad-body">Official PAGASA updates and Lian-wide guidance remain available below.</p>
-        </div>
+        {{-- No saved reading for this barangay yet: a calm note, never an error. --}}
+        <x-no-data note="Official PAGASA updates and Lian-wide guidance are below." />
     @endif
 </article>

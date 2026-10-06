@@ -54,7 +54,7 @@ class FarmerPlantingInfoTest extends TestCase
         $this->assertSame($farmer->id, $plan->user_id);
         $this->assertSame('2026-10-10', $plan->planting_date->toDateString());
         $this->assertSame('2027-02-02', $plan->scheduled_harvest_date->toDateString());     // the dashboard's 115 day season
-        $this->assertSame('Dry', $plan->season);
+        $this->assertSame('Wet', $plan->season);                                            // October is wet season (App\Support\RiceSeason)
         $this->assertSame('Rainfed', $plan->farm_type);                                     // taken from the farmer's profile
         $this->assertSame('1.50', $plan->farm_area_hectares);
         $this->assertSame('1.50', $farmer->farmerProfile()->first()->farm_area);

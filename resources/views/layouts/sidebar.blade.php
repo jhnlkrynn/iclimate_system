@@ -27,11 +27,14 @@
         };
     };
 
+    // Second element: every route that keeps the item highlighted. A page that has no menu item of its own (it is
+    // opened from a button on another page) is listed under the item it is opened from, so one item is always
+    // highlighted and people can see where they are.
     $routeDefs = [
-        'dashboard' => [$dashboardRoute, [$dashboardRoute]],
+        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'field-reports.*', 'admin.dashboard.*']],
         'heatmap' => ['heat-map.index', ['heat-map.*']],
-        'advisories' => ['planting-advisories.index', ['planting-advisories.*']],
-        'calendar' => ['calendar.index', ['calendar.*']],
+        'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
+        'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],
@@ -42,8 +45,10 @@
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
         'system-logs' => ['system-logs.index', ['system-logs.*']],
-        'system-health' => ['system-health.index', ['system-health.*']],
+        'system-health' => ['system-health.index', ['system-health.*', 'model-registry.*', 'model-evaluation.*', 'testing.*']],
         'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
+        // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
+        'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
     ];
 
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
@@ -57,20 +62,19 @@
     };
 
     if ($isFarmer) {
+        // Six items in the farmer's own language (English / Filipino). The Calendar opens from My Farm; announcements
+        // are read on the Advisories page; notifications open from the bell in the top bar.
+        $farmerLocale = \App\Support\FarmerLanguage::resolve(request());
+        $nav = fn (string $key): string => __('farmer.nav.'.$key, [], $farmerLocale);
         $primaryGroup = [
-            $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLink('Heat Map', 'heatmap', 'heatmap'),
-            $navLink('Advisories', 'advisories', 'advisories'),
-            $navLink('Calendar', 'calendar', 'calendar'),
-            $navLink('Community', 'community', 'community'),
-            $navLink('Messages', 'messages', 'messages'),
-            // Notifications are opened from the bell in the top bar (layouts/navigation.blade.php), as for MAO and IT.
+            $navLink($nav('home'), 'dashboard', 'dashboard'),
+            $navLink($nav('forecast'), 'weather', 'weather'),
+            $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
+            $navLink($nav('advisories'), 'advisories', 'advisories'),
+            $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
+            $navLink($nav('messages'), 'messages', 'messages'),
         ];
-        $moreGroup = [
-            $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Predictions', 'weather', 'weather'),
-            $navLink('Rice Production', 'rice-production', 'rice-production'),
-        ];
+        $moreGroup = [];
         $publishingGroup = [];
     } elseif ($isMao) {
         $primaryGroup = [

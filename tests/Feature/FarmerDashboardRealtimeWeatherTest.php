@@ -21,15 +21,16 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
         Http::fake([
             'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
         ]);
+        // Pages never call the provider; the scheduled refresh stores the reading the dashboard shows.
+        $this->artisan('iclimate:refresh-weather-cache');
 
         $this->actingAs($farmer)
             ->get(route('farmer.dashboard'))
             ->assertOk()
-            ->assertSeeText('28.7°C')
-            ->assertSee('<span>0.0</span><small>mm</small>', false)
-            ->assertSee('77%')
-            ->assertSee('Weather for Lian, Batangas')
-            ->assertSee('Updated')
+            ->assertSeeText('29°C')
+            ->assertDontSee('<small>mm</small>', false)
+            ->assertSee('Weather Today')
+            ->assertSee('Updated: ')
             ->assertDontSee('Live online fetch')
             ->assertDontSee('Live database count');
     }
@@ -71,8 +72,8 @@ class FarmerDashboardRealtimeWeatherTest extends TestCase
         $this->actingAs($farmer)
             ->get(route('farmer.dashboard'))
             ->assertOk()
-            ->assertSeeText('29.4°C')
-            ->assertSee('Weather for Lian, Batangas')->assertDontSee('OPEN-METEO');
+            ->assertSeeText('29°C')
+            ->assertSee('Weather Today')->assertDontSee('OPEN-METEO');
     }
 
     private function openMeteoPayload(): array

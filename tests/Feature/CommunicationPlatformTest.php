@@ -37,7 +37,8 @@ class CommunicationPlatformTest extends TestCase
         Storage::disk('public')->assertExists($post->media->first()->path);
     }
 
-    public function test_farmer_can_react_and_comment_on_feed_post(): void
+    /** Farmers read MAO posts as read-only Announcements (2026-10); reactions and comments stay with MAO and IT. */
+    public function test_farmers_cannot_react_or_comment_but_staff_still_can(): void
     {
         $mao = User::factory()->maoPersonnel()->create();
         $farmer = User::factory()->farmer()->create();
@@ -51,22 +52,19 @@ class CommunicationPlatformTest extends TestCase
 
         $this->actingAs($farmer)->post(route('community-feed.reactions.store', $post), [
             'type' => 'Helpful',
-        ])->assertRedirect();
+        ])->assertRedirect(route('planting-advisories.index').'#announcements');
 
         $this->actingAs($farmer)->post(route('community-feed.comments.store', $post), [
             'body' => 'Can I bring my neighbor?',
-        ])->assertRedirect();
+        ])->assertRedirect(route('planting-advisories.index').'#announcements');
 
-        $this->assertDatabaseHas('feed_reactions', [
-            'feed_post_id' => $post->id,
-            'user_id' => $farmer->id,
-            'type' => 'Helpful',
-        ]);
-        $this->assertDatabaseHas('feed_comments', [
-            'feed_post_id' => $post->id,
-            'user_id' => $farmer->id,
-            'body' => 'Can I bring my neighbor?',
-        ]);
+        $this->assertDatabaseMissing('feed_reactions', ['feed_post_id' => $post->id, 'user_id' => $farmer->id]);
+        $this->assertDatabaseMissing('feed_comments', ['feed_post_id' => $post->id, 'user_id' => $farmer->id]);
+
+        $this->actingAs($mao)->post(route('community-feed.comments.store', $post), [
+            'body' => 'Bring your RSBSA ID.',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('feed_comments', ['feed_post_id' => $post->id, 'user_id' => $mao->id]);
     }
 
     public function test_mao_can_edit_archive_and_delete_own_feed_post(): void
@@ -121,18 +119,23 @@ class CommunicationPlatformTest extends TestCase
             'archived_at' => now(),
         ]);
 
+        // Farmers read posts as Announcements on the Advisories page; an archived post is not among them.
         $this->actingAs($farmer)
-            ->get(route('community-feed.index'))
+            ->get(route('planting-advisories.index'))
             ->assertOk()
             ->assertDontSee('Archived Training');
 
+        // Farmers cannot react or comment on any post (2026-10); staff still cannot touch an archived one.
         $this->actingAs($farmer)
             ->post(route('community-feed.reactions.store', $post), ['type' => 'Helpful'])
-            ->assertForbidden();
-
+            ->assertRedirect(route('planting-advisories.index').'#announcements');
         $this->actingAs($farmer)
             ->post(route('community-feed.comments.store', $post), ['body' => 'Can I still join?'])
+            ->assertRedirect(route('planting-advisories.index').'#announcements');
+        $this->actingAs($mao)
+            ->post(route('community-feed.comments.store', $post), ['body' => 'Closed?'])
             ->assertForbidden();
+        $this->assertDatabaseMissing('feed_comments', ['feed_post_id' => $post->id]);
     }
 
     public function test_farmer_and_mao_can_exchange_messages(): void

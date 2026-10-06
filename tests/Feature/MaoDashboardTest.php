@@ -89,6 +89,9 @@ class MaoDashboardTest extends TestCase
     private function page(?User $as = null)
     {
         Cache::flush();
+        // Pages never call the provider; the scheduled refresh (iclimate:refresh-weather-cache) stores what they show.
+        app(\App\Services\Weather\FarmerDashboardWeatherService::class)->current(force: true);
+        app(\App\Services\WeatherApiService::class)->forecast(refresh: true);
 
         return $this->actingAs($as ?? $this->mao())->get(route('mao.dashboard'))->assertOk();
     }
@@ -272,8 +275,9 @@ class MaoDashboardTest extends TestCase
 
         $this->assertSame('error', $data['weather']['state']);
         $this->assertNull($this->kpi($data, 'weather'));
-        $this->assertStringContainsString('Live weather is temporarily unavailable.', $html);
-        $this->assertStringContainsString('data-mao-retry', $html);
+        // Nothing saved and the source down: a calm "Walang datos pa", never an error or a Try again (Phase 1 sign-off).
+        $this->assertStringContainsString('Walang datos pa', $html);
+        $this->assertStringNotContainsString('temporarily unavailable', $html);
         $this->assertStringNotContainsString('Current Rain', $html);
         $this->assertStringNotContainsString('Weather Outlook', $html);
         $this->assertStringNotContainsString('0.0 mm', $html);
@@ -448,7 +452,7 @@ class MaoDashboardTest extends TestCase
         $html = $this->page()->getContent();
         $section = substr($html, strpos($html, 'data-mao-conditions'), 3500);
 
-        foreach (['Weather Now', 'Live weather conditions for Lian, Batangas.', 'Current Rain', 'Temperature', 'Humidity', 'Wind Speed', 'Last updated:', 'View Weather Forecast'] as $text) {
+        foreach (['Weather Now', 'Live weather conditions for Lian, Batangas.', 'Current Rain', 'Temperature', 'Humidity', 'Wind Speed', 'Updated: ', 'View Weather Forecast'] as $text) {
             $this->assertStringContainsString($text, $section, $text);
         }
         $this->assertStringContainsString('28.3', $section);

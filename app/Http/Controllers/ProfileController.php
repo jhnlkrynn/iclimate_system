@@ -18,8 +18,12 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            // Farmers: what is still missing from their farm information (it used to be a checklist on the dashboard).
+            'farmSetup' => $user->role === User::ROLE_FARMER ? \App\Support\FarmerSetupChecklist::for($user) : null,
         ]);
     }
 
@@ -28,7 +32,8 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        // Farm size and type belong to the farmer profile (saved below), not to the account.
+        $request->user()->fill($request->safe()->except(['farm_area', 'farm_type']));
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
@@ -36,13 +41,23 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        if ($request->user()->role === User::ROLE_FARMER && $request->has('barangay')) {
+        if ($request->user()->role === User::ROLE_FARMER && $request->hasAny(['barangay', 'farm_area', 'farm_type'])) {
             $profile = $request->user()->farmerProfile()->firstOrCreate([], [
                 'full_name' => $request->user()->name,
                 'contact_number' => $request->user()->contact_number,
                 'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
             ]);
-            $profile->update(['barangay' => $request->validated('barangay') ?: null]);
+            $changes = [];
+            if ($request->has('barangay')) {
+                $changes['barangay'] = $request->validated('barangay') ?: null;
+            }
+            if ($request->filled('farm_area')) {
+                $changes['farm_area'] = $request->validated('farm_area');
+            }
+            if ($request->filled('farm_type')) {
+                $changes['farm_type'] = $request->validated('farm_type');
+            }
+            $profile->update($changes);
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');

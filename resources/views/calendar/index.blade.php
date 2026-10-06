@@ -224,7 +224,7 @@
             #plantingPlanModal .fad-input.is-invalid { border-color: var(--danger); }
             #plantingPlanModal .fcal-plan-error { font-size: .875rem; font-weight: 600; color: var(--danger-ink); }
             #plantingPlanModal .fad-m-foot { justify-content: flex-start; }
-            /* The saving spinner stays in front of the pop-up. */
+            /* The saving indicator stays in front of the pop-up. */
             html.fad-modal-open .icl-overlay { z-index: 10001; }
             @media (min-width: 641px) { #plantingPlanModal .fad-modal-dialog { width: min(640px, calc(100vw - 64px)); } }
             @media (max-width: 640px) { #plantingPlanModal .fcal-plan-grid { grid-template-columns: minmax(0, 1fr); } }

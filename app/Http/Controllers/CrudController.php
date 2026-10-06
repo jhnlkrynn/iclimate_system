@@ -36,6 +36,9 @@ abstract class CrudController extends Controller
 
     protected array $manageableRoles = [User::ROLE_MAO, User::ROLE_IT_EXPERT];
 
+    /** Rows per page on every record list. */
+    public const PER_PAGE = 25;
+
     protected bool $farmerOwnRecordsOnly = false;
 
     protected bool $viewOnly = false;
@@ -84,12 +87,12 @@ abstract class CrudController extends Controller
 
         if ($this->usesFarmerPages($request)) {
             return view('farmer-records.'.$this->routeName, $data + [
-                'records' => (clone $query)->latest($this->farmerSortColumn)->latest('id')->paginate(10)->withQueryString(),
+                'records' => (clone $query)->latest($this->farmerSortColumn)->latest('id')->paginate(self::PER_PAGE)->withQueryString(),
             ] + $this->farmerIndexData($request, clone $query));
         }
 
         return view('crud.index', $data + [
-            'records' => $query->latest('id')->paginate(10)->withQueryString(),
+            'records' => $query->latest('id')->paginate(self::PER_PAGE)->withQueryString(),
         ]);
     }
 
@@ -116,7 +119,7 @@ abstract class CrudController extends Controller
             ->sortBy(fn (object $row): string => $row->sort_key, SORT_STRING, $request->query('sort') !== 'oldest')
             ->values();
 
-        $perPage = 10;
+        $perPage = self::PER_PAGE;
         $page = LengthAwarePaginator::resolveCurrentPage();
 
         return view('crud.index', [

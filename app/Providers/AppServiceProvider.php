@@ -171,6 +171,8 @@ class AppServiceProvider extends ServiceProvider
             $forgetFarmer = static function ($record): void {
                 if ($record->user_id) {
                     Cache::forget(\App\Services\Analytics\FarmerDashboardService::predictionCacheKey((int) $record->user_id));
+                    // The new estimate is made in the background, so the dashboard never waits for the model.
+                    \App\Jobs\PrepareFarmerYieldEstimate::queueFor((int) $record->user_id);
                 }
             };
             $model::saved(static function ($record) use ($forgetFarmer): void {

@@ -113,7 +113,7 @@
     <div class="card no-lift">
         <div class="card-header border-0 d-flex flex-column flex-md-row justify-content-between gap-2 py-3">
             <div class="fw-semibold">Records</div>
-            <div class="small text-muted">{{ number_format($records->total()) }} {{ \Illuminate\Support\Str::plural('record', $records->total()) }}</div>
+            <div class="small text-muted">Showing {{ $records->firstItem() ?? 0 }}-{{ $records->lastItem() ?? 0 }} of {{ $records->total() }}</div>
         </div>
         @if ($records->count())
             <div class="table-responsive ic-table-hide-mobile">
@@ -137,8 +137,7 @@
                                         @elseif ($field === 'farm_type' && data_get($record, $field))
                                             <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                         @else
-                                            @if (! filled(data_get($record, $field)))<span class="text-muted" title="Not recorded yet" aria-label="Not recorded yet">&mdash;</span>@elseif ($field === 'role'){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ data_get($record, $field) }}@endif
-                                            {{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}
+                                            @if ($field === 'role' && filled(data_get($record, $field))){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
                                         @endif
                                     </td>
                                 @endforeach
@@ -183,8 +182,7 @@
                                     @elseif ($field === 'farm_type' && data_get($record, $field))
                                         <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                     @else
-                                        @if (! filled(data_get($record, $field)))<span class="text-muted" title="Not recorded yet" aria-label="Not recorded yet">&mdash;</span>@elseif ($field === 'role'){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ data_get($record, $field) }}@endif
-                                        {{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}
+                                        @if ($field === 'role' && filled(data_get($record, $field))){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
                                     @endif
                                 </div>
                             </div>

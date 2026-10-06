@@ -162,7 +162,7 @@ final class FeatureCatalog
             'unit' => 'Wet or Dry',
             'schemas' => [self::SCHEMA_DEPLOYED, self::SCHEMA_TARGET],
             'model_keys' => ['deployed' => 'Season', 'target' => 'season'],
-            'description' => 'Whether the target period falls in the wet season (May-September) or dry season (October-April) in Lian, Batangas.',
+            'description' => 'Whether the target period falls in the wet or dry season in Lian, Batangas, encoded as in the training data of the model (wet May-September). iClimate pages use wet May-October (App\Support\RiceSeason).',
             'behavior' => 'One of the strongest categorical predictors in Philippine rice farming — wet- and dry-season yields follow different baselines even before weather variation is considered, because irrigation dependence, pest pressure, and typhoon exposure differ by season.',
         ],
         'humidity' => [

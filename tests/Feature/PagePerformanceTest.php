@@ -37,7 +37,7 @@ class PagePerformanceTest extends TestCase
     use RefreshDatabase;
 
     private const PAGES = [
-        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/community-feed', '/messages', '/notifications', '/weather-predictions', '/climate-records', '/rice-productions'],
+        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/weather-predictions'],
         User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/field-reports', '/calendar'],
         User::ROLE_IT_EXPERT => ['/admin/dashboard', '/users', '/system-logs', '/system-health', '/system-health/model-registry', '/model-evaluation', '/ai-admin/topics', '/reports'],
     ];
@@ -201,10 +201,10 @@ class PagePerformanceTest extends TestCase
 
         $this->get('/_probe/weather')->assertOk();
 
-        $this->assertSame(1, $attempts, 'one attempt, no retries, when a person is waiting');
+        $this->assertSame(0, $attempts, 'a page never calls the provider; the scheduled refresh does');
     }
 
-    public function test_pages_use_stored_weather_but_live_widgets_ask_for_fresh(): void
+    public function test_pages_and_live_widgets_use_stored_weather_and_only_an_explicit_refresh_calls_out(): void
     {
         Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
         $service = app(FarmerDashboardWeatherService::class);
@@ -221,8 +221,12 @@ class PagePerformanceTest extends TestCase
         $this->get('/_probe/weather-page')->assertOk()->assertJsonPath('t', 26);
         Http::assertNothingSent();
 
-        // ...a live widget polling in the background wants the provider's current reading.
-        $this->getJson('/_probe/weather-page')->assertOk();
+        // ...so does a live widget polling in the background...
+        $this->getJson('/_probe/weather-page')->assertOk()->assertJsonPath('t', 26);
+        Http::assertNothingSent();
+
+        // ...and only an explicit refresh (a Refresh button, or the scheduled job) asks the provider.
+        app(FarmerDashboardWeatherService::class)->current(force: true);
         Http::assertSentCount(1);
     }
 
@@ -360,16 +364,16 @@ class PagePerformanceTest extends TestCase
     {
         Http::fake();
         $mao = $this->user(User::ROLE_MAO);
-        FarmerProfile::factory()->count(23)->create(); // 23 profiles: pages of 10, 10 and 3
+        FarmerProfile::factory()->count(53)->create(); // 53 profiles: pages of 25, 25 and 3
 
         $first = $this->actingAs($mao)->get('/farmer-profiles');
         $second = $this->actingAs($mao)->get('/farmer-profiles?page=3');
 
         $first->assertOk();
         $second->assertOk();
-        $this->assertCount(10, $first->viewData('records')->items());
-        $this->assertSame(10, $first->viewData('records')->perPage());
-        $this->assertCount(3, $second->viewData('records')->items(), 'page 3 holds the last 3 of 23 profiles');
+        $this->assertCount(25, $first->viewData('records')->items());
+        $this->assertSame(25, $first->viewData('records')->perPage());
+        $this->assertCount(3, $second->viewData('records')->items(), 'page 3 holds the last 3 of 53 profiles');
     }
 
     // ---------------------------------------------------------------- cache safety
@@ -377,16 +381,16 @@ class PagePerformanceTest extends TestCase
     public function test_one_persons_cached_page_is_never_shown_to_another(): void
     {
         Http::fake();
-        // The farmer dashboard lists weather-category notifications as alerts; that is the private, per-person content under test.
+        // Farmer Home greets each farmer by name and shows their own barangay: that is the per-person content under test.
         $alice = $this->user(User::ROLE_FARMER);
         $bob = $this->user(User::ROLE_FARMER);
-        Notification::factory()->create(['user_id' => $alice->id, 'title' => 'ALICE-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
-        Notification::factory()->create(['user_id' => $bob->id, 'title' => 'BOB-ONLY-NOTICE', 'type' => 'Warning', 'category' => 'weather', 'is_read' => false]);
+        $alice->forceFill(['name' => 'Alicenonly Santos', 'barangay' => 'Prenza'])->save();
+        $bob->forceFill(['name' => 'Bobonly Reyes', 'barangay' => 'Cumba'])->save();
 
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('ALICE-ONLY-NOTICE')->assertDontSee('BOB-ONLY-NOTICE');
-        $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('BOB-ONLY-NOTICE')->assertDontSee('ALICE-ONLY-NOTICE');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
+        $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('Bobonly')->assertDontSee('Alicenonly')->assertDontSee('Prenza, Lian');
         // and again, now that both copies exist
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('ALICE-ONLY-NOTICE')->assertDontSee('BOB-ONLY-NOTICE');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
     }
 
     public function test_advisories_and_calendars_are_cached_per_barangay_and_person(): void

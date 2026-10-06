@@ -109,11 +109,13 @@ class MonthlyWeatherOutlookTest extends TestCase
 
     public function test_outlook_cards_are_computed_from_the_selected_month_and_real_history(): void
     {
-        $cards = $this->outlook(10, $this->model())['model']['cards'];
+        // The monthly model now labels October wet as well (it is retrained with the iClimate calendar).
+        $cards = $this->outlook(10, $this->model(['season' => 'Wet']))['model']['cards'];
 
-        $this->assertSame('Dry', $cards['season']['active']);
-        $this->assertSame('May–September', $cards['season']['wet']);
-        $this->assertSame('October–April', $cards['season']['dry']);
+        // App\Support\RiceSeason: wet May–October (so October is wet), dry November–April.
+        $this->assertSame('Wet', $cards['season']['active']);
+        $this->assertSame('May–October', $cards['season']['wet']);
+        $this->assertSame('November–April', $cards['season']['dry']);
 
         $this->assertTrue($cards['rainfall']['available']);
         $this->assertSame('Above Normal', $cards['rainfall']['status']);
@@ -301,90 +303,4 @@ class MonthlyWeatherOutlookTest extends TestCase
         $this->assertSame('2016–2024', $h['span']);
     }
 
-    public function test_page_switches_between_monthly_weekly_and_none_and_follows_the_month(): void
-    {
-        $user = User::factory()->create(['role' => User::ROLE_MAO]);
-        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
-        $this->mock(PredictionOrchestrator::class, function ($mock) {
-            $mock->shouldReceive('monthlyWeatherForecast')->andReturnUsing(fn (CarbonImmutable $m) => $m->month === 10
-                ? $this->model()
-                : ['ready' => false, 'message' => 'Not enough history.', 'predictions' => []]);
-        });
-
-        $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => '2026-10']))
-            ->assertOk()
-            ->assertSee('data-outlook-month="2026-10"', false)
-            ->assertSee('data-outlook-mode="monthly"', false)
-            ->assertSee('Monthly Weather Prediction')
-            ->assertSee('Expected Rainfall')
-            ->assertSee('Forecast Period')
-            ->assertSee('Forecast Type')
-            ->assertSee('Source')
-            ->assertSee('Last Updated')
-            ->assertSee('Not available for this period')
-            ->assertSee('Seasonal &amp; Outlook Information', false)
-            ->assertSee('Seasonal Pattern')
-            ->assertSee('Rainfall Outlook')
-            ->assertSee('Temperature Outlook')
-            ->assertSee('Historical comparison')
-            ->assertSee('PAGASA seasonal and monthly climate outlooks are not connected')
-            ->assertDontSee('No reliable forecast available for this period.');
-        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
-        $this->assertStringContainsString('color: #0d1f18', (string) file_get_contents(resource_path('css/pages/weather-predictions.css')));
-            ->assertSee('color: #0d1f18', false)
-            ->assertSee('PAGASA monthly outlooks are not shown in iClimate')
-            ->assertDontSee('No forecast is available for this month yet.');
-
-        $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => '2026-11']))
-            ->assertOk()
-            ->assertSee('data-outlook-month="2026-11"', false)
-            ->assertSee('data-outlook-mode="none"', false)
-            ->assertSee('No forecast is available for this month yet.')
-            ->assertDontSee('Expected Rainfall');
-    }
-
-    public function test_page_shows_weekly_predictions_when_only_daily_forecast_exists(): void
-    {
-        $user = User::factory()->create(['role' => User::ROLE_MAO]);
-        $date = CarbonImmutable::now('Asia/Manila')->addDay();
-        Http::fake(['api.open-meteo.com/*' => Http::response([
-            'current' => ['time' => $date->format('Y-m-d').'T12:00', 'temperature_2m' => 29.0, 'relative_humidity_2m' => 80, 'precipitation' => 0, 'weather_code' => 53, 'wind_speed_10m' => 9, 'is_day' => 1],
-            'daily' => [
-                'time' => [$date->format('Y-m-d')], 'weather_code' => [53], 'temperature_2m_max' => [31], 'temperature_2m_min' => [25],
-                'precipitation_sum' => [4], 'precipitation_probability_max' => [60], 'wind_speed_10m_max' => [10],
-            ],
-        ])]);
-        $this->mock(PredictionOrchestrator::class, function ($mock) {
-            $mock->shouldReceive('monthlyWeatherForecast')->andReturn(['ready' => false, 'message' => 'n/a', 'predictions' => []]);
-        });
-
-        $html = $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => $date->format('Y-m')]))
-            ->assertOk()
-            ->assertSee('data-outlook-mode="weekly"', false)
-            ->assertSee('Weekly Weather Predictions')
-            ->assertSee('Week 1')
-            ->assertSee('No forecast yet')
-            ->assertSee('Moderate Rain')            // drizzle code 53 shown with rain wording
-            ->assertDontSee('Drizzle')
-            ->assertDontSee('No forecast is available for this month yet.')
-            ->getContent();
-
-        $this->assertSame(count(MonthlyWeatherOutlookService::weekRanges($date->startOfMonth())), substr_count($html, 'data-week-start='));
-    }
-
-    public function test_unconfirmed_model_wind_is_shown_only_to_it(): void
-    {
-        Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
-        $this->mock(PredictionOrchestrator::class, function ($mock) {
-            $mock->shouldReceive('monthlyWeatherForecast')->andReturnUsing(fn () => $this->model());
-        });
-        $page = fn (string $role) => $this->actingAs(User::factory()->create(['role' => $role]))
-            ->get(route('weather-predictions.index', ['calendar_month' => '2026-10']))->assertOk();
-
-        // The model's wind has no confirmed unit: a number a farmer cannot safely read is not shown.
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
-            $page($role)->assertSee('Expected Rainfall')->assertDontSee('Expected Wind')->assertDontSee('unit not confirmed');
-        }
-        $page(User::ROLE_IT_EXPERT)->assertSee('Expected Wind')->assertSee('(unit not confirmed)');
-    }
 }

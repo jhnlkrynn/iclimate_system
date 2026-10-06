@@ -19,6 +19,12 @@ class AIChatController extends Controller
         return redirect()->route($request->user()->dashboardRoute());
     }
 
+    /** The assistant's markup, styles and script, fetched by the launcher (components/ai-chat-launcher) on its first click. */
+    public function widget(): \Illuminate\Contracts\View\View
+    {
+        return view('components.ai-chat-widget');
+    }
+
     public function message(Request $request, AIOrchestratorService $orchestrator): JsonResponse
     {
         $validated = $request->validate([

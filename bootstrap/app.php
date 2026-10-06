@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'farmer.language' => SetFarmerLanguage::class,
+            'farmer.redirect' => \App\Http\Middleware\RedirectFarmers::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

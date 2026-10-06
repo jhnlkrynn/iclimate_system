@@ -75,6 +75,8 @@ class ResponsiveLayoutTest extends TestCase
 
         $this->assertStringContainsString('height: 100dvh;', $sidebarCss);
         $this->assertStringContainsString('overflow-y: hidden;', $sidebarCss);
+        // Since 2026-10-06 the menu groups sit together at the top, and a menu taller than the screen scrolls in its own box.
+        $this->assertMatchesRegularExpression('/\.ic-sidebar\.sidebar-fixed \.ic-sb-nav \{\s*justify-content: flex-start;\s*overflow-y: auto;/', $sidebarCss);
         $this->assertStringContainsString('html body .app-main {', $sidebarCss);
         $this->assertStringContainsString('overflow-y: auto;', $sidebarCss);
         $this->assertStringContainsString('html body #mobileSidebar .ic-sb-nav', $sidebarCss);

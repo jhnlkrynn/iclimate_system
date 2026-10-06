@@ -59,6 +59,23 @@
                 <p class="mt-1 text-sm text-[#44604E]">Choose the exact barangay on your registration. Do not choose a general Poblacion label.</p>
                 <x-input-error class="mt-2" :messages="$errors->get('barangay')" />
             </div>
+
+            {{-- Farm size and type: used for the expected yield on Home and shown on My Farm. --}}
+            <div>
+                <x-input-label for="farm_area" :value="__('Farm size (hectares)')" />
+                <x-text-input id="farm_area" name="farm_area" type="number" min="0.01" max="10000" step="0.01" class="mt-1 block w-full" :value="old('farm_area', $user->farmerProfile?->farm_area)" />
+                <x-input-error class="mt-2" :messages="$errors->get('farm_area')" />
+            </div>
+            <div>
+                <x-input-label for="farm_type" :value="__('Farm type')" />
+                <select id="farm_type" name="farm_type" class="mt-1 block w-full rounded-md border-gray-300">
+                    <option value="">Select</option>
+                    @foreach (\App\Models\FarmerPlantingSchedule::FARM_TYPES as $type)
+                        <option value="{{ $type }}" @selected(old('farm_type', $user->farmerProfile?->farm_type) === $type)>{{ __('farmer.my_farm.water.'.strtolower($type)) }}</option>
+                    @endforeach
+                </select>
+                <x-input-error class="mt-2" :messages="$errors->get('farm_type')" />
+            </div>
         @endif
 
         <div class="flex items-center gap-4">

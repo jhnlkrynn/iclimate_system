@@ -359,7 +359,7 @@
             </div>
         </div>
         @auth
-            @include('components.ai-chat-widget')
+            @include('components.ai-chat-launcher')
         @endauth
     </body>
 </html>

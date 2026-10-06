@@ -38,7 +38,7 @@ class RiceProductionController extends CrudController
     /** The plain source name of the dataset rows (the stored file is not shown to farmers). */
     public const DATASET_SOURCE = 'iClimate rice yield records';
 
-    private const FARMER_PER_PAGE = 10;
+    private const FARMER_PER_PAGE = CrudController::PER_PAGE;
 
     /**
      * Everyone sees the rice_productions rows together with the project's own yield history (ProjectYieldDataset:

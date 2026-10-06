@@ -1,412 +1,56 @@
-/* Predictions page (weather-predictions/index.blade.php).
-   Moved out of the Blade view so the page stays readable and the browser can cache the styles.
-   Loaded by the view itself (@vite), at the place its <style> block used to be, so the cascade order is unchanged. */
-.wp-hero { position: relative; overflow: hidden; border-radius: 32px; padding: 1.35rem; margin-bottom: 1.25rem; color: #1f2a24; background: radial-gradient(circle at 86% 14%, rgba(82,183,136,.14), transparent 30%), linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 100%); border: 1px solid #e3ece6; box-shadow: 0 1rem 2.3rem rgba(31,42,36,.08); }
-.wp-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(rgba(31,42,36,.07) 1px, transparent 1px); background-size: 28px 28px; mask-image: linear-gradient(90deg, rgba(0,0,0,.8), transparent 86%); }
-.wp-hero .text-white-50 { color: #4a5c52 !important; }
-.wp-panel::before, .wp-metric::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--accent, #52b788); }
-.wp-hero > * { position: relative; z-index: 1; }
-.wp-eyebrow { font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; color: #2d6a4f; line-height: 1.35; }
-.wp-tabs { display: inline-flex; gap: .35rem; padding: .35rem; margin-bottom: 1.25rem; border: 1px solid #e3ece6; border-radius: 999px; background: #f3f6f4; }
-.wp-tab-button { border: 0; border-radius: 999px; padding: .65rem 1rem; color: #4a5c52; background: transparent; font-weight: 900; }
-.wp-tab-button.active { color: #0d1f18; background: #52b788; }
-.wp-tab-button:focus-visible { outline: 3px solid rgba(45,106,79,.28); outline-offset: 2px; }
-.wp-tab-panel[hidden] { display: none !important; }
-.wp-state { min-height: 180px; display: grid; place-items: center; padding: 1.25rem; text-align: center; }
-.wp-state-copy { max-width: 640px; }
-.wp-state-icon { width: 3rem; height: 3rem; display: inline-grid; place-items: center; margin-bottom: .75rem; border-radius: 999px; color: #2d6a4f; background: #d8f3dc; font-size: 1.25rem; font-weight: 900; }
-.wp-panel, .wp-metric, .wp-input-card, .wp-result-card { position: relative; overflow: hidden; border: 1px solid rgba(212,237,218,.98); border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(247,251,248,.96)); box-shadow: 0 .9rem 2rem rgba(13,31,24,.07); }
-.wp-panel-header { padding: 1rem; border-bottom: 1px solid rgba(212,237,218,.9); background: linear-gradient(90deg, #fff, #f0f7f4); }
-.wp-panel-body, .wp-metric-body { padding: 1rem; }
-.wp-metric { min-height: 168px; }
-.wp-label { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
-.wp-value { margin-top: .35rem; color: #0d1f18; font-size: clamp(1.8rem, 3vw, 2.45rem); font-weight: 900; line-height: 1; }
-.wp-unit { color: #5a7a64; font-size: .86rem; font-weight: 700; }
-.wp-card-value { color: #0d1f18; font-weight: 900; line-height: 1.35; }
-.wp-note { color: #5a7a64; font-size: .86rem; margin-top: .7rem; }
-.wp-source-line { color: rgba(255,255,255,.72); font-size: .875rem; font-weight: 800; margin-top: .65rem; line-height: 1.4; }
-.wp-guide-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-top: 1rem; }
-.wp-guide-step { border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: rgba(255,255,255,.04); padding: .72rem; }
-.wp-guide-step strong { display: block; color: #fff; font-size: .875rem; line-height: 1.3; }
-.wp-guide-step span { display: block; color: rgba(255,255,255,.72); font-size: .875rem; line-height: 1.45; margin-top: .28rem; }
-.wp-status { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .38rem .7rem; margin-top: .85rem; font-size: .8125rem; font-weight: 900; color: var(--status-color, #2d6a4f); background: var(--status-bg, #d8f3dc); line-height: 1.25; }
-.wp-status::before { content: ""; width: .45rem; height: .45rem; border-radius: 999px; background: currentColor; }
-.tone-green { --accent: #52b788; --status-color: #2d6a4f; --status-bg: #d8f3dc; }
-.tone-blue { --accent: #2d6a4f; --status-color: #2d6a4f; --status-bg: #d8f3dc; }
-.tone-amber { --accent: #ffd166; --status-color: #8a5a00; --status-bg: #fff4cf; }
-.tone-red { --accent: #d85b45; --status-color: #9f3728; --status-bg: #fde8e2; }
-.wp-input-card { padding: 1rem; height: 100%; }
-.wp-input-row { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; margin-bottom: .7rem; }
-.wp-input-card .form-control { width: 100%; max-width: none; font-weight: 800; text-align: left; }
-.wp-input-card .input-group { flex-wrap: nowrap; }
-.wp-area-group .form-control { min-width: 180px; }
-.wp-area-group .input-group-text { color: #4f665b; font-weight: 800; }
-.wp-help { color: #4f665b; font-size: .875rem; margin-top: .45rem; line-height: 1.45; }
-.wp-advanced-panel { overflow: visible; }
-.wp-advanced-panel .wp-panel-body { overflow: visible; }
-#advancedWeatherInputs.collapse:not(.show) { display: none; }
-#advancedWeatherInputs.collapse.show,
-#advancedWeatherInputs.collapsing {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-    transition: none !important;
-}
-#advancedWeatherInputs .form-label { color: rgba(255,255,255,.82); }
-#advancedWeatherInputs .form-control,
-#advancedWeatherInputs .form-select {
-    background: rgba(255,255,255,.05);
-    border-color: rgba(255,255,255,.18);
-    color: #fff;
-}
-#advancedWeatherInputs .form-select option { color: #0d1f18; background: #fff; }
-.wp-result-card { padding: 1rem; }
-.wp-advisory { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: 1rem; }
-.wp-feature-pill { display: inline-flex; border-radius: 999px; padding: .38rem .7rem; background: #d8f3dc; color: #1f6f4a; font-size: .8125rem; font-weight: 800; margin: .18rem; line-height: 1.25; }
-.wp-score-bar { height: 10px; border-radius: 999px; overflow: hidden; background: #dbe8dd; }
-.wp-score-bar > span { display: block; height: 100%; width: min(var(--score, 50%), 100%); background: linear-gradient(90deg, #ffd166, #52b788); }
-.ds-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
-.ds-card { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: 1rem; min-height: 138px; }
-.ds-card.primary { background: linear-gradient(145deg, #fff, #f0f7f4); border-left: 5px solid var(--accent, #52b788); }
-.ds-title { color: #4f665b; font-size: .875rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; line-height: 1.35; }
-.ds-value { color: #0d1f18; font-size: 1.05rem; font-weight: 900; line-height: 1.28; margin-top: .45rem; }
-.ds-note { color: #5a7a64; font-size: .86rem; line-height: 1.4; margin-top: .45rem; }
-.ds-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .42rem .72rem; font-size: .84rem; font-weight: 900; background: var(--status-bg, #d8f3dc); color: var(--status-color, #2d6a4f); }
-.ds-notifications { display: grid; gap: .45rem; padding: 0; margin: .55rem 0 0; list-style: none; }
-.ds-notifications li { border: 1px solid #d4edda; border-radius: 8px; background: #f7fbf8; padding: .62rem .72rem; font-weight: 700; }
-.smart-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
-.smart-list li { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .72rem .8rem; color: #1b2b23; font-weight: 700; }
-.stress-chip { display: grid; gap: .25rem; border: 1px solid #d4edda; border-left: 5px solid var(--accent, #52b788); border-radius: 8px; background: #fff; padding: .8rem; }
-.stress-chip.high { --accent: #d85b45; }
-.stress-chip.moderate { --accent: #ffd166; }
-/* Monthly / weekly prediction panel: explicit dark text so nothing inherits the layout's white body colour. */
-.wp-outlook { margin-bottom: 1rem; padding: 1.1rem; border: 1px solid #b9dcc6; border-radius: 14px; background: rgba(247,251,248,.96); color: #0d1f18; box-shadow: 0 6px 18px rgba(13,31,24,.07); }
-.wp-outlook h3, .wp-outlook h4, .wp-outlook h5, .wp-outlook p, .wp-outlook dt, .wp-outlook dd, .wp-outlook li { color: inherit; }
-.wp-outlook .text-muted, .wp-outlook small { color: #3d5247 !important; }
-.wp-outlook-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .35rem 1rem; margin-bottom: .9rem; }
-.wp-outlook-head h3 { font-size: 1.4rem; font-weight: 800; color: #0d3b2a; }
-.wp-outlook-period { font-size: 1rem; color: #26382f; font-weight: 600; }
-.wp-outlook-block { padding: .9rem; margin-bottom: .85rem; border: 1px solid #cfe4d6; border-radius: 12px; background: #fff; }
-.wp-outlook-tag { display: inline-block; margin-bottom: .6rem; padding: .25rem .8rem; border-radius: 999px; font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.wp-outlook-tag.is-model { background: #fff0c2; color: #6b4400; }
-.wp-outlook-tag.is-daily { background: #d8f3dc; color: #1b4d38; }
-.wp-outlook-tag.is-history { background: #dde8f6; color: #243f6b; }
-.wp-outlook-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; }
-.wp-outlook-row { display: flex; flex-direction: column; gap: .1rem; padding: .6rem .8rem; border-radius: 10px; background: #eef6f0; border: 1px solid #d9eadf; min-width: 0; }
-.wp-outlook-k { font-size: .95rem; font-weight: 700; color: #26382f; }
-.wp-outlook-v { font-size: 1.35rem; font-weight: 800; color: #0d1f18; line-height: 1.25; overflow-wrap: anywhere; }
-.wp-outlook-v small { font-size: .85rem; font-weight: 600; color: #3d5247 !important; }
-.wp-outlook-row.is-unavailable { background: #f5f6f5; }
-.wp-outlook-row.is-unavailable .wp-outlook-v { font-size: 1rem; font-weight: 600; color: #4a5a52; }
-.wp-outlook-subtitle { margin: 1.1rem 0 .6rem; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; color: #0d3b2a; }
-.wp-outlook-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
-.wp-ocard { display: flex; flex-direction: column; gap: .35rem; padding: 1rem; border: 1px solid #b9dcc6; border-radius: 14px; background: linear-gradient(180deg, #ffffff 0%, #f1f8f3 100%); box-shadow: 0 4px 12px rgba(13,31,24,.06); min-width: 0; }
-.wp-ocard-title { margin: 0 0 .2rem; font-size: 1rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; color: #1f5a46; }
-.wp-ocard-status { align-self: flex-start; padding: .25rem .8rem; border-radius: 999px; font-size: 1rem; font-weight: 800; background: #d8f3dc; color: #14503a; }
-.wp-ocard-status.is-above-normal { background: #fff0c2; color: #6b4400; }
-.wp-ocard-status.is-below-normal { background: #dde8f6; color: #243f6b; }
-.wp-ocard-value { font-size: 2.1rem; font-weight: 800; line-height: 1.1; color: #0d1f18; }
-.wp-ocard-caption { margin: 0; font-size: 1rem; line-height: 1.4; color: #26382f; }
-.wp-ocard-basis { margin: auto 0 0; padding-top: .5rem; border-top: 1px solid #d9eadf; font-size: .9rem; color: #33483d; }
-.wp-ocard-none { font-size: 1.1rem; font-weight: 700; color: #4a5a52; }
-.wp-season { display: flex; align-items: center; gap: .7rem; padding: .6rem .75rem; border-radius: 10px; border: 1px solid #d9eadf; background: #f7faf8; }
-.wp-season.is-active { background: #d8f3dc; border-color: #52b788; }
-.wp-season-icon { font-size: 1.7rem; line-height: 1; }
-.wp-season div { display: flex; flex-direction: column; min-width: 0; }
-.wp-season strong { font-size: 1.05rem; color: #0d1f18; }
-.wp-season span:not(.wp-season-icon) { font-size: 1rem; color: #26382f; }
-.wp-season em { margin-left: auto; font-size: .8rem; font-style: normal; font-weight: 800; color: #14503a; text-align: right; }
-.wp-panel .text-muted, .wp-panel-body .text-muted { color: #3d5247 !important; }
-.wp-outlook-fineprint { margin: .7rem 0 0; font-size: .9rem; color: #3d5247; }
-.wp-outlook-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem 1.2rem; margin: 1rem 0 0; }
-.wp-outlook-meta dt { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 800; color: #33483d; }
-.wp-outlook-meta dd { margin: 0; font-size: .98rem; color: #0d1f18; overflow-wrap: anywhere; }
-.wp-outlook-missing, .wp-outlook-pagasa { margin: .7rem 0 0; font-size: .9rem; color: #3d5247; }
-.wp-outlook-empty { font-size: 1.1rem; font-weight: 700; color: #26382f; }
-.wp-outlook-weeks { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: .8rem; margin-bottom: .85rem; }
-.wp-outlook-week { padding: .9rem; border: 1px solid #cfe4d6; border-radius: 12px; background: #fff; min-width: 0; color: #0d1f18; }
-.wp-outlook-week.is-empty { background: #f5f6f5; }
-.wp-outlook-week-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .2rem; font-size: 1.15rem; letter-spacing: -0.01em; color: #0d1f18; }
-.wp-outlook-week-head span { font-weight: 800; color: #1f5a46; }
-.wp-outlook-grid.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 991.98px) { .wp-outlook-cards { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
-@media (max-width: 575.98px) { .wp-outlook { padding: .8rem; } .wp-outlook-head h3 { font-size: 1.2rem; } .wp-outlook-cards, .wp-outlook-grid.is-compact { grid-template-columns: 1fr; } .wp-ocard-value { font-size: 1.8rem; } }
-.wp-calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
-.wp-calendar-bar { display: flex; align-items: center; gap: .6rem; margin-bottom: .75rem; padding: .5rem .75rem; border: 1px solid #d4edda; border-radius: 12px; background: rgba(255,255,255,.85); }
-.wp-calendar-arrow { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 1px solid #cfe4d6; background: #fff; color: #1f5a46; font-size: 1.6rem; line-height: 1; text-decoration: none; font-weight: 700; }
-.wp-calendar-arrow:hover, .wp-calendar-arrow:focus-visible { background: #e8f5ec; border-color: #52b788; color: #0d3b2a; }
-.wp-calendar-today { margin-left: auto; padding: .35rem .9rem; border-radius: 999px; border: 1px solid #2d6a4f; color: #1f5a46; background: #fff; font-weight: 700; font-size: .9rem; text-decoration: none; }
-.wp-calendar-today:hover { background: #2d6a4f; color: #fff; }
-.wp-calendar-daynum { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 .35rem; border-radius: 999px; font-size: 1.25rem; font-weight: 800; line-height: 1; color: #0d1f18; }
-.wp-calendar-dow { display: none; margin-right: .4rem; font-size: .85rem; font-weight: 700; color: #4f665b; }
-.wp-calendar-day.is-today .wp-calendar-daynum { background: #2d6a4f; color: #fff; }
-.wp-calendar-day.outside-month .wp-calendar-daynum { color: #5f6f66; font-weight: 700; }
-.wp-calendar-month { min-width: 9.5ch; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: -.01em; color: #1f5a46; }
-.wp-calendar-day.no-forecast { background: #f7faf8; border-style: dashed; border-top-style: solid; }
-.wp-calendar-day.no-forecast:hover { transform: none; box-shadow: none; }
-.wp-calendar-day.has-forecast { background: #fff; box-shadow: 0 2px 8px rgba(13,31,24,.06); }
-.wp-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .55rem; }
-.wp-calendar-week { display: contents; }
-.wp-calendar-weekday { color: #1f3a2d; padding: .35rem; font-size: 1rem; font-weight: 800; text-align: center; }
-.wp-calendar-day { color: #0d1f18; min-height: 150px; border: 1px solid #d4edda; border-top: 6px solid #cbd5cf; border-radius: 10px; background: #fff; padding: .75rem; font-size: 1rem; line-height: 1.45; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-.wp-calendar-day:hover { transform: translateY(-1px); border-color: #52b788; box-shadow: 0 6px 16px rgba(13,31,24,.08); }
-.wp-calendar-day.outside-month { background: #eef1ef; border-color: #d9e0dc; color: #55665d; }
-.wp-calendar-day.outside-month .wp-calendar-values, .wp-calendar-day.outside-month .wp-calendar-condition { opacity: 1; color: #55665d; }
-.wp-calendar-day.is-today { outline: 3px solid rgba(45,106,79,.28); outline-offset: 1px; }
-.wp-calendar-day.risk-low { border-top-color: #52b788; }
-.wp-calendar-day.risk-moderate { border-top-color: #ffd166; }
-.wp-calendar-day.risk-high, .wp-calendar-day.risk-severe { border-top-color: #d85b45; }
-.wp-calendar-date { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .45rem; }
-.wp-calendar-risk { display: inline-flex; border-radius: 999px; padding: .25rem .55rem; background: #edf2ee; color: #33483d; font-size: .8rem; font-weight: 800; }
-.risk-low .wp-calendar-risk { background: #d8f3dc; color: #14503a; }
-.risk-moderate .wp-calendar-risk { background: #fff0c2; color: #6b4400; }
-.risk-high .wp-calendar-risk, .risk-severe .wp-calendar-risk { background: #fde1da; color: #8a2a1c; }
-.wp-calendar-condition { display: flex; align-items: center; gap: .35rem; color: #0d1f18; font-size: .94rem; font-weight: 800; line-height: 1.3; }
-.wp-calendar-icon { width: 20px; height: 20px; flex: 0 0 auto; }
-.wp-calendar-values { display: grid; gap: .18rem; margin-top: .35rem; color: #1f3327; font-size: .875rem; line-height: 1.35; overflow-wrap: anywhere; }
-.wp-calendar-values strong { font-weight: 700; color: #0d1f18; }
-.wp-calendar-unavailable { color: #6b7c72; font-size: .93rem; }
-/* Severity legend: same family as the section headings, but smaller. */
-.wp-risk-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.6rem; margin: 0 0 .75rem; padding: .5rem .9rem; border: 1px solid #cfe4d6; border-radius: 10px; background: rgba(255,255,255,.9); }
-.wp-risk-legend-item { display: inline-flex; align-items: center; gap: .55rem; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; color: #0d1f18; }
-.wp-risk-swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(13,31,24,.35); flex: none; }
-.wp-calendar-loading { min-height: 220px; place-items: center; text-align: center; }
-.wp-calendar-loading:not([hidden]) { display: grid; }
-.wp-monthly-prediction { background: #f4f9f5; border: 1px solid #cfe4d6; border-radius: 12px; padding: 1rem 1.15rem; margin-bottom: 1.1rem; }
-.wp-monthly-prediction-title { font-size: 1.1rem; font-weight: 900; color: #0d1f18; display: flex; align-items: center; gap: .5rem; }
-.wp-monthly-prediction-badge { display: inline-block; padding: .18rem .6rem; border-radius: 999px; background: #2d6a4f; color: #fff; font-size: .72rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
-.wp-monthly-prediction-note { margin: .4rem 0 .7rem; color: #4f665b; font-size: .92rem; line-height: 1.5; }
-.wp-monthly-prediction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .5rem .9rem; font-size: .95rem; color: #33483d; font-weight: 700; }
-@media (max-width: 1199.98px) { .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 991.98px) { .wp-guide-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 767.98px) {
-    .ds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .wp-guide-flow { grid-template-columns: 1fr; gap: .5rem; margin-top: .75rem; }
-    .wp-input-row { display: grid; }
-    .wp-input-card .form-control { max-width: none; text-align: left; }
-    .wp-hero { padding: 1rem; border-radius: 20px; margin-bottom: .85rem; }
-    .wp-tabs { margin-bottom: .85rem; padding: .28rem; }
-    .wp-tab-button { padding: .55rem .8rem; font-size: .86rem; }
-    .wp-panel-header, .wp-panel-body { padding: .75rem; }
-    .wp-metric-body { padding: .75rem; }
-    .wp-metric { min-height: auto; }
-    .wp-value { font-size: 1.7rem; margin-top: .25rem; }
-    .wp-guide-step { padding: .6rem; }
-    .ds-card { min-height: auto; padding: .75rem; }
-    .wp-page .row.g-4 { --bs-gutter-y: .75rem; }
-    .wp-page .mb-4 { margin-bottom: 1rem !important; }
-    .wp-result-card, .wp-input-card { padding: .85rem; }
-    .wp-outlook { margin-bottom: 1rem; padding: 1rem; border: 1px solid #d4edda; border-radius: 12px; background: rgba(247,251,248,.9); }
-.wp-outlook-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .35rem 1rem; margin-bottom: .75rem; }
-.wp-outlook-period { font-size: .9rem; color: #4f665b; font-weight: 600; }
-.wp-outlook-block { padding: .75rem; margin-bottom: .75rem; border: 1px solid #e3ece6; border-radius: 10px; background: #fff; }
-.wp-outlook-tag { display: inline-block; margin-bottom: .5rem; padding: .15rem .65rem; border-radius: 999px; font-size: .75rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
-.wp-outlook-tag.is-model { background: #fff4cf; color: #8a5a00; }
-.wp-outlook-tag.is-daily { background: #d8f3dc; color: #2d6a4f; }
-.wp-outlook-tag.is-history { background: #e4ecf7; color: #2f4f7f; }
-.wp-outlook-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .5rem; }
-.wp-outlook-row { display: flex; flex-direction: column; padding: .45rem .65rem; border-radius: 8px; background: #f3f8f4; min-width: 0; }
-.wp-outlook-k { font-size: .8rem; font-weight: 700; color: #4f665b; }
-.wp-outlook-v { font-size: 1.15rem; font-weight: 800; color: #0d1f18; overflow-wrap: anywhere; }
-.wp-outlook-v small { font-size: .75rem; font-weight: 600; color: #4f665b; }
-.wp-outlook-notes { margin-top: .6rem; display: grid; gap: .25rem; font-size: .92rem; }
-.wp-outlook-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .4rem 1rem; margin: .75rem 0 0; font-size: .88rem; }
-.wp-outlook-meta dt { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: #4f665b; }
-.wp-outlook-meta dd { margin: 0; overflow-wrap: anywhere; }
-.wp-outlook-missing, .wp-outlook-pagasa { margin: .6rem 0 0; font-size: .82rem; color: #5b6b64; }
-.wp-outlook-empty { font-weight: 700; }
-.wp-outlook-weeks { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: .75rem; margin-bottom: .75rem; }
-.wp-outlook-week { padding: .75rem; border: 1px solid #e3ece6; border-radius: 10px; background: #fff; min-width: 0; }
-.wp-outlook-week.is-empty { background: #f7f8f7; }
-.wp-outlook-week-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .15rem; color: #0d1f18; }
-.wp-outlook-week-head span { font-weight: 700; color: #2d6a4f; }
-.wp-outlook-grid.is-compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 420px) { .wp-outlook-grid.is-compact { grid-template-columns: 1fr; } }
-.wp-outlook-row.is-unavailable { background: #f7f8f7; }
-.wp-outlook-row.is-unavailable .wp-outlook-v { font-size: .9rem; font-weight: 600; color: #6b7c72; }
-.wp-outlook-pagasa { margin-bottom: 0; }
-.wp-calendar-toolbar { align-items: stretch; }
-    .wp-calendar-dow { display: inline; }
-    .wp-calendar-daynum { justify-content: flex-start; }
-    .wp-calendar-month { font-size: 1.35rem; }
-    .wp-calendar-day.no-forecast { padding: .5rem .9rem; }
-    .wp-calendar-grid { display: block; }
-    .wp-calendar-weekday { display: none; }
-    .wp-calendar-week { display: block; }
-    .wp-calendar-day { min-height: 0; margin-bottom: .7rem; padding: .9rem; font-size: 1rem; }
-    .wp-calendar-day.outside-month { display: none; }
-}
-@media (max-width: 380px) {
-    .ds-grid { grid-template-columns: 1fr; }
-}
+/*
+ * Predictions page (weather-predictions/index, 2026-10): one page for every role. The header and cards are the shared
+ * .fad parts (farmer-advisories.css); this file adds the range buttons, the day list, the yield number and IT's
+ * technical details. Dark-theme overrides are generated (scripts/generate_dark_overrides.py).
+ */
+.wpx .wpx-panel { display: flex; flex-direction: column; gap: 14px; }
+.wpx .wpx-panel h2 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #1b1f1d; }
+.wpx .wpx-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
 
-.wp-source-line { color: #6b7c72; }
-.wp-guide-step { border-color: #e3ece6; background: #fff; }
-.wp-guide-step strong { color: #1f2a24; }
-.wp-guide-step span { color: #4a5c52; }
-#advancedWeatherInputs .form-label { color: #4a5c52; }
-#advancedWeatherInputs .form-control,
-#advancedWeatherInputs .form-select {
-    background: #fff;
-    border-color: #d4edda;
-    color: #1f2a24;
-}
+/* [This Week] [Next 2 Weeks]: two plain links, the open one filled. */
+.wpx .wpx-range { display: inline-flex; border: 1px solid #c9d8ce; border-radius: 999px; overflow: hidden; }
+.wpx .wpx-range a { padding: 8px 18px; font-weight: 700; color: #0f5132; text-decoration: none; background: #fff; }
+.wpx .wpx-range a + a { border-left: 1px solid #c9d8ce; }
+.wpx .wpx-range a.is-active { background: #0f5132; color: #fff; }
 
-/* -- plain, uniform page (matches farmer dashboard, no tone variation) -- */
-.wp-metric::before, .wp-panel::before { background: #52b788 !important; }
-.wp-metric .wp-status { color: #74c69d !important; background: rgba(82,183,136,.16) !important; }
-.ds-card.primary { border-left-color: #52b788 !important; }
-.stress-chip { border-left-color: #52b788 !important; }
+.wpx .wpx-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.wpx .wpx-filter label { font-weight: 700; }
+.wpx .wpx-filter select { min-width: 220px; padding: 8px 10px; border: 1px solid #c9d8ce; border-radius: 8px; background: #fff; }
 
-/* Product UI restraint pass */
-.wp-hero {
-    border-radius: 16px;
-    background: #f5f7f4;
-    box-shadow: 0 1px 2px rgba(13,31,24,.08);
-}
-.wp-hero::before { opacity: .24; }
-.wp-eyebrow,
-.wp-label,
-.ds-title {
-    font-family: 'Inter', sans-serif;
-    text-transform: none;
-    letter-spacing: 0;
-}
-.wp-tabs {
-    border-radius: 10px;
-    padding: .25rem;
-}
-.wp-tab-button {
-    border-radius: 8px;
-    font-weight: 750;
-}
-.wp-panel,
-.wp-metric,
-.wp-input-card,
-.wp-result-card {
-    border: 1px solid #c9d7ce;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(13,31,24,.08);
-}
-.wp-panel-header { background: #f5f7f4; color: #1f2a24; }
-.wp-panel-header h1,
-.wp-panel-header h2,
-.wp-panel-header h3,
-.wp-panel-header h4,
-.wp-panel-header h5,
-.wp-panel-header h6 { color: #1f2a24; }
-.wp-status,
-.wp-feature-pill,
-.ds-pill {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-}
+/* The days: big, plain cards; numbers only for MAO and IT. */
+.wpx .wpx-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.wpx .wpx-day { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border: 1px solid #e3e8e5; border-radius: 12px; background: #f8faf9; text-align: center; }
+.wpx .wpx-day.is-today { border-color: #198754; background: #e6f4ec; }
+.wpx .wpx-day.is-estimate { border-style: dashed; background: #fbfaf5; }
+.wpx .wpx-day.is-empty { opacity: .7; }
+.wpx .wpx-day-name { font-weight: 700; }
+.wpx .wpx-day-icon { color: #1a5c96; }
+.wpx .wpx-day-icon svg { width: 34px; height: 34px; }
+.wpx .wpx-day-words { font-size: 1rem; line-height: 1.3; }
+.wpx .wpx-day-rain { font-size: .92rem; font-weight: 700; color: #1a5c96; }
+.wpx .wpx-day-temp, .wpx .wpx-day-wind { font-size: .9rem; color: #5b6660; }
+.wpx .wpx-badge { padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: #fbf1dc; color: #7a4f0a; }
+.wpx .wpx-day-numbers { display: grid; gap: 2px; width: 100%; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid #e3e8e5; font-size: .82rem; }
+.wpx .wpx-day-numbers div { display: flex; justify-content: space-between; gap: 6px; }
+.wpx .wpx-day-numbers dt { font-weight: 600; color: #5b6660; }
+.wpx .wpx-day-numbers dd { margin: 0; font-weight: 700; }
 
-.wp-tab-button { min-height: 44px; }
-.wp-tab-button.active { box-shadow: inset 0 -3px 0 #2d6a4f; }
-.btn-check:focus-visible + .btn { outline: 3px solid rgba(45,106,79,.35); outline-offset: 2px; }
-details.wp-panel > summary { list-style: none; }
-details.wp-panel > summary::-webkit-details-marker { display: none; }
-details.wp-panel[open] > summary { border-bottom: 1px solid rgba(212,237,218,.9); }
+/* Expected yield: one big number and its comparison. */
+.wpx .wpx-big { margin: 0; font-size: 2.6rem; font-weight: 800; line-height: 1.1; color: #1b1f1d; }
+.wpx .wpx-big small { font-size: 1.1rem; font-weight: 600; color: #5b6660; }
+.wpx .wpx-compare { align-self: flex-start; margin: 0; padding: 4px 16px; border-radius: 999px; font-weight: 700; background: #e8f1f9; color: #1a5c96; }
+.wpx .wpx-compare.is-good { background: #e6f4ec; color: #0f5132; }
+.wpx .wpx-compare.is-watch { background: #fbf1dc; color: #7a4f0a; }
 
-/* ====================================================================
-   Weather Forecast typography system
-   One font family, one colour palette, one size scale and one spacing
-   scale for the whole page. Only presentation: no data or logic here.
-   ==================================================================== */
-.wp-page {
-    --wp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    /* colour palette (all pass 4.5:1 on the light cards) */
-    --wp-ink: #0d1f18;        /* primary text */
-    --wp-ink-2: #26382f;      /* secondary text */
-    --wp-ink-3: #3d5247;      /* muted text: still clearly readable */
-    --wp-green: #0d3b2a;      /* headings and key values */
-    /* size scale */
-    --wp-fs-title: 1.5rem;    /* 24px  page / calendar title */
-    --wp-fs-h1: 1.4rem;       /* 22px  main section heading */
-    --wp-fs-h2: 1.15rem;      /* 18px  section heading */
-    --wp-fs-card: 0.9375rem;  /* 15px  card titles */
-    --wp-fs-label: 0.875rem;  /* 14px  metric labels */
-    --wp-fs-value: 1.375rem;  /* 22px  important values */
-    --wp-fs-body: 0.9375rem;  /* 15px  supporting text */
-    --wp-fs-meta: 0.875rem;   /* 14px  metadata values */
-    --wp-fs-meta-label: 0.8125rem; /* 13px metadata labels */
-    /* spacing scale */
-    --wp-s1: .5rem; --wp-s2: .75rem; --wp-s3: 1rem; --wp-s4: 1.25rem;
-}
-.wp-page, .wp-page * { font-family: var(--wp-font); }
-.wp-page h1, .wp-page h2, .wp-page h3, .wp-page h4, .wp-page h5, .wp-page h6 { font-weight: 700; letter-spacing: 0; text-wrap: balance; }
-.wp-page .wp-panel h2, .wp-page .wp-panel h3, .wp-page .wp-panel h4, .wp-page .wp-panel h5 { color: var(--wp-green); }
-.wp-page .wp-panel .text-muted, .wp-page .wp-panel small, .wp-page .wp-note, .wp-page .ds-note, .wp-page .wp-unit,
-.wp-page .wp-source-line { color: var(--wp-ink-3) !important; }
-.wp-page .wp-note, .wp-page .ds-note, .wp-page .wp-unit { font-size: var(--wp-fs-meta); line-height: 1.5; }
-.wp-page .wp-label { font-weight: 700; color: var(--wp-ink-2); }
-
-/* Title + intro lines */
-.wp-page .wp-calendar-toolbar h2 { font-size: var(--wp-fs-title); font-weight: 800; margin-bottom: .2rem !important; }
-.wp-page .wp-calendar-toolbar .text-muted { font-size: var(--wp-fs-body); }
-.wp-page [data-weather-calendar] > .mb-2 { font-size: var(--wp-fs-body); color: var(--wp-ink-2) !important; margin-bottom: var(--wp-s3) !important; }
-
-/* Monthly Weather Prediction */
-.wp-page .wp-outlook { padding: var(--wp-s4); margin-bottom: var(--wp-s4); }
-.wp-page .wp-outlook-head { margin-bottom: var(--wp-s3); gap: var(--wp-s1) var(--wp-s3); }
-.wp-page .wp-outlook-head h3 { font-size: var(--wp-fs-h1); font-weight: 800; color: var(--wp-green); line-height: 1.25; }
-.wp-page .wp-outlook-period { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-2); }
-.wp-page .wp-outlook-block { padding: var(--wp-s3); margin-bottom: var(--wp-s3); }
-.wp-page .wp-outlook-tag { font-size: var(--wp-fs-meta-label); font-weight: 700; letter-spacing: .05em; padding: .3rem .85rem; margin-bottom: var(--wp-s2); }
-.wp-page .wp-outlook-grid { gap: var(--wp-s2); }
-.wp-page .wp-outlook-row { min-height: 4.75rem; justify-content: space-between; gap: .25rem; padding: var(--wp-s2) var(--wp-s3); }
-.wp-page .wp-outlook-k { font-size: var(--wp-fs-label); font-weight: 600; color: var(--wp-ink-2); line-height: 1.3; }
-.wp-page .wp-outlook-v { font-size: var(--wp-fs-value); font-weight: 700; color: var(--wp-ink); line-height: 1.25; }
-.wp-page .wp-outlook-v small { font-size: var(--wp-fs-label); font-weight: 600; color: var(--wp-ink-3) !important; }
-.wp-page .wp-outlook-row.is-unavailable .wp-outlook-v { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-3); }
-
-/* Seasonal & Outlook cards: identical structure */
-.wp-page .wp-outlook-subtitle { font-size: var(--wp-fs-h2); font-weight: 700; color: var(--wp-green); margin: var(--wp-s4) 0 var(--wp-s2); letter-spacing: 0; }
-.wp-page .wp-outlook-cards { gap: var(--wp-s2); align-items: stretch; }
-.wp-page .wp-ocard { padding: var(--wp-s3); gap: var(--wp-s1); }
-.wp-page .wp-ocard-title { font-size: var(--wp-fs-card); font-weight: 700; letter-spacing: .05em; color: #1f5a46; margin: 0; }
-.wp-page .wp-ocard-status { font-size: var(--wp-fs-card); font-weight: 700; padding: .25rem .8rem; }
-.wp-page .wp-ocard-value { font-size: var(--wp-fs-value); font-weight: 800; color: var(--wp-green); line-height: 1.2; }
-.wp-page .wp-ocard-caption { font-size: var(--wp-fs-body); font-weight: 400; line-height: 1.5; color: var(--wp-ink-2); }
-.wp-page .wp-ocard-basis { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink-2); padding-top: var(--wp-s2); }
-.wp-page .wp-ocard-basis strong { font-weight: 700; color: var(--wp-ink); }
-.wp-page .wp-ocard-none { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-3); }
-.wp-page .wp-season { padding: var(--wp-s2); gap: var(--wp-s2); }
-.wp-page .wp-season strong { font-size: var(--wp-fs-card); font-weight: 700; color: var(--wp-ink); }
-.wp-page .wp-season span:not(.wp-season-icon) { font-size: var(--wp-fs-body); color: var(--wp-ink-2); }
-.wp-page .wp-season em { font-size: var(--wp-fs-meta-label); font-weight: 600; color: #1f5a46; }
-.wp-page .wp-outlook-fineprint, .wp-page .wp-outlook-missing, .wp-page .wp-outlook-pagasa { font-size: var(--wp-fs-meta); color: var(--wp-ink-3); line-height: 1.5; }
-
-/* Metadata: Forecast Period / Type / Source / Last Updated / Uncertainty */
-.wp-page .wp-outlook-meta { gap: var(--wp-s2) var(--wp-s4); margin-top: var(--wp-s3); padding-top: var(--wp-s3); border-top: 1px solid #d9eadf; }
-.wp-page .wp-outlook-meta dt { font-size: var(--wp-fs-meta-label); font-weight: 700; letter-spacing: .05em; color: var(--wp-ink-2); margin-bottom: .15rem; }
-.wp-page .wp-outlook-meta dd { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink); line-height: 1.5; }
-
-/* Weekly fallback cards */
-.wp-page .wp-outlook-week { padding: var(--wp-s3); }
-.wp-page .wp-outlook-week-head { font-size: var(--wp-fs-h2); font-weight: 700; letter-spacing: 0; color: var(--wp-ink); }
-.wp-page .wp-outlook-week-head span { font-size: var(--wp-fs-card); font-weight: 700; color: #1f5a46; }
-.wp-page .wp-outlook-empty { font-size: var(--wp-fs-body); font-weight: 600; color: var(--wp-ink-2); }
-
-/* Month bar, legend, calendar */
-.wp-page .wp-calendar-month { font-size: var(--wp-fs-title); font-weight: 800; letter-spacing: 0; color: var(--wp-green); }
-.wp-page .wp-calendar-today { font-size: var(--wp-fs-label); font-weight: 700; }
-.wp-page .wp-risk-legend { margin-bottom: var(--wp-s2); }
-.wp-page .wp-risk-legend-item { font-size: 1rem; font-weight: 600; letter-spacing: 0; color: var(--wp-ink); }
-.wp-page .wp-calendar-weekday { font-size: var(--wp-fs-body); font-weight: 700; color: var(--wp-ink); }
-.wp-page .wp-calendar-daynum { font-size: 1.0625rem; font-weight: 700; }
-.wp-page .wp-calendar-condition { font-size: var(--wp-fs-body); font-weight: 700; color: var(--wp-ink); }
-.wp-page .wp-calendar-values { font-size: var(--wp-fs-meta); font-weight: 400; color: var(--wp-ink-2); }
-.wp-page .wp-calendar-values strong { font-weight: 600; color: var(--wp-ink); }
-.wp-page .wp-calendar-risk { font-size: var(--wp-fs-meta-label); font-weight: 700; }
-.wp-page .wp-calendar-day.outside-month, .wp-page .wp-calendar-day.outside-month .wp-calendar-values, .wp-page .wp-calendar-day.outside-month .wp-calendar-condition { color: #4c5d54; }
-.wp-page .wp-calendar-day.outside-month .wp-calendar-daynum { color: #56675e; font-weight: 600; }
-.wp-page [data-calendar-content] > .small { font-size: var(--wp-fs-meta); color: var(--wp-ink-3) !important; }
+/* IT: technical details behind one toggle. */
+.wpx .wpx-tech summary { cursor: pointer; font-weight: 700; color: #0f5132; }
+.wpx .wpx-tech h3 { margin: 16px 0 8px; font-size: 1.05rem; font-weight: 700; }
+.wpx .wpx-tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 0; }
+.wpx .wpx-tech-grid dt { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }
+.wpx .wpx-tech-grid dd { margin: 2px 0 0; font-weight: 600; }
 
 @media (max-width: 575.98px) {
-    .wp-page { --wp-fs-title: 1.3rem; --wp-fs-h1: 1.2rem; --wp-fs-value: 1.25rem; }
-    .wp-page .wp-outlook { padding: var(--wp-s3); }
-    .wp-page .wp-outlook-row { min-height: 0; }
+    .wpx .wpx-days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .wpx .wpx-range { width: 100%; }
+    .wpx .wpx-range a { flex: 1; text-align: center; padding: 8px 10px; }
 }

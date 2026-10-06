@@ -80,13 +80,18 @@ class WeatherApiService
             return $cached;
         }
 
-        // A page a person is waiting on uses the last good forecast (up to an hour old) instead of
-        // calling the provider; the scheduled weather refresh keeps it current.
-        $mode = \App\Support\InteractiveRequest::weatherMode();
+        // A page or API request never calls the provider (only a Refresh button does, through $refresh): it shows the
+        // last stored forecast, whatever its age. iclimate:refresh-weather-cache keeps Lian's and every registered
+        // barangay's forecast current every few minutes.
+        if (\App\Support\InteractiveRequest::isPageRequest()) {
+            $latest = Cache::get($latestCacheKey);
 
-        if ($mode['stale_ok'] && ($recent = $this->recentSnapshot(Cache::get($latestCacheKey))) !== null) {
-            return $recent;
+            return $this->recentSnapshot($latest)
+                ?? $this->cachedFallback($latest)
+                ?? $this->storedFallback($latitude, $longitude);
         }
+
+        $mode = \App\Support\InteractiveRequest::weatherMode();
 
         $fresh = $this->fetchForecast($latitude, $longitude, $location, $mode['budget']);
 

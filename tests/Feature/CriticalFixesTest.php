@@ -145,15 +145,16 @@ class CriticalFixesTest extends TestCase
 
     public function test_one_season_calendar_is_used_everywhere(): void
     {
-        foreach ([5, 6, 7, 8, 9] as $month) {
+        // App\Support\RiceSeason (decided 2026-10-06): wet May to October, dry November to April.
+        foreach ([5, 6, 7, 8, 9, 10] as $month) {
             $this->assertSame(ClimateRecord::SEASON_WET, ClimateRecord::seasonForMonth($month));
         }
-        foreach ([10, 11, 12, 1, 2, 3, 4] as $month) {
+        foreach ([11, 12, 1, 2, 3, 4] as $month) {
             $this->assertSame(ClimateRecord::SEASON_DRY, ClimateRecord::seasonForMonth($month));
         }
 
         // The farmer wording states the same calendar in both languages.
-        $this->assertStringContainsString('May–September', (string) trans('farmer.climate.season.wet', [], 'en'));
-        $this->assertStringContainsString('Mayo–Setyembre', (string) trans('farmer.climate.season.wet', [], 'fil'));
+        $this->assertStringContainsString('May–October', (string) trans('farmer.climate.season.wet', [], 'en'));
+        $this->assertStringContainsString('Mayo–Oktubre', (string) trans('farmer.climate.season.wet', [], 'fil'));
     }
 }

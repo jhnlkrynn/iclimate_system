@@ -13,14 +13,12 @@ use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Prediction\ShortTermOutlookService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\MonthlyWeatherCalendarService;
-use App\Services\Weather\WeatherFeedbackService;
 use App\Services\WeatherApiService;
 use App\Support\LianBarangays;
 use App\Support\PredictionWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -28,169 +26,103 @@ class WeatherPredictionController extends Controller
 {
     private const LIAN_MUNICIPAL_PREVIEW_LABEL = 'Lian, Batangas municipal preview';
 
-    public function index(
-        Request $request,
-        PredictionDateValidator $dateValidator,
-        WeatherApiService $weatherApi,
-        MonthlyWeatherCalendarService $calendarService,
-        \App\Services\Weather\MonthlyWeatherOutlookService $outlookService,
-        ShortTermOutlookService $shortTermOutlookService,
-        PredictionOrchestrator $predictionOrchestrator,
-        WeatherFeedbackService $feedbackService,
-        FarmerDashboardWeatherService $sharedWeather,
-    ): View {
-        $validated = $request->validate([
-            'target_month' => ['nullable', 'date_format:Y-m'],
-            'target_date' => ['nullable', 'date'],
-            'calendar_month' => ['nullable', 'date_format:Y-m'],
-            'run' => ['nullable', 'uuid'],
-        ]);
-        $analyticsRun = $this->runForRequest($request);
-        $requestedDate = data_get($analyticsRun?->input, 'target_date');
-        $targetDate = $requestedDate
-            ? CarbonImmutable::parse($requestedDate)
-            : (isset($validated['target_date'])
-                ? CarbonImmutable::parse($validated['target_date'])
-                : (isset($validated['target_month'])
-                    ? CarbonImmutable::createFromFormat('Y-m-d', $validated['target_month'].'-01')
-                    : PredictionDateValidator::defaultTargetDate()));
-        $targetMonth = $targetDate->startOfMonth();
+    /**
+     * One Predictions page for every role (2026-10), from saved data only:
+     *   - weather: [This Week] = days 1–7 or [Next 2 Weeks] = days 1–14 of the stored daily forecast (DailyForecastService);
+     *     days it does not reach are "Tantiya" from the monthly model;
+     *   - yield: this season's expected yield (auto-detected season). A farmer sees their own stored estimate (farm area
+     *     and type from the profile); MAO and IT see the average of farmers' stored estimates for the area shown.
+     * Farmers read words (no millimetres); MAO and IT also see numbers. MAO can pick a barangay; IT can open the
+     * technical details. No date or month picker, no provider call, no model run.
+     */
+    public function index(Request $request, \App\Services\Weather\DailyForecastService $daily, \App\Services\Prediction\SeasonYield $seasonYield, \App\Services\Analytics\FarmerDashboardService $farmerHome): View
+    {
+        $user = $request->user();
+        $role = $user->role;
+        $range = $request->query('range') === '2weeks' ? '2weeks' : 'week';
 
-        // Technical model/analytics details are for IT Expert accounts only.
-        $isTechnical = $request->user()->role === User::ROLE_IT_EXPERT;
-
-        // $errorInfo is always farmer-safe. The raw failure text stays in the
-        // server log (and analytics_runs.error), and is exposed under
-        // 'technical' to IT Expert accounts only.
-        $errorInfo = null;
-        if ($dateMessage = $dateValidator->validate($targetDate)) {
-            $errorInfo = ['title' => 'Please Choose Another Date', 'detail' => $dateMessage, 'technical' => null];
-        } elseif ($analyticsRun?->status === AnalyticsRun::STATUS_FAILED) {
-            Log::warning('Prediction run failed.', [
-                'analytics_run_id' => $analyticsRun->id,
-                'type' => $analyticsRun->type,
-                'error' => $analyticsRun->error,
-            ]);
-            $errorInfo = PredictionWording::friendlyFailure($analyticsRun->error)
-                + ['technical' => $isTechnical ? $analyticsRun->error : null];
-        }
-        $error = $errorInfo['detail'] ?? null;
-
-        $stored = $analyticsRun?->status === AnalyticsRun::STATUS_COMPLETED
-            ? (array) $analyticsRun->result
-            : [];
-        $weatherResult = $analyticsRun?->type === 'rice_yield_prediction'
-            ? data_get($stored, 'weather_result')
-            : ($stored ?: null);
-        $mlResult = $analyticsRun?->type === 'rice_yield_prediction'
-            ? data_get($stored, 'ml_result')
-            : null;
-        $location = $this->savedLocation($request);
-        // The Lian-wide reading is the same one the dashboards show; the
-        // barangay reading is shown beside it (not instead of it).
-        $lianWeather = rescue(fn () => $sharedWeather->current(), null, false);
-        $liveWeather = rescue(function () use ($location, $sharedWeather, $weatherApi, $weatherResult) {
-            return match (true) {
-                // No usable barangay: show the Lian-wide reading instead of nothing.
-                ! $location['coordinates'], $location['is_municipal_preview'] => $sharedWeather->alignForecast($weatherApi->forecast(
-                    location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-                )) ?? data_get($weatherResult, 'live_weather'),
-                default => $weatherApi->forecast(
-                    latitude: $location['coordinates'][0],
-                    longitude: $location['coordinates'][1],
-                    location: $location['label'],
-                ) ?? data_get($weatherResult, 'live_weather'),
-            };
-        }, null, false);
-
-        // Keep both readings on the same update time: if they were fetched
-        // more than two minutes apart, refresh both together.
-        if (! $location['is_municipal_preview'] && $location['coordinates'] && $this->readingsOutOfSync($liveWeather, $lianWeather)) {
-            $liveWeather = rescue(fn () => $weatherApi->forecast(
-                refresh: true,
-                latitude: $location['coordinates'][0],
-                longitude: $location['coordinates'][1],
-                location: $location['label'],
-            ), null, false) ?? $liveWeather;
-            $lianWeather = rescue(fn () => $sharedWeather->current(force: true), null, false) ?? $lianWeather;
-        }
-        $calendarMonth = isset($validated['calendar_month'])
-            ? CarbonImmutable::createFromFormat('Y-m-d', $validated['calendar_month'].'-01')
-            : \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
-        // Municipal calendar uses the shared Lian reading so its daily values
-        // match the Farmer/MAO dashboards, login page and chatbot exactly.
-        $calendarWeather = rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast(
-            location: self::LIAN_MUNICIPAL_PREVIEW_LABEL,
-        )), null, false);
-        // A single whole-month estimate (not per-day) from the same monthly
-        // Random Forest model already used by the barangay risk map — shown
-        // in the calendar as its own clearly-labeled "Monthly Prediction"
-        // summary, never written into individual day cells.
-        //
-        // Reads through PredictionOrchestrator: a persisted/cached forecast
-        // (normally pre-generated by the `iclimate:refresh-predictions`
-        // scheduler) is returned instantly; only a month nothing has been
-        // generated for yet falls back to computing inline here. A genuine
-        // failure (not just "not enough history yet", which the model
-        // itself reports as a normal ready=false result) must never fatal
-        // the whole page — MonthlyWeatherCalendarService already treats a
-        // null monthly prediction as "no summary to show", the same as any
-        // other not-ready result.
-        try {
-            $monthlyPrediction = $predictionOrchestrator->monthlyWeatherForecast($calendarMonth);
-        } catch (\App\Exceptions\PredictionNotReady) {
-            // Not an error: this request may only read prepared forecasts and the scheduler has not built this month yet.
-            $monthlyPrediction = null;
-        } catch (\Throwable $exception) {
-            report($exception);
-            $monthlyPrediction = null;
-        }
-        $weatherCalendar = $calendarService->build($calendarMonth, $calendarWeather, $monthlyPrediction);
-        $monthlyOutlook = $outlookService->build($weatherCalendar);
-        $liveWeatherError = match (true) {
-            ! $location['coordinates'] => 'Your saved barangay is not recognized as one of Lian’s 19 barangays. Update your profile location.',
-            ! $liveWeather && $isTechnical => 'Open-Meteo is temporarily unavailable and no saved forecast exists for your location.',
-            ! $liveWeather => 'The forecast is not available right now. Please try again later.',
+        $barangay = match ($role) {
+            User::ROLE_FARMER => $user->registeredBarangay(),
+            User::ROLE_MAO => LianBarangays::canonicalName(is_string($request->query('barangay')) ? $request->query('barangay') : null),
             default => null,
         };
 
-        $defaultModelInput = (array) data_get($weatherResult, 'model_input', []);
+        $profile = $role === User::ROLE_FARMER ? $user->farmerProfile : null;
 
         return view('weather-predictions.index', [
-            'targetMonth' => $targetMonth,
-            'targetDate' => $targetDate,
-            'result' => $weatherResult,
-            'defaultModelInput' => $defaultModelInput,
-            'mlResult' => $mlResult,
-            'shortTermOutlook' => $defaultModelInput !== []
-                ? $shortTermOutlookService->build($defaultModelInput, $targetMonth)
-                : null,
-            'yieldComparison' => ($mlResult && $location['barangay'])
-                ? $this->yieldComparison((float) $mlResult['predicted_yield'], $location['barangay'], $targetDate)
-                : null,
-            'analyticsRun' => $analyticsRun,
-            'error' => $error,
-            'errorInfo' => $errorInfo,
-            'isTechnical' => $isTechnical,
-            'isFarmer' => $request->user()->role === User::ROLE_FARMER,
-            'yieldSummary' => $mlResult
-                ? $this->yieldSummary($mlResult, $location['barangay'], $targetDate, $targetMonth)
-                : null,
-            'weatherCheck' => rescue(fn () => $feedbackService->pendingPrompt($request->user()), null, false),
-            'weatherCheckBarangayIssue' => $request->user()->role === User::ROLE_FARMER
-                ? rescue(fn () => $feedbackService->barangayFor($request->user())[1] ?? null, null, false)
-                : null,
-            'liveWeather' => $liveWeather,
-            'lianWeather' => ($lianWeather['success'] ?? false) === true && $location['coordinates'] && ! $location['is_municipal_preview'] ? $lianWeather : null,
-            'liveWeatherError' => $liveWeatherError,
-            'liveWeatherCacheMinutes' => max(30, min(60, (int) config('services.weather_api.refresh_minutes', 45))),
-            'savedWeatherLocation' => $location,
-            'weatherCalendar' => $weatherCalendar,
-            'monthlyOutlook' => $monthlyOutlook,
-            'latestPredictionSavedAt' => $analyticsRun?->status === AnalyticsRun::STATUS_COMPLETED
-                ? $analyticsRun->completed_at
-                : null,
+            'role' => $role,
+            'isFarmer' => $role === User::ROLE_FARMER,
+            'range' => $range,
+            'barangay' => $barangay,
+            'barangays' => $role === User::ROLE_MAO ? LianBarangays::all() : [],
+            'forecast' => $daily->forLocation($barangay, $range === '2weeks' ? 14 : 7),
+            'yield' => $role === User::ROLE_FARMER ? $farmerHome->seasonEstimate($user) : $this->averageEstimate($barangay, $seasonYield),
+            'profileFarm' => $profile ? [
+                'area' => (float) ($profile->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null,
+                'type' => $profile->farm_type ? __('farmer.my_farm.water.'.strtolower((string) $profile->farm_type)) : null,
+            ] : null,
+            'technical' => $role === User::ROLE_IT_EXPERT ? $this->technicalDetails() : null,
         ]);
+    }
+
+    /**
+     * MAO / IT: this season's expected yield for the area shown, as the average of the farmers' saved estimates
+     * (each made by the background job from that farmer's own farm). Nothing is run here.
+     *
+     * @return array<string, mixed>
+     */
+    private function averageEstimate(?string $barangay, \App\Services\Prediction\SeasonYield $seasonYield): array
+    {
+        $now = CarbonImmutable::now('Asia/Manila');
+        $farmers = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->with('farmerProfile:id,user_id,barangay')->get(['id', 'barangay']);
+        if ($barangay !== null) {
+            $farmers = $farmers->filter(fn (User $f): bool => $f->registeredBarangay() === $barangay);
+        }
+        $estimates = $farmers->map(fn (User $f): ?array => \App\Services\Analytics\FarmerDashboardService::storedEstimate($f->id))->filter()->values();
+        $base = ['season' => $seasonYield->seasonLabel($now)];
+        if ($estimates->isEmpty()) {
+            return $base + ['state' => 'nodata', 'reason' => __('farmer.predictions.yield_none_staff')];
+        }
+        $average = (float) $estimates->avg(fn (array $e): float => (float) ($e['yield_tons_per_hectare'] ?? $e['predicted_yield']));
+        $ranAt = $estimates->pluck('ran_at')->filter()->sort()->last();
+
+        return $base + ['state' => 'ok', 'count' => $estimates->count()]
+            + $seasonYield->describe($average, $now->month)
+            + ['ran_at' => $ranAt ? CarbonImmutable::parse($ranAt)->timezone('Asia/Manila') : null];
+    }
+
+    /**
+     * IT only: what made the numbers — the monthly weather model's version, last run and confidence, and the active
+     * rice-yield model's registered version and test metrics (RMSE, MAE, R²). A value that was never recorded says so.
+     *
+     * @return array<string, mixed>
+     */
+    private function technicalDetails(): array
+    {
+        $month = \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
+        $weather = rescue(fn () => app(PredictionOrchestrator::class)->preparedMonthlyWeatherForecasts([$month])[$month->format('Y-m')] ?? null, null, false);
+        $model = rescue(fn () => \App\Models\MlModel::query()->where('purpose', \App\Models\MlModel::PURPOSE_RICE_YIELD)->where('is_active', true)->first(), null, false);
+        $lastYieldRun = User::query()->where('role', User::ROLE_FARMER)->pluck('id')
+            ->map(fn (int $id) => data_get(\App\Services\Analytics\FarmerDashboardService::storedEstimate($id), 'ran_at'))->filter()->sort()->last();
+
+        return [
+            'weather' => [
+                'model' => 'Monthly weather Random Forest',
+                'version' => $weather['weather_model'] ?? \App\Services\MachineLearning\MonthlyWeatherRandomForest::MODEL_VERSION,
+                'last_run' => ! empty($weather['generated_at']) ? CarbonImmutable::parse($weather['generated_at'])->timezone('Asia/Manila') : null,
+                'confidence' => data_get($weather, 'confidence.value'),
+                'training' => ($weather['training_period']['from'] ?? null) ? $weather['training_period']['from'].' – '.$weather['training_period']['to'] : null,
+                // The monthly model does not store test metrics; they are shown as not recorded rather than invented.
+                'rmse' => null, 'mae' => null, 'r2' => null,
+            ],
+            'yield' => [
+                'model' => $model?->name,
+                'version' => $model?->version,
+                'last_run' => $lastYieldRun ? CarbonImmutable::parse($lastYieldRun)->timezone('Asia/Manila') : null,
+                'trained_at' => $model?->trained_at,
+                'rmse' => $model?->rmse, 'mae' => $model?->mae, 'r2' => $model?->r2,
+            ],
+        ];
     }
 
     public function predict(
@@ -214,11 +146,14 @@ class WeatherPredictionController extends Controller
             ])->withInput();
         }
 
-        $liveWeather = $weatherApi->forecast(
-            latitude: $location['coordinates'][0],
-            longitude: $location['coordinates'][1],
-            location: $location['label'],
-        );
+        // The stored forecast for this place (the run is queued; nothing is fetched while the person waits).
+        $liveWeather = $location['is_municipal_preview']
+            ? $this->municipalForecast($weatherApi)
+            : $weatherApi->forecast(
+                latitude: $location['coordinates'][0],
+                longitude: $location['coordinates'][1],
+                location: $location['label'],
+            );
         $run = $analytics->dispatch('weather_prediction', [
             'prediction_type' => PredictionType::WEATHER->value,
             'target_date' => $targetDate->toDateString(),
@@ -333,21 +268,20 @@ class WeatherPredictionController extends Controller
         return $run;
     }
 
-    private function readingsOutOfSync(?array $barangayWeather, array $lianWeather): bool
-    {
-        $barangayFetchedAt = $barangayWeather['fetched_at'] ?? null;
-        $lianFetchedAt = $lianWeather['server_fetched_at'] ?? null;
-
-        if (! $barangayFetchedAt || ! $lianFetchedAt || ! empty($barangayWeather['is_cached_fallback']) || ($lianWeather['stale'] ?? false)) {
-            return false;
-        }
-
-        return abs(Carbon::parse($barangayFetchedAt)->diffInSeconds(Carbon::parse($lianFetchedAt))) > 120;
-    }
-
     /**
      * @return array{barangay: ?string, label: string, coordinates: ?array{0: float, 1: float}, is_municipal_preview: bool}
      */
+    /**
+     * The shared Lian forecast (the one iclimate:refresh-weather-cache stores for the dashboards), labelled as the
+     * municipal preview. Read under its own label it would be a separate cache entry nothing keeps current.
+     */
+    private function municipalForecast(WeatherApiService $weatherApi): ?array
+    {
+        $forecast = $weatherApi->forecast();
+
+        return $forecast === null ? null : array_merge($forecast, ['location' => self::LIAN_MUNICIPAL_PREVIEW_LABEL]);
+    }
+
     private function savedLocation(Request $request): array
     {
         $user = $request->user();

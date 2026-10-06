@@ -10,8 +10,8 @@ use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
-use App\Support\ClimateHistory;
 use App\Services\Climate\ClimateRecordHistory;
+use App\Support\ClimateHistory;
 
 class AnalyticsPayloadFactory
 {

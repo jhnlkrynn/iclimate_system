@@ -47,13 +47,13 @@ class BarangayVerificationTest extends TestCase
         $farmer = $this->poblacionFarmer();
 
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
-        $start = strpos($html, 'data-mfd-risk');
+        $start = strpos($html, 'data-fh-risk');
         $card = html_entity_decode(strip_tags(substr($html, $start, strpos($html, '</section>', $start) - $start)), ENT_QUOTES);
 
         $this->assertStringContainsString('Your barangay "Poblacion" needs to be confirmed.', $card);
         $this->assertStringNotContainsString('Add your barangay', $card);
-        $this->assertDoesNotMatchRegularExpression('/\b(Low|Moderate|High|Severe) Risk\b/', $card);
-        $this->assertStringContainsString('data-mfd-barangay-unverified', $html);
+        $this->assertStringNotContainsString('fh-risk-badge', substr($html, $start, strpos($html, '</section>', $start) - $start));
+        $this->assertStringContainsString('data-fh-barangay-unverified', $html);
         $this->assertSame('Poblacion', $farmer->fresh()->farmerProfile->barangay);   // nothing is rewritten
     }
 

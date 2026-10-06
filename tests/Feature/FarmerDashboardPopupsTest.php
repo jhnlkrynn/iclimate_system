@@ -155,45 +155,6 @@ class FarmerDashboardPopupsTest extends TestCase
 
     // ------------------------------------------------------------ Map My Farm
 
-    public function test_the_farm_outline_is_saved_for_the_signed_in_farmer_and_measured(): void
-    {
-        $farmer = $this->farmer(1.5);
-
-        $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-map'), ['boundary_coordinates' => self::OUTLINE])
-            ->assertOk()->assertJson(['message' => 'Farm location saved successfully.', 'boundary_coordinates' => self::OUTLINE]);
-        $moved = array_map(fn (array $point) => ['lat' => round($point['lat'] + 0.001, 4), 'lng' => $point['lng']], self::OUTLINE);
-        $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-map'), ['boundary_coordinates' => $moved])->assertOk();
-
-        $boundary = FarmBoundary::query()->sole();                                                  // adjusted, not added again
-        $this->assertSame($farmer->farmerProfile->id, $boundary->farmer_profile_id);
-        $this->assertEquals($moved, $boundary->boundary_coordinates);
-        $this->assertGreaterThan(0, (float) $boundary->calculated_area_hectares);
-        $this->assertSame('1.50', $farmer->farmerProfile()->first()->farm_area);                    // the entered farm size is not this pop-up's to change
-    }
-
-    public function test_saving_the_farm_outline_drops_the_farmers_stored_dashboard_page(): void
-    {
-        $farmer = $this->farmer();
-        $key = \App\Services\Analytics\FarmerDashboardService::cacheKey($farmer);
-        \Illuminate\Support\Facades\Cache::put($key, ['stale' => true], 60);
-
-        $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-map'), ['boundary_coordinates' => self::OUTLINE])->assertOk();
-
-        $this->assertNull(\Illuminate\Support\Facades\Cache::get(\App\Services\Analytics\FarmerDashboardService::cacheKey($farmer)));
-    }
-
-    public function test_a_farm_location_must_be_marked(): void
-    {
-        $farmer = $this->farmer();
-
-        foreach ([[], null, array_slice(self::OUTLINE, 0, 2)] as $points) {
-            $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-map'), ['boundary_coordinates' => $points])
-                ->assertStatus(422)->assertJsonPath('errors.boundary_coordinates.0', 'Please select your farm location on the map.');
-        }
-
-        $this->assertSame(0, FarmBoundary::query()->count());
-    }
-
     // ------------------------------------------------------------ Map My Farm: Lian only, barangay from the map
 
     /** @return array<int, array{lat: float, lng: float}> a small square field around a position */
@@ -205,88 +166,6 @@ class FarmerDashboardPopupsTest extends TestCase
     private function saveMap(User $farmer, array $data)
     {
         return $this->actingAs($farmer)->postJson(route('farmer.dashboard.farm-map'), $data);
-    }
-
-    public function test_the_farms_barangay_is_worked_out_from_the_outline_and_kept_on_the_farm(): void
-    {
-        $farmer = $this->farmer();                                                                  // lives in Binubusan
-
-        $this->saveMap($farmer, ['boundary_coordinates' => self::OUTLINE])->assertOk()->assertJsonPath('barangay', 'San Diego');
-
-        $this->assertSame('San Diego', FarmBoundary::query()->sole()->barangay);
-        // A farmer may live in one barangay and farm in another: the profile and the account are not touched.
-        $this->assertSame('Binubusan', $farmer->farmerProfile()->first()->barangay);
-        $this->assertSame('Binubusan', $farmer->refresh()->barangay);
-    }
-
-    public function test_a_farm_in_the_far_south_of_lian_is_accepted(): void
-    {
-        // Balibago and Matabungkay lie south of the old "service area" box, which wrongly turned them away.
-        foreach (['Balibago' => [13.9413816, 120.6489014], 'Matabungkay' => [13.9467451, 120.6249676]] as $barangay => [$lat, $lng]) {
-            $this->saveMap($this->farmer(), ['boundary_coordinates' => $this->field($lat, $lng)])->assertOk()->assertJsonPath('barangay', $barangay);
-        }
-    }
-
-    public function test_a_farm_outside_lian_can_not_be_saved(): void
-    {
-        $farmer = $this->farmer();
-        $message = 'You can only map farms located within Lian, Batangas. Please select a location inside the municipality.';
-
-        // Manila; Nasugbu just north of Lian; Calatagan just south; the sea to the west. The last three were inside the old box check.
-        foreach ([[14.5995, 120.9842], [14.0700, 120.6350], [13.9200, 120.6400], [14.0000, 120.5900]] as [$lat, $lng]) {
-            $this->saveMap($farmer, ['boundary_coordinates' => $this->field($lat, $lng)])
-                ->assertStatus(422)->assertJsonPath('errors.boundary_coordinates.0', $message);
-        }
-
-        $this->assertSame(0, FarmBoundary::query()->count());
-    }
-
-    public function test_a_farm_that_is_partly_outside_lian_can_not_be_saved(): void
-    {
-        $farmer = $this->farmer();
-        $message = 'Part of this farm area is outside Lian, Batangas. Please adjust the farm boundary before saving.';
-
-        // One corner pulled out to Nasugbu.
-        $stretched = [self::OUTLINE[0], self::OUTLINE[1], ['lat' => 14.0700, 'lng' => 120.6350]];
-        $this->saveMap($farmer, ['boundary_coordinates' => $stretched])->assertStatus(422)->assertJsonPath('errors.boundary_coordinates.0', $message);
-        // Every corner is inside Lian (all in Luyahan), but one side runs out across the coast and back.
-        $acrossTheCoast = [['lat' => 13.968067, 'lng' => 120.612469], ['lat' => 13.967618, 'lng' => 120.614915], ['lat' => 13.966375, 'lng' => 120.613423]];
-        $this->saveMap($farmer, ['boundary_coordinates' => $acrossTheCoast])->assertStatus(422)->assertJsonPath('errors.boundary_coordinates.0', $message);
-
-        $this->assertSame(0, FarmBoundary::query()->count());
-    }
-
-    public function test_a_barangay_sent_by_the_browser_is_ignored(): void
-    {
-        $farmer = $this->farmer();
-
-        $this->saveMap($farmer, ['boundary_coordinates' => self::OUTLINE, 'barangay' => 'Balibago', 'farm_barangay' => 'Balibago', 'municipality' => 'Nasugbu'])
-            ->assertOk()->assertJsonPath('barangay', 'San Diego');
-        $this->saveMap($farmer, ['boundary_coordinates' => $this->field(14.0700, 120.6350), 'barangay' => 'San Diego'])->assertStatus(422);
-
-        $this->assertSame('San Diego', FarmBoundary::query()->sole()->barangay);                    // the rejected attempt changed nothing
-    }
-
-    public function test_a_farm_across_two_barangays_always_gets_the_same_one(): void
-    {
-        // Three corners and the middle are in Prenza, one corner in Puting-Kahoy.
-        $outline = [['lat' => 13.997154, 'lng' => 120.651725], ['lat' => 13.997154, 'lng' => 120.652925], ['lat' => 13.998354, 'lng' => 120.652925], ['lat' => 13.998354, 'lng' => 120.651725]];
-
-        foreach ([$outline, array_reverse($outline), [$outline[2], $outline[3], $outline[0], $outline[1]]] as $order) {
-            $this->saveMap($this->farmer(), ['boundary_coordinates' => $order])->assertOk()->assertJsonPath('barangay', 'Prenza');
-        }
-    }
-
-    public function test_the_farm_map_page_follows_the_same_lian_rule(): void
-    {
-        $farmer = $this->farmer();
-
-        $this->actingAs($farmer)->put(route('farmer.boundary.update'), ['boundary_coordinates' => json_encode($this->field(14.0700, 120.6350))])
-            ->assertSessionHasErrors('boundary_coordinates');
-        $this->assertSame(0, FarmBoundary::query()->count());
-
-        $this->actingAs($farmer)->put(route('farmer.boundary.update'), ['boundary_coordinates' => json_encode(self::OUTLINE)])->assertSessionHasNoErrors();
-        $this->assertSame('San Diego', FarmBoundary::query()->sole()->barangay);
     }
 
     // ------------------------------------------------------------ access

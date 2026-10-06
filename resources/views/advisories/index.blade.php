@@ -73,7 +73,8 @@
         $local = fn ($time) => $time?->copy()->timezone(\App\Support\BusinessClock::timezone());
     @endphp
 
-    <div class="fad" @if(auth()->user()->role === \App\Models\User::ROLE_FARMER && $advisoryCheck['needs_refresh']) data-fad-auto-refresh @endif>
+    {{-- No automatic refresh on open: the scheduler fetches PAGASA and the barangay weather; the Refresh button is the only manual fetch. --}}
+    <div class="fad">
         {{-- 1. Header --}}
         <header class="fad-hero">
             <div class="fad-hero-text">
@@ -139,10 +140,11 @@
                 @else
                     <p class="fad-support">Add a barangay for location-specific conditions.</p>
                 @endif
-                <span class="fad-badge {{ $barangayWeather && !($barangayWeather['stale'] ?? true) ? 'is-good' : 'is-watch' }}">
-                    {{ $barangayWeather ? (($barangayWeather['stale'] ?? false) ? 'Update delayed' : 'Connected') : 'Not checked yet' }}
-                </span>
-                <p class="fad-support">Last checked: {{ !empty($barangayWeather['fetched_at']) ? \Illuminate\Support\Carbon::parse($barangayWeather['fetched_at'])->timezone('Asia/Manila')->format('M j, Y · g:i A') : 'Not available' }}</p>
+                @if (! empty($barangayWeather['fetched_at']))
+                    <p class="fad-support"><x-updated-at :at="$barangayWeather['fetched_at']" /></p>
+                @else
+                    <p class="fad-support">Walang datos pa</p>
+                @endif
             </article>
 
             <article class="fad-card">
@@ -255,6 +257,7 @@
                 'additionalPagasaInformation' => $additionalPagasaInformation,
                 'advisoryCheck' => $advisoryCheck,
             ])
+            @include('advisories._announcements', ['announcements' => $announcements ?? collect()])
         @else
         {{-- 4. Advisories: compact cards. "View" opens the full advisory in a popup (farmer-advisories.js);
              without JavaScript, or with Ctrl/Cmd-click, it is a normal link to the advisory page. --}}

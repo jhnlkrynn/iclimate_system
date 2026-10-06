@@ -120,8 +120,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/farmer/dashboard/planting-info', [FarmerPlantingScheduleController::class, 'applyFromDashboard'])->name('farmer.dashboard.planting-info');
             Route::post('/farmer/dashboard/farm-size', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'farmSize'])->name('farmer.dashboard.farm-size');
             Route::post('/farmer/dashboard/profile', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'profile'])->name('farmer.dashboard.profile');
-            Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->name('farmer.dashboard.farm-map');
+            // Farm map drawing was removed (2026-10): the old pop-up's save opens My Farm and stores nothing.
+            Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->middleware('farmer.redirect:farmer.my-farm')->name('farmer.dashboard.farm-map');
         });
+
+        // "Aking Bukid": the farmer's own farm, planting schedule, harvest records and upcoming dates.
+        Route::get('/farmer/my-farm', \App\Http\Controllers\FarmerMyFarmController::class)
+            ->middleware('farmer.language')
+            ->name('farmer.my-farm');
 
         Route::get(
             '/farmer/planting-schedules/create',
@@ -163,10 +169,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         );
 
 
+        // Farm boundary drawing was removed from the farmer pages (2026-10): these URLs open My Farm instead.
         Route::get(
             '/farmer/boundary',
             [FarmBoundaryController::class, 'edit']
-        )->name(
+        )->middleware('farmer.redirect:farmer.my-farm')->name(
             'farmer.boundary.edit'
         );
 
@@ -175,7 +182,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             '/farmer/boundary',
             [FarmBoundaryController::class, 'update']
         )
-            ->middleware('throttle:10,1,put-farmer-boundary')
+            ->middleware(['farmer.redirect:farmer.my-farm', 'throttle:10,1,put-farmer-boundary'])
             ->name(
                 'farmer.boundary.update'
             );
@@ -184,7 +191,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete(
             '/farmer/boundary',
             [FarmBoundaryController::class, 'destroy']
-        )->name(
+        )->middleware('farmer.redirect:farmer.my-farm')->name(
             'farmer.boundary.destroy'
         );
 
@@ -275,9 +282,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |
     */
 
+    // The candidate model test page moved to Model Evaluation (2026-10); both URLs open it. Its features join Model
+    // Evaluation in Phase 8; CandidatePredictionController is kept until the end-of-plan cleanup.
     Route::get(
         '/testing/candidate-rice-yield',
-        [CandidatePredictionController::class, 'index']
+        fn () => redirect()->route('model-evaluation.index')
     )
         ->middleware(
             'role:'.User::ROLE_IT_EXPERT
@@ -289,7 +298,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post(
         '/testing/candidate-rice-yield/predict',
-        [CandidatePredictionController::class, 'predict']
+        fn () => redirect()->route('model-evaluation.index', [], 303)
     )
         ->middleware([
             'role:'.User::ROLE_IT_EXPERT,
@@ -319,16 +328,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         );
 
 
+        // Removed from the farmer pages (2026-10): a farmer who opens one is sent to Home.
         Route::resource(
             'climate-records',
             ClimateRecordController::class
-        );
+        )->middleware('farmer.redirect:farmer.dashboard');
 
 
         Route::resource(
             'rice-productions',
             RiceProductionController::class
-        );
+        )->middleware('farmer.redirect:farmer.dashboard');
 
 
         /*
@@ -536,19 +546,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         |--------------------------------------------------------------------------
         */
 
+        // Farmers read MAO posts as read-only Announcements on the Advisories page.
         Route::get(
             'community-feed',
             [CommunityFeedController::class, 'index']
-        )->name(
+        )->middleware('farmer.redirect:planting-advisories.index,announcements')->name(
             'community-feed.index'
         );
 
 
+        // Farmers read posts as Announcements and cannot post, edit, archive, comment, react or delete: any of these
+        // sends a farmer to the Announcements (a redirect, not an error page). MAO and IT keep the full feed.
         Route::post(
             'community-feed',
             [CommunityFeedController::class, 'store']
         )
-            ->middleware('throttle:12,1,post-community-feed')
+            ->middleware(['farmer.redirect:planting-advisories.index,announcements', 'throttle:12,1,post-community-feed'])
             ->name(
                 'community-feed.store'
             );
@@ -558,7 +571,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}',
             [CommunityFeedController::class, 'update']
         )
-            ->middleware('throttle:20,1,patch-community-feed-post')
+            ->middleware(['farmer.redirect:planting-advisories.index,announcements', 'throttle:20,1,patch-community-feed-post'])
             ->name(
                 'community-feed.update'
             );
@@ -567,7 +580,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch(
             'community-feed/{post}/archive',
             [CommunityFeedController::class, 'archive']
-        )->name(
+        )->middleware('farmer.redirect:planting-advisories.index,announcements')->name(
             'community-feed.archive'
         );
 
@@ -576,7 +589,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}/comments',
             [CommunityFeedController::class, 'comment']
         )
-            ->middleware('throttle:30,1,post-community-feed-post-comments')
+            ->middleware(['farmer.redirect:planting-advisories.index,announcements', 'throttle:30,1,post-community-feed-post-comments'])
             ->name(
                 'community-feed.comments.store'
             );
@@ -586,7 +599,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}/reactions',
             [CommunityFeedController::class, 'react']
         )
-            ->middleware('throttle:60,1,post-community-feed-post-reactions')
+            ->middleware(['farmer.redirect:planting-advisories.index,announcements', 'throttle:60,1,post-community-feed-post-reactions'])
             ->name(
                 'community-feed.reactions.store'
             );
@@ -595,7 +608,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete(
             'community-feed/{post}',
             [CommunityFeedController::class, 'destroy']
-        )->name(
+        )->middleware('farmer.redirect:planting-advisories.index,announcements')->name(
             'community-feed.destroy'
         );
 
@@ -732,6 +745,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         );
 
 
+        // The chat widget, loaded only when the Climora button is first clicked.
+        Route::get(
+            'ai-farming-assistant/widget',
+            [AIChatController::class, 'widget']
+        )->name(
+            'ai-chat.widget'
+        );
+
+
         Route::post(
             'ai-farming-assistant/message',
             [AIChatController::class, 'message']
@@ -768,7 +790,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get(
             'weather-predictions',
             [WeatherPredictionController::class, 'index']
-        )->name(
+        )->middleware('farmer.language')->name(
             'weather-predictions.index'
         );
 
@@ -811,9 +833,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
 
+        // The Predictions page has no forms since 2026-10 (it shows saved forecasts and estimates); old form posts open it.
         Route::post(
             'weather-predictions/predict',
-            [WeatherPredictionController::class, 'predict']
+            fn () => redirect()->route('weather-predictions.index', [], 303)
         )
             ->middleware('throttle:20,1,post-weather-predictions-predict')
             ->name(
@@ -825,7 +848,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/feedback',
             [\App\Http\Controllers\WeatherFeedbackController::class, 'store']
         )
-            ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1,post-weather-predictions-feedback'])
+            ->middleware(['role:'.User::ROLE_FARMER, 'farmer.redirect:weather-predictions.index', 'throttle:20,1,post-weather-predictions-feedback'])
             ->name(
                 'weather-feedback.store'
             );
@@ -833,7 +856,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::post(
             'rice-yield-predictions/predict',
-            [RiceYieldPredictionController::class, 'predict']
+            fn () => redirect()->to(route('weather-predictions.index').'#yield', 303)
         )
             ->middleware('throttle:20,1,post-rice-yield-predictions-predict')
             ->name(

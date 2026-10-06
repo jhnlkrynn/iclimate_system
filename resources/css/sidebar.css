@@ -391,3 +391,31 @@ html body #mobileSidebar .ic-sb-foot { padding-bottom: max(12px, env(safe-area-i
     html body .ic-sidebar .sidebar-link,
     html body .ic-sidebar .ic-theme-btn { transition: none !important; }
 }
+
+/* The Menu button (layouts/navigation.blade.php) that opens the drawer below 992px: at least 44px tall, so it is
+   as easy to tap on a tablet as on a phone. */
+.topbar [data-bs-target="#mobileSidebar"] {
+    min-height: 44px;
+}
+
+/* Compact spacing (2026-10-06): on a tall desktop screen the items were 44px with up to 6px between them and 16px
+   above each section label, which left the menu looking sparse. Items are now 40px with a steady 2px gap and 12px
+   above a label: still comfortable to click, never crowded. Screens 820px high or less keep their own tighter
+   rules above; the drawer keeps 44px items because it is used by touch. */
+@media (min-width: 992px) and (min-height: 820.02px) {
+    html body .ic-sidebar.sidebar-fixed .sidebar-stack { gap: 2px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-section { margin: 12px 10px 4px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-group:first-child .sidebar-section { margin-top: 8px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-link { min-height: 40px; padding: 8px 12px; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-link:hover { padding-left: 12px; }
+}
+html body #mobileSidebar .sidebar-section { margin-top: 12px; }
+
+/* Menu groups sit together at the top of the sidebar (2026-10-06). They used to be spread over the whole height
+   ("space-evenly"), which left gaps of 60-180px between sections on a normal screen. When a menu is taller than the
+   screen (the 14-item IT menu in a very short window) it now scrolls inside its own box instead of being cut off;
+   the brand above and the Light/Dark switch below stay in place. */
+html body .ic-sidebar.sidebar-fixed .ic-sb-nav {
+    justify-content: flex-start;
+    overflow-y: auto;
+}

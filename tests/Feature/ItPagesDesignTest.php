@@ -113,7 +113,8 @@ class ItPagesDesignTest extends TestCase
     {
         $farmer = User::factory()->farmer()->create();
 
-        foreach (array_keys(self::PAGES) as $route) {
+        // Community Feed is a staff page now (farmers read Announcements on the Advisories page).
+        foreach (array_diff(array_keys(self::PAGES), ['community-feed.index']) as $route) {
             $this->actingAs($farmer)->get(route($route))
                 ->assertOk()
                 ->assertSee('data-user-role="Farmer"', false)

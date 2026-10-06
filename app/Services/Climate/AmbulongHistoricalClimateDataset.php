@@ -49,19 +49,10 @@ class AmbulongHistoricalClimateDataset
     /**
      * Must match the candidate rice-yield model preprocessing.
      *
-     * Wet season:
-     * May to September
-     *
-     * Dry season:
-     * October to April
+     * The iClimate season calendar (App\Support\RiceSeason):
+     * wet May to October, dry November to April.
      */
-    private const WET_SEASON_MONTHS = [
-        5,
-        6,
-        7,
-        8,
-        9,
-    ];
+    private const WET_SEASON_MONTHS = \App\Support\RiceSeason::WET_MONTHS;
 
     public function __construct(
         private readonly ?string $path = null,

@@ -51,6 +51,28 @@
     </section>
 
     <div class="row g-4">
+        @if ($farmSetup)
+            {{-- What is still missing from the farm information (moved here from the dashboard). --}}
+            <div class="col-12" data-farm-setup>
+                <div class="card no-lift">
+                    <div class="card-body p-4">
+                        @php $setupLocale = \App\Support\FarmerLanguage::resolve(request()); @endphp
+                        <h2 class="h4 fw-bold mb-2">{{ __('farmer.profile_setup.title', [], $setupLocale) }}</h2>
+                        @if ($farmSetup['items'])
+                            <p class="text-muted mb-3">{{ __('farmer.setup.progress', ['done' => $farmSetup['done'], 'total' => $farmSetup['total']], $setupLocale) }}</p>
+                            <ul class="list-unstyled d-grid gap-2 mb-0">
+                                @foreach ($farmSetup['items'] as $item)
+                                    <li><a class="fw-semibold" href="{{ $item['href'] }}">{{ $item['title'] }}</a> <span class="text-muted">{{ $item['benefit'] }}</span></li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="mb-0 text-muted">{{ __('farmer.profile_setup.done', [], $setupLocale) }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="col-xl-6">
             <div class="card no-lift h-100">
                 <div class="card-body p-4">
@@ -66,20 +88,6 @@
                 </div>
             </div>
         </div>
-
-        @if (auth()->user()->role === \App\Models\User::ROLE_FARMER)
-            <div class="col-12">
-                <div class="card no-lift">
-                    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <div>
-                            <h2 class="h4 fw-bold mb-2">Farm Location and Land Size</h2>
-                            <p class="mb-0 text-muted">Set your land size and draw the exact perimeter of your farm on the map.</p>
-                        </div>
-                        <a class="btn btn-primary" href="{{ route('farmer.boundary.edit') }}">Set Farm Location &amp; Size</a>
-                    </div>
-                </div>
-            </div>
-        @endif
 
         <div class="col-12">
             <div class="card no-lift border-danger-subtle">

@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use App\Support\LianBarangays;
 
 class LianBoundaryController extends Controller
@@ -17,7 +16,15 @@ class LianBoundaryController extends Controller
 
     private const GEORISK_QUERY_URL = 'https://portal.georisk.gov.ph/arcgis/rest/services/PSA/Barangay/MapServer/4/query';
 
-    public function __invoke(Request $request): JsonResponse
+    /** The finished 19-feature response, cached so the GeoJSON is not re-normalized on every request. */
+    public const RESPONSE_CACHE_KEY = 'geo:lian-boundaries-api:response:v1';
+
+    /**
+     * Never calls GeoRisk: a request serves what iclimate:refresh-lian-boundaries stored (daily), or the bundled
+     * file. Browsers keep it for a day and revalidate with an ETag, so after the first visit the map's largest
+     * file usually costs a 304.
+     */
+    public function __invoke(Request $request): Response
     {
         // One-time cleanup: a stale value under the old pre-rename cache key
         // must never be served again now that the key has changed.
@@ -26,33 +33,27 @@ class LianBoundaryController extends Controller
         }
 
         if ($request->boolean('refresh')) {
-            Cache::forget(self::CACHE_KEY);
+            Cache::forget(self::RESPONSE_CACHE_KEY);
         }
 
-        [$geojson, $source] = Cache::remember(self::CACHE_KEY, now()->addHours(12), function (): array {
-            try {
-                $geojson = Http::timeout(12)
-                    ->retry(2, 300)
-                    ->acceptJson()
-                    ->get(self::GEORISK_QUERY_URL, [
-                        'f' => 'geojson',
-                        'where' => "UPPER(prov_name)='BATANGAS' AND UPPER(city_name)='LIAN'",
-                        'outFields' => 'brgy_name,city_name,prov_name,brgy_code,psgc_10d',
-                        'returnGeometry' => 'true',
-                        'outSR' => '4326',
-                    ])
-                    ->throw()
-                    ->json();
+        $body = Cache::remember(self::RESPONSE_CACHE_KEY, now()->addDay(), fn (): string => json_encode($this->buildGeojson(), JSON_UNESCAPED_SLASHES));
+        $etag = '"'.sha1($body).'"';
+        $headers = ['ETag' => $etag, 'Cache-Control' => 'public, max-age=86400, stale-while-revalidate=604800'];
 
-                if (is_array($geojson) && ! empty($geojson['features'])) {
-                    return [$geojson, 'GeoRisk ArcGIS PSA Barangay Boundary API'];
-                }
-            } catch (\Throwable) {
-                // Fall through to the bundled boundary file.
-            }
+        if (in_array($etag, $request->getETags(), true)) {
+            return response('', 304, $headers);
+        }
 
-            return [$this->localBoundaryGeojson(), 'Bundled iClimate fallback GeoJSON'];
-        });
+        return response($body, 200, $headers + ['Content-Type' => 'application/json']);
+    }
+
+    /** @return array<string, mixed> */
+    private function buildGeojson(): array
+    {
+        $stored = Cache::get(self::CACHE_KEY);
+        [$geojson, $source] = is_array($stored) && count($stored) === 2
+            ? $stored
+            : [$this->localBoundaryGeojson(), 'Bundled iClimate fallback GeoJSON'];
 
         // Normalize and validate the source so every frontend receives one
         // feature for each of Lian's 19 canonical barangays. An incomplete or
@@ -74,7 +75,7 @@ class LianBoundaryController extends Controller
             : null;
         $geojson['generated_at'] = now()->toDateTimeString();
 
-        return response()->json($geojson);
+        return $geojson;
     }
 
     private function localBoundaryGeojson(): array

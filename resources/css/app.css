@@ -1528,7 +1528,11 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-note { color: #66756f; font-size: .78rem; margin: .6rem 0 0; }
 .risk-forecast-empty { background: #fff8e6; border: 1px solid #f2d48a; border-radius: 12px; color: #5c4a12; display: grid; gap: .15rem; font-size: .85rem; padding: .75rem 1rem; }
 /* The global loader defines these on .icl-overlay only; the map's own copy of its spinner needs them too. */
-.risk-map-spinner { --icl-green: var(--iclimate-primary-medium, #1F5A46); --icl-track: var(--iclimate-accent-light, #C9D8CE); --icl-grain: #C2912F; --icl-text: #1F3B30; --icl-size: 60px; align-items: center; background: rgba(255, 255, 255, .55); display: flex; inset: 0; justify-content: center; position: absolute; z-index: 950; }
+/* Loading placeholders on the map: gray shimmering blocks instead of a spinner. */
+.risk-map-spinner { position: absolute; inset: 0; z-index: 950; background: linear-gradient(90deg, #e5eae7 0%, #f0f3f1 50%, #e5eae7 100%); background-size: 200% 100%; opacity: .85; animation: risk-map-shimmer 1.3s ease-in-out infinite; }
+.risk-map-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes risk-map-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .risk-map-spinner { animation: none; } }
 .risk-map-spinner[hidden] { display: none; }
 .risk-forecast-popup .risk-forecast-facts { gap: .35rem; margin-top: .2rem; }
 .risk-forecast-popup .risk-forecast-facts dd { font-size: .8rem; }
@@ -1631,3 +1635,20 @@ body[data-user-role="Farmer"] * {
 @media (max-width: 768px) {
     .risk-forecast-select { min-width: 0; width: 100%; }
 }
+
+/* Shared loading placeholder (replaces spinners): three gray bars that shimmer while a result is prepared. */
+.ic-skel-lines { display: grid; gap: .5rem; width: min(280px, 100%); margin-inline: auto; }
+.ic-skel-lines > span:not(.visually-hidden) { display: block; height: .85rem; border-radius: 6px; background: linear-gradient(90deg, #e5eae7 0%, #f0f3f1 50%, #e5eae7 100%); background-size: 200% 100%; animation: risk-map-shimmer 1.3s ease-in-out infinite; }
+.ic-skel-lines > span:first-child { height: 1.4rem; width: 70%; }
+.ic-skel-lines > span:nth-child(3) { width: 85%; }
+html[data-theme="dark"] .ic-skel-lines > span:not(.visually-hidden) { background: linear-gradient(90deg, #1c2924 0%, #24342d 50%, #1c2924 100%); background-size: 200% 100%; }
+@media (prefers-reduced-motion: reduce) { .ic-skel-lines > span { animation: none; } }
+
+/* Saved-data labels shared by every page: "Updated: <time>" beside a stored reading, "Walang datos pa" when none exists yet. */
+.ic-updated { display: inline-block; font-size: .78rem; font-weight: 600; color: #5f7569; }
+.ic-no-data { display: flex; flex-direction: column; gap: .2rem; padding: .9rem 1rem; border-radius: 12px; background: #f1f4f2; color: #4b5f55; }
+.ic-no-data strong { font-size: .95rem; color: #2c3d35; }
+.ic-no-data span { font-size: .82rem; }
+html[data-theme="dark"] .ic-updated { color: #9fb5aa; }
+html[data-theme="dark"] .ic-no-data { background: #1c2924; color: #b8c9c0; }
+html[data-theme="dark"] .ic-no-data strong { color: #e4ece7; }

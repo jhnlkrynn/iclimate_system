@@ -72,7 +72,13 @@ def _day(value):
 
 
 def _season(month: int) -> str:
-    # The project's one season calendar (ClimateRecord::WET_SEASON_MONTHS): wet May-September, dry October-April.
+    # The project's one season calendar (App\Support\RiceSeason): wet May-October, dry November-April.
+    return "Wet" if month in {5, 6, 7, 8, 9, 10} else "Dry"
+
+
+def _trained_yield_season(month: int) -> str:
+    # The deployed rice-yield model was trained with wet = May-September; its inputs keep that encoding until it is
+    # retrained (mirrors RiceSeason::forTrainedYieldModel in PHP).
     return "Wet" if month in {5, 6, 7, 8, 9} else "Dry"
 
 
@@ -146,8 +152,9 @@ def _model_input(payload: dict, weather: dict) -> dict:
     temperatures = [t for t in (_optional_number(row.get("temperature")) for row in recent) if t is not None]
     rainfalls = [r for r in (_optional_number(row.get("rainfall")) for row in recent) if r is not None]
     target_month = date.fromisoformat(payload["target_date"]).month
-    season = predictions.get("season") or _season(target_month)
-    seasonal = [row for row in recent if row.get("season") == season]
+    # Encoded the way the yield model was trained, from the month (never a stored label).
+    season = _trained_yield_season(target_month)
+    seasonal = [row for row in recent if _day(row.get("record_date"))[5:7].isdigit() and _trained_yield_season(int(_day(row.get("record_date"))[5:7])) == season]
     seasonal_rain = [r for r in (_optional_number(row.get("rainfall")) for row in seasonal) if r is not None]
     seasonal_temp = [t for t in (_optional_number(row.get("temperature")) for row in seasonal) if t is not None]
 

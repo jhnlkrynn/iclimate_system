@@ -121,7 +121,7 @@
     @else
         <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
             <button class="btn btn-primary btn-lg" type="submit">Save Schedule</button>
-            <a class="btn btn-outline-secondary btn-lg" href="{{ route('calendar.index') }}">Cancel</a>
+            <a class="btn btn-outline-secondary btn-lg" href="{{ route('farmer.my-farm') }}">Cancel</a>
         </div>
     @endif
 </form>
@@ -136,8 +136,8 @@
         const review = () => {
             const messages = [];
             const plantingMonth = monthOf(planting.value);
-            const expected = season.value === 'Wet' ? [5,6,7] : (season.value === 'Dry' ? [10,11,12] : []);
-            if (plantingMonth && expected.length && !expected.includes(plantingMonth)) messages.push(`${season.value} season planting is normally ${season.value === 'Wet' ? 'May to July' : 'October to December'}.`);
+            const expected = season.value === 'Wet' ? [5,6,7] : (season.value === 'Dry' ? [11,12,1] : []);
+            if (plantingMonth && expected.length && !expected.includes(plantingMonth)) messages.push(`${season.value} season planting is normally ${season.value === 'Wet' ? 'May to July' : 'November to January'}.`);
             const selectedHarvestMonth = monthOf(harvestDate.value || harvestMonth.value);
             if (selectedHarvestMonth && ![3,4,10,11].includes(selectedHarvestMonth)) messages.push('Common harvest months are March, April, October, and November.');
             warning.innerHTML = messages.length ? `<strong>Date warning:</strong> <span>${messages.join(' ')} You may still save this schedule.</span>` : '';

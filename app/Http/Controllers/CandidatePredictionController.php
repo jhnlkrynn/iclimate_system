@@ -1147,20 +1147,8 @@ class CandidatePredictionController extends Controller
                 'F'
             );
 
-        $season =
-            in_array(
-                $month,
-                [
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                ],
-                true
-            )
-                ? 'Wet'
-                : 'Dry';
+        // Encoded the way the candidate model's training data was (see App\Support\RiceSeason).
+        $season = \App\Support\RiceSeason::forTrainedYieldModel($month);
 
         $row = [
             'YEAR' =>

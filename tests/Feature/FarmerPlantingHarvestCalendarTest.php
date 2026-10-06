@@ -37,7 +37,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
             'farm_area_hectares' => '',
             'progress_status' => '',
             'notes' => 'North field.',
-        ])->assertRedirect(route('calendar.index'))
+        ])->assertRedirect(route('farmer.my-farm'))
             ->assertSessionHas('schedule_warnings');
 
         $schedule = FarmerPlantingSchedule::query()->sole();
@@ -54,7 +54,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
             'farm_area_hectares' => '',
             'progress_status' => 'Planted',
             'notes' => 'Updated field note.',
-        ])->assertRedirect(route('calendar.index'));
+        ])->assertRedirect(route('farmer.my-farm'));
 
         $this->assertDatabaseHas('farmer_planting_schedules', [
             'id' => $schedule->id,
@@ -65,7 +65,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
 
         $this->actingAs($farmer)
             ->delete(route('farmer.planting-schedules.destroy', $schedule))
-            ->assertRedirect(route('calendar.index'));
+            ->assertRedirect(route('farmer.my-farm'));
         $this->assertDatabaseMissing('farmer_planting_schedules', ['id' => $schedule->id]);
     }
 

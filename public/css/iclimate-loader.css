@@ -55,54 +55,82 @@
     box-shadow: 0 12px 32px rgba(18, 63, 50, .14), 0 2px 6px rgba(18, 63, 50, .06);
 }
 
-.icl-spinner {
+/* Saves and requests: a small gray track with a moving green bar (no spinner). */
+.icl-progress {
     position: relative;
-    width: var(--icl-size);
-    height: var(--icl-size);
-    flex: 0 0 auto;
+    width: 132px;
+    height: 4px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--icl-track);
 }
 
-.icl-ring {
+.icl-progress::before,
+.icl-bar::before {
+    content: '';
     position: absolute;
-    inset: 0;
+    inset: 0 auto 0 0;
+    width: 35%;
+    border-radius: inherit;
+    background: var(--icl-green);
+    animation: icl-slide 1.1s ease-in-out infinite;
+}
+
+/* Page navigation: a thin bar on top and gray placeholder blocks where the next page will appear. */
+.icl-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    overflow: hidden;
+    display: none;
+}
+
+.icl-skeleton {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
     width: 100%;
-    height: 100%;
-    animation: icl-spin 1s linear infinite;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 88px 24px 24px;
 }
 
-.icl-ring-track {
-    fill: none;
-    stroke: var(--icl-track);
-    stroke-width: 4;
-    opacity: .55;
+.icl-sk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
 }
 
-.icl-ring-arc {
-    fill: none;
-    stroke: var(--icl-green);
-    stroke-width: 4;
-    stroke-linecap: round;
-    /* circumference of r=22 is ~138; show roughly a third of the ring */
-    stroke-dasharray: 46 138;
+.icl-sk {
+    border-radius: 12px;
+    background: linear-gradient(90deg, #e5eae7 0%, #f0f3f1 50%, #e5eae7 100%);
+    background-size: 200% 100%;
+    animation: icl-shimmer 1.3s ease-in-out infinite;
 }
 
-/* The rice stalk stays still in the middle of the turning ring. */
-.icl-rice {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 56%;
-    height: 56%;
-    transform: translate(-50%, -50%);
+.icl-sk-title { height: 28px; width: 42%; }
+.icl-sk-line { height: 14px; width: 66%; }
+.icl-sk-card { height: 112px; }
+.icl-sk-block { height: 260px; }
+
+.icl-overlay.is-page {
+    align-items: flex-start;
+    justify-content: stretch;
+    padding: 0;
+    background: #f5f7f6;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
-.icl-rice-stem,
-.icl-rice-leaf {
-    color: var(--icl-green);
-}
+.icl-overlay.is-page .icl-box { display: none; }
+.icl-overlay.is-page .icl-bar { display: block; }
+.icl-overlay.is-page .icl-skeleton { display: flex; }
 
-.icl-rice-grain {
-    fill: var(--icl-grain);
+/* The sidebar stays visible and usable-looking; only the content area turns into placeholders. */
+@media (min-width: 992px) {
+    body:has(.ic-sidebar) .icl-overlay.is-page { left: var(--sidebar-width, 248px); }
 }
 
 .icl-text {
@@ -132,27 +160,29 @@
     border: 0;
 }
 
-@keyframes icl-spin {
-    to { transform: rotate(360deg); }
+@keyframes icl-slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(290%); }
 }
 
-@keyframes icl-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .45; }
+@keyframes icl-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
 }
 
 @media (max-width: 575.98px) {
-    .icl-overlay { --icl-size: 52px; }
+    .icl-skeleton { padding: 72px 16px 16px; }
     .icl-box { min-width: 132px; padding: 18px 20px 15px; gap: 10px; }
     .icl-text { font-size: 14px; }
 }
 
-/* Reduced motion: no spinning; a full ring gently fades so loading is still obvious. */
+/* Reduced motion: nothing moves; the bars and blocks stay as still placeholders. */
 @media (prefers-reduced-motion: reduce) {
     .icl-overlay,
     .icl-overlay.is-visible { transition: none; }
-    .icl-ring { animation: none; }
-    .icl-ring-arc { stroke-dasharray: none; animation: icl-pulse 2s ease-in-out infinite; }
+    .icl-sk,
+    .icl-progress::before,
+    .icl-bar::before { animation: none; }
 }
 
 /* Dark theme (data-theme on <html>, see resources/js/theme.js): dark box, bright green rice symbol, light text. */
@@ -169,4 +199,11 @@ html[data-theme="dark"] .icl-box {
     background: #16231e;
     border-color: #2a3b33;
     box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}
+
+html[data-theme="dark"] .icl-overlay.is-page { background: #0f1613; }
+
+html[data-theme="dark"] .icl-sk {
+    background: linear-gradient(90deg, #1c2924 0%, #24342d 50%, #1c2924 100%);
+    background-size: 200% 100%;
 }
