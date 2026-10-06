@@ -327,6 +327,10 @@ class MonthlyWeatherOutlookTest extends TestCase
             ->assertSee('Rainfall Outlook')
             ->assertSee('Temperature Outlook')
             ->assertSee('Historical comparison')
+            ->assertSee('PAGASA seasonal and monthly climate outlooks are not connected')
+            ->assertDontSee('No reliable forecast available for this period.');
+        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
+        $this->assertStringContainsString('color: #0d1f18', (string) file_get_contents(resource_path('css/pages/weather-predictions.css')));
             ->assertSee('color: #0d1f18', false)
             ->assertSee('PAGASA monthly outlooks are not shown in iClimate')
             ->assertDontSee('No forecast is available for this month yet.');

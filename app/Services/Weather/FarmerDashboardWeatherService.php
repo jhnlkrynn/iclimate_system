@@ -307,7 +307,9 @@ class FarmerDashboardWeatherService
     {
         $errors = [];
 
-        if ((string) config('services.weather.provider', 'weatherapi') === 'weatherapi') {
+        // WeatherAPI is only tried when it can work: without a key every fetch used to fail first, log a
+        // warning, and only then use Open-Meteo.
+        if ((string) config('services.weather.provider', 'weatherapi') === 'weatherapi' && (string) config('services.weatherapi.key') !== '') {
             try {
                 return $this->normalizeWeatherApi($this->requestWeatherApi());
             } catch (Throwable $exception) {

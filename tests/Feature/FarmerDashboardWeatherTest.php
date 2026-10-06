@@ -288,10 +288,14 @@ class FarmerDashboardWeatherTest extends TestCase
         $response = $this->actingAs($user)->get(route('mao.operations'));
         $content = $response->getContent();
 
+        // The page's styles live in their own file since 2026-10-06 (they used to be a <style> block in the view).
+        $css = (string) file_get_contents(resource_path('css/pages/mao-operations.css'));
+        $this->assertStringContainsString('grid-template-columns: repeat(3, minmax(0, 1fr))', $css);
+        $this->assertStringContainsString('grid-template-columns: repeat(2, minmax(0, 1fr))', $css);
+        $this->assertMatchesRegularExpression('/<link[^>]+mao-operations[^">]*\.css/', $content);
+
         $response->assertOk()
             ->assertSee('horizontalCategoryTicks', false)
-            ->assertSee('grid-template-columns: repeat(3, minmax(0, 1fr))', false)
-            ->assertSee('grid-template-columns: repeat(2, minmax(0, 1fr))', false)
             ->assertSee('iClimateVisualsReady', false)
             ->assertSee('Loading real weather data...', false)
             ->assertSee('No weather records found for this chart.', false)

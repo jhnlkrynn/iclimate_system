@@ -345,7 +345,7 @@ abstract class CrudController extends Controller
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
-            'password' => [$id ? 'nullable' : 'required', 'string', 'min:8'],
+            'password' => [$id ? 'nullable' : 'required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
             'role' => ['required', Rule::in([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],

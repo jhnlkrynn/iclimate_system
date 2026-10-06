@@ -10,6 +10,7 @@ use App\Models\FeedPost;
 use App\Models\PlantingAdvisory;
 use App\Models\Report;
 use App\Models\RiceProduction;
+use App\Support\ClimateHistory;
 use App\Services\Climate\ClimateRecordHistory;
 
 class AnalyticsPayloadFactory
@@ -26,15 +27,50 @@ class AnalyticsPayloadFactory
         };
     }
 
+    // Both predictions read the same climate history as the dashboard forecast (App\Support\ClimateHistory):
+    // plausible entered records when they cover six months, otherwise the Ambulong station record.
     private function weather(array $input): array
     {
-        return $input + ['climate_records' => ClimateRecord::query()->orderBy('record_date')->get()->toArray()];
+        return $input + ['climate_records' => ClimateHistory::forModels(), 'prepared_forecast' => $this->preparedForecast($input)];
+    }
+
+    /**
+     * The month's forecast exactly as the Heat Map, the dashboards and the dashboard yield forecast already
+     * show it (PredictionOrchestrator). The Python service uses it as given instead of training its own
+     * second model, which used to answer with slightly different numbers for the same month
+     * (e.g. 146.6 mm on the Predictions page against 152 mm on the Heat Map). Null when that month has no
+     * usable forecast: Python then makes its own from the climate history, as before.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function preparedForecast(array $input): ?array
+    {
+        if (empty($input['target_date'])) {
+            return null;
+        }
+
+        try {
+            $month = \Carbon\CarbonImmutable::parse((string) $input['target_date'])->startOfMonth();
+            $forecast = app(\App\Services\Prediction\PredictionOrchestrator::class)->monthlyWeatherForecast($month);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
+
+        if (! ($forecast['ready'] ?? false) || ! is_array($forecast['predictions'] ?? null)) {
+            return null;
+        }
+
+        // Plain JSON values only (dates become strings), the same as it will arrive in Python.
+        return json_decode((string) json_encode($forecast), true) ?: null;
     }
 
     private function riceYield(array $input): array
     {
         return $input + [
-            'climate_records' => ClimateRecord::query()->orderBy('record_date')->get()->toArray(),
+            'prepared_forecast' => $this->preparedForecast($input),
+            'climate_records' => ClimateHistory::forModels(),
             'rice_productions' => RiceProduction::query()->orderBy('year')->get()->toArray(),
         ];
     }
@@ -56,7 +92,24 @@ class AnalyticsPayloadFactory
             'community_feed' => FeedPost::query()->with('author')->get()->toArray(),
         };
 
-        return $input + ['source_rows' => $rows];
+        // Stored times are UTC. A report shows, filters and sorts by Philippine time ("Registered", "Posted"),
+        // written plainly (2026-10-06 01:25) instead of a raw ISO string; a record date is a calendar day as entered.
+        $timezone = (string) config('iclimate.timezone', 'Asia/Manila');
+        $rows = array_map(function (array $row) use ($timezone): array {
+            foreach (['created_at', 'updated_at'] as $field) {
+                if (! empty($row[$field])) {
+                    $row[$field] = rescue(fn () => \Illuminate\Support\Carbon::parse($row[$field])->timezone($timezone)->format('Y-m-d H:i'), $row[$field], false);
+                }
+            }
+            if (! empty($row['record_date'])) {
+                $row['record_date'] = substr((string) $row['record_date'], 0, 10);
+            }
+
+            return $row;
+        }, $rows);
+
+        // An empty filter list must reach Python as an object ({}), not a list ([]): every unfiltered report failed.
+        return ['filters' => (object) ($input['filters'] ?? [])] + $input + ['source_rows' => $rows];
     }
 
     /**

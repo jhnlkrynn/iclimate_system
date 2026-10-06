@@ -549,7 +549,7 @@
                             @if($chat->weather_prediction || $chat->rice_yield_prediction || $chat->planting_recommendation || $chat->irrigation_recommendation)
                                 <div class="ic-ai-results">
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
-                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'N/A' }}</div></div>
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'Not available yet' }}</div></div>
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
                                 </div>
@@ -704,7 +704,7 @@
             const typingText = typing?.querySelector('.ic-ai-typing-text');
             if (typingText) typingText.textContent = languageText('Climora AI is checking iClimate...', 'Sinusuri ng Climora AI ang iClimate...');
         };
-        const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'N/A')}</div></div>`;
+        const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'Not available yet')}</div></div>`;
         const featureCatalog = (() => {
             try {
                 return JSON.parse(document.getElementById('icAiFeatureCatalog')?.textContent || '{}');
@@ -767,12 +767,12 @@
             const visibleCards = relevantPredictionCards(chat);
             if (!visibleCards.length) return '';
 
-            const weather = chat.weather_prediction?.predicted_weather || 'N/A';
+            const weather = chat.weather_prediction?.predicted_weather || 'Not available yet';
             const yieldValue = chat.rice_yield_prediction?.predicted_yield !== null && chat.rice_yield_prediction?.predicted_yield !== undefined
                 ? `${Number(chat.rice_yield_prediction.predicted_yield).toFixed(2)} t/ha`
-                : 'N/A';
-            const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'N/A';
-            const irrigation = chat.irrigation_recommendation?.recommendation || 'N/A';
+                : 'Not available yet';
+            const planting = chat.planting_recommendation?.recommendation || chat.planting_recommendation?.action || 'Not available yet';
+            const irrigation = chat.irrigation_recommendation?.recommendation || 'Not available yet';
             const cards = [];
 
             if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));

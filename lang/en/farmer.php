@@ -190,7 +190,7 @@ return [
     // ------------------------------------------------------------------ My Farm Today (the numbers)
     'today' => [
         'title' => 'My Farm Today',
-        'weather' => 'Weather Now',
+        'weather' => 'Weather Now in Lian',
         'feels_like' => 'Feels like :temp°C',
         'rain' => 'Rain Today',
         'chance' => ':percent% chance of rain',

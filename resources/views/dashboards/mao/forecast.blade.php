@@ -21,5 +21,9 @@
             @endforeach
         </div>
         <p class="mtd-foot">Days are highlighted when the forecast reaches {{ number_format(\App\Services\Analytics\MaoDashboardService::HEAVY_RAIN_MM, 0) }} mm of rain, {{ number_format(\App\Services\Analytics\MaoDashboardService::STRONG_WIND_KMH, 0) }} km/h wind or {{ number_format(\App\Services\Analytics\MaoDashboardService::VERY_HOT_C, 0) }}°C. A planning guide, not an official PAGASA warning.</p>
+        @if (collect($w['days'])->contains(fn ($day) => $day['wind'] === null) && collect($w['days'])->contains(fn ($day) => $day['wind'] !== null))
+            {{-- The provider's wind forecast is shorter than its rain and temperature forecast. --}}
+            <p class="mtd-foot">Wind speed is shown for the days the forecast provides it.</p>
+        @endif
     </section>
 @endif

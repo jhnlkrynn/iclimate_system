@@ -297,7 +297,8 @@ class DashboardController extends Controller
             'riskLevelCounts' => collect(['Low', 'Moderate', 'High', 'Severe'])
                 ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
                 ->all(),
-            'currentSeason' => $latestClimate?->season ?? data_get($liveWeather, 'season'),
+            // The season of today's month (it used to be the season of the newest stored record, e.g. "Wet" in October).
+            'currentSeason' => ClimateRecord::seasonForMonth(\App\Support\BusinessClock::month()),
             'pendingAdvisoryCount' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PENDING_REVIEW)->count(),
         ];
     }
@@ -603,7 +604,7 @@ class DashboardController extends Controller
                 'severity' => 'critical',
                 'weight' => 3,
                 'title' => $heatmapRefreshFailuresToday.' heatmap refresh '.str('failure')->plural($heatmapRefreshFailuresToday).' today',
-                'message' => 'One or more barangays failed to recompute risk during the heatmap refresh. Check storage/logs/laravel.log.',
+                'message' => 'One or more barangays failed to recompute risk during the heatmap refresh. Check the newest file in storage/logs (laravel*.log).',
             ];
         }
 

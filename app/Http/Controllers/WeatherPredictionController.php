@@ -326,7 +326,11 @@ class WeatherPredictionController extends Controller
             ->where('requested_by', $request->user()->id)
             ->whereIn('type', ['weather_prediction', 'rice_yield_prediction']);
 
-        return $query->where('uuid', $request->query('run'))->firstOrFail();
+        $run = $query->where('uuid', $request->query('run'))->firstOrFail();
+        // Never show an endless "loading" for a request no worker finished in time.
+        $run->expireIfStale();
+
+        return $run;
     }
 
     private function readingsOutOfSync(?array $barangayWeather, array $lianWeather): bool

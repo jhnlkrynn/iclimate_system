@@ -64,7 +64,6 @@ class BarangayRiskMapService
 
     private const GEOJSON_RELATIVE_PATH = 'geojson/lian-barangays.geojson';
 
-    private const WET_SEASON_MONTHS = [5, 6, 7, 8, 9, 10];
 
     public function __construct(
         private readonly LianBarangayWeatherService $weatherService,
@@ -821,7 +820,8 @@ class BarangayRiskMapService
             in_array('Drought stress', $stressLabels, true), in_array('Limited rainfall', $stressLabels, true) => 'Drought',
             in_array('Strong wind', $stressLabels, true) => 'Typhoon',
             $temperature !== null && $temperature >= 32 => 'Heat',
-            default => 'Drought',
+            // No specific stress factor: there is no main concern to name (it used to be stored as "Drought").
+            default => null,
         };
 
         try {
@@ -991,7 +991,7 @@ class BarangayRiskMapService
 
     private function currentSeason(): string
     {
-        return in_array(\App\Support\BusinessClock::month(), self::WET_SEASON_MONTHS, true) ? 'Wet' : 'Dry';
+        return \App\Models\ClimateRecord::seasonForMonth(\App\Support\BusinessClock::month());
     }
 
     private function colorFor(string $level): string

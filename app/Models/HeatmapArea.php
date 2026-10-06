@@ -55,7 +55,7 @@ class HeatmapArea extends Model
 
             if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'main_risk_reason')) {
                 $area->main_risk_reason = $area->description
-                    ?: "{$area->risk_type} risk with a computed score of ".number_format((float) $area->risk_score, 2).'.';
+                    ?: ($area->risk_type ?: 'Climate')." risk with a computed score of ".number_format((float) $area->risk_score, 2).'.';
             }
             if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'suggested_action')) {
                 $area->suggested_action = $area->irrigation_recommendation

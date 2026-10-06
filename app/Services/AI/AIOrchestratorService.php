@@ -829,7 +829,7 @@ class AIOrchestratorService
             'data' => $current->map(fn (HeatmapArea $area): array => [
                 'barangay' => $area->barangay,
                 'risk_level' => $area->risk_level,
-                'risk_type' => $area->risk_type,
+                'risk_type' => $area->risk_type ?: 'general conditions',
                 'risk_score' => $area->risk_score,
                 'predicted_yield' => $area->predicted_yield,
                 'rainfall_status' => $area->rainfall_status,
@@ -911,7 +911,7 @@ class AIOrchestratorService
             'data' => $row ? [[
                 'barangay' => $row->barangay,
                 'risk_level' => $row->risk_level,
-                'risk_type' => $row->risk_type,
+                'risk_type' => $row->risk_type ?: 'general conditions',
                 'risk_score' => $row->risk_score,
                 'predicted_yield' => $row->predicted_yield,
                 'rainfall_status' => $row->rainfall_status,
@@ -935,15 +935,15 @@ class AIOrchestratorService
 
                 return $this->translate(
                     $language,
-                    'As of '.$date.', '.$row->barangay.' was marked '.$row->risk_level.' risk for '.$row->risk_type.'. This is from an earlier computation, and current conditions are unknown — this may not reflect current conditions.',
-                    'Noong '.$date.', ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.$row->risk_type.'. Mula ito sa nakaraang kalkulasyon, hindi alam ang kasalukuyang kondisyon — maaaring hindi na ito reflektibo sa kasalukuyan.'
+                    'As of '.$date.', '.$row->barangay.' was marked '.$row->risk_level.' risk for '.($row->risk_type ?: 'general conditions').'. This is from an earlier computation, and current conditions are unknown — this may not reflect current conditions.',
+                    'Noong '.$date.', ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.($row->risk_type ?: 'general conditions').'. Mula ito sa nakaraang kalkulasyon, hindi alam ang kasalukuyang kondisyon — maaaring hindi na ito reflektibo sa kasalukuyan.'
                 );
             }
 
             return $this->translate(
                 $language,
-                $row->barangay.' is marked '.$row->risk_level.' risk for '.$row->risk_type.' in the iClimate heat map. Planting guidance: '.$row->planting_advisory,
-                'Ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.$row->risk_type.' sa iClimate heat map. Gabay sa pagtatanim: '.$row->planting_advisory
+                $row->barangay.' is marked '.$row->risk_level.' risk for '.($row->risk_type ?: 'general conditions').' in the iClimate heat map. Planting guidance: '.$row->planting_advisory,
+                'Ang '.$row->barangay.' ay naka-markang '.$row->risk_level.' risk para sa '.($row->risk_type ?: 'general conditions').' sa iClimate heat map. Gabay sa pagtatanim: '.$row->planting_advisory
             );
         });
 

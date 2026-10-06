@@ -9,6 +9,30 @@
 
 Updated Community Feed and Messaging Feature.
 
+## Running iClimate (Windows / XAMPP)
+
+iClimate needs five things running: the MySQL database, the web app, the scheduler, the queue worker and the ML service.
+Without the scheduler and queue worker, predictions and reports stay "loading" and weather, risk and advisories stop updating.
+
+```
+start-services.bat                    start everything (safe to run again; closes duplicate copies)
+start-services.bat status             show what is running
+start-services.bat restart            after changing code
+start-services.bat install-autostart  start everything when you sign in to Windows (after a reboot)
+```
+
+- For real use set `ICLIMATE_WEB_SERVER=apache` in `.env`: the script then runs Apache with four PHP workers instead of
+  the one-request-at-a-time dev server. See [deploy/README.md](deploy/README.md) for the full deployment checklist.
+- PHP 8.2 or newer is required. XAMPP's own PHP 8.0 cannot run the app; the script uses `C:\php85-cli\php.exe`
+  (set `ICLIMATE_PHP` to use another one).
+- Each service is restarted automatically if it stops. Logs are in `storage/logs`.
+- Password reset by email needs real mail settings in `.env` (`MAIL_MAILER=smtp` ...). With `MAIL_MAILER=log`
+  the forgot-password page tells people to ask MAO/IT for a new password instead.
+- A daily database backup (03:15) is written to `storage/app/backups`. Run one now with `php artisan iclimate:backup-database`.
+- The farmer masterlist (`database/data/iclimate_farmer_masterlist.csv`) holds personal data and is not kept in git:
+  copy it onto the server by hand before running `FarmerMasterlistSeeder`.
+- Check the data with `php artisan iclimate:data-audit`.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

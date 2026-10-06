@@ -14,7 +14,11 @@ use Illuminate\Support\Str;
 /**
  * Imports the iClimate Farmer Masterlist (RSBSA export) into users + farmer_profiles.
  *
- * Source file: database/data/iclimate_farmer_masterlist.csv
+ * Source file: database/data/iclimate_farmer_masterlist.csv. It holds farmers' names and RSBSA numbers, so it
+ * is NOT kept in git (.gitignore): copy it onto the server by hand before running this seeder.
+ *
+ * Passwords: nothing is written in code. A new account gets ICLIMATE_FARMER_ACCOUNT_PASSWORD when that is set,
+ * otherwise its own random password. An account that already exists keeps the password it has.
  * Columns:     No., RSBSA No., Last Name, First Name, Middle Name, Suffix,
  *              Barangay, Area (ha), Association
  *
@@ -23,8 +27,6 @@ use Illuminate\Support\Str;
  */
 class FarmerMasterlistSeeder extends Seeder
 {
-    private const DEFAULT_PASSWORD = 'farmer123';
-
     private const EMAIL_DOMAIN = 'iclimate.local';
 
     public function run(): void
@@ -55,7 +57,8 @@ class FarmerMasterlistSeeder extends Seeder
             return;
         }
 
-        $hashedPassword = Hash::make(self::DEFAULT_PASSWORD);
+        $sharedPassword = (string) config('iclimate.farmer_account_password');
+        $sharedHash = $sharedPassword !== '' ? Hash::make($sharedPassword) : null;
         $imported = 0;
         $skipped = 0;
         $rowNumber = 1; // header was row 0
@@ -127,17 +130,19 @@ class FarmerMasterlistSeeder extends Seeder
 
                 $email = $this->buildEmail($identifier);
 
-                $user = User::query()->updateOrCreate(
-                    ['email' => $email],
-                    [
-                        'name' => $fullName !== '' ? $fullName : $identifier,
-                        'password' => $hashedPassword,
-                        'role' => User::ROLE_FARMER,
-                        'barangay' => $barangay,
-                        'status' => User::STATUS_ACTIVE,
-                        'email_verified_at' => now(),
-                    ],
-                );
+                $user = User::query()->firstOrNew(['email' => $email]);
+                $user->fill([
+                    'name' => $fullName !== '' ? $fullName : $identifier,
+                    'role' => User::ROLE_FARMER,
+                    'barangay' => $barangay,
+                    'status' => User::STATUS_ACTIVE,
+                ]);
+                $user->email_verified_at ??= now();
+                if (! $user->exists) {
+                    // Re-running the import never resets a password a farmer (or IT) has already set.
+                    $user->password = $sharedHash ?? Hash::make(Str::password(24));
+                }
+                $user->save();
 
                 FarmerProfile::query()->updateOrCreate(
                     ['rsbsa_no' => $identifier],

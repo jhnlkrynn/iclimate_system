@@ -48,7 +48,7 @@ class AutomationStatus extends Command
             ['Typhoon safety response', $activeTyphoonEvent
                 ? 'Open: '.$activeTyphoonEvent['title']
                 : 'Closed: no active typhoon advisory'],
-            ['Automation log', storage_path('logs/automation.log')],
+            ['Automation logs', storage_path('logs').DIRECTORY_SEPARATOR.'automation-<command>.log (one per scheduled command)'],
         ]);
 
         if (! $latestWeather) {

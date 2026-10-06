@@ -116,6 +116,10 @@ return [
         'cache_minutes' => env('FARMING_AI_CACHE_MINUTES', 30),
         'queue_connection' => env('FARMING_AI_QUEUE_CONNECTION', 'database'),
         'queue' => env('FARMING_AI_QUEUE', 'analytics'),
+        // How long a requested prediction or report may wait for the queue worker, and how long it may run,
+        // before the page stops waiting and offers "try again" (see AnalyticsRun::expireIfStale()).
+        'pending_timeout_seconds' => (int) env('FARMING_AI_PENDING_TIMEOUT', 90),
+        'processing_timeout_seconds' => (int) env('FARMING_AI_PROCESSING_TIMEOUT', 300),
     ],
 
     // PredictionOrchestrator (App\Services\Prediction) — how long a

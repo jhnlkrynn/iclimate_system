@@ -215,7 +215,7 @@ class MessagingController extends Controller
 
         DB::transaction(function () use ($conversation, $message): void {
             if ($message->attachment_path) {
-                Storage::disk('public')->delete($message->attachment_path);
+                Storage::disk($this->attachmentDisk($message->attachment_path))->delete($message->attachment_path);
             }
 
             $message->delete();
@@ -228,11 +228,37 @@ class MessagingController extends Controller
         return redirect()->route('messages.show', $conversation)->with('success', 'Message unsent.');
     }
 
+    /** Sends a message's attachment to the two people in the conversation only. */
+    public function attachment(Request $request, Conversation $conversation, ConversationMessage $message): \Symfony\Component\HttpFoundation\Response
+    {
+        $this->authorizeConversation($request->user(), $conversation);
+        abort_unless($message->conversation_id === $conversation->id && $message->attachment_path, 404);
+
+        $disk = Storage::disk($this->attachmentDisk($message->attachment_path));
+        abort_unless($disk->exists($message->attachment_path), 404);
+
+        // Shown in the browser for pictures, video and PDF; anything else is downloaded.
+        $inline = preg_match('#^(image|video)/|^application/pdf$#', (string) $message->attachment_mime) === 1;
+
+        return $disk->response($message->attachment_path, $message->attachment_name ?: 'attachment', [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, max-age=600',
+        ], $inline ? 'inline' : 'attachment');
+    }
+
+    /** New attachments are private; ones sent before that change are still in the public folder. */
+    private function attachmentDisk(string $path): string
+    {
+        return Storage::disk('local')->exists($path) ? 'local' : 'public';
+    }
+
     private function createMessage(Request $request, Conversation $conversation, ?string $body): ConversationMessage
     {
         return DB::transaction(function () use ($request, $conversation, $body): ConversationMessage {
             $attachment = $request->file('attachment');
-            $path = $attachment?->store('message-attachments', 'public');
+            // Private storage: a message attachment is only ever sent through attachment() below, which checks
+            // that the viewer is in the conversation. It is never reachable by a public /storage link.
+            $path = $attachment?->store('message-attachments', 'local');
 
             $message = $conversation->messages()->create([
                 'sender_id' => $request->user()->id,
@@ -255,7 +281,7 @@ class MessagingController extends Controller
         return [
             'id' => $message->id,
             'body' => $message->body,
-            'attachment_url' => $message->attachment_path ? asset('storage/'.$message->attachment_path) : null,
+            'attachment_url' => $message->attachment_path ? route('messages.attachment', [$message->conversation_id, $message]) : null,
             'attachment_name' => $message->attachment_name,
             'sender_id' => $message->sender_id,
             'sender_name' => $message->sender?->name,

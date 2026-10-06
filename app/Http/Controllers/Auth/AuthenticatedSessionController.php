@@ -29,8 +29,6 @@ class AuthenticatedSessionController extends Controller
 
         return view('auth.login', [
             'captcha' => $captcha->challenge($request, 'login'),
-            'demoAccounts' => $this->demoAccounts(),
-            'demoPassword' => (string) config('iclimate.default_account_password'),
             'requiresCaptcha' => $requiresCaptcha,
             // The login page itself never calls a weather provider: it shows whatever is already stored, and
             // the page's own script asks login/weather (below) for the live reading after it has loaded.
@@ -124,20 +122,6 @@ class AuthenticatedSessionController extends Controller
             'updated_label' => $updatedAt
                 ? 'Updated '.$updatedAt->shortTime()
                 : ($hasUsableReading ? 'Stored climate record' : 'No live or stored weather available'),
-        ];
-    }
-
-    /**
-     * Demo credentials shown on the login page.
-     *
-     * @return array<int, array{role: string, email: string}>
-     */
-    private function demoAccounts(): array
-    {
-        return [
-            ['role' => User::ROLE_FARMER, 'email' => 'farmer@iclimate.com'],
-            ['role' => User::ROLE_MAO, 'email' => 'mao@iclimate.com'],
-            ['role' => User::ROLE_IT_EXPERT, 'email' => 'admin@iclimate.com'],
         ];
     }
 

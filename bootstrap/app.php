@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\ReadPreparedPredictionsOnly;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
@@ -23,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             SecurityHeaders::class,
+            // A deactivated account is signed out on its next request, not only refused at the next login.
+            EnsureAccountIsActive::class,
             TrackUserActivity::class,
             // No page request trains or rebuilds a model; it reads what the scheduled jobs prepared.
             ReadPreparedPredictionsOnly::class,

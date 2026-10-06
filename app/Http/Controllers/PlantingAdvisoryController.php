@@ -463,6 +463,11 @@ class PlantingAdvisoryController extends Controller
         // a farmer reuses a fetch from the last few minutes (services.pagasa.cache_minutes) so PAGASA is not hammered.
         // This used to only queue a Python "advisory_ai" job, which never called PAGASA and needed a queue
         // worker plus the ML service to be running.
+        // PAGASA plus the local weather refresh can take longer than PHP's default 30 seconds on a slow line.
+        if (! app()->runningInConsole()) {
+            @set_time_limit(75);
+        }
+
         $requestedBarangay = is_string($request->input('target_barangay'))
             ? LianBarangays::canonicalName($request->input('target_barangay'))
             : null;

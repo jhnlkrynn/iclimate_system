@@ -19,6 +19,18 @@ class ClimateRecord extends Model
     public const SEASON_DRY = 'Dry';
 
     /**
+     * The one season calendar used across iClimate: wet season May to September, dry season October to April.
+     * It is the calendar of the project dataset the weather and rice-yield models were trained on, so pages,
+     * risk ratings and advice must not use a different one.
+     */
+    public const WET_SEASON_MONTHS = [5, 6, 7, 8, 9];
+
+    public static function seasonForMonth(int $month): string
+    {
+        return in_array($month, self::WET_SEASON_MONTHS, true) ? self::SEASON_WET : self::SEASON_DRY;
+    }
+
+    /**
      * Numeric guardrails added by the 2026-09 data-quality fix, after an
      * audit found a manually-entered ClimateRecord row (5000mm rainfall,
      * 100C temperature, 500km/h wind, future-dated) had no upper bound to

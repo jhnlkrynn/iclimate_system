@@ -165,7 +165,7 @@ class FarmerPlantingScheduleController extends Controller
                     'planting_date' => $data['planting_date'],
                     'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
                     // May to September plantings are the wet season crop, the rest the dry season crop.
-                    'season' => in_array($planting->month, [5, 6, 7, 8, 9], true) ? 'Wet' : 'Dry',
+                    'season' => \App\Models\ClimateRecord::seasonForMonth($planting->month),
                     'farm_type' => $profile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED,
                     'barangay' => in_array($barangay, LianBarangays::all(), true) ? $barangay : null,
                     'farm_area_hectares' => $data['farm_area'],

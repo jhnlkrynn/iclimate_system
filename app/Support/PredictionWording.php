@@ -78,6 +78,13 @@ final class PredictionWording
             ];
         }
 
+        if (str_starts_with($text, 'timed out')) {
+            return [
+                'title' => 'This Is Taking Longer Than Usual',
+                'detail' => 'We could not finish your request in time. Please try again. If it happens again, tell the MAO office.',
+            ];
+        }
+
         return [
             'title' => 'Forecast Temporarily Unavailable',
             'detail' => 'Something went wrong on our side. Please try again in a few minutes.',

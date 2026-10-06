@@ -264,8 +264,10 @@ class ItDashboardInsightsTest extends TestCase
     public function test_active_sessions_count_recent_activity_on_the_database_driver(): void
     {
         config(['session.driver' => 'database']);
-        foreach ([['a', now()->subMinutes(2)], ['b', now()->subMinutes(10)], ['c', now()->subHours(3)]] as [$id, $when]) {
-            DB::table('sessions')->insert(['id' => $id, 'payload' => '', 'last_activity' => $when->getTimestamp()]);
+        [$one, $two, $three] = [User::factory()->create()->id, User::factory()->create()->id, User::factory()->create()->id];
+        // Two browsers of one person and a visitor who is not signed in must not add to the count.
+        foreach ([['a', $one, now()->subMinutes(2)], ['a2', $one, now()->subMinutes(1)], ['b', $two, now()->subMinutes(10)], ['c', $three, now()->subHours(3)], ['guest', null, now()]] as [$id, $userId, $when]) {
+            DB::table('sessions')->insert(['id' => $id, 'user_id' => $userId, 'payload' => '', 'last_activity' => $when->getTimestamp()]);
         }
 
         $this->assertSame(['ok', 2], [$this->insights()->activeSessions()['state'], $this->insights()->activeSessions()['count']]);

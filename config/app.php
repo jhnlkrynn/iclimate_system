@@ -76,6 +76,12 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Stored timestamps stay UTC, but the scheduler's times of day (routes/console.php: backup at 03:15, dataset
+    | processing at 01:30, ...) mean Philippine time. Without this the "night" jobs ran at 9-11 in the morning.
+    */
+    'schedule_timezone' => env('APP_SCHEDULE_TIMEZONE', 'Asia/Manila'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

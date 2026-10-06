@@ -23,7 +23,7 @@ class RiceProductionController extends CrudController
 
     protected string $title = 'Rice Production Record';
 
-    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield per Hectare', 'area_hectares' => 'Area (ha)', 'total_production' => 'Total Harvest', 'year' => 'Year'];
+    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year'];
 
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];
 
@@ -249,7 +249,8 @@ class RiceProductionController extends CrudController
             'area_hectares' => ['nullable', 'numeric', 'min:0'],
             'total_production' => ['nullable', 'numeric', 'min:0'],
             'year' => ['required', 'integer', 'min:1900', 'max:2100'],
-            'production_month' => ['nullable', 'date_format:Y-m'],
+            // Required: a harvest record without its month cannot be placed in a season or compared with the weather.
+            'production_month' => ['required', 'date_format:Y-m'],
             'remarks' => ['nullable', 'string'],
         ];
     }

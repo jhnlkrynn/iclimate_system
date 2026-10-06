@@ -160,12 +160,12 @@ class DatabaseBackupTest extends TestCase
         $this->assertSame([], $this->files());
     }
 
-    public function test_a_file_that_is_not_a_postgres_backup_is_rejected(): void
+    public function test_a_file_that_is_not_a_database_backup_is_rejected(): void
     {
         $this->fakePgDump('this is not a pg_dump archive');
 
         $this->artisan('iclimate:backup-database')
-            ->expectsOutputToContain('not a valid PostgreSQL backup')
+            ->expectsOutputToContain('not a valid database backup')
             ->assertExitCode(1);
 
         $this->assertSame([], $this->files());
@@ -195,16 +195,67 @@ class DatabaseBackupTest extends TestCase
             ->assertExitCode(1);
     }
 
-    public function test_only_postgres_connections_can_be_backed_up(): void
+    public function test_only_mysql_and_postgres_connections_can_be_backed_up(): void
     {
         config(['backup.connection' => null]); // falls back to the test SQLite connection
         Process::fake();
 
         $this->artisan('iclimate:backup-database')
-            ->expectsOutputToContain('only available for a PostgreSQL database')
+            ->expectsOutputToContain('only available for a MySQL/MariaDB or PostgreSQL database')
             ->assertExitCode(1);
 
         Process::assertNothingRan();
+    }
+
+    // ------------------------------------------------------------------ mysql
+
+    /** The local XAMPP database is MySQL/MariaDB: it is backed up with mysqldump instead of pg_dump. */
+    private function useMysqlConnection(string $dump, int $exitCode = 0): void
+    {
+        config([
+            'backup.connection' => 'mysql_backup_test',
+            'backup.mysqldump_binary' => 'mysqldump',
+            'database.connections.mysql_backup_test' => ['driver' => 'mysql', 'host' => self::HOST, 'port' => '3306', 'database' => self::DATABASE, 'username' => self::USER, 'password' => self::PASSWORD],
+        ]);
+
+        Process::fake(function (PendingProcess $process) use ($dump, $exitCode) {
+            $fileArgument = collect($process->command)->first(fn ($argument) => str_starts_with((string) $argument, '--result-file='));
+            if ($fileArgument) {
+                file_put_contents(substr((string) $fileArgument, 14), $dump);
+            }
+
+            return Process::result(output: '', errorOutput: '', exitCode: $exitCode);
+        });
+    }
+
+    public function test_a_mysql_database_is_backed_up_with_mysqldump_and_the_password_stays_off_the_command_line(): void
+    {
+        $this->useMysqlConnection("-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB\n--\nCREATE TABLE `users` (`id` int);\nCREATE TABLE `climate_records` (`id` int);\n-- Dump completed on 2026-10-06  3:15:00\n");
+
+        $this->artisan('iclimate:backup-database')->expectsOutputToContain('Backup created')->assertExitCode(0);
+
+        $this->assertCount(1, $this->files());
+        Process::assertRan(function (PendingProcess $process): bool {
+            $command = implode(' ', $process->command);
+
+            return str_contains($command, 'mysqldump') && str_contains($command, '--single-transaction')
+                && ! str_contains($command, self::PASSWORD) && ($process->environment['MYSQL_PWD'] ?? null) === self::PASSWORD;
+        });
+
+        // The same file passes verification without any PostgreSQL tool: it is complete and defines tables.
+        $record = app(\App\Services\BackupVerificationService::class)->verify();
+        $this->assertSame(\App\Models\BackupVerification::PASSED, $record->status);
+        $this->assertSame(2, $record->archive_entry_count);
+        $this->assertSame('ok', app(DatabaseBackupService::class)->status()['state']);
+    }
+
+    public function test_a_mysql_dump_that_was_cut_short_is_rejected(): void
+    {
+        $this->useMysqlConnection("-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB\n--\nCREATE TABLE `users` (`id` int);\n");
+
+        $this->artisan('iclimate:backup-database')->expectsOutputToContain('incomplete')->assertExitCode(1);
+
+        $this->assertSame([], $this->files());
     }
 
     // ---------------------------------------------------------------- secrets
@@ -424,7 +475,8 @@ class DatabaseBackupTest extends TestCase
 
     public function test_backup_is_scheduled_once_a_day(): void
     {
-        Artisan::call('schedule:list');
+        // Times of day in the schedule are Philippine time since 2026-10-06 (config app.schedule_timezone); list them that way.
+        Artisan::call('schedule:list', ['--timezone' => 'Asia/Manila']);
         $list = Artisan::output();
 
         $this->assertStringContainsString('iclimate:backup-database', $list);

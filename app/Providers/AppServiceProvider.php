@@ -48,6 +48,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // One password rule everywhere a password is chosen (registration, IT-created accounts, change, reset).
+        \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
+
         // Same as the built-in "eloquent" user provider, minus the per-request user query.
         \Illuminate\Support\Facades\Auth::provider('cached-eloquent', fn ($app, array $config) => new \App\Auth\CachedEloquentUserProvider($app['hash'], $config['model']));
 

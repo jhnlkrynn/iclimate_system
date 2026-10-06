@@ -137,7 +137,7 @@ class ReportController extends CrudController
             'rows' => $tooManyRows ? collect() : $rows,
             'columns' => $report->savedColumns(),
             'filters' => $report->savedFilters(),
-            'generatedAt' => $report->created_at,
+            'generatedAt' => $this->localTime($report->created_at),
             'totalRows' => $totalRows,
             'tooManyRows' => $tooManyRows,
             'rowCap' => self::PRINT_ROW_CAP,
@@ -190,6 +190,12 @@ class ReportController extends CrudController
         ];
     }
 
+    /** Timestamps are stored in UTC; every time shown on a report is Philippine time (Asia/Manila). */
+    private function localTime(?\DateTimeInterface $time): ?\Illuminate\Support\Carbon
+    {
+        return $time === null ? null : \Illuminate\Support\Carbon::instance($time)->timezone((string) config('iclimate.timezone', 'Asia/Manila'));
+    }
+
     private function validatedFilters(Request $request): array
     {
         return $request->validate([
@@ -238,7 +244,7 @@ class ReportController extends CrudController
             'sourceStats' => $this->sourceStats(),
             'selected' => $report?->report_type,
             'selectedReport' => $report,
-            'generatedAt' => $report?->created_at,
+            'generatedAt' => $this->localTime($report?->created_at),
             'rows' => $this->paginateSnapshot($records, $request),
             'columns' => $report?->savedColumns() ?? [],
             'filters' => $filters,
@@ -301,11 +307,15 @@ class ReportController extends CrudController
             return null;
         }
 
-        return AnalyticsRun::query()
+        $run = AnalyticsRun::query()
             ->where('uuid', $request->query('run'))
             ->where('type', $type)
             ->where('requested_by', $request->user()->id)
             ->firstOrFail();
+        // Never show an endless "generating" for a report no worker finished in time.
+        $run->expireIfStale();
+
+        return $run;
     }
 
     private function paginateSnapshot(array $records, Request $request): LengthAwarePaginator
@@ -347,7 +357,7 @@ class ReportController extends CrudController
             'farmers' => FarmerProfile::query()->count(),
             'advisories' => PlantingAdvisory::query()->count(),
             'community_posts' => FeedPost::query()->count(),
-            'last_refreshed' => now(),
+            'last_refreshed' => $this->localTime(now()),
         ]);
     }
 }

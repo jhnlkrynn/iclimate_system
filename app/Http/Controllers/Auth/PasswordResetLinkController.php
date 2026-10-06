@@ -16,7 +16,16 @@ class PasswordResetLinkController extends Controller
      */
     public function create(): View
     {
-        return view('auth.forgot-password');
+        return view('auth.forgot-password', ['emailAvailable' => $this->emailCanBeSent()]);
+    }
+
+    /**
+     * With the "log" mailer a reset link is only written to the server log and never reaches anyone, so the
+     * page must not promise an email. Staff can set a new password for the account instead (Users > Edit).
+     */
+    private function emailCanBeSent(): bool
+    {
+        return config('mail.default') !== 'log';
     }
 
     /**
@@ -29,6 +38,12 @@ class PasswordResetLinkController extends Controller
         $request->validate([
             'email' => ['required', 'email'],
         ]);
+
+        if (! $this->emailCanBeSent()) {
+            return back()->withInput($request->only('email'))->withErrors([
+                'email' => 'Password reset by email is not available yet. Please ask the Municipal Agriculture Office or IT personnel to set a new password for your account.',
+            ]);
+        }
 
         // We will send the password reset link to this user. Once we have attempted
         // to send the link, we will examine the response then see the message we
