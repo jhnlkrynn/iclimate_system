@@ -12,6 +12,8 @@ class ResponsiveLayoutTest extends TestCase
         $navigation = file_get_contents(resource_path('views/layouts/navigation.blade.php'));
         $sidebar = file_get_contents(resource_path('views/layouts/sidebar.blade.php'));
         $maoDashboard = file_get_contents(resource_path('views/dashboards/mao-operations.blade.php'));
+        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
+        $maoDashboard .= file_get_contents(resource_path('css/pages/mao-operations.css'));
         $maoOverview = file_get_contents(resource_path('views/dashboards/mao.blade.php'));
         $itDashboard = file_get_contents(resource_path('views/dashboards/it-expert.blade.php'));
         $crudIndex = file_get_contents(resource_path('views/crud/index.blade.php'));

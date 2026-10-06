@@ -34,7 +34,9 @@ class BarangayRiskMapTest extends TestCase
         // set_time_limit() in the console applies to the whole PHPUnit process, so it is restored
         // after each test; otherwise every later test shares a 30-second budget.
         $this->previousTimeLimit = ini_get('max_execution_time');
-        set_time_limit(30);
+        // A guard against a test that hangs, not a speed target: on Windows the limit counts real time, and 30 s
+        // was exceeded whenever the machine was busy (the forecast model is trained inside some of these tests).
+        set_time_limit(120);
 
         // A risk-map test must never silently wait on an unmatched provider
         // request. Individual tests below install the Open-Meteo fake they

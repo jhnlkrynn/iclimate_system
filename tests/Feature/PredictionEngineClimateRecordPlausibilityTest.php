@@ -46,7 +46,13 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
 
     public function test_implausible_row_id_analog_of_row_6_does_not_influence_derived_features(): void
     {
-        // A plausible historical row.
+        // Five older plausible rows, so the entered records cover the full six-month window (with fewer, the
+        // engine reads the Ambulong station record instead; see the last test).
+        foreach (['2025-08-15', '2025-09-15', '2025-10-15', '2025-11-15', '2025-12-15'] as $date) {
+            ClimateRecord::query()->create(['record_date' => $date, 'rainfall' => 100.0, 'temperature' => 27.0, 'humidity' => 75.0, 'wind_speed' => 7.0, 'season' => ClimateRecord::SEASON_DRY, 'source' => 'test fixture']);
+        }
+
+        // The latest plausible historical row.
         ClimateRecord::query()->create([
             'record_date' => '2026-01-15',
             'rainfall' => 120.0,
@@ -117,7 +123,7 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
         $this->assertNotSame($anotherBadRow->id, $plausibleLatest->id);
     }
 
-    public function test_empty_plausible_set_leaves_history_inputs_missing_not_copied_or_zero(): void
+    public function test_without_six_entered_records_the_station_record_supplies_the_history_never_the_excluded_row(): void
     {
         // Only an implausible row exists — the plausible-filtered set is empty.
         ClimateRecord::factory()->create([
@@ -132,11 +138,17 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
 
         $modelInput = $this->buildModelInputFor();
 
-        // No verified history means the "previous" and trailing-window inputs are null: not 0,
-        // not the forecast copied in their place, and never the excluded row's values.
-        foreach (['previous_rainfall', 'previous_temp', 'previous_humidity', 'previous_wind_speed', 'rainfall_6m', 'temp_3m', 'temp_6m', 'seasonal_rainfall', 'seasonal_temp', 'temp_range'] as $key) {
-            $this->assertNull($modelInput[$key], "{$key} must be null when there is no verified history");
-        }
+        // Fewer than six entered records: the history inputs are the latest six months of the verified
+        // Ambulong station record (2026-10 fix: the yield forecast could never run on a new install). They
+        // are real observations: not 0, not the forecast copied in their place, never the excluded row.
+        $months = collect(app(\App\Services\Climate\AmbulongHistoricalClimateDataset::class)->load()['observations'])
+            ->sortByDesc(fn (array $obs): int => $obs['year'] * 12 + $obs['month'])->take(6)->values();
+
+        $this->assertSame(round((float) $months->first()['rainfall'], 2), $modelInput['previous_rainfall']);
+        $this->assertSame(round((float) $months->sum('rainfall'), 2), $modelInput['rainfall_6m']);
+        $this->assertSame(round((float) $months->avg('temperature'), 2), $modelInput['temp_6m']);
+        $this->assertLessThan(60, $modelInput['previous_temp']);
+        $this->assertLessThan(5000, $modelInput['rainfall_6m']);
     }
 
     /**

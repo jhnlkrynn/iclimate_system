@@ -59,6 +59,11 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // The system must always keep a working administrator.
+        if (UserManagementController::isLastActiveItExpert($user)) {
+            return back()->withErrors(['password' => 'This is the last active IT Expert account, so it cannot be deleted. Create another IT Expert account first.'], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();

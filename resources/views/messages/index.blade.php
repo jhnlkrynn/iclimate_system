@@ -283,7 +283,7 @@
                                         <div style="white-space:pre-line;">{{ $message->body }}</div>
                                     @endif
                                     @if($message->attachment_path)
-                                        <a class="{{ $message->sender_id === $currentUser->id ? 'text-white' : '' }}" href="{{ asset('storage/'.$message->attachment_path) }}" target="_blank">{{ $message->attachment_name }}</a>
+                                        <a class="{{ $message->sender_id === $currentUser->id ? 'text-white' : '' }}" href="{{ route('messages.attachment', [$message->conversation_id, $message]) }}" target="_blank" rel="noopener">{{ $message->attachment_name }}</a>
                                     @endif
                                     <div class="msg-meta">
                                         <span>{{ $message->sender?->name ?? 'User' }} &middot; {{ $message->humanTimestamp() }}</span>

@@ -42,7 +42,7 @@ class RegisteredUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'farmer_organization_id' => ['nullable', 'integer', 'exists:farmer_organizations,id'],
             'barangay' => ['required_without:farmer_organization_id', 'nullable', 'string', Rule::in($this->manualBarangays())],
             'captcha_answer' => ['required', 'string', 'max:20'],

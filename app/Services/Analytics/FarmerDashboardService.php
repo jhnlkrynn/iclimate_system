@@ -187,8 +187,8 @@ final class FarmerDashboardService
     private function period(CarbonImmutable $now): string
     {
         return match (true) {
-            $now->hour < 12 => 'morning',
-            $now->hour < 18 => 'afternoon',
+            $now->hour >= 5 && $now->hour < 12 => 'morning',
+            $now->hour >= 12 && $now->hour < 18 => 'afternoon',
             default => 'evening',
         };
     }

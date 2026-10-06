@@ -62,7 +62,7 @@ class MobileAuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Rules\Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'contact_number' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
             'barangay' => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::in(\App\Support\LianBarangays::all())],

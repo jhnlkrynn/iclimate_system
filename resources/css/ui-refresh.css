@@ -1472,3 +1472,62 @@ body .quick-action:hover {
 }
 
 
+
+/* Record tables: a long column title may wrap onto two lines, so every column fits beside the pinned Actions
+   column instead of hiding behind it (e.g. "Total Harvest" and "Year" on Rice Production at 1366px). */
+body .table-responsive > .table > thead > tr > th {
+    white-space: normal;
+    vertical-align: bottom;
+}
+
+/* The Climora button floats over the bottom-right corner. This leaves room to scroll the last row of buttons
+   on a page clear of it. */
+body main.page-shell::after {
+    content: '';
+    display: block;
+    height: 76px;
+}
+
+/* ------------------------------------------------------------------ wide record tables
+   A table that does not fit its card must never hide columns behind the pinned Actions column
+   (resources/js/ui-enhancements.js, bindWideTables):
+     1. it is first tightened (.ic-table-compact);
+     2. if it still does not fit and the page has the card list used on phones, the cards are shown instead;
+     3. otherwise it scrolls sideways and says so. */
+body .table-responsive.ic-table-compact > .table > :is(thead, tbody) > tr > :is(th, td) {
+    padding: .5rem .55rem;
+    font-size: .875rem;
+}
+body .table-responsive.ic-table-compact > .table .btn-sm {
+    padding: .2rem .5rem;
+    font-size: .8rem;
+}
+body .table-responsive.ic-cards-forced {
+    display: none !important;
+}
+body .ic-table-cards.ic-cards-forced {
+    display: grid;
+}
+body .ic-table-scroll-hint {
+    margin: 0;
+    padding: .45rem .9rem;
+    font-size: .8125rem;
+    color: var(--iclimate-muted, #55645b);
+}
+html[data-theme="dark"] body .ic-table-scroll-hint {
+    color: var(--dk-muted);
+}
+
+/* Record cards (phones, and tables too wide for the screen): View / Edit / Delete share one row. */
+body .ic-table-card-actions {
+    flex-wrap: nowrap;
+}
+body .ic-table-card-actions > a,
+body .ic-table-card-actions > form {
+    flex: 1 1 0;
+    min-width: 0;
+}
+body .ic-table-card-actions .btn {
+    width: 100%;
+    white-space: nowrap;
+}

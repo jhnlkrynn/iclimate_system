@@ -471,7 +471,8 @@ class BackupRestoreTestTest extends TestCase
 
     public function test_the_restore_test_is_manual_only_and_the_backup_jobs_are_unchanged(): void
     {
-        Artisan::call('schedule:list');
+        // Times of day in the schedule are Philippine time since 2026-10-06 (config app.schedule_timezone); list them that way.
+        Artisan::call('schedule:list', ['--timezone' => 'Asia/Manila']);
         $list = Artisan::output();
 
         $this->assertStringNotContainsString('iclimate:test-restore', $list);

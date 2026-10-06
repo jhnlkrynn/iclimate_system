@@ -125,9 +125,15 @@ class User extends Authenticatable
             ->whereRaw("NOT EXISTS (SELECT 1 FROM system_logs sl WHERE sl.user_id = users.id AND LOWER(sl.action) IN ('user login', 'login'))");
     }
 
+    /** The role as people read it. The stored value of the IT role stays "IT Expert"; every screen says "IT Personnel". */
+    public static function labelForRole(?string $role): string
+    {
+        return $role === self::ROLE_IT_EXPERT ? 'IT Personnel' : (string) $role;
+    }
+
     public function roleLabel(): string
     {
-        return $this->role;
+        return self::labelForRole($this->role);
     }
 
     public function aiLanguageCode(): ?string

@@ -410,7 +410,10 @@ final class ItDashboardInsights
         }
     }
 
-    /** Sessions active in the last 15 minutes; only measurable on the database session driver. @return array{state: string, count: ?int, driver: string} */
+    /**
+     * People signed in and active in the last 15 minutes: one per account, however many browsers they use, and
+     * never visitors who are not signed in (counting every session row showed more people online than accounts).
+     * Only measurable on the database session driver. @return array{state: string, count: ?int, driver: string} */
     public function activeSessions(): array
     {
         $driver = (string) config('session.driver');
@@ -420,7 +423,7 @@ final class ItDashboardInsights
         try {
             $table = (string) config('session.table', 'sessions');
 
-            return ['state' => 'ok', 'driver' => $driver, 'count' => DB::table($table)->where('last_activity', '>=', now()->subMinutes(15)->getTimestamp())->count()];
+            return ['state' => 'ok', 'driver' => $driver, 'count' => DB::table($table)->whereNotNull('user_id')->where('last_activity', '>=', now()->subMinutes(15)->getTimestamp())->distinct()->count('user_id')];
         } catch (Throwable) {
             return ['state' => 'unavailable', 'count' => null, 'driver' => $driver];
         }

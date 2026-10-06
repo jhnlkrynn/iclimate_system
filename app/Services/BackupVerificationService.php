@@ -9,8 +9,9 @@ use Illuminate\Support\Facades\Process;
 use Throwable;
 
 /**
- * Proves the newest backup is a readable PostgreSQL archive without restoring
- * it: `pg_restore --list` only prints the archive's table of contents.
+ * Proves the newest backup is readable without restoring it. A PostgreSQL archive is listed with
+ * `pg_restore --list` (its table of contents only); a MySQL/MariaDB dump is read as text: it must end with
+ * mysqldump's completion line and define tables.
  *
  * pg_restore is given the file and nothing else. It is not given a database
  * connection or any PG* credentials, so it cannot reach or change the live
@@ -26,6 +27,7 @@ class BackupVerificationService
         'timeout' => 'The check took too long and was stopped.',
         'archive_unreadable' => 'The backup archive could not be read by pg_restore.',
         'archive_empty' => 'The backup archive has no contents.',
+        'dump_incomplete' => 'The backup file is incomplete: it does not end with the completion line.',
     ];
 
     public function __construct(private readonly DatabaseBackupService $backups) {}
@@ -56,6 +58,10 @@ class BackupVerificationService
         }
 
         $identity['backup_sha256'] = $sha256;
+
+        if ($this->backups->isSqlDump($backup['path'])) {
+            return $this->verifySqlDump($backup, $identity);
+        }
 
         $binary = (string) config('backup.pg_restore_binary', 'pg_restore');
 
@@ -96,6 +102,46 @@ class BackupVerificationService
             'backup' => $backup['name'],
             'entries' => $entries,
         ]);
+
+        return $record;
+    }
+
+    /**
+     * A mysqldump file is plain SQL, so it is checked by reading it: complete, and with table definitions.
+     *
+     * @param  array{name: string, path: string, size: int, mtime: int}  $backup
+     * @param  array<string, mixed>  $identity
+     */
+    private function verifySqlDump(array $backup, array $identity): BackupVerification
+    {
+        if (! $this->backups->sqlDumpIsComplete($backup['path'])) {
+            return $this->fail('dump_incomplete', $identity);
+        }
+
+        $handle = @fopen($backup['path'], 'rb');
+        if ($handle === false) {
+            return $this->fail('file_unreadable', $identity);
+        }
+
+        $tables = 0;
+        while (($line = fgets($handle)) !== false) {
+            if (str_starts_with($line, 'CREATE TABLE ')) {
+                $tables++;
+            }
+        }
+        fclose($handle);
+
+        if ($tables === 0) {
+            return $this->fail('archive_empty', $identity);
+        }
+
+        $record = BackupVerification::create($identity + [
+            'verified_at' => now(),
+            'status' => BackupVerification::PASSED,
+            'archive_entry_count' => $tables,
+        ]);
+
+        Log::info('Backup verification passed.', ['backup' => $backup['name'], 'entries' => $tables]);
 
         return $record;
     }

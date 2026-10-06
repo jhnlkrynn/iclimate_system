@@ -71,12 +71,21 @@ def _day(value):
 
 
 def _season(month: int) -> str:
-    return "Wet" if month in {5, 6, 7, 8, 9, 10} else "Dry"
+    # The project's one season calendar (ClimateRecord::WET_SEASON_MONTHS): wet May-September, dry October-April.
+    return "Wet" if month in {5, 6, 7, 8, 9} else "Dry"
 
 
 def weather_prediction(payload: dict) -> dict:
     target = date.fromisoformat(str(payload["target_date"])[:10])
-    result = monthly_weather_random_forest.predict(target.replace(day=1), payload.get("climate_records", []))
+    # One forecast per month across iClimate: when Laravel sends the month's prepared forecast (the one the Heat
+    # Map and dashboards show), it is used as given. A second model is only trained here when none was sent.
+    prepared = payload.get("prepared_forecast")
+    if isinstance(prepared, dict) and prepared.get("ready") and isinstance(prepared.get("predictions"), dict):
+        result = dict(prepared)
+        model_runtime = "iClimate prepared monthly forecast (MonthlyWeatherRandomForest)"
+    else:
+        result = monthly_weather_random_forest.predict(target.replace(day=1), payload.get("climate_records", []))
+        model_runtime = "Python scikit-learn RandomForestRegressor"
     predictions = result.get("predictions", {})
     predicted_rainfall = _optional_number(predictions.get("rainfall"))
     if predicted_rainfall is None:
@@ -98,7 +107,7 @@ def weather_prediction(payload: dict) -> dict:
         "target_month": target.replace(day=1).isoformat(),
         "location": payload.get("location", "Lian, Batangas"),
         "generated_at": datetime.now().isoformat(),
-        "model_runtime": "Python scikit-learn RandomForestRegressor",
+        "model_runtime": model_runtime,
         "processor": "python",
         "live_weather": payload.get("live_weather"),
         "predicted_rainfall": round(predicted_rainfall, 2) if predicted_rainfall is not None else None,
@@ -286,7 +295,9 @@ def advisory_ai(payload: dict) -> dict:
 
 def report_analytics(payload: dict) -> dict:
     report_type = payload["report_type"]
-    filters = {key: value for key, value in payload.get("filters", {}).items() if value not in (None, "")}
+    # A report with no filters arrives as an empty JSON list (PHP's empty array), not an object.
+    raw_filters = payload.get("filters")
+    filters = {key: value for key, value in (raw_filters if isinstance(raw_filters, dict) else {}).items() if value not in (None, "")}
     rows = payload.get("source_rows", [])
 
     def matches(row):

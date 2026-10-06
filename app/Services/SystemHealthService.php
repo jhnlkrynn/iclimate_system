@@ -164,7 +164,7 @@ class SystemHealthService
 
         $details = [
             'Last backup' => $this->when($status['last']),
-            'Size' => number_format($status['size'] / 1048576, 2).' MB',
+            'Size' => self::fileSize((int) ($status['size'])),
             'Backups kept' => (string) $status['count'],
             'Kept for' => $this->backups->retentionDays().' days',
         ];
@@ -206,7 +206,7 @@ class SystemHealthService
 
         $details['Result'] = 'Passed';
         $details['Archive entries'] = number_format((int) $latest->archive_entry_count);
-        $details['Size'] = number_format((int) $latest->backup_size_bytes / 1048576, 2).' MB';
+        $details['Size'] = self::fileSize((int) ((int) $latest->backup_size_bytes));
         $details['SHA-256'] = substr((string) $latest->backup_sha256, 0, 12).'…';
 
         if ($latest->verified_at->lt(now()->subHours(app(BackupVerificationService::class)->maxAgeHours()))) {
@@ -395,7 +395,7 @@ class SystemHealthService
 
         $modified = @filemtime($path);
         $details['Last updated'] = $modified ? $this->when(\Illuminate\Support\Carbon::createFromTimestamp($modified)) : 'Unknown';
-        $details['Size'] = number_format($size / 1048576, 2).' MB';
+        $details['Size'] = self::fileSize((int) ($size));
 
         return $this->result(self::HEALTHY, 'The model file is in place.', $details);
     }
@@ -557,5 +557,15 @@ class SystemHealthService
         $python = PythonRuntime::executable();
 
         return $python !== null && is_file($python);
+    }
+
+    /** 3,171 bytes reads "3.1 KB", not "0.00 MB". */
+    public static function fileSize(int $bytes): string
+    {
+        return match (true) {
+            $bytes >= 1048576 => number_format($bytes / 1048576, 2).' MB',
+            $bytes >= 1024 => number_format($bytes / 1024, 1).' KB',
+            default => number_format($bytes).' bytes',
+        };
     }
 }

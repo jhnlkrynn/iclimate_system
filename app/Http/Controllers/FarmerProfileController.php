@@ -56,7 +56,9 @@ class FarmerProfileController extends CrudController
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
             'barangay' => ['required', Rule::in(LianBarangays::all())],
-            'farm_area' => ['nullable', 'numeric', 'min:0'],
+            // A new profile needs the farm size (barangay risk, the yield forecast and reports all use it). An older
+            // profile without one can still be corrected (e.g. its barangay) before the size is known.
+            'farm_area' => [$id ? 'nullable' : 'required', 'numeric', 'gt:0', 'max:10000'],
             'farm_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
         ];
     }

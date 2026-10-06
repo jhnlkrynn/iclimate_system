@@ -15,7 +15,7 @@ Route::get('login', [AuthenticatedSessionController::class, 'create'])
     ->name('login');
 
 Route::get('login/weather', [AuthenticatedSessionController::class, 'weather'])
-    ->middleware('throttle:20,1')
+    ->middleware('throttle:20,1,get-login-weather')
     ->name('login.weather');
 
 Route::middleware('guest')->group(function () {
@@ -23,7 +23,7 @@ Route::middleware('guest')->group(function () {
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:5,10');
+        ->middleware('throttle:5,10,post-register');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
@@ -31,7 +31,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:5,10')
+        ->middleware('throttle:5,10,post-forgot-password')
         ->name('password.email');
 
 });
@@ -40,7 +40,7 @@ Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
     ->name('password.reset');
 
 Route::post('reset-password', [NewPasswordController::class, 'store'])
-    ->middleware('throttle:5,10')
+    ->middleware('throttle:5,10,post-reset-password')
     ->name('password.store');
 
 Route::middleware('auth')->group(function () {
@@ -48,11 +48,11 @@ Route::middleware('auth')->group(function () {
         ->name('verification.notice');
 
     Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
+        ->middleware(['signed', 'throttle:6,1,get-verify-email-id-hash'])
         ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:6,1,post-email-verification-notification')
         ->name('verification.send');
 
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])

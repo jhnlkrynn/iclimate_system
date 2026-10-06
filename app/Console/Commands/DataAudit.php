@@ -68,7 +68,8 @@ class DataAudit extends Command
         $this->compare('IT · Rice production records', $riceVerified > 0 ? (string) $riceVerified : 'Insufficient verified data', $itRice);
 
         $notifVerified = $samples->summary('notifications')['verified'];
-        $this->compare('IT · Notifications sent (in note)', (string) $notifVerified, preg_match('/of ([\d,]+) sent/', $kpi($it, 'notifications')['note'], $m) ? str_replace(',', '', $m[1]) : '?');
+        // With nothing sent the card is swapped out (see $kpi above): no figure shown is the correct display for 0.
+        $this->compare('IT · Notifications sent (in note)', (string) $notifVerified, preg_match('/of ([\d,]+) sent/', $kpi($it, 'notifications')['note'], $m) ? str_replace(',', '', $m[1]) : ($kpi($it, 'notifications')['note'] === '' ? '0' : '?'));
 
         $year = $mao['year'];
         $expectedYield = $year && $yields->yearlyMean($year) !== null ? number_format($yields->yearlyMean($year), 2) : 'Insufficient verified data';

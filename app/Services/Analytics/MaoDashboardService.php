@@ -545,7 +545,7 @@ final class MaoDashboardService
             $cards[] = [
                 'key' => 'yield', 'icon' => 'yield', 'label' => 'Average Rice Yield', 'unit' => 't/ha',
                 'value' => number_format($l['yield'], 2),
-                'context' => 'Historical · '.$l['year'].' · '.$l['months'].' monthly '.($l['months'] === 1 ? 'record' : 'records'),
+                'context' => 'Historical · '.$l['year'].' · '.$l['months'].' monthly '.($l['months'] === 1 ? 'record' : 'records').' · iClimate yield dataset',
                 'trend' => $cmp ? [
                     'delta' => $cmp['change'],
                     'label' => 'vs same '.$cmp['months'].' months of '.$cmp['previous_year'],

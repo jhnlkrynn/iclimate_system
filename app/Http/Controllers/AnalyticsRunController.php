@@ -17,6 +17,9 @@ class AnalyticsRunController extends Controller
             403,
         );
 
+        // The waiting page asks here every few seconds; a run nothing picked up in time is closed so it stops waiting.
+        $analyticsRun->expireIfStale();
+
         return response()->json([
             'uuid' => $analyticsRun->uuid,
             'type' => $analyticsRun->type,

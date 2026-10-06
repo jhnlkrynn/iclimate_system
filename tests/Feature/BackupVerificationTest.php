@@ -400,7 +400,8 @@ TXT;
 
     public function test_verification_is_scheduled_daily_after_the_backup(): void
     {
-        Artisan::call('schedule:list');
+        // Times of day in the schedule are Philippine time since 2026-10-06 (config app.schedule_timezone); list them that way.
+        Artisan::call('schedule:list', ['--timezone' => 'Asia/Manila']);
         $list = Artisan::output();
 
         $this->assertMatchesRegularExpression('/25\s+3\s+\*\s+\*\s+\*\s+php artisan iclimate:verify-backup/', $list);

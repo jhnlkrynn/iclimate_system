@@ -73,9 +73,7 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
                     'temperature' => round(($tmax + $tmin) / 2, 2),
                     'humidity' => $humidity,
                     'wind_speed' => $windSpeed,
-                    'season' => in_array($month, [5, 6, 7, 8, 9, 10], true)
-                        ? ClimateRecord::SEASON_WET
-                        : ClimateRecord::SEASON_DRY,
+                    'season' => ClimateRecord::seasonForMonth($month),
                 ],
             );
 
@@ -96,12 +94,16 @@ Artisan::command('climate:import-ambulong {path : Full path to Ambulong Monthly 
     return self::SUCCESS;
 })->purpose('Import Ambulong monthly climate CSV data into climate_records');
 
-$automationLog = storage_path('logs/automation.log');
+// One output file per scheduled command (storage/logs/automation-<command>.log). They used to share a single
+// automation.log: on Windows a file that one command is appending to cannot be opened by another, so whenever
+// two commands overlapped (the every-minute dashboard warm-up runs in the background) the second one failed
+// with exit code 1 before it even started.
+$automationLog = fn (string $command): string => storage_path('logs/automation-'.\Illuminate\Support\Str::after(\Illuminate\Support\Str::before($command, ' '), ':').'.log');
 
 Schedule::command('iclimate:automation-run --force-weather')
     ->everyThirtyMinutes()
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:automation-run --force-weather'));
 
 // Shared current weather for all 19 barangays (Heat Map, Advisories, Climora): one batched Open-Meteo request
 // every 10 minutes, then the 19 risk ratings are made from that same weather (skipped when already rated), so the
@@ -110,7 +112,7 @@ Schedule::command('iclimate:automation-run --force-weather')
 Schedule::command('iclimate:refresh-barangay-weather')
     ->cron('1,11,21,31,41,51 * * * *')
     ->withoutOverlapping(5)
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:refresh-barangay-weather'));
 
 // Keeps the MAO / IT dashboard payloads cached (they cost ~40 Supabase round
 // trips to build). Replaced in place every minute, so page loads stay instant.
@@ -118,7 +120,7 @@ Schedule::command('iclimate:warm-dashboards')
     ->everyMinute()
     ->withoutOverlapping(5)
     ->runInBackground()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:warm-dashboards'));
 
 // Prepare the pages that are the same for everyone (MAO / IT dashboards, System Health) so opening one is
 // instant instead of waiting for dozens of database round trips after every data change. System Health is
@@ -126,13 +128,13 @@ Schedule::command('iclimate:warm-dashboards')
 Schedule::command('iclimate:warm-dashboard-cache')
     ->everyTwoMinutes()
     ->withoutOverlapping(10)
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:warm-dashboard-cache'));
 
 // Keep the stored weather fresh so pages and the chatbot read it instantly instead of waiting on a provider.
 Schedule::command('iclimate:refresh-weather-cache')
     ->everyThreeMinutes()
     ->withoutOverlapping(5)
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:refresh-weather-cache'));
 
 // PAGASA online advisories are only fetched by this command; without a
 // schedule the stored ones expire (6h) and the Advisories page goes empty.
@@ -142,24 +144,31 @@ Schedule::command('iclimate:refresh-weather-cache')
 Schedule::command('iclimate:fetch-pagasa-advisories --force')
     ->cron('7,22,37,52 * * * *')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:fetch-pagasa-advisories --force'));
 
 Schedule::command('iclimate:refresh-lian-boundaries')
     ->daily()
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:refresh-lian-boundaries'));
 
 // Reconciliation: re-rates the 19 barangays with the existing risk engine in case a rating after a weather
 // refresh was missed (no extra provider request when that weather is current). Ratings carry their own time.
 Schedule::command('iclimate:refresh-barangay-risk')
     ->cron('5,35 * * * *')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:refresh-barangay-risk'));
+
+// Closes prediction/report requests nothing finished in time and drops repeated refresh jobs, so the queue
+// stays short even after the worker was stopped for a while.
+Schedule::command('iclimate:clean-stale-queue')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog('iclimate:clean-stale-queue'));
 
 Schedule::command('iclimate:process-datasets')
     ->dailyAt('01:30')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:process-datasets'));
 
 // Keeps the 12-month operational horizon of persisted monthly weather
 // predictions warm (queues background generation only for months that are
@@ -168,7 +177,7 @@ Schedule::command('iclimate:process-datasets')
 Schedule::command('iclimate:refresh-predictions')
     ->dailyAt('02:00')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:refresh-predictions'));
 
 // Right after the refresh has queued the monthly forecasts: wait for them, build anything still
 // missing here in the CLI, warm the yield engine and mark the cache ready. Chat requests only
@@ -176,18 +185,19 @@ Schedule::command('iclimate:refresh-predictions')
 Schedule::command('iclimate:warm-prediction-cache')
     ->dailyAt('02:15')
     ->withoutOverlapping(60)
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:warm-prediction-cache'));
 
-// Daily PostgreSQL backup during low activity (after the 01:30 dataset and
+// Times of day in this file are Philippine time (config app.schedule_timezone), not UTC.
+// Daily database backup (mysqldump for MySQL/MariaDB, pg_dump for PostgreSQL) during low activity (after the 01:30 dataset and
 // 02:00 prediction jobs), followed by cleanup of backups past the retention window.
 Schedule::command('iclimate:backup-database')
     ->dailyAt('03:15')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:backup-database'));
 
 // Ten minutes after the backup: prove the newest archive is readable
-// (pg_restore --list only; nothing is restored).
+// (read or listed only; nothing is restored).
 Schedule::command('iclimate:verify-backup')
     ->dailyAt('03:25')
     ->withoutOverlapping()
-    ->appendOutputTo($automationLog);
+    ->appendOutputTo($automationLog('iclimate:verify-backup'));

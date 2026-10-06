@@ -37,6 +37,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// The home page's "Send us a message" form: delivered to MAO staff as a notification.
+Route::post('/contact', \App\Http\Controllers\ContactMessageController::class)
+    ->middleware('throttle:3,10,post-contact')
+    ->name('contact.send');
+
 
 Route::get('/dashboard', function () {
     return redirect()->route(
@@ -58,7 +63,7 @@ Route::get(
     '/captcha/{context}',
     CaptchaImageController::class
 )
-    ->middleware('throttle:20,1')
+    ->middleware('throttle:20,1,get-captcha-context')
     ->name('captcha.image');
 
 
@@ -69,7 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Barangay AI Insight pop-up (Heat Map's Barangays Monitored list, and the MAO dashboard's).
     Route::get('/heat-map/insight/{barangay}', BarangayInsightController::class)
-        ->middleware('throttle:30,1')
+        ->middleware('throttle:30,1,get-heat-map-insight-barangay')
         ->name('heat-map.insight');
 
     /*
@@ -92,17 +97,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )
         ->middleware([
             'role:'.User::ROLE_FARMER,
-            'throttle:30,1',
+            'throttle:30,1,get-farmer-dashboard-weather',
         ])
         ->name('farmer.dashboard.weather');
 
     Route::get('/farmer/dashboard/live', [DashboardController::class, 'farmerLive'])
-        ->middleware(['role:'.User::ROLE_FARMER, 'farmer.language', 'throttle:30,1'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'farmer.language', 'throttle:30,1,get-farmer-dashboard-live'])
         ->name('farmer.dashboard.live');
 
     // The dashboard's English / Filipino selector: saves the choice on the farmer's account.
     Route::post('/farmer/dashboard/language', [DashboardController::class, 'farmerLanguage'])
-        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1'])
+        ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1,post-farmer-dashboard-language'])
         ->name('farmer.dashboard.language');
 
 
@@ -111,7 +116,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->group(function () {
 
         // The farmer dashboard's pop-ups (planting date, farm size, profile, farm map): each saves for the signed-in farmer and answers in JSON.
-        Route::middleware(['farmer.language', 'throttle:20,1'])->group(function () {
+        Route::middleware(['farmer.language', 'throttle:20,1,post-farmer-dashboard-language-2'])->group(function () {
             Route::post('/farmer/dashboard/planting-info', [FarmerPlantingScheduleController::class, 'applyFromDashboard'])->name('farmer.dashboard.planting-info');
             Route::post('/farmer/dashboard/farm-size', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'farmSize'])->name('farmer.dashboard.farm-size');
             Route::post('/farmer/dashboard/profile', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'profile'])->name('farmer.dashboard.profile');
@@ -170,7 +175,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             '/farmer/boundary',
             [FarmBoundaryController::class, 'update']
         )
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:10,1,put-farmer-boundary')
             ->name(
                 'farmer.boundary.update'
             );
@@ -188,7 +193,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             '/planting-advisories/{plantingAdvisory}/feedback',
             [PlantingAdvisoryController::class, 'feedback']
         )
-            ->middleware('throttle:30,1')
+            ->middleware('throttle:30,1,post-planting-advisories-plantingadvisory-feedback')
             ->name(
                 'planting-advisories.feedback'
             );
@@ -201,7 +206,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )
         ->middleware([
             'role:'.User::ROLE_FARMER,
-            'throttle:30,1',
+            'throttle:30,1,get-api-weather-live',
         ])
         ->name('api.weather.live');
 
@@ -226,12 +231,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )
         ->middleware([
             'role:'.User::ROLE_MAO,
-            'throttle:30,1',
+            'throttle:30,1,get-mao-dashboard-weather',
         ])
         ->name('mao.dashboard.weather');
 
     Route::middleware('role:'.User::ROLE_MAO)->group(function () {
-        Route::get('/mao/dashboard/live', [DashboardController::class, 'maoLive'])->middleware('throttle:30,1')->name('mao.dashboard.live');
+        Route::get('/mao/dashboard/live', [DashboardController::class, 'maoLive'])->middleware('throttle:30,1,get-mao-dashboard-live')->name('mao.dashboard.live');
         Route::get('/mao/operations', [DashboardController::class, 'maoOperations'])->name('mao.operations');
     });
 
@@ -288,7 +293,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )
         ->middleware([
             'role:'.User::ROLE_IT_EXPERT,
-            'throttle:10,1',
+            'throttle:10,1,post-testing-candidate-rice-yield-predict',
         ])
         ->name(
             'testing.candidate-rice-yield.predict'
@@ -378,7 +383,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'planting-advisories/refresh-pagasa',
             [PlantingAdvisoryController::class, 'refreshPagasa']
         )
-            ->middleware('throttle:6,1')
+            ->middleware('throttle:6,1,post-planting-advisories-refresh-pagasa')
             ->name(
                 'planting-advisories.refresh-pagasa'
             );
@@ -543,7 +548,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed',
             [CommunityFeedController::class, 'store']
         )
-            ->middleware('throttle:12,1')
+            ->middleware('throttle:12,1,post-community-feed')
             ->name(
                 'community-feed.store'
             );
@@ -553,7 +558,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}',
             [CommunityFeedController::class, 'update']
         )
-            ->middleware('throttle:20,1')
+            ->middleware('throttle:20,1,patch-community-feed-post')
             ->name(
                 'community-feed.update'
             );
@@ -571,7 +576,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}/comments',
             [CommunityFeedController::class, 'comment']
         )
-            ->middleware('throttle:30,1')
+            ->middleware('throttle:30,1,post-community-feed-post-comments')
             ->name(
                 'community-feed.comments.store'
             );
@@ -581,7 +586,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'community-feed/{post}/reactions',
             [CommunityFeedController::class, 'react']
         )
-            ->middleware('throttle:60,1')
+            ->middleware('throttle:60,1,post-community-feed-post-reactions')
             ->name(
                 'community-feed.reactions.store'
             );
@@ -620,7 +625,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post(
             'messages/open',
             [MessagingController::class, 'openConversation']
-        )->name(
+        )->middleware('throttle:30,1,post-messages-open')->name(
             'messages.open'
         );
 
@@ -628,7 +633,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post(
             'messages',
             [MessagingController::class, 'store']
-        )->name(
+        )->middleware('throttle:30,1,post-messages')->name(
             'messages.store'
         );
 
@@ -653,7 +658,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'messages/{conversation}/typing',
             [MessagingController::class, 'typing']
         )
-            ->middleware('throttle:30,1')
+            ->middleware('throttle:30,1,post-messages-conversation-typing')
             ->name(
                 'messages.typing'
             );
@@ -662,8 +667,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post(
             'messages/{conversation}',
             [MessagingController::class, 'reply']
-        )->name(
+        )->middleware('throttle:30,1,post-messages-conversation')->name(
             'messages.reply'
+        );
+
+
+        // Attachments are private files: only the two people in the conversation can open them.
+        Route::get(
+            'messages/{conversation}/messages/{message}/attachment',
+            [MessagingController::class, 'attachment']
+        )->name(
+            'messages.attachment'
         );
 
 
@@ -698,7 +712,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'typhoon-safety',
             [TyphoonSafetyController::class, 'store']
         )
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:10,1,post-typhoon-safety')
             ->name(
                 'typhoon-safety.store'
             );
@@ -722,7 +736,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'ai-farming-assistant/message',
             [AIChatController::class, 'message']
         )
-            ->middleware('throttle:20,1')
+            ->middleware('throttle:20,1,post-ai-farming-assistant-message')
             ->name(
                 'ai-chat.message'
             );
@@ -781,9 +795,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->group(function () {
                 Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');
                 Route::get('{resource}', [AiAdminController::class, 'index'])->name('index');
-                Route::post('{resource}', [AiAdminController::class, 'store'])->middleware('throttle:60,1')->name('store');
-                Route::put('{resource}/{id}', [AiAdminController::class, 'update'])->whereNumber('id')->middleware('throttle:60,1')->name('update');
-                Route::post('{resource}/{id}/toggle', [AiAdminController::class, 'toggle'])->whereNumber('id')->middleware('throttle:60,1')->name('toggle');
+                Route::post('{resource}', [AiAdminController::class, 'store'])->middleware('throttle:60,1,post-resource')->name('store');
+                Route::put('{resource}/{id}', [AiAdminController::class, 'update'])->whereNumber('id')->middleware('throttle:60,1,put-resource-id')->name('update');
+                Route::post('{resource}/{id}/toggle', [AiAdminController::class, 'toggle'])->whereNumber('id')->middleware('throttle:60,1,post-resource-id-toggle')->name('toggle');
             });
 
         Route::prefix('system-health/model-registry')
@@ -791,9 +805,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('model-registry.')
             ->group(function () {
                 Route::get('/', [ModelRegistryController::class, 'index'])->name('index');
-                Route::post('{model}/validate', [ModelRegistryController::class, 'validateModel'])->middleware('throttle:20,1')->name('validate');
-                Route::post('{model}/activate', [ModelRegistryController::class, 'activate'])->middleware('throttle:20,1')->name('activate');
-                Route::post('{model}/fail', [ModelRegistryController::class, 'fail'])->middleware('throttle:20,1')->name('fail');
+                Route::post('{model}/validate', [ModelRegistryController::class, 'validateModel'])->middleware('throttle:20,1,post-model-validate')->name('validate');
+                Route::post('{model}/activate', [ModelRegistryController::class, 'activate'])->middleware('throttle:20,1,post-model-activate')->name('activate');
+                Route::post('{model}/fail', [ModelRegistryController::class, 'fail'])->middleware('throttle:20,1,post-model-fail')->name('fail');
             });
 
 
@@ -801,7 +815,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/predict',
             [WeatherPredictionController::class, 'predict']
         )
-            ->middleware('throttle:20,1')
+            ->middleware('throttle:20,1,post-weather-predictions-predict')
             ->name(
                 'weather-predictions.predict'
             );
@@ -811,7 +825,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/feedback',
             [\App\Http\Controllers\WeatherFeedbackController::class, 'store']
         )
-            ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1'])
+            ->middleware(['role:'.User::ROLE_FARMER, 'throttle:20,1,post-weather-predictions-feedback'])
             ->name(
                 'weather-feedback.store'
             );
@@ -821,7 +835,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'rice-yield-predictions/predict',
             [RiceYieldPredictionController::class, 'predict']
         )
-            ->middleware('throttle:20,1')
+            ->middleware('throttle:20,1,post-rice-yield-predictions-predict')
             ->name(
                 'rice-yield-predictions.predict'
             );
@@ -866,7 +880,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'reports/generate',
             [ReportController::class, 'generate']
         )
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:10,1,post-reports-generate')
             ->name(
                 'reports.generate'
             );

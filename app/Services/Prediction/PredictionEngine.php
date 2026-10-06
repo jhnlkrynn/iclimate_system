@@ -112,17 +112,11 @@ class PredictionEngine
         array $manualOverrides,
     ): array {
         $predictions = $weatherResult['predictions'] ?? [];
-        // ->plausible() excludes physically-impossible rows (e.g. the
-        // historical "sir mags" row: 5000mm rainfall, 100C, 500km/h wind,
-        // future-dated) using ClimateRecord's shared bounds, without
-        // hardcoding any row ID. These derived features feed the rice-yield
-        // model's "recent real climate trend" inputs — a different concern
-        // from MonthlyWeatherRandomForest's own CSV-trained history.
-        $recent = ClimateRecord::query()
-            ->plausible()
-            ->latest('record_date')
-            ->take(6)
-            ->get();
+        // The recent real climate behind the "previous" and trailing-window inputs: the latest six months of
+        // App\Support\ClimateHistory (entered records when they cover six months, otherwise the Ambulong
+        // station record; never impossible rows, never seeded sample rows). The on-demand prediction run by
+        // the Python service reads the same history, so both give the same inputs.
+        $recent = \App\Support\ClimateHistory::months()->take(\App\Support\ClimateHistory::WINDOW)->values();
         $latest = $recent->first();
 
         $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;

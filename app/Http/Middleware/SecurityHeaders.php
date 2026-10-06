@@ -24,6 +24,23 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
 
+        // A deliberately loose content policy: it still allows the app's inline styles/scripts, Google Fonts, the
+        // Bootstrap CDN and OpenStreetMap tiles (any https source), but it stops the page being framed by another
+        // site, <base> hijacking, forms posting to another site, and plugins. Tighten script-src once the inline
+        // scripts have moved into asset files.
+        $response->headers->set('Content-Security-Policy', implode('; ', [
+            "default-src 'self' https: data: blob: ws: wss: 'unsafe-inline' 'unsafe-eval'",
+            "frame-ancestors 'self'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "object-src 'none'",
+        ]));
+
+        // Do not advertise the PHP version (set expose_php = Off in php.ini as well; this covers servers where it is on).
+        if (function_exists('header_remove') && ! headers_sent()) {
+            header_remove('X-Powered-By');
+        }
+
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }

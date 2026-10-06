@@ -467,7 +467,7 @@
                         </div>
                         <div class="col-lg-4">
                             <div class="me-label">Deployed Model Artifact</div>
-                            <div class="small"><code>{{ $source['deployed_model'] ?? storage_path('models/rice_yield_model_final.pkl') }}</code></div>
+                            <div class="small"><code>{{ basename((string) ($source['deployed_model'] ?? 'rice_yield_model_final.pkl')) }}</code></div>
                         </div>
                     </div>
                 </div>

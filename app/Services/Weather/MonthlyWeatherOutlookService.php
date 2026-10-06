@@ -168,7 +168,7 @@ final class MonthlyWeatherOutlookService
         }
 
         // Season labels follow the dataset's own definition (wet May–September, dry October–April).
-        $activeSeason = ! empty($mp['season']) ? ucfirst(strtolower((string) $mp['season'])) : (in_array($month->month, [5, 6, 7, 8, 9], true) ? 'Wet' : 'Dry');
+        $activeSeason = ! empty($mp['season']) ? ucfirst(strtolower((string) $mp['season'])) : (\App\Models\ClimateRecord::seasonForMonth($month->month) === 'Wet' ? 'Wet' : 'Dry');
 
         return [
             'season' => ['wet' => 'May–September', 'dry' => 'October–April', 'active' => $activeSeason, 'month' => $name],

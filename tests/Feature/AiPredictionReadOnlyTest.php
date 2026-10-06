@@ -338,7 +338,8 @@ class AiPredictionReadOnlyTest extends TestCase
     public function test_warming_runs_after_the_daily_refresh(): void
     {
         $this->artisan('schedule:list')->assertSuccessful();
-        \Illuminate\Support\Facades\Artisan::call('schedule:list');
+        // Times of day in the schedule are Philippine time since 2026-10-06 (config app.schedule_timezone); list them that way.
+        \Illuminate\Support\Facades\Artisan::call('schedule:list', ['--timezone' => 'Asia/Manila']);
         $list = \Illuminate\Support\Facades\Artisan::output();
 
         $this->assertMatchesRegularExpression('/0\s+2\s+\*\s+\*\s+\*\s+php artisan iclimate:refresh-predictions/', $list);

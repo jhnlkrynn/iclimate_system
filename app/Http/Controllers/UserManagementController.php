@@ -17,7 +17,7 @@ class UserManagementController extends CrudController
 
     protected array $searchable = ['name', 'email', 'role', 'contact_number', 'address', 'barangay', 'status'];
 
-    protected array $filterable = ['role' => [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT], 'status' => [User::STATUS_ACTIVE, User::STATUS_INACTIVE]];
+    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => [User::STATUS_ACTIVE, User::STATUS_INACTIVE]];
 
     protected array $manageableRoles = [User::ROLE_IT_EXPERT];
 
@@ -27,7 +27,7 @@ class UserManagementController extends CrudController
             ['name' => 'name', 'label' => 'Name'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'password', 'label' => 'Password', 'type' => 'password'],
-            ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => User::ROLE_IT_EXPERT]],
+            ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel']],
             ['name' => 'contact_number', 'label' => 'Contact Number'],
             ['name' => 'address', 'label' => 'Address', 'type' => 'textarea'],
             ['name' => 'barangay', 'label' => 'Barangay'],
@@ -50,6 +50,53 @@ class UserManagementController extends CrudController
     protected function prepareData(Request $request, array $data): array
     {
         return $this->hashPasswordWhenPresent($data);
+    }
+
+    /**
+     * The system must always keep a working administrator: IT cannot delete, deactivate or demote their own
+     * account, and the last active IT Expert account cannot be deleted, deactivated or demoted by anyone.
+     */
+    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $this->authorizeManage($request);
+        $target = $this->findRecord($request, $id);
+        $losesAccess = $request->input('role', $target->role) !== User::ROLE_IT_EXPERT
+            || $request->input('status', $target->status) !== User::STATUS_ACTIVE;
+
+        if ($losesAccess && ($message = $this->protectedAccountMessage($request, $target, 'change the role or status of'))) {
+            return back()->withInput($request->except('password'))->withErrors(['status' => $message]);
+        }
+
+        return parent::update($request, $id);
+    }
+
+    public function destroy(Request $request, int $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $this->authorizeManage($request);
+        $target = $this->findRecord($request, $id);
+
+        if ($message = $this->protectedAccountMessage($request, $target, 'delete')) {
+            return redirect()->route('users.index')->with('error', $message);
+        }
+
+        return parent::destroy($request, $id);
+    }
+
+    private function protectedAccountMessage(Request $request, User $target, string $verb): ?string
+    {
+        if ($target->is($request->user())) {
+            return "You cannot {$verb} your own account. Ask another IT Expert to do it.";
+        }
+
+        return self::isLastActiveItExpert($target)
+            ? "You cannot {$verb} the last active IT Expert account. Create another IT Expert account first."
+            : null;
+    }
+
+    public static function isLastActiveItExpert(User $user): bool
+    {
+        return $user->role === User::ROLE_IT_EXPERT && $user->status === User::STATUS_ACTIVE
+            && ! User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->whereKeyNot($user->getKey())->exists();
     }
 
     protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder

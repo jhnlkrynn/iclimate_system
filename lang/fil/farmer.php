@@ -205,7 +205,7 @@ return [
     // ------------------------------------------------------------------ Kalagayan ng Bukid Ngayon
     'today' => [
         'title' => 'Ang Aking Bukid Ngayon',
-        'weather' => 'Panahon Ngayon',
+        'weather' => 'Panahon Ngayon sa Lian',
         'feels_like' => 'Pakiramdam ay :temp°C',
         'rain' => 'Ulan Ngayon',
         'chance' => ':percent% tsansa ng ulan',

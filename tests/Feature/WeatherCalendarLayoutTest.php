@@ -142,10 +142,12 @@ class WeatherCalendarLayoutTest extends TestCase
         $this->assertSame(['Low', 'Moderate', 'High / Severe'], $items);
 
         // Dark, semibold, 16px text; the family comes from the page-wide font system (checked in the typography test).
-        $this->assertMatchesRegularExpression('/\.wp-risk-legend-item\s*\{[^}]*font-size:\s*1rem[^}]*color:\s*#0d1f18/', $html);
-        $this->assertStringNotContainsString("wp-risk-legend-item { display: inline-flex; align-items: center; gap: .55rem; font-family: 'DM Serif", $html);
+        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
+        $css = (string) file_get_contents(resource_path('css/pages/weather-predictions.css'));
+        $this->assertMatchesRegularExpression('/\.wp-risk-legend-item\s*\{[^}]*font-size:\s*1rem[^}]*color:\s*#0d1f18/', $css);
+        $this->assertStringNotContainsString("wp-risk-legend-item { display: inline-flex; align-items: center; gap: .55rem; font-family: 'DM Serif", $css);
         foreach (['#52b788', '#ffd166', '#d85b45'] as $swatch) {
-            $this->assertStringContainsString('background:'.$swatch, $html);
+            $this->assertStringContainsString('background:'.$swatch, $html.$css);
         }
     }
     public function test_page_uses_one_font_family_and_readable_type_scale(): void
@@ -154,9 +156,12 @@ class WeatherCalendarLayoutTest extends TestCase
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
         $html = $this->actingAs($user)->get(route('weather-predictions.index', ['calendar_month' => '2026-10']))->assertOk()->getContent();
 
-        $start = strpos($html, 'Weather Forecast typography system');
+        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
+        $css = (string) file_get_contents(resource_path('css/pages/weather-predictions.css'));
+        $this->assertMatchesRegularExpression('/<link[^>]+weather-predictions[^">]*\.css/', $html);
+        $start = strpos($css, 'Weather Forecast typography system');
         $this->assertNotFalse($start);
-        $system = substr($html, $start, strpos($html, '</style>', $start) - $start);
+        $system = substr($css, $start);
 
         // One family for everything on the page (headings, labels, values, buttons, calendar).
         $this->assertStringContainsString("--wp-font: 'Inter'", $system);

@@ -9,6 +9,9 @@ python_scripts/.venv/
 .DS_Store
 .env
 .env.backup
+.env.*backup*
+# Farmers' names and RSBSA numbers: copied onto the server by hand, never committed.
+/database/data/iclimate_farmer_masterlist.csv
 .env.production
 .phpactor.json
 .phpunit.result.cache

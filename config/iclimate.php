@@ -14,8 +14,14 @@ return [
     /* Python used for the ML scripts. Empty: the app looks for the project's virtualenv. */
     'python_binary' => env('PYTHON_BINARY') ?: null,
 
-    /* Password shown next to the demo accounts on the login page. */
-    'default_account_password' => env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD', 'iClimate2026!'),
+    /* Password of the demo accounts made by DevelopmentDemoSeeder. No fallback: a password is never written in code. */
+    'default_account_password' => env('ICLIMATE_DEFAULT_ACCOUNT_PASSWORD'),
+
+    /*
+    | First password of farmer accounts imported by FarmerMasterlistSeeder. Empty: every imported account gets
+    | its own random password and IT sets a real one (Users > Edit) when the farmer first asks to sign in.
+    */
+    'farmer_account_password' => env('ICLIMATE_FARMER_ACCOUNT_PASSWORD'),
 
     /* Password given to it@gmail.com and mao@gmail.com by StaffLoginAccountSeeder. Empty: those accounts are not seeded. */
     'staff_account_password' => env('ICLIMATE_STAFF_ACCOUNT_PASSWORD'),

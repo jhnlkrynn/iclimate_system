@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Process;
 use Throwable;
 
 /**
- * PostgreSQL backups with pg_dump (custom format), retention and inspection.
+ * Database backups, retention and inspection: mysqldump (plain SQL) for a MySQL/MariaDB database, pg_dump
+ * (custom format) for PostgreSQL. The tool is chosen from the connection's driver.
  *
  * Secrets: connection details come from the Laravel database configuration and
  * are handed to pg_dump through PG* environment variables, never as command
@@ -58,6 +59,10 @@ class DatabaseBackupService
     {
         $connection = $this->connectionSettings();
         $directory = $this->ensureDirectory();
+
+        if ($connection['driver'] !== 'pgsql') {
+            return $this->backupMysql($connection, $directory);
+        }
 
         $name = $this->newFileName($directory);
         $final = $directory.DIRECTORY_SEPARATOR.$name;
@@ -113,7 +118,106 @@ class DatabaseBackupService
         return ['file' => $name, 'bytes' => $bytes];
     }
 
-    /** The file must exist, be non-empty and be a real pg_dump custom-format archive. */
+    /**
+     * mysqldump of the whole application database. The password travels in MYSQL_PWD, never on the command line.
+     *
+     * @return array{file: string, bytes: int}
+     *
+     * @throws BackupFailedException
+     */
+    private function backupMysql(array $connection, string $directory): array
+    {
+        $name = $this->newFileName($directory);
+        $final = $directory.DIRECTORY_SEPARATOR.$name;
+        $partial = $final.'.partial';
+        $secrets = array_filter([$connection['host'], $connection['username'], $connection['password'], $connection['database']]);
+
+        try {
+            $result = Process::env(array_filter(['MYSQL_PWD' => $connection['password']], fn (string $value): bool => $value !== ''))
+                ->timeout(max(30, (int) config('backup.timeout_seconds', 900)))
+                ->run([
+                    (string) config('backup.mysqldump_binary', 'mysqldump'),
+                    '--host='.$connection['host'],
+                    '--port='.$connection['port'],
+                    '--user='.$connection['username'],
+                    '--single-transaction',
+                    '--routines',
+                    '--no-tablespaces',
+                    '--default-character-set=utf8mb4',
+                    '--result-file='.$partial,
+                    $connection['database'],
+                ]);
+        } catch (Throwable $exception) {
+            $this->discard($partial);
+            $this->logFailure('process_error', null, $exception::class);
+
+            throw new BackupFailedException('mysqldump could not be started. Check that the MySQL client tools are installed (or set MYSQLDUMP_BINARY).');
+        }
+
+        if (! $result->successful()) {
+            $this->discard($partial);
+            $exitCode = $result->exitCode();
+            $this->logFailure('mysqldump_failed', $exitCode, $this->redact($result->errorOutput(), $secrets));
+
+            throw new BackupFailedException($this->looksLikeMissingBinary($exitCode, $result->errorOutput())
+                ? 'mysqldump was not found. Install the MySQL client tools or set MYSQLDUMP_BINARY in .env.'
+                : 'mysqldump failed (exit code '.$exitCode.'). The database was not backed up. See the application log for safe details.');
+        }
+
+        try {
+            $bytes = $this->verify($partial);
+            if (! $this->sqlDumpIsComplete($partial)) {
+                throw new BackupFailedException('The backup file is incomplete, so it was rejected.');
+            }
+        } catch (BackupFailedException $exception) {
+            $this->discard($partial);
+            $this->logFailure('verification_failed', null, $exception->getMessage());
+
+            throw $exception;
+        }
+
+        if (! @rename($partial, $final)) {
+            $this->discard($partial);
+            $this->logFailure('rename_failed');
+
+            throw new BackupFailedException('The backup was created but could not be saved in the backup folder.');
+        }
+
+        return ['file' => $name, 'bytes' => $bytes];
+    }
+
+    /** Whether the file is a mysqldump SQL file (as opposed to a pg_dump archive). */
+    public function isSqlDump(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+        if ($handle === false) {
+            return false;
+        }
+
+        $head = (string) fread($handle, 400);
+        fclose($handle);
+
+        // The first lines of every dump name the tool: "-- MySQL dump 10.13 ..." or "-- MariaDB dump 10.19 ...".
+        return (str_starts_with($head, '--') || str_starts_with($head, '/*'))
+            && preg_match('/-- (MySQL|MariaDB) dump /', $head) === 1;
+    }
+
+    /** mysqldump writes "-- Dump completed" as its last line; a file without it was cut short. */
+    public function sqlDumpIsComplete(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+        if ($handle === false) {
+            return false;
+        }
+
+        fseek($handle, -min(400, (int) filesize($path)), SEEK_END);
+        $tail = (string) fread($handle, 400);
+        fclose($handle);
+
+        return str_contains($tail, '-- Dump completed');
+    }
+
+    /** The file must exist, be non-empty and be a real backup (a pg_dump archive or a mysqldump SQL file). */
     private function verify(string $path): int
     {
         clearstatcache(true, $path);
@@ -128,7 +232,7 @@ class DatabaseBackupService
         }
 
         if (! $this->hasBackupHeader($path)) {
-            throw new BackupFailedException('The backup file is not a valid PostgreSQL backup, so it was rejected.');
+            throw new BackupFailedException('The backup file is not a valid database backup, so it was rejected.');
         }
 
         return $size;
@@ -254,7 +358,7 @@ class DatabaseBackupService
     // --------------------------------------------------------------- helpers
 
     /**
-     * @return array{host: string, port: string, database: string, username: string, password: string, sslmode: string, schema: string}
+     * @return array{driver: string, host: string, port: string, database: string, username: string, password: string, sslmode: string, schema: string}
      *
      * @throws BackupFailedException
      */
@@ -263,8 +367,29 @@ class DatabaseBackupService
         $name = config('backup.connection') ?: config('database.default');
         $config = DB::connection($name)->getConfig();
 
-        if (($config['driver'] ?? null) !== 'pgsql') {
-            throw new BackupFailedException('Backups are only available for a PostgreSQL database.');
+        $driver = (string) ($config['driver'] ?? '');
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $settings = [
+                'driver' => $driver,
+                'host' => (string) ($config['host'] ?? ''),
+                'port' => (string) ($config['port'] ?? '3306'),
+                'database' => (string) ($config['database'] ?? ''),
+                'username' => (string) ($config['username'] ?? ''),
+                'password' => (string) ($config['password'] ?? ''),
+                'sslmode' => '',
+                'schema' => '',
+            ];
+
+            if ($settings['host'] === '' || $settings['database'] === '' || $settings['username'] === '') {
+                throw new BackupFailedException('The database connection is not fully configured, so no backup was made.');
+            }
+
+            return $settings;
+        }
+
+        if ($driver !== 'pgsql') {
+            throw new BackupFailedException('Backups are only available for a MySQL/MariaDB or PostgreSQL database.');
         }
 
         // The first entry of the search path is the application schema (e.g. the iClimate schema).
@@ -275,6 +400,7 @@ class DatabaseBackupService
         }
 
         $settings = [
+            'driver' => 'pgsql',
             'host' => (string) ($config['host'] ?? ''),
             'port' => (string) ($config['port'] ?? '5432'),
             'database' => (string) ($config['database'] ?? ''),
@@ -377,7 +503,7 @@ class DatabaseBackupService
         $head = fread($handle, strlen(self::MAGIC));
         fclose($handle);
 
-        return $head === self::MAGIC;
+        return $head === self::MAGIC || $this->isSqlDump($path);
     }
 
     private function discard(string $partial): void

@@ -77,6 +77,12 @@ class RunPythonAnalytics implements ShouldQueue
             return;
         }
 
+        // The page already told the user this request timed out and offered "try again"; a late worker
+        // must not spend time on it.
+        if ($run->timedOut()) {
+            return;
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Mark Processing

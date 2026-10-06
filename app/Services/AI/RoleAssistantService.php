@@ -184,15 +184,17 @@ class RoleAssistantService
         }
         $liveReportsNoData = $liveDetail !== null && ($liveDetail['risk_level'] ?? null) === 'No Data';
 
+        // The main concern is only named when the rating has one.
+        $riskType = $heatmap?->risk_type ? " ({$heatmap->risk_type})" : '';
         if ($heatmap && ! $liveReportsNoData && $heatmap->isCurrentlyComputed()) {
             $lines[] = $tagalog
-                ? "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type})."
-                : "Climate risk: {$heatmap->risk_level} ({$heatmap->risk_type}).";
+                ? "Climate risk: {$heatmap->risk_level}{$riskType}."
+                : "Climate risk: {$heatmap->risk_level}{$riskType}.";
         } elseif ($heatmap && ! $liveReportsNoData) {
             $date = $heatmap->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
             $lines[] = $tagalog
-                ? "Noong {$date}, ang climate risk ay {$heatmap->risk_level} ({$heatmap->risk_type}) — maaaring hindi na ito kasalukuyang kondisyon."
-                : "As of {$date}, climate risk was marked {$heatmap->risk_level} ({$heatmap->risk_type}); this may not reflect current conditions.";
+                ? "Noong {$date}, ang climate risk ay {$heatmap->risk_level}{$riskType} — maaaring hindi na ito kasalukuyang kondisyon."
+                : "As of {$date}, climate risk was marked {$heatmap->risk_level}{$riskType}; this may not reflect current conditions.";
         } else {
             $lines[] = $tagalog
                 ? 'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
@@ -376,7 +378,8 @@ class RoleAssistantService
 
     private function errorLogSummary(bool $tagalog): array
     {
-        $path = storage_path('logs/laravel.log');
+        $path = collect(\Illuminate\Support\Facades\File::glob(storage_path('logs/laravel*.log')) ?: [])
+            ->sortByDesc(fn (string $file): int => (int) @filemtime($file))->first() ?? storage_path('logs/laravel.log');
         $lines = $this->tailLogLines($path);
 
         if (empty($lines)) {

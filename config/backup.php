@@ -3,7 +3,7 @@
 return [
     /*
     | Database connection to back up. Null means the application's default
-    | connection. Only PostgreSQL connections are supported.
+    | connection. MySQL/MariaDB (mysqldump) and PostgreSQL (pg_dump) are supported.
     */
     'connection' => env('BACKUP_DB_CONNECTION'),
 
@@ -18,6 +18,12 @@ return [
     | on PATH; set the full location if it is not on PATH.
     */
     'pg_dump_binary' => env('PG_DUMP_BINARY', 'pg_dump'),
+
+    /*
+    | The mysqldump program, used when the database is MySQL/MariaDB. XAMPP ships it in its mysql/bin folder,
+    | which is normally not on PATH, so that location is used when it exists.
+    */
+    'mysqldump_binary' => env('MYSQLDUMP_BINARY') ?: (is_file('C:/xampp/mysql/bin/mysqldump.exe') ? 'C:/xampp/mysql/bin/mysqldump.exe' : 'mysqldump'),
 
     /*
     | The pg_restore program, used only by iclimate:verify-backup to LIST an

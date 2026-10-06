@@ -293,8 +293,98 @@ function bindForecastStrips(root = document) {
     });
 }
 
+// ------------------------------------------------------------ field labels
+// Screen readers announce a field by its label. Many forms print a label next to a field without connecting the
+// two (no for/id), and search boxes often have only a placeholder. This connects what is already on the page:
+// nothing visible changes.
+let fieldLabelId = 0;
+
+function labelText(node) {
+    return (node?.textContent || '').replace(/\s+/g, ' ').replace(/\*$/, '').trim();
+}
+
+export function bindFieldLabels(root = document) {
+    const controls = root.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), select, textarea');
+
+    controls.forEach((control) => {
+        if ((control.labels && control.labels.length) || control.hasAttribute('aria-label') || control.hasAttribute('aria-labelledby')) return;
+
+        // A label printed right before the field, or the only free label in the same small group.
+        let label = control.previousElementSibling;
+        if (!label || label.tagName !== 'LABEL' || label.htmlFor) {
+            const group = control.closest('.form-group, .mb-3, .mb-4, [class*="col-"], .input-group, fieldset, div');
+            const free = group ? [...group.querySelectorAll('label')].filter((l) => !l.htmlFor && !l.control) : [];
+            const fields = group ? group.querySelectorAll('input:not([type=hidden]), select, textarea') : [];
+            label = free.length === 1 && fields.length === 1 ? free[0] : null;
+        }
+
+        if (label && labelText(label)) {
+            if (!control.id) control.id = `ic-field-${++fieldLabelId}`;
+            label.htmlFor = control.id;
+
+            return;
+        }
+
+        const fallback = control.getAttribute('placeholder') || control.getAttribute('title')
+            || (control.getAttribute('name') || '').replace(/\[\]$/, '').replace(/[_-]+/g, ' ').trim();
+        if (fallback) control.setAttribute('aria-label', fallback.charAt(0).toUpperCase() + fallback.slice(1));
+    });
+}
+
+// ------------------------------------------------------------- wide tables
+// A record table that is wider than its card would hide its last columns behind the pinned Actions column.
+// It is tightened first; if that is not enough the page's card list (the phone layout) is shown instead, and a
+// table without a card list says that it scrolls sideways. Re-checked when the window size changes.
+function fitTable(wrap) {
+    const cards = wrap.nextElementSibling?.classList.contains('ic-table-cards') ? wrap.nextElementSibling : null;
+    const hint = wrap.nextElementSibling?.classList.contains('ic-table-scroll-hint') ? wrap.nextElementSibling : null;
+    wrap.classList.remove('ic-table-compact', 'ic-cards-forced');
+    cards?.classList.remove('ic-cards-forced');
+    hint?.remove();
+
+    const overflows = () => wrap.scrollWidth - wrap.clientWidth > 4;
+    // Hidden already (the phone layout shows the cards), or it fits.
+    if (wrap.clientWidth === 0 || !overflows()) return;
+
+    wrap.classList.add('ic-table-compact');
+    if (!overflows()) return;
+
+    if (cards) {
+        wrap.classList.add('ic-cards-forced');
+        cards.classList.add('ic-cards-forced');
+
+        return;
+    }
+
+    const note = document.createElement('p');
+    note.className = 'ic-table-scroll-hint';
+    note.textContent = 'Scroll sideways to see all columns.';
+    wrap.after(note);
+}
+
+export function bindWideTables(root = document) {
+    // .itd-table-wrap: the IT dashboard's own scrolling tables (they get the sideways-scroll note only).
+    const wraps = [...root.querySelectorAll('.table-responsive, .itd-table-wrap')].filter((wrap) => wrap.querySelector(':scope > table'));
+    if (!wraps.length) return;
+
+    const fitAll = () => wraps.forEach(fitTable);
+    fitAll();
+
+    let timer = null;
+    window.addEventListener('resize', () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(fitAll, 150);
+    });
+    // A table inside a tab or a collapsed section has no width until it is opened.
+    document.addEventListener('click', (event) => {
+        if (event.target.closest('a, button, summary, [role="tab"]')) window.setTimeout(fitAll, 300);
+    });
+}
+
 // ------------------------------------------------------------------ init
 export function initUiEnhancements(root = document) {
+    bindFieldLabels(root);
+    bindWideTables(root);
     bindSpotlight();
     decorateMetrics(root);
     bindWeatherMood(root);
