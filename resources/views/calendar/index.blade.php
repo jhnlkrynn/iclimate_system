@@ -1,27 +1,22 @@
 <x-app-layout>
-    {{-- Same design system as the farmer dashboard and Advisories page (.fad tokens, buttons and badges in
-         farmer-advisories.css); the calendar's own parts are .fcal-* in farmer-calendar.css. --}}
+    {{-- Calendar (2026-10, CalendarController): planning and activities only — planting dates, expected harvest dates,
+         the recommended planting window and MAO activities. No advisories, weather or notifications here. Same design
+         system as the Advisories page (.fad tokens in farmer-advisories.css); the calendar's own parts are .fcal-*. --}}
     @php
-        $isFarmer = auth()->user()->role === \App\Models\User::ROLE_FARMER;
         $canPlan = ($plantingScheduleFeatureReady ?? true) && $isFarmer;
-        // One name and one colour family per kind of entry; the legend, the cells and Upcoming all use it.
-        $kinds = [
-            'climate' => 'Weather', 'planting' => 'Planting', 'harvesting' => 'Harvesting', 'irrigation' => 'Watering', 'community' => 'Events',
-        ];
-        $kindOf = fn (array $event) => match ($event['type_key']) {
-            'schedule-planting' => 'planting',
-            'schedule-harvest' => 'harvesting',
-            default => array_key_exists($event['type_key'], $kinds) ? $event['type_key'] : 'community',
-        };
+        $t = fn (string $key, array $replace = []) => trans('farmer.calendar_page.'.$key, $replace, $locale);
+        // One name and one colour per kind of entry; the legend, the cells and Upcoming all use it.
+        $kinds = ['planting' => $t('kinds.planting'), 'harvest' => $t('kinds.harvest'), 'window' => $t('kinds.window'), 'activity' => $t('kinds.activity')];
         $perDay = 2;
+        $monthUrl = fn (int $month, int $year) => route('calendar.index', array_filter(['month' => $month, 'year' => $year, 'barangay' => $isFarmer ? null : $barangay]));
     @endphp
 
-    <div class="fad fcal">
+    <div class="fad fcal" lang="{{ $locale }}">
         <header class="fad-hero">
             <div class="fad-hero-text">
-                <span class="fad-kicker">Planting Schedule</span>
-                <h1>Calendar</h1>
-                <p>See when advisories start and expire, laid out by day, so you can plan planting and harvesting activities ahead of time.</p>
+                <span class="fad-kicker">{{ $t('kicker') }}</span>
+                <h1>{{ $t('title') }}</h1>
+                <p>{{ $isFarmer ? $t('intro') : 'Farmers\' planting dates and expected harvest dates, the recommended planting window and MAO activities.' }}</p>
             </div>
         </header>
 
@@ -32,25 +27,41 @@
             </div>
         @endif
         @unless($plantingScheduleFeatureReady ?? true)
-            <div class="fad-empty is-watch" role="status"><p class="fad-lead">Farmer schedules are temporarily unavailable.</p><p class="fad-body">Advisories and community events are still shown while the database update is completed.</p></div>
+            <div class="fad-empty is-watch" role="status"><p class="fad-lead">Farmer schedules are temporarily unavailable.</p><p class="fad-body">MAO activities are still shown while the database update is completed.</p></div>
         @endunless
         @if(session('schedule_feature_warning'))
             <div class="fad-empty is-watch" role="status"><p class="fad-body">{{ session('schedule_feature_warning') }}</p></div>
         @endif
 
+        @unless ($isFarmer)
+            {{-- MAO and IT see every farmer's dates; one barangay can be picked. --}}
+            <form class="fcal-filter" method="GET" action="{{ route('calendar.index') }}" data-fcal-filter>
+                <input type="hidden" name="month" value="{{ $current->month }}">
+                <input type="hidden" name="year" value="{{ $current->year }}">
+                <label class="fad-label" for="fcalBarangay">Barangay</label>
+                <select class="fad-input" id="fcalBarangay" name="barangay" onchange="this.form.submit()">
+                    <option value="">All barangays</option>
+                    @foreach ($barangays as $name)
+                        <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>
+                    @endforeach
+                </select>
+                <noscript><button class="fad-btn is-quiet is-compact" type="submit">Show</button></noscript>
+            </form>
+        @endunless
+
         <div class="fcal-layout">
             {{-- Month --}}
             <section class="fcal-month" aria-labelledby="fcalMonthTitle">
                 <div class="fcal-toolbar">
-                    <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index', ['month' => $previousMonth, 'year' => $previousYear]) }}" aria-label="Previous month, {{ $current->copy()->subMonth()->format('F Y') }}"><span aria-hidden="true">‹</span> Prev</a>
+                    <a class="fad-btn is-quiet is-compact" href="{{ $monthUrl($previousMonth, $previousYear) }}" aria-label="Previous month, {{ $current->copy()->subMonth()->format('F Y') }}"><span aria-hidden="true">‹</span> Prev</a>
                     <h2 id="fcalMonthTitle" class="fcal-month-title" aria-live="polite">{{ $current->format('F Y') }}</h2>
                     <div class="fcal-toolbar-end">
-                        <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index') }}" aria-label="Go to this month ({{ $today->format('F Y') }})" @if($current->isSameMonth($today)) aria-current="date" @endif>Today</a>
-                        <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index', ['month' => $nextMonth, 'year' => $nextYear]) }}" aria-label="Next month, {{ $current->copy()->addMonth()->format('F Y') }}">Next <span aria-hidden="true">›</span></a>
+                        <a class="fad-btn is-quiet is-compact" href="{{ route('calendar.index', array_filter(['barangay' => $isFarmer ? null : $barangay])) }}" aria-label="Go to this month ({{ $today->format('F Y') }})" @if($current->isSameMonth($today)) aria-current="date" @endif>Today</a>
+                        <a class="fad-btn is-quiet is-compact" href="{{ $monthUrl($nextMonth, $nextYear) }}" aria-label="Next month, {{ $current->copy()->addMonth()->format('F Y') }}">Next <span aria-hidden="true">›</span></a>
                     </div>
                 </div>
 
-                <ul class="fcal-legend" aria-label="Colour key">
+                <ul class="fcal-legend" aria-label="Colour key" data-fcal-legend>
                     @foreach($kinds as $key => $label)
                         <li><span class="fcal-dot" data-kind="{{ $key }}" aria-hidden="true"></span>{{ $label }}</li>
                     @endforeach
@@ -67,23 +78,25 @@
                                 $dayEvents = $eventsByDay[$day->toDateString()] ?? [];
                                 $outside = $day->month !== $current->month;
                                 $isToday = $day->isSameDay($today);
+                                $inWindow = isset($windowDays[$day->toDateString()]);
                             @endphp
-                            <div @class(['fcal-day', 'is-outside' => $outside, 'is-today' => $isToday, 'is-empty' => count($dayEvents) === 0])
-                                 role="group" aria-label="{{ $day->format('l, F j') }}{{ $isToday ? ', today' : '' }}{{ count($dayEvents) ? ', '.count($dayEvents).' '.(count($dayEvents) === 1 ? 'entry' : 'entries') : '' }}">
+                            <div @class(['fcal-day', 'is-outside' => $outside, 'is-today' => $isToday, 'is-window' => $inWindow, 'is-empty' => count($dayEvents) === 0])
+                                 role="group" aria-label="{{ $day->format('l, F j') }}{{ $isToday ? ', today' : '' }}{{ $inWindow ? ', '.$t('window_day') : '' }}{{ count($dayEvents) ? ', '.count($dayEvents).' '.(count($dayEvents) === 1 ? 'entry' : 'entries') : '' }}"
+                                 @if ($inWindow) data-fcal-window="{{ $windowDays[$day->toDateString()] }}" title="{{ $t('window_day') }}" @endif>
                                 <div class="fcal-day-head">
                                     <span class="fcal-day-number">{{ $day->day }}</span>
                                     <span class="fcal-day-name">{{ $day->format('D, M j') }}</span>
                                     @if($isToday)<span class="fcal-today-tag">Today</span>@endif
                                 </div>
                                 @foreach(array_slice($dayEvents, 0, $perDay) as $event)
-                                    @include('calendar._event', ['event' => $event, 'kind' => $kindOf($event), 'kinds' => $kinds])
+                                    @include('calendar._event', ['event' => $event, 'kinds' => $kinds])
                                 @endforeach
                                 @if(count($dayEvents) > $perDay)
                                     {{-- "+N more" opens in place: no JavaScript, works with the keyboard. --}}
                                     <details class="fcal-more">
                                         <summary><span class="fcal-more-closed">+{{ count($dayEvents) - $perDay }} more</span><span class="fcal-more-open">Show fewer</span></summary>
                                         @foreach(array_slice($dayEvents, $perDay) as $event)
-                                            @include('calendar._event', ['event' => $event, 'kind' => $kindOf($event), 'kinds' => $kinds])
+                                            @include('calendar._event', ['event' => $event, 'kinds' => $kinds])
                                         @endforeach
                                     </details>
                                 @endif
@@ -91,46 +104,48 @@
                         @endforeach
                     @endforeach
                 </div>
-                <p class="fcal-empty-month">Nothing is planned for {{ $current->format('F Y') }} yet.</p>
+                <p class="fcal-empty-month">{{ $t('empty_month', ['month' => $current->format('F Y')]) }}</p>
             </section>
 
             {{-- Upcoming --}}
             <details class="ic-collapse fcal-upcoming" open>
                 <summary>
-                    <span class="fcal-upcoming-title">Upcoming</span>
+                    <span class="fcal-upcoming-title">{{ $t('upcoming') }}</span>
                     @if($upcoming->count())<span class="fad-count" aria-label="{{ $upcoming->count() }} items">{{ $upcoming->count() }}</span>@endif
                 </summary>
                 <div class="fcal-upcoming-body">
-                    <p class="fad-support">Active and coming advisories, your planting and harvest dates, and MAO events.</p>
+                    <p class="fad-support">{{ $isFarmer ? $t('upcoming_note') : 'Farmers\' planting and harvest dates, the planting window and MAO activities.' }}</p>
                     @if($upcoming->count())
-                        <ol class="fcal-up-list">
+                        <ol class="fcal-up-list" data-fcal-upcoming>
                             @foreach($upcoming as $event)
-                                @php $kind = $kindOf($event); @endphp
-                                <li class="fcal-up">
+                                <li class="fcal-up" data-kind="{{ $event['kind'] }}">
                                     <div @class(['fcal-up-date', 'is-now' => $event['active_now']])>
                                         @if($event['active_now'])
-                                            <span class="fcal-up-day">Now</span>
+                                            <span class="fcal-up-day">{{ $t('now') }}</span>
                                         @else
                                             <span class="fcal-up-day">{{ $event['date']->format('j') }}</span>
                                             <span class="fcal-up-month">{{ $event['date']->format('M') }}</span>
                                         @endif
                                     </div>
                                     <div class="fcal-up-body">
-                                        <a class="fcal-up-title" href="{{ $event['url'] }}">{{ $event['title'] }}</a>
+                                        @if ($event['url'])
+                                            <a class="fcal-up-title" href="{{ $event['url'] }}">{{ $event['title'] }}</a>
+                                        @else
+                                            <span class="fcal-up-title">{{ $event['title'] }}</span>
+                                        @endif
                                         @if($event['summary'])<p class="fcal-up-summary">{{ $event['summary'] }}</p>@endif
                                         <div class="fcal-up-meta">
-                                            <span class="fad-badge fcal-kind" data-kind="{{ $kind }}">{{ $event['type_label'] }}</span>
-                                            @if($event['active_now'] && $event['until'])<span class="fad-meta">Active until {{ $event['until']->format('M j') }}</span>@endif
+                                            <span class="fad-badge fcal-kind" data-kind="{{ $event['kind'] }}">{{ $kinds[$event['kind']] }}</span>
+                                            @if($event['active_now'] && $event['until'])<span class="fad-meta">{{ $t('until', ['date' => $event['until']->format('M j')]) }}</span>@endif
                                         </div>
                                     </div>
                                 </li>
                             @endforeach
                         </ol>
-                        <a class="fad-link fcal-up-all" href="{{ route('planting-advisories.index') }}">See all advisories</a>
                     @else
                         <div class="fcal-up-empty">
-                            <p class="fad-lead">No upcoming advisories.</p>
-                            <p class="fad-support">Check back after new guidance is published.</p>
+                            <p class="fad-lead">{{ $t('upcoming_empty') }}</p>
+                            <p class="fad-support">{{ $isFarmer ? $t('upcoming_empty_note') : 'Farmers\' planting plans and MAO activities appear here.' }}</p>
                         </div>
                     @endif
                 </div>

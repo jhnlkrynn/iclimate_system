@@ -35,9 +35,10 @@ class SavedDataStatesTest extends TestCase
         $filipinoFarmer = User::factory()->farmer()->create(['barangay' => 'Prenza', 'preferred_language' => 'fil']);
         FarmerProfile::factory()->create(['user_id' => $filipinoFarmer->id, 'barangay' => 'Prenza']);
 
-        // Staff pages say "Walang datos pa"; a farmer's Predictions page says it in the farmer's own language.
+        // Staff pages say "Walang datos pa"; a farmer's Predictions and Advisories pages say it in the farmer's own language.
         foreach ([[$mao, '/mao/dashboard', 'walang datos pa'], [$mao, '/weather-predictions', 'walang datos pa'], [$farmer, '/weather-predictions', 'no data yet'],
-            [$filipinoFarmer, '/weather-predictions', 'walang datos pa'], [$farmer, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
+            [$filipinoFarmer, '/weather-predictions', 'walang datos pa'], [$farmer, '/planting-advisories', 'no data yet'],
+            [$filipinoFarmer, '/planting-advisories', 'walang datos pa'], [$mao, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
             $text = $this->visible($this->actingAs($user)->get($path)->assertOk()->getContent());
 
             $this->assertStringContainsString($words, $text, $path);

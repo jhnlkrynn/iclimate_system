@@ -58,6 +58,10 @@
                                 @if($when)<p class="fad-meta"><time datetime="{{ $note->created_at->toIso8601String() }}">{{ $when->format('M j, Y · g:i A') }}</time> · {{ $when->diffForHumans() }}</p>@endif
                             </div>
                             <div class="frec-note-actions">
+                                @if($note->type === 'Advisory')
+                                    {{-- An advisory alert only points to the Advisories page, where the advice itself is read. --}}
+                                    <a class="fad-btn is-primary is-compact" href="{{ route('planting-advisories.index') }}" data-notif-advisories>{{ __('farmer.advisories_page.open', [], \App\Support\FarmerLanguage::resolve(request())) }}</a>
+                                @endif
                                 <a class="fad-btn is-quiet is-compact" href="{{ route('notifications.show', $note) }}" data-ic-view data-ic-size="normal" data-ic-notif-item aria-haspopup="dialog">Open</a>
                                 @if(! $note->is_read)
                                     <form method="POST" action="{{ route('notifications.mark-read', $note) }}" data-loading="true">

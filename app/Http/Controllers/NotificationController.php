@@ -183,6 +183,8 @@ class NotificationController extends CrudController
         $type = is_string($request->query('type')) ? $request->query('type') : '';
         $filter = is_string($request->query('filter')) ? $request->query('filter') : '';
         $perPage = min(30, max(5, $request->integer('per_page', 30)));
+        // An advisory alert only points to the Advisories page, where the advice itself is read.
+        $advisoriesLabel = trans('farmer.advisories_page.open', [], $request->user()->role === User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve($request) : 'en');
 
         $page = (clone $all)
             ->when($filter === 'unread', fn (Builder $query) => $query->where('is_read', false))
@@ -219,6 +221,8 @@ class NotificationController extends CrudController
                 'time' => $note->created_at?->copy()->timezone($tz)->format('M j, Y · g:i A'),
                 'ago' => $note->created_at?->diffForHumans(),
                 'mark_read_url' => route('notifications.mark-read', $note),
+                'link_url' => $note->type === 'Advisory' ? route('planting-advisories.index') : null,
+                'link_label' => $note->type === 'Advisory' ? $advisoriesLabel : null,
             ] + ($canManage ? [
                 'user_id' => $note->user_id,
                 'category' => $note->category ?? 'general',

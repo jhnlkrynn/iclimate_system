@@ -65,8 +65,11 @@ class MaoOptionalDataFailureTest extends TestCase
         $response = $this->actingAs($user)->get('/planting-advisories')->assertOk();
         $content = (string) $response->getContent();
 
-        $this->assertStringContainsString('Advisory Information Temporarily Unavailable', $content);
-        $this->assertStringNotContainsString('No active advisories are available for your location.', $content);
+        // Advisories list (2026-10): one status line says the source is unreachable; the page never says "none right now".
+        $this->assertStringContainsString('data-adv-check="unavailable"', $content);
+        $this->assertStringContainsString('Advisory information is temporarily unavailable.', $content);
+        $this->assertStringNotContainsString('data-adv-empty', $content);
+        $this->assertStringNotContainsString('No planting advisory right now.', $content);
     }
 
     public function test_heat_map_and_risk_endpoints_render_with_placeholder_or_empty_risk_data(): void
