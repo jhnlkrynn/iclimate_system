@@ -39,6 +39,16 @@ abstract class CrudController extends Controller
     /** Rows per page on every record list. */
     public const PER_PAGE = 25;
 
+    /**
+     * A Print button on the staff list (2026-10): ?print=1 opens a print page with EVERY row that matches the current
+     * search and filters (not only the page shown), the office header, the print date and the active filters.
+     * Off unless a module opts in.
+     */
+    protected bool $printable = false;
+
+    /** The most rows one print page lists; beyond it the page says so and asks for a narrower filter. */
+    public const PRINT_ROW_LIMIT = 2000;
+
     protected bool $farmerOwnRecordsOnly = false;
 
     protected bool $viewOnly = false;
@@ -75,6 +85,10 @@ abstract class CrudController extends Controller
             }
         }
 
+        if ($this->wantsPrint($request)) {
+            return $this->printView($request, (clone $query)->latest('id')->limit(self::PRINT_ROW_LIMIT)->get(), (clone $query)->count(), $search, $this->selectFilterOptions());
+        }
+
         $data = [
             'title' => $this->title,
             'routeName' => $this->routeName,
@@ -83,6 +97,7 @@ abstract class CrudController extends Controller
             'filterable' => $this->selectFilterOptions(),
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
+            'printable' => $this->printable && ! $this->usesFarmerPages($request),
         ];
 
         if ($this->usesFarmerPages($request)) {
@@ -119,6 +134,10 @@ abstract class CrudController extends Controller
             ->sortBy(fn (object $row): string => $row->sort_key, SORT_STRING, $request->query('sort') !== 'oldest')
             ->values();
 
+        if ($this->wantsPrint($request)) {
+            return $this->printView($request, $filtered->take(self::PRINT_ROW_LIMIT), $filtered->count(), $search, $filterable);
+        }
+
         $perPage = self::PER_PAGE;
         $page = LengthAwarePaginator::resolveCurrentPage();
 
@@ -130,11 +149,59 @@ abstract class CrudController extends Controller
             'filterable' => $filterable,
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
+            'printable' => $this->printable,
             'records' => new LengthAwarePaginator($filtered->forPage($page, $perPage)->values(), $filtered->count(), $perPage, $page, [
                 'path' => $request->url(),
                 'query' => $request->query(),
             ]),
         ]);
+    }
+
+    /** Staff only, and only for a module that opted in: farmers print their own records from My Farm. */
+    protected function wantsPrint(Request $request): bool
+    {
+        return $this->printable && $request->boolean('print') && ! $this->usesFarmerPages($request);
+    }
+
+    /**
+     * The print page: every filtered row, with what was filtered written out.
+     *
+     * @param  iterable<int, mixed>  $rows
+     * @param  array<string, array<int|string, string>>  $filterable  field => [value => label]
+     */
+    protected function printView(Request $request, iterable $rows, int $total, string $search, array $filterable): View
+    {
+        $filters = [];
+        if ($search !== '') {
+            $filters['Search'] = $search;
+        }
+        foreach ($filterable as $field => $options) {
+            $value = $request->query($field);
+            if (is_string($value) && $value !== '') {
+                $filters[(string) str($field)->headline()] = (string) ($options[$value] ?? $value);
+            }
+        }
+
+        return view('crud.print', [
+            'title' => $this->title.'s',
+            'columns' => $this->columns,
+            'rows' => $rows,
+            'total' => $total,
+            'limit' => self::PRINT_ROW_LIMIT,
+            'filters' => $filters + $this->printFilters($request),
+            'printedAt' => \App\Support\BusinessClock::now(),
+            'backUrl' => route($this->routeName.'.index', $request->except('print')),
+        ]);
+    }
+
+    /**
+     * Filters a module adds on top of search and its select filters, as label => value, for the print page.
+     *
+     * @return array<string, string>
+     */
+    protected function printFilters(Request $request): array
+    {
+        return [];
     }
 
     /** A stored number as written, without trailing zeros ("114", "25.1", "26.95"), or null when missing. */
