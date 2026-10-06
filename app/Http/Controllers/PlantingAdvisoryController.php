@@ -142,6 +142,30 @@ class PlantingAdvisoryController extends Controller
                 : collect(),
             'analyticsRun' => $this->requestedAnalyticsRun($request),
             'check' => $this->lastCheck(),
+            // Typhoon Safety Check-Ins (moved here from the former Operations page): staff only.
+            'checkIns' => $canManage ? $this->typhoonCheckIns() : null,
+        ];
+    }
+
+    /**
+     * While a typhoon advisory is in effect: how many farmers answered Safe / Needs Help / not yet, and who needs help.
+     *
+     * @return array<string, mixed>
+     */
+    private function typhoonCheckIns(): array
+    {
+        $event = rescue(fn () => app(TyphoonSafetyService::class)->activeEvent(), null, false);
+        if (! $event || ! SchemaCache::hasTable('typhoon_safety_responses')) {
+            return ['event' => null];
+        }
+        $responses = rescue(fn () => TyphoonSafetyResponse::query()->with('farmer.farmerProfile:id,user_id,barangay')->where('event_key', $event['key'])->latest('responded_at')->get(), collect(), false);
+        $farmers = rescue(fn (): int => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count(), 0, false);
+
+        return [
+            'event' => $event,
+            'safe' => $responses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count(),
+            'needs_help' => $responses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->values(),
+            'no_response' => max(0, $farmers - $responses->pluck('user_id')->unique()->count()),
         ];
     }
 

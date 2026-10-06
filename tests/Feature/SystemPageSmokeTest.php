@@ -22,6 +22,8 @@ class SystemPageSmokeTest extends TestCase
 
     /** Pages that intentionally answer with a redirect instead of a page of their own. */
     private const REDIRECTS = [
+        '/mao/operations',            // the Operations page was removed; its address opens the MAO dashboard (2026-10)
+        '/management/advisories',     // Advisory Management moved into the Advisories page (2026-10)
         '/ai-farming-assistant',      // Climora lives in the widget on every page
         '/announcements',             // announcements are part of the Community Feed
         '/testing/candidate-rice-yield', // the candidate model test page moved to Model Evaluation (2026-10)
@@ -111,8 +113,8 @@ class SystemPageSmokeTest extends TestCase
     public function test_every_mao_page_opens_with_optional_services_down(): void
     {
         $this->assertPagesOpen($this->user(User::ROLE_MAO), [
-            '/mao/dashboard' => 'Municipal Risk Overview',
-            '/mao/operations' => 'Barangay',
+            '/mao/dashboard' => 'Kailangan ng Aksyon',
+            '/mao/operations' => 'Barangay',     // removed page: redirects (see REDIRECTS)
             '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',
@@ -123,7 +125,6 @@ class SystemPageSmokeTest extends TestCase
             '/rice-productions' => 'Rice',
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',
-            '/ai-admin/topics' => 'Topic',
             '/field-reports' => 'Report',
             '/community-feed' => 'Community',
             '/announcements' => 'Announcements',

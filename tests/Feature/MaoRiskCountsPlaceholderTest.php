@@ -90,24 +90,6 @@ class MaoRiskCountsPlaceholderTest extends TestCase
         $this->assertSame('No Data', collect($risk['barangays'])->firstWhere('barangay', 'Malaruhatan')['level']);
     }
 
-    public function test_mao_operations_counts_warning_high_risk_list_and_table_ignore_placeholders(): void
-    {
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $view = $this->actingAs($mao)->get(route('mao.operations'))->assertOk();
-
-        $view->assertViewHas('riskLevelCounts', ['Low' => 1, 'Moderate' => 1, 'High' => 1, 'Severe' => 1]);
-        $view->assertViewHas('weatherWarning', fn (array $w) => $w['level'] === 'Severe');
-        $view->assertViewHas('highRiskAreasList', fn ($areas) => $areas->pluck('barangay')->sort()->values()->all() === ['Barangay 2 (Pob.)', 'Barangay 3 (Pob.)']);
-        $view->assertViewHas('barangayMonitoring', function ($rows) {
-            $byName = collect($rows)->keyBy('barangay');
-
-            return $byName['Balibago']['risk_level'] === 'Moderate'
-                && $byName['Bungahan']['risk_level'] === null           // shown as "No Data"
-                && $byName['Malaruhatan']['risk_level'] === null
-                && collect($rows)->whereNotNull('risk_level')->count() === 4;
-        });
-    }
-
     public function test_with_only_placeholders_nothing_is_counted_and_no_warning_is_raised(): void
     {
         HeatmapArea::query()->whereIn('barangay', ['Bagong Pook', 'Balibago', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)'])
@@ -117,8 +99,5 @@ class MaoRiskCountsPlaceholderTest extends TestCase
         $this->assertSame(['Low' => 0, 'Moderate' => 0, 'High' => 0, 'Severe' => 0], $this->counts());
         $this->assertSame('empty', app(MaoDashboardService::class)->payload()['risk']['state']);   // "No barangay has a calculated rating yet"
 
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('mao.operations'))->assertOk()
-            ->assertViewHas('weatherWarning', fn (array $w) => ! in_array($w['level'] ?? null, ['Moderate', 'High', 'Severe'], true));
     }
 }

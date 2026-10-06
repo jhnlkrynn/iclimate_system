@@ -219,7 +219,7 @@ html[data-theme="dark"] body .candidate-warning { border-color: color-mix(in srg
 html[data-theme="dark"] body .badge-green { border-color: color-mix(in srgb, #33cc6b 30%, var(--dk-border)); }
 html[data-theme="dark"] body .badge-yellow { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
 
-/* ---- css/app.css (76) */
+/* ---- css/app.css (78) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
 html[data-theme="dark"] body .ic-skeleton { background-color: var(--dk-surface-2); }
@@ -310,6 +310,8 @@ html[data-theme="dark"] body .ic-skel-lines > span:not(.visually-hidden) { backg
 html[data-theme="dark"] body .ic-updated { color: var(--dk-muted); }
 html[data-theme="dark"] body .ic-no-data { background: var(--dk-surface-2); color: var(--dk-muted); }
 html[data-theme="dark"] body .ic-no-data strong { color: var(--dk-ink-mid); }
+html[data-theme="dark"] body .ic-tab { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
+html[data-theme="dark"] body .ic-tab:hover { color: #9de7ba; }
 
 /* ---- css/ui-refresh.css (47) */
 html[data-theme="dark"] body .card:hover,
@@ -521,7 +523,7 @@ html[data-theme="dark"] body .mfd.itd.itp .thread-link.active { background: var(
 html[data-theme="dark"] body .mfd.itd.itp .bubble-row:not(.mine) .bubble { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd.itd.itp .msg-compose { background: var(--dk-surface-2); }
 
-/* ---- css/mao-dashboard.css (12) */
+/* ---- css/mao-dashboard.css (15) */
 html[data-theme="dark"] body .mtd { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --line: var(--dk-border-strong); --rule: var(--dk-border-strong); --ink: var(--dk-ink); --ink-2: var(--dk-ink-mid); --muted: var(--dk-muted); --ok-bg: var(--dk-surface-2); --ok-ink: #9de7c4; --warn-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --warn-ink: #e7ca9d; --crit-bg: var(--dk-surface-2); --crit-ink: #e7a49d; --info-bg: var(--dk-surface-2); --info-ink: #9dc4e7; }
 html[data-theme="dark"] body .mtd-btn.is-quiet { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mtd-soft-error { border-color: color-mix(in srgb, #cc9833 30%, var(--dk-border)); }
@@ -534,6 +536,9 @@ html[data-theme="dark"] body .mtd-day.is-flagged { border-color: color-mix(in sr
 html[data-theme="dark"] body .mtd-flag { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mtd-badge.is-high { background: color-mix(in srgb, #c35622 16%, var(--dk-surface)); color: #e7b19d; border-color: color-mix(in srgb, #cc6433 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mtd-badge.is-sev { border-color: color-mix(in srgb, #cc4533 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mhd-action.is-waiting { border-color: color-mix(in srgb, #cc9e33 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mhd-map-frame { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .mhd-map-canvas { background: var(--dk-surface-2); }
 
 /* ---- css/info-modal.css (10) */
 html[data-theme="dark"] body .ic-notif-tabs { background: var(--dk-surface-2); }

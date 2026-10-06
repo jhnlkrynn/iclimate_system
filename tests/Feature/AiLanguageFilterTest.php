@@ -366,22 +366,23 @@ class AiLanguageFilterTest extends TestCase
         $this->assertStringNotContainsString('tarantado', strtolower(json_encode($chat)));
     }
 
-    public function test_it_experts_and_mao_can_manage_vocabulary_and_the_filter(): void
+    public function test_it_experts_manage_vocabulary_and_the_filter_and_mao_no_longer_does(): void
     {
-        foreach ([User::ROLE_IT_EXPERT, User::ROLE_MAO] as $role) {
-            $admin = $this->admin($role);
-
-            foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
-                $this->actingAs($admin)->get(route('ai-admin.index', $resource))->assertOk();
-            }
-
-            $this->actingAs($admin)->get(route('ai-admin.index', 'nonsense'))->assertNotFound();
+        $admin = $this->admin(User::ROLE_IT_EXPERT);
+        foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
+            $this->actingAs($admin)->get(route('ai-admin.index', $resource))->assertOk();
         }
+        $this->actingAs($admin)->get(route('ai-admin.index', 'nonsense'))->assertNotFound();
+
+        // Chatbot Knowledge moved from MAO to IT (2026-10): MAO cannot open or change it by URL.
+        $mao = $this->admin(User::ROLE_MAO);
+        $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertForbidden();
+        $this->actingAs($mao)->post(route('ai-admin.store', 'topics'), ['name' => 'x'])->assertForbidden();
     }
 
     public function test_admins_can_add_edit_and_deactivate_entries(): void
     {
-        $admin = $this->admin(User::ROLE_MAO);
+        $admin = $this->admin(User::ROLE_IT_EXPERT);                          // Chatbot Knowledge is an IT page since 2026-10
 
         // topic -> term -> synonym -> faq
         $this->actingAs($admin)->post(route('ai-admin.store', 'topics'), [

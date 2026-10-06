@@ -39,17 +39,17 @@ class MaoPageSmokeTest extends TestCase
         $user = $this->maoUser();
 
         $routes = [
-            '/mao/dashboard' => 'Municipal Risk Overview',
-            '/mao/operations' => 'Barangay',
+            '/mao/dashboard' => 'Kailangan ng Aksyon',
             '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',
             '/planting-advisories' => 'Advisories',
-            '/management/advisories' => 'Advisory',
+            '/field-reports' => 'Field Report',
+            '/reports' => 'Reports',
+            '/community-feed' => 'Announcements',
             '/farmer-profiles' => 'Farmer',
             '/weather-predictions' => 'Prediction',
             '/messages' => 'Messages',
-            '/ai-admin/topics' => 'Topic',
             '/profile' => 'Profile',
             '/notifications' => 'Notifications',
             '/rice-productions' => 'Rice',
@@ -70,5 +70,10 @@ class MaoPageSmokeTest extends TestCase
                 "Failed asserting content '{$identifyingText}' on MAO route {$uri}"
             );
         }
+
+        // Removed or moved pages (2026-10) open their replacement; Chatbot Knowledge is an IT page.
+        $this->actingAs($user)->get('/mao/operations')->assertRedirect('/mao/dashboard');
+        $this->actingAs($user)->get('/management/advisories')->assertRedirect(route('planting-advisories.index', ['show' => 'all']));
+        $this->actingAs($user)->get('/ai-admin/topics')->assertForbidden();
     }
 }

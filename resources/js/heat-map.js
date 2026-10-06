@@ -136,3 +136,52 @@ export function initHeatMap() {
             canvas.dataset.loaded = 'failed';
         });
 }
+
+// The MAO dashboard's small Heat Map preview: the same 19 barangays in this week's colours, with no controls. The
+// whole frame is a link to the Heat Map page, so the map itself takes no clicks, drags or zooms.
+export function initHeatMapPreview() {
+    const frame = document.querySelector('[data-heat-map-preview]');
+    const canvas = frame?.querySelector('#heatMapPreviewCanvas');
+    if (!canvas || canvas.dataset.ready || !window.L) return;
+    canvas.dataset.ready = 'true';
+
+    let data = { levels: {}, colors: {} };
+    try {
+        data = JSON.parse(frame.querySelector('[data-heat-map-preview-levels]')?.textContent || '{}');
+    } catch (error) {
+        console.error('iClimate could not read the heat map preview ratings.', error);
+    }
+    const L = window.L;
+    const map = L.map(canvas, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, zoomSnap: 0.25 });
+    map.setView([14.02, 120.65], 11);
+
+    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' } })
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Boundary request failed'))))
+        .then((boundary) => {
+            const seen = new Set();
+            const layer = L.geoJSON(boundary, {
+                interactive: false,
+                filter: (feature) => {
+                    const props = feature?.properties || {};
+                    const name = canonicalName(props.brgy_name);
+                    if (!name || seen.has(name) || (props.city_name && props.city_name !== 'Lian')) return false;
+                    seen.add(name);
+                    return true;
+                },
+                style: (feature) => {
+                    const level = data.levels?.[canonicalName(feature?.properties?.brgy_name)] || 'nodata';
+                    return { color: '#26352f', weight: 1, opacity: 1, fillColor: data.colors?.[level] || '#8a939b', fillOpacity: 0.8, dashArray: level === 'nodata' ? '4 4' : undefined };
+                },
+            }).addTo(map);
+            const bounds = layer.getBounds();
+            // The frame can get its final size after the map is made; fit the 19 barangays again whenever it changes.
+            const fit = () => { if (bounds.isValid() && canvas.clientWidth > 0) { map.invalidateSize({ pan: false }); map.fitBounds(bounds, { padding: [8, 8], animate: false }); } };
+            fit();
+            if ('ResizeObserver' in window) new ResizeObserver(fit).observe(canvas);
+            canvas.dataset.loaded = 'true';
+        })
+        .catch((error) => {
+            console.error('iClimate could not load the Lian barangay boundaries.', error);
+            canvas.dataset.loaded = 'failed';
+        });
+}

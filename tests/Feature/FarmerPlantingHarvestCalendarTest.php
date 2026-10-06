@@ -113,21 +113,17 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
             'barangay' => 'Lumaniag',
         ]);
 
-        $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
+        // The Operations page's schedule monitor moved (2026-10): farmers' dates are on the Calendar, where MAO picks
+        // a barangay, and plans expected to yield less than before are listed on Reports.
+        $calendar = $this->actingAs($mao)->get(route('calendar.index', ['month' => 5, 'year' => 2027, 'barangay' => 'Binubusan']))->assertOk();
+        $calendar->assertSee('Planting – Ana Farmer')->assertDontSee('Ben Farmer');
 
-        $response = $this->actingAs($mao)->get(route('mao.operations', [
-            'schedule_month' => 10,
-            'schedule_season' => 'Wet',
-            'schedule_barangay' => 'Binubusan',
-            'schedule_farm_type' => 'Irrigated',
-            'schedule_farmer' => $ana->id,
-            'schedule_status' => 'upcoming_planting',
-        ]))->assertOk()
-            ->assertSee('Farmer Planting and Harvest Calendar')
+        $this->actingAs($mao)->get(route('reports.index'))->assertOk()
+            ->assertSee('Lower Than Previous Yield')
             ->assertSee('Ana Farmer')
-            ->assertSee('Recommended Actions');
-        $this->assertCount(1, $response->viewData('farmerSchedules'));
-        $this->assertSame('Ana Farmer', $response->viewData('farmerSchedules')->first()->farmer->name);
+            ->assertSee('3.50 t/ha')
+            ->assertSee('4.00 t/ha')
+            ->assertDontSee('Ben Farmer');
     }
 
     public function test_prediction_is_compared_only_with_matching_previous_same_month_history(): void
@@ -211,10 +207,11 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
         Schema::drop('farmer_planting_schedules');
         $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
 
-        $this->actingAs($mao)
-            ->get(route('mao.operations'))
-            ->assertOk()
-            ->assertSee('Farm calendar is temporarily unavailable');
+        // MAO's dashboard, Calendar and Reports read farmer plans too: none of them may crash without the table.
+        foreach (['mao.dashboard', 'calendar.index', 'reports.index'] as $route) {
+            $this->actingAs($mao)->get(route($route))->assertOk();
+        }
+        $this->actingAs($mao)->get(route('calendar.index'))->assertSee('Farmer schedules are temporarily unavailable');
 
         $this->actingAs($farmer)
             ->get(route('calendar.index'))

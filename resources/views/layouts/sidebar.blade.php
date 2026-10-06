@@ -31,7 +31,10 @@
     // opened from a button on another page) is listed under the item it is opened from, so one item is always
     // highlighted and people can see where they are.
     $routeDefs = [
-        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'field-reports.*', 'admin.dashboard.*']],
+        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'admin.dashboard.*']],
+        'field-reports' => ['field-reports.index', ['field-reports.*']],
+        // MAO's "Records": Climate Records and Rice Production are two tabs of one item.
+        'records' => ['climate-records.index', ['climate-records.*', 'rice-productions.*']],
         'heatmap' => ['heat-map.index', ['heat-map.*']],
         'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
         'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
@@ -77,24 +80,23 @@
         $moreGroup = [];
         $publishingGroup = [];
     } elseif ($isMao) {
+        // MAO (2026-10): eleven items in one list, each page once. Records opens Climate Records, with Rice Production
+        // as its second tab. Chatbot Knowledge is an IT page.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
-            $navLink('Farm Calendar', 'calendar', 'calendar'),
-            $navLink('Climate Records', 'climate-records', 'climate-records'),
-            $navLink('Planting Advisories', 'advisories', 'advisories'),
+            $navLink('Advisories', 'advisories', 'advisories'),
+            $navLink('Calendar', 'calendar', 'calendar'),
+            $navLink('Records', 'records', 'climate-records'),
+            $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
+            $navLink('Field Reports', 'field-reports', 'reports'),
+            $navLink('Predictions', 'weather', 'weather'),
+            $navLink('Reports', 'reports', 'reports'),
+            $navLink('Announcements', 'community', 'community'),
             $navLink('Messages', 'messages', 'messages'),
         ];
-        $moreGroup = [
-            $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
-            $navLink('Predictions', 'weather', 'weather'),
-            $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
-            $navLink('Rice Production', 'rice-production', 'rice-production'),
-        ];
-        $publishingGroup = [
-            $navLink('Community Feed', 'community', 'community'),
-            $navLink('Reports', 'reports', 'reports'),
-        ];
+        $moreGroup = [];
+        $publishingGroup = [];
     } else {
         // IT Personnel: four groups so every page fits on a laptop screen without scrolling the menu; each page appears once.
         $primaryGroup = [
@@ -111,7 +113,7 @@
                 $navLink('User Management', 'user-management', 'user-management'),
                 $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
                 $navLink('Planting Advisories', 'advisories', 'advisories'),
-                $navLink('Community Feed', 'community', 'community'),
+                $navLink('Announcements', 'community', 'community'),
                 $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             ]],
             ['Data', [

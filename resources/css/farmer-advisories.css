@@ -355,3 +355,12 @@ html[data-theme="dark"] .fad.adv .adv-sev.is-moderate { background: #57430c; col
 html[data-theme="dark"] .fad.adv .adv-sev.is-high { background: #5c1c1c; color: #ffd0d0; }
 .fad.adv .adv-filter .fad-label { margin: 0; white-space: nowrap; }
 .fad.adv .adv-filter .fad-input { width: auto; flex: 0 1 240px; }
+
+/* Typhoon Safety Check-Ins on the Advisories page (staff). */
+.fad.adv .adv-checkin-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
+.fad.adv .adv-checkin-counts > div { padding: 12px 16px; border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; background: var(--card); }
+.fad.adv .adv-checkin-counts > div.is-moderate { border-left-color: #f2b134; }
+.fad.adv .adv-checkin-counts > div.is-high { border-left-color: #c62828; }
+.fad.adv .adv-checkin-counts dt { font-size: .875rem; font-weight: 600; color: var(--muted); }
+.fad.adv .adv-checkin-counts dd { margin: 0; font-size: 1.75rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+@container fad (max-width: 520px) { .fad.adv .adv-checkin-counts { grid-template-columns: minmax(0, 1fr); } }

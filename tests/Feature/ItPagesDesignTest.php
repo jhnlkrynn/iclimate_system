@@ -18,7 +18,7 @@ class ItPagesDesignTest extends TestCase
     private const PAGES = [
         'profile.edit' => 'Account',
         'weather-predictions.index' => 'Predictions',
-        'community-feed.index' => 'Community Feed',
+        'community-feed.index' => 'Announcements',          // the Community Feed's name for MAO and IT (2026-10)
         'messages.index' => 'Messages',
     ];
 

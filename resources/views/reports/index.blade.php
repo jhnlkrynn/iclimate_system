@@ -102,6 +102,8 @@
         </div>
     </div>
 
+    @include('reports._lower-yield')
+
     <details class="ic-collapse" data-force-open="true">
         <summary><span class="ic-collapse-title">Generate Report</span></summary>
     <div class="card filter-panel no-lift">
