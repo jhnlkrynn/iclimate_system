@@ -78,7 +78,8 @@ class PagasaBulletinParser
                         ['scope_type' => 'regional', 'scope_name' => 'CALABARZON (includes Lian, Batangas)', 'barangays' => []],
                         $this->labelledDate($articleText, 'Issued (?:at|on)'),
                         $this->date("{$period[2]} {$period[3]} {$period[4]}")?->timezone('Asia/Manila')->endOfDay()->utc(), 'agri_outlook',
-                        $this->date("{$period[1]} {$period[3]} {$period[4]}"));
+                        $this->date("{$period[1]} {$period[3]} {$period[4]}"),
+                        $this->agriOutlook($xpath, $region));
                 }
             } else {
                 $published = $this->labelledDate($articleText, 'Issued (?:at|on)');
@@ -190,9 +191,66 @@ class PagasaBulletinParser
         };
     }
 
-    private function bulletin(string $title, string $text, ?array $scope, ?Carbon $published, ?Carbon $until, string $family, ?Carbon $from = null): array
+    /** @param  array<string, mixed>|null  $details  Structured content read from the page (e.g. the agri outlook table). */
+    private function bulletin(string $title, string $text, ?array $scope, ?Carbon $published, ?Carbon $until, string $family, ?Carbon $from = null, ?array $details = null): array
     {
-        return compact('title', 'text', 'scope', 'published', 'until', 'family', 'from');
+        return compact('title', 'text', 'scope', 'published', 'until', 'family', 'from', 'details');
+    }
+
+    /**
+     * The ten-day agri outlook table for one region, read from its own cells: the four weather values exactly as
+     * PAGASA wrote them, and each crop's stages and the farm operations as separate items (the page lists them in
+     * <li> elements). Nothing is reworded; a part the page does not have is left out.
+     *
+     * @return array{weather: array<string, string>, crops: array<string, list<string>>, farm_operations: list<string>}|null
+     */
+    private function agriOutlook(DOMXPath $xpath, \DOMNode $region): ?array
+    {
+        $weather = [];
+        foreach ($xpath->query('.//thead//th', $region) as $cell) {
+            $value = $xpath->query('.//p', $cell)->item(0);
+            if (! $value) {
+                continue;
+            }
+            $label = trim(preg_replace('/\s+/u', ' ', str_replace($value->textContent, '', $cell->textContent)));
+            $key = match (true) {
+                (bool) preg_match('/rainfall/i', $label) => 'rainfall_mm',
+                (bool) preg_match('/humidity/i', $label) => 'relative_humidity_percent',
+                (bool) preg_match('/rainy days/i', $label) => 'rainy_days',
+                (bool) preg_match('/temperature/i', $label) => 'temperature_c',
+                default => null,
+            };
+            if ($key) {
+                $weather[$key] = trim(preg_replace('/\s+/u', ' ', $value->textContent));
+            }
+        }
+
+        $crops = [];
+        $operations = [];
+        foreach ($xpath->query('.//tbody//tr', $region) as $row) {
+            $items = [];
+            foreach ($xpath->query('.//li', $row) as $item) {
+                $items[] = trim(preg_replace('/\s+/u', ' ', $item->textContent));
+            }
+            $items = array_values(array_filter($items));
+            $heads = [];
+            foreach ($xpath->query('./th', $row) as $head) {
+                if (! $xpath->query('.//li|.//img', $head)->length) {
+                    $heads[] = trim(preg_replace('/\s+/u', ' ', $head->textContent));
+                }
+            }
+            $name = $heads[0] ?? '';
+            if ($items === [] || $name === '') {
+                continue;
+            }
+            if (preg_match('/farm operations/i', $name)) {
+                $operations = $items;
+            } else {
+                $crops[ucwords(strtolower($name))] = $items;
+            }
+        }
+
+        return $weather || $crops || $operations ? ['weather' => $weather, 'crops' => $crops, 'farm_operations' => $operations] : null;
     }
 
     private function labelledDate(string $text, string $label): ?Carbon

@@ -4,8 +4,7 @@ namespace App\Services\Advisories;
 
 use App\Models\PlantingAdvisory;
 use App\Models\User;
-use App\Support\DashboardData;
-use App\Support\PageCache;
+use App\Support\CacheScope;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -31,6 +30,7 @@ class PagasaAdvisoryService
         $remaining = fn (): float => $deadline === null ? INF : $deadline - microtime(true);
         $cached = Cache::get(self::CHECK_KEY);
         $previous = $cached ?? Cache::get('pagasa-advisories:status');
+        $hadProviderStatus = is_array(Cache::get('pagasa-advisories:status'));
         if (! $force && is_array($cached)) {
             return $cached;
         }
@@ -42,6 +42,7 @@ class PagasaAdvisoryService
             'checked_at' => now()->toIso8601String(),
             'last_successful_check' => $previous['last_successful_check'] ?? null, 'errors' => [],
         ];
+        $providerDataChanged = false;
         if (! config('services.pagasa.enabled', true)) {
             $summary['errors'][] = 'PAGASA fetching is disabled.';
         } else {
@@ -82,9 +83,10 @@ class PagasaAdvisoryService
                             if ($bulletin['published']) {
                                 // A new warning replaces the earlier warning even if its
                                 // updated affected-area list no longer includes Lian.
-                                JsonColumn::where(PlantingAdvisory::query()->fromPagasaOnline()->published(), 'metadata', 'bulletin_family', '=', $familyKey)
+                                $archived = JsonColumn::where(PlantingAdvisory::query()->fromPagasaOnline()->published(), 'metadata', 'bulletin_family', '=', $familyKey)
                                     ->where('published_at', '<', $bulletin['published'])
                                     ->update(['status' => PlantingAdvisory::STATUS_ARCHIVED]);
+                                $providerDataChanged = $providerDataChanged || $archived > 0;
                             }
                             if (! $bulletin['scope'] || ($bulletin['until'] && $bulletin['until']->lte(now()))) {
                                 continue;
@@ -97,12 +99,25 @@ class PagasaAdvisoryService
                             $candidate = $this->candidate($bulletin, $source, $familyKey);
                             $existing = PlantingAdvisory::query()->where('generation_key', $candidate['generation_key'])->first();
                             if ($existing) {
-                                // Fetch time changes; publication and validity never become "now".
-                                $existing->update(['metadata' => array_merge($existing->metadata ?? [], ['fetched_at' => $summary['checked_at']])]);
+                                // A successful read is already represented by
+                                // the check status. Do not rewrite a bulletin
+                                // row merely because its retrieval time
+                                // changed; only new structured provider data
+                                // requires a database write and invalidation.
+                                $metadata = $existing->metadata ?? [];
+                                $newMetadata = $metadata;
+                                if ($bulletin['details'] && ($metadata['pagasa_details'] ?? null) !== $bulletin['details']) {
+                                    $newMetadata['pagasa_details'] = $bulletin['details'];
+                                }
+                                if ($newMetadata !== $metadata) {
+                                    $existing->update(['metadata' => $newMetadata]);
+                                    $providerDataChanged = true;
+                                }
                                 $summary['advisories_skipped_as_duplicates']++;
                             } else {
                                 PlantingAdvisory::query()->create($candidate);
                                 $summary['advisories_created']++;
+                                $providerDataChanged = true;
                             }
                         }
                         $summary['relevant_bulletins'] += $relevant;
@@ -130,8 +145,14 @@ class PagasaAdvisoryService
         // is not mistaken for "never checked" after the cache TTL passes.
         Cache::forever('pagasa-advisories:status', $summary);
         Cache::put(self::CHECK_KEY, $summary, now()->addMinutes((int) config('services.pagasa.cache_minutes', 10)));
-        DashboardData::bump();
-        PageCache::flushShared();
+        // The check status changed (Advisories shows when PAGASA was last checked). Advisory rows that changed have
+        // already retired their readers through their own model events.
+        // The first successful check must warm the page's status. Later
+        // unchanged bulletins do not retire advisory readers just because the
+        // provider was polled again.
+        if (! $hadProviderStatus || $providerDataChanged) {
+            CacheScope::bump('advisory-sources');
+        }
         Log::info('PAGASA advisory refresh completed.', $summary);
 
         return $summary;
@@ -180,6 +201,7 @@ class PagasaAdvisoryService
                 'source_excerpt' => $bulletin['text'], 'bulletin_family' => $familyKey,
                 'advisory_horizon' => $source['horizon'], 'fetched_at' => now()->toIso8601String(),
                 'publication_time_available' => $bulletin['published'] !== null,
+                'pagasa_details' => $bulletin['details'] ?? null,
             ],
             'posted_by' => $this->systemUserId(),
         ];

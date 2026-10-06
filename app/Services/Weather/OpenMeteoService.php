@@ -3,6 +3,7 @@
 namespace App\Services\Weather;
 
 use App\Models\ExternalWeatherData;
+use App\Support\CoordinateNormalizer;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -48,16 +49,27 @@ class OpenMeteoService
 
     public function fetchForecast(bool $force = false): array
     {
-        $realTime = (bool) config('services.open_meteo.realtime', true);
+        $cacheKey = $this->providerCacheKey();
 
-        if (! $realTime && ! $force && Cache::has('open-meteo:last-fetch-result')) {
-            return Cache::get('open-meteo:last-fetch-result');
+        if (! $force && is_array($cached = Cache::get($cacheKey))) {
+            return $cached;
+        }
+
+        $lock = Cache::lock($cacheKey.':lock', 60);
+        if (! $lock->get()) {
+            return $this->fallbackResult('Another Open-Meteo refresh is already running.');
         }
 
         $startedAt = now();
         $clock = hrtime(true);
 
         try {
+            // A second caller can arrive after the first caller acquired the
+            // lock but before it released it. Recheck the shared result so it
+            // does not make a second provider request.
+            if (! $force && is_array($cached = Cache::get($cacheKey))) {
+                return $cached;
+            }
             $payload = $this->requestForecast();
             \App\Models\WeatherFetchLog::record($startedAt, (int) round((hrtime(true) - $clock) / 1_000_000), true);
             $records = $this->storeForecast($payload);
@@ -77,8 +89,8 @@ class OpenMeteoService
 
             $refreshMinutes = (int) config('services.open_meteo.refresh_minutes', 10);
 
-            if (! $realTime && $refreshMinutes > 0) {
-                Cache::put('open-meteo:last-fetch-result', $result, now()->addMinutes($refreshMinutes));
+            if ($refreshMinutes > 0) {
+                Cache::put($cacheKey, $result, now()->addMinutes($refreshMinutes));
             }
 
             return $result;
@@ -106,7 +118,40 @@ class OpenMeteoService
                 'message' => 'Latest weather is temporarily unavailable. Showing the last weather update.',
                 'error' => 'Unable to update weather data.',
             ];
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
         }
+    }
+
+    private function providerCacheKey(): string
+    {
+        return 'open-meteo:forecast:v2:'.sha1(implode('|', [
+            CoordinateNormalizer::pair(
+                (float) config('services.open_meteo.latitude', \App\Support\LianLocation::LATITUDE),
+                (float) config('services.open_meteo.longitude', \App\Support\LianLocation::LONGITUDE),
+            ),
+            config('services.open_meteo.timezone', 'Asia/Manila'),
+            (int) config('services.open_meteo.forecast_days', 16),
+        ]));
+    }
+
+    private function fallbackResult(string $message): array
+    {
+        $fallback = $this->latestStoredForecast();
+
+        return [
+            'ok' => false,
+            'source' => 'Open-Meteo',
+            'source_name' => 'Open-Meteo Forecast API',
+            'source_url' => 'https://open-meteo.com/',
+            'source_note' => 'Stored fallback from the latest successful Open-Meteo update.',
+            'freshness' => $fallback->first()?->freshnessLabel() ?? 'unavailable',
+            'records' => $fallback,
+            'records_saved' => 0,
+            'fetched_at' => $fallback->first()?->fetched_at,
+            'message' => $message.' Showing the last weather update where available.',
+            'error' => 'Unable to update weather data.',
+        ];
     }
 
     public function latestStoredForecast(): Collection

@@ -12,6 +12,7 @@ use App\Services\Advisories\PagasaAdvisoryService;
 use App\Services\Weather\OpenMeteoService;
 use Database\Seeders\AdvisoryRuleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -53,6 +54,20 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
 
         $this->assertFalse($result['ok']);
         $this->assertTrue($result['records']->contains('id', $stored->id));
+    }
+
+    public function test_repeated_non_forced_open_meteo_reads_share_one_provider_refresh(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => Http::response($this->openMeteoPayload(rainfall: 12, probability: 40), 200)]);
+
+        $service = app(OpenMeteoService::class);
+        $first = $service->fetchForecast();
+        $second = $service->fetchForecast();
+
+        $this->assertTrue($first['ok']);
+        $this->assertSame($first['fetched_at']->toIso8601String(), $second['fetched_at']->toIso8601String());
+        Http::assertSentCount(1);
     }
 
     public function test_heavy_rainfall_generates_climate_advisory_and_prevents_duplicates(): void
