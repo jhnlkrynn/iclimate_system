@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Cache;
  * Queued when a farmer's profile or planting schedule changes, or when the dashboard finds no stored estimate,
  * so no page waits for the model. The 3-hourly iclimate:warm-farmer-yields keeps every farmer's estimate current.
  */
-class PrepareFarmerYieldEstimate implements ShouldQueue
+class PrepareFarmerYieldEstimate implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -21,7 +22,15 @@ class PrepareFarmerYieldEstimate implements ShouldQueue
 
     public int $timeout = 120;
 
+    /** One estimate per farmer waits in the queue at a time (held until it has run, at most an hour). */
+    public int $uniqueFor = 3600;
+
     public function __construct(public int $userId) {}
+
+    public function uniqueId(): string
+    {
+        return (string) $this->userId;
+    }
 
     /** Queues the estimate unless one is already waiting for this farmer. */
     public static function queueFor(int $userId): void

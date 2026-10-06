@@ -26,8 +26,16 @@ class WarmDashboardCaches extends Command
                 $this->line('Refreshed heat map in '.round(microtime(true) - $started, 1).'s');
             }
 
-            foreach ($dashboards->warmSharedDashboards() as $name => $seconds) {
-                $this->line("Warmed {$name} dashboard in {$seconds}s");
+            // MAO dashboard, IT overview and MAO Operations: rebuilt only when the data they read changed or they are
+            // getting old; a payload that fails keeps its last verified copy (and the run reports it).
+            $failed = false;
+            foreach ($dashboards->warmSharedDashboards() as $name => $result) {
+                $this->line("{$name}: {$result}");
+                $failed = $failed || str_starts_with($result, 'failed');
+            }
+
+            if ($failed) {
+                return self::FAILURE;
             }
         } catch (Throwable $exception) {
             $this->error('Dashboard warm-up failed: '.$exception->getMessage());

@@ -114,17 +114,16 @@ Schedule::command('iclimate:refresh-barangay-weather')
     ->withoutOverlapping(5)
     ->appendOutputTo($automationLog('iclimate:refresh-barangay-weather'));
 
-// Keeps the MAO / IT dashboard payloads cached (they cost ~40 Supabase round
-// trips to build). Replaced in place every minute, so page loads stay instant.
+// Prepares the expensive shared pages (MAO dashboard, IT overview, MAO Operations; ~25-100 Supabase round trips each)
+// before anyone opens them. Each is rebuilt only when the data it reads changed (CacheScope) or it is about to expire,
+// and never while another rebuild of it runs; a failed build keeps the last verified copy (PreparedDashboards).
 Schedule::command('iclimate:warm-dashboards')
     ->everyMinute()
     ->withoutOverlapping(5)
     ->runInBackground()
     ->appendOutputTo($automationLog('iclimate:warm-dashboards'));
 
-// Prepare the pages that are the same for everyone (MAO / IT dashboards, System Health) so opening one is
-// instant instead of waiting for dozens of database round trips after every data change. System Health is
-// only prepared by this command.
+// Prepares System Health (17 checks), which only this command prepares. The dashboards are iclimate:warm-dashboards' job.
 Schedule::command('iclimate:warm-dashboard-cache')
     ->everyTwoMinutes()
     ->withoutOverlapping(10)
