@@ -44,7 +44,7 @@ use Throwable;
  */
 class DashboardOverviewService
 {
-    // Long TTL is safe: DashboardData::bump() invalidates on any data write.
+    // Long TTL is safe: a change to the data a value reads retires it at once (CacheScope).
     private const CACHE_SECONDS = 300;
 
     private const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -137,7 +137,8 @@ class DashboardOverviewService
         $year = $this->resolveYear($requestedYear);
 
         $data = Cache::remember(
-            'dashboard:overview:farmer:v'.DashboardData::version().':'.$user->id.':'.md5((string) $barangay).':'.($year ?? 'none'),
+            // Shared data it reads (CacheScope) plus the farmer's own rows (their plans, their unread notifications).
+            'dashboard:overview:farmer:'.\App\Support\CacheScope::token('farmer-overview').':u'.\App\Support\PageCache::userVersion((int) $user->id).':'.$user->id.':'.md5((string) $barangay).':'.($year ?? 'none'),
             now()->addSeconds(self::CACHE_SECONDS),
             fn (): array => $this->farmerStored($user, $barangay, $year),
         );
@@ -479,8 +480,9 @@ class DashboardOverviewService
     {
         $year = $this->resolveYear($requestedYear);
 
-        $data = \App\Support\StaleCache::remember(
-            'dashboard:overview:mao:v'.DashboardData::version().':'.($year ?? 'none'),
+        $data = \App\Support\StaleCache::scoped(
+            'mao-dashboard',
+            fn (string $token): string => 'dashboard:overview:mao:'.$token.':'.($year ?? 'none'),
             self::CACHE_SECONDS,
             fn (): array => $this->maoStored($year),
         );
@@ -751,7 +753,7 @@ class DashboardOverviewService
 
     public function it(): array
     {
-        $data = \App\Support\StaleCache::remember('dashboard:overview:it:v'.DashboardData::version(), self::CACHE_SECONDS, fn (): array => $this->itStored());
+        $data = \App\Support\StaleCache::scoped('it-dashboard', fn (string $token): string => 'dashboard:overview:it:'.$token, self::CACHE_SECONDS, fn (): array => $this->itStored());
 
         $data['sources'] = $this->provenance->it($data['status']);
 

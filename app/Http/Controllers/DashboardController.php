@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Models\WeatherForecastFeedback;
 use App\Services\Analytics\DashboardKpiService;
 use App\Services\Analytics\DashboardOverviewService;
+use App\Services\Analytics\PreparedDashboards;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\ItDashboardInsights;
 use App\Services\Analytics\ItDashboardService;
@@ -32,10 +33,14 @@ use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Services\WeatherApiService;
+use App\Support\Aggregates;
+use App\Support\BuildMemo;
 use App\Support\BusinessClock;
+use App\Support\CacheScope;
 use App\Support\DashboardData;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
+use App\Support\SchemaCache;
 use App\Support\StaleCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +50,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
@@ -54,16 +58,6 @@ class DashboardController extends Controller
 {
     /** Per-farmer overview: short, because it carries live weather. */
     private const FARMER_OVERVIEW_CACHE_SECONDS = 60;
-
-    /** Shared MAO / IT overviews: short, because they carry live weather and health checks. The warm-up job refreshes them every minute. */
-    private const MAO_OVERVIEW_CACHE_SECONDS = 90;
-
-    private const IT_PAGE_CACHE_SECONDS = 60;
-
-    private const ADMIN_LATEST_KEY = 'dashboard:it:overview:3:latest';
-
-    /** The IT overview shows when each section was built, so its last copy may be shown for up to an hour while it rebuilds. */
-    private const IT_MAX_STALE_SECONDS = 3600;
 
     /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
@@ -82,19 +76,19 @@ class DashboardController extends Controller
         'harvest-check' => ['refresh' => [], 'slots' => ['harvest']],
     ];
 
-    /** MAO overview: shared payload (cached briefly) plus what depends on who is signed in. */
-    public function mao(Request $request, MaoDashboardService $mao): View
+    /** MAO overview: the prepared shared payload (PreparedDashboards) plus what depends on who is signed in. */
+    public function mao(Request $request, MaoDashboardService $mao, PreparedDashboards $dashboards): View
     {
-        $payload = StaleCache::remember($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, fn (): array => $mao->payload());
-
-        return view('dashboards.mao', ['mao' => $mao->forUser($payload, $request->user())]);
+        return view('dashboards.mao', ['mao' => $mao->forUser($dashboards->mao(), $request->user())]);
     }
 
-    /** Refresh button: rebuilds the live sections (weather is re-fetched) and returns each section's HTML. */
-    public function maoLive(Request $request, MaoDashboardService $mao): JsonResponse
+    /**
+     * The page's timed refresh reads the prepared payload (a stale one is rebuilt after the response). The Refresh
+     * button (?refresh=1) rebuilds it now with the latest weather, once even if several people press it together.
+     */
+    public function maoLive(Request $request, MaoDashboardService $mao, PreparedDashboards $dashboards): JsonResponse
     {
-        $payload = $mao->payload(forceWeather: $request->boolean('refresh'));
-        Cache::put($this->maoOverviewCacheKey(), $payload, now()->addSeconds(self::MAO_OVERVIEW_CACHE_SECONDS));
+        $payload = $request->boolean('refresh') ? $dashboards->refreshMao() : $dashboards->mao();
         $data = $mao->forUser($payload, $request->user());
 
         $slots = [];
@@ -106,50 +100,34 @@ class DashboardController extends Controller
     }
 
     /**
-     * Rebuilds the shared MAO and IT dashboard caches (run every minute by iclimate:warm-dashboards) so the next person
-     * to open a dashboard does not wait for it.
+     * Prepares the shared payloads that are due (MAO, IT, MAO Operations) so the next person to open one does not wait
+     * (run by iclimate:warm-dashboards).
      *
-     * @return array<string, float> dashboard name => seconds it took
+     * @return array<string, string> payload => what happened
      */
     public function warmSharedDashboards(): array
     {
-        $timings = [];
-
-        $started = microtime(true);
-        StaleCache::put($this->maoOverviewCacheKey(), self::MAO_OVERVIEW_CACHE_SECONDS, app(MaoDashboardService::class)->payload());
-        $timings['MAO'] = round(microtime(true) - $started, 1);
-
-        $started = microtime(true);
-        StaleCache::put($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, app(ItDashboardService::class)->payload(), self::ADMIN_LATEST_KEY);
-        // The Overview's 30-day activity chart comes with the page (see admin()): prepared here too.
-        app(ItDashboardService::class)->activity(30);
-        $timings['IT'] = round(microtime(true) - $started, 1);
-
-        return $timings;
-    }
-
-    private function maoOverviewCacheKey(): string
-    {
-        return 'dashboard:mao:overview:v'.DashboardData::version();
-    }
-
-    private function adminCacheKey(): string
-    {
-        return 'dashboard:it:overview:3:v'.DashboardData::version();
+        return app(PreparedDashboards::class)->warm();
     }
 
     /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
-        $user = $request->user();
-        $key = FarmerDashboardService::cacheKey($user);
-        $payload = Cache::get($key);
+        return view('dashboards.farmer', ['f' => $this->preparedFarmerPayload($request->user(), $farmer)]);
+    }
+
+    /** The farmer's prepared Home (built from saved data when there is none for the current data yet). */
+    private function preparedFarmerPayload(User $user, FarmerDashboardService $farmer): array
+    {
+        $snapshot = CacheScope::snapshot('farmer-dashboard');
+        $payload = Cache::get(FarmerDashboardService::cacheKey($user, token: CacheScope::tokenAt($snapshot)));
         if (! is_array($payload)) {
             $payload = $farmer->payload($user);
-            Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
+            // Stored under the token that includes the build's own writes (a weather snapshot), so the next visit finds it.
+            Cache::put(FarmerDashboardService::cacheKey($user, token: CacheScope::settledToken($snapshot)), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
-        return view('dashboards.farmer', ['f' => $payload]);
+        return $payload;
     }
 
     /**
@@ -182,8 +160,20 @@ class DashboardController extends Controller
         $user = $request->user();
         $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
 
-        $payload = $farmer->payload($user, forceWeather: $request->boolean('refresh'), refresh: $retry['refresh'] ?? []);
-        Cache::put(FarmerDashboardService::cacheKey($user), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
+        if ($request->boolean('refresh')) {
+            // The Refresh button: rebuilt now with the latest weather, once even if the farmer presses it twice.
+            $payload = StaleCache::refreshScoped('farmer-dashboard', fn (string $token): string => FarmerDashboardService::cacheKey($user, token: $token),
+                self::FARMER_OVERVIEW_CACHE_SECONDS, fn (): array => $farmer->payload($user, forceWeather: true), waitSeconds: 30);
+        } else {
+            // The timed refresh and the yield card's check read the prepared Home. The check rebuilds it only when the
+            // background estimate has been saved since (the prepared copy still shows the placeholder).
+            $payload = $this->preparedFarmerPayload($user, $farmer);
+            if ($retry !== null && ($payload['harvest']['state'] ?? null) === 'loading' && Cache::has(FarmerDashboardService::predictionCacheKey($user->id))) {
+                $snapshot = CacheScope::snapshot('farmer-dashboard');
+                $payload = $farmer->payload($user, refresh: $retry['refresh']);
+                Cache::put(FarmerDashboardService::cacheKey($user, token: CacheScope::settledToken($snapshot)), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
+            }
+        }
 
         $slots = [];
         foreach ($retry['slots'] ?? self::FARMER_SLOTS as $slot) {
@@ -248,42 +238,142 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function maoOperations(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, TyphoonSafetyService $typhoonSafety, DashboardKpiService $kpis): View
+    /** MAO Operations: the prepared page for these filters (PreparedDashboards); built by maoOperationsData(). */
+    public function maoOperations(Request $request, PreparedDashboards $dashboards): View
     {
+        return view('dashboards.mao-operations', $dashboards->maoOperations($request));
+    }
+
+    /**
+     * Everything the MAO Operations page shows, for this request's filters (about 100 queries cold). Called by
+     * PreparedDashboards, from a page request or the warm-up command; nothing in it depends on who is signed in.
+     *
+     * @return array<string, mixed>
+     */
+    public function maoOperationsData(Request $request): array
+    {
+        // One build: a figure several parts read is read once (BuildMemo), and the single counts and averages of
+        // this controller are read together in one statement before the parts ask for them (Performance Phase 4).
+        return BuildMemo::run(function () use ($request): array {
+            Aggregates::fetch($this->maoOperationsReads());
+
+            return $this->buildMaoOperationsData($request);
+        });
+    }
+
+    /**
+     * Every single count or average the MAO Operations parts of this controller read, by part. Each part reads its
+     * own entries again (from BuildMemo inside the build); listed once here so both always send the same SQL.
+     *
+     * @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}>
+     */
+    private function maoOperationsReads(): array
+    {
+        $reads = [];
+        foreach ([
+            'stats' => $this->statsReads(),
+            'aggregates' => $this->maoAggregateReads(),
+            'action' => $this->maoActionItemReads(),
+            'ops' => $this->maoOperationsCountReads(),
+            'season' => $this->seasonalRainfallReads(ClimateRecord::seasonForMonth(BusinessClock::month())),
+            'crop' => $this->estimatedYieldReads(),
+        ] as $part => $partReads) {
+            foreach ($partReads as $name => $read) {
+                $reads[$part.'.'.$name] = $read;
+            }
+        }
+
+        return $reads;
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function maoOperationsCountReads(): array
+    {
+        return [
+            'pending' => Aggregates::count(PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PENDING_REVIEW)),
+            'activeFarmers' => Aggregates::count(User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)),
+            'openFieldReports' => Aggregates::count(FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)),
+        ];
+    }
+
+    private function buildMaoOperationsData(Request $request): array
+    {
+        $weatherApi = app(WeatherApiService::class);
+        $sharedWeather = app(FarmerDashboardWeatherService::class);
+        $typhoonSafety = app(TyphoonSafetyService::class);
+        $kpis = app(DashboardKpiService::class);
+
         $recent = $this->recentOperationalData();
         $environment = $this->maoOperationsEnvironment($weatherApi, $sharedWeather, $recent);
         $safety = $this->maoOperationsSafety($typhoonSafety);
         $weatherFeedbackFilters = $this->weatherFeedbackFilters($request);
 
-        return view('dashboards.mao-operations', $this->stats()
+        return $this->stats()
             + $this->maoOperationsRecentData($kpis, $recent, $environment, $weatherFeedbackFilters)
             + $this->maoOperationsMonitoringData($request, $kpis, $recent, $environment, $safety)
             + $safety
-            + $this->maoScheduleData($request));
+            + $this->maoScheduleData($request);
     }
 
     private function maoOperationsEnvironment(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, array $recent): array
     {
-        $records = ClimateRecord::query()->orderByDesc('record_date')->take(12)->get()->sortBy('record_date')->values();
-        $liveWeather = rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast()), null, false);
-        $currentRiskLevels = rescue(fn () => app(DashboardData::class)->currentRiskRatings(), collect(), false);
-        $latestClimate = $recent['recentClimateRecords']->first();
+        $records = $this->maoOperationsClimateRecords();
+        $liveWeather = $this->maoOperationsLiveWeather($weatherApi, $sharedWeather);
 
         return [
-            'latestClimate' => $latestClimate,
+            'latestClimate' => $recent['recentClimateRecords']->first(),
             'liveWeather' => $liveWeather,
-            'weatherChartData' => data_get($liveWeather, 'daily_series') ?: $this->storedWeatherChartData($records),
-            'weatherDataSource' => $liveWeather
-                ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
-                : 'Stored climate records',
-            // One rating per barangay, so the counts add up to the barangays on the map.
-            'riskLevelCounts' => collect(['Low', 'Moderate', 'High', 'Severe'])
-                ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
-                ->all(),
-            // The season of today's month (it used to be the season of the newest stored record, e.g. "Wet" in October).
-            'currentSeason' => ClimateRecord::seasonForMonth(\App\Support\BusinessClock::month()),
-            'pendingAdvisoryCount' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PENDING_REVIEW)->count(),
+            'weatherChartData' => $this->maoOperationsWeatherChartData($liveWeather, $records),
+            'weatherDataSource' => $this->maoOperationsWeatherDataSource($liveWeather),
+            'riskLevelCounts' => $this->maoOperationsRiskLevelCounts(),
+            'currentSeason' => $this->maoOperationsCurrentSeason(),
+            'pendingAdvisoryCount' => $this->maoOperationsPendingAdvisoryCount(),
         ];
+    }
+
+    /** @return Collection<int, ClimateRecord> */
+    private function maoOperationsClimateRecords(): Collection
+    {
+        return ClimateRecord::query()->orderByDesc('record_date')->take(12)->get()->sortBy('record_date')->values();
+    }
+
+    private function maoOperationsLiveWeather(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather): ?array
+    {
+        return rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast()), null, false);
+    }
+
+    /** @param Collection<int, ClimateRecord> $records */
+    private function maoOperationsWeatherChartData(?array $liveWeather, Collection $records): array
+    {
+        return data_get($liveWeather, 'daily_series') ?: $this->storedWeatherChartData($records);
+    }
+
+    private function maoOperationsWeatherDataSource(?array $liveWeather): string
+    {
+        return $liveWeather
+            ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
+            : 'Stored climate records';
+    }
+
+    private function maoOperationsRiskLevelCounts(): array
+    {
+        $currentRiskLevels = rescue(fn () => app(DashboardData::class)->currentRiskRatings(), collect(), false);
+
+        // One rating per barangay, so the counts add up to the barangays on the map.
+        return collect(['Low', 'Moderate', 'High', 'Severe'])
+            ->mapWithKeys(fn (string $level) => [$level => $currentRiskLevels->where('risk_level', $level)->count()])
+            ->all();
+    }
+
+    private function maoOperationsCurrentSeason(): string
+    {
+        // Use today's month, not the newest stored record, which can belong to a different season.
+        return ClimateRecord::seasonForMonth(BusinessClock::month());
+    }
+
+    private function maoOperationsPendingAdvisoryCount(): int
+    {
+        return (int) Aggregates::fetch(['pending' => $this->maoOperationsCountReads()['pending']])['pending'];
     }
 
     private function maoOperationsSafety(TyphoonSafetyService $typhoonSafety): array
@@ -292,7 +382,7 @@ class DashboardController extends Controller
         $responses = $this->hasTyphoonSafetyTable() && $event
             ? TyphoonSafetyResponse::query()->with('farmer')->where('event_key', $event['key'])->latest('responded_at')->get()
             : collect();
-        $farmerCount = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count();
+        $farmerCount = Aggregates::fetch(['farmers' => $this->maoOperationsCountReads()['activeFarmers']])['farmers'];
 
         return [
             'activeTyphoonSafetyEvent' => $event,
@@ -329,7 +419,7 @@ class DashboardController extends Controller
     private function maoOperationsMonitoringData(Request $request, DashboardKpiService $kpis, array $recent, array $environment, array $safety): array
     {
         $weatherWarning = $this->weatherWarningLevel($environment['riskLevelCounts']);
-        $fieldReportsPendingCount = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
+        $fieldReportsPendingCount = Aggregates::fetch(['open' => $this->maoOperationsCountReads()['openFieldReports']])['open'];
 
         return [
             'weatherChartData' => $environment['weatherChartData'],
@@ -389,7 +479,7 @@ class DashboardController extends Controller
             'farmer' => $request->integer('schedule_farmer'),
             'status' => $this->stringQuery($request, 'schedule_status'),
         ];
-        $featureReady = Schema::hasTable('farmer_planting_schedules');
+        $featureReady = SchemaCache::hasTable('farmer_planting_schedules');
         $schedules = $featureReady
             ? FarmerPlantingSchedule::query()
                 ->with(['farmer:id,name,barangay', 'farmer.farmerProfile:id,user_id,full_name,barangay'])
@@ -457,11 +547,11 @@ class DashboardController extends Controller
     }
 
     /** IT overview: everything comes from ItDashboardService and is cached for a short time (the warm-up job refreshes it). */
-    public function admin(Request $request, ItDashboardService $it): View
+    public function admin(Request $request, ItDashboardService $it, PreparedDashboards $dashboards): View
     {
         // Expired or invalidated: the last good overview is shown and rebuilt after the response (the cold build is
         // ~80 Supabase round trips, longer than a request may run).
-        $payload = StaleCache::remember($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, fn (): array => $it->payload(), self::ADMIN_LATEST_KEY, self::IT_MAX_STALE_SECONDS);
+        $payload = $dashboards->it();
 
         $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
 
@@ -473,13 +563,13 @@ class DashboardController extends Controller
         ]);
     }
 
-    /** Refresh button: rebuilds the live sections and returns each section's HTML. */
-    public function adminLive(ItDashboardService $it): JsonResponse
+    /**
+     * The page's timed refresh reads the prepared overview; the Refresh button (?refresh=1) rebuilds every section now,
+     * once even if several people press it together. Each section's HTML is returned.
+     */
+    public function adminLive(Request $request, PreparedDashboards $dashboards): JsonResponse
     {
-        // An explicit rebuild of every section: allowed the time a full rebuild takes.
-        StaleCache::allowTime(StaleCache::COLD_BUILD_SECONDS);
-        $payload = $it->payload(fresh: true);
-        StaleCache::put($this->adminCacheKey(), self::IT_PAGE_CACHE_SECONDS, $payload, self::ADMIN_LATEST_KEY);
+        $payload = $request->boolean('refresh') ? $dashboards->refreshIt() : $dashboards->it();
 
         $slots = [];
         foreach (self::IT_LIVE_SLOTS as $slot) {
@@ -503,7 +593,7 @@ class DashboardController extends Controller
         if ($ids !== []) {
             SystemAuditLogger::record('Retry Failed Jobs', $request, ['job_class' => $class, 'jobs' => count($ids), 'retried_by' => $request->user()->name]);
             Artisan::call('queue:retry', ['id' => $ids]);
-            Cache::forget($this->adminCacheKey());
+            Cache::forget(PreparedDashboards::itKey(CacheScope::token('it-dashboard')));
         }
 
         return redirect()->route('admin.dashboard')->with('status', count($ids).' failed '.(count($ids) === 1 ? 'job was' : 'jobs were').' put back on the queue.');
@@ -568,10 +658,16 @@ class DashboardController extends Controller
     private function maoActionItems(): array
     {
         return StaleCache::remember('dashboard:mao-action-items', 20, fn (): array => [
-            'feedbackAwaitingResponse' => Schema::hasTable('advisory_feedback')
-                ? AdvisoryFeedback::query()->whereNotNull('is_helpful')->whereNull('mao_response')->count()
-                : 0,
+            'feedbackAwaitingResponse' => ($reads = $this->maoActionItemReads()) ? Aggregates::fetch($reads)['feedbackAwaitingResponse'] : 0,
         ]);
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function maoActionItemReads(): array
+    {
+        return SchemaCache::hasTable('advisory_feedback')
+            ? ['feedbackAwaitingResponse' => Aggregates::count(AdvisoryFeedback::query()->whereNotNull('is_helpful')->whereNull('mao_response'))]
+            : [];
     }
 
     /**
@@ -692,12 +788,20 @@ class DashboardController extends Controller
                 'riceProductionTotal' => isset($latest['production']) ? (float) $latest['production'] : null,
                 'riceAreaTotal' => isset($latest['area']) ? (float) $latest['area'] : null,
                 'avgYield' => isset($latest['yield']) ? (float) $latest['yield'] : null,
-                'profileCount' => FarmerProfile::count(),
-                'reportCount' => Report::query()->realGenerated()->count(),
-                'publishedAdvisoryCount' => PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PUBLISHED)->count(),
-                'communityPostCount' => FeedPost::query()->whereNull('archived_at')->count(),
+                ...Aggregates::fetch($this->maoAggregateReads()),
             ];
         });
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function maoAggregateReads(): array
+    {
+        return [
+            'profileCount' => Aggregates::count(FarmerProfile::query()),
+            'reportCount' => Aggregates::count(Report::query()->realGenerated()),
+            'publishedAdvisoryCount' => Aggregates::count(PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PUBLISHED)),
+            'communityPostCount' => Aggregates::count(FeedPost::query()->whereNull('archived_at')),
+        ];
     }
 
     private function adminAggregates(): array
@@ -824,7 +928,7 @@ class DashboardController extends Controller
     private function weatherAnomalySummary(?array $liveWeather, ?string $currentSeason): array
     {
         $seasonalAvgRainfall = $currentSeason
-            ? ClimateRecord::query()->where('season', $currentSeason)->avg('rainfall')
+            ? Aggregates::fetch($this->seasonalRainfallReads($currentSeason))['rainfall']
             : null;
         $seasonalAvgRainfall = $seasonalAvgRainfall !== null ? (float) $seasonalAvgRainfall : null;
 
@@ -869,7 +973,7 @@ class DashboardController extends Controller
         );
         $rainfed = $latestPerBarangay->diff($irrigated);
 
-        $estimatedYield = HeatmapArea::query()->computed()->whereNotNull('predicted_yield')->avg('predicted_yield');
+        $estimatedYield = Aggregates::fetch($this->estimatedYieldReads())['yield'];
         $latestArea = (float) $latestPerBarangay->sum('area_hectares');
         $actualYield = $latestArea > 0 ? (float) $latestPerBarangay->sum('total_production') / $latestArea : null;
 
@@ -897,9 +1001,8 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('barangay');
 
-        return HeatmapArea::query()
-            ->orderBy('barangay')
-            ->get()
+        // The same rows (same query) the risk figures of this build already loaded.
+        return app(DashboardData::class)->heatmapAreas()
             ->unique('barangay')
             ->map(function (HeatmapArea $area) use ($production) {
                 $row = $production->get($area->barangay);
@@ -953,21 +1056,37 @@ class DashboardController extends Controller
 
     private function stats(): array
     {
-        return StaleCache::remember('dashboard:shared-stats', 45, function (): array {
-            return [
-                'totalFarmers' => User::query()->where('role', User::ROLE_FARMER)->count(),
-                'totalClimateRecords' => ClimateRecord::count(),
-                'totalRiceProductions' => RiceProduction::count(),
-                'totalAdvisories' => PlantingAdvisory::count(),
-                'totalCommunityPosts' => FeedPost::query()->whereNull('archived_at')->count(),
-                'totalNotifications' => UserNotification::count(),
-            ];
-        });
+        return StaleCache::remember('dashboard:shared-stats', 45, fn (): array => Aggregates::fetch($this->statsReads()));
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function statsReads(): array
+    {
+        return [
+            'totalFarmers' => Aggregates::count(User::query()->where('role', User::ROLE_FARMER)),
+            'totalClimateRecords' => Aggregates::count(ClimateRecord::query()),
+            'totalRiceProductions' => Aggregates::count(RiceProduction::query()),
+            'totalAdvisories' => Aggregates::count(PlantingAdvisory::query()),
+            'totalCommunityPosts' => Aggregates::count(FeedPost::query()->whereNull('archived_at')),
+            'totalNotifications' => Aggregates::count(UserNotification::query()),
+        ];
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function seasonalRainfallReads(?string $season): array
+    {
+        return $season ? ['rainfall' => Aggregates::avg(ClimateRecord::query()->where('season', $season), 'rainfall')] : [];
+    }
+
+    /** @return array<string, array{0: \Illuminate\Database\Query\Builder, 1: string}> */
+    private function estimatedYieldReads(): array
+    {
+        return ['yield' => Aggregates::avg(HeatmapArea::query()->computed()->whereNotNull('predicted_yield'), 'predicted_yield')];
     }
 
     private function hasTyphoonSafetyTable(): bool
     {
-        return Schema::hasTable('typhoon_safety_responses');
+        return SchemaCache::hasTable('typhoon_safety_responses');
     }
 
     /**

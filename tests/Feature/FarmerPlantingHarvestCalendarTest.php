@@ -209,6 +209,7 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $farmer = User::factory()->farmer()->create();
         Schema::drop('farmer_planting_schedules');
+        \App\Support\SchemaCache::forget(); // a migration run does this; the test drops the table by hand
         $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
 
         $this->actingAs($mao)

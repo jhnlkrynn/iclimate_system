@@ -2,15 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\ClimateRecord;
-use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
-use App\Models\FeedPost;
-use App\Models\Notification;
-use App\Models\PlantingAdvisory;
-use App\Models\Report;
-use App\Models\RiceProduction;
-use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
@@ -76,6 +68,22 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerDataCacheInvalidation();
 
+        // A migration may add or drop a table or column: the cached schema lists (SchemaCache) are read again.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Database\Events\MigrationsEnded::class, static fn () => \App\Support\SchemaCache::forget());
+
+        // A write during a dashboard build: the reads that build remembered (BuildMemo) are made again. The cache and
+        // session tables (CACHE_STORE / SESSION_DRIVER=database) hold no figures.
+        \Illuminate\Support\Facades\DB::listen(static function (\Illuminate\Database\Events\QueryExecuted $query): void {
+            if (! \App\Support\BuildMemo::active() || preg_match('/^\s*(select|with)\b/i', $query->sql)) {
+                return;
+            }
+            $kept = ['cache', 'cache_locks', 'sessions', config('cache.stores.database.table'), config('cache.stores.database.lock_table'), config('session.table')];
+            if (! preg_match('/^\s*(?:insert\s+into|update|delete\s+from)\s+"?([\w.]+)"?/i', $query->sql, $table)
+                || ! in_array(strtolower((string) preg_replace('/^.*\./', '', $table[1])), array_filter($kept), true)) {
+                \App\Support\BuildMemo::flush();
+            }
+        });
+
         $this->createMysqlDatabaseForMigrations();
     }
 
@@ -108,65 +116,12 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerDataCacheInvalidation(): void
     {
-        $flush = static function (): void {
-            // Everything cached with PageCache::shared() (dashboards, lists, reference data).
-            \App\Support\PageCache::flushShared();
-
-            // The MAO / IT dashboards key their cached payload on this version, so a data change retires them at once.
-            app(\App\Support\DashboardData::class)->forget();
-            \App\Support\DashboardData::bump();
-
-            foreach ([
-                'dashboard:shared-stats',
-                'dashboard:mao-aggregates',
-                'dashboard:admin-aggregates',
-                'dashboard:farmer-organizations',
-                'dashboard:recent-operational-data',
-                'dashboard:high-risk-areas',
-                'dashboard:mao-action-items',
-                'reports:filter-barangays',
-                'reports:source-stats',
-            ] as $key) {
-                Cache::forget($key);
-            }
-        };
-
-        foreach ([
-            User::class,
-            FarmerProfile::class,
-            FarmerOrganization::class,
-            ClimateRecord::class,
-            RiceProduction::class,
-            PlantingAdvisory::class,
-            FeedPost::class,
-            Notification::class,
-            Report::class,
-            \App\Models\HeatmapArea::class,
-            \App\Models\FieldReport::class,
-            \App\Models\FarmerPlantingSchedule::class,
-            \App\Models\WeatherForecastFeedback::class,
-            \App\Models\AdvisoryFeedback::class,
-            \App\Models\MonthlyWeatherPrediction::class,
-            \App\Models\ExternalWeatherData::class,
-            \App\Models\MlModel::class,
-            \App\Models\FeedComment::class,
-            \App\Models\FeedReaction::class,
-            \App\Models\FeedMedia::class,
-            \App\Models\TyphoonSafetyResponse::class,
-            \App\Models\AnalyticsRun::class,
-        ] as $model) {
-            // Eloquent fires "saved" even when nothing changed (e.g. the risk-map refresh re-saves 19 identical rows);
-            // only a real change should throw the cached pages away.
-            $model::saved(static function ($record) use ($flush): void {
-                if ($record->wasRecentlyCreated || $record->wasChanged()) {
-                    $flush();
-                }
-            });
-            $model::deleted($flush);
-        }
+        // A real data change retires only the caches that read that data (the map is in CacheScope); rows that belong
+        // to one person also retire that person's private pages.
+        \App\Support\CacheScope::listen();
 
         // A farmer's expected yield depends on their farm area, farm type and planting schedule, so it must not outlive an edit
-        // to any of them. Both the payload cache and the 6-hour prediction cache are dropped for that one farmer.
+        // to any of them. The 6-hour prediction cache is dropped for that one farmer.
         foreach ([FarmerProfile::class, \App\Models\FarmerPlantingSchedule::class] as $model) {
             $forgetFarmer = static function ($record): void {
                 if ($record->user_id) {
@@ -181,18 +136,6 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
             $model::deleted($forgetFarmer);
-        }
-
-        // Private per-person data (notifications, their advisory feedback, their profile): only that person's cache is cleared.
-        $flushOwner = static function ($model): void {
-            if ($model->user_id ?? null) {
-                \App\Support\PageCache::flushUser((int) $model->user_id);
-            }
-        };
-
-        foreach ([Notification::class, \App\Models\AdvisoryFeedback::class, FarmerProfile::class, \App\Models\FarmBoundary::class] as $model) {
-            $model::saved($flushOwner);
-            $model::deleted($flushOwner);
         }
     }
 

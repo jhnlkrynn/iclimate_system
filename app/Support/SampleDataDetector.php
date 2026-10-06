@@ -72,8 +72,9 @@ class SampleDataDetector
             return $this->batches;
         }
 
-        return $this->batches = StaleCache::remember(
-            'sample-data:batches:v'.DashboardData::version(),
+        return $this->batches = StaleCache::scoped(
+            'sample-data:batches',
+            fn (string $token): string => 'sample-data:batches:'.$token,
             600,
             fn (): array => $this->scanBatches(),
         );
@@ -188,7 +189,7 @@ class SampleDataDetector
             return [];
         }
 
-        return StaleCache::remember('sample-data:excluded:'.$table.':v'.DashboardData::version(), 600, function () use ($table): array {
+        return StaleCache::scoped('sample-data:'.$table, fn (string $token): string => 'sample-data:excluded:'.$table.':'.$token, 600, function () use ($table): array {
             $ids = $this->sampleIds($table);
 
             return match ($table) {

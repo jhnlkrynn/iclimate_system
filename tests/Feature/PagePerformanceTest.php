@@ -290,6 +290,8 @@ class PagePerformanceTest extends TestCase
         $mao = $this->user(User::ROLE_MAO);
         $it = $this->user(User::ROLE_IT_EXPERT);
 
+        // Both scheduled warm-ups: the dashboards (iclimate:warm-dashboards) and System Health (iclimate:warm-dashboard-cache).
+        $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
         $this->artisan('iclimate:warm-dashboard-cache')->assertExitCode(0);
 
         foreach ([[$mao, '/mao/dashboard'], [$it, '/admin/dashboard'], [$it, '/system-health']] as [$user, $page]) {
@@ -597,20 +599,37 @@ class PagePerformanceTest extends TestCase
 
     // ------------------------------------------------------------ infrastructure
 
-    public function test_schema_checks_are_remembered_only_when_the_table_exists(): void
+    public function test_schema_checks_share_one_catalog_query_and_a_migration_reads_it_again(): void
     {
-        $exists = $this->countQueries(function (): void {
+        $first = $this->countQueries(fn () => SchemaCache::hasTable('users'));
+        $tables = $this->countQueries(function (): void {
             SchemaCache::hasTable('users');
-            SchemaCache::hasTable('users');
-            SchemaCache::hasTable('users');
+            SchemaCache::hasTable('planting_advisories');
+            SchemaCache::hasTable('no_such_table');
+            SchemaCache::hasTable('no_such_table');
         });
-        $missing = $this->countQueries(function (): void {
-            SchemaCache::hasTable('no_such_table');
-            SchemaCache::hasTable('no_such_table');
+        $firstColumn = $this->countQueries(fn () => SchemaCache::hasColumn('users', 'email'));
+        $columns = $this->countQueries(function (): void {
+            SchemaCache::hasColumn('users', 'email');
+            SchemaCache::hasColumn('users', 'no_such_column');
+            SchemaCache::hasColumn('no_such_table', 'id');
         });
 
-        $this->assertSame(1, $exists, 'an existing table is checked once');
-        $this->assertSame(2, $missing, 'a missing table is checked every time, so migrating it takes effect at once');
+        $this->assertLessThanOrEqual(2, $first, 'one catalog read (SQLite adds a dbstat check; PostgreSQL is one query)');
+        $this->assertSame(0, $tables, 'that list answers every other table, a missing one included');
+        $this->assertLessThanOrEqual(2, $firstColumn, 'one column read per table (SQLite adds one more)');
+        $this->assertSame(0, $columns, 'that list answers its other columns; a missing table needs no query');
+        $this->assertTrue(SchemaCache::hasTable('USERS'));
+        $this->assertFalse(SchemaCache::hasTable('no_such_table'));
+        $this->assertTrue(SchemaCache::hasColumn('users', 'email'));
+        $this->assertFalse(SchemaCache::hasColumn('users', 'no_such_column'));
+
+        // A "no" is cached safely because every migration run starts a new version of the lists.
+        \Illuminate\Support\Facades\Schema::create('no_such_table', fn ($table) => $table->id());
+        $this->assertFalse(SchemaCache::hasTable('no_such_table'), 'until the next migration run');
+        event(new \Illuminate\Database\Events\MigrationsEnded('up'));
+        $this->assertTrue(SchemaCache::hasTable('no_such_table'), 'a migration run reads the catalog again');
+        $this->assertSame(0, $this->countQueries(fn () => SchemaCache::hasTable('no_such_table')));
     }
 
     public function test_persistent_connections_are_opt_in_and_the_schema_is_sent_at_connect_time(): void
@@ -622,6 +641,38 @@ class PagePerformanceTest extends TestCase
 
         $this->assertTrue($config['startup_search_path']);
         $this->assertInstanceOf(StartupSearchPathPostgresConnector::class, app('db.connector.pgsql'));
+    }
+
+    public function test_postgres_sends_each_query_in_one_round_trip_unless_switched_off(): void
+    {
+        if (! extension_loaded('pdo_pgsql')) {
+            $this->markTestSkipped('pdo_pgsql is not installed.');
+        }
+
+        $disablePrepares = class_exists(\Pdo\Pgsql::class) ? \Pdo\Pgsql::ATTR_DISABLE_PREPARES : \PDO::PGSQL_ATTR_DISABLE_PREPARES;
+        $options = fn (): array => (require config_path('database.php'))['connections']['pgsql']['options'];
+
+        // Default: values go as real parameters in one round trip (not emulated prepares, which inline them).
+        $default = config('database.connections.pgsql.options');
+        $this->assertTrue($default[$disablePrepares] ?? false, 'prepares are disabled by default');
+        $this->assertArrayNotHasKey(\PDO::ATTR_EMULATE_PREPARES, $default, 'values are never pasted into the SQL text');
+        $this->assertArrayNotHasKey(\PDO::ATTR_PERSISTENT, $default, 'persistent connections stay opt-in');
+
+        $_SERVER['DB_PGSQL_DISABLE_PREPARES'] = 'false';
+        try {
+            $off = $options();
+        } finally {
+            unset($_SERVER['DB_PGSQL_DISABLE_PREPARES']);
+        }
+        $this->assertSame([], $off, 'switched off: Laravel\'s own prepare + execute is used');
+
+        $_SERVER['DB_PERSISTENT'] = 'true';
+        try {
+            $both = $options();
+        } finally {
+            unset($_SERVER['DB_PERSISTENT']);
+        }
+        $this->assertSame([$disablePrepares => true, \PDO::ATTR_PERSISTENT => true], $both, 'one options list holds both settings');
     }
 
     public function test_the_connector_sends_the_schema_as_a_startup_option_only_when_it_is_safe(): void

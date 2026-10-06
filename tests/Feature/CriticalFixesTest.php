@@ -64,11 +64,27 @@ class CriticalFixesTest extends TestCase
         config(['queue.default' => 'database']);
         $run = AnalyticsRun::query()->create(['type' => 'weather_prediction', 'status' => AnalyticsRun::STATUS_PENDING, 'input' => []]);
         RunPythonAnalytics::dispatch($run->id)->onConnection('database')->onQueue('analytics');
+
+        // New dispatches no longer pile up: a refresh or a month's forecast waits in the queue once (ShouldBeUnique).
         foreach (range(1, 3) as $i) {
             RefreshBarangayRiskMap::dispatch()->onConnection('database')->onQueue('analytics');
-            GenerateMonthlyWeatherForecast::dispatch('2026-11-01')->onConnection('database')->onQueue('analytics');
         }
-        GenerateMonthlyWeatherForecast::dispatch('2026-12-01')->onConnection('database')->onQueue('analytics');
+        $this->assertSame(2, DB::table('jobs')->count());
+
+        // Copies queued before that (the shared database held 47 risk refreshes) are what the clean-up removes. They are
+        // made here the way the old code made them: the unique lock is let go after each dispatch.
+        $legacy = function (object $job): void {
+            dispatch($job)->onConnection('database')->onQueue('analytics');
+            (new \Illuminate\Bus\UniqueLock(app(\Illuminate\Contracts\Cache\Repository::class)))->release($job);
+        };
+        (new \Illuminate\Bus\UniqueLock(app(\Illuminate\Contracts\Cache\Repository::class)))->release(new RefreshBarangayRiskMap);
+        foreach (range(1, 2) as $i) {
+            $legacy(new RefreshBarangayRiskMap);
+        }
+        foreach (range(1, 3) as $i) {
+            $legacy(new GenerateMonthlyWeatherForecast('2026-11-01'));
+        }
+        $legacy(new GenerateMonthlyWeatherForecast('2026-12-01'));
         $this->assertSame(8, DB::table('jobs')->count());
 
         $this->travel(10)->minutes();

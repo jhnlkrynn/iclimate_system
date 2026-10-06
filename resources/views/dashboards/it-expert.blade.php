@@ -245,12 +245,13 @@
 
             // ---- Refresh: each section dims and shimmers (the shared .mfd-slot skeleton) while its new HTML is fetched
             const pills = @json($pills);
-            async function refresh() {
+            // force: the Refresh button (?refresh=1 rebuilds every section); the 5-minute timer reads the prepared overview.
+            async function refresh(force = false) {
                 const btn = $('[data-it-refresh]'); const label = $('[data-it-refresh-text]');
                 const slots = [...root.querySelectorAll('[data-slot]')];
                 btn.disabled = true; label.textContent = 'Refreshing...'; slots.forEach((s) => s.classList.add('is-loading'));
                 try {
-                    const res = await fetch(root.dataset.liveUrl, { headers: { Accept: 'application/json' } });
+                    const res = await fetch(root.dataset.liveUrl + (force === true ? '?refresh=1' : ''), { headers: { Accept: 'application/json' } });
                     if (!res.ok) throw new Error('bad status');
                     const data = await res.json();
                     const filters = $('[data-recent-filters]');
@@ -271,7 +272,7 @@
                     btn.disabled = false; label.textContent = 'Refresh'; slots.forEach((s) => s.classList.remove('is-loading'));
                 }
             }
-            $('[data-it-refresh]').addEventListener('click', refresh);
+            $('[data-it-refresh]').addEventListener('click', () => refresh(true));
             // Health changes slowly: refresh every 5 minutes, and only while the tab is visible.
             setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 300000);
 

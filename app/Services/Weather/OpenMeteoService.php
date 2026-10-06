@@ -6,6 +6,7 @@ use App\Models\ExternalWeatherData;
 use App\Support\CoordinateNormalizer;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -178,8 +179,8 @@ class OpenMeteoService
             ->retry(2, 300)
             ->acceptJson()
             ->get($baseUrl.'/forecast', [
-                'latitude' => config('services.open_meteo.latitude'),
-                'longitude' => config('services.open_meteo.longitude'),
+                'latitude' => CoordinateNormalizer::format((float) config('services.open_meteo.latitude')),
+                'longitude' => CoordinateNormalizer::format((float) config('services.open_meteo.longitude')),
                 'current' => implode(',', self::CURRENT),
                 'hourly' => implode(',', self::HOURLY),
                 'daily' => implode(',', self::DAILY),
@@ -206,52 +207,79 @@ class OpenMeteoService
         $hourly = $payload['hourly'] ?? [];
         $fetchedAt = now();
         $records = collect();
+        $dates = array_values(array_map('strval', $daily['time'] ?? []));
+        $existing = ExternalWeatherData::query()
+            ->where('source', 'Open-Meteo')
+            ->whereIn('forecast_date', $dates)
+            ->whereNull('forecast_time')
+            ->whereNull('barangay_id')
+            ->get()
+            ->keyBy(fn (ExternalWeatherData $record): string => $record->forecast_date?->toDateString() ?? '');
+        $rows = [];
+        $meaningfulChange = false;
+        $now = now();
 
         foreach ($daily['time'] as $index => $date) {
             $hourlyForDate = $this->hourlyForDate($hourly, (string) $date);
+            $raw = [
+                'daily' => collect($daily)->map(fn ($values) => is_array($values) ? ($values[$index] ?? null) : null)->all(),
+                'current' => $payload['current'] ?? [], 'hourly' => $hourlyForDate,
+                'source_payload_meta' => ['source_name' => 'Open-Meteo Forecast API', 'source_url' => 'https://open-meteo.com/',
+                    'latitude' => $payload['latitude'] ?? null, 'longitude' => $payload['longitude'] ?? null, 'timezone' => $payload['timezone'] ?? null],
+            ];
+            $attributes = [
+                'source' => 'Open-Meteo', 'location_name' => config('services.open_meteo.location_name', 'Lian, Batangas'),
+                'barangay_id' => null, 'latitude' => (float) config('services.open_meteo.latitude', \App\Support\LianLocation::LATITUDE),
+                'longitude' => (float) config('services.open_meteo.longitude', \App\Support\LianLocation::LONGITUDE), 'forecast_date' => $date, 'forecast_time' => null,
+                'weather_code' => $daily['weather_code'][$index] ?? null, 'temperature' => $this->average($hourlyForDate['temperature_2m'] ?? []),
+                'temperature_max' => $daily['temperature_2m_max'][$index] ?? null, 'temperature_min' => $daily['temperature_2m_min'][$index] ?? null,
+                'humidity' => $this->average($hourlyForDate['relative_humidity_2m'] ?? []), 'rainfall_mm' => $daily['precipitation_sum'][$index] ?? $daily['rain_sum'][$index] ?? null,
+                'precipitation_probability' => $daily['precipitation_probability_max'][$index] ?? null, 'wind_speed' => $daily['wind_speed_10m_max'][$index] ?? null,
+                'soil_temperature' => $this->average($hourlyForDate['soil_temperature_0cm'] ?? []),
+                'soil_moisture' => $this->average(array_merge($hourlyForDate['soil_moisture_0_to_1cm'] ?? [], $hourlyForDate['soil_moisture_1_to_3cm'] ?? [])),
+                'evapotranspiration_mm' => $daily['et0_fao_evapotranspiration'][$index] ?? null, 'raw_response' => $raw, 'fetched_at' => $fetchedAt,
+            ];
+            $record = $existing->get((string) $date);
+            if ($record) {
+                $record->fill($attributes);
+                // Bulk SQL bypasses Eloquent's saved event, so materialize the dirty set first and let the
+                // existing numeric/JSON equivalence rules decide whether this is a real weather change.
+                $record->syncChanges();
+                $meaningfulChange = $meaningfulChange || \App\Support\CacheScope::isMeaningfulChange($record);
+                $attributes['id'] = $record->getKey();
+                $attributes['created_at'] = $record->getRawOriginal('created_at') ?: $now;
+            } else {
+                $meaningfulChange = true;
+                $attributes['created_at'] = $now;
+            }
+            $attributes['updated_at'] = $now;
+            $rows[] = [...$attributes, 'raw_response' => json_encode($raw, JSON_THROW_ON_ERROR)];
+            $records->push($record ?: new ExternalWeatherData($attributes));
+        }
 
-            $record = ExternalWeatherData::query()->updateOrCreate(
-                [
-                    'source' => 'Open-Meteo',
-                    'forecast_date' => $date,
-                    'forecast_time' => null,
-                    'barangay_id' => null,
-                ],
-                [
-                    'location_name' => config('services.open_meteo.location_name', 'Lian, Batangas'),
-                    'latitude' => (float) config('services.open_meteo.latitude', \App\Support\LianLocation::LATITUDE),
-                    'longitude' => (float) config('services.open_meteo.longitude', \App\Support\LianLocation::LONGITUDE),
-                    'weather_code' => $daily['weather_code'][$index] ?? null,
-                    'temperature' => $this->average($hourlyForDate['temperature_2m'] ?? []),
-                    'temperature_max' => $daily['temperature_2m_max'][$index] ?? null,
-                    'temperature_min' => $daily['temperature_2m_min'][$index] ?? null,
-                    'humidity' => $this->average($hourlyForDate['relative_humidity_2m'] ?? []),
-                    'rainfall_mm' => $daily['precipitation_sum'][$index] ?? $daily['rain_sum'][$index] ?? null,
-                    'precipitation_probability' => $daily['precipitation_probability_max'][$index] ?? null,
-                    'wind_speed' => $daily['wind_speed_10m_max'][$index] ?? null,
-                    'soil_temperature' => $this->average($hourlyForDate['soil_temperature_0cm'] ?? []),
-                    'soil_moisture' => $this->average(array_merge(
-                        $hourlyForDate['soil_moisture_0_to_1cm'] ?? [],
-                        $hourlyForDate['soil_moisture_1_to_3cm'] ?? [],
-                    )),
-                    'evapotranspiration_mm' => $daily['et0_fao_evapotranspiration'][$index] ?? null,
-                    'raw_response' => [
-                        'daily' => collect($daily)->map(fn ($values) => is_array($values) ? ($values[$index] ?? null) : null)->all(),
-                        'current' => $payload['current'] ?? [],
-                        'hourly' => $hourlyForDate,
-                        'source_payload_meta' => [
-                            'source_name' => 'Open-Meteo Forecast API',
-                            'source_url' => 'https://open-meteo.com/',
-                            'latitude' => $payload['latitude'] ?? null,
-                            'longitude' => $payload['longitude'] ?? null,
-                            'timezone' => $payload['timezone'] ?? null,
-                        ],
-                    ],
-                    'fetched_at' => $fetchedAt,
-                ],
-            );
-
-            $records->push($record);
+        try {
+            DB::transaction(function () use ($rows): void {
+                $updates = array_values(array_filter($rows, fn (array $row): bool => isset($row['id'])));
+                $inserts = array_values(array_filter($rows, fn (array $row): bool => ! isset($row['id'])));
+                $columns = ['source', 'location_name', 'barangay_id', 'latitude', 'longitude', 'forecast_date', 'forecast_time', 'weather_code', 'temperature', 'temperature_max', 'temperature_min', 'humidity', 'rainfall_mm', 'precipitation_probability', 'wind_speed', 'soil_temperature', 'soil_moisture', 'evapotranspiration_mm', 'raw_response', 'fetched_at', 'updated_at'];
+                if ($updates !== []) {
+                    DB::table('external_weather_data')->upsert($updates, ['id'], $columns);
+                }
+                if ($inserts !== []) {
+                    DB::table('external_weather_data')->insert($inserts);
+                }
+            });
+            if ($meaningfulChange) {
+                \App\Support\CacheScope::changed(ExternalWeatherData::class);
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Open-Meteo forecast bulk persistence failed; retrying rows individually.', ['message' => $exception->getMessage()]);
+            foreach ($rows as $row) {
+                $key = ['source' => $row['source'], 'forecast_date' => $row['forecast_date'], 'forecast_time' => null, 'barangay_id' => null];
+                $values = $row;
+                unset($values['id'], $values['created_at'], $values['updated_at']);
+                ExternalWeatherData::query()->updateOrCreate($key, $values);
+            }
         }
 
         return $records;

@@ -38,7 +38,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class DashboardKpiService
 {
-    // Long TTL is safe: DashboardData::bump() invalidates on any data write.
+    // Long TTL is safe: a change to the data a value reads retires it at once (CacheScope).
     private const CACHE_SECONDS = 300;
 
     public function __construct(private readonly DashboardData $data) {}
@@ -140,7 +140,8 @@ class DashboardKpiService
     public function farmer(User $user, ?string $barangay, ?array $barangayRisk): array
     {
         $cached = Cache::remember(
-            'dashboard:kpi:farmer:v'.DashboardData::version().':'.$user->id.':'.md5((string) $barangay),
+            // Shared data it reads (CacheScope) plus the farmer's own rows (plans, unread notifications, feedback).
+            'dashboard:kpi:farmer:'.\App\Support\CacheScope::token('farmer-overview').':u'.\App\Support\PageCache::userVersion((int) $user->id).':'.$user->id.':'.md5((string) $barangay),
             now()->addSeconds(self::CACHE_SECONDS),
             fn (): array => $this->farmerFigures($user, $barangay)
         );
@@ -271,7 +272,7 @@ class DashboardKpiService
 
     public function mao(): array
     {
-        return \App\Support\StaleCache::remember('dashboard:kpi:mao:v'.DashboardData::version(), self::CACHE_SECONDS, function (): array {
+        return \App\Support\StaleCache::scoped('mao-dashboard', fn (string $token): string => 'dashboard:kpi:mao:'.$token, self::CACHE_SECONDS, function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
@@ -429,7 +430,7 @@ class DashboardKpiService
 
     public function itExpert(): array
     {
-        return \App\Support\StaleCache::remember('dashboard:kpi:it:v'.DashboardData::version(), self::CACHE_SECONDS, function (): array {
+        return \App\Support\StaleCache::scoped('it-dashboard', fn (string $token): string => 'dashboard:kpi:it:'.$token, self::CACHE_SECONDS, function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
