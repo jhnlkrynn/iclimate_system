@@ -38,6 +38,98 @@ class CommunicationPlatformTest extends TestCase
         Storage::disk('public')->assertExists($post->media->first()->path);
     }
 
+    public function test_uploaded_image_uses_persistent_public_path_and_renders_for_staff_and_farmer(): void
+    {
+        Storage::fake('public');
+        $mao = User::factory()->maoPersonnel()->create();
+        $farmer = User::factory()->farmer()->create();
+        $image = UploadedFile::fake()->image('field.png', 80, 60);
+
+        $this->actingAs($mao)->post(route('community-feed.store'), [
+            'title' => 'Field image update',
+            'body' => 'The rice field is ready.',
+            'category' => 'Announcement',
+            'visibility' => 'All Farmers',
+            'attachments' => [$image],
+        ])->assertRedirect();
+
+        $post = FeedPost::query()->with('media')->firstOrFail();
+        $media = $post->media->sole();
+        $this->assertSame('image', $media->media_type);
+        $this->assertStringStartsWith('community-feed/', $media->path);
+        $this->assertStringNotContainsString(base_path(), $media->path);
+        Storage::disk('public')->assertExists($media->path);
+
+        $url = $media->url();
+        $this->assertNotNull($url);
+        $this->actingAs($mao)->get(route('community-feed.index'))->assertOk()->assertSee($url, false);
+        $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee($url, false);
+    }
+
+    public function test_edit_without_upload_keeps_image_and_replacement_removes_old_file(): void
+    {
+        Storage::fake('public');
+        $mao = User::factory()->maoPersonnel()->create();
+
+        $this->actingAs($mao)->post(route('community-feed.store'), [
+            'title' => 'Original image', 'body' => 'Original body', 'category' => 'Update', 'visibility' => 'All Farmers',
+            'attachments' => [UploadedFile::fake()->image('old.jpg')],
+        ])->assertRedirect();
+
+        $post = FeedPost::query()->with('media')->firstOrFail();
+        $oldPath = $post->media->sole()->path;
+        Storage::disk('public')->assertExists($oldPath);
+
+        $this->actingAs($mao)->patch(route('community-feed.update', $post), [
+            'title' => 'Edited text', 'body' => 'Edited body', 'category' => 'Update', 'visibility' => 'All Farmers',
+        ])->assertRedirect();
+        Storage::disk('public')->assertExists($oldPath);
+
+        $this->actingAs($mao)->patch(route('community-feed.update', $post), [
+            'title' => 'Replaced image', 'body' => 'Edited body', 'category' => 'Update', 'visibility' => 'All Farmers',
+            'attachments' => [UploadedFile::fake()->image('new.webp')],
+        ])->assertRedirect();
+
+        $newPath = $post->fresh()->media->sole()->path;
+        $this->assertNotSame($oldPath, $newPath);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($newPath);
+
+        $this->actingAs($mao)->delete(route('community-feed.destroy', $post))->assertRedirect();
+        Storage::disk('public')->assertMissing($newPath);
+    }
+
+    public function test_missing_legacy_attachment_has_no_broken_image(): void
+    {
+        Storage::fake('public');
+        $mao = User::factory()->maoPersonnel()->create();
+        $farmer = User::factory()->farmer()->create();
+        $post = FeedPost::query()->create([
+            'user_id' => $mao->id, 'title' => 'Legacy image', 'body' => 'Old post', 'category' => 'Announcement', 'visibility' => 'All Farmers',
+        ]);
+        $post->media()->create([
+            'path' => 'community-feed/deleted-image.jpg', 'original_name' => 'deleted-image.jpg', 'mime_type' => 'image/jpeg', 'media_type' => 'image', 'size' => 10,
+        ]);
+
+        $staffHtml = $this->actingAs($mao)->get(route('community-feed.index'))->assertOk()->assertSee('Attachment unavailable')->getContent();
+        $farmerHtml = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee('Attachment unavailable')->getContent();
+        $this->assertStringNotContainsString('community-feed/deleted-image.jpg', $staffHtml);
+        $this->assertStringNotContainsString('community-feed/deleted-image.jpg', $farmerHtml);
+    }
+
+    public function test_invalid_feed_attachment_is_rejected(): void
+    {
+        Storage::fake('public');
+        $mao = User::factory()->maoPersonnel()->create();
+
+        $this->actingAs($mao)->from(route('community-feed.index'))->post(route('community-feed.store'), [
+            'title' => 'Invalid attachment', 'body' => 'Should not publish.', 'category' => 'Update', 'visibility' => 'All Farmers',
+            'attachments' => [UploadedFile::fake()->create('payload.txt', 10, 'text/plain')],
+        ])->assertRedirect(route('community-feed.index'))->assertSessionHasErrors('attachments.0');
+
+        $this->assertDatabaseMissing('feed_posts', ['title' => 'Invalid attachment']);
+    }
+
     /** Farmers read MAO posts as read-only Announcements (2026-10); reactions and comments stay with MAO and IT. */
     public function test_farmers_cannot_react_or_comment_but_staff_still_can(): void
     {

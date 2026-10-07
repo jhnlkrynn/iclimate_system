@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeedPost;
+use App\Models\FeedMedia;
 use App\Models\FeedReaction;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -66,9 +67,7 @@ class CommunityFeedController extends Controller
             'show_on_calendar' => $request->boolean('show_on_calendar') && ! empty($validated['event_date']),
         ]);
 
-        foreach ($request->file('attachments', []) as $file) {
-            $this->storeAttachment($post, $file);
-        }
+        $this->storeAttachments($post, $request->file('attachments', []));
 
         return redirect()->route('community-feed.index')->with('success', 'Post published to the community feed.');
     }
@@ -88,8 +87,10 @@ class CommunityFeedController extends Controller
             'show_on_calendar' => $request->boolean('show_on_calendar') && ! empty($validated['event_date']),
         ]);
 
-        foreach ($request->file('attachments', []) as $file) {
-            $this->storeAttachment($post, $file);
+        $attachments = array_values(array_filter($request->file('attachments', [])));
+        if ($attachments !== []) {
+            // A new upload is an intentional replacement. With no new upload, existing media is untouched.
+            $this->storeAttachments($post, $attachments, replaceExisting: true);
         }
 
         return back()->with('success', 'Post updated.');
@@ -141,7 +142,7 @@ class CommunityFeedController extends Controller
         abort_unless($this->canManagePost($request->user(), $post), 403);
 
         foreach ($post->media as $media) {
-            Storage::disk('public')->delete($media->path);
+            $this->deleteAttachment($media);
         }
 
         $post->delete();
@@ -174,16 +175,52 @@ class CommunityFeedController extends Controller
         ]);
     }
 
-    private function storeAttachment(FeedPost $post, $file): void
+    private function storeAttachments(FeedPost $post, array $files, bool $replaceExisting = false): void
     {
-        $path = $file->store('community-feed', 'public');
-        $mime = $file->getMimeType() ?: 'application/octet-stream';
-        $post->media()->create([
-            'path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $mime,
-            'media_type' => str_starts_with($mime, 'image/') ? 'image' : (str_starts_with($mime, 'video/') ? 'video' : 'file'),
-            'size' => $file->getSize() ?: 0,
-        ]);
+        $stored = [];
+        $storedPaths = [];
+
+        try {
+            foreach ($files as $file) {
+                $path = $file->store('community-feed', 'public');
+                $storedPaths[] = $path;
+                $mime = $file->getMimeType() ?: 'application/octet-stream';
+                $stored[] = $post->media()->create([
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $mime,
+                    'media_type' => str_starts_with($mime, 'image/') ? 'image' : (str_starts_with($mime, 'video/') ? 'video' : 'file'),
+                    'size' => $file->getSize() ?: 0,
+                ]);
+            }
+        } catch (\Throwable $exception) {
+            foreach ($storedPaths as $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            foreach ($stored as $media) {
+                $media->delete();
+            }
+
+            throw $exception;
+        }
+
+        if ($replaceExisting) {
+            $post->media()->whereNotIn('id', collect($stored)->pluck('id'))->get()->each(fn (FeedMedia $media) => $this->deleteAttachment($media));
+        }
+    }
+
+    private function deleteAttachment(FeedMedia $media): void
+    {
+        $isReferencedElsewhere = FeedMedia::query()
+            ->where('path', $media->path)
+            ->whereKeyNot($media->getKey())
+            ->exists();
+
+        if (! $isReferencedElsewhere) {
+            Storage::disk('public')->delete($media->path);
+        }
+
+        $media->delete();
     }
 }
