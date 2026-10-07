@@ -143,6 +143,10 @@
                                 <strong>MAO responded:</strong> {{ $myFeedback->mao_response }}
                             </div>
                         @endif
+                        {{-- Farmer Survey – Naicel (2026-10-09): the three-question survey, saved with this advisory. --}}
+                        @if ($advisory->status === \App\Models\PlantingAdvisory::STATUS_PUBLISHED && \Illuminate\Support\Facades\Route::has('farmer.survey.show'))
+                            <p class="mt-3 mb-0"><a href="{{ route('farmer.survey.show', ['advisory' => $advisory->id]) }}" data-survey-link>{{ __('farmer.survey.rate_advisory', [], \App\Support\FarmerLanguage::resolve(request())) }}</a></p>
+                        @endif
                     </div>
                 </div>
             @endif
