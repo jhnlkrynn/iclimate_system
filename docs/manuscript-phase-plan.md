@@ -110,7 +110,7 @@ add what is missing. Each phase is one commit, so any phase can be reverted on i
 | Phase | Status |
 |---|---|
 | 1 Accounts and farmer approval | done |
-| 2 Climate and production data | to do |
+| 2 Climate and production data | done |
 | 3 Barangays and heat map layers | to do |
 | 4 Climate monitoring and impact analysis | to do |
 | 5 Yield prediction and forecasting | to do |
