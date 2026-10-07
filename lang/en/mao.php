@@ -114,6 +114,11 @@ return [
                 'axis' => 'Hectares',
                 'tip' => 'ha planted',
             ],
+            'risk' => [
+                'title' => 'Barangay Risk This Week',
+                'sub' => 'How the :count rated barangays are split by farm risk.',
+                'center' => 'at low risk',
+            ],
             'farmers' => [
                 'title' => 'Registered Farmers by Barangay',
                 'sub' => ':count registered farmer with a barangay on file.|:count registered farmers with a barangay on file.',

@@ -774,4 +774,34 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     .mfd[data-farmer-dashboard] .fh-kpis { grid-template-columns: minmax(0, 1fr); }
     .mfd[data-farmer-dashboard] .fh-kpi-value { font-size: 1.75rem; }
 }
+
+/* Dashboard redesign – Naicel (2026-10-09), after the reference design: rounder cards, the first figure as a green lead
+   card with a round "open" chip, the week's chance of rain as pill bars and the crop progress as a half-donut. */
+.mfd[data-farmer-dashboard] .fh-card, .mfd[data-farmer-dashboard] .fh-kpi { border-radius: 18px; }
+.mfd[data-farmer-dashboard] .fh-kpi { position: relative; transition: transform .15s ease, box-shadow .15s ease; }
+.mfd[data-farmer-dashboard] .fh-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 81, 50, .12); }
+.mfd[data-farmer-dashboard] .fh-kpi-label { align-items: flex-start; padding-right: 40px; }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child { background: linear-gradient(135deg, #14532d 0%, #1f7a4d 55%, #2f9e6b 100%); border-color: transparent; color: #fff !important; }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child :is(.fh-kpi-label, .fh-kpi-value, .fh-kpi-note, .fh-kpi-value small, .fh-kpi-label svg) { color: #fff; }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child .ic-go { background: #fff; border-color: #fff; color: #14532d; }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child .fh-kpi-bar { background: rgba(255, 255, 255, .3); }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child .fh-kpi-bar > span { background: #fff; }
+
+.mfd[data-farmer-dashboard] .fh-pills { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin: 6px 0 0; padding: 0; list-style: none; }
+.mfd[data-farmer-dashboard] .fh-pill { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.mfd[data-farmer-dashboard] .fh-pill-value { font-size: .85rem; font-weight: 700; color: var(--ink); }
+.mfd[data-farmer-dashboard] .fh-pill-track { position: relative; display: flex; align-items: flex-end; width: 100%; max-width: 46px; height: 150px; border-radius: 999px; overflow: hidden;
+    background: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 9px); }
+.mfd[data-farmer-dashboard] .fh-pill-fill { display: block; width: 100%; border-radius: 999px; background: #2f9e6b; }
+.mfd[data-farmer-dashboard] .fh-pill.is-high .fh-pill-fill { background: #14532d; }
+.mfd[data-farmer-dashboard] .fh-pill.is-low .fh-pill-fill { background: #a7d9bd; }
+.mfd[data-farmer-dashboard] .fh-pill-label { font-size: .85rem; font-weight: 600; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.mfd[data-farmer-dashboard] .fh-pill.is-today .fh-pill-label { color: var(--ink); font-weight: 800; }
+.mfd[data-farmer-dashboard] .fh-pill-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 6px 0 0; font-size: .85rem; color: var(--muted); }
+.mfd[data-farmer-dashboard] .fh-pill-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mfd[data-farmer-dashboard] .fh-pill-legend i { width: 12px; height: 12px; border-radius: 50%; background: #2f9e6b; }
+.mfd[data-farmer-dashboard] .fh-pill-legend i.is-high { background: #14532d; }
+.mfd[data-farmer-dashboard] .fh-pill-legend i.is-low { background: #a7d9bd; }
+.mfd[data-farmer-dashboard] .fh-gauge-note { text-align: center; font-weight: 600; }
+@media (max-width: 479.98px) { .mfd[data-farmer-dashboard] .fh-pills { gap: 6px; } .mfd[data-farmer-dashboard] .fh-pill-track { height: 120px; } .mfd[data-farmer-dashboard] .fh-pill-label, .mfd[data-farmer-dashboard] .fh-pill-value { font-size: .75rem; } }
 /* ------------------------------------------------------------------ end Farmer – Naicel */

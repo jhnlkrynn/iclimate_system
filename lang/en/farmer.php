@@ -1174,6 +1174,18 @@ return [
             'heavy' => 'Heavy rain on :count day|Heavy rain on :count days',
             'no_heavy' => 'No heavy rain expected',
         ],
+        'rain_week' => [
+            'title' => 'Chance of Rain This Week',
+            'sub' => 'A taller bar means rain is more likely that day.',
+            'high' => 'Likely (70% or more)',
+            'mid' => 'Possible',
+            'low' => 'Unlikely (under 30%)',
+        ],
+        'progress' => [
+            'title' => 'Crop Progress',
+            'center' => 'of growing time',
+            'done' => 'Time passed since planting',
+        ],
         'compare' => [
             'title' => 'Yield Comparison',
             'sub' => 'Tons per hectare (t/ha).',

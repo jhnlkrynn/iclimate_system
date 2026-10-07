@@ -279,3 +279,33 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mhd-lang select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 html[data-theme="dark"] body .mhd-lang select { border-color: var(--dk-border-strong); background-color: var(--dk-surface-2); color: var(--dk-ink); }
 @media (max-width: 767.98px) { .mhd-lang { width: 100%; } .mhd-lang select { flex: 1 1 auto; } }
+
+/* ------------------------------------------------------------------ Dashboard redesign – Naicel (2026-10-09)
+   The MAO Dashboard's look, after the reference design: rounder cards, the first figure as a green lead card, a round
+   "open" chip on every figure, and a half-donut gauge. Scoped to .mhd (the MAO Dashboard only); .ic-gauge and .ic-go
+   are new classes shared with the farmer dashboard. */
+.mhd .mhd-tile, .mhd .mtd-card { border-radius: 18px; }
+.mhd .mhd-tile { position: relative; padding: 20px 20px 18px; transition: transform .15s ease, box-shadow .15s ease; }
+.mhd .mhd-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 81, 50, .12); }
+.mhd .mhd-tile-label { align-items: flex-start; padding-right: 40px; font-size: .95rem; font-weight: 600; }
+.mhd .mhd-tile-value { font-size: 2.6rem; font-weight: 700; }
+.mhd .mhd-tile:first-child { background: linear-gradient(135deg, #14532d 0%, #1f7a4d 55%, #2f9e6b 100%); border-color: transparent; color: #fff !important; }
+.mhd .mhd-tile:first-child :is(.mhd-tile-label, .mhd-tile-value, .mhd-tile-note, .mhd-tile-value small, .mtd-svg) { color: #fff; }
+.mhd .mhd-tile:first-child .mhd-tile-note { opacity: .9; }
+.ic-go { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 32px; height: 32px; border: 1.5px solid currentColor; border-radius: 50%; font-style: normal; }
+.ic-go::before { content: "\2197"; font-size: 1rem; font-weight: 700; line-height: 1; }
+.mhd .mhd-tile:first-child .ic-go { background: #fff; border-color: #fff; color: #14532d; }
+
+.ic-gauge { position: relative; width: min(100%, 340px); margin: 4px auto 0; }
+.ic-gauge svg { display: block; width: 100%; height: auto; }
+.ic-gauge-track { stroke: var(--line, #dfe7e2); }
+.ic-gauge-center { position: absolute; left: 0; right: 0; bottom: 2%; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.ic-gauge-center strong { font-size: 2.4rem; font-weight: 700; color: var(--ink, #1b2620); }
+.ic-gauge-center span { font-size: .9rem; color: var(--muted, #5b6b63); }
+.ic-gauge-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 14px 0 0; padding: 0; list-style: none; font-size: .95rem; }
+.ic-gauge-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.ic-gauge-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+html[data-theme="dark"] body .ic-gauge-track { stroke: var(--dk-border-strong); }
+html[data-theme="dark"] body .ic-gauge-center strong { color: var(--dk-ink); }
+@media (prefers-reduced-motion: reduce) { .mhd .mhd-tile { transition: none; } .mhd .mhd-tile:hover { transform: none; } }
+/* ------------------------------------------------------------------ end Dashboard redesign */

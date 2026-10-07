@@ -38,7 +38,7 @@ export async function initFarmerHomeCharts(root) {
 
     const harvestCanvas = root.querySelector('#fhHarvestChart');
     if (harvest && harvestCanvas) {
-        const datasets = [{ type: 'bar', label: harvest.text.mine, data: harvest.mine, backgroundColor: brand, borderRadius: 6, maxBarThickness: 56, order: 2 }];
+        const datasets = [{ type: 'bar', label: harvest.text.mine, data: harvest.mine, backgroundColor: brand, borderRadius: 999, borderSkipped: false, maxBarThickness: 44, order: 2 }];
         if (harvest.has_average) {
             datasets.push({ type: 'line', label: harvest.text.average, data: harvest.average, borderColor: warm, backgroundColor: warm, borderWidth: 3, pointRadius: 5, spanGaps: true, order: 1 });
         }
@@ -83,10 +83,11 @@ export async function initFarmerHomeCharts(root) {
         const colors = { estimate: brand, usual: '#6b7f8c', last: warm };
         new Chart(compareCanvas, {
             type: 'bar',
-            data: { labels: compare.labels, datasets: [{ data: compare.values, backgroundColor: compare.keys.map((k) => colors[k] || brand), borderRadius: 6, maxBarThickness: 44 }] },
+            data: { labels: compare.labels, datasets: [{ data: compare.values, backgroundColor: compare.keys.map((k) => colors[k] || brand), borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
             options: {
                 ...common,
                 indexAxis: 'y',
+                layout: { padding: { left: 10 } },             // room for the longest bar name
                 scales: {
                     x: { beginAtZero: true, title: { display: !narrow, text: compare.text.axis, font: { size: FONT } }, ticks: { font: { size: FONT } } },
                     y: { ticks: { font: { size: FONT } }, grid: { display: false } },

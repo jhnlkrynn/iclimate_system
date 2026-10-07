@@ -120,7 +120,7 @@
         <section class="mhd-tiles" aria-label="{{ $t('key_figures') }}" data-mao-kpis style="--mhd-tile-cols: {{ min(4, count($tiles)) }}">
             @foreach ($tiles as $tile)
                 <a class="mhd-tile" href="{{ $tile['href'] }}" data-kpi="{{ $tile['key'] }}">
-                    <span class="mhd-tile-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}</span>
+                    <span class="mhd-tile-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}<i class="ic-go" aria-hidden="true"></i></span>
                     <span class="mhd-tile-value"><span data-kpi-value>{{ $tile['value'] }}</span>@if ($tile['unit'])<small>{{ $tile['unit'] }}</small>@endif</span>
                     @if ($tile['key'] === 'yield' && $y['change_percent'] !== null)
                         <span class="mtd-trend {{ $y['change_percent'] > 0 ? 'is-up' : ($y['change_percent'] < 0 ? 'is-down' : 'is-flat') }}" data-kpi-change>
@@ -186,6 +186,30 @@
         {{-- 4. The charts, all from saved records (MaoHomeService): no provider is called and no model is run. --}}
         @if (in_array(true, $charts, true))
         <div class="mhd-charts">
+            {{-- Dashboard redesign – Naicel (2026-10-09): this week's risk rating of the barangays as one half-donut
+                 (the same ratings as the Heat Map preview and the High-risk tile). --}}
+            @if ($showMap)
+            @php
+                $riskCounts = array_count_values(array_map('strval', $risk['levels']));
+                $riskRated = array_sum(array_intersect_key($riskCounts, ['low' => 1, 'moderate' => 1, 'high' => 1]));
+                $riskSegments = array_map(fn (string $level): array => ['value' => (int) ($riskCounts[$level] ?? 0), 'color' => \App\Services\Risk\HeatMapPanel::COLORS[$level],
+                    'label' => $t('map.'.$level).': '.(int) ($riskCounts[$level] ?? 0)], ['low', 'moderate', 'high']);
+                $riskLow = $riskRated > 0 ? (int) round(($riskCounts['low'] ?? 0) / $riskRated * 100) : 0;
+            @endphp
+            @if ($riskRated > 0)
+            <section class="mtd-card mhd-gauge-card" aria-labelledby="mhdRiskGaugeTitle" data-mao-risk-gauge>
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdRiskGaugeTitle">{{ $t('charts.risk.title') }}</h2>
+                        <p class="mtd-sub">{{ $t('charts.risk.sub', ['count' => $riskRated]) }}</p>
+                    </div>
+                </div>
+                @include('partials.half-donut', ['segments' => $riskSegments, 'big' => $riskLow.'%', 'small' => $t('charts.risk.center'),
+                    'label' => $t('charts.risk.title').': '.implode(', ', array_column($riskSegments, 'label'))])
+            </section>
+            @endif
+            @endif
+
             @if ($charts['yield'])
             <section class="mtd-card" aria-labelledby="mhdYieldTitle" data-mao-yield>
                 <div class="mtd-card-head">
@@ -339,7 +363,7 @@
                 const [yieldEl, y] = read('riceYieldTrendChart', 'yield');
                 if (yieldEl) new window.Chart(yieldEl, {
                     type: 'bar',
-                    data: { labels: y.labels || [], datasets: [{ label: T.yield.dataset, data: y.values || [], backgroundColor: '#0f5132', borderRadius: 4, maxBarThickness: 64 }] },
+                    data: { labels: y.labels || [], datasets: [{ label: T.yield.dataset, data: y.values || [], backgroundColor: '#0f5132', borderRadius: 999, borderSkipped: false, maxBarThickness: 46 }] },
                     options: { ...base(false), scales: { y: axis(T.yield.axis, { beginAtZero: true }), x: { grid: { display: false }, ticks: { font: FONT } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: {
                             title: (items) => T.yield.year + ' ' + items[0]?.label,
@@ -370,7 +394,7 @@
                 const [plantedEl, p] = read('maoPlantedChart');
                 if (plantedEl) new window.Chart(plantedEl, {
                     type: 'bar',
-                    data: { labels: p.labels || [], datasets: [{ label: T.planted.dataset, data: p.values || [], backgroundColor: '#198754', borderRadius: 4, maxBarThickness: 48 }] },
+                    data: { labels: p.labels || [], datasets: [{ label: T.planted.dataset, data: p.values || [], backgroundColor: '#198754', borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
                     options: { ...base(false), indexAxis: 'y', scales: { x: axis(T.planted.axis, { beginAtZero: true }), y: { grid: { display: false }, ticks: { font: FONT } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (b) => b.parsed.x + ' ' + T.planted.tip } } } },
                 });
@@ -379,7 +403,7 @@
                 const [farmersEl, f] = read('maoFarmersChart');
                 if (farmersEl) new window.Chart(farmersEl, {
                     type: 'bar',
-                    data: { labels: f.labels || [], datasets: [{ label: T.farmers.dataset, data: f.values || [], backgroundColor: '#1f6fb2', borderRadius: 4, maxBarThickness: 28 }] },
+                    data: { labels: f.labels || [], datasets: [{ label: T.farmers.dataset, data: f.values || [], backgroundColor: '#2f9e6b', borderRadius: 999, borderSkipped: false, maxBarThickness: 22 }] },
                     options: { ...base(false), indexAxis: 'y', scales: { x: axis(T.farmers.axis, { beginAtZero: true, ticks: { font: FONT, precision: 0 } }), y: { grid: { display: false }, ticks: { font: FONT, autoSkip: false } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (b) => b.parsed.x + ' ' + (b.parsed.x === 1 ? T.farmers.one : T.farmers.many) } } } },
                 });

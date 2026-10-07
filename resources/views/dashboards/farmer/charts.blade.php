@@ -23,7 +23,49 @@
     // What the harvest chart shows, in words, for screen readers.
     $harvestWords = $harvestData ? collect($harvest['labels'])->map(fn ($label, $i) => $label.' '.number_format($harvest['mine'][$i], 2).' t/ha')->implode(', ') : '';
 @endphp
+@php
+    // Dashboard redesign – Naicel (2026-10-09): two small analytics drawn without a chart library.
+    // Rain this week: the chance of rain for the next 7 days, from the same saved forecast as the 14-day chart.
+    $rainWeek = [];
+    if ($weatherData && $weather['has_rain']) {
+        foreach (array_slice($weather['labels'], 0, 7) as $i => $dayLabel) {
+            if (($weather['rain'][$i] ?? null) !== null) {
+                $rainWeek[] = ['label' => $dayLabel, 'chance' => (int) $weather['rain'][$i], 'today' => $i === 0];
+            }
+        }
+    }
+    // Crop progress: how much of the growing time has passed, from the "Days to harvest" figure.
+    $cropTile = collect($f['kpis'] ?? [])->first(fn (array $tile): bool => $tile['key'] === 'crop' && ($tile['progress'] ?? null) !== null);
+@endphp
 <div class="fh-charts" data-fh-charts>
+    @if (count($rainWeek) >= 3)
+    <section class="fh-card" aria-labelledby="fhRainWeekTitle" data-fh-analytic="rain-week">
+        <h2 id="fhRainWeekTitle" class="fh-kicker">{{ __('farmer.kpis.rain_week.title') }}</h2>
+        <p class="fh-muted">{{ __('farmer.kpis.rain_week.sub') }}</p>
+        <ol class="fh-pills" aria-label="{{ __('farmer.kpis.rain_week.title') }}">
+            @foreach ($rainWeek as $day)
+                <li @class(['fh-pill', 'is-low' => $day['chance'] < 30, 'is-high' => $day['chance'] >= 70, 'is-today' => $day['today']])>
+                    <span class="fh-pill-value">{{ $day['chance'] }}%</span>
+                    <span class="fh-pill-track"><span class="fh-pill-fill" style="height: {{ max(8, $day['chance']) }}%"></span></span>
+                    <span class="fh-pill-label">{{ $day['label'] }}</span>
+                </li>
+            @endforeach
+        </ol>
+        <p class="fh-pill-legend"><span><i class="is-high"></i>{{ __('farmer.kpis.rain_week.high') }}</span><span><i class="is-mid"></i>{{ __('farmer.kpis.rain_week.mid') }}</span><span><i class="is-low"></i>{{ __('farmer.kpis.rain_week.low') }}</span></p>
+    </section>
+    @endif
+
+    @if ($cropTile)
+    <section class="fh-card" aria-labelledby="fhCropProgressTitle" data-fh-analytic="crop-progress">
+        <h2 id="fhCropProgressTitle" class="fh-kicker">{{ __('farmer.kpis.progress.title') }}</h2>
+        <p class="fh-muted">{{ $cropTile['note'] }}</p>
+        @include('partials.half-donut', ['segments' => [['value' => $cropTile['progress'], 'color' => 'var(--brand, #1f7a4d)', 'label' => __('farmer.kpis.progress.done')]], 'total' => 100,
+            'big' => $cropTile['progress'].'%', 'small' => __('farmer.kpis.progress.center'),
+            'label' => __('farmer.kpis.crop.progress', ['percent' => $cropTile['progress']])])
+        <p class="fh-words fh-gauge-note">{{ $cropTile['label'] }}: {{ $cropTile['value'] }} {{ $cropTile['unit'] }}</p>
+    </section>
+    @endif
+
     <section class="fh-card" aria-labelledby="fhHarvestChartTitle" data-fh-chart="harvest">
         <h2 id="fhHarvestChartTitle" class="fh-kicker">{{ __('farmer.charts.harvest_title') }}</h2>
         @if ($harvestData)
