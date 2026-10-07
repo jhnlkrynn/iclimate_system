@@ -34,6 +34,28 @@
             <div class="itd-row"><div class="itd-cell mfd-slot" id="itd-health" data-slot="health">@include('dashboards.it.health')</div></div>
         </section>
 
+        {{-- IT Dashboard – Naicel (2026-10-09): the one chart of this page, System Activity Trend. Daily counts of
+             logins, admin actions, data processing, system jobs and errors (ItDashboardService::activity), read from
+             admin.dashboard.activity after the page opens, so the dashboard itself stays a read of its prepared copy.
+             Not one of the four numbered sections above and below (it has no data-it-section). --}}
+        <section class="itd-section" aria-labelledby="itdTrendTitle" data-it-trend data-trend-url="{{ route('admin.dashboard.activity') }}">
+            <div class="itd-trend-head">
+                <div>
+                    <h2 class="itd-section-title" id="itdTrendTitle">System Activity Trend</h2>
+                    <p class="itd-trend-sub">How many logins, admin actions, data processing runs, system jobs and errors were recorded each day.</p>
+                </div>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Period">
+                    @foreach ([7 => '7 days', 30 => '30 days', 90 => '90 days'] as $days => $label)
+                        <button type="button" @class(['btn', 'btn-outline-secondary', 'active' => $days === 30]) data-trend-range="{{ $days }}" aria-pressed="{{ $days === 30 ? 'true' : 'false' }}">{{ $label }}</button>
+                    @endforeach
+                </div>
+            </div>
+            <div class="mfd-card">
+                <div class="itd-trend-box"><canvas id="itActivityTrendChart" role="img" aria-label="System activity per day, by kind"></canvas></div>
+                <p class="itd-trend-state" data-trend-state role="status">Loading the activity…</p>
+            </div>
+        </section>
+
         {{-- 2. Users by Role --}}
         <section class="itd-section" aria-label="Users by Role" data-it-section="users">
             {{-- its card carries the "Users by Role" heading --}}
@@ -96,6 +118,43 @@
             $('[data-it-refresh]').addEventListener('click', () => refresh(true));
             // Health changes slowly: refresh every 5 minutes, and only while the tab is visible.
             setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 300000);
+
+            // System Activity Trend (IT Dashboard – Naicel, 2026-10-09): one line per kind of event, for 7, 30 or 90 days.
+            const trend = $('[data-it-trend]');
+            if (trend) {
+                const state = trend.querySelector('[data-trend-state]');
+                const box = trend.querySelector('.itd-trend-box');
+                const buttons = [...trend.querySelectorAll('[data-trend-range]')];
+                let chart = null;
+                const say = (text) => { state.textContent = text; state.hidden = text === ''; box.hidden = text !== ''; };
+                async function load(days) {
+                    buttons.forEach((b) => { const on = Number(b.dataset.trendRange) === days; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+                    try {
+                        const res = await fetch(trend.dataset.trendUrl + '?range=' + days, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                        if (!res.ok) throw new Error('bad status');
+                        const data = await res.json();
+                        if (data.state === 'empty') return say('No system activity was recorded in the last ' + days + ' days.');
+                        if (data.state !== 'ok') return say(data.message || 'The activity could not be read. Try again in a moment.');
+                        try { await window.iClimateVisualsReady; } catch (e) { /* no chart library */ }
+                        if (!window.Chart) return say('The chart could not be drawn in this browser.');
+                        say('');
+                        const datasets = data.datasets.map((d) => ({ label: d.label, data: d.data, borderColor: d.color, backgroundColor: d.color, borderWidth: 2.5, cubicInterpolationMode: 'monotone', pointRadius: days > 30 ? 0 : 3, pointHoverRadius: 5 }));
+                        if (chart) { chart.data.labels = data.labels; chart.data.datasets = datasets; chart.update(); return; }
+                        chart = new window.Chart(trend.querySelector('canvas'), {
+                            type: 'line',
+                            data: { labels: data.labels, datasets },
+                            options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 13 } } } },
+                                scales: { y: { beginAtZero: true, ticks: { precision: 0, font: { size: 13 } }, title: { display: true, text: 'Events per day', font: { size: 13, weight: '600' } } },
+                                    x: { grid: { display: false }, ticks: { font: { size: 13 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } } } },
+                        });
+                    } catch (e) {
+                        say('The activity could not be read. Try again in a moment.');
+                    }
+                }
+                buttons.forEach((b) => b.addEventListener('click', () => load(Number(b.dataset.trendRange))));
+                load(30);
+            }
         })();
     </script>
 </x-app-layout>

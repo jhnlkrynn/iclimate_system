@@ -141,7 +141,12 @@ class ItDashboardTest extends TestCase
         foreach (['System status, users, errors and security at a glance', 'Updated at', 'System Status', 'Errors and Failed Jobs'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
-        // No tabs, no activity chart, no heat map, and nothing that moved to System Health or System Logs.
+        // One chart since 2026-10-09, System Activity Trend, filled from admin.dashboard.activity after the page opens.
+        $this->assertSame(1, substr_count($html, '<canvas'));
+        $this->assertStringContainsString('<canvas id="itActivityTrendChart"', $html);
+        $this->assertStringContainsString('data-trend-url="'.route('admin.dashboard.activity').'"', $html);
+        $this->assertSame(3, substr_count($html, 'data-trend-range='));
+        // No tabs, no heat map, and nothing that moved to System Health or System Logs.
         foreach (['role="tablist"', 'data-panel=', 'itSystemActivityTrendChart', 'id="barangayRiskMap"', 'data-it-activity', 'data-it-brief', 'data-it-ai', 'data-it-usage',
             'data-it-resources', 'data-it-integrity', 'data-it-pipeline', 'data-it-recent', 'Recent System Activity'] as $gone) {
             $this->assertStringNotContainsString($gone, $html, $gone);
