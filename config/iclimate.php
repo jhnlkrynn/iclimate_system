@@ -11,6 +11,19 @@
 */
 
 return [
+    /*
+    | Chatbot Knowledge pages (topics, terms, synonyms, FAQs, blocked words). Off by default: the tab is not in any
+    | sidebar and its pages send every role to their dashboard. Set CHATBOT_KNOWLEDGE_UI=true to bring the tab back
+    | for IT. Only the pages are switched: the knowledge itself is always used by the Climora chatbot.
+    */
+    'chatbot_knowledge_ui' => (bool) env('CHATBOT_KNOWLEDGE_UI', false),
+
+    /*
+    | The Candidate Model and Season Calendar Retraining sections of the Model Evaluation page. Off by default
+    | (hidden for now); the files, the report and python_scripts/retrain_yield_season.py are kept.
+    */
+    'model_evaluation_candidate_ui' => (bool) env('MODEL_EVALUATION_CANDIDATE_UI', false),
+
     /* Python used for the ML scripts. Empty: the app looks for the project's virtualenv. */
     'python_binary' => env('PYTHON_BINARY') ?: null,
 

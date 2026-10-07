@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\AdvisoryFeedback;
 use App\Models\AnalyticsRun;
-use App\Models\ExternalWeatherData;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
@@ -20,7 +19,6 @@ use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\BusinessClock;
-use App\Support\CacheScope;
 use App\Support\FarmerAdvisoryView;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
@@ -246,43 +244,6 @@ class PlantingAdvisoryController extends Controller
         }
 
         return (string) str($text)->limit(220);
-    }
-
-    /**
-     * Header figures shared by both advisory pages: seven separate queries
-     * (~300 ms each against Supabase) that only change when an advisory or the
-     * weather record is saved. Cached for a minute, and changes to the data it
-     * reads retire it through the scoped invalidation token.
-     *
-     * @return array<string, mixed>
-     */
-    private function advisorySummary(): array
-    {
-        return Cache::remember('advisories:summary:'.CacheScope::token('advisories-summary'), now()->addSeconds(60), fn (): array => [
-            'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
-            'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('published_at')->get()
-                ->first(fn (PlantingAdvisory $advisory) => $advisory->isOfficialPagasa()),
-            'activeCount' => PlantingAdvisory::query()->active()->count(),
-            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
-            'pendingCount' => PlantingAdvisory::query()->pendingReview()->count(),
-            'highRiskCount' => PlantingAdvisory::query()->whereIn('severity', ['high', 'critical'])->whereIn('status', ['published', 'pending_review'])->count(),
-            'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->where('updated_at', '>=', BusinessClock::todayUtc())->where('updated_at', '<', BusinessClock::todayUtc()->addDay())->count(),
-        ]);
-    }
-
-    public function adminIndex(Request $request): View
-    {
-        $this->authorizeManage($request);
-
-        return view('advisories.management', [
-            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(CrudController::PER_PAGE)->withQueryString(),
-            ...$this->advisorySummary(),
-            'types' => self::TYPES,
-            'severities' => self::SEVERITIES,
-            'statuses' => self::STATUSES,
-            'barangays' => LianBarangays::all(),
-            'analyticsRun' => $this->requestedAnalyticsRun($request),
-        ]);
     }
 
     /**
@@ -649,34 +610,6 @@ class PlantingAdvisoryController extends Controller
             ->where('type', 'advisory_ai')
             ->where('requested_by', $request->user()->id)
             ->first();
-    }
-
-    private function filteredQuery(Request $request)
-    {
-        $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
-        $advisoryType = is_string($request->query('advisory_type')) ? trim($request->query('advisory_type')) : '';
-        $type = is_string($request->query('type')) ? trim($request->query('type')) : '';
-        $status = is_string($request->query('status')) ? trim($request->query('status')) : '';
-        $severity = is_string($request->query('severity')) ? trim($request->query('severity')) : '';
-        $targetBarangay = is_string($request->query('target_barangay')) ? trim($request->query('target_barangay')) : '';
-
-        return PlantingAdvisory::query()
-            ->with(['weatherData', 'rule'])
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($builder) use ($search) {
-                    $builder->where('title', 'like', "%{$search}%")
-                        ->orWhere('summary', 'like', "%{$search}%")
-                        ->orWhere('message', 'like', "%{$search}%")
-                        ->orWhere('target_barangay', 'like', "%{$search}%");
-                });
-            })
-            ->when($advisoryType !== '', fn ($query) => $query->where('advisory_type', $advisoryType))
-            ->when($type !== '', fn ($query) => $query->where('advisory_type', strtolower($type)))
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
-            ->when($targetBarangay !== '', function ($query) use ($targetBarangay) {
-                $query->forBarangay($targetBarangay);
-            });
     }
 
     private function validated(Request $request): array

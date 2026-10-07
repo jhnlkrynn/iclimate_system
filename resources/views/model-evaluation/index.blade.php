@@ -446,7 +446,12 @@
                 </div>
             @endif
         @endif
-        @include('model-evaluation._candidate')
+        @include('model-evaluation._deployed')
+        {{-- Hidden for now (config iclimate.model_evaluation_candidate_ui): the candidate model and the season
+             retraining report. The partial, the report file and the retrain script are kept. --}}
+        @if (config('iclimate.model_evaluation_candidate_ui'))
+            @include('model-evaluation._candidate')
+        @endif
         <div class="col-12">
             <div class="me-panel">
                 <div class="me-panel-header">

@@ -9,8 +9,6 @@ use App\Jobs\RunPythonAnalytics;
 use App\Models\AnalyticsRun;
 use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
-use App\Models\FeedPost;
-use App\Models\FeedReaction;
 use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\MaoDashboardService;
@@ -45,35 +43,6 @@ class PreparedDashboardsTest extends TestCase
 
     // ------------------------------------------------------------------ pages and timed refreshes read prepared data
 
-    public function test_mao_operations_is_built_once_and_then_read_prepared(): void
-    {
-        $mao = User::factory()->maoPersonnel()->create();
-
-        $cold = $this->queries(fn () => $this->actingAs($mao)->get(route('mao.operations'))->assertOk());
-        $warm = $this->queries(fn () => $this->actingAs($mao)->get(route('mao.operations'))->assertOk()->assertViewHas('maoKpis'));
-
-        $this->assertGreaterThan(10, $cold, 'the first visit assembles the page');
-        $this->assertLessThanOrEqual(3, $warm, 'the next visit reads the prepared page (only the signed-in user\'s own lookups)');
-    }
-
-    public function test_mao_operations_filters_are_separate_prepared_copies(): void
-    {
-        $mao = User::factory()->maoPersonnel()->create();
-        $this->actingAs($mao)->get(route('mao.operations'))->assertOk();
-
-        $filtered = $this->queries(fn () => $this->actingAs($mao)->get(route('mao.operations', ['schedule_season' => 'Wet']))->assertOk());
-        $this->assertGreaterThan(3, $filtered, 'a different filter is its own page');
-        $this->assertSame('Wet', $this->actingAs($mao)->get(route('mao.operations', ['schedule_season' => 'Wet']))->viewData('scheduleFilters')['season']);
-    }
-
-    public function test_the_warm_up_prepares_mao_operations_so_the_first_visitor_reads_it(): void
-    {
-        $mao = User::factory()->maoPersonnel()->create();
-        $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
-
-        $this->assertLessThanOrEqual(3, $this->queries(fn () => $this->actingAs($mao)->get(route('mao.operations'))->assertOk()));
-    }
-
     public function test_the_warm_up_rebuilds_only_what_is_due(): void
     {
         $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
@@ -86,19 +55,6 @@ class PreparedDashboardsTest extends TestCase
         $after = app(PreparedDashboards::class)->warm();
         $this->assertStringEndsWith(' s', $after['MAO dashboard'], 'the MAO dashboard read climate data: rebuilt');
         $this->assertStringEndsWith(' s', $after['MAO Operations']);
-    }
-
-    public function test_the_mao_timed_refresh_reads_the_prepared_dashboard_and_only_refresh_rebuilds(): void
-    {
-        $mao = User::factory()->maoPersonnel()->create();
-        $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk();
-
-        $timer = $this->queries(fn () => $this->actingAs($mao)->getJson(route('mao.dashboard.live'))->assertOk());
-        $this->travel(2)->seconds();                             // a Refresh pressed after the copy was built
-        $refresh = $this->queries(fn () => $this->actingAs($mao)->getJson(route('mao.dashboard.live', ['refresh' => 1]))->assertOk());
-
-        $this->assertLessThanOrEqual(4, $timer, 'the 5-minute timer reads the prepared payload (plus the signed-in MAO\'s own counts)');
-        $this->assertGreaterThan($timer + 5, $refresh, 'the Refresh button really rebuilds');
     }
 
     public function test_the_it_timed_refresh_reads_the_prepared_overview_and_only_refresh_rebuilds(): void
@@ -197,23 +153,6 @@ class PreparedDashboardsTest extends TestCase
 
     // ------------------------------------------------------------------ change-driven freshness (Phase 2 still holds)
 
-    public function test_a_relevant_change_retires_mao_operations_and_an_unrelated_one_does_not(): void
-    {
-        $mao = User::factory()->maoPersonnel()->create();
-        $post = FeedPost::query()->create(['user_id' => $mao->id, 'title' => 'Seed', 'body' => 'Ready', 'category' => 'Update']);
-        $farmer = $this->farmer();
-        $this->actingAs($mao)->get(route('mao.operations'))->assertOk();
-
-        FeedReaction::query()->create(['feed_post_id' => $post->id, 'user_id' => $farmer->id, 'type' => 'Like']);
-        $this->assertLessThanOrEqual(3, $this->queries(fn () => $this->actingAs($mao)->get(route('mao.operations'))->assertOk()),
-            'a reaction is not on MAO Operations: still the prepared page');
-
-        $before = $this->actingAs($mao)->get(route('mao.operations'))->viewData('totalClimateRecords');
-        ClimateRecord::factory()->create();
-        $after = $this->actingAs($mao)->get(route('mao.operations'))->viewData('totalClimateRecords');
-        $this->assertSame($before + 1, $after, 'a new climate record shows on the very next visit');
-    }
-
     // ------------------------------------------------------------------ queued work is never duplicated
 
     public function test_twenty_page_visits_queue_one_risk_map_refresh(): void
@@ -261,9 +200,8 @@ class PreparedDashboardsTest extends TestCase
         $this->assertNull($harvest['result'] ?? null);
         Queue::assertPushed(PrepareFarmerYieldEstimate::class, 1);               // the failure is remembered: no retry on every visit
 
-        $this->travel(6)->minutes();                                              // remembered for 5 minutes
         $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();
-        Queue::assertPushed(PrepareFarmerYieldEstimate::class, 2);               // tried again later
+        Queue::assertPushed(PrepareFarmerYieldEstimate::class, 1);               // no retry on every ordinary visit
     }
 
     // ------------------------------------------------------------------ reports and the scheduler

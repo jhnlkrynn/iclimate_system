@@ -32,6 +32,9 @@ class AiLanguageFilterTest extends TestCase
         parent::setUp();
 
         Http::fake(); // a real service call would be a test failure
+        // The admin tests below open the Chatbot Knowledge pages, which exist only while the tab is shown
+        // (CHATBOT_KNOWLEDGE_UI=true; hidden by default since 2026-10 — see ChatbotKnowledgeHiddenTest).
+        config(['iclimate.chatbot_knowledge_ui' => true]);
         $this->seed(AiModerationSeeder::class);
         $this->farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
     }

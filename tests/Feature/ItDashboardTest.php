@@ -550,6 +550,9 @@ class ItDashboardTest extends TestCase
         foreach ([route('users.index'), route('system-logs.index'), route('system-health.index'), route('reports.index'), route('farmer-profiles.index')] as $url) {
             $this->assertSame(2, substr_count($sidebar, 'href="'.$url.'"'), $url);
         }
+        // Chatbot Knowledge is hidden from the interface (CHATBOT_KNOWLEDGE_UI=false).
+        $this->assertStringNotContainsString(route('ai-admin.home'), $html);
+        $this->assertStringNotContainsString('Chatbot Knowledge', $html);
     }
 
     public function test_other_roles_keep_their_own_sidebar_sections(): void

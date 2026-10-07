@@ -114,6 +114,8 @@
                 $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
                 $navLink('Planting Advisories', 'advisories', 'advisories'),
                 $navLink('Announcements', 'community', 'community'),
+                // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
+                ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
             ]],
             ['Data', [
                 $navLink('Climate Records', 'climate-records', 'climate-records'),

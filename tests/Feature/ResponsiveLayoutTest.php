@@ -11,9 +11,6 @@ class ResponsiveLayoutTest extends TestCase
         $appCss = file_get_contents(resource_path('css/app.css'));
         $navigation = file_get_contents(resource_path('views/layouts/navigation.blade.php'));
         $sidebar = file_get_contents(resource_path('views/layouts/sidebar.blade.php'));
-        $maoDashboard = file_get_contents(resource_path('views/dashboards/mao-operations.blade.php'));
-        // The page's styles live in resources/css/pages since 2026-10-06 (they used to be a <style> block in the view).
-        $maoDashboard .= file_get_contents(resource_path('css/pages/mao-operations.css'));
         $maoOverview = file_get_contents(resource_path('views/dashboards/mao.blade.php'));
         $itDashboard = file_get_contents(resource_path('views/dashboards/it-expert.blade.php'));
         $crudIndex = file_get_contents(resource_path('views/crud/index.blade.php'));
@@ -31,7 +28,8 @@ class ResponsiveLayoutTest extends TestCase
         $farmerCss = file_get_contents(resource_path('css/farmer-dashboard.css'));
         $this->assertStringContainsString('.mfd-kpis { display: grid; gap: var(--gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }', $farmerCss);
         $this->assertStringContainsString('@media (max-width: 640px)', $farmerCss);
-        $this->assertStringContainsString('.mao-stat-grid, .live-weather-grid, .risk-level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }', $maoDashboard);
+        // The MAO dashboard (2026-10): four tiles, two per row on phones (the Operations page and its stylesheet were removed).
+        $this->assertStringContainsString('@media (min-width: 560px) { .mhd-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', file_get_contents(resource_path('css/mao-dashboard.css')));
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
         // IT dashboard: five farmer-style KPI cards in its own grid (.itd-kpis: 2 per row on phones, 3 then 2 on tablets, 5 on desktops);
@@ -43,7 +41,6 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('.itd-table-wrap { max-width: 100%; overflow-x: auto;', $itCss);
         $this->assertStringContainsString('@media (max-width: 640px)', $itCss);
         $this->assertStringNotContainsString('<style>', $itDashboard);
-        $this->assertStringContainsString('height: min(52vh, 320px)', $maoDashboard);
         // MAO overview: built on the farmer dashboard system; its styles live in resources/css/mao-dashboard.css.
         // 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
         $maoCss = file_get_contents(resource_path('css/mao-dashboard.css'));

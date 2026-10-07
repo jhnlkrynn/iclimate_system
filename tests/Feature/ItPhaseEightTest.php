@@ -92,12 +92,13 @@ class ItPhaseEightTest extends TestCase
         foreach (['System Health', 'System Logs', 'User Management'] as $label) {
             $this->assertContains($label, $labels[1], $label);
         }
+        // Chatbot Knowledge is hidden from the interface (see ChatbotKnowledgeHiddenTest).
+        $this->assertNotContains('Chatbot Knowledge', $labels[1]);
 
         foreach ([$this->mao(), User::factory()->farmer()->create()] as $other) {
             foreach (['admin.dashboard', 'system-health.index', 'model-evaluation.index', 'system-logs.index', 'users.index'] as $route) {
                 $this->actingAs($other)->get(route($route))->assertForbidden();
             }
-            $this->actingAs($other)->get(route('ai-admin.index', 'topics'))->assertForbidden();
         }
     }
 
@@ -199,6 +200,16 @@ class ItPhaseEightTest extends TestCase
         $this->actingAs($it)->get(route('testing.candidate-rice-yield'))->assertRedirect(route('model-evaluation.index'));
         $this->actingAs($it)->post(route('testing.candidate-rice-yield.predict'))->assertRedirect(route('model-evaluation.index'));
 
+        // The candidate sections are hidden for now (config iclimate.model_evaluation_candidate_ui); the page shows
+        // the deployed model. Their code and files are kept, so turning the setting on shows them again.
+        $default = $this->actingAs($it)->get(route('model-evaluation.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="deployed-model"', $default);
+        $this->assertStringContainsString('rice_yield_model_final.pkl', $default);
+        foreach (['id="candidate-model"', 'id="season-retraining"', 'Candidate Model', 'Season Calendar Retraining', 'rice_yield_model_candidate'] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $default, $hidden);
+        }
+
+        config(['iclimate.model_evaluation_candidate_ui' => true]);
         $html = $this->actingAs($it)->get(route('model-evaluation.index'))->assertOk()->getContent();
         $this->assertStringContainsString('id="candidate-model"', $html);
         $this->assertStringContainsString('It is not the deployed model.', $html);
@@ -226,6 +237,9 @@ class ItPhaseEightTest extends TestCase
         $this->assertFalse($report['deployed_model']['retrained']);
         $this->assertFalse($report['retrained_model']['activated']);
 
+        // Hidden on the page for now; shown when the setting is on.
+        $this->actingAs($this->it())->get(route('model-evaluation.index'))->assertOk()->assertDontSee('Season Calendar Retraining');
+        config(['iclimate.model_evaluation_candidate_ui' => true]);
         $html = $this->actingAs($this->it())->get(route('model-evaluation.index'))->assertOk()->getContent();
         $this->assertStringContainsString('Season Calendar Retraining (October = Wet)', $html);
         foreach (['holdout_2025', 'leave_one_year_out'] as $check) {
@@ -244,6 +258,8 @@ class ItPhaseEightTest extends TestCase
         $this->assertSame(RiceSeason::WET, RiceSeason::forMonth(10));
         $this->assertSame(RiceSeason::DRY, RiceSeason::forTrainedYieldModel(10));
         $this->assertSame(RiceSeason::WET, RiceSeason::forTrainedYieldModel(9));
+        // The retrain script is kept for when the original training data is found.
+        $this->assertFileExists(base_path('python_scripts/retrain_yield_season.py'));
         // The deployed file is untouched by the retraining: the retrained candidate is a separate, inactive file.
         $this->assertFileExists(base_path('storage/models/rice_yield_model_final.pkl'));
         $this->assertSame('storage/models/rice_yield_model_final.pkl', config('prediction.rice_yield.model_path', 'storage/models/rice_yield_model_final.pkl'));
