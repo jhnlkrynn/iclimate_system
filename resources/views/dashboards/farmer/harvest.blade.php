@@ -2,7 +2,19 @@
      The estimate is made in the background (PrepareFarmerYieldEstimate); until it is saved the card says so. --}}
 @php $h = $f['harvest']; @endphp
 {{-- Farmer – Naicel: a missing farm size is asked for in the notification bell (FarmerMissingInfoNotifier), not with a card here. --}}
-@unless ($h['state'] !== 'ok' && ($h['needs_area'] ?? false))
+@if ($h['state'] !== 'ok' && ($h['needs_area'] ?? false))
+    {{-- Farmer – Naicel (2026-10-09): no farm size yet, so no estimate of their own. The card shows what Lian farms
+         usually harvest this month (past records) instead of leaving the row one card short. The missing farm size is
+         still asked for in the notification bell only (no prompt on Home). --}}
+    @if (is_numeric($h['usual'] ?? null))
+    <section class="fh-card" aria-labelledby="fhUsualYieldTitle" data-fh-usual-yield>
+        <h2 id="fhUsualYieldTitle" class="fh-kicker">{{ __('farmer.home.harvest.usual_title') }}</h2>
+        <p class="fh-muted">{{ $h['season'] }}</p>
+        <p class="fh-big">{{ number_format((float) $h['usual'], 2) }} <small>t/ha</small></p>
+        <p class="fh-words">{{ __('farmer.home.harvest.usual_note') }}</p>
+    </section>
+    @endif
+@else
 <section class="fh-card" aria-labelledby="fhHarvestTitle" data-fh-harvest @if ($h['state'] === 'loading') data-mfd-load="harvest" @endif>
     <h2 id="fhHarvestTitle" class="fh-kicker">{{ __('farmer.home.harvest.title') }}</h2>
     <p class="fh-muted">{{ $h['season'] }}</p>
@@ -28,4 +40,4 @@
         @endif
     @endif
 </section>
-@endunless
+@endif
