@@ -13,6 +13,12 @@ export function initAdvisoryModal() {
     // covers; as a direct child of <body> the overlay covers the whole window, sidebar and top bar included.
     document.body.appendChild(modal);
 
+    // Advisories barangay picker: choosing a barangay shows its advice at once (the Show button is the no-JS path).
+    document.addEventListener('change', (event) => {
+        const select = event.target.closest('[data-fad-barangay-picker] select');
+        if (select) select.form.requestSubmit();
+    });
+
     const dialog = modal.querySelector('[data-fad-dialog]');
     const loadingTemplate = document.getElementById('fadModalLoading');
     const errorTemplate = document.getElementById('fadModalError');

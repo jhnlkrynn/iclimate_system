@@ -2,6 +2,7 @@
 
 namespace App\Services\Risk;
 
+use Carbon\CarbonInterface;
 use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
@@ -12,6 +13,7 @@ use App\Support\InteractiveRequest;
 use App\Services\Weather\WeatherIconMapper;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -403,6 +405,10 @@ class BarangayRiskMapService
 
         $this->refreshScheduled = true;
         app()->terminating(function (): void {
+            // Once only: an application that serves several requests calls every terminating callback again.
+            if (! $this->refreshScheduled) {
+                return;
+            }
             rescue(fn () => $this->refreshForCurrentWeather(), report: false);
             $this->refreshScheduled = false;
         });
@@ -564,7 +570,7 @@ class BarangayRiskMapService
         // the same readings the Heat Map popups, Advisories and Climora show.
         // One calculation time for this pass: the map, the database rows and every dashboard show the same one.
         $computedAt = now();
-        $unchangedIds = [];
+        $writes = [];
 
         try {
             $allWeather = $this->weatherService->all($refresh);
@@ -598,10 +604,10 @@ class BarangayRiskMapService
             $farmType = $farmTypes[$barangay] ?? FarmerProfile::FARM_TYPE_RAINFED;
             $evaluation = $this->evaluate($barangay, $weather, $lastYield, $farmType, $monthlyRainfall['value']);
             $results[] = ['updated_at' => $computedAt->toIso8601String()] + $this->realResult($barangay, $psgc, $weather, $lastYield, $farmType, $evaluation, $monthlyRainfall['value']);
-            $unchangedIds[] = $this->persist($barangay, $latitude, $longitude, $weather, $evaluation, $existingAreas[$barangay] ?? null, $computedAt);
+            $writes[] = compact('barangay', 'latitude', 'longitude', 'weather', 'evaluation') + ['existing' => $existingAreas[$barangay] ?? null];
         }
 
-        $this->stampUnchanged(array_values(array_filter($unchangedIds)), $computedAt);
+        $this->persistBatch($writes, $computedAt);
 
         return [
             'generated_at' => $computedAt->toIso8601String(),
@@ -804,62 +810,86 @@ class BarangayRiskMapService
         ];
     }
 
-    /**
-     * Saves one barangay's rating. A changed (or new) rating is saved normally, with its model events, so the
-     * cached dashboards are retired. An unchanged rating only needs its calculation time restamped; it is returned
-     * as its row id for one batched update (no per-barangay query, no needless dashboard cache flush).
-     */
-    private function persist(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, ?HeatmapArea $existing = null, ?\Illuminate\Support\Carbon $computedAt = null): ?int
+    /** Persist all valid ratings in one short transaction; a failed batch falls back to isolated row saves. */
+    private function persistBatch(array $writes, CarbonInterface $computedAt): void
+    {
+        $rows = [];
+        $unchangedIds = [];
+        $now = now();
+
+        foreach ($writes as $write) {
+            $attributes = $this->riskAttributes($write['barangay'], $write['latitude'], $write['longitude'], $write['weather'], $write['evaluation'], $computedAt);
+            $existing = $write['existing'];
+            if ($existing instanceof HeatmapArea) {
+                $existing->fill(array_diff_key($attributes, ['risk_computed_at' => true]));
+                if (! $existing->isDirty()) {
+                    $unchangedIds[] = (int) $existing->getKey();
+                    continue;
+                }
+            }
+            $rows[] = $attributes + ['created_at' => $now, 'updated_at' => $now];
+        }
+
+        try {
+            if ($rows !== []) {
+                DB::transaction(fn () => HeatmapArea::query()->upsert(
+                    $rows,
+                    ['barangay'],
+                    ['latitude', 'longitude', 'risk_level', 'risk_type', 'risk_score', 'predicted_yield', 'rainfall_status', 'planting_advisory', 'irrigation_recommendation', 'description', 'main_risk_reason', 'suggested_action', 'risk_computed_at', 'updated_at'],
+                ));
+                \App\Support\CacheScope::changed(HeatmapArea::class);
+            }
+        } catch (Throwable $exception) {
+            Log::warning('Barangay risk map: bulk persistence failed; retrying ratings individually.', ['message' => $exception->getMessage()]);
+            foreach ($writes as $write) {
+                $this->persistOne($write, $computedAt);
+            }
+        }
+
+        $this->stampUnchanged($unchangedIds, $computedAt);
+    }
+
+    /** @return array<string, mixed> */
+    private function riskAttributes(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, CarbonInterface $computedAt): array
     {
         $risk = $evaluation['risk'];
         $stressLabels = array_map(fn (array $f): string => (string) ($f['label'] ?? ''), $evaluation['stress_factors'] ?? []);
         $temperature = is_numeric($weather['temperature_c'] ?? null) ? (float) $weather['temperature_c'] : null;
-
         $riskType = match (true) {
             in_array('Flooding risk', $stressLabels, true), in_array('Wet field risk', $stressLabels, true) => 'Flood',
             in_array('Drought stress', $stressLabels, true), in_array('Limited rainfall', $stressLabels, true) => 'Drought',
             in_array('Strong wind', $stressLabels, true) => 'Typhoon',
             $temperature !== null && $temperature >= 32 => 'Heat',
-            // No specific stress factor: there is no main concern to name (it used to be stored as "Drought").
             default => null,
         };
+        $description = 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.';
 
+        return [
+            'barangay' => $barangay, 'latitude' => $latitude, 'longitude' => $longitude,
+            'risk_level' => $risk['level'], 'risk_type' => $riskType, 'risk_score' => $risk['score'],
+            'predicted_yield' => $evaluation['yield']['predicted_yield'] ?? null,
+            'rainfall_status' => $weather['rainfall_status'] ?? null,
+            'planting_advisory' => $evaluation['planting']['recommendation'] ?? null,
+            'irrigation_recommendation' => $evaluation['irrigation']['recommendation'] ?? null,
+            'description' => $description, 'main_risk_reason' => $description,
+            'suggested_action' => $evaluation['irrigation']['recommendation'] ?? $evaluation['planting']['recommendation'] ?? 'Continue routine field monitoring.',
+            'risk_computed_at' => $computedAt,
+        ];
+    }
+
+    private function persistOne(array $write, CarbonInterface $computedAt): void
+    {
         try {
-            // Same effect as updateOrCreate(), minus its SELECT: the row was preloaded.
-            $area = ($existing ?? new HeatmapArea(['barangay' => $barangay]))->fill(
-                [
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'risk_level' => $risk['level'],
-                    'risk_type' => $riskType,
-                    'risk_score' => $risk['score'],
-                    'predicted_yield' => $evaluation['yield']['predicted_yield'] ?? null,
-                    'rainfall_status' => $weather['rainfall_status'] ?? null,
-                    'planting_advisory' => $evaluation['planting']['recommendation'] ?? null,
-                    'irrigation_recommendation' => $evaluation['irrigation']['recommendation'] ?? null,
-                    'description' => 'Computed from live barangay weather and last recorded rice yield via AgriculturalRiskScorer.',
-                ]
-            );
-
-            if ($area->exists && ! $area->isDirty()) {
-                return (int) $area->getKey();
-            }
-
-            // Stamped on every successful rating, so the dashboards and Climora show when it was last verified.
-            $area->risk_computed_at = $computedAt ?? now();
-            $area->save();
+            ($write['existing'] ?? new HeatmapArea(['barangay' => $write['barangay']]))
+                ->fill($this->riskAttributes($write['barangay'], $write['latitude'], $write['longitude'], $write['weather'], $write['evaluation'], $computedAt))
+                ->save();
         } catch (Throwable $exception) {
-            Log::warning('Barangay risk map: failed to persist HeatmapArea row.', [
-                'barangay' => $barangay,
-                'message' => $exception->getMessage(),
-            ]);
+            Log::warning('Barangay risk map: failed to persist HeatmapArea row.', ['barangay' => $write['barangay'], 'message' => $exception->getMessage()]);
         }
-
-        return null;
     }
 
     /** Restamp the calculation time of ratings that came out unchanged: one query for all of them. */
-    private function stampUnchanged(array $ids, \Illuminate\Support\Carbon $computedAt): void
+    private function stampUnchanged(array $ids, CarbonInterface $computedAt): void
     {
         if ($ids === []) {
             return;

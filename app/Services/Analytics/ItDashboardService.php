@@ -235,23 +235,30 @@ final class ItDashboardService
             });
             $add('climate', 'Climate Records', self::TARGET_HOURS['climate'], function () {
                 $q = SampleData::without(ClimateRecord::query(), 'climate_records');
+                $summary = (clone $q)->selectRaw('MAX(updated_at) as latest, COUNT(*) as total')->first();
 
-                return ['at' => self::parse((clone $q)->max('updated_at')), 'processed' => (clone $q)->count()];
+                return ['at' => self::parse($summary?->latest), 'processed' => (int) ($summary?->total ?? 0)];
             });
             $add('rice', 'Rice Production', self::TARGET_HOURS['rice'], function () {
                 $q = SampleData::without(RiceProduction::query(), 'rice_productions');
+                $summary = (clone $q)->selectRaw('MAX(updated_at) as latest, COUNT(*) as total')->first();
 
-                return ['at' => self::parse((clone $q)->max('updated_at')), 'processed' => (clone $q)->count()];
+                return ['at' => self::parse($summary?->latest), 'processed' => (int) ($summary?->total ?? 0)];
             });
             $add('predictions', 'Predictions', self::TARGET_HOURS['predictions'], function () {
-                $ready = MonthlyWeatherPrediction::query()->where('status', MonthlyWeatherPrediction::STATUS_READY);
-                $runs = SampleData::without(AnalyticsRun::query(), 'analytics_runs')->whereIn('type', self::PREDICTION_TYPES);
+                $ready = MonthlyWeatherPrediction::query()->selectRaw(
+                    'MAX(generated_at) as latest, COUNT(*) as total, SUM(CASE WHEN status != ? THEN 1 ELSE 0 END) as rejected',
+                    [MonthlyWeatherPrediction::STATUS_READY],
+                )->first();
+                $runs = SampleData::without(AnalyticsRun::query(), 'analytics_runs')->whereIn('type', self::PREDICTION_TYPES)->selectRaw(
+                    'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed',
+                    [AnalyticsRun::STATUS_COMPLETED, AnalyticsRun::STATUS_FAILED],
+                )->first();
 
                 return [
-                    'at' => self::parse((clone $ready)->max('generated_at')),
-                    'processed' => (clone $ready)->count() + (clone $runs)->where('status', AnalyticsRun::STATUS_COMPLETED)->count(),
-                    'rejected' => MonthlyWeatherPrediction::query()->where('status', '!=', MonthlyWeatherPrediction::STATUS_READY)->count()
-                        + (clone $runs)->where('status', AnalyticsRun::STATUS_FAILED)->count(),
+                    'at' => self::parse($ready?->latest),
+                    'processed' => (int) ($ready?->total ?? 0) + (int) ($runs?->completed ?? 0),
+                    'rejected' => (int) ($ready?->rejected ?? 0) + (int) ($runs?->failed ?? 0),
                 ];
             });
             $add('advisories', 'Planting Advisories', self::TARGET_HOURS['advisories'], function () {

@@ -110,6 +110,7 @@ class AdvisoryFeedbackTest extends TestCase
         $advisory = PlantingAdvisory::query()->create($this->advisoryPayload());
 
         Schema::drop('advisory_feedback');
+        \App\Support\SchemaCache::forget(); // a migration run does this; the test drops the table by hand
 
         $this->actingAs($mao)
             ->get(route('planting-advisories.show', $advisory))

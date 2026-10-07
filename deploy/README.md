@@ -88,6 +88,48 @@ command has its own `automation-<command>.log`.
 - Run the scheduler from cron and the queue worker and ML service from systemd or Supervisor (the same commands as
   in the table above).
 
+### Hostinger VPS (PHP-FPM): scheduler and queue worker
+
+Replace `/var/www/iclimate_system` with the project folder and `/usr/bin/php` with the server's PHP 8.2+ CLI
+(`which php`). Use the same PHP version as PHP-FPM, and run both as the web server's user so files they write stay
+readable by the site.
+
+**Scheduler** (`crontab -e` as that user). It prepares the dashboards every minute (`iclimate:warm-dashboards`
+rebuilds only what is due), refreshes weather, risk and PAGASA, and cleans repeated queue jobs:
+
+```
+* * * * * cd /var/www/iclimate_system && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Queue worker** (`/etc/supervisor/conf.d/iclimate-worker.conf`). It runs reports, predictions, the farmers' yield
+estimates and the risk-map refresh. `--timeout=300` covers the longest job (the risk-map refresh) and stays under the
+queue's `retry_after` (330 s, `DB_QUEUE_RETRY_AFTER`), so a slow job is never handed to a second worker; each job's own
+`$tries` applies. One process is enough for this load; a second one would also take one more Supabase connection
+(the session pool allows 15).
+
+```
+[program:iclimate-worker]
+command=/usr/bin/php /var/www/iclimate_system/artisan queue:work database --queue=analytics,default --sleep=3 --tries=2 --timeout=300 --max-time=3600
+directory=/var/www/iclimate_system
+user=www-data
+numprocs=1
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=330
+redirect_stderr=true
+stdout_logfile=/var/www/iclimate_system/storage/logs/worker.log
+```
+
+Then `sudo supervisorctl reread && sudo supervisorctl update`. After every deployment run `php artisan queue:restart`
+(the worker finishes its current job and Supervisor starts it on the new code) and `php artisan iclimate:warm-dashboards`
+(the dashboards are ready before the first visitor). `--max-time=3600` also restarts the worker every hour.
+
+Before starting the worker for the first time on an existing database, look at what is waiting:
+`php artisan iclimate:clean-stale-queue --dry-run` lists repeated and abandoned jobs; without `--dry-run` it removes
+them (a copy of each removed job is kept under `storage/app/backups/queue`).
+
 ## Checklist before real use
 
 `.env`:

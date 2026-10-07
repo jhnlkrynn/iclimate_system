@@ -8,7 +8,8 @@ use App\Models\MonthlyWeatherPrediction;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
-use App\Support\DashboardData;
+use App\Support\Aggregates;
+use App\Support\BuildMemo;
 use App\Support\ProjectYieldDataset;
 use App\Support\SampleDataDetector;
 use Illuminate\Support\Carbon;
@@ -383,32 +384,60 @@ class DataProvenanceService
 
     /**
      * Everything read from the database in one cached pass. Retired whenever
-     * dashboard source data changes (DashboardData::version()).
+     * the data it reads changes (CacheScope 'provenance').
      *
      * @return array<string, mixed>
      */
     private function databaseFacts(): array
     {
-        return \App\Support\StaleCache::remember('provenance:db:v'.DashboardData::version(), 300, function (): array {
+        return \App\Support\StaleCache::scoped('provenance', fn (string $token): string => 'provenance:db:'.$token, 300, fn (): array => BuildMemo::run(function (): array {
             $iso = fn ($v) => $v ? Carbon::parse($v)->toIso8601String() : null;
 
+            // The three totals the summaries need, in one statement (each summary then reads its own from BuildMemo).
+            rescue(fn () => Aggregates::fetch([
+                'rice' => Aggregates::count(DB::table('rice_productions')),
+                'climate' => Aggregates::count(DB::table('climate_records')),
+                'notifications' => Aggregates::count(DB::table('notifications')),
+            ]), null, false);
             $rice = $this->samples->summary('rice_productions');
-            $riceRows = DB::table('rice_productions')->whereNotIn('id', $this->samples->excludedIds('rice_productions'))
-                ->selectRaw('min(year) a, max(year) b, max(updated_at) u')->first();
-
             $climate = $this->samples->summary('climate_records');
-            $climateRows = DB::table('climate_records')->whereNotIn('id', $this->samples->excludedIds('climate_records'))
-                ->selectRaw('min(record_date) a, max(record_date) b, max(updated_at) u')->first();
-
             $notifications = $this->samples->summary('notifications');
-            $notifUpdated = DB::table('notifications')->whereNotIn('id', $this->samples->excludedIds('notifications'))->max('created_at');
 
+            $riceRows = DB::table('rice_productions')->whereNotIn('id', $this->samples->excludedIds('rice_productions'));
+            $climateRows = DB::table('climate_records')->whereNotIn('id', $this->samples->excludedIds('climate_records'));
             $forecast = MonthlyWeatherPrediction::query()->where('status', 'ready');
-            $latestForecast = (clone $forecast)->orderByDesc('generated_at')->first(['weather_model', 'training_from', 'training_to', 'generated_at']);
-            $span = (clone $forecast)->selectRaw('min(prediction_year * 100 + prediction_month) a, max(prediction_year * 100 + prediction_month) b')->first();
-            $ym = fn ($n) => $n ? Carbon::create((int) floor($n / 100), $n % 100, 1)->format('M Y') : null;
-
             $pagasa = PlantingAdvisory::query()->fromPagasaOnline();
+            $runs = \App\Support\SampleData::without(AnalyticsRun::query(), 'analytics_runs')->whereIn('type', ['rice_yield_prediction', 'weather_prediction']);
+
+            // Every figure below in one statement (Performance Phase 4; the same aggregates, the same values).
+            $facts = Aggregates::fetch([
+                'rice_from' => Aggregates::min(clone $riceRows, 'year'),
+                'rice_to' => Aggregates::max(clone $riceRows, 'year'),
+                'rice_updated' => Aggregates::max(clone $riceRows, 'updated_at'),
+                'climate_from' => Aggregates::min(clone $climateRows, 'record_date'),
+                'climate_to' => Aggregates::max(clone $climateRows, 'record_date'),
+                'climate_updated' => Aggregates::max(clone $climateRows, 'updated_at'),
+                'notifications_updated' => Aggregates::max(DB::table('notifications')->whereNotIn('id', $this->samples->excludedIds('notifications')), 'created_at'),
+                'forecast_from' => Aggregates::min(clone $forecast, DB::raw('prediction_year * 100 + prediction_month')),
+                'forecast_to' => Aggregates::max(clone $forecast, DB::raw('prediction_year * 100 + prediction_month')),
+                'forecast_records' => Aggregates::count(clone $forecast),
+                'weather_records' => Aggregates::count(DB::table('external_weather_data')),
+                'weather_latest' => Aggregates::max(DB::table('external_weather_data'), 'fetched_at'),
+                'pagasa_records' => Aggregates::count(clone $pagasa),
+                'pagasa_latest' => Aggregates::max(clone $pagasa, 'created_at'),
+                'risk_records' => Aggregates::count(HeatmapArea::query()),
+                'risk_computed' => Aggregates::max(HeatmapArea::query(), 'risk_computed_at'),
+                'risk_updated' => Aggregates::max(HeatmapArea::query(), 'updated_at'),
+                'runs_records' => Aggregates::count(clone $runs),
+                'runs_latest' => Aggregates::max(clone $runs, 'created_at'),
+            ]);
+            $riceRows = (object) ['a' => $facts['rice_from'], 'b' => $facts['rice_to'], 'u' => $facts['rice_updated']];
+            $climateRows = (object) ['a' => $facts['climate_from'], 'b' => $facts['climate_to'], 'u' => $facts['climate_updated']];
+            $notifUpdated = $facts['notifications_updated'];
+
+            $latestForecast = (clone $forecast)->orderByDesc('generated_at')->first(['weather_model', 'training_from', 'training_to', 'generated_at']);
+            $span = (object) ['a' => $facts['forecast_from'], 'b' => $facts['forecast_to']];
+            $ym = fn ($n) => $n ? Carbon::create((int) floor($n / 100), $n % 100, 1)->format('M Y') : null;
 
             return [
                 'rice' => $rice + [
@@ -421,7 +450,7 @@ class DataProvenanceService
                 ],
                 'notifications' => $notifications + ['updated' => $iso($notifUpdated)],
                 'forecast' => [
-                    'records' => (clone $forecast)->count(),
+                    'records' => $facts['forecast_records'],
                     'model' => $latestForecast?->weather_model ?? 'n/a',
                     'training' => $latestForecast && $latestForecast->training_from
                         ? Carbon::parse($latestForecast->training_from)->format('M Y').' – '.Carbon::parse($latestForecast->training_to)->format('M Y')
@@ -430,23 +459,23 @@ class DataProvenanceService
                     'generated' => $iso($latestForecast?->generated_at),
                 ],
                 'weather' => [
-                    'records' => DB::table('external_weather_data')->count(),
-                    'latest' => $iso(DB::table('external_weather_data')->max('fetched_at')),
+                    'records' => $facts['weather_records'],
+                    'latest' => $iso($facts['weather_latest']),
                 ],
                 'advisories' => [
-                    'pagasa' => (clone $pagasa)->count(),
-                    'latest' => $iso((clone $pagasa)->max('created_at')),
+                    'pagasa' => $facts['pagasa_records'],
+                    'latest' => $iso($facts['pagasa_latest']),
                 ],
                 'risk' => [
-                    'records' => HeatmapArea::query()->count(),
-                    'computed' => $iso(HeatmapArea::query()->max('risk_computed_at') ?? HeatmapArea::query()->max('updated_at')),
+                    'records' => $facts['risk_records'],
+                    'computed' => $iso($facts['risk_computed'] ?? $facts['risk_updated']),
                 ],
                 'runs' => [
-                    'records' => \App\Support\SampleData::without(AnalyticsRun::query(), 'analytics_runs')->whereIn('type', ['rice_yield_prediction', 'weather_prediction'])->count(),
-                    'latest' => $iso(\App\Support\SampleData::without(AnalyticsRun::query(), 'analytics_runs')->whereIn('type', ['rice_yield_prediction', 'weather_prediction'])->max('created_at')),
+                    'records' => $facts['runs_records'],
+                    'latest' => $iso($facts['runs_latest']),
                     'invalid' => count($this->samples->excludedIds('analytics_runs')),
                 ],
             ];
-        });
+        }));
     }
 }

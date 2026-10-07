@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -131,11 +132,12 @@ class ReportController extends CrudController
         $rows = collect($report->savedRecords());
         $totalRows = $rows->count();
         $tooManyRows = $totalRows > self::PRINT_ROW_CAP;
+        $columns = $this->displayColumns($report->savedColumns(), $report->typeKey());
 
         return view('reports.print', [
             'title' => $report->title,
-            'rows' => $tooManyRows ? collect() : $rows,
-            'columns' => $report->savedColumns(),
+            'rows' => $tooManyRows ? collect() : $this->displayRows($rows, $report->typeKey()),
+            'columns' => $columns,
             'filters' => $report->savedFilters(),
             'generatedAt' => $this->localTime($report->created_at),
             'totalRows' => $totalRows,
@@ -157,8 +159,8 @@ class ReportController extends CrudController
 
         abort_unless($request->filled('report'), 404);
         $report = $this->reportHistory()->findOrFail($request->integer('report'));
-        $columns = $report->savedColumns();
-        $records = $report->savedRecords();
+        $columns = $this->displayColumns($report->savedColumns(), $report->typeKey());
+        $records = $this->displayRows(collect($report->savedRecords()), $report->typeKey());
         $filename = Str::slug($report->title).'.csv';
 
         return response()->streamDownload(function () use ($records, $columns) {
@@ -169,6 +171,33 @@ class ReportController extends CrudController
             }
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    private function displayRows(Collection $rows, string $type): Collection
+    {
+        if ($type !== 'climate_records') {
+            return $rows;
+        }
+
+        return $rows->map(function ($row) {
+            if (is_array($row) && array_key_exists('source', $row)) {
+                $row['source'] = ClimateRecordHistory::displaySource($row['source']);
+            } elseif (is_object($row) && isset($row->source)) {
+                $row->source = ClimateRecordHistory::displaySource($row->source);
+            }
+
+            return $row;
+        });
+    }
+
+    /** Hide presentation-only fields from the Climate Records report without changing saved report data. */
+    private function displayColumns(array $columns, string $type): array
+    {
+        if ($type === 'climate_records') {
+            unset($columns['wind_speed']);
+        }
+
+        return $columns;
     }
 
     protected function prepareData(Request $request, array $data): array
@@ -245,8 +274,8 @@ class ReportController extends CrudController
             'selected' => $report?->report_type,
             'selectedReport' => $report,
             'generatedAt' => $this->localTime($report?->created_at),
-            'rows' => $this->paginateSnapshot($records, $request),
-            'columns' => $report?->savedColumns() ?? [],
+            'rows' => $this->paginateSnapshot($this->displayRows(collect($records), $report?->typeKey() ?? '')->all(), $request),
+            'columns' => $report ? $this->displayColumns($report->savedColumns(), $report->typeKey()) : [],
             'filters' => $filters,
             'analyticsRun' => $analyticsRun,
             'reportTypeInfo' => $report ? ReportTypeCatalog::describe($report->typeKey()) : null,
@@ -285,7 +314,7 @@ class ReportController extends CrudController
 
         return [
             'range_label' => $this->dateRangeLabel($from, $to),
-            'historical_source' => ClimateRecordHistory::AMBULONG_SOURCE,
+            'historical_source' => ClimateRecordHistory::AMBULONG_DISPLAY_LABEL,
             'historical' => ClimateRecordHistory::historicalSummary($inRange->where('group', ClimateRecordHistory::HISTORICAL)),
             'entered' => ClimateRecordHistory::enteredSummary($inRange->where('group', ClimateRecordHistory::ENTERED)),
         ];

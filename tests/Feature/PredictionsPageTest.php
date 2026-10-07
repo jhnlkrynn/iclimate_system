@@ -251,7 +251,7 @@ class PredictionsPageTest extends TestCase
         }
     }
 
-    public function test_only_it_gets_the_technical_details_with_recorded_metrics_or_not_recorded(): void
+    public function test_only_it_gets_technical_details_without_model_performance_metrics(): void
     {
         $this->prepareMonthlyForecasts();
         MlModel::query()->create(['purpose' => MlModel::PURPOSE_RICE_YIELD, 'name' => 'Rice yield model (production)', 'model_type' => 'random_forest', 'version' => '1.0.0',
@@ -259,10 +259,18 @@ class PredictionsPageTest extends TestCase
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
         $html = $this->actingAs($it)->get(route('weather-predictions.index'))->getContent();
-        $this->assertStringContainsString('<details class="fad-card wpx-tech" data-wpx-technical>', $html);
-        foreach (['Show technical details', 'monthly_weather_rf_v5', 'Rice yield model (production)', '1.0.0', '0.412', '0.318', '0.871', 'Not recorded', '68%'] as $value) {
+        $this->assertStringContainsString('<section class="fad-card wpx-tech" data-wpx-technical aria-labelledby="wpxTechnicalTitle">', $html);
+        $this->assertStringContainsString('Technical Details', $html);
+        $this->assertStringNotContainsString('<details', $html);
+        $this->assertStringNotContainsString('<summary', $html);
+        $this->assertStringNotContainsString('Show technical details', $html);
+        foreach (['monthly_weather_rf_v5', 'Rice yield model (production)', '1.0.0', '—', '68%'] as $value) {
             $this->assertStringContainsString($value, $html, $value);
         }
+        foreach (['RMSE', 'MAE', 'R²', 'Not recorded', 'Last run'] as $metric) {
+            $this->assertStringNotContainsString($metric, $html, $metric);
+        }
+        $this->assertSame(['rmse' => 0.412, 'mae' => 0.318, 'r2' => 0.871], MlModel::query()->firstOrFail()->only(['rmse', 'mae', 'r2']));
 
         foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])] as $other) {
             $page = $this->actingAs($other)->get(route('weather-predictions.index'))->getContent();

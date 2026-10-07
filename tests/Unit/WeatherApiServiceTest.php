@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\WeatherApiService;
+use App\Support\CoordinateNormalizer;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -230,7 +231,7 @@ class WeatherApiServiceTest extends TestCase
         $latitude = 14.0389;
         $longitude = 120.6503;
         $location = 'Lian, Batangas municipal preview';
-        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(number_format($latitude, 5).','.number_format($longitude, 5));
+        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(CoordinateNormalizer::pair($latitude, $longitude));
         $service = app(WeatherApiService::class);
 
         $first = $service->forecast(latitude: $latitude, longitude: $longitude, location: $location);

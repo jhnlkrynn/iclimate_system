@@ -35,10 +35,19 @@ class FarmerDashboardSetupController extends Controller
 
         try {
             DB::transaction(function () use ($request, $data) {
-                $this->profileFor($request->user())->update(array_filter(['farm_area' => $data['farm_area'], 'farm_type' => $data['farm_type'] ?? null]));
+                // The size of the farm the farmer is viewing (no farms yet: the profile, as before).
+                $farm = \App\Support\ActiveFarm::current($request->user());
+                if ($farm !== null) {
+                    app(\App\Services\Farms\FarmService::class)->update($farm, array_filter([
+                        'farm_size_method' => \App\Models\Farm::SIZE_EXACT, 'farm_size_value' => $data['farm_area'],
+                        'farm_size_unit' => \App\Models\Farm::UNIT_HECTARES, 'farm_type' => $data['farm_type'] ?? null,
+                    ], fn ($value) => $value !== null));
+                } else {
+                    $this->profileFor($request->user())->update(array_filter(['farm_area' => $data['farm_area'], 'farm_type' => $data['farm_type'] ?? null]));
+                }
 
                 // A current plan that has no size yet takes this one; a size the farmer set on a plan is left alone.
-                $plan = FarmerPlantingScheduleController::currentSchedule($request->user());
+                $plan = FarmerPlantingScheduleController::currentSchedule($request->user(), $farm);
                 if ($plan instanceof FarmerPlantingSchedule && $plan->farm_area_hectares === null) {
                     $plan->update(['farm_area_hectares' => $data['farm_area']]);
                 }
@@ -52,7 +61,7 @@ class FarmerDashboardSetupController extends Controller
         return response()->json([
             // Sent with a farm type field, it was the "Farm Information" form.
             'message' => $request->has('farm_type') ? __('farmer.popup.size.saved_info') : __('farmer.popup.size.saved'),
-            'values' => ['farm_area' => number_format((float) $data['farm_area'], 2, '.', ''), 'farm_type' => (string) $request->user()->farmerProfile()->value('farm_type')],
+            'values' => ['farm_area' => number_format((float) $data['farm_area'], 2, '.', ''), 'farm_type' => (string) (\App\Support\ActiveFarm::current($request->user())?->farm_type ?? $request->user()->farmerProfile()->value('farm_type'))],
         ]);
     }
 

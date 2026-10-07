@@ -24,13 +24,18 @@ class ClimateRecordHistory
     /** How the Ambulong monthly record is labelled; the station is in Tanauan, the nearest PAGASA station to Lian. */
     public const AMBULONG_SOURCE = 'PAGASA Ambulong Station (Tanauan, Batangas)';
 
+    /** The user-facing source label; the stored station provenance above never changes. */
+    public const AMBULONG_DISPLAY_LABEL = 'PAGASA Lian, Batangas';
+
+    public const AMBULONG_PROVENANCE_NOTE = 'PAGASA historical climate reference used for Lian, Batangas.';
+
     /**
      * Farmer-facing names for the Ambulong rows: the page presents them as the climate reference used for Lian,
      * while the stored source above stays the true one (filters still match it) and the page notes the station.
      */
-    public const AMBULONG_ROW_LABEL = 'Lian Climate Reference';
+    public const AMBULONG_ROW_LABEL = self::AMBULONG_DISPLAY_LABEL;
 
-    public const AMBULONG_FILTER_LABEL = 'Lian Past Weather Records';
+    public const AMBULONG_FILTER_LABEL = self::AMBULONG_DISPLAY_LABEL;
 
     public const HISTORICAL = 'historical';
 
@@ -84,6 +89,11 @@ class ClimateRecordHistory
         $entered->each(fn (ClimateRecord $record) => $rows->push($this->row($record->id, $record->record_date, 'day', $record->rainfall, $record->temperature, $record->humidity, $record->season, $record->source, $record->wind_speed)));
 
         return [$rows, $unavailable];
+    }
+
+    public static function displaySource(?string $source): ?string
+    {
+        return $source === self::AMBULONG_SOURCE ? self::AMBULONG_DISPLAY_LABEL : $source;
     }
 
     /**

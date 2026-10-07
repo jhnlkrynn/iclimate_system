@@ -4,7 +4,8 @@
          one panel on the right: the municipal summary first, then the clicked barangay's risk level, plain explanation
          ("Ibig sabihin") and recommended action ("Gawin ngayon"). [This Week] / [2 Weeks] come from the saved daily
          forecast (BarangayWeekRiskService); both ranges are in the page, so resources/js/heat-map.js only shows and
-         hides them and colours the map. No pop-up, no request on click. --}}
+         hides them and colours the map. No pop-up, no request on click. data-heat-map-updating: a barangay has no
+         forecast while new weather is on its way, so heat-map.js reads this page again a few times until it has. --}}
     @php
         $t = fn (string $key, array $replace = []) => trans('farmer.heat_map.'.$key, $replace, $locale);
         $colors = \App\Services\Risk\HeatMapPanel::COLORS;
@@ -13,7 +14,7 @@
         $hasNoData = collect($ranges)->contains(fn (array $r) => $r['counts']['nodata'] > 0);
         $mapData = ['levels' => $levels, 'colors' => $colors, 'labels' => $labels, 'yours' => $t('your_barangay')];
     @endphp
-    <div class="hmx" data-heat-map data-range="{{ $range }}" lang="{{ $locale }}">
+    <div class="hmx" data-heat-map data-range="{{ $range }}" lang="{{ $locale }}" @if ($updating ?? false) data-heat-map-updating @endif>
         <h1 class="visually-hidden">{{ $t('title') }}</h1>
 
         <div class="hmx-map">
@@ -46,8 +47,7 @@
                 <section class="hmx-view" data-heat-map-view="{{ $key }}:summary" @if ($key !== $range) hidden @endif>
                     <h2 class="hmx-title">{{ $r['title'] }}</h2>
                     @if ($r['state'] === 'nodata')
-                        <x-no-data :label="$showNumbers ? 'Walang datos pa' : trans('farmer.home.no_data', [], $locale)"
-                            :note="trans('farmer.home.no_data_note', [], $locale)" />
+                        <x-no-data :label="trans('farmer.home.no_data', [], $locale)" :note="trans('farmer.home.no_data_note', [], $locale)" />
                     @else
                         <ul class="hmx-counts">
                             @foreach ($r['count_lines'] as $line)
@@ -62,6 +62,14 @@
                                 <span class="hmx-badge is-{{ $own['level'] }}">{{ $own['label'] }}</span>
                             </button>
                         @endif
+                        @if ($showNumbers && $r['outlook'] !== [])
+                            <h3 class="hmx-sub">{{ $t('outlook_title') }}</h3>
+                            <dl class="hmx-numbers" data-heat-map-outlook>
+                                @foreach ($r['outlook'] as $label => $value)
+                                    <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
+                                @endforeach
+                            </dl>
+                        @endif
                         <p class="hmx-hint">{{ $t('pick') }}</p>
                         <h3 class="hmx-sub">{{ $t('all_barangays') }}</h3>
                         <ul class="hmx-list">
@@ -74,6 +82,9 @@
                             @endforeach
                         </ul>
                         <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" />
+                        @if ($r['delayed'])
+                            <p class="hmx-source" data-heat-map-delayed>{{ $t('delayed') }}</p>
+                        @endif
                         <p class="hmx-source">{{ $t('source') }}</p>
                     @endif
                 </section>
@@ -107,6 +118,9 @@
                             <p class="hmx-source">{{ $b['partial'] }}</p>
                         @endif
                         <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" />
+                        @if ($r['delayed'] && $b['level'] !== 'nodata')
+                            <p class="hmx-source">{{ $t('delayed') }}</p>
+                        @endif
                     </section>
                 @endforeach
             @endforeach

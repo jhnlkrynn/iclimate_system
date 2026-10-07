@@ -76,11 +76,8 @@ class WeatherPredictionController extends Controller
     private function averageEstimate(?string $barangay, \App\Services\Prediction\SeasonYield $seasonYield): array
     {
         $now = CarbonImmutable::now('Asia/Manila');
-        $farmers = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->with('farmerProfile:id,user_id,barangay')->get(['id', 'barangay']);
-        if ($barangay !== null) {
-            $farmers = $farmers->filter(fn (User $f): bool => $f->registeredBarangay() === $barangay);
-        }
-        $estimates = $farmers->map(fn (User $f): ?array => \App\Services\Analytics\FarmerDashboardService::storedEstimate($f->id))->filter()->values();
+        // One saved estimate per farm (each farm in its own barangay), read with one query for the farms.
+        $estimates = \App\Services\Analytics\FarmerDashboardService::storedEstimates($barangay);
         $base = ['season' => $seasonYield->seasonLabel($now)];
         if ($estimates->isEmpty()) {
             return $base + ['state' => 'nodata', 'reason' => __('farmer.predictions.yield_none_staff')];
@@ -104,8 +101,7 @@ class WeatherPredictionController extends Controller
         $month = \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         $weather = rescue(fn () => app(PredictionOrchestrator::class)->preparedMonthlyWeatherForecasts([$month])[$month->format('Y-m')] ?? null, null, false);
         $model = rescue(fn () => \App\Models\MlModel::query()->where('purpose', \App\Models\MlModel::PURPOSE_RICE_YIELD)->where('is_active', true)->first(), null, false);
-        $lastYieldRun = User::query()->where('role', User::ROLE_FARMER)->pluck('id')
-            ->map(fn (int $id) => data_get(\App\Services\Analytics\FarmerDashboardService::storedEstimate($id), 'ran_at'))->filter()->sort()->last();
+        $lastYieldRun = \App\Services\Analytics\FarmerDashboardService::storedEstimates()->pluck('ran_at')->filter()->sort()->last();
 
         return [
             'weather' => [

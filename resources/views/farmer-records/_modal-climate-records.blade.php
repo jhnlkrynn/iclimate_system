@@ -54,7 +54,7 @@
             <div><dt>Date</dt><dd>{{ $date?->format('F j, Y') ?? 'Not available' }}</dd></div>
             <div><dt>Location</dt><dd>Lian, Batangas</dd></div>
             @if ($record->season)<div><dt>Season</dt><dd>{{ $record->season }} season</dd></div>@endif
-            <div><dt>Source</dt><dd>{{ $record->source ?: 'Not recorded' }}</dd></div>
+            <div><dt>Source</dt><dd>{{ \App\Services\Climate\ClimateRecordHistory::displaySource($record->source) ?: 'Not recorded' }}</dd></div>
             @if ($recorded)<div><dt>Recorded On</dt><dd>{{ $recorded->format('F j, Y · g:i A') }}</dd></div>@endif
             @if ($updated && (! $recorded || $updated->gt($recorded)))<div><dt>Updated</dt><dd>{{ $updated->format('F j, Y · g:i A') }}</dd></div>@endif
         </dl>

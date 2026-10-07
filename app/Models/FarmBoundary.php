@@ -12,6 +12,7 @@ class FarmBoundary extends Model
 
     protected $fillable = [
         'farmer_profile_id',
+        'farm_id',
         'boundary_coordinates',
         'barangay',
         'calculated_area_hectares',
@@ -30,5 +31,11 @@ class FarmBoundary extends Model
     public function farmerProfile(): BelongsTo
     {
         return $this->belongsTo(FarmerProfile::class);
+    }
+
+    /** The farm this map is of (one map per farm). */
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
     }
 }

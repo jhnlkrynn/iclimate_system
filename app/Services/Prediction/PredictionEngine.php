@@ -8,6 +8,7 @@ use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\DecisionSupportService;
 use App\Services\PythonService;
+use App\Support\ActiveFarm;
 use Carbon\CarbonImmutable;
 use Throwable;
 
@@ -137,7 +138,10 @@ class PredictionEngine
         $inSeason = $recent->filter(fn (object $row): bool => $modelSeasonOf($row) === $season);
         $temps = $recent->pluck('temperature')->filter(fn ($v) => $v !== null);
 
+        $activeFarm = $user && $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
+        $farmArea = $activeFarm?->modelArea();
         $area = $areaOverride
+            ?? $farmArea
             ?? $user?->farmerProfile?->farm_area
             ?? ($user ? null : RiceProduction::query()->avg('area_hectares'));
         $area = $num($area);

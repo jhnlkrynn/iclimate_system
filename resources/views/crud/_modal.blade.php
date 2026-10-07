@@ -25,7 +25,7 @@
         <h3 id="icRecordFields">Details</h3>
         <dl class="fad-m-details">
             @foreach ($columns as $field => $label)
-                <div><dt>{{ $label }}</dt><dd>{{ $value($field) }}</dd></div>
+                <div><dt>{{ $label }}</dt><dd>{{ $routeName === 'climate-records' && $field === 'source' ? \App\Services\Climate\ClimateRecordHistory::displaySource($record->source) : $value($field) }}</dd></div>
             @endforeach
             @if (isset($record->message) && ! array_key_exists('message', $columns))
                 <div><dt>Message</dt><dd>{{ $record->message }}</dd></div>

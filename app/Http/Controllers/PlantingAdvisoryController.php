@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\AdvisoryFeedback;
 use App\Models\AnalyticsRun;
-use App\Models\ExternalWeatherData;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
@@ -20,7 +19,6 @@ use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\BusinessClock;
-use App\Support\DashboardData;
 use App\Support\FarmerAdvisoryView;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
@@ -580,7 +578,8 @@ class PlantingAdvisoryController extends Controller
             : $requestedBarangay;
         $summary = $pagasa->fetchAndStore($this->canManage($request), (int) config('services.pagasa.request_budget', 15));
         $weather = $local->refresh($barangay);
-        PageCache::flushShared();
+        // The provider services retire their own dependent cache scopes; keep unrelated
+        // prepared pages warm after a refresh.
 
         if (! ($summary['ok'] ?? false) && ! ($weather['available'] ?? false)) {
             if ($request->expectsJson()) {

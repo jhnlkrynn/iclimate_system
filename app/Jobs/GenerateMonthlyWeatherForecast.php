@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Services\Prediction\PredictionOrchestrator;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,7 @@ use Throwable;
  * never dispatched from a normal farmer-facing request path, and never
  * blocks a page render.
  */
-class GenerateMonthlyWeatherForecast implements ShouldQueue
+class GenerateMonthlyWeatherForecast implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -26,6 +27,14 @@ class GenerateMonthlyWeatherForecast implements ShouldQueue
     public int $timeout = 120;
 
     public array $backoff = [10, 30];
+
+    /** One forecast job per month waits in the queue at a time (held until it has run, at most six hours). */
+    public int $uniqueFor = 21600;
+
+    public function uniqueId(): string
+    {
+        return $this->targetMonth;
+    }
 
     public function __construct(public readonly string $targetMonth)
     {

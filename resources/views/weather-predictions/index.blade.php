@@ -120,19 +120,15 @@
         </section>
 
         @if ($t)
-            {{-- IT only: what made these numbers. Closed until opened; a value never recorded says so. --}}
-            <details class="fad-card wpx-tech" data-wpx-technical>
-                <summary>{{ __('farmer.predictions.tech_toggle') }}</summary>
+            {{-- IT only: what made these numbers; always visible and missing metadata stays visually compact. --}}
+            <section class="fad-card wpx-tech" data-wpx-technical aria-labelledby="wpxTechnicalTitle">
+                <h2 class="wpx-tech-title" id="wpxTechnicalTitle">Technical Details</h2>
                 @foreach (['weather' => __('farmer.predictions.tech_weather'), 'yield' => __('farmer.predictions.tech_yield')] as $key => $heading)
-                    @php $m = $t[$key]; $nr = __('farmer.predictions.not_recorded'); @endphp
+                    @php $m = $t[$key]; $nr = '—'; @endphp
                     <h3>{{ $heading }}</h3>
                     <dl class="wpx-tech-grid">
                         <div><dt>{{ __('farmer.predictions.tech_model') }}</dt><dd>{{ $m['model'] ?? $nr }}</dd></div>
                         <div><dt>{{ __('farmer.predictions.tech_version') }}</dt><dd>{{ $m['version'] ?? $nr }}</dd></div>
-                        <div><dt>RMSE</dt><dd>{{ $m['rmse'] === null ? $nr : number_format($m['rmse'], 3) }}</dd></div>
-                        <div><dt>MAE</dt><dd>{{ $m['mae'] === null ? $nr : number_format($m['mae'], 3) }}</dd></div>
-                        <div><dt>R²</dt><dd>{{ $m['r2'] === null ? $nr : number_format($m['r2'], 3) }}</dd></div>
-                        <div><dt>{{ __('farmer.predictions.tech_last_run') }}</dt><dd>{{ $m['last_run'] ? $m['last_run']->format('M j, Y g:i A') : $nr }}</dd></div>
                         @if ($key === 'weather')
                             <div><dt>{{ __('farmer.predictions.tech_confidence') }}</dt><dd>{{ $m['confidence'] === null ? $nr : $m['confidence'].'%' }}</dd></div>
                             <div><dt>{{ __('farmer.predictions.tech_training') }}</dt><dd>{{ $m['training'] ?? $nr }}</dd></div>
@@ -140,7 +136,7 @@
                     </dl>
                 @endforeach
                 <p class="fad-support"><a href="{{ route('model-evaluation.index') }}">Model Evaluation</a></p>
-            </details>
+            </section>
         @endif
     </div>
     @unless ($isFarmer)

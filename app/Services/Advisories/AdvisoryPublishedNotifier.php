@@ -21,12 +21,17 @@ class AdvisoryPublishedNotifier
     {
         $target = LianBarangays::canonicalName($advisory->target_barangay);
 
+        // A farmer with farms in several barangays hears about an advisory for any of them (each farmer once).
+        $withFarms = \App\Support\ActiveFarm::available();
         $farmers = User::query()
             ->with('farmerProfile:id,user_id,barangay')
+            ->when($withFarms, fn ($q) => $q->with(['farms' => fn ($f) => $f->active()->select('id', 'user_id', 'barangay')]))
             ->where('role', User::ROLE_FARMER)
             ->where('status', User::STATUS_ACTIVE)
             ->get()
-            ->filter(fn (User $farmer): bool => $target === null || LianBarangays::canonicalName($farmer->registeredBarangay()) === $target)
+            ->filter(fn (User $farmer): bool => $target === null
+                || ($withFarms && $farmer->farms->contains(fn ($farm) => LianBarangays::canonicalName($farm->barangay) === $target))
+                || LianBarangays::canonicalName($farmer->registeredBarangay()) === $target)
             ->values();
 
         if ($farmers->isEmpty()) {

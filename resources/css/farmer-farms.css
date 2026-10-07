@@ -1,0 +1,77 @@
+/*
+ * A farmer's farms: the My Farms cards (My Farm page), the Add/Edit Farm form, the farm map page and the My Farm
+ * selector in the top bar. Built on the farmer design system (.fad tokens in farmer-advisories.css, .frec panels in
+ * farmer-records.css); only these parts live here.
+ */
+
+/* ------------------------------------------------------------ My Farms cards */
+.ffm-cards { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; grid-template-columns: minmax(0, 1fr); }
+@container fad (min-width: 640px) { .ffm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container fad (min-width: 1100px) { .ffm-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ffm-card { display: grid; gap: 6px; align-content: start; min-width: 0; padding: 16px; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; }
+.ffm-card.is-current { border-color: var(--brand); box-shadow: inset 4px 0 0 var(--brand); }
+.ffm-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.ffm-card-head h3 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.ffm-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.ffm-card p { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.ffm-card-place { color: var(--muted) !important; font-size: .9375rem; }
+.ffm-card-size { font-size: 1.125rem; font-weight: 700; }
+.ffm-card-size small { display: block; font-size: .8125rem; font-weight: 500; color: var(--muted); }
+.ffm-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ffm-card-actions form { display: inline; margin: 0; }
+.ffm-card-actions .fad-btn { min-height: 40px; }
+.ffm-remove { color: #a23a2c !important; }
+.ffm-empty { display: grid; gap: 8px; justify-items: start; padding: 20px; background: var(--subtle); border: 1px dashed var(--rule); border-radius: 6px; }
+
+/* ------------------------------------------------------------ Add / Edit Farm form */
+.ffm-form { max-width: 760px; }
+.ffm-group { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ffm-group > legend { float: none; width: auto; margin: 0 0 4px; padding: 0; }
+.ffm-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@container fad (min-width: 560px) { .ffm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ffm-choices { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@container fad (min-width: 560px) { .ffm-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ffm-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--field); border-radius: 6px; background: var(--card); cursor: pointer; font-weight: 600; color: var(--ink); }
+.ffm-choice input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--brand); }
+.ffm-choice:has(input:checked) { border-color: var(--brand); background: #f1f8f4; }
+.ffm-size { display: grid; gap: 8px; padding: 12px 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 6px; }
+.ffm-size[hidden] { display: none; }
+.ffm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ffm-actions .fad-btn { min-height: 44px; }
+
+/* ------------------------------------------------------------ farm map page */
+.ffm-map { min-height: 460px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+@media (max-width: 767.98px) { .ffm-map { min-height: 380px; } }
+.ffm-map-stats { margin: 0 0 12px; }
+.ffm-point { border: 3px solid #fff; border-radius: 50%; background: #1f5a46; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+
+/* ------------------------------------------------------------ the Farmer Home "Viewing" line */
+.fh-farm-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 4px 0 0; font-size: .9375rem; }
+.fh-farm-line strong { font-weight: 700; }
+
+/* ------------------------------------------------------------ My Farm selector in the top bar */
+.topbar-farm { display: flex; align-items: center; gap: .45rem; min-width: 0; margin: 0; }
+.topbar-farm label { margin: 0; color: rgba(255,255,255,.72); font-size: .74rem; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+.topbar-farm select {
+    min-width: 0; max-width: 240px; min-height: 40px; padding: .4rem 2rem .4rem .7rem; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.22); background-color: rgba(255,255,255,.08); color: #fff;
+    font-size: .85rem; font-weight: 600; text-overflow: ellipsis; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right .6rem center; background-size: 14px 14px;
+}
+.topbar-farm select option { color: #1b1f1d; background: #fff; }
+.topbar-farm select:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.topbar-farm-add { color: #fff; font-size: .82rem; font-weight: 600; white-space: nowrap; }
+@media (max-width: 575.98px) {
+    .topbar-farm { order: 3; flex: 1 1 100%; }
+    .topbar-farm select { flex: 1 1 auto; max-width: none; }
+}
+
+/* ------------------------------------------------------------ dark mode */
+html[data-theme="dark"] .ffm-card { background: var(--dk-surface, #16201b); border-color: var(--dk-border, #2a3b33); }
+html[data-theme="dark"] .ffm-card h3, html[data-theme="dark"] .ffm-card p, html[data-theme="dark"] .ffm-choice { color: var(--dk-ink, #e4ece7); }
+html[data-theme="dark"] .ffm-card-place, html[data-theme="dark"] .ffm-card-size small { color: var(--dk-muted, #9fb5aa) !important; }
+html[data-theme="dark"] .ffm-choice { background: var(--dk-surface, #16201b); border-color: var(--dk-border-strong, #34493f); }
+html[data-theme="dark"] .ffm-choice:has(input:checked) { background: var(--dk-surface-2, #1d2a23); border-color: #52b788; }
+html[data-theme="dark"] .ffm-size, html[data-theme="dark"] .ffm-empty { background: var(--dk-surface-2, #1d2a23); border-color: var(--dk-border, #2a3b33); }

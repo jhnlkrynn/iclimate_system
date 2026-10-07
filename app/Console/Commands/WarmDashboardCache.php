@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SystemHealthController;
 use Illuminate\Console\Command;
 use Throwable;
@@ -27,7 +26,7 @@ class WarmDashboardCache extends Command
         $failed = 0;
 
         foreach ([
-            'dashboards' => fn () => app()->call([app(DashboardController::class), 'warmSharedDashboards']),
+            // The MAO / IT / MAO Operations payloads are prepared by iclimate:warm-dashboards (every minute, when due).
             'system health' => fn () => app()->call([app(SystemHealthController::class), 'warm']),
         ] as $label => $warm) {
             $started = microtime(true);

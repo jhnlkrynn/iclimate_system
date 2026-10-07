@@ -64,9 +64,25 @@ class User extends Authenticatable
         return $this->hasOne(FarmerProfile::class);
     }
 
-    /** Resolve the exact registered Lian barangay without guessing ambiguous values. */
+    /** Every farm this farmer owns or manages (archived ones too; use ->active()). */
+    public function farms(): HasMany
+    {
+        return $this->hasMany(Farm::class);
+    }
+
+    /**
+     * The farmer's Lian barangay without guessing ambiguous values. For the signed-in farmer it is the barangay of the
+     * farm they are viewing (App\Support\ActiveFarm), so the Home, Heat Map, advisories, forecast and Climora all
+     * follow the farm picked in the My Farm selector; anyone else reading it (MAO lists, notices) gets the primary
+     * farm's barangay, which the profile mirrors.
+     */
     public function registeredBarangay(): ?string
     {
+        if ($this->role === self::ROLE_FARMER && (int) auth()->id() === (int) $this->getKey()
+            && ($farm = \App\Support\ActiveFarm::current($this)) !== null && ($farmBarangay = LianBarangays::canonicalName($farm->barangay)) !== null) {
+            return $farmBarangay;
+        }
+
         $profileValue = $this->farmerProfile?->barangay;
         if (is_string($profileValue) && trim($profileValue) !== '') {
             // A present but ambiguous profile value is a genuine data-quality

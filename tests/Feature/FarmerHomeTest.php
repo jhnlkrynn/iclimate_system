@@ -103,12 +103,16 @@ class FarmerHomeTest extends TestCase
         return $user;
     }
 
-    private function home(?User $as = null, bool $withWeather = true)
+    /** @param  bool  $estimate  the farmer's estimate was already prepared (the warm-up or a background run) */
+    private function home(?User $as = null, bool $withWeather = true, bool $estimate = false)
     {
         $as ??= $this->farmer();
         Cache::flush();
         if ($withWeather) {
             $this->storeWeather();
+        }
+        if ($estimate) {
+            app(FarmerDashboardService::class)->prepareYieldEstimate($as->load('farmerProfile'));
         }
 
         return $this->actingAs($as)->get(route('farmer.dashboard'))->assertOk();
@@ -327,7 +331,7 @@ class FarmerHomeTest extends TestCase
         $this->lianYields(4.0);
         foreach ([4.1 => 'Normal', 5.0 => 'Higher', 3.0 => 'Lower'] as $yield => $label) {
             $this->mockPrediction((float) $yield);
-            $html = $this->home($this->farmer(attributes: ['email' => 'y'.$yield.'@example.test']))->getContent();
+            $html = $this->home($this->farmer(attributes: ['email' => 'y'.$yield.'@example.test']), estimate: true)->getContent();
             $this->assertStringContainsString(number_format((float) $yield, 2).' <small>t/ha</small>', $html);
             $this->assertStringContainsString('>'.$label.'</p>', $html, (string) $yield);
         }

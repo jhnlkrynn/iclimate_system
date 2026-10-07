@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ExternalWeatherData;
 use App\Services\Weather\WeatherIconMapper;
+use App\Support\CoordinateNormalizer;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -49,7 +50,7 @@ class WeatherApiService
         $latitude ??= (float) config('services.weather.latitude', config('services.open_meteo.latitude', config('services.weather_api.latitude', \App\Support\LianLocation::LATITUDE)));
         $longitude ??= (float) config('services.weather.longitude', config('services.open_meteo.longitude', config('services.weather_api.longitude', \App\Support\LianLocation::LONGITUDE)));
         $location ??= (string) config('services.weather.location_name', config('services.weather_api.location_name', 'Lian, Batangas'));
-        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(number_format($latitude, 5).','.number_format($longitude, 5));
+        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(CoordinateNormalizer::pair($latitude, $longitude));
         $latestCacheKey = $cacheKey.':latest';
         $ttlMinutes = max(30, min(60, (int) config('services.weather_api.refresh_minutes', 45)));
         $ttl = now()->addMinutes($ttlMinutes);
@@ -173,8 +174,8 @@ class WeatherApiService
 
             $response = $client
                 ->get(rtrim((string) config('services.open_meteo.base_url', 'https://api.open-meteo.com/v1'), '/').'/forecast', [
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
+                    'latitude' => CoordinateNormalizer::format($latitude),
+                    'longitude' => CoordinateNormalizer::format($longitude),
                     'current' => implode(',', self::CURRENT_FIELDS),
                     'hourly' => implode(',', self::HOURLY_FIELDS),
                     'daily' => implode(',', self::DAILY_FIELDS),

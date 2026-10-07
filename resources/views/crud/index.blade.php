@@ -95,6 +95,7 @@
     @php
         $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
             + collect(array_keys($filterable))->filter(fn ($field) => request()->filled($field))->count();
+        $showRecordActions = $routeName !== 'climate-records';
     @endphp
     <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
         <summary>
@@ -146,7 +147,7 @@
                             @foreach ($columns as $label)
                                 <th>{{ $label }}</th>
                             @endforeach
-                            <th class="text-end">Actions</th>
+                            @if ($showRecordActions)<th class="text-end">Actions</th>@endif
                         </tr>
                     </thead>
                     <tbody>
@@ -160,11 +161,13 @@
                                         @elseif ($field === 'farm_type' && data_get($record, $field))
                                             <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                         @else
-                                            @if ($field === 'role' && filled(data_get($record, $field))){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
+                                            @php $value = data_get($record, $field); @endphp
+                                            @if ($routeName === 'climate-records' && $field === 'source') @php $value = \App\Services\Climate\ClimateRecordHistory::displaySource($value); @endphp @endif
+                                            @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
                                         @endif
                                     </td>
                                 @endforeach
-                                <td class="text-end text-nowrap">
+                                @if ($showRecordActions)<td class="text-end text-nowrap">
                                     @if (data_get($record, 'is_source_dataset'))
                                         {{-- A row read from a source dataset: read-only, so no View / Edit / Delete. --}}
                                         <span class="small text-muted" title="{{ data_get($record, 'source_note') }}">Dataset · read-only</span>
@@ -186,7 +189,7 @@
                                         </form>
                                     @endif
                                     @endif
-                                </td>
+                                </td>@endif
                             </tr>
                         @endforeach
                     </tbody>
@@ -205,12 +208,14 @@
                                     @elseif ($field === 'farm_type' && data_get($record, $field))
                                         <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                     @else
-                                        @if ($field === 'role' && filled(data_get($record, $field))){{ \App\Models\User::labelForRole((string) data_get($record, $field)) }}@else{{ filled(data_get($record, $field)) ? data_get($record, $field) : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
+                                        @php $value = data_get($record, $field); @endphp
+                                        @if ($routeName === 'climate-records' && $field === 'source') @php $value = \App\Services\Climate\ClimateRecordHistory::displaySource($value); @endphp @endif
+                                        @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
                                     @endif
                                 </div>
                             </div>
                         @endforeach
-                        <div class="ic-table-card-actions">
+                        @if ($showRecordActions)<div class="ic-table-card-actions">
                             @if (data_get($record, 'is_source_dataset'))
                                 <span class="small text-muted" title="{{ data_get($record, 'source_note') }}">Dataset · read-only</span>
                             @else
@@ -231,7 +236,7 @@
                                 </form>
                             @endif
                             @endif
-                        </div>
+                        </div>@endif
                     </div>
                 @endforeach
             </div>

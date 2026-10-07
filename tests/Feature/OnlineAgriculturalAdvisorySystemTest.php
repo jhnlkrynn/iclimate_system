@@ -12,6 +12,7 @@ use App\Services\Advisories\PagasaAdvisoryService;
 use App\Services\Weather\OpenMeteoService;
 use Database\Seeders\AdvisoryRuleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -53,6 +54,20 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
 
         $this->assertFalse($result['ok']);
         $this->assertTrue($result['records']->contains('id', $stored->id));
+    }
+
+    public function test_repeated_non_forced_open_meteo_reads_share_one_provider_refresh(): void
+    {
+        Cache::flush();
+        Http::fake(['api.open-meteo.com/*' => Http::response($this->openMeteoPayload(rainfall: 12, probability: 40), 200)]);
+
+        $service = app(OpenMeteoService::class);
+        $first = $service->fetchForecast();
+        $second = $service->fetchForecast();
+
+        $this->assertTrue($first['ok']);
+        $this->assertSame($first['fetched_at']->toIso8601String(), $second['fetched_at']->toIso8601String());
+        Http::assertSentCount(1);
     }
 
     public function test_heavy_rainfall_generates_climate_advisory_and_prevents_duplicates(): void
@@ -381,13 +396,14 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->actingAs($farmer)->get(route('planting-advisories.show', $advisory))->assertOk()->assertSee('<html', false);
     }
 
-    public function test_popup_follows_the_same_access_rules_as_the_advisory_page(): void
+    public function test_popup_opens_any_lian_barangay_advisory_but_never_a_draft(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $other = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Other barangay', 'target_barangay' => 'Matabungkay', 'target_scope' => 'barangay']));
         $draft = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Draft', 'status' => 'pending_review']));
 
-        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertForbidden();
+        // Advice for another Lian barangay is public farm advice: the barangay picker shows it, so it opens.
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertOk();
         $this->actingAs($farmer)->get(route('planting-advisories.show', [$draft, 'modal' => 1]))->assertForbidden();
     }
 

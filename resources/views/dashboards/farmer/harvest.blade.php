@@ -12,12 +12,20 @@
             <p class="fh-badge is-{{ ['typical' => 'info', 'above' => 'good', 'below' => 'watch'][$h['compare']] }}">{{ $h['compare_label'] }}</p>
             <p class="fh-muted">{{ __('farmer.home.harvest.compare_note') }}</p>
         @endif
+        @if (! empty($h['size_note']))<p class="fh-muted">{{ $h['size_note'] }}</p>@endif
         <x-updated-at :at="$h['ran_at']" :label="__('farmer.home.updated')" />
     @elseif ($h['state'] === 'loading')
         <div class="ic-skel-lines" role="status"><span></span><span></span><span class="visually-hidden">{{ __('farmer.home.harvest.preparing') }}</span></div>
         <p class="fh-muted">{{ __('farmer.home.harvest.preparing') }}</p>
     @else
         <x-no-data :label="__('farmer.home.no_data')" :note="$h['reason']" />
+        @if ($h['needs_area'])
+            @if (! empty($h['farm_id']))
+                <a class="fh-link" href="{{ route('farmer.farms.edit', $h['farm_id']) }}">{{ __('farms.yield.add_size') }}</a>
+            @else
+                <a class="fh-link" href="{{ route('profile.edit') }}">{{ __('farmer.home.harvest.add_area') }}</a>
+            @endif
+        @endif
     @endif
 </section>
 @endunless

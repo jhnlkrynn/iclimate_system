@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Support\DashboardData;
+use App\Support\CacheScope;
 use App\Support\SampleDataDetector;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -91,7 +91,7 @@ class PurgeSampleData extends Command
             }
         });
 
-        DashboardData::bump();
+        CacheScope::bumpAll();
         Cache::flush();
 
         $this->info("Deleted {$total} row(s). Run `php artisan iclimate:data-audit` to confirm.");

@@ -44,6 +44,18 @@
                         <option value="{{ $farmOption->id }}" @selected((int) old('farm_id', $schedule->farm_id ?? $farmOptions->first()->id) === $farmOption->id)>{{ $farmOption->name }}</option>
                     @endforeach
                 </select>
+        @php $planFarms = $farms ?? collect(); @endphp
+        @if ($planFarms->isNotEmpty())
+            {{-- Which of the farmer's farms the plan is for (their own farms only; defaults to the farm they are viewing). --}}
+            <div class="{{ $c['full'] }}">
+                <label class="{{ $c['label'] }}" for="plan_farm_id">{{ __('farms.plan_farm') }}</label>
+                <select class="{{ $c['select'] }}{{ $invalid('farm_id') }}" id="plan_farm_id" name="farm_id">
+                    @foreach ($planFarms as $planFarm)
+                        <option value="{{ $planFarm->id }}" @selected((int) old('farm_id', $schedule->farm_id ?? \App\Support\ActiveFarm::current(auth()->user())?->id) === (int) $planFarm->id)>{{ $planFarm->farm_name }}{{ $planFarm->barangay ? ' · '.$planFarm->barangay : '' }}</option>
+                    @endforeach
+                </select>
+                @error('farm_id')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
+                <div class="{{ $c['help'] }}">{{ __('farms.plan_farm_hint') }}</div>
             </div>
         @endif
         <div class="{{ $c['field'] }}">

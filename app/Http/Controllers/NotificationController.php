@@ -88,8 +88,9 @@ class NotificationController extends CrudController
                 'updated_at' => $timestamp,
             ] + $category)->all());
         });
-        Cache::forget('dashboard:shared-stats');
-        Cache::forget('dashboard:admin-aggregates');
+        // A bulk insert skips model events: retire what reads notifications (the staff counts) the same way a save would.
+        // Each recipient's own pages pick the new notice up within their short cache time, as before.
+        \App\Support\CacheScope::changed(UserNotification::class);
         SystemAuditLogger::record('Sent Notification', $request, [
             'title' => $data['title'],
             'type' => $data['type'],
