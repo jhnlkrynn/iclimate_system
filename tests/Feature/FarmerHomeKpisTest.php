@@ -190,7 +190,7 @@ class FarmerHomeKpisTest extends TestCase
         preg_match_all('#data-fh-kpi="([a-z]+)"#', $m[1], $keys);
         // No estimate and no forecast here, so "expected" and "rain" are left out; the row is filled with figures about the
         // farmer's place that need nothing from the farmer (2026-10-09).
-        $this->assertSame(['farm', 'crop', 'advisories', 'usual'], $keys[1]);
+        $this->assertSame(['farm', 'crop', 'advisories', 'season', 'usual'], $keys[1]);
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1])));
         $this->assertStringContainsString('Farm size 1.5 ha Irrigated', $text);
         $this->assertStringContainsString('Days to harvest 30 days', $text);
@@ -211,14 +211,16 @@ class FarmerHomeKpisTest extends TestCase
     {
         $html = $this->actingAs($this->farmer())->get(route('farmer.dashboard'))->assertOk()->getContent();
 
-        // Nothing of their own is saved (no farm size, plan, estimate) and no forecast is stored: only the two figures
-        // that exist are shown. Zero advisories is a real count; the usual yield is 4.00 t/ha in this test's records.
+        // Nothing of their own is saved (no farm size, plan, estimate) and no forecast is stored: only the figures that
+        // exist are shown. Zero advisories is a real count. Lian's usual yield (4.00 t/ha in this test's records) is on
+        // the yield card, so it is not repeated as a tile.
         preg_match_all('#data-fh-kpi="([a-z]+)"#', $html, $keys);
-        $this->assertSame(['advisories', 'usual'], $keys[1]);
+        $this->assertSame(['advisories', 'season'], $keys[1]);
+        $this->assertStringContainsString('data-fh-usual-yield', $html);
+        $this->assertStringContainsString('Days left in the wet season 25 days Ends Oct 31', (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($html))));
         $this->assertSame(1, preg_match('#<section class="fh-kpis"[^>]*data-fh-kpis>(.*?)</section>#s', $html, $m));
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1])));
         $this->assertStringContainsString('Advisories in effect 0 No advisory right now', $text);
-        $this->assertStringContainsString('Usual yield in Lian 4.00 t/ha', $text);
         $this->assertStringNotContainsString('data-fh-chart="compare"', $html);
     }
 
@@ -234,7 +236,8 @@ class FarmerHomeKpisTest extends TestCase
 
         // Nothing of the farmer's own: the four place figures.
         $sparse = $tiles(null, ['state' => 'nodata'], ['state' => 'nodata', 'days' => []]);
-        $this->assertSame(['risk', 'advisories', 'hot', 'usual'], array_keys($sparse));
+        $this->assertSame(['risk', 'advisories', 'hot', 'season', 'usual'], array_keys($sparse));
+        $this->assertSame(['Days left in the wet season', '25', 'days', 'Ends Oct 31'], [$sparse['season']['label'], $sparse['season']['value'], $sparse['season']['unit'], $sparse['season']['note']]);
         $this->assertSame(['Low', 'Prenza'], [$sparse['risk']['value'], $sparse['risk']['note']]);
         $this->assertSame(['33', '°C', 'Sat 10'], [$sparse['hot']['value'], $sparse['hot']['unit'], $sparse['hot']['note']]);
         $this->assertSame(['4.00', 't/ha'], [$sparse['usual']['value'], $sparse['usual']['unit']]);
@@ -244,6 +247,23 @@ class FarmerHomeKpisTest extends TestCase
         $full = $tiles($this->farm($farmer), ['state' => 'ok', 'yield' => 4.2], $this->week(['light', 'none', 'heavy']));
         $this->assertSame(['farm', 'crop', 'expected', 'rain', 'risk'], array_keys($full));
         $this->assertCount(FarmerHomeKpis::MAX_TILES, $full);
+    }
+
+    public function test_the_weather_risk_and_yield_row_always_has_three_cards(): void
+    {
+        // A farmer whose farm has no size has no estimate of their own: the third card shows Lian's usual yield for the
+        // month (4.00 t/ha in this test's records), and the tiles do not repeat it.
+        $farmer = $this->farmer();
+        $this->farm($farmer, ['farm_size_hectares' => null, 'farm_size_method' => \App\Models\Farm::SIZE_UNKNOWN]);
+
+        $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
+
+        $this->assertSame(1, preg_match('#<section class="fh-card"[^>]*data-fh-usual-yield>(.*?)</section>#s', $html, $m));
+        $text = trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1]))));
+        $this->assertStringStartsWith('Usual Yield This Month Wet season 2026 4.00 t/ha', $text);
+        $this->assertStringNotContainsString('data-fh-harvest', $html);         // it is not presented as the farmer's own estimate
+        $this->assertDoesNotMatchRegularExpression('/data-slot="harvest"\s+hidden/', $html);
+        $this->assertStringNotContainsString('data-fh-kpi="usual"', $html);
     }
 
     public function test_english_and_filipino_have_the_same_words_for_the_figures(): void

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Prediction\SeasonYield;
 use App\Support\ActiveFarm;
 use App\Support\FarmSize;
+use App\Support\RiceSeason;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
 use Carbon\CarbonImmutable;
@@ -29,7 +30,9 @@ use Illuminate\Database\Eloquent\Builder;
  *   - risk:       the barangay's risk rating for this week (the same badge as the Barangay Risk card);
  *   - advisories: how many published advisories are in effect for the barangay or all of Lian;
  *   - hot:        the highest temperature in the next 7 days of the saved forecast;
- *   - usual:      Lian's usual rice yield for this month, from past records.
+ *   - season:     how many days are left in the current rice season;
+ *   - usual:      Lian's usual rice yield for this month, from past records (not when the page's third card already
+ *                 shows it, which it does for a farmer without an estimate of their own).
  * Every figure is a saved one; a figure that cannot be worked out is still left out, never shown as zero.
  *
  * The comparison is one small chart in t/ha: this season's estimate, the usual yield in Lian for this month, and the
@@ -67,7 +70,7 @@ class FarmerHomeKpis
 
         // Fill the row with the figures about the farmer's place, in this order, until there are MAX_TILES.
         if ($place !== null) {
-            foreach (['riskTile', 'advisoriesTile', 'hotTile', 'usualTile'] as $filler) {
+            foreach (['riskTile', 'advisoriesTile', 'hotTile', 'seasonTile', 'usualTile'] as $filler) {
                 if (count($tiles) >= self::MAX_TILES) {
                     break;
                 }
@@ -292,6 +295,24 @@ class FarmerHomeKpis
     }
 
     /**
+     * Days left in the current rice season (wet: May to October; dry: November to April), and the day it ends.
+     *
+     * @param  array<string, mixed>  $place
+     * @return array<string, mixed>|null
+     */
+    private function seasonTile(array $place, CarbonImmutable $now): ?array
+    {
+        $season = RiceSeason::window($now);
+        $today = CarbonImmutable::parse($now->toDateString());
+        $end = CarbonImmutable::parse($season['end']->toDateString());
+        $days = (int) $today->diffInDays($end);
+
+        return ['key' => 'season', 'icon' => 'calendar', 'href' => route('farmer.my-farm'),
+            'label' => __('farmer.kpis.season.'.strtolower($season['season'])), 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
+            'note' => __('farmer.kpis.season.ends', ['date' => $end->locale(app()->getLocale())->translatedFormat('M j')])];
+    }
+
+    /**
      * Lian's usual rice yield for this month, from past records.
      *
      * @param  array<string, mixed>  $place
@@ -299,6 +320,9 @@ class FarmerHomeKpis
      */
     private function usualTile(array $place, CarbonImmutable $now): ?array
     {
+        if ($place['usual_on_card'] ?? false) {
+            return null;                                              // the same number is already on the yield card
+        }
         $usual = $this->seasonYield->usual((int) $now->month);
 
         return $usual === null ? null : ['key' => 'usual', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.usual.label'),
