@@ -221,6 +221,22 @@ html body .ic-sidebar .sidebar-link.active {
 
 html body .ic-sidebar .sidebar-link.active .sidebar-icon { color: var(--sb-accent); filter: none; }
 
+/* A hairline between one link and the next: inset from both edges and fading out at its ends, so it divides without
+   boxing the menu in. None after the last link, and none touching the highlighted page. */
+html body .ic-sidebar .sidebar-link:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 0;                                 /* inside the link: the link clips what overflows it */
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--sb-rule, rgba(255, 255, 255, .22)) 16%, var(--sb-rule, rgba(255, 255, 255, .22)) 84%, transparent);
+    pointer-events: none;
+}
+
+html body .ic-sidebar .sidebar-link.active::after,
+html body .ic-sidebar .sidebar-link:has(+ .sidebar-link.active)::after { content: none; }
+
 html body .ic-sidebar .sidebar-link:active { transform: none; }
 
 html body .ic-sidebar .sidebar-link:focus-visible,
