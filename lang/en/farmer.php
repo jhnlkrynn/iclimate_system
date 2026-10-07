@@ -729,7 +729,7 @@ return [
 
     // ------------------------------------------------------------------ 2026-10 simple farmer pages (Phase 2)
     'nav' => [
-        'home' => 'Home',
+        'home' => 'Dashboard',
         'forecast' => 'Forecast',
         'heat_map' => 'Heat Map',
         'advisories' => 'Advisories',

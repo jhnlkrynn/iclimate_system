@@ -733,7 +733,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource(
             'field-reports',
             FieldReportController::class
-        )->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT);
+        )->middleware([\App\Http\Middleware\FieldReportsUi::class, 'role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT]);   // MAO/IT – Naicel: hidden unless FIELD_REPORTS_UI=true
 
 
         /*

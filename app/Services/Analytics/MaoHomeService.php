@@ -4,6 +4,7 @@ namespace App\Services\Analytics;
 
 use App\Models\FarmerPlantingSchedule;
 use App\Models\FarmerProfile;
+use App\Models\FieldReport;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
@@ -193,6 +194,14 @@ class MaoHomeService
                 'href' => route('planting-advisories.index', ['show' => 'pending']),
                 'action' => 'Review',
             ],
+            // Field Reports remains available only when the existing UI switch is explicitly enabled.
+            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [[
+                'key' => 'field-reports',
+                'label' => 'Unresolved field reports',
+                'count' => rescue(fn (): int => FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count(), null, false),
+                'href' => route('field-reports.index', ['unresolved' => 1]),
+                'action' => 'Open',
+            ]] : []),
             [
                 'key' => 'check-ins',
                 'label' => '"Needs Help" check-ins',

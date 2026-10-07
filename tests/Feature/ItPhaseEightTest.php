@@ -126,7 +126,8 @@ class ItPhaseEightTest extends TestCase
         $this->assertSame(['pending_review', 'Plant this week.'], [$pending->fresh()->status, $pending->fresh()->message]);
         $this->assertSame('published', $published->fresh()->status);
         $this->assertSame(2, PlantingAdvisory::query()->count());
-        $this->assertSame(0, Notification::query()->count());
+        // No advisory alert went out. (The MAO's own "no data yet" reminders, category mao-setup:*, are not alerts.)
+        $this->assertSame(0, Notification::query()->where(fn ($q) => $q->whereNull('category')->orWhere('category', 'not like', 'mao-setup:%'))->count());
 
         // The MAO still does all of it.
         $this->actingAs($this->mao())->post(route('management.advisories.approve', $pending))->assertRedirect();

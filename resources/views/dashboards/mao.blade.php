@@ -1,6 +1,10 @@
 <x-app-layout>
     {{-- MAO Dashboard (2026-10, MaoHomeService): four KPI tiles, the "Kailangan ng Aksyon" list, a small Heat Map preview
-         and one bar chart. Everything is saved data; the pages behind each number are one click away. --}}
+         and one bar chart. Everything is saved data; the pages behind each number are one click away. The former
+         Operations page's parts live on their own pages (Advisories, Calendar, Reports).
+         MAO/IT – Naicel (2026-10-07): a section with no data is not shown at all (no empty card, no placeholder text).
+         Data the MAO can add (climate records this month, production this season, advisories, planner activities) is
+         asked for in the notification bell instead (App\Services\Mao\MaoMissingDataNotifier). --}}
     @php
         $num = fn ($value, int $decimals = 0) => $value === null ? null : number_format((float) $value, $decimals);
         $y = $mao['yield'];
@@ -20,7 +24,17 @@
                 'value' => $num($risk['high']), 'unit' => $risk['high'] === null ? null : 'of 19',
                 'note' => $risk['high'] === null ? 'No saved forecast yet' : ($risk['names'] ? implode(', ', array_slice($risk['names'], 0, 3)).(count($risk['names']) > 3 ? ' +'.(count($risk['names']) - 3).' more' : '') : 'None this week')],
         ];
-        $waiting = collect($mao['actions'])->sum(fn ($a) => (int) $a['count']);
+        // Only figures that exist are shown; a tile or an action whose number cannot be worked out is left out.
+        $tiles = array_values(array_filter($tiles, fn (array $tile): bool => $tile['value'] !== null));
+        $actions = array_values(array_filter($mao['actions'], fn (array $action): bool => $action['count'] !== null));
+        $waiting = collect($actions)->sum(fn ($a) => (int) $a['count']);
+        $showMap = $risk['state'] === 'ok';
+        $charts = [
+            'yield' => $chart['state'] === 'ok',
+            'climate' => $mao['climate']['state'] === 'ok',
+            'impact' => $mao['impact']['state'] === 'ok',
+            'planted' => $mao['planted']['state'] === 'ok',
+        ];
     @endphp
 
     <div class="mtd mhd" data-mao-dashboard>
@@ -36,35 +50,35 @@
         </header>
 
         {{-- 1. Four KPI tiles --}}
-        <section class="mhd-tiles" aria-label="Key figures" data-mao-kpis>
+        @if ($tiles !== [])
+        <section class="mhd-tiles" aria-label="Key figures" data-mao-kpis style="--mhd-tile-cols: {{ count($tiles) }}">
             @foreach ($tiles as $tile)
                 <a class="mhd-tile" href="{{ $tile['href'] }}" data-kpi="{{ $tile['key'] }}">
                     <span class="mhd-tile-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}</span>
-                    @if ($tile['value'] !== null)
-                        <span class="mhd-tile-value"><span data-kpi-value>{{ $tile['value'] }}</span>@if ($tile['unit'])<small>{{ $tile['unit'] }}</small>@endif</span>
-                        @if ($tile['key'] === 'yield' && $y['change_percent'] !== null)
-                            <span class="mtd-trend {{ $y['change_percent'] > 0 ? 'is-up' : ($y['change_percent'] < 0 ? 'is-down' : 'is-flat') }}" data-kpi-change>
-                                <span aria-hidden="true">{{ $y['change_percent'] > 0 ? '↑' : ($y['change_percent'] < 0 ? '↓' : '→') }}</span>
-                                <strong>{{ $y['change_percent'] > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format($y['change_percent'], 1), '0'), '.') }}%</strong> vs last season
-                            </span>
-                        @endif
-                    @else
-                        <span class="mhd-tile-value is-empty" data-kpi-empty>Walang datos pa</span>
+                    <span class="mhd-tile-value"><span data-kpi-value>{{ $tile['value'] }}</span>@if ($tile['unit'])<small>{{ $tile['unit'] }}</small>@endif</span>
+                    @if ($tile['key'] === 'yield' && $y['change_percent'] !== null)
+                        <span class="mtd-trend {{ $y['change_percent'] > 0 ? 'is-up' : ($y['change_percent'] < 0 ? 'is-down' : 'is-flat') }}" data-kpi-change>
+                            <span aria-hidden="true">{{ $y['change_percent'] > 0 ? '↑' : ($y['change_percent'] < 0 ? '↓' : '→') }}</span>
+                            <strong>{{ $y['change_percent'] > 0 ? '+' : '' }}{{ rtrim(rtrim(number_format($y['change_percent'], 1), '0'), '.') }}%</strong> vs last season
+                        </span>
                     @endif
                     <span class="mhd-tile-note">{{ $tile['note'] }}</span>
                 </a>
             @endforeach
         </section>
+        @endif
 
-        <div class="mhd-grid">
+        @if ($actions !== [] || $showMap)
+        <div @class(['mhd-grid', 'is-single' => $actions === [] || ! $showMap])>
             {{-- 2. Kailangan ng Aksyon --}}
+            @if ($actions !== [])
             <section class="mtd-card mhd-actions" aria-labelledby="mhdActionsTitle" data-mao-actions>
                 <div class="mtd-card-head">
                     <h2 id="mhdActionsTitle">Kailangan ng Aksyon</h2>
                     @if ($waiting > 0)<span class="mtd-count">{{ $waiting }}</span>@endif
                 </div>
                 <ul class="mhd-action-list">
-                    @foreach ($mao['actions'] as $action)
+                    @foreach ($actions as $action)
                         <li @class(['mhd-action', 'is-waiting' => (int) $action['count'] > 0]) data-mao-action="{{ $action['key'] }}">
                             <strong class="mhd-action-count">{{ $action['count'] === null ? '—' : number_format($action['count']) }}</strong>
                             <span class="mhd-action-label">{{ $action['label'] }}</span>
@@ -76,8 +90,10 @@
                     <p class="mtd-allgood">@include('dashboards.mao.icon', ['name' => 'check']) Nothing is waiting right now.</p>
                 @endif
             </section>
+            @endif
 
-            {{-- 3. Small Heat Map preview: the whole card opens the Heat Map. --}}
+            {{-- 3. Small Heat Map preview: the whole card opens the Heat Map. Not shown before the first saved forecast. --}}
+            @if ($showMap)
             <section class="mtd-card mhd-map" aria-labelledby="mhdMapTitle">
                 <div class="mtd-card-head">
                     <div>
@@ -86,25 +102,25 @@
                     </div>
                     <a class="mtd-link" href="{{ route('heat-map.index') }}">Open Heat Map →</a>
                 </div>
-                @if ($risk['state'] === 'ok')
-                    <a class="mhd-map-frame" href="{{ route('heat-map.index') }}" aria-label="Open the Heat Map" data-heat-map-preview>
-                        <div id="heatMapPreviewCanvas" class="mhd-map-canvas" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"></div>
-                        <script type="application/json" data-heat-map-preview-levels>@json(['levels' => $risk['levels'], 'colors' => \App\Services\Risk\HeatMapPanel::COLORS])</script>
-                    </a>
-                    <p class="mhd-legend">
-                        @foreach (['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High'] as $level => $label)
-                            <span><span class="mhd-dot" style="--mhd-color: {{ \App\Services\Risk\HeatMapPanel::COLORS[$level] }}"></span>{{ $label }}</span>
-                        @endforeach
-                        <x-updated-at :at="$risk['updated_at']" />
-                    </p>
-                @else
-                    <x-no-data note="The map appears here after the next weather update." />
-                @endif
+                <a class="mhd-map-frame" href="{{ route('heat-map.index') }}" aria-label="Open the Heat Map" data-heat-map-preview>
+                    <div id="heatMapPreviewCanvas" class="mhd-map-canvas" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"></div>
+                    <script type="application/json" data-heat-map-preview-levels>@json(['levels' => $risk['levels'], 'colors' => \App\Services\Risk\HeatMapPanel::COLORS])</script>
+                </a>
+                <p class="mhd-legend">
+                    @foreach (['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High'] as $level => $label)
+                        <span><span class="mhd-dot" style="--mhd-color: {{ \App\Services\Risk\HeatMapPanel::COLORS[$level] }}"></span>{{ $label }}</span>
+                    @endforeach
+                    <x-updated-at :at="$risk['updated_at']" />
+                </p>
             </section>
+            @endif
         </div>
+        @endif
 
         {{-- 4. Four charts, all from saved records (MaoHomeService): no provider is called and no model is run. --}}
+        @if (in_array(true, $charts, true))
         <div class="mhd-charts">
+            @if ($charts['yield'])
             <section class="mtd-card" aria-labelledby="mhdYieldTitle" data-mao-yield>
                 <div class="mtd-card-head">
                     <div>
@@ -112,18 +128,16 @@
                         <p class="mtd-sub">Average tons per hectare, from past records.</p>
                     </div>
                 </div>
-                @if ($chart['state'] === 'ok')
-                    <div class="mtd-chart">
-                        <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}"
-                            data-chart-source="{{ $chart['source'] }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
-                            data-chart-note="Historical data, not a forecast. A year with fewer than 12 monthly records is the average of the months on file."
-                            aria-label="Average rice yield by year, {{ $chart['labels'][0] }} to {{ end($chart['labels']) }}"></canvas>
-                    </div>
-                @else
-                    <x-no-data note="The chart needs recorded yields for at least one year." />
-                @endif
+                <div class="mtd-chart">
+                    <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}"
+                        data-chart-source="{{ $chart['source'] }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
+                        data-chart-note="Historical data, not a forecast. A year with fewer than 12 monthly records is the average of the months on file."
+                        aria-label="Average rice yield by year, {{ $chart['labels'][0] }} to {{ end($chart['labels']) }}"></canvas>
+                </div>
             </section>
+            @endif
 
+            @if ($charts['climate'])
             <section class="mtd-card" aria-labelledby="mhdClimateTitle" data-mao-climate>
                 <div class="mtd-card-head">
                     <div>
@@ -131,16 +145,14 @@
                         <p class="mtd-sub">The latest 12 months on record. Blue is rain, orange is heat.</p>
                     </div>
                 </div>
-                @if ($mao['climate']['state'] === 'ok')
-                    <div class="mtd-chart">
-                        <canvas id="maoClimateChart" data-chart="{{ json_encode($mao['climate']) }}" data-chart-type="historical" data-chart-info-style="icon"
-                            aria-label="Monthly rainfall in millimetres and temperature in degrees Celsius, {{ $mao['climate']['labels'][0] }} to {{ end($mao['climate']['labels']) }}"></canvas>
-                    </div>
-                @else
-                    <x-no-data note="The chart needs monthly climate records." />
-                @endif
+                <div class="mtd-chart">
+                    <canvas id="maoClimateChart" data-chart="{{ json_encode($mao['climate']) }}" data-chart-type="historical" data-chart-info-style="icon"
+                        aria-label="Monthly rainfall in millimetres and temperature in degrees Celsius, {{ $mao['climate']['labels'][0] }} to {{ end($mao['climate']['labels']) }}"></canvas>
+                </div>
             </section>
+            @endif
 
+            @if ($charts['impact'])
             <section class="mtd-card" aria-labelledby="mhdImpactTitle" data-mao-impact>
                 <div class="mtd-card-head">
                     <div>
@@ -148,17 +160,15 @@
                         <p class="mtd-sub">Each dot is one rice season.</p>
                     </div>
                 </div>
-                @if ($mao['impact']['state'] === 'ok')
-                    <div class="mtd-chart">
-                        <canvas id="maoImpactChart" data-chart="{{ json_encode($mao['impact']) }}" data-chart-type="historical" data-chart-info-style="icon"
-                            aria-label="Average monthly rainfall against average rice yield, one point per season"></canvas>
-                    </div>
-                    <p class="mhd-reading" data-mao-impact-reading>{{ $mao['impact']['reading'] }}</p>
-                @else
-                    <x-no-data note="The chart needs rainfall and yield records for at least three seasons." />
-                @endif
+                <div class="mtd-chart">
+                    <canvas id="maoImpactChart" data-chart="{{ json_encode($mao['impact']) }}" data-chart-type="historical" data-chart-info-style="icon"
+                        aria-label="Average monthly rainfall against average rice yield, one point per season"></canvas>
+                </div>
+                <p class="mhd-reading" data-mao-impact-reading>{{ $mao['impact']['reading'] }}</p>
             </section>
+            @endif
 
+            @if ($charts['planted'])
             <section class="mtd-card" aria-labelledby="mhdPlantedTitle" data-mao-planted>
                 <div class="mtd-card-head">
                     <div>
@@ -166,20 +176,20 @@
                         <p class="mtd-sub">Hectares planted this season ({{ $mao['season'] }}).</p>
                     </div>
                 </div>
-                @if ($mao['planted']['state'] === 'ok')
-                    <div class="mtd-chart">
-                        <canvas id="maoPlantedChart" data-chart="{{ json_encode($mao['planted']) }}" data-chart-type="recorded" data-chart-unit="ha" data-chart-info-style="icon"
-                            aria-label="Hectares planted this season in each barangay"></canvas>
-                    </div>
-                @else
-                    <x-no-data note="No farmer has saved a planting date for this season yet." />
-                @endif
+                <div class="mtd-chart">
+                    <canvas id="maoPlantedChart" data-chart="{{ json_encode($mao['planted']) }}" data-chart-type="recorded" data-chart-unit="ha" data-chart-info-style="icon"
+                        aria-label="Hectares planted this season in each barangay"></canvas>
+                </div>
             </section>
+            @endif
         </div>
+        @endif
 
         {{-- Survey Results: farmers' answers about the forecast, and predicted against harvested yield. Saved answers only. --}}
         @php $survey = $mao['survey'] ?? ['accuracy' => [], 'yield' => ['count' => 0, 'rows' => collect()]]; @endphp
+        @if ($survey['accuracy'] !== [] || $survey['yield']['count'] > 0)
         <div class="mhd-charts" data-mao-survey>
+            @if ($survey['accuracy'] !== [])
             <section class="mtd-card" aria-labelledby="mhdSurveyTitle">
                 <div class="mtd-card-head">
                     <div>
@@ -187,22 +197,20 @@
                         <p class="mtd-sub">What farmers answered after each forecast, by month.</p>
                     </div>
                 </div>
-                @if ($survey['accuracy'] === [])
-                    <x-no-data note="No farmer has answered the forecast survey yet." />
-                @else
-                    <div class="mtd-table-wrap">
-                        <table class="mtd-table">
-                            <thead><tr><th>Month</th><th>Answers</th><th>Tama</th><th>Medyo</th><th>Mali</th></tr></thead>
-                            <tbody>
-                                @foreach ($survey['accuracy'] as $row)
-                                    <tr><td>{{ $row['month'] }}</td><td>{{ $row['reports'] }}</td><td><strong>{{ $row['tama'] }}%</strong></td><td>{{ $row['medyo'] }}%</td><td>{{ $row['mali'] }}%</td></tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
+                <div class="mtd-table-wrap">
+                    <table class="mtd-table">
+                        <thead><tr><th>Month</th><th>Answers</th><th>Tama</th><th>Medyo</th><th>Mali</th></tr></thead>
+                        <tbody>
+                            @foreach ($survey['accuracy'] as $row)
+                                <tr><td>{{ $row['month'] }}</td><td>{{ $row['reports'] }}</td><td><strong>{{ $row['tama'] }}%</strong></td><td>{{ $row['medyo'] }}%</td><td>{{ $row['mali'] }}%</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </section>
+            @endif
 
+            @if ($survey['yield']['count'] > 0)
             <section class="mtd-card" aria-labelledby="mhdSurveyYieldTitle">
                 <div class="mtd-card-head">
                     <div>
@@ -210,23 +218,21 @@
                         <p class="mtd-sub">The yield the system predicted and the yield farmers harvested, in tons per hectare.</p>
                     </div>
                 </div>
-                @if ($survey['yield']['count'] === 0)
-                    <x-no-data note="No farmer has recorded a harvest with a predicted yield yet." />
-                @else
-                    <p class="mhd-reading mhd-reading-flat">Predicted {{ number_format($survey['yield']['predicted'], 2) }} t/ha · Actual {{ number_format($survey['yield']['actual'], 2) }} t/ha · {{ $survey['yield']['count'] }} {{ $survey['yield']['count'] === 1 ? 'harvest' : 'harvests' }}</p>
-                    <div class="mtd-table-wrap">
-                        <table class="mtd-table">
-                            <thead><tr><th>Harvested</th><th>Barangay</th><th>Predicted</th><th>Actual</th><th>Difference</th></tr></thead>
-                            <tbody>
-                                @foreach ($survey['yield']['rows'] as $row)
-                                    <tr><td>{{ $row['date'] }}</td><td>{{ $row['barangay'] }}</td><td>{{ number_format($row['predicted'], 2) }}</td><td>{{ number_format($row['actual'], 2) }}</td><td>{{ $row['difference'] > 0 ? '+' : '' }}{{ number_format($row['difference'], 2) }}</td></tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
+                <p class="mhd-reading mhd-reading-flat">Predicted {{ number_format($survey['yield']['predicted'], 2) }} t/ha · Actual {{ number_format($survey['yield']['actual'], 2) }} t/ha · {{ $survey['yield']['count'] }} {{ $survey['yield']['count'] === 1 ? 'harvest' : 'harvests' }}</p>
+                <div class="mtd-table-wrap">
+                    <table class="mtd-table">
+                        <thead><tr><th>Harvested</th><th>Barangay</th><th>Predicted</th><th>Actual</th><th>Difference</th></tr></thead>
+                        <tbody>
+                            @foreach ($survey['yield']['rows'] as $row)
+                                <tr><td>{{ $row['date'] }}</td><td>{{ $row['barangay'] }}</td><td>{{ number_format($row['predicted'], 2) }}</td><td>{{ number_format($row['actual'], 2) }}</td><td>{{ $row['difference'] > 0 ? '+' : '' }}{{ number_format($row['difference'], 2) }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </section>
+            @endif
         </div>
+        @endif
     </div>
 
     <script>

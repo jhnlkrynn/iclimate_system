@@ -32,6 +32,7 @@ class CrudListFiltersTest extends TestCase
 
     public function test_status_filters_on_staff_lists_work(): void
     {
+        config(['iclimate.field_reports_ui' => true]);   // Field Reports pages are hidden by default
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         foreach ([FieldReport::STATUS_PENDING => 'Open drainage issue', FieldReport::STATUS_RESOLVED => 'Fixed canal'] as $status => $title) {
             FieldReport::query()->create(['title' => $title, 'barangay' => 'Binubusan', 'issue_type' => 'Flooding', 'status' => $status, 'reported_by' => $mao->id]);

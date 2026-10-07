@@ -251,9 +251,9 @@ function keepMapsSized(Leaflet) {
 }
 
 /*
- * The phone and tablet menu (the Bootstrap offcanvas #mobileSidebar): Bootstrap already gives it the dimmed overlay,
- * tap-outside and Escape to close, and stops the page behind it from scrolling. Added here: choosing a page closes the
- * drawer at once, the Menu button reports open/closed, and the drawer is shut if the screen grows to the desktop layout.
+ * The phone menu (the Bootstrap offcanvas #mobileSidebar, full screen below 768px): Bootstrap already gives it Escape to
+ * close and stops the page behind it from scrolling. Added here: choosing a page closes the drawer at once, the menu
+ * button reports open/closed, and the drawer is shut if the screen grows to the fixed-sidebar layout (768px).
  */
 function bindSidebarDrawer() {
     const drawer = document.getElementById('mobileSidebar');
@@ -268,7 +268,7 @@ function bindSidebarDrawer() {
     });
     drawer.addEventListener('shown.bs.offcanvas', () => toggle?.setAttribute('aria-expanded', 'true'));
     drawer.addEventListener('hidden.bs.offcanvas', () => toggle?.setAttribute('aria-expanded', 'false'));
-    window.matchMedia('(min-width: 992px)').addEventListener('change', (event) => { if (event.matches) hide(); });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => { if (event.matches) hide(); });
     // Coming back with the browser's Back button must not show a drawer left open.
     window.addEventListener('pageshow', (event) => { if (event.persisted) hide(); });
 }

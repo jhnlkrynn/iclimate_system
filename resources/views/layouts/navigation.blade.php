@@ -98,7 +98,7 @@
 </style>
 <nav class="topbar navbar navbar-expand px-3 px-lg-4">
     <div class="container-fluid px-0 gap-3 topbar-inner flex-wrap">
-        <button class="btn btn-outline-primary d-lg-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open navigation menu">
+        <button class="btn btn-outline-primary d-md-none fw-bold d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open navigation menu">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             <span>Menu</span>
         </button>

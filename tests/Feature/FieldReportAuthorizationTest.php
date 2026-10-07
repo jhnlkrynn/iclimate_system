@@ -12,6 +12,14 @@ class FieldReportAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // These tests check the Field Reports pages themselves, which are hidden by default (FIELD_REPORTS_UI=false;
+        // FieldReportsHiddenTest covers that). Here they are switched on.
+        config(['iclimate.field_reports_ui' => true]);
+    }
+
     private function report(): FieldReport
     {
         return FieldReport::query()->create([
