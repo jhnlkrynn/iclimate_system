@@ -177,6 +177,57 @@
                 @endif
             </section>
         </div>
+
+        {{-- Survey Results: farmers' answers about the forecast, and predicted against harvested yield. Saved answers only. --}}
+        @php $survey = $mao['survey'] ?? ['accuracy' => [], 'yield' => ['count' => 0, 'rows' => collect()]]; @endphp
+        <div class="mhd-charts" data-mao-survey>
+            <section class="mtd-card" aria-labelledby="mhdSurveyTitle">
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdSurveyTitle">Survey Results: Forecast Accuracy</h2>
+                        <p class="mtd-sub">What farmers answered after each forecast, by month.</p>
+                    </div>
+                </div>
+                @if ($survey['accuracy'] === [])
+                    <x-no-data note="No farmer has answered the forecast survey yet." />
+                @else
+                    <div class="mtd-table-wrap">
+                        <table class="mtd-table">
+                            <thead><tr><th>Month</th><th>Answers</th><th>Tama</th><th>Medyo</th><th>Mali</th></tr></thead>
+                            <tbody>
+                                @foreach ($survey['accuracy'] as $row)
+                                    <tr><td>{{ $row['month'] }}</td><td>{{ $row['reports'] }}</td><td><strong>{{ $row['tama'] }}%</strong></td><td>{{ $row['medyo'] }}%</td><td>{{ $row['mali'] }}%</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </section>
+
+            <section class="mtd-card" aria-labelledby="mhdSurveyYieldTitle">
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdSurveyYieldTitle">Survey Results: Predicted vs Actual Yield</h2>
+                        <p class="mtd-sub">The yield the system predicted and the yield farmers harvested, in tons per hectare.</p>
+                    </div>
+                </div>
+                @if ($survey['yield']['count'] === 0)
+                    <x-no-data note="No farmer has recorded a harvest with a predicted yield yet." />
+                @else
+                    <p class="mhd-reading mhd-reading-flat">Predicted {{ number_format($survey['yield']['predicted'], 2) }} t/ha · Actual {{ number_format($survey['yield']['actual'], 2) }} t/ha · {{ $survey['yield']['count'] }} {{ $survey['yield']['count'] === 1 ? 'harvest' : 'harvests' }}</p>
+                    <div class="mtd-table-wrap">
+                        <table class="mtd-table">
+                            <thead><tr><th>Harvested</th><th>Barangay</th><th>Predicted</th><th>Actual</th><th>Difference</th></tr></thead>
+                            <tbody>
+                                @foreach ($survey['yield']['rows'] as $row)
+                                    <tr><td>{{ $row['date'] }}</td><td>{{ $row['barangay'] }}</td><td>{{ number_format($row['predicted'], 2) }}</td><td>{{ number_format($row['actual'], 2) }}</td><td>{{ $row['difference'] > 0 ? '+' : '' }}{{ number_format($row['difference'], 2) }}</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </section>
+        </div>
     </div>
 
     <script>

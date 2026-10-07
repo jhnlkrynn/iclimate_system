@@ -8,13 +8,16 @@ use App\Models\FieldReport;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
+use App\Models\WeatherForecastFeedback;
 use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
+use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Support\ClimateHistory;
 use App\Support\LianBarangays;
 use App\Support\ProjectYieldDataset;
 use App\Support\RiceSeason;
 use App\Support\SchemaCache;
+use App\Support\YieldCorrections;
 use Carbon\CarbonImmutable;
 use Throwable;
 
@@ -66,7 +69,35 @@ class MaoHomeService
             'climate' => rescue(fn (): array => $this->monthlyClimate(), ['state' => 'nodata'], false),
             'impact' => rescue(fn (): array => $this->rainfallAgainstYield(), ['state' => 'nodata'], false),
             'planted' => rescue(fn (): array => $this->plantedByBarangay($now), ['state' => 'nodata'], false),
+            'survey' => rescue(fn (): array => $this->surveyResults(), ['accuracy' => [], 'yield' => ['count' => 0, 'rows' => collect()]], false),
         ];
+    }
+
+    /**
+     * Survey Results: what farmers answered about the forecast (Tama / Medyo / Mali) for each month, and the yield the
+     * system predicted against the yield farmers harvested. Only answers that pass the feedback quality checks count.
+     *
+     * @return array{accuracy: array<int, array{month: string, reports: int, tama: int, medyo: int, mali: int}>, yield: array<string, mixed>}
+     */
+    private function surveyResults(): array
+    {
+        $share = fn (\Illuminate\Support\Collection $rows, string $answer): int => (int) round($rows->where('accuracy', $answer)->count() / $rows->count() * 100);
+
+        $accuracy = app(WeatherFeedbackSummaryService::class)->validatedObservations()
+            ->groupBy(fn (array $row): string => substr($row['forecast_date'], 0, 7))
+            ->sortKeysDesc()->take(6)
+            ->map(fn (\Illuminate\Support\Collection $rows, string $month): array => [
+                'month' => CarbonImmutable::parse($month.'-01')->format('F Y'),
+                'reports' => $rows->count(),
+                'tama' => $share($rows, WeatherForecastFeedback::ACCURATE),
+                'medyo' => $share($rows, WeatherForecastFeedback::PARTLY),
+                'mali' => $share($rows, WeatherForecastFeedback::DIFFERENT),
+            ])->values()->all();
+
+        $yield = YieldCorrections::summary();
+        $yield['rows'] = $yield['rows']->take(8);
+
+        return ['accuracy' => $accuracy, 'yield' => $yield];
     }
 
     /** "Wet season 2026" / "Dry season 2026–2027". */

@@ -482,6 +482,32 @@
     </div>
     </details>
 
+    {{-- MAO/IT – Kaye: predicted against actual yield from farmers' harvest records. Shown only; nothing retrains by itself. --}}
+    @php $retraining = $retraining ?? ['count' => 0, 'rows' => collect()]; @endphp
+    <section class="card border-0 shadow-sm mt-4" aria-labelledby="meRetrainTitle" data-retraining-data>
+        <div class="card-body">
+            <h2 class="h5 fw-bold mb-1" id="meRetrainTitle">Data for Future Retraining</h2>
+            <p class="text-muted mb-3">Harvests where a farmer recorded the actual yield, beside the yield the model predicted. This data is only listed here. The model is not retrained automatically.</p>
+            <p class="h4 fw-bold mb-3" data-retraining-count>{{ $retraining['count'] }} <span class="fs-6 fw-normal text-muted">{{ $retraining['count'] === 1 ? 'correction on record' : 'corrections on record' }}@if ($retraining['count'] > 0) · average miss {{ number_format($retraining['error'], 2) }} t/ha @endif</span></p>
+            @if ($retraining['count'] === 0)
+                <x-no-data note="No farmer has recorded a harvest with a predicted yield yet." />
+            @else
+                <div class="table-responsive" style="max-height: 420px;">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>Harvested</th><th>Barangay</th><th>Season</th><th>Farm type</th><th class="text-end">Predicted (t/ha)</th><th class="text-end">Actual (t/ha)</th><th class="text-end">Difference</th></tr></thead>
+                        <tbody>
+                            @foreach ($retraining['rows']->take(100) as $row)
+                                <tr><td class="text-nowrap">{{ $row['date'] }}</td><td>{{ $row['barangay'] }}</td><td>{{ $row['season'] }}</td><td>{{ $row['farm_type'] }}</td>
+                                    <td class="text-end">{{ number_format($row['predicted'], 2) }}</td><td class="text-end">{{ number_format($row['actual'], 2) }}</td>
+                                    <td class="text-end">{{ $row['difference'] > 0 ? '+' : '' }}{{ number_format($row['difference'], 2) }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </section>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const modelRows = @json($rows->values());
