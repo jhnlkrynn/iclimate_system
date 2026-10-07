@@ -22,6 +22,7 @@
                 <span class="mfd-age">Checked {{ $checkedAt->format('M j, Y g:i A') }}</span>
             </div>
             <div class="itd-header-actions">
+                <a class="mfd-btn is-ghost" href="{{ route('model-evaluation.index') }}">@include('dashboards.mao.icon', ['name' => 'report'])Model Evaluation</a>
                 <a class="mfd-btn is-ghost" href="{{ route('model-registry.index') }}">@include('dashboards.mao.icon', ['name' => 'sparkle'])ML Model Registry</a>
                 <a class="mfd-btn is-quiet" href="{{ route('system-health.index', ['refresh' => 1]) }}">@include('dashboards.mao.icon', ['name' => 'refresh'])Refresh</a>
             </div>
