@@ -719,3 +719,33 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 
 /* "Ngayon:" / "Buong araw:" before a weather word, so the current condition and today's rain never read as a conflict. */
 .mfd[data-farmer-dashboard] .fh-when { font-weight: 600; color: var(--muted); }
+
+/* ------------------------------------------------------------------ Farmer – Naicel (2026-10)
+ * Farmer Home only (scoped to .mfd[data-farmer-dashboard], so the IT and MAO dashboards are untouched):
+ * the greeting as one short line in a slim strip (no big banner), the farm selector, and the two charts. */
+.mfd[data-farmer-dashboard] .fh-header { padding: 12px 18px; gap: 8px 16px; align-items: center; }
+.mfd[data-farmer-dashboard] .fh-header .fh-greeting { margin: 0; font-size: 1.2rem !important; font-weight: 700; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+.mfd[data-farmer-dashboard] .fh-header .mfd-place { margin: 2px 0 0 !important; font-size: .9rem; font-weight: 500; }
+/* Easy to tap: the header's selectors and Refresh are at least 44px tall. */
+.mfd[data-farmer-dashboard] .fh-header .mfd-lang select, .mfd[data-farmer-dashboard] .fh-header .mfd-header-side > .mfd-btn { min-height: 44px; }
+
+.mfd[data-farmer-dashboard] .fh-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap, 16px); min-width: 0; }
+.mfd[data-farmer-dashboard] .fh-charts > .fh-card { min-width: 0; }
+.mfd[data-farmer-dashboard] .fh-chart-box { position: relative; width: 100%; height: 300px; min-width: 0; }
+.mfd[data-farmer-dashboard] .fh-chart-box canvas { max-width: 100%; }
+.mfd[data-farmer-dashboard] .fh-chart-none { color: var(--muted); }
+@media (max-width: 991.98px) {
+    .mfd[data-farmer-dashboard] .fh-charts { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 575.98px) {
+    .mfd[data-farmer-dashboard] .fh-header { padding: 10px 14px; }
+    .mfd[data-farmer-dashboard] .fh-header .fh-greeting { font-size: 1.1rem !important; }
+    .mfd[data-farmer-dashboard] .fh-chart-box { height: 260px; }
+    /* Phone: farm, language and Refresh each get a full row, so nothing is squeezed or cut off. */
+    .mfd[data-farmer-dashboard] .fh-header .mfd-header-side { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mfd[data-farmer-dashboard] .fh-header .mfd-lang { flex: 1 1 100%; }
+    .mfd[data-farmer-dashboard] .fh-header .mfd-lang label { flex: 0 0 64px; white-space: nowrap; }
+    .mfd[data-farmer-dashboard] .fh-header .mfd-lang select { flex: 1 1 auto; max-width: none; }
+    .mfd[data-farmer-dashboard] .fh-header .mfd-header-side > .mfd-btn { flex: 1 1 100%; justify-content: center; }
+}
+/* ------------------------------------------------------------------ end Farmer – Naicel */

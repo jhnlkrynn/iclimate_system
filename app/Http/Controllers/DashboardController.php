@@ -136,7 +136,12 @@ class DashboardController extends Controller
     /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
-        return view('dashboards.farmer', ['f' => $this->preparedFarmerPayload($request->user(), $farmer)]);
+        $payload = $this->preparedFarmerPayload($request->user(), $farmer);
+        // Farmer – Naicel (2026-10): missing farm information goes to the notification bell (at most once a minute).
+        // After the page data is read: a new notification clears the farmer's stored page, so it must not run first.
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($request->user());
+
+        return view('dashboards.farmer', ['f' => $payload]);
     }
 
     /** The farmer's prepared Home (built from saved data when there is none for the current data yet). */

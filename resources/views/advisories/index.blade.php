@@ -57,7 +57,9 @@
         @endif
 
         {{-- What the last scheduled check found. An unreachable source is said so, never shown as "no advisories". --}}
-        @if ($check['state'] === 'unchecked')
+        {{-- Farmer – Naicel (2026-10): a farmer with no advisories sees only the page title: no "No data yet", no empty box. --}}
+        @if ($check['state'] === 'unchecked' && $isFarmer)
+        @elseif ($check['state'] === 'unchecked')
             {{-- Nothing has been checked yet: the same calm "no data yet" as every other page. --}}
             <x-no-data :label="$isFarmer ? trans('farmer.home.no_data', [], $locale) : 'Walang datos pa'" :note="$t('check.unchecked')" data-adv-check="unchecked" />
         @elseif ($check['state'] !== 'ok')
@@ -115,7 +117,7 @@
                         </li>
                     @endforeach
                 </ul>
-            @elseif ($show !== 'active' || ! in_array($check['state'], ['unchecked', 'unavailable'], true))
+            @elseif (! $isFarmer && ($show !== 'active' || ! in_array($check['state'], ['unchecked', 'unavailable'], true)))
                 {{-- Only a finished check may say "none right now". --}}
                 <div class="fad-empty" data-adv-empty>
                     <p class="fad-lead">{{ $show === 'pending' ? 'Nothing is waiting for approval.' : $t($type === 'planting' ? 'empty.planting' : 'empty.other') }}</p>
