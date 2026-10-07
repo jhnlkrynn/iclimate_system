@@ -109,7 +109,6 @@ class MaoOptionalDataFailureTest extends TestCase
         $routes = [
             '/mao/dashboard',
             '/calendar',
-            '/field-reports',
             '/reports',
             '/climate-records',
             '/planting-advisories',
@@ -171,7 +170,6 @@ class MaoOptionalDataFailureTest extends TestCase
         $queries = [
             '/mao/dashboard?year[]=2026',
             '/planting-advisories?search[]=test&type[]=planting&show[]=all&status[]=published&target_barangay[]=Binubusan',
-            '/field-reports?unresolved[]=1&status[]=Pending',
             '/farmer-profiles?search[]=john&barangay[]=Binubusan&farm_type[]=Rainfed',
             '/calendar?year[]=2026&month[]=10',
             '/calendar?year=-999&month=99',

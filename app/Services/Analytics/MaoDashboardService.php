@@ -621,7 +621,7 @@ final class MaoDashboardService
 
         try {
             $reports = FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count();
-            if ($reports > 0) {
+            if ($reports > 0 && \App\Http\Middleware\FieldReportsUi::enabled()) {   // MAO/IT – Naicel: Field Reports hidden
                 $items[] = ['severity' => 'action', 'icon' => 'report', 'title' => number_format($reports).' Field '.($reports === 1 ? 'Report' : 'Reports').' Unresolved',
                     'detail' => 'Issues reported from the field.', 'action' => 'Review', 'href' => route('field-reports.index')];
             }

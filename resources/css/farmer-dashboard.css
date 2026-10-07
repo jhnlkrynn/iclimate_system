@@ -710,6 +710,13 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     .mfd[data-farmer-dashboard] .fh-message-text { font-size: 1.25rem; }
 }
 
+/* Farmer – Naicel (2026-10-07): from 768px the fixed sidebar takes 216-248px, so up to 1199px seven cells in a row would
+   split "Thunderstorm" too; the days wrap into rows of whole cells instead. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .mfd[data-farmer-dashboard] .fh-days { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+    .mfd[data-farmer-dashboard] .fh-day-words, .mfd[data-farmer-dashboard] .fh-day-rain { overflow-wrap: normal; word-break: normal; hyphens: none; }
+}
+
 /* Typhoon Safety Check-In (only during a typhoon) */
 .mfd[data-farmer-dashboard] .fh-typhoon { border: 2px solid var(--danger); background: var(--danger-bg); }
 .mfd[data-farmer-dashboard] .fh-typhoon-form { display: flex; flex-direction: column; gap: 10px; }

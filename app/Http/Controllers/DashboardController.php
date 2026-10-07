@@ -117,6 +117,10 @@ class DashboardController extends Controller
      */
     public function warmSharedDashboards(): array
     {
+        // MAO/IT – Naicel (2026-10-07): the MAO's "no data yet" bell notifications are checked here, every minute, and
+        // after a save (MaoMissingDataNotifier), never while the dashboard loads. First, because a notification change
+        // retires prepared copies that count notifications (the IT dashboard): the copies below are built after it.
+        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncAll(), null, false);
         // Populate the saved risk-map inputs before the prepared dashboard payloads are warmed.
         rescue(fn () => RiskMapInitialData::payloads(false), null, false);
         StaleCache::prepareScoped(
@@ -943,7 +947,7 @@ class DashboardController extends Controller
             ];
         }
 
-        if ($fieldReportsPendingCount > 0) {
+        if ($fieldReportsPendingCount > 0 && \App\Http\Middleware\FieldReportsUi::enabled()) {   // MAO/IT – Naicel: Field Reports hidden
             $highlights[] = [
                 'severity' => 'warning',
                 'weight' => 2,

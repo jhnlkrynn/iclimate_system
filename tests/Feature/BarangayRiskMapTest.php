@@ -471,10 +471,26 @@ class BarangayRiskMapTest extends TestCase
         $response->assertDontSee('Draw your farm on the map');    // a saved outline completes that setup step
     }
 
+    /**
+     * A saved 16-day forecast for every barangay: the MAO dashboard's Heat Map card is shown only once one exists
+     * (2026-10-07: sections without data are left out).
+     */
+    private function storeWeekForecast(): void
+    {
+        $today = \Carbon\CarbonImmutable::now('Asia/Manila')->startOfDay();
+        $records = [];
+        foreach (\App\Support\LianBarangays::all() as $barangay) {
+            $records[$barangay] = ['barangay' => $barangay, 'temperature_c' => 28.0, 'fetched_at' => now()->toIso8601String(), 'observed_at' => now()->toIso8601String(),
+                'daily' => array_map(fn (int $i) => ['date' => $today->addDays($i)->toDateString(), 'rainfall' => 4.0, 'wind_speed_max' => 12.0, 'temperature_max' => 31.0], range(0, 15))];
+        }
+        Cache::forever(\App\Services\Weather\LianBarangayWeatherService::STORE_KEY, ['records' => $records, 'status' => []]);
+    }
+
     public function test_mao_dashboard_loads_with_risk_map_section(): void
     {
         Cache::flush();
         $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
+        $this->storeWeekForecast();
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
@@ -654,6 +670,7 @@ class BarangayRiskMapTest extends TestCase
         $this->actingAs($itExpert)->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
 
         // MAO Dashboard (2026-10): the preview card links to the Heat Map page; the page reads saved data (no refresh control).
+        $this->storeWeekForecast();
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
         $response->assertOk();

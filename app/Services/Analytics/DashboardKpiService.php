@@ -358,32 +358,34 @@ class DashboardKpiService
                 'href' => route('planting-advisories.index'),
             ];
 
-            // Field reports: open queue + 30-day resolution.
-            $open = $counts['open'];
-            $new30 = $counts['new30'];
-            $newPrior30 = $counts['new_prior30'];
-            $resolvedRecently = FieldReport::query()
-                ->where('status', FieldReport::STATUS_RESOLVED)
-                ->whereNotNull('resolved_at')
-                ->where('resolved_at', '>=', now()->subDays(30))
-                ->get(['created_at', 'resolved_at']);
-            $avgDays = $resolvedRecently->isNotEmpty()
-                ? $resolvedRecently->avg(fn (FieldReport $report) => $report->created_at->diffInHours($report->resolved_at) / 24)
-                : null;
-            $kpis[] = [
-                'key' => 'field-reports',
-                'label' => 'Open Field Reports',
-                'value' => number_format($open),
-                'unit' => null,
-                'note' => $new30.' new in 30 days'
-                    .($avgDays !== null ? ' · resolved in '.number_format($avgDays, 1).' days on average' : ''),
-                'trend' => $newPrior30 > 0
-                    ? ['delta' => round((($new30 - $newPrior30) / $newPrior30) * 100, 1), 'label' => 'new vs prior 30 days', 'good' => 'down']
-                    : null,
-                'status' => $open > 0 ? 'warning' : null,
-                'status_label' => $open > 0 ? 'Needs review' : null,
-                'href' => route('field-reports.index'),
-            ];
+            // Field reports: open queue + 30-day resolution. MAO/IT – Naicel: only while the pages are shown (FIELD_REPORTS_UI).
+            if (\App\Http\Middleware\FieldReportsUi::enabled()) {
+                $open = $counts['open'];
+                $new30 = $counts['new30'];
+                $newPrior30 = $counts['new_prior30'];
+                $resolvedRecently = FieldReport::query()
+                    ->where('status', FieldReport::STATUS_RESOLVED)
+                    ->whereNotNull('resolved_at')
+                    ->where('resolved_at', '>=', now()->subDays(30))
+                    ->get(['created_at', 'resolved_at']);
+                $avgDays = $resolvedRecently->isNotEmpty()
+                    ? $resolvedRecently->avg(fn (FieldReport $report) => $report->created_at->diffInHours($report->resolved_at) / 24)
+                    : null;
+                $kpis[] = [
+                    'key' => 'field-reports',
+                    'label' => 'Open Field Reports',
+                    'value' => number_format($open),
+                    'unit' => null,
+                    'note' => $new30.' new in 30 days'
+                        .($avgDays !== null ? ' · resolved in '.number_format($avgDays, 1).' days on average' : ''),
+                    'trend' => $newPrior30 > 0
+                        ? ['delta' => round((($new30 - $newPrior30) / $newPrior30) * 100, 1), 'label' => 'new vs prior 30 days', 'good' => 'down']
+                        : null,
+                    'status' => $open > 0 ? 'warning' : null,
+                    'status_label' => $open > 0 ? 'Needs review' : null,
+                    'href' => route('field-reports.index'),
+                ];
+            }
 
             // Farmer feedback on advisories.
             if ($feedbackReady) {

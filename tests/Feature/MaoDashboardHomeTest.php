@@ -110,23 +110,30 @@ class MaoDashboardHomeTest extends TestCase
     public function test_the_dashboard_is_four_tiles_the_action_list_the_map_preview_and_the_charts(): void
     {
         $this->yieldRows([['year' => 2024, 'month' => 6, 'yield' => 3.8, 'split' => null]]);
+        $this->storeForecasts();
+        FarmerPlantingSchedule::query()->create(['user_id' => $this->farmer()->id, 'planting_date' => '2026-06-10', 'scheduled_harvest_date' => '2026-09-28',
+            'season' => 'Wet', 'farm_type' => 'Irrigated', 'barangay' => 'Prenza', 'farm_area_hectares' => 1.5]);
         $html = $this->html();
 
+        // A tile is shown only with a figure (2026-10-07): no farmer has a saved yield estimate here, so that tile is left out.
         preg_match_all('#data-kpi="([a-z]+)"#', $html, $tiles);
-        $this->assertSame(['farmers', 'area', 'yield', 'risk'], $tiles[1]);
-        foreach (['Registered farmers', 'Area planted this season', 'Expected yield vs last season', 'High-risk barangays'] as $label) {
+        $this->assertSame(['farmers', 'area', 'risk'], $tiles[1]);
+        foreach (['Registered farmers', 'Area planted this season', 'High-risk barangays'] as $label) {
             $this->assertStringContainsString($label, $html, $label);
         }
+        $this->assertStringNotContainsString('Expected yield vs last season', $html);
         // In reading order: tiles, Kailangan ng Aksyon, the Heat Map preview, the charts.
         $order = array_map(fn (string $marker) => strpos($html, $marker), ['data-mao-kpis', 'Kailangan ng Aksyon', 'id="mhdMapTitle"', 'Rice Yield by Year 2020–2025']);
         $this->assertNotContains(false, $order);
         $sorted = $order;
         sort($sorted);
         $this->assertSame($sorted, $order);
-        // Four chart cards (yield, rainfall and temperature, weather impact, planted area); each draws or says why not.
-        foreach (['data-mao-yield', 'data-mao-climate', 'data-mao-impact', 'data-mao-planted'] as $card) {
+        // Up to four chart cards (yield, rainfall and temperature, weather impact, planted area), each only with data: one
+        // recorded season is too few for the weather-impact chart (it needs three), so that card is left out.
+        foreach (['data-mao-yield', 'data-mao-climate', 'data-mao-planted'] as $card) {
             $this->assertSame(1, substr_count($html, $card), $card);
         }
+        $this->assertStringNotContainsString('data-mao-impact', $html);
         $this->assertSame(1, substr_count($html, '<canvas id="riceYieldTrendChart"'));
 
         // What the old dashboard carried is not here any more: weather cards, the forecast row, the full map and its
@@ -147,24 +154,25 @@ class MaoDashboardHomeTest extends TestCase
         }
     }
 
-    public function test_the_page_reads_saved_data_only_and_empty_figures_say_no_data_never_zero(): void
+    public function test_the_page_reads_saved_data_only_and_empty_figures_are_left_out_never_zero(): void
     {
         $this->yieldRows([]);
         $html = $this->html();
 
         Http::assertNothingSent();
         $this->assertStringContainsString('0 Farmer profiles on file', $this->tile($html, 'farmers'));   // a real count of zero
+        // MAO/IT – Naicel (2026-10-07): a figure that cannot be worked out is not shown at all (no "Walang datos pa" card);
+        // what the MAO can add is asked for in the bell instead (MaoMissingDataNotificationTest).
         foreach (['area', 'yield', 'risk'] as $key) {
-            $this->assertStringContainsString('Walang datos pa', $this->tile($html, $key), $key);
-            $this->assertDoesNotMatchRegularExpression('/\b0\b/', $this->tile($html, $key), $key);
+            $this->assertStringNotContainsString('data-kpi="'.$key.'"', $html, $key);
         }
-        // No saved forecast: no map preview; no yield records: no yield or weather-impact chart; no planting dates: no
-        // planted-area chart. Each says so.
-        $this->assertStringNotContainsString('data-heat-map-preview', $html);
-        foreach (['riceYieldTrendChart', 'maoImpactChart', 'maoPlantedChart'] as $canvas) {
-            $this->assertStringNotContainsString('id="'.$canvas.'"', $html, $canvas);
+        // No saved forecast: no map card; no yield records: no yield or weather-impact chart; no planting dates: no
+        // planted-area chart. None of them leaves an empty card behind.
+        foreach (['data-heat-map-preview', 'id="mhdMapTitle"', 'data-mao-yield', 'data-mao-impact', 'data-mao-planted', 'data-mao-survey'] as $gone) {
+            $this->assertStringNotContainsString($gone, $html, $gone);
         }
-        $this->assertGreaterThanOrEqual(5, substr_count($html, 'Walang datos pa'));
+        $this->assertStringNotContainsString('Walang datos pa', $html);
+        $this->assertStringNotContainsString('class="ic-no-data', $html);
     }
 
     // ------------------------------------------------------------ the four tiles
@@ -262,7 +270,6 @@ class MaoDashboardHomeTest extends TestCase
 
         $expected = [
             'advisories' => ['2', 'Advisories to approve', route('planting-advisories.index', ['show' => 'pending'])],
-            'field-reports' => ['2', 'Unresolved field reports', route('field-reports.index', ['unresolved' => 1])],
             'check-ins' => ['1', '"Needs Help" check-ins', route('planting-advisories.index').'#check-ins'],
         ];
         foreach ($expected as $key => [$count, $label, $href]) {
@@ -270,12 +277,12 @@ class MaoDashboardHomeTest extends TestCase
             $this->assertSame($count.' '.$label, trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) preg_replace('#<a .*?</a>#s', '', $m[1]))))), $key);
             $this->assertStringContainsString('href="'.e($href).'"', $m[1], $key);
         }
-        $this->assertStringContainsString('<span class="mtd-count">5</span>', $html);
+        // Field Reports is hidden from the interface (FIELD_REPORTS_UI=false): its two unresolved reports are not listed.
+        $this->assertStringNotContainsString('data-mao-action="field-reports"', $html);
+        $this->assertStringNotContainsString(route('field-reports.index'), $html);
+        $this->assertStringContainsString('<span class="mtd-count">3</span>', $html);
 
         // Each count's page shows exactly those items.
-        $this->actingAs($mao)->get(route('field-reports.index', ['unresolved' => 1]))->assertOk()
-            ->assertSee('Report Pending')->assertSee('Report Verified')->assertDontSee('Report Resolved');
-        $this->actingAs($mao)->get(route('field-reports.index'))->assertSee('Report Resolved');
         $checkIns = $this->actingAs($mao)->get(route('planting-advisories.index'))->assertOk();
         $checkIns->assertSee('id="check-ins"', false)->assertSee('Typhoon Test')->assertSee('Roof damaged')
             ->assertSee('<dd data-adv-needs-help>1</dd>', false);
@@ -285,7 +292,7 @@ class MaoDashboardHomeTest extends TestCase
     {
         $html = $this->html();
 
-        $this->assertSame(3, preg_match_all('#<strong class="mhd-action-count">0</strong>#', $html));
+        $this->assertSame(2, preg_match_all('#<strong class="mhd-action-count">0</strong>#', $html));   // advisories and check-ins (Field Reports is hidden)
         $this->assertStringContainsString('Nothing is waiting right now.', $html);
         $this->assertStringNotContainsString('class="mtd-count"', $html);
         // Outside a typhoon the check-ins section on Advisories says no check-in is open.
@@ -332,15 +339,16 @@ class MaoDashboardHomeTest extends TestCase
         $this->actingAs($farmer)->get(route('management.advisories.index'))->assertForbidden();
     }
 
-    public function test_the_mao_sidebar_is_the_eleven_pages_in_order(): void
+    public function test_the_mao_sidebar_is_the_ten_pages_in_order(): void
     {
         $html = $this->html();
 
-        // The menu is in the page twice (side bar and phone drawer): the same eleven labels each time.
+        // The menu is in the page twice (side bar and phone drawer): the same ten labels each time. Field Reports is
+        // hidden (FIELD_REPORTS_UI=false).
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
         $labels = array_map('html_entity_decode', $labels[1]);
-        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Field Reports', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
-        $this->assertSame(0, count($labels) % 11);
+        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
+        $this->assertSame(0, count($labels) % 10);
         $nav = [implode(' | ', $labels)];
 
         foreach (['Chatbot Knowledge', 'Community Feed', 'Farm Calendar', 'Planting Advisories', 'More Tools'] as $gone) {

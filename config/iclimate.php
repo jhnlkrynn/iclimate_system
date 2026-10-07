@@ -19,6 +19,13 @@ return [
     'chatbot_knowledge_ui' => (bool) env('CHATBOT_KNOWLEDGE_UI', false),
 
     /*
+    | Field Reports pages (MAO/IT – Naicel, 2026-10-07). Off by default: the item is not in any sidebar or dashboard and
+    | its addresses send MAO and IT to their own dashboard. Set FIELD_REPORTS_UI=true to bring the pages back. The table,
+    | data, model, controller and migrations are kept.
+    */
+    'field_reports_ui' => (bool) env('FIELD_REPORTS_UI', false),
+
+    /*
     | The Candidate Model and Season Calendar Retraining sections of the Model Evaluation page. Off by default
     | (hidden for now); the files, the report and python_scripts/retrain_yield_season.py are kept.
     */
