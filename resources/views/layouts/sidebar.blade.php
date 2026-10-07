@@ -171,9 +171,10 @@
 @endphp
 
 {{-- The one sidebar of the application shell (layouts/app.blade.php) for Farmer, MAO and IT: the same place, width, icons and
-     colours on every page; only the menu items differ by role. Styles: resources/css/sidebar.css. Below 992px the fixed
-     sidebar is hidden and the same menu opens as the slide-in drawer below (button in layouts/navigation.blade.php). --}}
-<aside class="ic-sidebar sidebar-fixed d-none d-lg-flex flex-column" aria-label="Sidebar">
+     colours on every page; only the menu items differ by role. Styles: resources/css/sidebar.css. From 768px it is fixed
+     at the full screen height; below 768px it is hidden and the same menu opens full screen as the drawer below (button
+     in layouts/navigation.blade.php). --}}
+<aside class="ic-sidebar sidebar-fixed d-none d-md-flex flex-column" aria-label="Sidebar">
     @include('layouts.partials.sidebar-brand')
     <nav class="ic-sb-nav sidebar-nav-scroll" aria-label="Main menu">
         {!! $renderSidebarNav('sb') !!}
