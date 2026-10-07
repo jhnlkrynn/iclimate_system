@@ -84,20 +84,20 @@ class ItPhaseEightTest extends TestCase
         Queue::assertNothingPushed();
     }
 
-    public function test_the_it_sidebar_has_chatbot_knowledge_and_mao_and_farmers_cannot_open_it_pages(): void
+    public function test_mao_and_farmers_cannot_open_it_pages_and_the_it_sidebar_lists_them(): void
     {
         $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
-        $this->assertContains('Chatbot Knowledge', $labels[1]);
         foreach (['System Health', 'System Logs', 'User Management'] as $label) {
             $this->assertContains($label, $labels[1], $label);
         }
+        // Chatbot Knowledge is hidden from the interface (see ChatbotKnowledgeHiddenTest).
+        $this->assertNotContains('Chatbot Knowledge', $labels[1]);
 
         foreach ([$this->mao(), User::factory()->farmer()->create()] as $other) {
             foreach (['admin.dashboard', 'system-health.index', 'model-evaluation.index', 'system-logs.index', 'users.index'] as $route) {
                 $this->actingAs($other)->get(route($route))->assertForbidden();
             }
-            $this->actingAs($other)->get(route('ai-admin.index', 'topics'))->assertForbidden();
         }
     }
 

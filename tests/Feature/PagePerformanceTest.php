@@ -45,6 +45,8 @@ class PagePerformanceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // /ai-admin/topics is measured as a page: it exists only while the Chatbot Knowledge tab is shown (hidden by default).
+        config(['iclimate.chatbot_knowledge_ui' => true]);
 
         Cache::flush();
         config(['services.groq.enabled' => true, 'services.groq.key' => 'gsk_test_key']);

@@ -361,10 +361,14 @@ class MaoDashboardHomeTest extends TestCase
         $mao = $this->mao();
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
+        // Chatbot Knowledge is hidden from the interface (2026-10): its pages open the dashboard and no menu lists it.
+        $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertRedirect(route('dashboard'));
+        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertDontSee('Chatbot Knowledge')->assertSee('Announcements');
+        // Shown again (CHATBOT_KNOWLEDGE_UI=true), it belongs to IT only.
+        config(['iclimate.chatbot_knowledge_ui' => true]);
         $this->actingAs($mao)->get(route('ai-admin.home'))->assertForbidden();
         $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertForbidden();
         $this->actingAs($it)->get(route('ai-admin.index', 'topics'))->assertOk();
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertSee('Chatbot Knowledge')->assertSee('Announcements');
 
         foreach ([$mao, $it] as $user) {
             $this->actingAs($user)->get(route('community-feed.index'))->assertOk()->assertSee('<h1>Announcements</h1>', false);

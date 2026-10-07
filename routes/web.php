@@ -815,9 +815,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('system-health.index');
 
-        // Chatbot Knowledge (vocabulary and language filter): IT only since 2026-10. MAO no longer has it.
+        // Chatbot Knowledge (vocabulary and language filter). Hidden from the interface unless
+        // CHATBOT_KNOWLEDGE_UI=true: while hidden, these pages send every role to their dashboard (the first
+        // middleware). When shown, they are IT only. The chatbot uses the knowledge either way.
         Route::prefix('ai-admin')
-            ->middleware('role:'.User::ROLE_IT_EXPERT)
+            ->middleware([\App\Http\Middleware\ChatbotKnowledgeUi::class, 'role:'.User::ROLE_IT_EXPERT])
             ->name('ai-admin.')
             ->group(function () {
                 Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');
