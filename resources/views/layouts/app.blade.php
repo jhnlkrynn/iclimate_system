@@ -4,7 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>{{ config('app.name', 'iClimate') }}</title>
+        {{-- A page can name itself in the browser tab: <x-slot:title>Dashboard</x-slot:title> gives "Dashboard · iClimate". --}}
+        <title>{{ isset($title) && trim((string) $title) !== '' ? trim((string) $title).' · '.config('app.name', 'iClimate') : config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">

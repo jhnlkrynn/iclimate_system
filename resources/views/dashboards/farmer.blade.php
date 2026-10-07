@@ -1,4 +1,6 @@
 <x-app-layout>
+    {{-- Farmer – Naicel (2026-10-07): the page is called "Dashboard" in both languages (farmer.nav.home), sidebar and browser tab. --}}
+    <x-slot:title>{{ __('farmer.nav.home') }}</x-slot:title>
     {{-- Farmer Home (2026-10): five plain parts in reading order, all from saved data (FarmerDashboardService).
          1 Mensahe Ngayon, 2 weather today, 3 barangay risk, 4 expected yield this season, 5 the next 7 days and the
          latest planting advice. The Typhoon Safety Check-In appears only while a typhoon advisory is in effect. --}}
