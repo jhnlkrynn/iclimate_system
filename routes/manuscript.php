@@ -13,6 +13,8 @@
 use App\Http\Controllers\AdvisoryAlertController;
 use App\Http\Controllers\BarangayProfileController;
 use App\Http\Controllers\FarmerApprovalController;
+use App\Http\Controllers\FarmerReportController;
+use App\Http\Controllers\ReportExtrasController;
 use App\Http\Controllers\RecordImportController;
 use App\Http\Controllers\RecordValidationController;
 use App\Http\Controllers\UserPasswordResetController;
@@ -71,6 +73,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('forecast', [YieldPredictionController::class, 'mao'])->name('forecast');
             Route::post('forecast', [YieldPredictionController::class, 'maoStore'])->middleware('throttle:20,1,post-analysis-forecast')->name('forecast.store');
         });
+    });
+
+    // Phase 7: report Excel / PDF and Draft / Published (MAO); the farmer's My Reports.
+    Route::middleware('role:'.User::ROLE_MAO)->group(function () {
+        Route::get('reports/export/xlsx', [ReportExtrasController::class, 'xlsx'])->middleware('throttle:20,1,get-reports-xlsx')->name('reports.export.xlsx');
+        Route::get('reports/export/pdf', [ReportExtrasController::class, 'pdf'])->middleware('throttle:20,1,get-reports-pdf')->name('reports.export.pdf');
+        Route::post('reports/{report}/publish', [ReportExtrasController::class, 'publish'])->whereNumber('report')->middleware('throttle:30,1,post-reports-publish')->name('reports.publish');
+    });
+    Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->prefix('farmer/my-reports')->name('farmer.reports.')->group(function () {
+        Route::get('/', [FarmerReportController::class, 'index'])->name('index');
+        Route::get('pdf', [FarmerReportController::class, 'pdf'])->middleware('throttle:10,1,get-farmer-reports-pdf')->name('pdf');
     });
 
     // Phase 6: Send Alert (MAO, opened from Advisories).
