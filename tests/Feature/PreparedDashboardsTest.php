@@ -132,7 +132,7 @@ class PreparedDashboardsTest extends TestCase
         $farmer = $this->farmer();
         $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk();
 
-        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['failed' => true, 'lacks_records' => false], now()->addMinutes(5));
+        Cache::put(FarmerDashboardService::predictionFailureKey($farmer->id), ['failed' => true, 'lacks_records' => false], now()->addMinutes(5));
         $card = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => 'harvest-check']))->assertOk()->json('slots.harvest');
 
         $this->assertNotNull($card, 'the saved result replaces the placeholder');

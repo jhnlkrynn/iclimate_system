@@ -32,6 +32,7 @@ use App\Services\Risk\HeatMapPanel;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
+use App\Services\Weather\LianBarangayWeatherService;
 use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Services\WeatherApiService;
 use App\Support\Aggregates;
@@ -78,7 +79,7 @@ class DashboardController extends Controller
 
     /** ?retry=harvest-check: the yield card's placeholder asks whether the background estimate is saved yet (reads only). */
     private const FARMER_RETRY = [
-        'harvest-check' => ['refresh' => [], 'slots' => ['harvest']],
+        'harvest-check' => ['slots' => ['harvest']],
     ];
 
     /** MAO overview: the incoming saved-data home contract, retained behind the shared stale cache. */
@@ -188,34 +189,36 @@ class DashboardController extends Controller
 
     /**
      * The page's timed refresh and the Refresh button (?refresh=1, which also asks for the latest weather): every part's
-     * HTML from saved data. ?retry=harvest-check returns only the yield card, never running the model.
+     * HTML from saved data. ?retry=harvest-check returns only the yield card from the stored estimate, never running the
+     * model or rebuilding the page.
      */
     public function farmerLive(Request $request, FarmerDashboardService $farmer): JsonResponse
     {
         $user = $request->user();
         $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
 
+        if ($retry !== null && ! $request->boolean('refresh')) {
+            // Only the yield card, from the stored estimate: no dashboard rebuild. While it is still being prepared nothing
+            // is sent, so the placeholder stays; a ready estimate, or the reason there is none, replaces it.
+            $harvest = $farmer->seasonEstimate($user);
+
+            return response()->json([
+                'slots' => $harvest['state'] === 'loading' ? [] : ['harvest' => view('dashboards.farmer.harvest', ['f' => ['harvest' => $harvest]])->render()],
+                'updated' => now(FarmerDashboardService::TIMEZONE)->format('g:i A'),
+            ]);
+        }
+
         if ($request->boolean('refresh')) {
             // The Refresh button: rebuilt now with the latest weather, once even if the farmer presses it twice.
             $payload = StaleCache::refreshScoped('farmer-dashboard', fn (string $token): string => FarmerDashboardService::cacheKey($user, token: $token),
                 self::FARMER_OVERVIEW_CACHE_SECONDS, fn (): array => $farmer->payload($user, forceWeather: true), waitSeconds: 30);
         } else {
-            // The timed refresh and the yield card's check read the prepared Home. The check rebuilds it only when the
-            // background estimate has been saved since (the prepared copy still shows the placeholder).
+            // The timed refresh reads the prepared Home.
             $payload = $this->preparedFarmerPayload($user, $farmer);
-            if ($retry !== null && ($payload['harvest']['state'] ?? null) === 'loading' && Cache::has(FarmerDashboardService::predictionCacheKey($user->id))) {
-                $snapshot = CacheScope::snapshot('farmer-dashboard');
-                $payload = $farmer->payload($user, refresh: $retry['refresh']);
-                Cache::put(FarmerDashboardService::cacheKey($user, token: CacheScope::settledToken($snapshot)), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
-            }
         }
 
         $slots = [];
-        foreach ($retry['slots'] ?? self::FARMER_SLOTS as $slot) {
-            // A placeholder never replaces itself: the check only answers once the estimate is saved.
-            if ($slot === 'harvest' && $retry !== null && ($payload['harvest']['state'] ?? null) === 'loading') {
-                continue;
-            }
+        foreach (self::FARMER_SLOTS as $slot) {
             $slots[$slot] = view('dashboards.farmer.'.$slot, ['f' => $payload])->render();
         }
 
