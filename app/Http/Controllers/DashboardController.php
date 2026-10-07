@@ -82,9 +82,6 @@ class DashboardController extends Controller
     /** MAO overview: the incoming saved-data home contract, retained behind the shared stale cache. */
     public function mao(Request $request, MaoHomeService $home): View
     {
-        // MAO/IT – Naicel (2026-10-07): data not added yet becomes a bell notification instead of an empty card.
-        app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncOnPageLoad($request->user());
-
         return view('dashboards.mao', [
             'mao' => StaleCache::scoped(
                 'mao-home',
@@ -120,6 +117,10 @@ class DashboardController extends Controller
      */
     public function warmSharedDashboards(): array
     {
+        // MAO/IT – Naicel (2026-10-07): the MAO's "no data yet" bell notifications are checked here, every minute, and
+        // after a save (MaoMissingDataNotifier), never while the dashboard loads. First, because a notification change
+        // retires prepared copies that count notifications (the IT dashboard): the copies below are built after it.
+        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncAll(), null, false);
         // Populate the saved risk-map inputs before the prepared dashboard payloads are warmed.
         rescue(fn () => RiskMapInitialData::payloads(false), null, false);
         StaleCache::prepareScoped(
@@ -128,8 +129,6 @@ class DashboardController extends Controller
             self::MAO_HOME_CACHE_SECONDS,
             fn (): array => app(MaoHomeService::class)->payload(),
         );
-        // MAO/IT – Naicel: a new month or season starts without anyone saving a record; the MAO bell follows here too.
-        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncAll(), null, false);
         return app(PreparedDashboards::class)->warm();
     }
 

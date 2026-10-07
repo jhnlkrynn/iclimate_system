@@ -52,6 +52,13 @@ class MaoMissingDataNotificationTest extends TestCase
         return $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->getContent();
     }
 
+    /** The every-minute check (iclimate:warm-dashboards runs it); a dashboard visit never does. */
+    private function scheduledCheck(): void
+    {
+        Cache::flush();
+        app(MaoMissingDataNotifier::class)->syncAll();
+    }
+
     /** One record of each kind the notifications ask for, dated inside this month / season / from today. */
     private function addAllData(User $mao): void
     {
@@ -62,10 +69,10 @@ class MaoMissingDataNotificationTest extends TestCase
         MaoActivity::query()->create(['user_id' => $mao->id, 'activity_type' => 'Training', 'barangay' => null, 'starts_on' => '2026-10-20', 'title' => 'Rice crop care training']);
     }
 
-    public function test_with_no_data_the_dashboard_creates_one_notification_per_missing_item_in_filipino(): void
+    public function test_with_no_data_the_check_creates_one_notification_per_missing_item_in_filipino(): void
     {
         $mao = $this->mao();
-        $this->dashboard($mao);
+        $this->scheduledCheck();
 
         $notes = $this->notes($mao);
         $this->assertSame(self::ITEMS, array_values(array_intersect(self::ITEMS, array_keys($notes))));
@@ -75,10 +82,20 @@ class MaoMissingDataNotificationTest extends TestCase
         $this->assertFalse((bool) $notes['planner']->is_read);
     }
 
+    public function test_the_scheduled_warm_up_creates_them_and_a_dashboard_visit_alone_does_not(): void
+    {
+        $mao = $this->mao();
+        $this->dashboard($mao);
+        $this->assertSame([], $this->notes($mao), 'the dashboard stays a read of its prepared copy');
+
+        $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
+        $this->assertCount(4, $this->notes($mao));
+    }
+
     public function test_the_notifications_follow_a_mao_whose_saved_language_is_english(): void
     {
         $mao = $this->mao(['preferred_language' => 'en']);
-        $this->dashboard($mao);
+        $this->scheduledCheck();
 
         $this->assertSame('No climate records this month – add one', $this->notes($mao)['climate_month']->title);
     }
@@ -86,8 +103,8 @@ class MaoMissingDataNotificationTest extends TestCase
     public function test_they_are_never_duplicated(): void
     {
         $mao = $this->mao();
-        $this->dashboard($mao);
-        $this->dashboard($mao);
+        $this->scheduledCheck();
+        $this->scheduledCheck();
         app(MaoMissingDataNotifier::class)->syncAll();
         $this->assertSame(4, Notification::query()->where('user_id', $mao->id)->count());
 
@@ -100,7 +117,7 @@ class MaoMissingDataNotificationTest extends TestCase
     public function test_each_notification_in_the_bell_links_to_the_page_where_the_data_is_added(): void
     {
         $mao = $this->mao();
-        $this->dashboard($mao);
+        $this->scheduledCheck();
 
         $items = collect($this->actingAs($mao)->getJson(route('notifications.feed'))->assertOk()->json('items'))->keyBy('title');
         $expected = [
@@ -123,7 +140,7 @@ class MaoMissingDataNotificationTest extends TestCase
     {
         $mao = $this->mao();
         $other = $this->mao();
-        $this->dashboard($mao);
+        $this->scheduledCheck();
         app(MaoMissingDataNotifier::class)->syncAll();
         $this->assertCount(4, $this->notes($other));
 
@@ -139,16 +156,16 @@ class MaoMissingDataNotificationTest extends TestCase
     {
         $mao = $this->mao();
         $this->addAllData($mao);
-        $this->dashboard($mao);
+        $this->scheduledCheck();
         $this->assertSame([], $this->notes($mao));
 
-        MaoActivity::query()->delete();   // a query delete fires no model events: the next dashboard visit notices
-        $this->dashboard($mao);
+        MaoActivity::query()->delete();   // a query delete fires no model events: the next scheduled check notices
+        $this->scheduledCheck();
         $this->assertSame(['planner'], array_keys($this->notes($mao)));
 
         // November: October's climate record no longer counts for "this month".
         $this->travelTo(CarbonImmutable::parse('2026-11-03 09:00:00', 'Asia/Manila'));
-        $this->dashboard($mao);
+        $this->scheduledCheck();
         $this->assertArrayHasKey('climate_month', $this->notes($mao));
     }
 

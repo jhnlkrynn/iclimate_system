@@ -26,7 +26,9 @@ use Illuminate\Support\Facades\Cache;
  *  - advisories         no published advisory in effect today                   → Advisories, New Advisory
  *  - planner            no MAO Planner activity from today onward               → MAO Planner
  *
- * Reads saved rows only (a few counts): no provider is called and no model is run.
+ * When it runs: every minute with the dashboard warm-up (iclimate:warm-dashboards, so a new month or season is noticed)
+ * and once after any save or delete of those records (queueSyncAll). Never while a page loads, so the MAO dashboard stays
+ * a read of its prepared copy (PagePerformanceTest). Reads saved rows only: no provider is called and no model is run.
  */
 class MaoMissingDataNotifier
 {
@@ -34,21 +36,10 @@ class MaoMissingDataNotifier
 
     public const ITEMS = ['climate_month', 'production_season', 'advisories', 'planner'];
 
-    /** Page loads look again at most this often; a save looks at once (after the response, see queueSyncAll()). */
-    private const PAGE_CHECK_SECONDS = 60;
-
     /** Container keys: a check of every MAO account is waiting / the after-response callback is registered. */
     private const SYNC_QUEUED = 'mao.missing-data.sync-queued';
 
     private const SYNC_REGISTERED = 'mao.missing-data.sync-registered';
-
-    /** Called when the MAO dashboard opens: cheap, and at most once a minute per MAO account. */
-    public function syncOnPageLoad(User $user): void
-    {
-        if (Cache::add('mao:missing-data:checked:'.$user->id, true, now()->addSeconds(self::PAGE_CHECK_SECONDS))) {
-            rescue(fn () => $this->sync($user), null, true);
-        }
-    }
 
     /**
      * A climate record, rice production record, advisory or planner activity was saved or deleted: every MAO account
