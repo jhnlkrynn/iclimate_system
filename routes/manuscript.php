@@ -52,4 +52,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{barangay}', [BarangayProfileController::class, 'update'])->middleware('throttle:60,1,put-mao-barangay')->name('update');
     });
 
+    // Phase 4: Weather Analysis (farmers and MAO) and Weather Impact Analysis (MAO), tabs of Predictions.
+    Route::prefix('analysis')->name('analysis.')->group(function () {
+        Route::get('weather', [WeatherAnalysisController::class, 'weather'])
+            ->middleware(['role:'.User::ROLE_FARMER.','.User::ROLE_MAO, 'farmer.language'])->name('weather');
+        Route::middleware('role:'.User::ROLE_MAO)->group(function () {
+            Route::get('impact', [WeatherAnalysisController::class, 'impact'])->name('impact');
+            Route::post('impact', [WeatherAnalysisController::class, 'store'])->middleware('throttle:20,1,post-analysis-impact')->name('impact.store');
+            Route::get('impact/{analysis}', [WeatherAnalysisController::class, 'show'])->whereNumber('analysis')->name('impact.show');
+        });
+
+    });
+
 });

@@ -17,6 +17,14 @@
             ['rice-productions.index', 'Rice Production', ['rice-productions.*'], [$mao]],
             ['mao.barangays.index', 'Barangays', ['mao.barangays.*'], [$mao]],
         ],
+        // Predictions (Forecast for farmers) and the analysis pages.
+        'analysis' => [
+            ['weather-predictions.index', [$role === $farmerRole ? 'Forecast' : 'Predictions', 'Taya ng Panahon'], ['weather-predictions.*'], [$farmerRole, $mao]],
+            ['analysis.weather', ['Weather Analysis', 'Pagsusuri ng Panahon'], ['analysis.weather'], [$farmerRole, $mao]],
+            ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
+            ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
+            ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
+        ],
     ];
     $tabs = array_values(array_filter($groups[$group] ?? [], fn (array $tab): bool => \Illuminate\Support\Facades\Route::has($tab[0]) && in_array($role, $tab[3], true)));
 @endphp

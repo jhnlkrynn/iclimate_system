@@ -43,7 +43,7 @@
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
-        'weather' => ['weather-predictions.index', ['weather-predictions.*']],
+        'weather' => ['weather-predictions.index', ['weather-predictions.*', 'analysis.*']],   // Manuscript – Naicel: + analysis tabs
         'rice-production' => ['rice-productions.index', ['rice-productions.*']],
         'farmer-profiles' => ['farmer-profiles.index', ['farmer-profiles.*']],
         'reports' => ['reports.index', ['reports.*']],

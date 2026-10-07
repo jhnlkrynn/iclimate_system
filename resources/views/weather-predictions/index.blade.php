@@ -18,6 +18,8 @@
         <x-it.page-header kicker="Weather and Rice Yield" title="Predictions" lede="The coming days' weather and this season's expected harvest for Lian." />
     @endunless
     <div class="fad wpx" data-predictions>
+        {{-- Manuscript – Naicel (2026-10-08): Weather Analysis, Yield Prediction / Impact Analysis, Yield Forecast tabs. --}}
+        @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
         @if ($isFarmer)
             <header class="fad-hero">
                 <div class="fad-hero-text">
