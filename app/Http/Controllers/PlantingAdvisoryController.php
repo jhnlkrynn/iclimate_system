@@ -136,7 +136,7 @@ class PlantingAdvisoryController extends Controller
             'locale' => $locale,
             // Farmers read MAO posts here as read-only Announcements (no reactions, comments or posting).
             'announcements' => $isFarmer
-                ? \App\Models\FeedPost::query()->with('author:id,name')->whereNull('archived_at')->latest()->take(10)->get()
+                ? \App\Models\FeedPost::query()->with(['author:id,name', 'media'])->whereNull('archived_at')->latest()->take(10)->get()
                 : collect(),
             'analyticsRun' => $this->requestedAnalyticsRun($request),
             'check' => $this->lastCheck(),

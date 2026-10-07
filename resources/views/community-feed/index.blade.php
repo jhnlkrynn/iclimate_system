@@ -159,12 +159,15 @@
                             @if($post->media->isNotEmpty())
                                 <div class="media-grid">
                                     @foreach($post->media as $media)
-                                        @if($media->media_type === 'image')
-                                            <img src="{{ asset('storage/'.$media->path) }}" alt="{{ $media->original_name }}">
-                                        @elseif($media->media_type === 'video')
-                                            <video controls src="{{ asset('storage/'.$media->path) }}"></video>
+                                        @php $mediaUrl = $media->url(); @endphp
+                                        @if($mediaUrl && $media->media_type === 'image')
+                                            <img src="{{ $mediaUrl }}" alt="{{ $media->original_name }}" loading="lazy">
+                                        @elseif($mediaUrl && $media->media_type === 'video')
+                                            <video controls src="{{ $mediaUrl }}"></video>
+                                        @elseif($mediaUrl)
+                                            <a class="file-tile" href="{{ $mediaUrl }}" target="_blank" rel="noopener">File: {{ $media->original_name }}</a>
                                         @else
-                                            <a class="file-tile" href="{{ asset('storage/'.$media->path) }}" target="_blank">File: {{ $media->original_name }}</a>
+                                            <div class="file-tile media-unavailable" role="status">Attachment unavailable: {{ $media->original_name }}</div>
                                         @endif
                                     @endforeach
                                 </div>
