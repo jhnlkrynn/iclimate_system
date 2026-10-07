@@ -48,8 +48,9 @@ class FarmerPlantingScheduleController extends Controller
         }
 
         $data = $this->validated($request);
-        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data));
+        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data) + $this->farmColumn($request));
         $predictions->refresh($schedule);
+        $this->afterSave($request, $schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Planting and harvest schedule saved.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
@@ -80,8 +81,9 @@ class FarmerPlantingScheduleController extends Controller
 
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
-        $schedule->update($this->normalized($this->validated($request)));
+        $schedule->update($this->normalized($this->validated($request)) + $this->farmColumn($request, $schedule));
         $predictions->refresh($schedule);
+        $this->afterSave($request, $schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Schedule updated.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
@@ -96,9 +98,44 @@ class FarmerPlantingScheduleController extends Controller
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
         $schedule->delete();
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->sync($request->user());
 
         return redirect()->route('farmer.my-farm')->with('success', 'Schedule deleted.');
     }
+
+    // ------------------------------------------------------------------ Farmer – Naicel (2026-10)
+
+    /** The farmer's own active farms for the form's "Farm" choice. */
+    public static function farmOptions(Request $request): \Illuminate\Support\Collection
+    {
+        return app(\App\Services\Farmer\FarmService::class)->farms($request->user());
+    }
+
+    /** farm_id for a saved plan: the farm chosen on the form when it is the farmer's own, else the plan's, else the primary farm. */
+    private function farmColumn(Request $request, ?FarmerPlantingSchedule $schedule = null): array
+    {
+        if (! \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'farm_id')) {
+            return [];
+        }
+        $farms = self::farmOptions($request);
+        $chosen = is_numeric($request->input('farm_id')) ? $farms->firstWhere('id', (int) $request->input('farm_id')) : null;
+
+        return ['farm_id' => $chosen?->id ?? $schedule?->farm_id ?? $farms->first()?->id];
+    }
+
+    /** A harvest typed on the form is kept with the yield predicted for it (stored only); the bell's reminders follow. */
+    private function afterSave(Request $request, FarmerPlantingSchedule $schedule): void
+    {
+        rescue(function () use ($request, $schedule): void {
+            $schedule->refresh();
+            if (is_numeric($schedule->actual_yield) && (float) $schedule->actual_yield > 0) {
+                app(\App\Services\Farmer\YieldSurveyService::class)->record($schedule, (float) $schedule->actual_yield);
+            }
+            app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->sync($request->user());
+        }, null, true);
+    }
+
+    // ------------------------------------------------------------------ end Farmer – Naicel
 
     /**
      * The farmer dashboard's "Add Planting Information" pop-up: a planting date and a farm size, nothing else.
@@ -161,7 +198,7 @@ class FarmerPlantingScheduleController extends Controller
                 $planting = Carbon::parse($data['planting_date']);
                 $barangay = $profile?->barangay ?: $user->barangay;
 
-                return $user->plantingSchedules()->create([
+                return $user->plantingSchedules()->create($this->farmColumn(request()) + [
                     'planting_date' => $data['planting_date'],
                     'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
                     // May to October plantings are the wet season crop, the rest the dry season crop (App\Support\RiceSeason).

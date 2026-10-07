@@ -474,7 +474,7 @@ html[data-theme="dark"] body .fcal-day.is-outside .fcal-day-number { color: var(
 html[data-theme="dark"] body .fcal-day.is-today { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
 html[data-theme="dark"] body .fad-badge.fcal-kind { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
 
-/* ---- css/farmer-records.css (9) */
+/* ---- css/farmer-records.css (28) */
 html[data-theme="dark"] body .frec-bar { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .frec-table tbody tr:nth-child(even) > * { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .frec-table tbody tr.is-mine > * { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); }
@@ -484,11 +484,35 @@ html[data-theme="dark"] body .frec-noteitem.is-unread { background: color-mix(in
 html[data-theme="dark"] body .fmf .fmf-facts dt { color: var(--dk-muted); }
 html[data-theme="dark"] body .fmf .fmf-facts dd { color: var(--dk-ink); }
 html[data-theme="dark"] body .fmf .fmf-events li { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .fmf .fmf-farm { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .fmf .fmf-farm-name { color: var(--dk-ink); }
+html[data-theme="dark"] body .fmf .fmf-farm-facts { color: var(--dk-muted); }
+html[data-theme="dark"] body .fmf .fmf-cal th { color: var(--dk-muted); }
+html[data-theme="dark"] body .fmf .fmf-cal td { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .fmf .fmf-cal td.is-out { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .fmf .fmf-cal-day:hover,
+html[data-theme="dark"] body .fmf .fmf-cal-day:focus-visible { background: var(--dk-surface-3); }
+html[data-theme="dark"] body .fmf .fmf-cal-event.is-planted,
+html[data-theme="dark"] body .fmf .fmf-cal-item.is-planted strong { background: var(--dk-surface-2); color: #9de7c4; }
+html[data-theme="dark"] body .fmf .fmf-cal-event.is-harvested,
+html[data-theme="dark"] body .fmf .fmf-cal-item.is-harvested strong { background: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); color: #e7ca9d; }
+html[data-theme="dark"] body .fmf .fmf-cal-event.is-expected,
+html[data-theme="dark"] body .fmf .fmf-cal-item.is-expected strong { background: var(--dk-surface-2); color: #9dc4e7; }
+html[data-theme="dark"] body .fmf .fmf-cal-item { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .fmf .fmf-survey { border-color: color-mix(in srgb, #cc9933 30%, var(--dk-border)); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .fmf .fmf-survey-predicted span { color: var(--dk-muted); }
+html[data-theme="dark"] body .fmf .fmf-survey-predicted small { color: var(--dk-muted); }
+html[data-theme="dark"] body .fmf .fmf-field > span,
+html[data-theme="dark"] body .fmf .fmf-field > legend { color: var(--dk-ink); }
+html[data-theme="dark"] body .fmf .fmf-choice { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .fmf .fmf-choice:has(input:checked) { background: var(--dk-surface-3); color: #9de7c4; }
+html[data-theme="dark"] body .fmf .fmf-error { border-color: color-mix(in srgb, #cc3333 30%, var(--dk-border)); background: color-mix(in srgb, #c32222 16%, var(--dk-surface)); color: #e79d9d; }
+html[data-theme="dark"] body .fmf .fmf-dialog { background: var(--dk-surface-2); color: var(--dk-ink); }
 
 /* ---- css/farmer-messages.css (1) */
 html[data-theme="dark"] body .fmsg .thread-link.active { background: var(--dk-surface-3); }
 
-/* ---- css/farmer-predictions.css (5) */
+/* ---- css/farmer-predictions.css (9) */
 html[data-theme="dark"] body .fpred .wp-page { --wp-ink-2: var(--dk-ink-mid); }
 html[data-theme="dark"] body .fpred .wp-advisory { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .fpred .wp-status { border-color: var(--dk-border-strong); }
@@ -497,6 +521,10 @@ html[data-theme="dark"] body .fpred .form-select { background-color: var(--dk-su
 html[data-theme="dark"] body .fpred .btn-outline-success,
 html[data-theme="dark"] body .fpred .btn-outline-primary,
 html[data-theme="dark"] body .fpred .btn-outline-secondary { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-survey h2 { color: var(--dk-ink); }
+html[data-theme="dark"] body .wpx .wpx-survey-choice { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .wpx .wpx-survey-choice:has(input:checked) { background: var(--dk-surface-3); color: #9de7c4; }
+html[data-theme="dark"] body .wpx p.wpx-survey-thanks { color: #9de7c4; }
 
 /* ---- css/it-dashboard.css (10) */
 html[data-theme="dark"] body .itd-meter { background: var(--dk-surface-2); }

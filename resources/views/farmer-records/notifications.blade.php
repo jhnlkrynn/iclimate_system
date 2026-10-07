@@ -58,6 +58,10 @@
                                 @if($when)<p class="fad-meta"><time datetime="{{ $note->created_at->toIso8601String() }}">{{ $when->format('M j, Y · g:i A') }}</time> · {{ $when->diffForHumans() }}</p>@endif
                             </div>
                             <div class="frec-note-actions">
+                                {{-- Farmer – Naicel: a missing-info notification opens the page where it is added. --}}
+                                @if($setupLink = \App\Services\Farmer\FarmerMissingInfoNotifier::linkFor($note->category, \App\Support\FarmerLanguage::resolve(request())))
+                                    <a class="fad-btn is-primary is-compact" href="{{ $setupLink['url'] }}" data-notif-setup>{{ $setupLink['label'] }}</a>
+                                @endif
                                 @if($note->type === 'Advisory')
                                     {{-- An advisory alert only points to the Advisories page, where the advice itself is read. --}}
                                     <a class="fad-btn is-primary is-compact" href="{{ route('planting-advisories.index') }}" data-notif-advisories>{{ __('farmer.advisories_page.open', [], \App\Support\FarmerLanguage::resolve(request())) }}</a>

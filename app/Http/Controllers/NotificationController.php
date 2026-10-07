@@ -201,6 +201,14 @@ class NotificationController extends CrudController
             ->latest('created_at')->latest('id')
             ->paginate($perPage, ['*'], 'page', max(1, $request->integer('page', 1)));
 
+        // Farmer – Naicel (2026-10): a missing-info notification (category "setup:*") links to the page where the
+        // farmer adds it. Every other notification keeps the link it had.
+        $setupLocale = $request->user()->role === User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve($request) : 'en';
+        $setupLink = fn (UserNotification $note): array => ($link = \App\Services\Farmer\FarmerMissingInfoNotifier::linkFor($note->category, $setupLocale))
+            ? ['link_url' => $link['url'], 'link_label' => $link['label']]
+            : [];
+        // end Farmer – Naicel
+
         return response()->json([
             'ok' => true,
             'unread' => (clone $all)->where('is_read', false)->count(),
@@ -214,7 +222,7 @@ class NotificationController extends CrudController
             'can_manage' => $canManage,
             'store_url' => $canManage ? route('notifications.store') : null,
             'form' => $canManage && $request->boolean('form') ? $this->fields : null,
-            'items' => collect($page->items())->map(fn (UserNotification $note): array => [
+            'items' => collect($page->items())->map(fn (UserNotification $note): array => array_merge([
                 'id' => $note->id,
                 'title' => $note->title,
                 'message' => $note->message,
@@ -226,7 +234,7 @@ class NotificationController extends CrudController
                 'mark_read_url' => route('notifications.mark-read', $note),
                 'link_url' => $note->type === 'Advisory' ? route('planting-advisories.index') : null,
                 'link_label' => $note->type === 'Advisory' ? $advisoriesLabel : null,
-            ] + ($canManage ? [
+            ], $setupLink($note)) + ($canManage ? [
                 'user_id' => $note->user_id,
                 'category' => $note->category ?? 'general',
                 'update_url' => route('notifications.update', $note),

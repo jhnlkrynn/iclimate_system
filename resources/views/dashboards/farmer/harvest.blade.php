@@ -1,6 +1,8 @@
 {{-- 4. Expected yield this season: one number in t/ha and Normal / Mas mataas / Mas mababa against the usual Lian yield.
      The estimate is made in the background (PrepareFarmerYieldEstimate); until it is saved the card says so. --}}
 @php $h = $f['harvest']; @endphp
+{{-- A missing farm size is asked for in the notification bell (FarmerMissingInfoNotifier), not with a card here. --}}
+@unless ($h['state'] !== 'ok' && ($h['needs_area'] ?? false))
 <section class="fh-card" aria-labelledby="fhHarvestTitle" data-fh-harvest @if ($h['state'] === 'loading') data-mfd-load="harvest" @endif>
     <h2 id="fhHarvestTitle" class="fh-kicker">{{ __('farmer.home.harvest.title') }}</h2>
     <p class="fh-muted">{{ $h['season'] }}</p>
@@ -16,6 +18,6 @@
         <p class="fh-muted">{{ __('farmer.home.harvest.preparing') }}</p>
     @else
         <x-no-data :label="__('farmer.home.no_data')" :note="$h['reason']" />
-        @if ($h['needs_area'])<a class="fh-link" href="{{ route('profile.edit') }}">{{ __('farmer.home.harvest.add_area') }}</a>@endif
     @endif
 </section>
+@endunless

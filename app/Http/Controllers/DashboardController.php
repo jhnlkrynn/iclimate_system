@@ -151,14 +151,31 @@ class DashboardController extends Controller
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $user = $request->user();
-        $key = FarmerDashboardService::cacheKey($user);
+        // Farmer – Naicel (2026-10): missing farm information goes to the notification bell, and ?farm= opens Home
+        // for one of the farmer's other farms (the selector is shown with two or more farms).
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($user);
+        $farmId = $this->farmerOtherFarmId($request);
+
+        $key = FarmerDashboardService::cacheKey($user, null, $farmId);
         $payload = Cache::get($key);
         if (! is_array($payload)) {
-            $payload = $farmer->payload($user);
+            $payload = $farmer->payload($user, farmId: $farmId);
             Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
         return view('dashboards.farmer', ['f' => $payload]);
+    }
+
+    /** Farmer – Naicel: ?farm= when it is one of the farmer's own active farms other than the primary one; else null. */
+    private function farmerOtherFarmId(Request $request): ?int
+    {
+        if (! is_numeric($request->query('farm'))) {
+            return null;
+        }
+        $farms = app(\App\Services\Farmer\FarmService::class);
+        $farm = $farms->selected($request->user(), $request->query('farm'));
+
+        return $farm !== null && ! $farms->isPrimary($request->user(), $farm) ? (int) $farm->id : null;
     }
 
     /**
@@ -191,8 +208,9 @@ class DashboardController extends Controller
         $user = $request->user();
         $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
 
-        $payload = $farmer->payload($user, forceWeather: $request->boolean('refresh'), refresh: $retry['refresh'] ?? []);
-        Cache::put(FarmerDashboardService::cacheKey($user), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
+        $farmId = $this->farmerOtherFarmId($request);
+        $payload = $farmer->payload($user, forceWeather: $request->boolean('refresh'), refresh: $retry['refresh'] ?? [], farmId: $farmId);
+        Cache::put(FarmerDashboardService::cacheKey($user, null, $farmId), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
 
         $slots = [];
         foreach ($retry['slots'] ?? self::FARMER_SLOTS as $slot) {
