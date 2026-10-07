@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class MaoOptionalDataFailureTest extends TestCase
@@ -120,6 +121,17 @@ class MaoOptionalDataFailureTest extends TestCase
         foreach ($routes as $route) {
             $this->actingAs($user)->get($route)->assertOk();
         }
+    }
+
+    public function test_planner_reports_missing_activity_schema_without_querying_it(): void
+    {
+        $user = $this->maoUser();
+        Schema::dropIfExists('mao_activities');
+        Cache::flush();
+
+        $response = $this->actingAs($user)->get('/mao/planner');
+
+        $response->assertStatus(503)->assertSee('MAO planning is temporarily unavailable.');
     }
 
     public function test_incomplete_farmer_profile_does_not_crash_list_or_detail_view(): void
