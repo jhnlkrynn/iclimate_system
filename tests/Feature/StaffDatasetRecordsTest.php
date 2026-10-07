@@ -24,9 +24,10 @@ class StaffDatasetRecordsTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** The reader of the lists. These were also IT pages until 2026-10; IT is now sent to its dashboard. */
     private function it(): User
     {
-        return User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        return User::factory()->create(['role' => User::ROLE_MAO]);
     }
 
     /** @return Collection<int, array<string, mixed>> */
@@ -107,9 +108,8 @@ class StaffDatasetRecordsTest extends TestCase
         // The copy replaces its station month (no duplicate); the other source is a separate record.
         $html = $this->actingAs($mao)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
         $this->assertStringNotContainsString(route('climate-records.edit', $copy->id), $html);
-        // IT sees the same list, without table actions or Create.
-        $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))
-            ->assertDontSee('/edit"', false)->assertDontSee('Create Climate Record');
+        // IT does not read climate records any more: it is sent to its dashboard.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('climate-records.index'))->assertRedirect(route('admin.dashboard'));
 
         // Climate Records has no visible action column for dataset or entered rows.
         $this->assertSame(0, substr_count($html, '/edit"'));
