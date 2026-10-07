@@ -18,7 +18,7 @@ class FarmerPlantingSchedule extends Model
     public const MANUAL_STATUSES = ['Planted', 'Harvested', 'Delayed', 'Needs Review'];
 
     protected $fillable = [
-        'user_id', 'planting_date', 'scheduled_harvest_date', 'harvest_month',
+        'user_id', 'farm_id', 'planting_date', 'scheduled_harvest_date', 'harvest_month',
         'season', 'farm_type', 'barangay', 'farm_area_hectares', 'actual_yield', 'harvested_on', 'notes',
         'progress_status', 'predicted_yield', 'prediction_confidence',
         'prediction_source', 'prediction_unavailable_reason', 'prediction_details',
@@ -45,6 +45,12 @@ class FarmerPlantingSchedule extends Model
     public function farmer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Farmer – Naicel (2026-10): the farm this planting / harvest record belongs to (null on records older than farms).
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
     }
 
     public function harvestDateForPlanning(): ?Carbon

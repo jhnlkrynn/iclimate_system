@@ -21,22 +21,23 @@ class PrepareFarmerYieldEstimate implements ShouldQueue
 
     public int $timeout = 120;
 
-    public function __construct(public int $userId) {}
+    /** $farmId: one of the farmer's other farms (2026-10); null is the primary farm, the one on the farmer's profile. */
+    public function __construct(public int $userId, public ?int $farmId = null) {}
 
-    /** Queues the estimate unless one is already waiting for this farmer. */
-    public static function queueFor(int $userId): void
+    /** Queues the estimate unless one is already waiting for this farmer (and farm). */
+    public static function queueFor(int $userId, ?int $farmId = null): void
     {
-        if (Cache::add(self::lockKey($userId), true, now()->addMinutes(10))) {
-            self::dispatch($userId)
+        if (Cache::add(self::lockKey($userId, $farmId), true, now()->addMinutes(10))) {
+            self::dispatch($userId, $farmId)
                 ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
                 ->onQueue((string) config('services.farming_ai.queue', 'analytics'))
                 ->afterCommit();
         }
     }
 
-    public static function lockKey(int $userId): string
+    public static function lockKey(int $userId, ?int $farmId = null): string
     {
-        return 'dashboard:farmer-prediction:queued:'.$userId;
+        return 'dashboard:farmer-prediction:queued:'.$userId.($farmId !== null ? ':farm:'.$farmId : '');
     }
 
     public function handle(FarmerDashboardService $dashboard): void
@@ -44,10 +45,10 @@ class PrepareFarmerYieldEstimate implements ShouldQueue
         try {
             $user = User::query()->with('farmerProfile')->find($this->userId);
             if ($user !== null && $user->role === User::ROLE_FARMER) {
-                $dashboard->prepareYieldEstimate($user);
+                $dashboard->prepareYieldEstimate($user, $this->farmId);
             }
         } finally {
-            Cache::forget(self::lockKey($this->userId));
+            Cache::forget(self::lockKey($this->userId, $this->farmId));
         }
     }
 }
