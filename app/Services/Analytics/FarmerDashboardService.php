@@ -157,6 +157,11 @@ final class FarmerDashboardService
         $stored = $farm !== null ? '' : trim((string) ($profile?->barangay ?: $user->barangay));
         $risk = $barangay === null && $stored !== '' ? ['state' => 'unverified', 'stored' => $stored] : $this->riskStatus($barangay);
         $harvest = $this->harvest($this->prediction($user, $farm, in_array('harvest', $refresh, true)), $farm, fn () => $profile, $now);
+        // Farmer – Naicel (2026-10-09): without an estimate of their own (no farm size yet), the third card of the row
+        // shows Lian's usual yield for this month from past records, so the row always has its three cards.
+        if ($harvest['state'] !== 'ok' && ! isset($harvest['usual'])) {
+            $harvest['usual'] = rescue(fn (): ?float => ($usual = $this->seasonYield->usual((int) $now->month)) !== null ? round($usual, 2) : null, null, false);
+        }
         $typhoon = $this->typhoonCheckIn($user);
         $advisory = $this->latestPlantingAdvisory($barangay);
         // With two or more farms the farmer's records are read for the farm being viewed; otherwise all of them.
@@ -164,7 +169,9 @@ final class FarmerDashboardService
         // Farmer – Naicel (2026-10-08): the key figures and the yield comparison, from the parts above and saved records.
         $charts = app(\App\Services\Farmer\FarmerHomeCharts::class)->for($user, $onlyFarm, $barangay);
         $figures = app(\App\Services\Farmer\FarmerHomeKpis::class)->for($user, $farm, $onlyFarm, $harvest, $week, $now,
-            ['risk' => $risk, 'barangay' => $barangay, 'forecast' => $charts['weather']]);
+            ['risk' => $risk, 'barangay' => $barangay, 'forecast' => $charts['weather'],
+                // The yield card shows Lian's usual yield itself when the farmer has no estimate (see harvest.blade.php).
+                'usual_on_card' => $harvest['state'] !== 'ok' && ($harvest['needs_area'] ?? false) && is_numeric($harvest['usual'] ?? null)]);
 
         return [
             'generated_at' => $now,

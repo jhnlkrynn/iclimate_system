@@ -793,6 +793,8 @@ return [
             'need_records' => 'Not enough weather records yet for an estimate.',
             'unavailable' => 'Estimate is temporarily unavailable. We’ll try again automatically.',
             'add_area' => 'Add farm size',
+            'usual_title' => 'Usual Yield This Month',
+            'usual_note' => 'What farms in Lian usually harvest this month, from past records.',
         ],
         'week' => [
             'title' => 'Next 7 Days',
@@ -1177,6 +1179,7 @@ return [
         'risk' => ['label' => 'Barangay risk this week'],
         'advisories' => ['label' => 'Advisories in effect', 'note' => 'For your barangay and all of Lian', 'none' => 'No advisory right now'],
         'hot' => ['label' => 'Hottest day, next 7 days'],
+        'season' => ['wet' => 'Days left in the wet season', 'dry' => 'Days left in the dry season', 'ends' => 'Ends :date'],
         'usual' => ['label' => 'Usual yield in Lian', 'note' => 'This month, from past harvests'],
         'rain_week' => [
             'title' => 'Chance of Rain This Week',

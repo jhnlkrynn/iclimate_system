@@ -804,6 +804,8 @@ return [
             'need_records' => 'Kulang pa ang datos ng panahon para sa tantiya.',
             'unavailable' => 'Hindi pa makuha ang tantiya ngayon. Susubukan namin ulit nang kusa.',
             'add_area' => 'Ilagay ang laki ng bukid',
+            'usual_title' => 'Karaniwang Ani Ngayong Buwan',
+            'usual_note' => 'Ang karaniwang inaani ng mga bukid sa Lian ngayong buwan, mula sa mga nakaraang tala.',
         ],
         'week' => [
             'title' => 'Susunod na 7 Araw',
@@ -1188,6 +1190,7 @@ return [
         'risk' => ['label' => 'Panganib sa barangay ngayong linggo'],
         'advisories' => ['label' => 'Mga advisory na umiiral', 'note' => 'Para sa barangay mo at buong Lian', 'none' => 'Walang advisory sa ngayon'],
         'hot' => ['label' => 'Pinakamainit na araw, susunod na 7 araw'],
+        'season' => ['wet' => 'Araw na natitira sa tag-ulan', 'dry' => 'Araw na natitira sa tag-araw', 'ends' => 'Matatapos sa :date'],
         'usual' => ['label' => 'Karaniwang ani sa Lian', 'note' => 'Ngayong buwan, mula sa mga nakaraang ani'],
         'rain_week' => [
             'title' => 'Tsansa ng Ulan Ngayong Linggo',
