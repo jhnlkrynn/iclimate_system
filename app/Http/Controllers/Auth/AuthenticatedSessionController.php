@@ -136,6 +136,7 @@ class AuthenticatedSessionController extends Controller
         SystemAuditLogger::record('User Login', $request);
 
         $user = $request->user();
+        $user->forceFill(['last_login_at' => now()])->saveQuietly();   // Manuscript – Naicel: Last Login on the user list
         $intended = $request->session()->pull('url.intended');
         $dashboard = route($user->dashboardRoute(), absolute: false);
 

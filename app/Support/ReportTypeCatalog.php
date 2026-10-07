@@ -41,5 +41,22 @@ class ReportTypeCatalog
             'purpose' => 'Lists community feed posts and announcements published in the selected date range.',
             'good_for' => 'Reviewing what was communicated to farmers, or compiling an outreach/engagement record.',
         ],
+        // Manuscript – Naicel (2026-10-08): App\Services\Reports\ManuscriptReportBuilder.
+        'seasonal_production' => [
+            'purpose' => 'Totals the MAO\'s production records by year, season and barangay: area planted and harvested, production and yield, with Lian\'s average yield per season.',
+            'good_for' => 'The seasonal production report to the Provincial Agriculture Office, and comparing wet and dry seasons.',
+        ],
+        'yield_prediction' => [
+            'purpose' => 'Lists the yield predictions farmers requested and the MAO\'s yield forecasts, with their outlook, and how far predictions were from farmers\' actual harvests.',
+            'good_for' => 'Planning for the season, and checking how reliable the yield model has been.',
+        ],
+        'climate_trend' => [
+            'purpose' => 'Monthly rainfall, temperature, humidity and wind from the climate history iClimate uses, with yearly totals, season averages and the heavy-rain, dry and hot months.',
+            'good_for' => 'Explaining a good or poor season, and the climate section of planning documents.',
+        ],
+        'barangay_risk' => [
+            'purpose' => 'This week\'s farm risk for each barangay beside the MAO\'s own classification, flood- and drought-prone marks, rice area and registered farmers.',
+            'good_for' => 'Deciding where to send technicians or assistance first.',
+        ],
     ];
 }

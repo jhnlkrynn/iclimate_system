@@ -18,7 +18,31 @@ class Report extends Model
         'farmer_registration' => 'Farmer Registration Report',
         'advisory' => 'Advisory Report',
         'community_feed' => 'Community Feed Report',
+        // Manuscript – Naicel (2026-10-08): built in PHP from stored data (App\Services\Reports\ManuscriptReportBuilder).
+        'seasonal_production' => 'Seasonal Production Report',
+        'yield_prediction' => 'Yield Prediction Summary',
+        'climate_trend' => 'Climate Trend Report',
+        'barangay_risk' => 'Barangay Risk Report',
     ];
+
+    // Manuscript – Naicel (2026-10-08): Draft / Published, and a version per type + filters.
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_PUBLISHED = 'published';
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $report): void {
+            if (! \App\Support\SchemaCache::hasColumn('reports', 'version')) {
+                return;
+            }
+            $key = hash('sha256', $report->typeKey().'|'.json_encode(\Illuminate\Support\Arr::sortRecursive($report->savedFilters())));
+            $report->series_key = $key;
+            $report->version = (int) self::query()->where('series_key', $key)->max('version') + 1;
+            $report->status ??= self::STATUS_DRAFT;
+        });
+    }
+    // End Manuscript – Naicel
 
     /** Record Type values in a climate report: the two groups are summarised separately, never together. */
     public const CLIMATE_HISTORICAL = 'Historical Weather';
@@ -31,11 +55,14 @@ class Report extends Model
         'generated_by',
         'payload',
         'is_generated',
+        'status',          // Manuscript – Naicel
+        'published_at',
     ];
 
     protected $casts = [
         'payload' => 'array',
         'is_generated' => 'boolean',
+        'published_at' => 'datetime',   // Manuscript – Naicel
     ];
 
     public function scopeRealGenerated(Builder $query): Builder
@@ -134,7 +161,8 @@ class Report extends Model
                 ['label' => 'Posts Published', 'value' => (string) $rows->count()],
                 ['label' => 'Categories Used', 'value' => (string) $rows->pluck('category')->filter()->unique()->count()],
             ],
-            default => [],
+            // Manuscript – Naicel: the new report types save their own summary with the report.
+            default => array_values((array) data_get($this->payload, 'summary', [])),
         };
     }
 

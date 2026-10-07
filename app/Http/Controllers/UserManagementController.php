@@ -13,11 +13,12 @@ class UserManagementController extends CrudController
 
     protected string $title = 'User';
 
-    protected array $columns = ['name' => 'Name', 'email' => 'Email', 'role' => 'Role', 'barangay' => 'Barangay', 'status' => 'Status'];
+    // Manuscript – Naicel: Last Login (users.last_login_at, set at each sign-in).
+    protected array $columns = ['name' => 'Name', 'email' => 'Email', 'role' => 'Role', 'barangay' => 'Barangay', 'status' => 'Status', 'last_login_at' => 'Last Login'];
 
     protected array $searchable = ['name', 'email', 'role', 'contact_number', 'address', 'barangay', 'status'];
 
-    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => [User::STATUS_ACTIVE, User::STATUS_INACTIVE]];
+    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => User::STATUSES];   // Manuscript – Naicel
 
     protected array $manageableRoles = [User::ROLE_IT_EXPERT];
 
@@ -31,7 +32,7 @@ class UserManagementController extends CrudController
             ['name' => 'contact_number', 'label' => 'Contact Number'],
             ['name' => 'address', 'label' => 'Address', 'type' => 'textarea'],
             ['name' => 'barangay', 'label' => 'Barangay'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [User::STATUS_ACTIVE => User::STATUS_ACTIVE, User::STATUS_INACTIVE => User::STATUS_INACTIVE]],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => array_combine(User::STATUSES, User::STATUSES)],   // Manuscript – Naicel
         ];
     }
 

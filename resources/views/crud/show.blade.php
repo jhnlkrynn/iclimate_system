@@ -11,9 +11,25 @@
                 @if ($canManage)
                     <a class="btn btn-light" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
                 @endif
+                {{-- Manuscript – Naicel: IT resets a user's password to a one-time temporary password. --}}
+                @if ($routeName === 'users' && $canManage && ! $record->is(auth()->user()))
+                    <form method="POST" action="{{ route('users.reset-password', $record) }}" data-loading="true" data-ic-confirm="Give {{ $record->name }} a new temporary password? Their current password stops working.">
+                        @csrf
+                        <button class="btn btn-outline-primary" type="submit" data-loading-text="Resetting...">Reset Password</button>
+                    </form>
+                @endif
+                {{-- End Manuscript – Naicel --}}
             </div>
         </div>
     </section>
+
+    {{-- Manuscript – Naicel: the temporary password is shown once, right after a reset. --}}
+    @if (session('temporary_password'))
+        <div class="alert alert-warning" role="status" data-temporary-password>
+            New temporary password for {{ $record->name }}: <strong class="font-monospace">{{ session('temporary_password') }}</strong>.
+            Give it to them in person; it is shown only once.
+        </div>
+    @endif
 
     <div class="card no-lift">
         <div class="card-body">

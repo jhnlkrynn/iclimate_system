@@ -24,7 +24,8 @@ class ClimateRecordController extends CrudController
 
     protected bool $printable = true;
 
-    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source'];
+    // Manuscript – Naicel (2026-10-08): Validated (verified_at, set by RecordValidationController).
+    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source', 'verification' => 'Validated'];
 
     protected array $searchable = ['record_date', 'season', 'source'];
 
@@ -43,6 +44,9 @@ class ClimateRecordController extends CrudController
     public const AMBULONG_FILTER_LABEL = ClimateRecordHistory::AMBULONG_FILTER_LABEL;
 
     private const FARMER_PER_PAGE = CrudController::PER_PAGE;
+
+    /** Manuscript – Naicel (2026-10-08): the Validated filter, shared with RiceProductionController. */
+    public const VERIFICATION_CHOICES = ['Validated' => 'Validated', 'Not validated' => 'Not validated', 'Published dataset' => 'Published dataset'];
 
     /**
      * Everyone sees the stored climate history: the Ambulong monthly record (database/data/Ambulong Monthly Data.csv,
@@ -109,6 +113,8 @@ class ClimateRecordController extends CrudController
     {
         [$rows] = app(ClimateRecordHistory::class)->records(plausibleOnly: false);
         $isIt = $request->user()?->role === User::ROLE_IT_EXPERT;
+        // Manuscript – Naicel (2026-10-08): which entered rows the MAO validated; the station dataset is a published source.
+        $verified = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->pluck('verified_at', 'id'), collect(), false);
 
         $display = $rows->map(fn (object $row): object => (object) [
             'id' => $row->id,
@@ -124,6 +130,10 @@ class ClimateRecordController extends CrudController
                 : self::plainNumber($row->wind_speed),
             'season' => $row->season,
             'source' => $row->source,
+            // Manuscript – Naicel (2026-10-08): validation status, and the year and month filters.
+            'verification' => $row->id === null ? 'Published dataset' : ($verified->has($row->id) ? 'Validated' : 'Not validated'),
+            'year' => $row->record_date->format('Y'),
+            'month' => $row->record_date->format('m'),
             'search_text' => $row->search_text,
             'sort_key' => $row->record_date->format('Y-m-d').'|'.$row->source,
         ]);
@@ -131,6 +141,10 @@ class ClimateRecordController extends CrudController
         return $this->staffRowsIndex($request, $display, [
             'season' => $rows->pluck('season')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v])->all(),
             'source' => $rows->pluck('source')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => ClimateRecordHistory::displaySource($v)])->all(),
+            // Manuscript – Naicel
+            'year' => $display->pluck('year')->unique()->sortDesc()->mapWithKeys(fn ($v) => [$v => $v])->all(),
+            'month' => collect(range(1, 12))->mapWithKeys(fn (int $m) => [sprintf('%02d', $m) => date('F', mktime(0, 0, 0, $m, 1))])->all(),
+            'verification' => self::VERIFICATION_CHOICES,
         ]);
     }
 
@@ -179,6 +193,12 @@ class ClimateRecordController extends CrudController
      * so analytics consumers (ClimateRecord::scopePlausible()) can apply the
      * exact same bounds without duplicating them here.
      */
+    /** Manuscript – Naicel (2026-10-08): the same checks for each row of a CSV import (RecordImportController). */
+    public function importRules(): array
+    {
+        return $this->rules(request());
+    }
+
     protected function rules(Request $request, ?int $id = null): array
     {
         return [

@@ -976,6 +976,51 @@ return [
         'today' => 'today',
         'and' => 'and',
         'days_count' => ':count days',
+        // Manuscript – Naicel (2026-10-08): map layers next to This Week / 2 Weeks (App\Services\Risk\BarangayMapLayers).
+        'layers' => [
+            'label' => 'Map layer',
+            'flood' => 'Flood-prone',
+            'drought' => 'Drought-prone',
+            'yield' => 'Expected yield',
+            'flood_title' => 'Flood-prone barangays',
+            'drought_title' => 'Drought-prone barangays',
+            'yield_title' => 'Expected rice yield this season',
+            'flood_levels' => ['high' => 'Flood-prone', 'low' => 'Not flood-prone', 'nodata' => 'Not checked yet'],
+            'drought_levels' => ['high' => 'Drought-prone', 'low' => 'Not drought-prone', 'nodata' => 'Not checked yet'],
+            'yield_levels' => ['low' => 'Good (4.5 t/ha or more)', 'moderate' => 'Fair (3.5 to 4.5 t/ha)', 'high' => 'Low (below 3.5 t/ha)', 'nodata' => 'No estimate yet'],
+            'flood_meaning' => [
+                'high' => 'The Municipal Agriculture Office lists this barangay as flood-prone. Low fields can stay under water after heavy rain.',
+                'low' => 'This barangay is not on the MAO\'s list of flood-prone areas.',
+                'nodata' => 'The MAO has not marked this barangay yet.',
+            ],
+            'flood_action' => [
+                'high' => 'Keep drainage canals clear before the wet season, and plan planting so the crop is not young when typhoons come.',
+                'low' => 'Still watch the weekly risk and the advisories during heavy rain.',
+                'nodata' => 'Ask the MAO about flooding in your area.',
+            ],
+            'drought_meaning' => [
+                'high' => 'The Municipal Agriculture Office lists this barangay as drought-prone. Rainfed fields can lack water in dry months.',
+                'low' => 'This barangay is not on the MAO\'s list of drought-prone areas.',
+                'nodata' => 'The MAO has not marked this barangay yet.',
+            ],
+            'drought_action' => [
+                'high' => 'Plant when the rains have settled, use drought-tolerant varieties, and save water where you can.',
+                'low' => 'Still check the rain forecast before planting.',
+                'nodata' => 'Ask the MAO about dry spells in your area.',
+            ],
+            'yield_meaning' => ':value t/ha expected on average from :count farm estimates this season.',
+            'yield_none' => 'No farm in this barangay has an estimate yet.',
+            'yield_action' => [
+                'low' => 'Keep following the planting calendar and the advisories.',
+                'moderate' => 'Check fertilizer timing and water; ask the MAO technician what can raise the yield.',
+                'high' => 'Ask the MAO technician to visit: low expected yield can come from weather, water or pests.',
+                'nodata' => 'Add your planting date and farm size in My Farm so your farm gets an estimate.',
+            ],
+            'count' => '{0} No barangay|{1} :count barangay|[2,*] :count barangays',
+            'source' => 'From the MAO\'s barangay records.',
+            'yield_source' => 'Average of the saved farm yield estimates. A planning guide, not a promise.',
+        ],
+        // End Manuscript – Naicel
     ],
 
     // Advisories (2026-10): one list. Staff read these in English.

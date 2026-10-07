@@ -28,6 +28,9 @@ class RiceProduction extends Model
         'year',
         'production_month',
         'remarks',
+        // Manuscript – Naicel (2026-10-08): area harvested (ha); validation (verified_at / verified_by) is set by
+        // RecordValidationController, never by the form.
+        'area_harvested_hectares',
     ];
 
     protected $casts = [
@@ -36,7 +39,21 @@ class RiceProduction extends Model
         'total_production' => 'decimal:2',
         'production_month' => 'date',
         'year' => 'integer',
+        'area_harvested_hectares' => 'decimal:2',   // Manuscript – Naicel
+        'verified_at' => 'datetime',
     ];
+
+    // Manuscript – Naicel (2026-10-08)
+    public function verifier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    /** "Validated" / "Not validated", for the record page (the Validated column). */
+    public function getVerificationAttribute(): string
+    {
+        return $this->verified_at ? 'Validated' : 'Not validated';
+    }
 
     public function setProductionMonthAttribute(mixed $value): void
     {
