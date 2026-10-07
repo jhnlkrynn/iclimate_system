@@ -92,7 +92,14 @@ class ClimateRecord extends Model
         'temperature' => 'decimal:2',
         'humidity' => 'decimal:2',
         'wind_speed' => 'decimal:2',
+        'verified_at' => 'datetime',   // Manuscript – Naicel (2026-10-08): set by RecordValidationController only
     ];
+
+    /** Manuscript – Naicel: "Validated" / "Not validated", for the record page (the Validated column). */
+    public function getVerificationAttribute(): string
+    {
+        return $this->verified_at ? 'Validated' : 'Not validated';
+    }
 
     /**
      * Query-time filter for "physically plausible" rows, sharing the exact

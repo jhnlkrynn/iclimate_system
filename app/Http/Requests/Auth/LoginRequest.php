@@ -100,14 +100,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (Auth::user()?->status !== User::STATUS_ACTIVE) {
+        if (($status = Auth::user()?->status) !== User::STATUS_ACTIVE) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
             $captcha->recordFailedAttempt($this, 'login');
-            $this->auditFailure('inactive account');
+            $this->auditFailure(strtolower((string) $status).' account');
 
             throw ValidationException::withMessages([
-                'email' => 'This account is inactive. Please contact the administrator.',
+                'email' => User::signInRefusal($status),   // Manuscript – Naicel: Pending / Rejected say why
             ]);
         }
 

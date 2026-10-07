@@ -12,7 +12,7 @@
             $change,
         ), fn ($v) => $v !== null && $v !== ''));
         $views = ['active' => 'Active', 'pending' => 'To approve', 'all' => 'All'];
-        $statusTone = ['published' => 'good', 'pending_review' => 'watch', 'expired' => 'muted', 'rejected' => 'danger', 'archived' => 'muted'];
+        $statusTone = ['published' => 'good', 'pending_review' => 'watch', 'expired' => 'muted', 'rejected' => 'danger', 'archived' => 'muted', 'scheduled' => 'watch'];   // Manuscript – Naicel: + scheduled alerts
     @endphp
 
     <div class="fad adv" lang="{{ $locale }}">
@@ -25,6 +25,10 @@
             @if ($canManage)
                 <div class="fad-hero-actions">
                     <a class="fad-btn is-light" href="{{ route('planting-advisories.create', array_filter(['barangay' => $barangay])) }}">@include('dashboards.mao.icon', ['name' => 'plus'])<span>New Advisory</span></a>
+                    {{-- Manuscript – Naicel (2026-10-08): typhoon / flood / drought / heat alerts, now or scheduled, with read counts. --}}
+                    @if (\Illuminate\Support\Facades\Route::has('mao.alerts.index'))
+                        <a class="fad-btn is-light" href="{{ route('mao.alerts.index') }}" data-send-alert>@include('dashboards.mao.icon', ['name' => 'plus'])<span>Send Alert</span></a>
+                    @endif
                 </div>
             @endif
         </header>

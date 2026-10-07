@@ -47,9 +47,11 @@ class MobileAuthController extends Controller
 
         if ($user->status !== User::STATUS_ACTIVE) {
             throw ValidationException::withMessages([
-                'email' => ['This account is inactive. Please contact the administrator.'],
+                'email' => [User::signInRefusal($user->status)],   // Manuscript – Naicel
             ]);
         }
+
+        $user->forceFill(['last_login_at' => now()])->saveQuietly();   // Manuscript – Naicel
 
         return response()->json([
             'message' => 'Login successful.',
@@ -79,7 +81,8 @@ class MobileAuthController extends Controller
                 'contact_number' => $validated['contact_number'],
                 'address' => $validated['address'] ?? null,
                 'barangay' => $validated['barangay'],
-                'status' => User::STATUS_ACTIVE,
+                // Manuscript – Naicel: Pending until the MAO approves the sign-up.
+                'status' => config('iclimate.farmer_approval') ? User::STATUS_PENDING : User::STATUS_ACTIVE,
             ]);
 
             FarmerProfile::create([
@@ -96,7 +99,7 @@ class MobileAuthController extends Controller
         });
 
         return response()->json([
-            'message' => 'Registration successful.',
+            'message' => $user->status === User::STATUS_PENDING ? 'Registration received. You can log in once the Municipal Agriculture Office approves it.' : 'Registration successful.',   // Manuscript – Naicel
             'user' => $this->mobileUser($user),
         ], 201);
     }

@@ -31,10 +31,13 @@ class EnsureAccountIsActive
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        // Manuscript – Naicel: a Pending or Rejected farmer is told why (User::signInRefusal).
+        $message = User::signInRefusal($user->status);
+
         if ($request->expectsJson()) {
-            return response()->json(['message' => self::MESSAGE], 401);
+            return response()->json(['message' => $message], 401);
         }
 
-        return redirect()->route('login')->withErrors(['email' => self::MESSAGE]);
+        return redirect()->route('login')->withErrors(['email' => $message]);
     }
 }

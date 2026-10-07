@@ -178,10 +178,15 @@ class DashboardController extends Controller
         // locked and at most once a minute, however many people open the page.
         rescue(fn () => $weather->refreshIfDue($ownBarangay), report: false);
         $ranges = $panel->ranges($locale);
+        // Manuscript – Naicel (2026-10-08): Flood-prone / Drought-prone / Expected yield layers, shown like a range.
+        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale), [], false);
+        $requested = (string) $request->query('range');
 
         return view('heat-map.index', [
-            'ranges' => $ranges,
-            'range' => $request->query('range') === '2weeks' ? '2weeks' : 'week',
+            'ranges' => $ranges + $layers,
+            'layerKeys' => array_keys($layers),
+            'range' => $requested === '2weeks' || isset($layers[$requested]) ? $requested : 'week',
+            // End Manuscript – Naicel
             'locale' => $locale,
             // The farmer's own barangay is outlined; every role still sees and can click all 19.
             'ownBarangay' => $ownBarangay,

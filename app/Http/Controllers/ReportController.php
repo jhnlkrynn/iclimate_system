@@ -89,6 +89,17 @@ class ReportController extends CrudController
         $this->authorizeManage($request);
         $data = $this->validatedFilters($request);
         $label = self::REPORT_TYPES[$data['report_type']];
+
+        // Manuscript – Naicel (2026-10-08): Seasonal Production, Yield Prediction Summary, Climate Trend and Barangay
+        // Risk are built at once in PHP from stored data (small tables), not queued for the Python analytics.
+        if (\App\Services\Reports\ManuscriptReportBuilder::handles($data['report_type'])) {
+            $report = app(\App\Services\Reports\ManuscriptReportBuilder::class)->create($data['report_type'], $data, $request->user());
+            SystemAuditLogger::forModel('generated', $report, $request, ['report_type' => $label]);
+
+            return redirect()->route('reports.show', $report)->with('success', $label.' generated as a draft (version '.$report->version.').');
+        }
+        // End Manuscript – Naicel
+
         $run = $analytics->dispatch('report_analytics', [
             'report_type' => $data['report_type'],
             'filters' => $this->appliedFilters($data),

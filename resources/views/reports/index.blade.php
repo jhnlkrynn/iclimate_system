@@ -217,6 +217,8 @@
                         @if ($selectedReport)
                             <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.print', ['report' => $selectedReport->id]) }}" target="_blank">Print Report</a>
                             <a class="btn btn-sm fw-bold report-white-action" href="{{ route('reports.export', ['report' => $selectedReport->id]) }}">Download as Spreadsheet</a>
+                            {{-- Manuscript – Naicel (2026-10-08): Excel / PDF, Draft or Published, version. --}}
+                            @includeWhen(\Illuminate\Support\Facades\Route::has('reports.publish'), 'reports._manuscript-actions', ['report' => $selectedReport])
                         @endif
                     </div>
                 </div>

@@ -31,6 +31,9 @@ class PlantingAdvisory extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
+    /** Manuscript – Naicel (2026-10-08): an MAO alert waiting for its scheduled_for time (iclimate:publish-scheduled-alerts). */
+    public const STATUS_SCHEDULED = 'scheduled';
+
     public const SEVERITY_INFORMATION = 'information';
 
     public const SEVERITY_LOW = 'low';
@@ -76,6 +79,7 @@ class PlantingAdvisory extends Model
         'metadata',
         'posted_by',
         'status',
+        'scheduled_for',   // Manuscript – Naicel (2026-10-08)
     ];
 
     protected $casts = [
@@ -86,6 +90,7 @@ class PlantingAdvisory extends Model
         'valid_until' => 'datetime',
         'published_at' => 'datetime',
         'approved_at' => 'datetime',
+        'scheduled_for' => 'datetime',   // Manuscript – Naicel
     ];
 
     public function postedBy(): BelongsTo

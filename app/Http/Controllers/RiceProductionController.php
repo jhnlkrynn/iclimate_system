@@ -28,7 +28,8 @@ class RiceProductionController extends CrudController
 
     protected bool $printable = true;
 
-    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year'];
+    // Manuscript – Naicel (2026-10-08): Area Planted / Area Harvested and Validated.
+    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area Planted (ha)', 'area_harvested_hectares' => 'Area Harvested (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year', 'verification' => 'Validated'];
 
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];
 
@@ -75,11 +76,19 @@ class RiceProductionController extends CrudController
             'area_hectares' => self::plainNumber($r->area_hectares, ' ha'),
             'total_production' => self::plainNumber($r->total_production, ' t'),
             'year' => $r->year,
+            // Manuscript – Naicel (2026-10-08)
+            'area_harvested_hectares' => self::plainNumber($r->area_harvested_hectares, ' ha'),
+            'verification' => $r->is_source_dataset ? 'Published dataset' : ($r->verified ? 'Validated' : 'Not validated'),
             'search_text' => $r->search_text,
             'sort_key' => $r->sort_key,
         ]);
 
-        return $this->staffRowsIndex($request, $rows, $this->filterChoices($records));
+        // Manuscript – Naicel (2026-10-08): + year, barangay and Validated filters.
+        return $this->staffRowsIndex($request, $rows, $this->filterChoices($records) + [
+            'year' => $records->pluck('year')->filter()->unique()->sortDesc()->mapWithKeys(fn ($v) => [$v => $v])->all(),
+            'barangay' => $records->where('is_source_dataset', false)->pluck('barangay')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v])->all(),
+            'verification' => ClimateRecordController::VERIFICATION_CHOICES,
+        ]);
     }
 
     /**
@@ -189,6 +198,8 @@ class RiceProductionController extends CrudController
                 'yield_per_hectare' => (float) $row['yield'],
                 'area_hectares' => null,
                 'total_production' => null,
+                'area_harvested_hectares' => null,   // Manuscript – Naicel
+                'verified' => false,
                 'year' => $row['year'],
                 // Short enough for the bar label column (one line, like "2024 Wet · Lumaniag").
                 'bar_label' => $month->format('M Y').' · Lian average',
@@ -202,7 +213,8 @@ class RiceProductionController extends CrudController
     private function enteredRows(): Collection
     {
         try {
-            $records = RiceProduction::query()->get(['id', 'barangay', 'season', 'irrigation_type', 'yield_per_hectare', 'area_hectares', 'total_production', 'year', 'production_month', 'remarks']);
+            // Manuscript – Naicel: + area_harvested_hectares, verified_at
+            $records = RiceProduction::query()->get(['id', 'barangay', 'season', 'irrigation_type', 'yield_per_hectare', 'area_hectares', 'area_harvested_hectares', 'verified_at', 'total_production', 'year', 'production_month', 'remarks']);
         } catch (QueryException $exception) {
             Log::warning('Rice production records: rice_productions could not be read.', ['message' => $exception->getMessage()]);
 
@@ -221,6 +233,8 @@ class RiceProductionController extends CrudController
             'yield_per_hectare' => $number($record->yield_per_hectare),
             'area_hectares' => $number($record->area_hectares),
             'total_production' => $number($record->total_production),
+            'area_harvested_hectares' => $number($record->area_harvested_hectares),   // Manuscript – Naicel
+            'verified' => $record->verified_at !== null,
             'year' => $record->year,
             'bar_label' => trim($record->year.' '.$record->season).' · '.$record->barangay,
             'search_text' => mb_strtolower(implode(' ', [$record->barangay, $record->season, $record->irrigation_type, $record->year, $record->production_month?->format('M Y'), $record->remarks, 'mao record'])),
@@ -236,12 +250,19 @@ class RiceProductionController extends CrudController
             ['name' => 'season', 'label' => 'Season', 'type' => 'select', 'options' => ['Wet' => 'Wet', 'Dry' => 'Dry']],
             ['name' => 'irrigation_type', 'label' => 'Irrigation Type', 'type' => 'select', 'options' => ['Rainfed' => 'Rainfed', 'Irrigated' => 'Irrigated']],
             ['name' => 'yield_per_hectare', 'label' => 'Yield Per Hectare', 'type' => 'number', 'step' => '0.01'],
-            ['name' => 'area_hectares', 'label' => 'Area Hectares', 'type' => 'number', 'step' => '0.01'],
+            ['name' => 'area_hectares', 'label' => 'Area Planted (ha)', 'type' => 'number', 'step' => '0.01'],
+            ['name' => 'area_harvested_hectares', 'label' => 'Area Harvested (ha)', 'type' => 'number', 'step' => '0.01'],   // Manuscript – Naicel
             ['name' => 'total_production', 'label' => 'Total Production', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'year', 'label' => 'Year', 'type' => 'number'],
             ['name' => 'production_month', 'label' => 'Harvest / Production Month', 'type' => 'month'],
             ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'textarea'],
         ];
+    }
+
+    /** Manuscript – Naicel (2026-10-08): the same checks for each row of a CSV import (RecordImportController). */
+    public function importRules(): array
+    {
+        return $this->rules(request());
     }
 
     protected function rules(Request $request, ?int $id = null): array
@@ -252,6 +273,7 @@ class RiceProductionController extends CrudController
             'irrigation_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
             'yield_per_hectare' => ['nullable', 'numeric', 'min:0'],
             'area_hectares' => ['nullable', 'numeric', 'min:0'],
+            'area_harvested_hectares' => ['nullable', 'numeric', 'min:0'],   // Manuscript – Naicel
             'total_production' => ['nullable', 'numeric', 'min:0'],
             'year' => ['required', 'integer', 'min:1900', 'max:2100'],
             // Required: a harvest record without its month cannot be placed in a season or compared with the weather.

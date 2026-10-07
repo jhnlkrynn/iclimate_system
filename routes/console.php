@@ -208,3 +208,10 @@ Schedule::command('iclimate:verify-backup')
     ->dailyAt('03:25')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog('iclimate:verify-backup'));
+
+// Manuscript – Naicel (2026-10-08), Phase 6: MAO alerts scheduled for later are published (and their farmers notified)
+// within a minute of their time.
+Schedule::command('iclimate:publish-scheduled-alerts')
+    ->everyMinute()
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog('iclimate:publish-scheduled-alerts'));

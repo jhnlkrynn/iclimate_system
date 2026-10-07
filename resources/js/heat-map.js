@@ -24,10 +24,13 @@ export function initHeatMap() {
     }
     const own = canonicalName(canvas?.dataset.ownBarangay);
     const layers = new Map();
-    let range = root.dataset.range === '2weeks' ? '2weeks' : 'week';
+    // Manuscript – Naicel (2026-10-08): a range may also be a map layer (flood / drought / yield) listed in data.layers.
+    const validRange = (key) => (key === '2weeks' || (data.layers || []).includes(key) ? key : 'week');
+    let range = validRange(root.dataset.range);
     let selected = null;
 
     const levelOf = (name) => data.levels?.[range]?.[name] || 'nodata';
+    const labelOf = (level) => data.labelsByRange?.[range]?.[level] || data.labels?.[level] || '';
     const styleFor = (name, hovered = false) => {
         const level = levelOf(name);
         const isSelected = name === selected;
@@ -41,7 +44,7 @@ export function initHeatMap() {
             dashArray: level === 'nodata' ? '4 4' : undefined,
         };
     };
-    const tooltipFor = (name) => `<strong>${escapeHtml(displayName(name))}</strong>${name === own ? ` <span class="your-barangay-pill">${escapeHtml(data.yours)}</span>` : ''}<br>${escapeHtml(data.labels?.[levelOf(name)] || '')}`;
+    const tooltipFor = (name) => `<strong>${escapeHtml(displayName(name))}</strong>${name === own ? ` <span class="your-barangay-pill">${escapeHtml(data.yours)}</span>` : ''}<br>${escapeHtml(labelOf(levelOf(name)))}`;
 
     const show = () => {
         const key = `${range}:${selected || 'summary'}`;
@@ -52,6 +55,11 @@ export function initHeatMap() {
             button.classList.toggle('is-active', active);
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
+        // Manuscript – Naicel: the legend and the layer choice follow the shown range.
+        const isLayer = (data.layers || []).includes(range);
+        root.querySelectorAll('[data-heat-map-legend]').forEach((legend) => { legend.hidden = legend.dataset.heatMapLegend !== (isLayer ? range : 'risk'); });
+        const layerSelect = root.querySelector('[data-heat-map-layer]');
+        if (layerSelect) layerSelect.value = isLayer ? range : '';
         layers.forEach((layer, name) => layer.setStyle(styleFor(name)));
         if (selected) layers.get(selected)?.bringToFront();
     };
@@ -64,15 +72,24 @@ export function initHeatMap() {
         }
     };
 
+    const setRange = (key) => {
+        range = validRange(key);
+        if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
+        const url = new URL(window.location.href);
+        if (range === 'week') url.searchParams.delete('range'); else url.searchParams.set('range', range);
+        window.history.replaceState(null, '', url);
+        show();
+    };
+    // Manuscript – Naicel: choosing a map layer shows it; the empty choice goes back to this week's risk.
+    root.addEventListener('change', (event) => {
+        if (event.target.matches('[data-heat-map-layer]')) setRange(event.target.value || 'week');
+    });
+
     root.addEventListener('click', (event) => {
         const rangeButton = event.target.closest('[data-heat-map-range]');
         if (rangeButton) {
             event.preventDefault();
-            range = rangeButton.dataset.heatMapRange === '2weeks' ? '2weeks' : 'week';
-            const url = new URL(window.location.href);
-            if (range === 'week') url.searchParams.delete('range'); else url.searchParams.set('range', range);
-            window.history.replaceState(null, '', url);
-            show();
+            setRange(rangeButton.dataset.heatMapRange);
             return;
         }
         const pickButton = event.target.closest('[data-heat-map-pick]');
@@ -93,7 +110,7 @@ export function initHeatMap() {
                     const next = fresh ? readLevels(fresh) : null;
                     if (!next || !hasRating(next.levels)) return update(delays.slice(1));
                     data = next;
-                    ['[data-heat-map-panel]', '.hmx-legend'].forEach((selector) => {
+                    ['[data-heat-map-panel]', '[data-heat-map-legend="risk"]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
                         const target = root.querySelector(selector);
                         const source = fresh.querySelector(selector);
                         if (target && source) target.innerHTML = source.innerHTML;
