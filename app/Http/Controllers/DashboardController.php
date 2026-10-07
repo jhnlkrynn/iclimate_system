@@ -942,7 +942,7 @@ class DashboardController extends Controller
             ];
         }
 
-        if ($fieldReportsPendingCount > 0) {
+        if ($fieldReportsPendingCount > 0 && \App\Http\Middleware\FieldReportsUi::enabled()) {   // MAO/IT – Naicel: Field Reports hidden
             $highlights[] = [
                 'severity' => 'warning',
                 'weight' => 2,

@@ -129,7 +129,6 @@ class SystemPageSmokeTest extends TestCase
             '/rice-productions' => 'Rice',
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',
-            '/field-reports' => 'Report',
             '/community-feed' => 'Community',
             '/announcements' => 'Announcements',
             '/reports' => 'Report',

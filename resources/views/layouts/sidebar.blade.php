@@ -91,7 +91,8 @@
             $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
             $navLink('Records', 'records', 'climate-records'),
             $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
-            $navLink('Field Reports', 'field-reports', 'reports'),
+            // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
+            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
             $navLink('Predictions', 'weather', 'weather'),
             $navLink('Reports', 'reports', 'reports'),
             $navLink('Announcements', 'community', 'community'),
