@@ -1185,6 +1185,18 @@ return [
             'heavy' => 'Malakas na ulan sa :count araw|Malakas na ulan sa :count araw',
             'no_heavy' => 'Walang inaasahang malakas na ulan',
         ],
+        'rain_week' => [
+            'title' => 'Tsansa ng Ulan Ngayong Linggo',
+            'sub' => 'Kapag mas mataas ang bar, mas malamang na umulan sa araw na iyon.',
+            'high' => 'Malamang (70% pataas)',
+            'mid' => 'Posible',
+            'low' => 'Malabong umulan (wala pang 30%)',
+        ],
+        'progress' => [
+            'title' => 'Lagay ng Tanim',
+            'center' => 'ng panahon ng pagtubo',
+            'done' => 'Panahong lumipas mula pagtatanim',
+        ],
         'compare' => [
             'title' => 'Paghahambing ng Ani',
             'sub' => 'Tonelada bawat ektarya (t/ha).',

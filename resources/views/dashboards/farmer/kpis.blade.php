@@ -6,7 +6,7 @@
 <section class="fh-kpis" aria-label="{{ __('farmer.kpis.title') }}" data-fh-kpis>
     @foreach ($tiles as $tile)
         <a class="fh-kpi" href="{{ $tile['href'] }}" data-fh-kpi="{{ $tile['key'] }}">
-            <span class="fh-kpi-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}</span>
+            <span class="fh-kpi-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}<i class="ic-go" aria-hidden="true"></i></span>
             <span class="fh-kpi-value"><span data-fh-kpi-value>{{ $tile['value'] }}</span>@if (! empty($tile['unit'])) <small>{{ $tile['unit'] }}</small>@endif</span>
             @if (($tile['progress'] ?? null) !== null)
                 <span class="fh-kpi-bar" role="img" aria-label="{{ __('farmer.kpis.crop.progress', ['percent' => $tile['progress']]) }}"><span style="width: {{ $tile['progress'] }}%"></span></span>

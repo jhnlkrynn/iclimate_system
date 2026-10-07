@@ -114,6 +114,11 @@ return [
                 'axis' => 'Ektarya',
                 'tip' => 'ha ang natamnan',
             ],
+            'risk' => [
+                'title' => 'Panganib sa Barangay Ngayong Linggo',
+                'sub' => 'Hati ng :count barangay na may rating ayon sa panganib sa bukid.',
+                'center' => 'mababa ang panganib',
+            ],
             'farmers' => [
                 'title' => 'Mga Rehistradong Magsasaka Bawat Barangay',
                 'sub' => ':count rehistradong magsasaka na may barangay sa tala.|:count rehistradong magsasaka na may barangay sa tala.',
