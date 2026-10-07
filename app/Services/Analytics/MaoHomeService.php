@@ -4,7 +4,6 @@ namespace App\Services\Analytics;
 
 use App\Models\FarmerPlantingSchedule;
 use App\Models\FarmerProfile;
-use App\Models\FieldReport;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
@@ -24,7 +23,7 @@ use Throwable;
 /**
  * MAO Dashboard (2026-10): one screen, one purpose. Four KPI tiles (registered farmers, area planted this season,
  * expected yield against the last recorded season, high-risk barangays), the "Kailangan ng Aksyon" list (advisories to
- * approve, unresolved field reports, "Needs Help" check-ins), a small Heat Map preview and four charts: rice yield by
+ * approve, "Needs Help" check-ins), a small Heat Map preview and four charts: rice yield by
  * year, monthly rainfall and temperature, rainfall against yield per season (the weather impact view) and planted area
  * per barangay this season. Everything is read from saved data: no provider is called and no model is run.
  *
@@ -193,13 +192,6 @@ class MaoHomeService
                 'count' => rescue(fn (): int => PlantingAdvisory::query()->pendingReview()->count(), null, false),
                 'href' => route('planting-advisories.index', ['show' => 'pending']),
                 'action' => 'Review',
-            ],
-            [
-                'key' => 'field-reports',
-                'label' => 'Unresolved field reports',
-                'count' => rescue(fn (): int => FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count(), null, false),
-                'href' => route('field-reports.index', ['unresolved' => 1]),
-                'action' => 'Open',
             ],
             [
                 'key' => 'check-ins',

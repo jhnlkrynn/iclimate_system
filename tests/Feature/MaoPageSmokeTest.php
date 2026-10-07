@@ -44,7 +44,6 @@ class MaoPageSmokeTest extends TestCase
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',
             '/planting-advisories' => 'Advisories',
-            '/field-reports' => 'Field Report',
             '/reports' => 'Reports',
             '/community-feed' => 'Announcements',
             '/farmer-profiles' => 'Farmer',

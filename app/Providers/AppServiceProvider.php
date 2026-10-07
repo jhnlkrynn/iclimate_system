@@ -158,6 +158,21 @@ class AppServiceProvider extends ServiceProvider
         });
         \App\Models\FarmerPlantingSchedule::deleted($planChanged);
 
+        // The municipality forecast is invalidated when one of its verified model inputs changes. The next warm
+        // command or Predictions page prepares one fresh result; no request trains a model.
+        \App\Models\MonthlyWeatherPrediction::saved(static function ($forecast): void {
+            \App\Services\Prediction\MunicipalYieldForecastService::invalidateMonth((int) $forecast->prediction_year, (int) $forecast->prediction_month);
+        });
+        foreach ([\App\Models\RiceProduction::class, \App\Models\ClimateRecord::class] as $municipalInput) {
+            $municipalInput::saved(static fn () => \App\Services\Prediction\MunicipalYieldForecastService::invalidateCurrent());
+            $municipalInput::deleted(static fn () => \App\Services\Prediction\MunicipalYieldForecastService::invalidateCurrent());
+        }
+        \App\Models\MlModel::saved(static function ($model): void {
+            if ($model->purpose === \App\Models\MlModel::PURPOSE_RICE_YIELD && ($model->wasRecentlyCreated || $model->wasChanged(['status', 'is_active', 'file_path', 'version']))) {
+                \App\Services\Prediction\MunicipalYieldForecastService::invalidateCurrent();
+            }
+        });
+
         // The farmer profile's farm fields (registration, the mobile app, MAO edits): written to the farmer's primary farm
         // (their first farm is made from them). Before the farms table exists, the profile is still the farm.
         FarmerProfile::saved(static function (FarmerProfile $profile) use ($estimateAgain): void {

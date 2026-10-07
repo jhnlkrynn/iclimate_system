@@ -144,6 +144,11 @@ class RiceYieldPredictionService
         };
     }
 
+    public function municipalityArea(): ?float
+    {
+        return $this->engine->municipalityArea();
+    }
+
     public function normalizeSeason(?string $season): ?string
     {
         $value = strtolower(trim((string) $season));
@@ -241,9 +246,11 @@ class RiceYieldPredictionService
                 'value' => $value,
                 'source' => match (true) {
                     array_key_exists($key, $manualOverrides) => 'user',
+                    $key === 'area' && $areaOverride !== null && $user === null => 'municipality_organization_or_workbook',
                     $key === 'area' && $areaOverride !== null => 'user',
                     $key === 'area' && $user && $user->role === User::ROLE_FARMER && ActiveFarm::current($user)?->modelArea() !== null => 'active_farm',
                     $key === 'area' && $user?->farmerProfile?->farm_area !== null => 'farmer_profile',
+                    $key === 'area' && $user === null => 'municipality_organization_or_workbook',
                     $key === 'area' => 'unavailable',
                     in_array($key, ['season', 'farm_type'], true) => 'profile_or_model_default',
                     default => 'shared_prediction_engine',

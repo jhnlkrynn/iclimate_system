@@ -563,8 +563,8 @@ class ItDashboardTest extends TestCase
 
         $html = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->getContent();
 
-        // MAO (2026-10): one list of eleven pages, without IT's sections.
-        $this->assertStringContainsString('Field Reports', $html);
+        // MAO (2026-10): one list of ten pages, without IT's sections or the retired Field Reports tab.
+        $this->assertStringNotContainsString('Field Reports', $html);
         $this->assertStringNotContainsString('More Tools', $html);
         $this->assertStringNotContainsString('>Management<', $html);
         $this->assertStringNotContainsString('System Health', $html);

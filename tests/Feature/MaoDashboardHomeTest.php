@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\FarmerPlantingSchedule;
 use App\Models\FarmerProfile;
-use App\Models\FieldReport;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
@@ -22,8 +21,8 @@ use Tests\TestCase;
 
 /**
  * MAO Dashboard (2026-10): four KPI tiles, the "Kailangan ng Aksyon" list, a small Heat Map preview and four charts,
- * all from saved data. The Operations page is gone (its parts moved to Advisories, Calendar, Field Reports and
- * Reports), the MAO sidebar is one list of eleven pages, and Chatbot Knowledge belongs to IT.
+ * all from saved data. The Operations page is gone (its parts moved to Advisories, Calendar and Reports),
+ * the MAO sidebar is one list of ten pages, and Chatbot Knowledge belongs to IT.
  */
 class MaoDashboardHomeTest extends TestCase
 {
@@ -250,9 +249,6 @@ class MaoDashboardHomeTest extends TestCase
         $advisory('pending_review');
         $advisory('pending_review');
         $advisory('published');
-        foreach ([FieldReport::STATUS_PENDING, FieldReport::STATUS_VERIFIED, FieldReport::STATUS_RESOLVED] as $status) {
-            FieldReport::query()->create(['title' => 'Report '.$status, 'barangay' => 'Prenza', 'issue_type' => 'Flooding', 'description' => 'Water in the field.', 'status' => $status, 'reported_by' => $mao->id]);
-        }
         $this->mock(TyphoonSafetyService::class, fn ($mock) => $mock->shouldReceive('activeEvent')->andReturn(['key' => 'typhoon-test', 'title' => 'Typhoon Test', 'severity' => 'Signal No. 2']));
         TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer()->id, 'event_key' => 'typhoon-test', 'event_title' => 'Typhoon Test', 'status' => TyphoonSafetyResponse::STATUS_NEEDS_HELP, 'note' => 'Roof damaged', 'responded_at' => now()]);
         TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer('Cumba')->id, 'event_key' => 'typhoon-test', 'event_title' => 'Typhoon Test', 'status' => TyphoonSafetyResponse::STATUS_SAFE, 'responded_at' => now()]);
@@ -262,7 +258,6 @@ class MaoDashboardHomeTest extends TestCase
 
         $expected = [
             'advisories' => ['2', 'Advisories to approve', route('planting-advisories.index', ['show' => 'pending'])],
-            'field-reports' => ['2', 'Unresolved field reports', route('field-reports.index', ['unresolved' => 1])],
             'check-ins' => ['1', '"Needs Help" check-ins', route('planting-advisories.index').'#check-ins'],
         ];
         foreach ($expected as $key => [$count, $label, $href]) {
@@ -270,12 +265,9 @@ class MaoDashboardHomeTest extends TestCase
             $this->assertSame($count.' '.$label, trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) preg_replace('#<a .*?</a>#s', '', $m[1]))))), $key);
             $this->assertStringContainsString('href="'.e($href).'"', $m[1], $key);
         }
-        $this->assertStringContainsString('<span class="mtd-count">5</span>', $html);
+        $this->assertStringContainsString('<span class="mtd-count">3</span>', $html);
 
-        // Each count's page shows exactly those items.
-        $this->actingAs($mao)->get(route('field-reports.index', ['unresolved' => 1]))->assertOk()
-            ->assertSee('Report Pending')->assertSee('Report Verified')->assertDontSee('Report Resolved');
-        $this->actingAs($mao)->get(route('field-reports.index'))->assertSee('Report Resolved');
+        // Each remaining count's page shows exactly the items it represents.
         $checkIns = $this->actingAs($mao)->get(route('planting-advisories.index'))->assertOk();
         $checkIns->assertSee('id="check-ins"', false)->assertSee('Typhoon Test')->assertSee('Roof damaged')
             ->assertSee('<dd data-adv-needs-help>1</dd>', false);
@@ -285,7 +277,7 @@ class MaoDashboardHomeTest extends TestCase
     {
         $html = $this->html();
 
-        $this->assertSame(3, preg_match_all('#<strong class="mhd-action-count">0</strong>#', $html));
+        $this->assertSame(2, preg_match_all('#<strong class="mhd-action-count">0</strong>#', $html));
         $this->assertStringContainsString('Nothing is waiting right now.', $html);
         $this->assertStringNotContainsString('class="mtd-count"', $html);
         // Outside a typhoon the check-ins section on Advisories says no check-in is open.
@@ -332,15 +324,17 @@ class MaoDashboardHomeTest extends TestCase
         $this->actingAs($farmer)->get(route('management.advisories.index'))->assertForbidden();
     }
 
-    public function test_the_mao_sidebar_is_the_eleven_pages_in_order(): void
+    public function test_the_mao_sidebar_is_the_ten_pages_in_order(): void
     {
         $html = $this->html();
 
-        // The menu is in the page twice (side bar and phone drawer): the same eleven labels each time.
+        // The menu is in the page twice (side bar and phone drawer): the same ten labels each time.
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
         $labels = array_map('html_entity_decode', $labels[1]);
-        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Field Reports', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
-        $this->assertSame(0, count($labels) % 11);
+        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
+        $this->assertSame(0, count($labels) % 10);
+        $this->assertStringNotContainsString('Field Reports', $html);
+        $this->assertStringNotContainsString('field-reports.index', $html);
         $nav = [implode(' | ', $labels)];
 
         foreach (['Chatbot Knowledge', 'Community Feed', 'Farm Calendar', 'Planting Advisories', 'More Tools'] as $gone) {

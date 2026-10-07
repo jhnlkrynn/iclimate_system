@@ -32,7 +32,6 @@
     // highlighted and people can see where they are.
     $routeDefs = [
         'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'admin.dashboard.*']],
-        'field-reports' => ['field-reports.index', ['field-reports.*']],
         // MAO's "Records": Climate Records and Rice Production are two tabs of one item.
         'records' => ['climate-records.index', ['climate-records.*', 'rice-productions.*']],
         'heatmap' => ['heat-map.index', ['heat-map.*']],
@@ -91,7 +90,6 @@
             $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
             $navLink('Records', 'records', 'climate-records'),
             $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
-            $navLink('Field Reports', 'field-reports', 'reports'),
             $navLink('Predictions', 'weather', 'weather'),
             $navLink('Reports', 'reports', 'reports'),
             $navLink('Announcements', 'community', 'community'),

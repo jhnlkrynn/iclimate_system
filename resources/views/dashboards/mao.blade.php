@@ -1,7 +1,6 @@
 <x-app-layout>
     {{-- MAO Dashboard (2026-10, MaoHomeService): four KPI tiles, the "Kailangan ng Aksyon" list, a small Heat Map preview
-         and one bar chart. Everything is saved data; the pages behind each number are one click away. The former
-         Operations page's parts live on their own pages (Advisories, Calendar, Field Reports, Reports). --}}
+         and one bar chart. Everything is saved data; the pages behind each number are one click away. --}}
     @php
         $num = fn ($value, int $decimals = 0) => $value === null ? null : number_format((float) $value, $decimals);
         $y = $mao['yield'];

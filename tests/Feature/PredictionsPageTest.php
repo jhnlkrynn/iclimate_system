@@ -23,7 +23,7 @@ use Tests\TestCase;
 /**
  * Phase 3 (2026-10): one Predictions page for every role, from saved data only. Weather: [This Week] = days 1–7,
  * [Next 2 Weeks] = days 1–14 of the stored daily forecast, missing days as "Tantiya" from the monthly model. Yield: this
- * season's expected yield (farmer: own estimate from the profile; MAO/IT: average of farmers' saved estimates).
+ * season's expected yield (farmer: own estimate from the profile; All of Lian: the trained municipality model).
  * Farmers read words; MAO and IT see numbers; MAO has a barangay filter; IT has the technical details.
  */
 class PredictionsPageTest extends TestCase
@@ -36,7 +36,9 @@ class PredictionsPageTest extends TestCase
         Cache::flush();
         Queue::fake();
         config(['services.weather.provider' => 'openmeteo', 'services.weatherapi.key' => null, 'services.weather.forecast_days' => 7]);
-        $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldNotReceive('predictForUser'));
+        $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldReceive('predictForUser')->zeroOrMoreTimes()->andReturn([
+            'success' => false, 'missing_inputs' => ['test fixture'], 'api_error' => 'test fixture',
+        ]));
     }
 
     // ------------------------------------------------------------ fixtures (what the scheduled jobs store)
@@ -294,10 +296,10 @@ class PredictionsPageTest extends TestCase
 
         $noArea = $this->farmer(area: null, attributes: ['email' => 'noarea@example.test']);
         Cache::put(FarmerDashboardService::predictionCacheKey($noArea->id), ['failed' => true, 'lacks_records' => false], now()->addMinutes(5));
-        $this->assertStringContainsString('Add your farm size to see your estimate.', $this->text($this->actingAs($noArea)->get(route('weather-predictions.index'))->getContent()));
+        $this->assertStringContainsString("Add or measure this farm's size to get a yield estimate.", $this->text($this->actingAs($noArea)->get(route('weather-predictions.index'))->getContent()));
     }
 
-    public function test_staff_see_the_average_of_farmers_saved_estimates_for_the_area_shown(): void
+    public function test_staff_use_the_model_for_all_lian_and_saved_estimates_only_for_a_barangay_filter(): void
     {
         $this->lianYields(4.0);
         $this->storeEstimate($a = $this->farmer('Binubusan'), 4.0);
@@ -305,9 +307,23 @@ class PredictionsPageTest extends TestCase
         $this->storeEstimate($this->farmer('Prenza', attributes: ['email' => 'p1@example.test']), 2.0);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
+        $calls = 0;
+        $this->mock(RiceYieldPredictionService::class, function ($mock) use (&$calls): void {
+            $mock->shouldReceive('municipalityArea')->once()->andReturn(2.5);
+            $mock->shouldReceive('predictForUser')->once()->andReturnUsing(function () use (&$calls): array {
+                $calls++;
+
+                return ['success' => true, 'yield_tons_per_hectare' => 4.13, 'predicted_yield' => 4.13, 'farm_area_hectares' => 2.5,
+                    'model' => 'Random Forest', 'model_source' => 'storage/models/rice_yield_model_final.pkl', 'model_version' => 'test'];
+            });
+        });
+
         $all = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
-        $this->assertStringContainsString('3.67 t/ha', $all);
-        $this->assertStringContainsString("Average of 3 farmers' saved estimates.", $all);
+        $this->assertStringContainsString('Preparing the latest yield forecast...', $all);
+        $this->assertStringNotContainsString("Average of 3 farmers' saved estimates.", $all);
+        $this->assertSame(1, $calls, 'the first page starts exactly one after-response inference');
+        $this->assertIsArray(Cache::get('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m')));
+        Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
 
         $one = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'Binubusan']))->getContent());
         $this->assertStringContainsString('4.50 t/ha', $one);
@@ -315,6 +331,47 @@ class PredictionsPageTest extends TestCase
 
         $none = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'Cumba']))->getContent());
         $this->assertStringContainsString('No saved farmer estimates yet for this area.', $none);
+    }
+
+    public function test_all_lian_renders_a_cached_model_result_without_farmer_estimates(): void
+    {
+        $this->storeLianForecast(16);
+        Cache::forever('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m'), [
+            'state' => 'ok', 'yield' => 4.25, 'usual' => 4.0, 'compare' => 'above', 'compare_label' => 'Higher',
+            'ran_at' => now('Asia/Manila')->subHour()->toIso8601String(), 'model' => 'Random Forest',
+        ]);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
+
+        $this->assertStringContainsString('4.25 t/ha', $text);
+        $this->assertStringContainsString('Municipality-wide forecast from the trained rice-yield model', $text);
+        $this->assertStringNotContainsString('No saved farmer estimates yet', $text);
+        Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
+    }
+
+    public function test_municipality_status_endpoint_returns_only_the_cached_result(): void
+    {
+        Cache::forever('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m'), [
+            'state' => 'ok', 'yield' => 4.13, 'ran_at' => now('Asia/Manila')->toIso8601String(),
+        ]);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($mao)->get(route('weather-predictions.municipality-yield-status'))
+            ->assertOk()
+            ->assertJson(['status' => 'ready', 'yield' => 4.13, 'unit' => 't/ha']);
+        Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
+    }
+
+    public function test_municipality_failure_cooldown_returns_unavailable_without_restarting_inference(): void
+    {
+        Cache::put('predictions:municipal-yield-failure:'.now('Asia/Manila')->format('Y-m'), ['at' => now()->toIso8601String()], now()->addMinutes(30));
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($mao)->get(route('weather-predictions.municipality-yield-status'))
+            ->assertOk()
+            ->assertJsonPath('status', 'unavailable');
+        Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
     }
 
     // ------------------------------------------------------------ old URLs
