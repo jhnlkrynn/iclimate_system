@@ -67,11 +67,37 @@ class BarangayWeekRiskService
     public function forRange(string $range): array
     {
         $range = isset(self::RANGES[$range]) ? $range : 'week';
-        $days = self::RANGES[$range];
-        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
-
         $records = rescue(fn (): array => $this->weather->savedForecasts(), [], false);
         $farmTypes = rescue(fn (): array => $this->map->dominantFarmTypes(), [], false);
+
+        return $this->buildRange($range, $records, $farmTypes);
+    }
+
+    /**
+     * All ranges from one saved forecast and farm-type snapshot. The Heat Map page displays both ranges together;
+     * sharing these inputs avoids repeating the same cache read and database aggregate.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function ranges(): array
+    {
+        $records = rescue(fn (): array => $this->weather->savedForecasts(), [], false);
+        $farmTypes = rescue(fn (): array => $this->map->dominantFarmTypes(), [], false);
+
+        return collect(array_keys(self::RANGES))
+            ->mapWithKeys(fn (string $range): array => [$range => $this->buildRange($range, $records, $farmTypes)])
+            ->all();
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $records
+     * @param  array<string, string>  $farmTypes
+     * @return array<string, mixed>
+     */
+    private function buildRange(string $range, array $records, array $farmTypes): array
+    {
+        $days = self::RANGES[$range];
+        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
 
         $barangays = [];
         $updated = null;

@@ -44,11 +44,39 @@ class MessagingController extends Controller
         ]);
     }
 
-    public function show(Request $request, Conversation $conversation): View
+    public function show(Request $request, Conversation $conversation): View|JsonResponse
     {
         $this->authorizeConversation($request->user(), $conversation);
 
         $this->markRead($conversation, $request->user());
+
+        $messages = $conversation->messages()
+            ->with('sender')
+            ->latest('id')
+            ->limit(100)
+            ->get()
+            ->sortBy('id')
+            ->values();
+
+        if ($request->wantsJson()) {
+            $other = $conversation->otherParticipant($request->user());
+
+            return response()->json([
+                'conversation_id' => $conversation->id,
+                'other' => [
+                    'id' => $other?->id,
+                    'name' => $other?->name ?? 'User',
+                    'role' => $other?->role ?? 'User',
+                    'online' => (bool) $other?->isOnline(),
+                ],
+                'messages' => $messages->map(fn (ConversationMessage $message) => $this->serializeMessage($message))->values(),
+                'last_message_id' => (int) ($messages->max('id') ?? 0),
+                'poll_url' => route('messages.poll', $conversation),
+                'send_url' => route('messages.reply', $conversation),
+                'typing_url' => route('messages.typing', $conversation),
+                'unsend_url_base' => route('messages.destroy-message', [$conversation, 0]),
+            ]);
+        }
 
         $conversationPaginator = $this->conversationQuery($request->user())
             ->with(['participantOne', 'participantTwo', 'latestMessage'])
@@ -61,13 +89,7 @@ class MessagingController extends Controller
             'conversations' => $conversations,
             'conversationPaginator' => $conversationPaginator,
             'activeConversation' => $conversation->load(['participantOne', 'participantTwo']),
-            'messages' => $conversation->messages()
-                ->with('sender')
-                ->latest('id')
-                ->limit(100)
-                ->get()
-                ->sortBy('id')
-                ->values(),
+            'messages' => $messages,
             'recipients' => $this->recipients($request->user()),
             'unreadCounts' => $this->unreadCounts($request->user(), $conversations),
         ]);
@@ -123,9 +145,10 @@ class MessagingController extends Controller
         $validated = $request->validate([
             'body' => ['required_without:attachment', 'nullable', 'string', 'max:5000'],
             'attachment' => self::ATTACHMENT_RULES,
+            'client_message_id' => ['nullable', 'string', 'max:64'],
         ]);
 
-        $message = $this->createMessage($request, $conversation, $validated['body'] ?? null);
+        $message = $this->createMessage($request, $conversation, $validated['body'] ?? null, $validated['client_message_id'] ?? null);
 
         Cache::forget($this->typingCacheKey($conversation, $request->user()->id));
 
@@ -152,7 +175,8 @@ class MessagingController extends Controller
         $messages = $conversation->messages()
             ->with('sender')
             ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
-            ->oldest()
+            ->oldest('id')
+            ->limit(100)
             ->get();
 
         $this->markRead($conversation, $user);
@@ -201,12 +225,13 @@ class MessagingController extends Controller
             'recipients' => $recipients->map(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'role' => $user->role,
+                'role' => $user->roleLabel(),
+                'online' => $user->isOnline(),
             ])->values(),
         ]);
     }
 
-    public function destroyMessage(Request $request, Conversation $conversation, ConversationMessage $message): RedirectResponse
+    public function destroyMessage(Request $request, Conversation $conversation, ConversationMessage $message): RedirectResponse|JsonResponse
     {
         $this->authorizeConversation($request->user(), $conversation);
 
@@ -224,6 +249,10 @@ class MessagingController extends Controller
                 'last_message_at' => $conversation->messages()->latest()->value('created_at'),
             ]);
         });
+
+        if ($request->wantsJson()) {
+            return response()->json(['message_id' => $message->id, 'ok' => true]);
+        }
 
         return redirect()->route('messages.show', $conversation)->with('success', 'Message unsent.');
     }
@@ -252,21 +281,45 @@ class MessagingController extends Controller
         return Storage::disk('local')->exists($path) ? 'local' : 'public';
     }
 
-    private function createMessage(Request $request, Conversation $conversation, ?string $body): ConversationMessage
+    private function createMessage(Request $request, Conversation $conversation, ?string $body, ?string $clientMessageId = null): ConversationMessage
     {
-        return DB::transaction(function () use ($request, $conversation, $body): ConversationMessage {
+        return DB::transaction(function () use ($request, $conversation, $body, $clientMessageId): ConversationMessage {
+            if ($clientMessageId !== null) {
+                $existing = $conversation->messages()
+                    ->where('sender_id', $request->user()->id)
+                    ->where('client_message_id', $clientMessageId)
+                    ->first();
+
+                if ($existing) {
+                    return $existing->load('sender');
+                }
+            }
+
             $attachment = $request->file('attachment');
             // Private storage: a message attachment is only ever sent through attachment() below, which checks
             // that the viewer is in the conversation. It is never reachable by a public /storage link.
             $path = $attachment?->store('message-attachments', 'local');
 
-            $message = $conversation->messages()->create([
-                'sender_id' => $request->user()->id,
-                'body' => $body,
-                'attachment_path' => $path,
-                'attachment_name' => $attachment?->getClientOriginalName(),
-                'attachment_mime' => $attachment?->getMimeType(),
-            ]);
+            $message = $clientMessageId === null
+                ? $conversation->messages()->create([
+                    'sender_id' => $request->user()->id,
+                    'body' => $body,
+                    'attachment_path' => $path,
+                    'attachment_name' => $attachment?->getClientOriginalName(),
+                    'attachment_mime' => $attachment?->getMimeType(),
+                ])
+                : $conversation->messages()->firstOrCreate(
+                    [
+                        'sender_id' => $request->user()->id,
+                        'client_message_id' => $clientMessageId,
+                    ],
+                    [
+                        'body' => $body,
+                        'attachment_path' => $path,
+                        'attachment_name' => $attachment?->getClientOriginalName(),
+                        'attachment_mime' => $attachment?->getMimeType(),
+                    ],
+                );
 
             $conversation->update(['last_message_at' => now()]);
 
@@ -348,12 +401,32 @@ class MessagingController extends Controller
 
     private function recipients(User $user, ?string $search = null)
     {
-        return User::query()
+        $query = User::query()
             ->where('id', '!=', $user->id)
             ->where('status', User::STATUS_ACTIVE)
             ->when($user->role === User::ROLE_FARMER, fn ($query) => $query->where('role', User::ROLE_MAO))
             ->when($user->role === User::ROLE_MAO, fn ($query) => $query->where('role', User::ROLE_FARMER))
-            ->when($search, fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
+            ->when($search, function ($query) use ($search): void {
+                $term = '%'.mb_strtolower($search).'%';
+                $query->where(function ($query) use ($term): void {
+                    $query->whereRaw('LOWER(name) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
+                });
+            });
+
+        // Keep the server-side result bounded, but put people the user already knows first.
+        // This is a correlated EXISTS expression, not an N+1 relationship lookup.
+        $conversationOrder = <<<'SQL'
+            CASE WHEN EXISTS (
+                SELECT 1 FROM conversations
+                WHERE (participant_one_id = ? AND participant_two_id = users.id)
+                   OR (participant_two_id = ? AND participant_one_id = users.id)
+            ) THEN 0 ELSE 1 END
+            SQL;
+
+        return $query
+            ->orderByRaw($conversationOrder, [$user->id, $user->id])
+            ->orderByDesc('last_active_at')
             ->orderBy('name')
             ->limit($search ? 20 : 50)
             ->get(['id', 'name', 'role', 'last_active_at']);
