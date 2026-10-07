@@ -42,8 +42,8 @@
 .wpx .wpx-compare.is-good { background: #e6f4ec; color: #0f5132; }
 .wpx .wpx-compare.is-watch { background: #fbf1dc; color: #7a4f0a; }
 
-/* IT: technical details behind one toggle. */
-.wpx .wpx-tech summary { cursor: pointer; font-weight: 700; color: #0f5132; }
+/* IT: technical details are always visible. */
+.wpx .wpx-tech-title { margin: 0 0 8px; font-size: 1.15rem; font-weight: 700; color: #0f5132; }
 .wpx .wpx-tech h3 { margin: 16px 0 8px; font-size: 1.05rem; font-weight: 700; }
 .wpx .wpx-tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 0; }
 .wpx .wpx-tech-grid dt { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }

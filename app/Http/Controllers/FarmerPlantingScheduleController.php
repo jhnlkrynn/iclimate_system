@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FarmerPlantingSchedule;
 use App\Services\PlantingSchedulePredictionService;
+use App\Support\ActiveFarm;
 use App\Support\LianBarangays;
 use App\Models\FarmerProfile;
 use App\Models\User;
@@ -27,14 +28,23 @@ class FarmerPlantingScheduleController extends Controller
             return $this->featureUnavailable();
         }
 
-        $profile = $request->user()->farmerProfile;
+        $user = $request->user();
+        $profile = $user->farmerProfile;
+        // The plan is for the farm the farmer asked for (?farm=, only their own), else the farm they are viewing.
+        $farm = ActiveFarm::owned($user, $request->query('farm')) ?? ActiveFarm::current($user);
 
         return view('planting-schedules.form', [
-            'schedule' => new FarmerPlantingSchedule([
-                'barangay' => $profile?->barangay ?: $request->user()->barangay,
+            'schedule' => new FarmerPlantingSchedule($farm !== null ? [
+                'farm_id' => $farm->getKey(),
+                'barangay' => $farm->barangay,
+                'farm_type' => $farm->farm_type,
+                'farm_area_hectares' => $farm->knownHectares(),
+            ] : [
+                'barangay' => $profile?->barangay ?: $user->barangay,
                 'farm_type' => $profile?->farm_type,
                 'farm_area_hectares' => $profile?->farm_area,
             ]),
+            'farms' => ActiveFarm::farms($user),
             'barangays' => LianBarangays::all(),
             'action' => route('farmer.planting-schedules.store'),
             'method' => 'POST',
@@ -48,7 +58,7 @@ class FarmerPlantingScheduleController extends Controller
         }
 
         $data = $this->validated($request);
-        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data));
+        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data, $request));
         $predictions->refresh($schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Planting and harvest schedule saved.')
@@ -66,6 +76,7 @@ class FarmerPlantingScheduleController extends Controller
 
         return view('planting-schedules.form', [
             'schedule' => $schedule,
+            'farms' => ActiveFarm::farms($request->user()),
             'barangays' => LianBarangays::all(),
             'action' => route('farmer.planting-schedules.update', $schedule),
             'method' => 'PUT',
@@ -80,7 +91,7 @@ class FarmerPlantingScheduleController extends Controller
 
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
-        $schedule->update($this->normalized($this->validated($request)));
+        $schedule->update($this->normalized($this->validated($request), $request));
         $predictions->refresh($schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Schedule updated.')
@@ -127,7 +138,9 @@ class FarmerPlantingScheduleController extends Controller
         ]);
 
         $user = $request->user();
-        $schedule = self::currentSchedule($user);
+        // The farm the farmer is viewing: its size and its plan (no farms yet: the profile, as before).
+        $farm = ActiveFarm::current($user);
+        $schedule = self::currentSchedule($user, $farm);
         $harvest = $schedule?->harvestDateForPlanning();
         if ($harvest && $harvest->toDateString() < $data['planting_date']) {
             throw ValidationException::withMessages([
@@ -136,9 +149,11 @@ class FarmerPlantingScheduleController extends Controller
         }
 
         try {
-            $schedule = DB::transaction(function () use ($user, $schedule, $data) {
+            $schedule = DB::transaction(function () use ($user, $schedule, $data, $farm) {
                 $profile = $user->farmerProfile;
-                if ($profile) {
+                if ($farm !== null) {
+                    app(\App\Services\Farms\FarmService::class)->update($farm, ['farm_size_method' => \App\Models\Farm::SIZE_EXACT, 'farm_size_value' => $data['farm_area'], 'farm_size_unit' => \App\Models\Farm::UNIT_HECTARES]);
+                } elseif ($profile) {
                     $profile->update(['farm_area' => $data['farm_area']]);
                 } elseif ($user->barangay) {
                     $profile = FarmerProfile::query()->create([
@@ -159,14 +174,15 @@ class FarmerPlantingScheduleController extends Controller
                 }
 
                 $planting = Carbon::parse($data['planting_date']);
-                $barangay = $profile?->barangay ?: $user->barangay;
+                $barangay = $farm?->barangay ?: ($profile?->barangay ?: $user->barangay);
 
                 return $user->plantingSchedules()->create([
+                    ...($farm !== null ? ['farm_id' => $farm->getKey()] : []),
                     'planting_date' => $data['planting_date'],
                     'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
                     // May to October plantings are the wet season crop, the rest the dry season crop (App\Support\RiceSeason).
                     'season' => \App\Models\ClimateRecord::seasonForMonth($planting->month),
-                    'farm_type' => $profile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED,
+                    'farm_type' => $farm?->farm_type ?: ($profile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED),
                     'barangay' => in_array($barangay, LianBarangays::all(), true) ? $barangay : null,
                     'farm_area_hectares' => $data['farm_area'],
                 ]);
@@ -190,20 +206,26 @@ class FarmerPlantingScheduleController extends Controller
         ]);
     }
 
-    /** The plan the dashboard's Crop Season card shows first: the earliest planting that is not harvested yet. */
-    public static function currentSchedule(User $user): ?FarmerPlantingSchedule
+    /**
+     * The plan the dashboard's Crop Season card shows first: the earliest planting not harvested yet, of the given farm
+     * (older plans without a farm count as the primary farm's).
+     */
+    public static function currentSchedule(User $user, ?\App\Models\Farm $farm = null): ?FarmerPlantingSchedule
     {
         if (! \App\Support\SchemaCache::hasTable('farmer_planting_schedules')) {
             return null;
         }
 
-        return FarmerPlantingSchedule::query()->where('user_id', $user->id)->whereNotNull('planting_date')->orderBy('planting_date')->limit(100)->get()
+        return FarmerPlantingSchedule::query()->where('user_id', $user->id)->whereNotNull('planting_date')
+            ->when($farm !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $farm->getKey())->when($farm->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
+            ->orderBy('planting_date')->limit(100)->get()
             ->first(fn (FarmerPlantingSchedule $row) => $row->monitoringStatus() !== 'harvested');
     }
 
     private function validated(Request $request): array
     {
         return $request->validate([
+            'farm_id' => ['nullable', 'integer'],
             'planting_date' => ['required', 'date'],
             'scheduled_harvest_date' => ['nullable', 'date', 'required_without:harvest_month', 'after_or_equal:planting_date'],
             'harvest_month' => ['nullable', 'date_format:Y-m', 'required_without:scheduled_harvest_date'],
@@ -218,8 +240,23 @@ class FarmerPlantingScheduleController extends Controller
         ]);
     }
 
-    private function normalized(array $data): array
+    private function normalized(array $data, Request $request): array
     {
+        // Which farm: one of the farmer's own farms in use (a farm id that is not theirs is refused), else the farm
+        // they are viewing. Its barangay fills an empty barangay.
+        if (ActiveFarm::available() && \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'farm_id')) {
+            $farm = isset($data['farm_id']) ? ActiveFarm::owned($request->user(), $data['farm_id']) : ActiveFarm::current($request->user());
+            if (isset($data['farm_id']) && $farm === null) {
+                throw ValidationException::withMessages(['farm_id' => __('farms.errors.not_found')]);
+            }
+            $data['farm_id'] = $farm?->getKey();
+            if (empty($data['barangay']) && $farm?->barangay) {
+                $data['barangay'] = $farm->barangay;
+            }
+        } else {
+            unset($data['farm_id']);
+        }
+
         $data['harvest_month'] = ! empty($data['harvest_month']) ? $data['harvest_month'].'-01' : null;
         $data['scheduled_harvest_date'] = $data['scheduled_harvest_date'] ?? null;
         $data['barangay'] = $data['barangay'] ?? null;

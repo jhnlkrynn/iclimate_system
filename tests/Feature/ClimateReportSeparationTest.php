@@ -125,7 +125,7 @@ class ClimateReportSeparationTest extends TestCase
 
         $this->actingAs($this->mao())->get(route('reports.show', $report->id))->assertOk()
             ->assertSee('Historical Weather')
-            ->assertSee('PAGASA Ambulong Station (Tanauan, Batangas) · used by iClimate as the weather reference for Lian')
+            ->assertSee(ClimateRecordHistory::AMBULONG_DISPLAY_LABEL)
             ->assertSee('12 (Jan 2024 – Dec 2024)')
             ->assertSee('Entered Records')
             ->assertSee('No entered climate records for this period.')

@@ -24,7 +24,7 @@ class ClimateRecordController extends CrudController
 
     protected bool $printable = true;
 
-    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'wind_speed' => 'Wind Speed', 'season' => 'Season', 'source' => 'Source'];
+    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source'];
 
     protected array $searchable = ['record_date', 'season', 'source'];
 
@@ -130,7 +130,7 @@ class ClimateRecordController extends CrudController
 
         return $this->staffRowsIndex($request, $display, [
             'season' => $rows->pluck('season')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v])->all(),
-            'source' => $rows->pluck('source')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => $v])->all(),
+            'source' => $rows->pluck('source')->filter()->unique()->sort()->mapWithKeys(fn ($v) => [$v => ClimateRecordHistory::displaySource($v)])->all(),
         ]);
     }
 

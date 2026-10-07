@@ -2,19 +2,10 @@
 
 namespace App\Providers;
 
-use App\Models\ClimateRecord;
-use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
-use App\Models\FeedPost;
-use App\Models\Notification;
-use App\Models\PlantingAdvisory;
-use App\Models\Report;
-use App\Models\RiceProduction;
-use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use PDO;
 
@@ -76,6 +67,22 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerDataCacheInvalidation();
 
+        // A migration may add or drop a table or column: the cached schema lists (SchemaCache) are read again.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Database\Events\MigrationsEnded::class, static fn () => \App\Support\SchemaCache::forget());
+
+        // A write during a dashboard build: the reads that build remembered (BuildMemo) are made again. The cache and
+        // session tables (CACHE_STORE / SESSION_DRIVER=database) hold no figures.
+        \Illuminate\Support\Facades\DB::listen(static function (\Illuminate\Database\Events\QueryExecuted $query): void {
+            if (! \App\Support\BuildMemo::active() || preg_match('/^\s*(select|with)\b/i', $query->sql)) {
+                return;
+            }
+            $kept = ['cache', 'cache_locks', 'sessions', config('cache.stores.database.table'), config('cache.stores.database.lock_table'), config('session.table')];
+            if (! preg_match('/^\s*(?:insert\s+into|update|delete\s+from)\s+"?([\w.]+)"?/i', $query->sql, $table)
+                || ! in_array(strtolower((string) preg_replace('/^.*\./', '', $table[1])), array_filter($kept), true)) {
+                \App\Support\BuildMemo::flush();
+            }
+        });
+
         $this->createMysqlDatabaseForMigrations();
     }
 
@@ -108,92 +115,51 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerDataCacheInvalidation(): void
     {
-        $flush = static function (): void {
-            // Everything cached with PageCache::shared() (dashboards, lists, reference data).
-            \App\Support\PageCache::flushShared();
+        // A real data change retires only the caches that read that data (the map is in CacheScope); rows that belong
+        // to one person also retire that person's private pages.
+        \App\Support\CacheScope::listen();
 
-            // The MAO / IT dashboards key their cached payload on this version, so a data change retires them at once.
-            app(\App\Support\DashboardData::class)->forget();
-            \App\Support\DashboardData::bump();
-
-            foreach ([
-                'dashboard:shared-stats',
-                'dashboard:mao-aggregates',
-                'dashboard:admin-aggregates',
-                'dashboard:farmer-organizations',
-                'dashboard:recent-operational-data',
-                'dashboard:high-risk-areas',
-                'dashboard:mao-action-items',
-                'reports:filter-barangays',
-                'reports:source-stats',
-            ] as $key) {
-                Cache::forget($key);
-            }
+        // A farm's expected yield depends on its size, type and location and on its planting plans, so a change to any of
+        // them makes THAT farm's estimate due: the new one is started now (after the response), and the last estimate
+        // stays on the card with its time until it is replaced. Another farm, or another farmer, is not touched.
+        $estimateAgain = static function (int $userId, ?int $farmId): void {
+            \App\Services\Analytics\FarmerDashboardService::estimateInputsChanged($userId, $farmId);
+            \App\Jobs\PrepareFarmerYieldEstimate::queueFor($userId, $farmId);
         };
 
-        foreach ([
-            User::class,
-            FarmerProfile::class,
-            FarmerOrganization::class,
-            ClimateRecord::class,
-            RiceProduction::class,
-            PlantingAdvisory::class,
-            FeedPost::class,
-            Notification::class,
-            Report::class,
-            \App\Models\HeatmapArea::class,
-            \App\Models\FieldReport::class,
-            \App\Models\FarmerPlantingSchedule::class,
-            \App\Models\WeatherForecastFeedback::class,
-            \App\Models\AdvisoryFeedback::class,
-            \App\Models\MonthlyWeatherPrediction::class,
-            \App\Models\ExternalWeatherData::class,
-            \App\Models\MlModel::class,
-            \App\Models\FeedComment::class,
-            \App\Models\FeedReaction::class,
-            \App\Models\FeedMedia::class,
-            \App\Models\TyphoonSafetyResponse::class,
-            \App\Models\AnalyticsRun::class,
-        ] as $model) {
-            // Eloquent fires "saved" even when nothing changed (e.g. the risk-map refresh re-saves 19 identical rows);
-            // only a real change should throw the cached pages away.
-            $model::saved(static function ($record) use ($flush): void {
-                if ($record->wasRecentlyCreated || $record->wasChanged()) {
-                    $flush();
-                }
-            });
-            $model::deleted($flush);
-        }
+        \App\Models\Farm::saved(static function (\App\Models\Farm $farm) use ($estimateAgain): void {
+            // An archived farm is no longer estimated.
+            if ($farm->archived_at === null && ($farm->wasRecentlyCreated || $farm->wasChanged(\App\Models\Farm::ESTIMATE_INPUTS))) {
+                $estimateAgain((int) $farm->user_id, (int) $farm->getKey());
+            }
+        });
 
-        // A farmer's expected yield depends on their farm area, farm type and planting schedule, so it must not outlive an edit
-        // to any of them. Both the payload cache and the 6-hour prediction cache are dropped for that one farmer.
-        foreach ([FarmerProfile::class, \App\Models\FarmerPlantingSchedule::class] as $model) {
-            $forgetFarmer = static function ($record): void {
-                if ($record->user_id) {
-                    Cache::forget(\App\Services\Analytics\FarmerDashboardService::predictionCacheKey((int) $record->user_id));
-                    // The new estimate is made in the background, so the dashboard never waits for the model.
-                    \App\Jobs\PrepareFarmerYieldEstimate::queueFor((int) $record->user_id);
-                }
-            };
-            $model::saved(static function ($record) use ($forgetFarmer): void {
-                if ($record->wasRecentlyCreated || $record->wasChanged()) {
-                    $forgetFarmer($record);
-                }
-            });
-            $model::deleted($forgetFarmer);
-        }
-
-        // Private per-person data (notifications, their advisory feedback, their profile): only that person's cache is cleared.
-        $flushOwner = static function ($model): void {
-            if ($model->user_id ?? null) {
-                \App\Support\PageCache::flushUser((int) $model->user_id);
+        $planChanged = static function (\App\Models\FarmerPlantingSchedule $plan) use ($estimateAgain): void {
+            if ($plan->user_id) {
+                $estimateAgain((int) $plan->user_id, \App\Support\ActiveFarm::available() ? ($plan->farm_id ? (int) $plan->farm_id : null) : null);
             }
         };
+        \App\Models\FarmerPlantingSchedule::saved(static function ($plan) use ($planChanged): void {
+            if ($plan->wasRecentlyCreated || $plan->wasChanged()) {
+                $planChanged($plan);
+            }
+        });
+        \App\Models\FarmerPlantingSchedule::deleted($planChanged);
 
-        foreach ([Notification::class, \App\Models\AdvisoryFeedback::class, FarmerProfile::class, \App\Models\FarmBoundary::class] as $model) {
-            $model::saved($flushOwner);
-            $model::deleted($flushOwner);
-        }
+        // The farmer profile's farm fields (registration, the mobile app, MAO edits): written to the farmer's primary farm
+        // (their first farm is made from them). Before the farms table exists, the profile is still the farm.
+        FarmerProfile::saved(static function (FarmerProfile $profile) use ($estimateAgain): void {
+            if (! $profile->user_id || ! ($profile->wasRecentlyCreated || $profile->wasChanged(['barangay', 'farm_area', 'farm_type']))) {
+                return;
+            }
+            if (\App\Support\ActiveFarm::available()) {
+                app(\App\Services\Farms\FarmService::class)->fromProfile($profile);
+            } else {
+                $estimateAgain((int) $profile->user_id, null);
+            }
+        });
+        FarmerProfile::deleted(static fn (FarmerProfile $profile) => $profile->user_id && ! \App\Support\ActiveFarm::available()
+            ? $estimateAgain((int) $profile->user_id, null) : null);
     }
 
     private function createMysqlDatabaseForMigrations(): void

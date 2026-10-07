@@ -143,7 +143,7 @@
             @if($hasAmbulong)
                 <p class="fad-support">iClimate uses these past weather records for Lian, Batangas. Each record is one month. Temperature is the average of the month's highs and lows.</p>
                 <p class="frec-reference"><span class="fad-label">About These Records</span> <strong>Lian, Batangas Climate Records</strong></p>
-                <p class="frec-provenance">Source: PAGASA Ambulong Station, Tanauan, Batangas.</p>
+                <p class="frec-provenance">{{ \App\Services\Climate\ClimateRecordHistory::AMBULONG_PROVENANCE_NOTE }}</p>
             @endif
             @if($otherSources->isNotEmpty())
                 <p class="fad-support">{{ $hasAmbulong ? 'Other records come from' : 'Source:' }} {{ $otherSources->join(', ') }}.</p>

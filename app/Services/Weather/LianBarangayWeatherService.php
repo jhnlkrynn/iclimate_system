@@ -108,7 +108,9 @@ class LianBarangayWeatherService
      */
     public function all(bool $refresh = false): array
     {
-        if ($refresh || $this->isDue()) {
+        // A refresh attempted in the last minute (by the scheduler, a page or Refresh) is reused, not repeated: when the
+        // provider is down, rating the barangays right after that attempt must not send the same 19 requests again.
+        if ($refresh || ($this->isDue() && ! $this->attemptedWithin(60))) {
             return $this->refreshAll(wait: $refresh);
         }
 
@@ -131,6 +133,29 @@ class LianBarangayWeatherService
         }
 
         return $records;
+    }
+
+    /**
+     * Each barangay's last saved daily forecast and when it was fetched, from the cache only. Unlike snapshot(), a
+     * record older than KEEP_HOURS still counts: its days that have not passed yet are the last forecast there is, so
+     * a missed refresh shows that forecast with its own time instead of no forecast at all.
+     *
+     * @return array<string, array{daily: array<int, mixed>, fetched_at: ?string}>
+     */
+    public function savedForecasts(): array
+    {
+        $stored = $this->store()['records'];
+        $forecasts = [];
+
+        foreach (array_keys(LianBarangays::coordinates()) as $barangay) {
+            $record = is_array($stored[$barangay] ?? null) ? $stored[$barangay] : [];
+            $forecasts[$barangay] = [
+                'daily' => is_array($record['daily'] ?? null) ? $record['daily'] : [],
+                'fetched_at' => is_string($record['fetched_at'] ?? null) ? $record['fetched_at'] : null,
+            ];
+        }
+
+        return $forecasts;
     }
 
     /**
@@ -210,6 +235,10 @@ class LianBarangayWeatherService
 
         $this->refreshScheduled = true;
         app()->terminating(function () use ($priorityBarangay): void {
+            // Once only: an application that serves several requests calls every terminating callback again.
+            if (! $this->refreshScheduled) {
+                return;
+            }
             rescue(fn () => $this->refreshAll($priorityBarangay), report: false);
             // Rate the barangays from the new readings too (skipped if already rated), so the risk follows the
             // weather even when no queue worker or scheduler is running.
@@ -258,10 +287,15 @@ class LianBarangayWeatherService
      */
     public function refreshUnlessJustChecked(?string $priorityBarangay = null, int $seconds = 30): array
     {
-        $lastAttempt = $this->store()['status']['last_attempt_at'] ?? null;
-        $recent = rescue(fn () => $lastAttempt !== null && Carbon::parse($lastAttempt)->gt(now()->subSeconds($seconds)), false, false);
+        return $this->attemptedWithin($seconds) ? $this->snapshot() : $this->refreshAll($priorityBarangay);
+    }
 
-        return $recent ? $this->snapshot() : $this->refreshAll($priorityBarangay);
+    /** True when the provider was asked (successfully or not) in the last $seconds. */
+    private function attemptedWithin(int $seconds): bool
+    {
+        $lastAttempt = $this->store()['status']['last_attempt_at'] ?? null;
+
+        return rescue(fn () => $lastAttempt !== null && Carbon::parse($lastAttempt)->gt(now()->subSeconds($seconds)), false, false);
     }
 
     /**

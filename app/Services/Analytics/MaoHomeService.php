@@ -100,8 +100,8 @@ class MaoHomeService
      */
     private function expectedYield(CarbonImmutable $now): array
     {
-        $estimates = rescue(fn () => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->pluck('id')
-            ->map(fn (int $id): ?array => FarmerDashboardService::storedEstimate($id))->filter()->values(), collect(), false);
+        // One saved estimate per farm (a farmer's farms are estimated separately).
+        $estimates = rescue(fn () => FarmerDashboardService::storedEstimates(), collect(), false);
         $expected = $estimates->isEmpty() ? null : round((float) $estimates->avg(fn (array $e): float => (float) ($e['yield_tons_per_hectare'] ?? $e['predicted_yield'] ?? 0)), 2);
         $last = rescue(fn (): ?array => $this->lastRecordedSeason($now), null, false);
 

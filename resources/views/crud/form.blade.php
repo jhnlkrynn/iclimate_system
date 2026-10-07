@@ -2,8 +2,8 @@
     <section class="page-hero">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-end">
             <div>
-                <div class="eyebrow mb-2">Edit Record</div>
-                <h1 class="h2 fw-bold mb-2">{{ $title }}</h1>
+                <div class="eyebrow mb-2">{{ $routeName === 'farmer-profiles' ? 'Farmer Profile' : 'Edit Record' }}</div>
+                <h1 class="h2 fw-bold mb-2">{{ $routeName === 'farmer-profiles' ? 'Modify Farmer Profile' : $title }}</h1>
                 <p class="mb-0" style="color: var(--ic-ink-mid);">Fill in the details, then save.</p>
             </div>
             <a class="btn btn-light align-self-start align-self-lg-end" href="{{ route($routeName.'.index') }}">Back to List</a>
@@ -33,7 +33,7 @@
                                 @if ($type === 'textarea')
                                     <textarea class="form-control @error($name) is-invalid @enderror" id="{{ $name }}" name="{{ $name }}" rows="5">{{ $value }}</textarea>
                                 @elseif ($type === 'select')
-                                    <select class="form-select @error($name) is-invalid @enderror" id="{{ $name }}" name="{{ $name }}">
+                                    <select class="form-select @error($name) is-invalid @enderror" id="{{ $name }}" name="{{ $name }}" @if ($routeName === 'farmer-profiles' && $name === 'user_id') data-farmer-profile-user @endif>
                                         <option value="">Select {{ $field['label'] }}</option>
                                         @foreach (($field['options'] ?? []) as $optionValue => $optionLabel)
                                             <option value="{{ $optionValue }}" @selected((string) $value === (string) $optionValue)>{{ $optionLabel }}</option>
@@ -64,3 +64,17 @@
         </div>
     </div>
 </x-app-layout>
+
+@if ($routeName === 'farmer-profiles')
+    <script>
+        (() => {
+            const userSelect = document.querySelector('[data-farmer-profile-user]');
+            if (!userSelect) return;
+
+            userSelect.addEventListener('change', () => {
+                const url = @json(route('farmer-profiles.create'));
+                window.location.assign(userSelect.value ? `${url}?user_id=${encodeURIComponent(userSelect.value)}` : url);
+            });
+        })();
+    </script>
+@endif

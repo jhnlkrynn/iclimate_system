@@ -17,7 +17,13 @@ final class FarmerSetupChecklist
     public static function for(User $user): array
     {
         $profile = $user->farmerProfile;
-        $checks = [
+        // With farms, the gaps are the current farm's and each opens that farm's form.
+        $farm = ActiveFarm::current($user);
+        $checks = $farm !== null ? [
+            ['key' => 'barangay', 'ok' => $farm->barangay !== null, 'href' => route('farmer.farms.edit', $farm)],
+            ['key' => 'farm_type', 'ok' => (bool) $farm->farm_type, 'href' => route('farmer.farms.edit', $farm)],
+            ['key' => 'farm_area', 'ok' => $farm->hasSize(), 'href' => route('farmer.farms.edit', $farm)],
+        ] : [
             ['key' => 'barangay', 'ok' => $user->registeredBarangay() !== null, 'href' => '#barangay'],
             ['key' => 'farm_type', 'ok' => (bool) $profile?->farm_type, 'href' => '#farm_type'],
             ['key' => 'farm_area', 'ok' => (float) ($profile?->farm_area ?? 0) > 0, 'href' => '#farm_area'],

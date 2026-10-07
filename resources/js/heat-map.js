@@ -1,6 +1,8 @@
 // Heat Map page (resources/views/heat-map/index.blade.php): the map on the left and one panel on the right.
 // Every rating and every sentence is already in the page for both ranges, so this module only colours the 19
-// barangays, switches [This Week] / [2 Weeks], and shows the clicked barangay's panel. No request on click.
+// barangays, switches [This Week] / [2 Weeks], and shows the clicked barangay's panel. No request on click. When the
+// page opened while new weather was on its way (data-heat-map-updating), it reads the page again a few times and
+// swaps in the panel, legend and colours once a forecast is there.
 
 import { canonicalName, displayName } from './barangay-risk-map';
 
@@ -12,10 +14,11 @@ export function initHeatMap() {
     root.dataset.ready = 'true';
 
     const canvas = root.querySelector('#heatMapCanvas');
-    const views = [...root.querySelectorAll('[data-heat-map-view]')];
+    let views = [...root.querySelectorAll('[data-heat-map-view]')];
+    const readLevels = (scope) => JSON.parse(scope.querySelector('[data-heat-map-levels]')?.textContent || '{}');
     let data = { levels: {}, colors: {}, labels: {}, yours: '' };
     try {
-        data = JSON.parse(root.querySelector('[data-heat-map-levels]')?.textContent || '{}');
+        data = readLevels(root);
     } catch (error) {
         console.error('iClimate could not read the heat map ratings.', error);
     }
@@ -75,6 +78,36 @@ export function initHeatMap() {
         const pickButton = event.target.closest('[data-heat-map-pick]');
         if (pickButton) pick(canonicalName(pickButton.dataset.heatMapPick), true);
     });
+
+    // New weather is on its way: read this page again after 5, 15 and 30 seconds (the shared refresh runs once on the
+    // server however often it is read), and stop as soon as no barangay is missing its forecast.
+    const hasRating = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).some((level) => level !== 'nodata'));
+    const missing = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).includes('nodata'));
+    const update = (delays) => {
+        if (!delays.length) return;
+        window.setTimeout(() => {
+            fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })
+                .then((response) => (response.ok ? response.text() : Promise.reject(new Error(`Heat Map page answered ${response.status}`))))
+                .then((html) => {
+                    const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-heat-map]');
+                    const next = fresh ? readLevels(fresh) : null;
+                    if (!next || !hasRating(next.levels)) return update(delays.slice(1));
+                    data = next;
+                    ['[data-heat-map-panel]', '.hmx-legend'].forEach((selector) => {
+                        const target = root.querySelector(selector);
+                        const source = fresh.querySelector(selector);
+                        if (target && source) target.innerHTML = source.innerHTML;
+                    });
+                    views = [...root.querySelectorAll('[data-heat-map-view]')];
+                    if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
+                    show();
+                    if (missing(next.levels) && fresh.hasAttribute('data-heat-map-updating')) update(delays.slice(1));
+                    return undefined;
+                })
+                .catch(() => update(delays.slice(1)));
+        }, delays[0]);
+    };
+    if (root.hasAttribute('data-heat-map-updating')) update([5000, 10000, 15000]);
 
     if (!canvas || !window.L) return;
     const L = window.L;

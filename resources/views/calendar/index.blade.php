@@ -217,12 +217,20 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
                     </button>
                 </header>
+                @php $planFarm = \App\Support\ActiveFarm::current(auth()->user()); @endphp
                 @include('planting-schedules._form', [
-                    'schedule' => new \App\Models\FarmerPlantingSchedule([
+                    // A new plan is for the farm the farmer is viewing, with that farm's barangay, type and known size.
+                    'schedule' => new \App\Models\FarmerPlantingSchedule($planFarm ? [
+                        'farm_id' => $planFarm->id,
+                        'barangay' => $planFarm->barangay,
+                        'farm_type' => $planFarm->farm_type,
+                        'farm_area_hectares' => $planFarm->knownHectares(),
+                    ] : [
                         'barangay' => $planProfile?->barangay ?: auth()->user()->barangay,
                         'farm_type' => $planProfile?->farm_type,
                         'farm_area_hectares' => $planProfile?->farm_area,
                     ]),
+                    'farms' => \App\Support\ActiveFarm::farms(auth()->user()),
                     'barangays' => \App\Support\LianBarangays::all(),
                     'action' => route('farmer.planting-schedules.store'),
                     'method' => 'POST',

@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
+use App\Services\Risk\HeatMapPanel;
+use App\Support\ActiveFarm;
 use App\Support\BusinessClock;
+use App\Support\FarmSize;
 use App\Support\RiceSeason;
 use App\Support\SchemaCache;
 use Illuminate\Http\Request;
@@ -12,8 +16,9 @@ use Illuminate\Support\Facades\Lang;
 use Illuminate\View\View;
 
 /**
- * "Aking Bukid" (My Farm): the signed-in farmer's own farm only — farm size and type, their planting schedules, their
- * harvest records (printable) and their upcoming planting and harvest dates. Nothing of another farmer is read.
+ * "Aking Bukid" (My Farm): the signed-in farmer's farms (My Farms: add, edit, map, set as primary, remove), then the
+ * current farm's size and type, its planting schedules, harvest records (printable) and upcoming planting and harvest
+ * dates. Nothing of another farmer is read.
  */
 class FarmerMyFarmController extends Controller
 {
@@ -21,15 +26,36 @@ class FarmerMyFarmController extends Controller
     {
         $user = $request->user();
         $profile = $user->farmerProfile;
+        $farms = ActiveFarm::farms($user);
+        $current = ActiveFarm::current($user);
         $schedules = SchemaCache::hasTable('farmer_planting_schedules')
-            ? FarmerPlantingSchedule::query()->where('user_id', $user->id)->orderByDesc('planting_date')->get()
+            ? FarmerPlantingSchedule::query()->where('user_id', $user->id)
+                // The current farm's plans (older plans without a farm count as the primary farm's).
+                ->when($current !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $current->getKey())
+                    ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
+                ->orderByDesc('planting_date')->get()
             : collect();
-        $type = $profile?->farm_type ? strtolower((string) $profile->farm_type) : null;
+        $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
+        $type = $farmType ? strtolower((string) $farmType) : null;
 
         return view('farmer-records.my-farm', [
+            'available' => ActiveFarm::available(),
+            'farms' => $farms->map(fn (Farm $f): array => [
+                'id' => $f->getKey(),
+                'name' => $f->farm_name,
+                'barangay' => $f->barangay ? HeatMapPanel::displayName($f->barangay) : null,
+                'location' => $f->location_description,
+                'size' => FarmSize::describe($f),
+                'mapped' => $f->boundary !== null,
+                'primary' => (bool) $f->is_primary,
+                'current' => $current !== null && $f->getKey() === $current->getKey(),
+            ])->all(),
+            'current' => $current,
             'farm' => [
-                'barangay' => $user->registeredBarangay() ?? ($profile?->barangay ?: $user->barangay),
-                'area' => (float) ($profile?->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null,
+                'name' => $current?->farm_name,
+                'barangay' => $current !== null ? ($current->barangay ? HeatMapPanel::displayName($current->barangay) : null) : ($user->registeredBarangay() ?? ($profile?->barangay ?: $user->barangay)),
+                'area' => $current !== null ? null : ((float) ($profile?->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null),
+                'size' => $current !== null ? FarmSize::describe($current) : null,
                 'type' => $type && Lang::has('farmer.my_farm.water.'.$type) ? __('farmer.my_farm.water.'.$type) : null,
             ],
             'schedules' => $schedules->map(fn (FarmerPlantingSchedule $s): array => [

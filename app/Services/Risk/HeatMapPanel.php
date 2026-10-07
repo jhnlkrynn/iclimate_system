@@ -34,9 +34,11 @@ final class HeatMapPanel
                 'days' => $rated['days'],
                 'state' => $rated['state'],
                 'updated_at' => $rated['updated_at'],
+                'delayed' => $rated['delayed'] ?? false,
                 'title' => $this->t($range === 'week' ? 'summary_title' : 'summary_title_2weeks', $locale),
                 'counts' => $rated['counts'],
                 'count_lines' => $this->countLines($rated['counts'], $locale),
+                'outlook' => $this->outlook($rated['barangays'], $locale),
                 'barangays' => $barangays,
             ];
         }
@@ -84,6 +86,36 @@ final class HeatMapPanel
                 $this->t('farm_type', $locale) => $b['farm_type'],
             ]),
         ];
+    }
+
+    /**
+     * Lian's forecast numbers for the period, worked out from the barangays' own saved forecasts (never a separate
+     * municipal figure): the spread of rain totals across barangays and the period's wettest day, strongest wind and
+     * hottest day in any barangay.
+     *
+     * @param  array<string, array<string, mixed>>  $barangays
+     * @return array<string, string>
+     */
+    private function outlook(array $barangays, string $locale): array
+    {
+        $values = fn (string $key): array => array_values(array_filter(
+            array_map(fn (array $b) => $b['level'] === 'nodata' ? null : $b[$key], $barangays),
+            fn ($value): bool => $value !== null,
+        ));
+        $rain = $values('rain_total_mm');
+        $wettest = $values('wettest_day_mm');
+        $wind = $values('wind_max_kmh');
+        $temp = $values('temp_max_c');
+        $rainRange = $rain === [] ? null : (min($rain) === max($rain)
+            ? number_format(min($rain), 1)
+            : number_format(min($rain), 1).'–'.number_format(max($rain), 1));
+
+        return array_filter([
+            $this->t('rain_range', $locale) => $rainRange !== null ? $rainRange.' mm' : null,
+            $this->t('wettest_day', $locale) => $wettest !== [] ? number_format(max($wettest), 1).' mm' : null,
+            $this->t('wind_max', $locale) => $wind !== [] ? number_format(max($wind), 0).' km/h' : null,
+            $this->t('temp_max', $locale) => $temp !== [] ? number_format(max($temp), 1).' °C' : null,
+        ]);
     }
 
     /**

@@ -41,8 +41,15 @@ class FarmerProfile extends Model
         return $this->belongsTo(FarmerOrganization::class);
     }
 
+    /** The farmer's most recently saved farm map (each farm now has its own: Farm::boundary()). */
     public function farmBoundary(): HasOne
     {
-        return $this->hasOne(FarmBoundary::class);
+        return $this->hasOne(FarmBoundary::class)->latestOfMany();
+    }
+
+    /** The farmer's farms (by the same user). */
+    public function farms(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Farm::class, 'user_id', 'user_id');
     }
 }

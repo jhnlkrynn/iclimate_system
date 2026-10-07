@@ -802,6 +802,7 @@ return [
             'preparing' => 'Inihahanda pa ang inyong tantiya.',
             'need_area' => 'Ilagay ang laki ng bukid para makita ang tantiya.',
             'need_records' => 'Kulang pa ang datos ng panahon para sa tantiya.',
+            'unavailable' => 'Hindi pa makuha ang tantiya ngayon. Susubukan namin ulit nang kusa.',
             'add_area' => 'Ilagay ang laki ng bukid',
         ],
         'week' => [
@@ -934,6 +935,8 @@ return [
         'meaning_title' => 'Ibig sabihin',
         'action_title' => 'Gawin ngayon',
         'numbers_title' => 'Mga numero ng taya',
+        'outlook_title' => 'Mga numero ng taya sa Lian',
+        'rain_range' => 'Ulan sa panahong ito (bawat barangay)',
         'rain_total' => 'Ulan sa panahong ito',
         'wettest_day' => 'Pinakamaulang araw',
         'wind_max' => 'Pinakamalakas na hangin',
@@ -941,6 +944,7 @@ return [
         'farm_type' => 'Karaniwang uri ng bukid',
         'days_covered' => 'Batay sa :count sa :days araw ng naka-save na taya.',
         'source' => 'Mula sa naka-save na araw-araw na taya ng panahon. Gabay ito sa pagpaplano, hindi opisyal na babala.',
+        'delayed' => 'Hindi pa na-update ang taya. Ito ang huling naka-save na taya.',
         'meaning' => [
             'calm' => 'Walang inaasahang malakas na ulan, malakas na hangin o matinding init sa panahong ito.',
             'heavy_rain' => [

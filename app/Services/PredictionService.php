@@ -18,6 +18,8 @@ use App\Services\AI\KnowledgeBaseService;
 use App\Services\AI\RoleAssistantService;
 use App\Services\Prediction\PredictionDateValidator;
 use App\Services\Prediction\RiceYieldPredictionService;
+use App\Support\ActiveFarm;
+use App\Support\FarmSize;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 
@@ -69,8 +71,9 @@ class PredictionService
         $memoryText = $question.' '.implode(' ', $memory['recent_questions'] ?? []);
         $conditions = $this->conditionsFrom($memoryText);
         $profile = $user->farmerProfile ?: FarmerProfile::query()->where('user_id', $user->id)->first();
+        $activeFarm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
 
-        $farmType = $conditions['farm_type'] ?? (string) ($profile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
+        $farmType = $conditions['farm_type'] ?? (string) ($activeFarm?->farm_type ?? $profile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
         $areaOverride = $numbers['area'] ?? null;
         $manualOverrides = array_filter([
             'rainfall' => $numbers['rainfall'] ?? null,
@@ -103,7 +106,13 @@ class PredictionService
 
         $context = [
             ...$engineResult['model_input'],
-            'barangay' => (string) ($profile?->barangay ?? $user->barangay ?? ''),
+            'barangay' => (string) ($activeFarm?->barangay ?? $profile?->barangay ?? $user->barangay ?? ''),
+            'farm_context' => $activeFarm ? [
+                'name' => $activeFarm->farm_name,
+                'size' => FarmSize::describe($activeFarm),
+                'size_method' => $activeFarm->farm_size_method,
+                'estimate_range' => $activeFarm->farm_size_estimate_range,
+            ] : null,
             'source_notes' => $this->sourceNotes($numbers, $conditions, $targetDate->startOfMonth()),
         ];
 
@@ -511,10 +520,13 @@ class PredictionService
         }
 
         if ($intent === IntentDetectionService::USER_PROFILE || str_contains($text, 'profile')) {
+            $farm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
             $profile = $user->farmerProfile;
-            $answer = $profile
-                ? 'Your profile shows barangay '.$profile->barangay.', farm area '.$profile->farm_area.' hectares, and farm type '.$profile->farm_type.'.'
-                : 'No farmer profile is linked to your account yet. Add farm area, barangay, and farm type to improve iClimate recommendations.';
+            $answer = $farm
+                ? 'Your selected farm, '.$farm->farm_name.', is in barangay '.$farm->barangay.', with size '.FarmSize::describe($farm)['text'].', and farm type '.($farm->farm_type ?: 'not added').'.'
+                : ($profile
+                    ? 'Your profile shows barangay '.$profile->barangay.', farm area '.$profile->farm_area.' hectares, and farm type '.$profile->farm_type.'.'
+                    : 'No farmer profile is linked to your account yet. Add farm area, barangay, and farm type to improve iClimate recommendations.');
 
             return [
                 'answer' => $answer,
@@ -529,7 +541,8 @@ class PredictionService
     private function assistantContextForGroq(User $user): array
     {
         $profile = $user->farmerProfile;
-        $barangay = $profile?->barangay ?: $user->barangay;
+        $farm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
+        $barangay = $farm?->barangay ?: ($profile?->barangay ?: $user->barangay);
         $latestWeather = ExternalWeatherData::query()->latest('fetched_at')->first();
         $latestClimate = ClimateRecord::query()->latest('record_date')->first();
         $latestProduction = RiceProduction::query()
@@ -548,8 +561,11 @@ class PredictionService
             'current_user' => [
                 'role' => $user->role,
                 'barangay' => $barangay,
-                'farm_area_hectares' => $profile?->farm_area,
-                'farm_type' => $profile?->farm_type,
+                'farm_name' => $farm?->farm_name,
+                'farm_area_hectares' => $farm?->modelArea() ?? $profile?->farm_area,
+                'farm_size_method' => $farm?->farm_size_method,
+                'farm_size_estimate_range' => $farm?->farm_size_estimate_range,
+                'farm_type' => $farm?->farm_type ?? $profile?->farm_type,
             ],
             'latest_weather_forecast' => $latestWeather ? [
                 'source' => $latestWeather->source,

@@ -13,7 +13,14 @@ class RefreshBarangayAgriculturalRisk extends Command
 
     public function handle(BarangayRiskMapService $riskMapService): int
     {
-        $map = $riskMapService->riskMap(refresh: true);
+        // Re-rates from the shared barangay weather. It asks the provider only when that weather is due, so this
+        // reconciliation never repeats the request iclimate:refresh-barangay-weather made a few minutes earlier.
+        $map = $riskMapService->refreshForCurrentWeather(force: true);
+        if ($map === null) {
+            $this->warn('Another process is rating the barangays, or rating failed; the last verified ratings are kept.');
+
+            return self::SUCCESS;
+        }
 
         $counts = collect($map['barangays'])->countBy('risk_level');
 

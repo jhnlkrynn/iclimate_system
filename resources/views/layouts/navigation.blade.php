@@ -6,6 +6,10 @@
     // Every role gets the same bell: it opens their own notifications in the shared pop-up (resources/js/notifications-popup.js).
     $showNavBell = true;
     $navBarangay = $isFarmerNav ? $user->registeredBarangay() : null;
+    // The My Farm selector: the farmer's farms (read once per request) and the one their pages show.
+    $navFarmsOn = $isFarmerNav && \App\Support\ActiveFarm::available();
+    $navFarms = $navFarmsOn ? \App\Support\ActiveFarm::farms($user) : collect();
+    $navFarm = $navFarmsOn ? \App\Support\ActiveFarm::current($user) : null;
     // The bell is the only entry point to notifications (the sidebar has no Notifications item); the count is cached briefly.
     $navUnread = $showNavBell
         ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())
@@ -112,6 +116,24 @@
                 </div>
             </div>
         </div>
+        @if ($navFarmsOn)
+            @if ($navFarms->isNotEmpty())
+                <form class="topbar-farm" method="POST" action="{{ route('farmer.farms.select') }}" data-farm-select>
+                    @csrf
+                    <label for="topbarFarm">{{ __('farms.select_label') }}</label>
+                    <select id="topbarFarm" name="farm_id" data-add-url="{{ route('farmer.farms.create') }}" aria-describedby="topbarFarmNote">
+                        @foreach ($navFarms as $navOption)
+                            <option value="{{ $navOption->id }}" @selected($navOption->id === $navFarm?->id)>{{ $navOption->farm_name }}{{ $navOption->barangay ? ' · '.$navOption->barangay : '' }}</option>
+                        @endforeach
+                        <option value="add">+ {{ __('farms.add') }}</option>
+                    </select>
+                    <span id="topbarFarmNote" class="visually-hidden">{{ __('farms.current') }}</span>
+                    <noscript><button type="submit" class="topbar-btn">{{ __('farms.view') }}</button></noscript>
+                </form>
+            @else
+                <a class="topbar-farm topbar-farm-add" href="{{ route('farmer.farms.create') }}">+ {{ __('farms.add_first') }}</a>
+            @endif
+        @endif
         @unless ($isFarmerNav)
             <div class="d-none d-md-flex align-items-center me-2">
                 <span class="topbar-role-badge">{{ $user->roleLabel() }}</span>
@@ -144,3 +166,13 @@
         </div>
     </div>
 </nav>
+@if ($navFarmsOn)
+    <script>
+        // My Farm selector: choosing a farm shows that farm's pages; "+ Add Farm" opens the form.
+        document.querySelector('[data-farm-select] select')?.addEventListener('change', (event) => {
+            const select = event.target;
+            if (select.value === 'add') { window.location.href = select.dataset.addUrl; return; }
+            select.form.requestSubmit ? select.form.requestSubmit() : select.form.submit();
+        });
+    </script>
+@endif

@@ -2,6 +2,7 @@
 
 namespace App\Services\Advisories;
 
+use App\Support\CoordinateNormalizer;
 use App\Models\PlantingAdvisory;
 use App\Support\LianBarangays;
 use Illuminate\Support\Carbon;
@@ -178,7 +179,7 @@ class AdvisoryWeatherService
      */
     private function forecast(float $lat, float $lon): ?array
     {
-        $key = 'advisory-weather:'.number_format($lat, 3).':'.number_format($lon, 3);
+        $key = 'advisory-weather:'.CoordinateNormalizer::pair($lat, $lon);
         $cached = Cache::get($key);
 
         if ($cached && Carbon::parse($cached['fetched_at'])->gt(now()->subMinutes(self::FRESH_MINUTES))) {
@@ -190,8 +191,8 @@ class AdvisoryWeatherService
                 ->retry(2, 300)
                 ->acceptJson()
                 ->get(rtrim((string) config('services.open_meteo.base_url', 'https://api.open-meteo.com/v1'), '/').'/forecast', [
-                    'latitude' => $lat,
-                    'longitude' => $lon,
+                    'latitude' => CoordinateNormalizer::format($lat),
+                    'longitude' => CoordinateNormalizer::format($lon),
                     'hourly' => implode(',', self::HOURLY),
                     'daily' => implode(',', self::DAILY),
                     'timezone' => self::TIMEZONE,

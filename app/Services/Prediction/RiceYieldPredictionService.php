@@ -7,6 +7,7 @@ use App\Models\ClimateRecord;
 use App\Models\FarmerProfile;
 use App\Models\MlModel;
 use App\Models\User;
+use App\Support\ActiveFarm;
 use App\Services\MachineLearning\ModelRegistryService;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
@@ -241,6 +242,7 @@ class RiceYieldPredictionService
                 'source' => match (true) {
                     array_key_exists($key, $manualOverrides) => 'user',
                     $key === 'area' && $areaOverride !== null => 'user',
+                    $key === 'area' && $user && $user->role === User::ROLE_FARMER && ActiveFarm::current($user)?->modelArea() !== null => 'active_farm',
                     $key === 'area' && $user?->farmerProfile?->farm_area !== null => 'farmer_profile',
                     $key === 'area' => 'unavailable',
                     in_array($key, ['season', 'farm_type'], true) => 'profile_or_model_default',

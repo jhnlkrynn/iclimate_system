@@ -606,6 +606,7 @@
 
             let pollTimer = null;
             let pollInFlight = false;
+            const POLL_INTERVAL_MS = 8000;
 
             const poll = async () => {
                 if (!pollUrl || pollInFlight || document.hidden) return;
@@ -638,7 +639,7 @@
 
             const startPolling = () => {
                 if (!pollUrl || pollTimer) return;
-                pollTimer = setInterval(poll, 4000);
+                pollTimer = setInterval(poll, POLL_INTERVAL_MS);
             };
 
             const stopPolling = () => {

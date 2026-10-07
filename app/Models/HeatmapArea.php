@@ -53,17 +53,17 @@ class HeatmapArea extends Model
                 return;
             }
 
-            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'main_risk_reason')) {
+            if (\App\Support\SchemaCache::hasColumn('heatmap_areas', 'main_risk_reason')) {
                 $area->main_risk_reason = $area->description
                     ?: ($area->risk_type ?: 'Climate')." risk with a computed score of ".number_format((float) $area->risk_score, 2).'.';
             }
-            if (\Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'suggested_action')) {
+            if (\App\Support\SchemaCache::hasColumn('heatmap_areas', 'suggested_action')) {
                 $area->suggested_action = $area->irrigation_recommendation
                     ?: $area->planting_advisory
                     ?: 'Continue routine field monitoring.';
             }
             // A caller that set the calculation time (the risk map, one time for all 19) keeps it.
-            if (! $area->isDirty('risk_computed_at') && \Illuminate\Support\Facades\Schema::hasColumn('heatmap_areas', 'risk_computed_at')) {
+            if (! $area->isDirty('risk_computed_at') && \App\Support\SchemaCache::hasColumn('heatmap_areas', 'risk_computed_at')) {
                 $area->risk_computed_at = now();
             }
         });

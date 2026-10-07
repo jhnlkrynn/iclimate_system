@@ -72,8 +72,9 @@ class SampleDataDetector
             return $this->batches;
         }
 
-        return $this->batches = StaleCache::remember(
-            'sample-data:batches:v'.DashboardData::version(),
+        return $this->batches = StaleCache::scoped(
+            'sample-data:batches',
+            fn (string $token): string => 'sample-data:batches:'.$token,
             600,
             fn (): array => $this->scanBatches(),
         );
@@ -167,9 +168,10 @@ class SampleDataDetector
     public function implausibleClimateIds(): array
     {
         try {
-            $plausible = ClimateRecord::query()->plausible()->pluck('id')->all();
-
-            return ClimateRecord::query()->whereNotIn('id', $plausible)->pluck('id')->map(fn ($id) => (int) $id)->all();
+            // One query (the plausible ids as a sub-select), read once per dashboard build (Performance Phase 4).
+            return BuildMemo::remember('sample-data:implausible-climate', fn (): array => ClimateRecord::query()
+                ->whereNotIn('id', ClimateRecord::query()->plausible()->select('id'))
+                ->pluck('id')->map(fn ($id) => (int) $id)->all());
         } catch (Throwable) {
             return [];
         }
@@ -187,7 +189,7 @@ class SampleDataDetector
             return [];
         }
 
-        return StaleCache::remember('sample-data:excluded:'.$table.':v'.DashboardData::version(), 600, function () use ($table): array {
+        return StaleCache::scoped('sample-data:'.$table, fn (string $token): string => 'sample-data:excluded:'.$table.':'.$token, 600, function () use ($table): array {
             $ids = $this->sampleIds($table);
 
             return match ($table) {
@@ -204,7 +206,7 @@ class SampleDataDetector
     public function summary(string $table): array
     {
         try {
-            $total = DB::table($table)->count();
+            $total = Aggregates::fetch(['total' => Aggregates::count(DB::table($table))])['total'];
         } catch (Throwable) {
             return ['total' => 0, 'sample' => 0, 'implausible' => 0, 'verified' => 0];
         }

@@ -74,8 +74,11 @@ return Application::configure(basePath: dirname(__DIR__))
             for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
                 $unavailable = $current instanceof ConnectionException
                     || $current instanceof \Illuminate\Database\LostConnectionException
-                    // SQLSTATE class 08 = connection exception (e.g. 08006 could not connect).
-                    || ($current instanceof \PDOException && (str_starts_with((string) $current->getCode(), '08') || $lostConnection->causedByLostConnection($current)));
+                    // SQLSTATE class 08 = connection exception (e.g. 08006 could not connect). A failed connect
+                    // carries the driver's code (7), so the state is read from the message as well: a connect
+                    // that timed out or was refused is not in Laravel's lost-connection list. 2002 is MySQL's
+                    // "can not connect to the server".
+                    || ($current instanceof \PDOException && (str_starts_with((string) $current->getCode(), '08') || str_contains($current->getMessage(), 'SQLSTATE[08') || str_contains($current->getMessage(), 'SQLSTATE[HY000] [2002]') || $lostConnection->causedByLostConnection($current)));
 
                 if (! $unavailable) {
                     continue;

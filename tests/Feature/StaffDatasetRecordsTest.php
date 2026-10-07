@@ -8,6 +8,7 @@ use App\Models\ClimateRecord;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
+use App\Services\Climate\ClimateRecordHistory;
 use App\Support\ProjectYieldDataset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -53,9 +54,10 @@ class StaffDatasetRecordsTest extends TestCase
         $html = $this->actingAs($this->it())->get(route('climate-records.index'))->assertOk()
             ->assertSee("Showing 1-25 of {$total}")
             ->assertDontSee('No records found')
-            ->assertSee(ClimateRecordController::AMBULONG_SOURCE)                    // the true station, not "Lian"
-            ->assertSee('title="iClimate weather reference for Lian · read-only"', false)
-            ->assertSee('Dataset · read-only')
+            ->assertSee(ClimateRecordHistory::AMBULONG_DISPLAY_LABEL)
+            ->assertSee(ClimateRecordHistory::AMBULONG_FILTER_LABEL)
+            ->assertDontSee('Actions')
+            ->assertDontSee('Dataset · read-only')
             ->getContent();
 
         // Newest first; values exactly as the shared loader (and so the forecast model) reads them.
@@ -94,7 +96,7 @@ class StaffDatasetRecordsTest extends TestCase
             ->assertDontSee('iClimate Seed Data (synthetic)');
     }
 
-    public function test_an_entered_copy_of_a_station_month_is_shown_once_and_stays_editable(): void
+    public function test_an_entered_copy_of_a_station_month_is_shown_once_without_table_actions(): void
     {
         $total = $this->climate()->count();
         $it = $this->it();
@@ -104,25 +106,25 @@ class StaffDatasetRecordsTest extends TestCase
 
         // The copy replaces its station month (no duplicate); the other source is a separate record.
         $html = $this->actingAs($mao)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
-        $this->assertStringContainsString(route('climate-records.edit', $copy->id), $html);
-        // IT sees the same list, without Edit or Create.
+        $this->assertStringNotContainsString(route('climate-records.edit', $copy->id), $html);
+        // IT sees the same list, without table actions or Create.
         $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))
             ->assertDontSee('/edit"', false)->assertDontSee('Create Climate Record');
 
-        // Dataset rows have no View / Edit / Delete: only the two entered rows (newest, so on page 1) have Edit
-        // links, each twice (desktop table and phone card).
-        $this->assertSame(4, substr_count($html, '/edit"'));
+        // Climate Records has no visible action column for dataset or entered rows.
+        $this->assertSame(0, substr_count($html, '/edit"'));
     }
 
-    public function test_dataset_rows_are_read_only_and_the_wind_unit_is_not_claimed(): void
+    public function test_dataset_rows_are_read_only_and_wind_speed_is_not_in_the_table(): void
     {
         $it = $this->actingAs($this->it())->get(route('climate-records.index'))->assertOk()->getContent();
         $this->assertStringNotContainsString('/edit"', $it, 'No dataset row has an Edit link.');
-        $this->assertStringContainsString('(unit not confirmed)', $it);
+        $this->assertStringNotContainsString('Wind Speed', $it);
+        $this->assertStringNotContainsString('Unit not confirmed', $it);
 
         $mao = $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('climate-records.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('Unit not confirmed', $mao);
-        $this->assertStringNotContainsString('(unit not confirmed)', $mao);
+        $this->assertStringNotContainsString('Wind Speed', $mao);
+        $this->assertStringNotContainsString('Unit not confirmed', $mao);
     }
 
     public function test_it_rice_list_shows_the_yield_dataset_without_inventing_fields(): void

@@ -56,6 +56,22 @@ class DataServiceUnavailableTest extends TestCase
         $this->get($url)->assertStatus(503);
     }
 
+    public function test_a_connection_that_could_not_be_opened_shows_the_data_service_page(): void
+    {
+        config(['app.debug' => false]);
+
+        // What PDO really throws when the connect fails: the driver's code (7), with the SQLSTATE only in the message.
+        foreach ([
+            [7, 'SQLSTATE[08006] [7] connection to server at "10.255.255.1", port 5432 failed: timeout expired'],
+            [7, 'SQLSTATE[08006] [7] connection to server at "127.0.0.1", port 5432 failed: Connection refused Is the server running on that host and accepting TCP/IP connections?'],
+            [2002, 'SQLSTATE[HY000] [2002] Operation timed out'],                // MySQL
+        ] as $index => [$code, $message]) {
+            Route::middleware('web')->get("/__test/connect-fails-{$index}", fn () => throw new PDOException($message, $code));
+
+            $this->get("/__test/connect-fails-{$index}")->assertStatus(503)->assertSee('Data Service Unavailable');
+        }
+    }
+
     public function test_an_ordinary_sql_error_is_a_500_not_a_data_service_outage(): void
     {
         config(['app.debug' => false]);

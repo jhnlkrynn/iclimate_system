@@ -8,7 +8,7 @@ use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Services\Weather\OpenMeteoService;
 use App\Support\LianBarangays;
-use App\Support\PageCache;
+use App\Support\CacheScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +41,10 @@ class LocalFarmGuidanceService
             $lock = Cache::lock('advisories:local-refresh-lock', 60);
             if ($lock->get()) {
                 try {
-                    $weather = $this->weather->fetchForecast(true);
+                    // Reuse the shared short-lived Open-Meteo result. The
+                    // scheduler/explicit weather refresh owns force=true;
+                    // local guidance must not create a second provider call.
+                    $weather = $this->weather->fetchForecast(false);
                     // No historical day or stale snapshot may be used as today's forecast.
                     $records = $weather['records']->filter(fn ($row) => $row->forecast_date?->gte(now('Asia/Manila')->startOfDay())
                         && $row->fetched_at?->gte(now()->subHours(6))
@@ -57,7 +60,7 @@ class LocalFarmGuidanceService
                         'errors' => array_merge($generated['errors'] ?? [], ! $weather['ok'] ? [$weather['message']] : []),
                     ];
                     Cache::forever(self::STATUS_KEY, $status);
-                    PageCache::flushShared();
+                    CacheScope::bump('advisory-sources');   // what Advisories shows about this check
                     Log::info('Local farm guidance refreshed.', $status);
                 } finally {
                     $lock->release();

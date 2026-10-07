@@ -1,10 +1,12 @@
 // Farmer Home (resources/views/dashboards/farmer.blade.php): the language selector, the Refresh button, a quiet refresh
-// every 5 minutes, and one later look at the yield card while its estimate is still being prepared. Everything the page
+// every 5 minutes, and a few later looks at the yield card alone while its estimate is still being prepared. Everything the page
 // shows is saved data (FarmerDashboardService); nothing here asks a weather provider or runs a model, except Refresh,
 // which also asks the server for the latest weather. All wording comes from the page (data-text-* attributes).
 
 const REFRESH_EVERY_MS = 300000;
-const HARVEST_CHECK_MS = 30000;
+// While the yield card is a placeholder: look again after these waits (about 4 minutes in all), then leave it to the
+// 5-minute refresh. The estimate is normally ready within seconds of the page being sent.
+const HARVEST_CHECKS_MS = [4000, 6000, 10000, 15000, 20000, 30000, 45000, 60000, 60000];
 
 export function initFarmerDashboard() {
     const root = document.querySelector('[data-farmer-dashboard]');
@@ -92,7 +94,28 @@ export function initFarmerDashboard() {
     });
     setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);
 
-    // The yield estimate is made in the background (PrepareFarmerYieldEstimate): while the card is a placeholder, look
-    // once more later, reading only what is saved.
-    if ($('[data-mfd-load="harvest"]')) setTimeout(() => { if ($('[data-mfd-load="harvest"]')) refresh({ retry: 'harvest-check' }); }, HARVEST_CHECK_MS);
+    // The yield estimate is made in the background (PrepareFarmerYieldEstimate): while the card is a placeholder, ask for
+    // that card alone, a little less often each time and only while the tab is visible, and stop once it is filled.
+    const harvestPending = () => !!$('[data-mfd-load="harvest"]');
+    let harvestTimer = null;
+    let harvestStep = 0;
+    const scheduleHarvest = () => {
+        if (harvestTimer || !harvestPending() || harvestStep >= HARVEST_CHECKS_MS.length || document.visibilityState !== 'visible') return;
+        harvestTimer = setTimeout(async () => {
+            harvestTimer = null;
+            await refresh({ retry: 'harvest-check' });    // skipped while another refresh is in flight, never doubled
+            scheduleHarvest();
+        }, HARVEST_CHECKS_MS[harvestStep++]);
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            scheduleHarvest();
+        } else if (harvestTimer) {
+            // A hidden tab asks nothing; the same wait starts again when the farmer comes back.
+            clearTimeout(harvestTimer);
+            harvestTimer = null;
+            harvestStep = Math.max(0, harvestStep - 1);
+        }
+    });
+    scheduleHarvest();
 }

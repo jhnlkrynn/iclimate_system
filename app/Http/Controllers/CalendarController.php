@@ -107,7 +107,11 @@ class CalendarController extends Controller
             'previousYear' => $previous->year,
             'nextMonth' => $next->month,
             'nextYear' => $next->year,
-            'schedules' => $schedulesReady && $isFarmer ? $user->plantingSchedules()->latest('planting_date')->get() : collect(),
+            // The plans of the farm the farmer is viewing (older plans without a farm count as the primary farm's).
+            'schedules' => $schedulesReady && $isFarmer ? $user->plantingSchedules()
+                ->when(($calendarFarm = \App\Support\ActiveFarm::current($user)) !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $calendarFarm->getKey())
+                    ->when($calendarFarm->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
+                ->latest('planting_date')->get() : collect(),
             'plantingScheduleFeatureReady' => $schedulesReady,
             'isFarmer' => $isFarmer,
             'locale' => $locale,
