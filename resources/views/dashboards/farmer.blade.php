@@ -15,5 +15,8 @@
             @php $html = view('dashboards.farmer.'.$name, ['f' => $f])->render(); @endphp
             <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
         @endforeach
+
+        {{-- Farmer – Naicel: the two simple charts. Not part of the timed refresh (their numbers change with a save). --}}
+        @include('dashboards.farmer.charts')
     </div>
 </x-app-layout>

@@ -79,3 +79,26 @@
     .fpred .wp-page .wp-panel-header h2, .fpred .wp-page .wp-calendar-toolbar h2 { font-size: 1.25rem !important; }
     .fpred .wp-tab-button { flex: 1 1 0; }
 }
+
+/* ------------------------------------------------------------------ Farmer – Naicel (2026-10)
+ * The Forecast page's small survey card ("Tama ba ang taya ng panahon kahapon?"). Farmers only. */
+.wpx .wpx-survey { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.wpx .wpx-survey[hidden], .wpx .wpx-survey [hidden] { display: none; }
+.wpx .wpx-survey-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.wpx .wpx-survey h2 { margin: 0; font-size: 1.15rem; font-weight: 700; color: #1b1f1d; }
+.wpx .wpx-survey-choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.wpx .wpx-survey-choices > legend { float: none; width: auto; flex-basis: 100%; margin: 0 0 6px; padding: 0; font-size: 1rem; font-weight: 700; }
+.wpx .wpx-survey-choice { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 8px 16px; border: 1px solid #cbd5cf; border-radius: 999px; background: #fff; font-weight: 600; cursor: pointer; }
+.wpx .wpx-survey-choice:has(input:checked) { border-color: #0f5132; background: #e6f4ec; color: #0f5132; }
+.wpx .wpx-survey-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.wpx .wpx-survey-actions .fad-btn { min-height: 44px; }
+.wpx p.wpx-survey-thanks { font-weight: 600; color: #0f5132; }
+@media (max-width: 575.98px) {
+    .wpx .wpx-survey-choice { flex: 1 1 auto; justify-content: center; }
+    .wpx .wpx-survey-actions .fad-btn { flex: 1 1 100%; }
+}
+html[data-theme="dark"] .wpx .wpx-survey h2 { color: #e4ece7; }
+html[data-theme="dark"] .wpx .wpx-survey-choice { background: #16211c; border-color: #2a3b33; color: #e4ece7; }
+html[data-theme="dark"] .wpx .wpx-survey-choice:has(input:checked) { background: #1d3327; border-color: #6fcf97; color: #9fe0bb; }
+html[data-theme="dark"] .wpx p.wpx-survey-thanks { color: #9fe0bb; }
+/* ------------------------------------------------------------------ end Farmer – Naicel */

@@ -53,6 +53,10 @@
             <div class="frec-panel-head"><h2 id="frecDetailTitle">Details</h2></div>
             @if($routeName === 'notifications' && $record->message)
                 <p class="frec-message">{{ $record->message }}</p>
+                {{-- Farmer – Naicel: a missing-info notification opens the page where it is added. --}}
+                @if($setupLink = \App\Services\Farmer\FarmerMissingInfoNotifier::linkFor($record->category, \App\Support\FarmerLanguage::resolve(request()), auth()->user()))
+                    <p><a class="fad-btn is-primary" href="{{ $setupLink['url'] }}" data-notif-setup>{{ $setupLink['label'] }}</a></p>
+                @endif
                 @if($record->type === 'Advisory')
                     <p><a class="fad-btn is-primary" href="{{ route('planting-advisories.index') }}" data-notif-advisories>{{ __('farmer.advisories_page.open', [], \App\Support\FarmerLanguage::resolve(request())) }}</a></p>
                 @endif

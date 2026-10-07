@@ -23,8 +23,7 @@ final class HeatMapPanel
     public function ranges(string $locale): array
     {
         $ranges = [];
-        foreach (array_keys(BarangayWeekRiskService::RANGES) as $range) {
-            $rated = $this->risk->forRange($range);
+        foreach ($this->risk->ranges() as $range => $rated) {
             $barangays = [];
             foreach ($rated['barangays'] as $name => $b) {
                 $barangays[$name] = $this->barangay($b, $rated['days'], $locale);

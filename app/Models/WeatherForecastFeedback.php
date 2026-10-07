@@ -19,6 +19,9 @@ class WeatherForecastFeedback extends Model
 
     public const TYPE_MONTHLY = 'monthly';
 
+    // Farmer – Naicel (2026-10): "Tama ba ang taya ng panahon kahapon?" — one answer per farmer per forecast day.
+    public const TYPE_DAILY = 'daily';
+
     public const ACCURATE = 'accurate';
 
     public const PARTLY = 'partly';

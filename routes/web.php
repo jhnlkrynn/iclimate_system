@@ -123,6 +123,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('farmer.language')
             ->name('farmer.my-farm');
 
+        // Farmer – Naicel (2026-10): the Activity Calendar (planted / harvested), the actual-harvest question and the
+        // forecast survey. Farmer only; each acts on the signed-in farmer's own records and farms.
+        Route::middleware(['farmer.language', 'throttle:30,1,post-farmer-naicel'])->group(function () {
+            Route::post('/farmer/activities', [\App\Http\Controllers\FarmerActivityController::class, 'store'])->name('farmer.activities.store');
+            Route::post('/farmer/yield-survey/{plantingSchedule}', [\App\Http\Controllers\FarmerActivityController::class, 'yieldSurvey'])->whereNumber('plantingSchedule')->name('farmer.yield-survey.store');
+            Route::post('/farmer/forecast-survey', [\App\Http\Controllers\FarmerForecastSurveyController::class, 'store'])->name('farmer.forecast-survey.store');
+        });
+        // end Farmer – Naicel
+
         // A farmer's farms: add, edit, remove (archive), set as primary, map, and the My Farm selector. Every {farm} is
         // looked up among the signed-in farmer's own farms only (FarmController::ownFarm).
         Route::middleware('farmer.language')->prefix('/farmer/farms')->name('farmer.farms.')->group(function () {

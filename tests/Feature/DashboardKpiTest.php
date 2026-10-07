@@ -154,6 +154,8 @@ class DashboardKpiTest extends TestCase
         $this->rice('Binubusan', 2024, 10, 50);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
+        // With a farm size: since 2026-10 a missing one is a bell notification and the yield card is left out.
+        \App\Models\FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Binubusan', 'farm_area' => 1.5]);
         // Farmer Home (2026-10): five plain parts instead of a KPI strip, in reading order.
         Http::fake(['*' => Http::response([], 500)]);
         $this->actingAs($farmer)->get(route('farmer.dashboard'))

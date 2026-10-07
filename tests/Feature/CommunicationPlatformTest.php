@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\FeedPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -165,6 +166,76 @@ class CommunicationPlatformTest extends TestCase
             'sender_id' => $mao->id,
             'body' => 'Yes, please visit the MAO desk this week.',
         ]);
+    }
+
+    public function test_message_search_returns_bounded_authorized_accounts_with_empty_and_partial_queries(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        $recentMao = User::factory()->maoPersonnel()->create(['name' => 'Maria Santos', 'email' => 'maria@example.test']);
+        $otherMao = User::factory()->maoPersonnel()->create(['name' => 'Mark Reyes']);
+        $anotherFarmer = User::factory()->farmer()->create(['name' => 'Farmer Hidden']);
+        $inactiveMao = User::factory()->maoPersonnel()->create(['name' => 'Inactive MAO', 'status' => User::STATUS_INACTIVE]);
+
+        Conversation::query()->forceCreate([
+            'participant_one_id' => min($farmer->id, $recentMao->id),
+            'participant_two_id' => max($farmer->id, $recentMao->id),
+            'last_message_at' => now(),
+        ]);
+
+        $empty = $this->actingAs($farmer)->getJson(route('messages.search'))
+            ->assertOk()
+            ->assertJsonPath('recipients.0.id', $recentMao->id);
+
+        $emptyIds = collect($empty->json('recipients'))->pluck('id');
+        $this->assertTrue($emptyIds->contains($otherMao->id));
+        $this->assertFalse($emptyIds->contains($anotherFarmer->id));
+        $this->assertFalse($emptyIds->contains($inactiveMao->id));
+        $this->assertSame('MAO Personnel', $empty->json('recipients.0.role'));
+
+        $this->actingAs($farmer)->getJson(route('messages.search', ['q' => 'SANT']))
+            ->assertOk()
+            ->assertJsonPath('recipients.0.id', $recentMao->id)
+            ->assertJsonMissing(['id' => $otherMao->id]);
+    }
+
+    public function test_json_conversation_loading_and_idempotent_replies_are_supported(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        $mao = User::factory()->maoPersonnel()->create();
+        $conversation = Conversation::query()->forceCreate([
+            'participant_one_id' => min($farmer->id, $mao->id),
+            'participant_two_id' => max($farmer->id, $mao->id),
+            'last_message_at' => now(),
+        ]);
+
+        $payload = ['body' => 'Please confirm the seed schedule.', 'client_message_id' => 'client-message-1'];
+        $first = $this->actingAs($farmer)->postJson(route('messages.reply', $conversation), $payload)->assertOk();
+        $second = $this->actingAs($farmer)->postJson(route('messages.reply', $conversation), $payload)->assertOk();
+
+        $first->assertJsonPath('message.body', $payload['body']);
+        $second->assertJsonPath('message.id', $first->json('message.id'));
+        $this->assertSame(1, ConversationMessage::query()->where('conversation_id', $conversation->id)->count());
+
+        $this->actingAs($mao)->getJson(route('messages.show', $conversation))
+            ->assertOk()
+            ->assertJsonPath('conversation_id', $conversation->id)
+            ->assertJsonPath('messages.0.body', $payload['body']);
+    }
+
+    public function test_message_json_endpoints_still_enforce_conversation_membership(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        $mao = User::factory()->maoPersonnel()->create();
+        $outsider = User::factory()->farmer()->create();
+        $conversation = Conversation::query()->forceCreate([
+            'participant_one_id' => min($farmer->id, $mao->id),
+            'participant_two_id' => max($farmer->id, $mao->id),
+            'last_message_at' => now(),
+        ]);
+
+        $this->actingAs($outsider)->getJson(route('messages.show', $conversation))->assertForbidden();
+        $this->actingAs($outsider)->getJson(route('messages.poll', $conversation))->assertForbidden();
+        $this->actingAs($outsider)->postJson(route('messages.reply', $conversation), ['body' => 'No'])->assertForbidden();
     }
 
     public function test_message_attachments_reject_unsafe_file_types(): void

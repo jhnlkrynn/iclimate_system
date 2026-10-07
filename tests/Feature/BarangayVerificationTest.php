@@ -47,13 +47,13 @@ class BarangayVerificationTest extends TestCase
         $farmer = $this->poblacionFarmer();
 
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
-        $start = strpos($html, 'data-fh-risk');
-        $card = html_entity_decode(strip_tags(substr($html, $start, strpos($html, '</section>', $start) - $start)), ENT_QUOTES);
 
-        $this->assertStringContainsString('Your barangay "Poblacion" needs to be confirmed.', $card);
-        $this->assertStringNotContainsString('Add your barangay', $card);
-        $this->assertStringNotContainsString('fh-risk-badge', substr($html, $start, strpos($html, '</section>', $start) - $start));
-        $this->assertStringContainsString('data-fh-barangay-unverified', $html);
+        // 2026-10: asked in the notification bell, not with a card on Home; still no rating is shown.
+        $this->assertStringNotContainsString('data-fh-risk', $html);
+        $this->assertStringNotContainsString('fh-risk-badge', $html);
+        $note = \App\Models\Notification::query()->where('user_id', $farmer->id)->where('category', 'setup:barangay')->sole();
+        $this->assertSame('Confirm your barangay', $note->title);
+        $this->assertStringContainsString('Your barangay "Poblacion" needs to be confirmed.', $note->message);
         $this->assertSame('Poblacion', $farmer->fresh()->farmerProfile->barangay);   // nothing is rewritten
     }
 

@@ -3,14 +3,23 @@
 // shows is saved data (FarmerDashboardService); nothing here asks a weather provider or runs a model, except Refresh,
 // which also asks the server for the latest weather. All wording comes from the page (data-text-* attributes).
 
+import { initFarmerMyFarm } from './farmer-my-farm';
+import { initFarmerHomeCharts } from './farmer-home-charts';
+import { initForecastSurvey } from './farmer-forecast-survey';
+
 const REFRESH_EVERY_MS = 300000;
 // While the yield card is a placeholder: look again after these waits (about 4 minutes in all), then leave it to the
 // 5-minute refresh. The estimate is normally ready within seconds of the page being sent.
 const HARVEST_CHECKS_MS = [4000, 6000, 10000, 15000, 20000, 30000, 45000, 60000, 60000];
 
 export function initFarmerDashboard() {
+    // Farmer – Naicel: the other farmer pages' scripts start here too, so the shared app.js needs no change.
+    initFarmerMyFarm();
+    initForecastSurvey();
+
     const root = document.querySelector('[data-farmer-dashboard]');
     if (!root) return;
+    initFarmerHomeCharts(root);
 
     const $ = (selector) => root.querySelector(selector);
     const t = (name) => root.dataset[name] || '';

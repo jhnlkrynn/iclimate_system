@@ -225,10 +225,12 @@ class FarmerYieldEstimateTest extends TestCase
     {
         $farmer = $this->farmer(area: null);
         Queue::fake();
-        $card = $this->card($this->home($farmer));
+        $html = $this->home($farmer);
 
-        $this->assertStringContainsString('Add your farm size to see your estimate.', $card);
-        $this->assertStringNotContainsString('being prepared', $card);
+        // 2026-10 (Naicel, farmer Task 3): asked at once in the notification bell, not with a card on Home; never "being prepared".
+        $this->assertStringNotContainsString('data-fh-harvest', $html);
+        $this->assertStringNotContainsString('being prepared', $html);
+        $this->assertDatabaseHas('notifications', ['user_id' => $farmer->id, 'category' => 'setup:farm_area', 'title' => 'Add your farm size']);
     }
 
     // ------------------------------------------------------------ failures
