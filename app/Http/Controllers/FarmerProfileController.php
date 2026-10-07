@@ -6,9 +6,13 @@ use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\User;
 use App\Services\FarmerOrganizationSummaryService;
+use App\Services\SystemAuditLogger;
 use App\Support\LianBarangays;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -42,7 +46,6 @@ class FarmerProfileController extends CrudController
             ['name' => 'farmer_organization_id', 'label' => 'Farmer Organization', 'type' => 'select', 'options' => $this->farmerOrganizationOptions()],
             ['name' => 'full_name', 'label' => 'Full Name'],
             ['name' => 'contact_number', 'label' => 'Contact Number'],
-            ['name' => 'address', 'label' => 'Address', 'type' => 'textarea'],
             ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => LianBarangays::options(false)],
             ['name' => 'farm_area', 'label' => 'Farm Area', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'farm_type', 'label' => 'Farm Type', 'type' => 'select', 'options' => ['Rainfed' => 'Rainfed', 'Irrigated' => 'Irrigated']],
@@ -51,18 +54,75 @@ class FarmerProfileController extends CrudController
 
     protected function rules(Request $request, ?int $id = null): array
     {
+        // Selecting an existing farmer from the modify form is an update workflow even when the
+        // request arrives at store (for example after a stale form submission). Let it target the
+        // same unique profile row instead of producing a duplicate-key validation error.
+        $existingId = $id ?? FarmerProfile::query()->where('user_id', $request->input('user_id'))->value('id');
+
         return [
-            'user_id' => ['required', 'exists:users,id', Rule::unique('farmer_profiles', 'user_id')->ignore($id)],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id')->where(fn (QueryBuilder $query) => $query->where('role', User::ROLE_FARMER)),
+                Rule::unique('farmer_profiles', 'user_id')->ignore($existingId),
+            ],
             'farmer_organization_id' => ['nullable', 'exists:farmer_organizations,id'],
             'full_name' => ['required', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:50'],
-            'address' => ['nullable', 'string'],
             'barangay' => ['required', Rule::in(LianBarangays::all())],
             // A new profile needs the farm size (barangay risk, the yield forecast and reports all use it). An older
             // profile without one can still be corrected (e.g. its barangay) before the size is known.
             'farm_area' => [$id ? 'nullable' : 'required', 'numeric', 'gt:0', 'max:10000'],
             'farm_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
         ];
+    }
+
+    public function create(Request $request): View
+    {
+        $this->authorizeManage($request);
+
+        $record = null;
+        if ($request->filled('user_id')) {
+            $user = User::query()
+                ->whereKey($request->integer('user_id'))
+                ->where('role', User::ROLE_FARMER)
+                ->firstOrFail();
+
+            $record = FarmerProfile::query()
+                ->with(['user', 'farmerOrganization'])
+                ->where('user_id', $user->id)
+                ->first() ?? (object) ['user_id' => $user->id];
+        }
+
+        return view('crud.form', [
+            'title' => 'Modify '.$this->title,
+            'routeName' => $this->routeName,
+            'fields' => $this->fields,
+            'record' => $record,
+            'method' => $record instanceof FarmerProfile ? 'PUT' : 'POST',
+            'action' => $record instanceof FarmerProfile
+                ? route($this->routeName.'.update', $record)
+                : route($this->routeName.'.store'),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse|JsonResponse
+    {
+        $this->authorizeManage($request);
+
+        $data = $this->prepareData($request, $this->validated($request));
+        $record = FarmerProfile::query()->where('user_id', $data['user_id'])->first();
+
+        if ($record) {
+            $record->update($data);
+            SystemAuditLogger::forModel('updated', $record, $request, ['module' => $this->title]);
+
+            return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' updated successfully.');
+        }
+
+        $record = FarmerProfile::query()->create($data);
+        SystemAuditLogger::forModel('created', $record, $request, ['module' => $this->title]);
+
+        return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' created successfully.');
     }
 
     /**

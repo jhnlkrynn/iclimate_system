@@ -660,7 +660,6 @@ html[data-theme="dark"] body .wpx .wpx-big small { color: var(--dk-muted); }
 html[data-theme="dark"] body .wpx .wpx-compare { background: var(--dk-surface-2); color: #9dc4e7; }
 html[data-theme="dark"] body .wpx .wpx-compare.is-good { background: color-mix(in srgb, #3fa66b 16%, var(--dk-surface)); color: #9de7c4; }
 html[data-theme="dark"] body .wpx .wpx-compare.is-watch { background: color-mix(in srgb, #c38f22 16%, var(--dk-surface)); color: #e7ca9d; }
-html[data-theme="dark"] body .wpx .wpx-tech summary { color: #9de7c4; }
 html[data-theme="dark"] body .wpx .wpx-tech-grid dt { color: var(--dk-muted); }
 
 /* ---- css/pages/community-feed.css (112) */

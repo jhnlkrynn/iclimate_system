@@ -364,7 +364,7 @@ class MaoDashboardHomeTest extends TestCase
         $this->actingAs($mao)->get(route('ai-admin.home'))->assertForbidden();
         $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertForbidden();
         $this->actingAs($it)->get(route('ai-admin.index', 'topics'))->assertOk();
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertSee('Chatbot Knowledge')->assertSee('Announcements');
+        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertDontSee('Chatbot Knowledge')->assertSee('Announcements');
 
         foreach ([$mao, $it] as $user) {
             $this->actingAs($user)->get(route('community-feed.index'))->assertOk()->assertSee('<h1>Announcements</h1>', false);

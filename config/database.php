@@ -49,6 +49,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                // Seconds to wait for the connection to open (see the pgsql connection).
+                PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 3)),
                 (PHP_VERSION_ID >= 80500
                     ? Mysql::ATTR_SSL_CA
                     : PDO::MYSQL_ATTR_SSL_CA
@@ -72,6 +74,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                // Seconds to wait for the connection to open (see the pgsql connection).
+                PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 3)),
                 (PHP_VERSION_ID >= 80500
                     ? Mysql::ATTR_SSL_CA
                     : PDO::MYSQL_ATTR_SSL_CA
@@ -109,7 +113,15 @@ return [
             // connection open, so only enable it where the worker count is small.
             // When on, AppServiceProvider rolls back any transaction a crashed request
             // left open on a reused connection.
+            //
+            // Timeout: seconds to wait for the connection to open. Without it pdo_pgsql waits 30 s, which is
+            // PHP's whole request time limit, so an unreachable database ended the request with a fatal
+            // "Maximum execution time exceeded" instead of the 503 page. It has to be this PDO option:
+            // pdo_pgsql writes its own connect_timeout after the DSN, so one put in the DSN is ignored
+            // (measured 2026-10-07). libpq applies it to each address the host resolves to, one after the
+            // other (Supabase's pooler has 3, or 6 on an IPv6 network), so keep addresses x seconds under 30.
             'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 3)),
                 // PHP 8.4+ names it Pdo\Pgsql::ATTR_DISABLE_PREPARES (the PDO:: constant is deprecated in 8.5).
                 (class_exists(\Pdo\Pgsql::class) ? \Pdo\Pgsql::ATTR_DISABLE_PREPARES : PDO::PGSQL_ATTR_DISABLE_PREPARES) => filter_var(env('DB_PGSQL_DISABLE_PREPARES', true), FILTER_VALIDATE_BOOLEAN),
                 PDO::ATTR_PERSISTENT => filter_var(env('DB_PERSISTENT', false), FILTER_VALIDATE_BOOLEAN),

@@ -21,7 +21,7 @@
                 'Humidity' => $num($record->humidity, 2, '%'),
                 'Wind speed (unit not recorded)' => $num($record->wind_speed),
                 'Season' => $record->season ?: '—',
-                'Source' => $record->source ?: '—',
+                'Source' => \App\Services\Climate\ClimateRecordHistory::displaySource($record->source) ?: '—',
             ],
             'rice-productions' => [
                 'Barangay' => $record->barangay ?: '—',

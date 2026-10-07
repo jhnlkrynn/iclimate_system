@@ -114,7 +114,6 @@
                 $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
                 $navLink('Planting Advisories', 'advisories', 'advisories'),
                 $navLink('Announcements', 'community', 'community'),
-                $navLink('Chatbot Knowledge', 'ai-admin', 'ai'),
             ]],
             ['Data', [
                 $navLink('Climate Records', 'climate-records', 'climate-records'),

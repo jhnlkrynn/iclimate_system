@@ -84,11 +84,11 @@ class ItPhaseEightTest extends TestCase
         Queue::assertNothingPushed();
     }
 
-    public function test_the_it_sidebar_has_chatbot_knowledge_and_mao_and_farmers_cannot_open_it_pages(): void
+    public function test_the_it_sidebar_hides_chatbot_knowledge_and_mao_and_farmers_cannot_open_it_pages(): void
     {
         $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
-        $this->assertContains('Chatbot Knowledge', $labels[1]);
+        $this->assertNotContains('Chatbot Knowledge', $labels[1]);
         foreach (['System Health', 'System Logs', 'User Management'] as $label) {
             $this->assertContains($label, $labels[1], $label);
         }

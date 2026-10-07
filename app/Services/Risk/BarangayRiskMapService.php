@@ -2,6 +2,7 @@
 
 namespace App\Services\Risk;
 
+use Carbon\CarbonInterface;
 use App\Models\FarmerProfile;
 use App\Models\HeatmapArea;
 use App\Models\RiceProduction;
@@ -810,7 +811,7 @@ class BarangayRiskMapService
     }
 
     /** Persist all valid ratings in one short transaction; a failed batch falls back to isolated row saves. */
-    private function persistBatch(array $writes, \Illuminate\Support\Carbon $computedAt): void
+    private function persistBatch(array $writes, CarbonInterface $computedAt): void
     {
         $rows = [];
         $unchangedIds = [];
@@ -849,7 +850,7 @@ class BarangayRiskMapService
     }
 
     /** @return array<string, mixed> */
-    private function riskAttributes(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, \Illuminate\Support\Carbon $computedAt): array
+    private function riskAttributes(string $barangay, float $latitude, float $longitude, array $weather, array $evaluation, CarbonInterface $computedAt): array
     {
         $risk = $evaluation['risk'];
         $stressLabels = array_map(fn (array $f): string => (string) ($f['label'] ?? ''), $evaluation['stress_factors'] ?? []);
@@ -876,7 +877,7 @@ class BarangayRiskMapService
         ];
     }
 
-    private function persistOne(array $write, \Illuminate\Support\Carbon $computedAt): void
+    private function persistOne(array $write, CarbonInterface $computedAt): void
     {
         try {
             ($write['existing'] ?? new HeatmapArea(['barangay' => $write['barangay']]))
@@ -888,7 +889,7 @@ class BarangayRiskMapService
     }
 
     /** Restamp the calculation time of ratings that came out unchanged: one query for all of them. */
-    private function stampUnchanged(array $ids, \Illuminate\Support\Carbon $computedAt): void
+    private function stampUnchanged(array $ids, CarbonInterface $computedAt): void
     {
         if ($ids === []) {
             return;

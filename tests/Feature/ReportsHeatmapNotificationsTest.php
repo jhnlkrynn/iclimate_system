@@ -98,7 +98,8 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('14.25')
             ->assertSee('29.50')
             ->assertSee('81.00')
-            ->assertSee('7.75')
+            ->assertDontSee('Wind Speed')
+            ->assertDontSee('7.75')
             ->assertSee('PAGASA');
 
         $export = $this->actingAs($mao)->get(route('reports.export', [
@@ -106,6 +107,8 @@ class ReportsHeatmapNotificationsTest extends TestCase
         ]));
         $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
         $this->assertStringContainsString('2026-09-10', $export->streamedContent());
+        $this->assertStringNotContainsString('Wind Speed', $export->streamedContent());
+        $this->assertStringNotContainsString('7.75', $export->streamedContent());
     }
 
     public function test_reports_page_auto_loads_latest_saved_rows_without_showing_history_panel(): void

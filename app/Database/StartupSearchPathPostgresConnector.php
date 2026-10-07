@@ -20,6 +20,50 @@ use Illuminate\Database\Connectors\PostgresConnector;
  */
 class StartupSearchPathPostgresConnector extends PostgresConnector
 {
+    /** How long one failed connect answers for the next ones (seconds). */
+    private const UNREACHABLE_FOR = 10;
+
+    /** @var array<string, array{float, \PDOException}> the last failed connect per server, in this PHP process */
+    private static array $unreachable = [];
+
+    /**
+     * A server that could not be reached is not tried again for the rest of the request.
+     *
+     * Why: a page makes several separate database calls, and many of them catch a failure and carry on. Each one
+     * would wait the whole connect timeout again (login: 2 x 3 s, measured 2026-10-07), and together they reach
+     * PHP's request time limit. A web request ends long before the wait is over; a queue worker tries again after it.
+     */
+    public function connect(array $config)
+    {
+        $server = ($config['host'] ?? '').':'.($config['port'] ?? '');
+        [$failedAt, $failure] = self::$unreachable[$server] ?? [null, null];
+
+        if ($failure !== null && microtime(true) - $failedAt < self::UNREACHABLE_FOR) {
+            throw new \PDOException($failure->getMessage(), (int) $failure->getCode(), $failure);
+        }
+
+        try {
+            $connection = parent::connect($config);
+        } catch (\PDOException $exception) {
+            // SQLSTATE class 08: the server could not be reached (a wrong password or database is not remembered).
+            if (str_contains($exception->getMessage(), 'SQLSTATE[08')) {
+                self::$unreachable[$server] = [microtime(true), $exception];
+            }
+
+            throw $exception;
+        }
+
+        unset(self::$unreachable[$server]);
+
+        return $connection;
+    }
+
+    /** Forget the remembered failures (tests). */
+    public static function forgetUnreachable(): void
+    {
+        self::$unreachable = [];
+    }
+
     protected function getDsn(array $config)
     {
         $dsn = parent::getDsn($config);

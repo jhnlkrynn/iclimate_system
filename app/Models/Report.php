@@ -152,7 +152,7 @@ class Report extends Model
         [$historical, $entered] = $rows->partition(fn ($row): bool => data_get($row, 'record_type') === self::CLIMATE_HISTORICAL
             || (data_get($row, 'record_type') === null && strlen((string) data_get($row, 'record_date')) === 7));
         $value = fn (?float $number, string $unit, int $decimals = 1): string => $number === null ? 'Not available' : number_format($number, $decimals).$unit;
-        $historicalGroup = ['group' => 'Historical Weather', 'source' => ClimateRecordHistory::AMBULONG_SOURCE.' · used by iClimate as the weather reference for Lian'];
+        $historicalGroup = ['group' => 'Historical Weather', 'source' => ClimateRecordHistory::AMBULONG_DISPLAY_LABEL];
         $enteredGroup = ['group' => 'Entered Records', 'source' => 'iClimate staff records'];
         $items = [];
 

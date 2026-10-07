@@ -547,7 +547,7 @@ class ItDashboardTest extends TestCase
         $this->assertLessThan(strpos($html, '>Management<'), strpos($html, '>Main Menu<'));
         $this->assertLessThan(strpos($html, '>System<'), strpos($html, '>Data<'));
         // The menu is rendered twice (desktop sidebar + mobile offcanvas), so a page listed once per menu appears exactly twice.
-        foreach ([route('users.index'), route('system-logs.index'), route('system-health.index'), route('reports.index'), route('farmer-profiles.index'), route('ai-admin.home')] as $url) {
+        foreach ([route('users.index'), route('system-logs.index'), route('system-health.index'), route('reports.index'), route('farmer-profiles.index')] as $url) {
             $this->assertSame(2, substr_count($sidebar, 'href="'.$url.'"'), $url);
         }
     }

@@ -76,6 +76,7 @@
                             <td>{{ $loop->iteration }}</td>
                             @foreach ($columns as $field => $label)
                                 @php $value = data_get($row, $field); @endphp
+                                @if (($routeName ?? null) === 'climate-records' && $field === 'source') @php $value = \App\Services\Climate\ClimateRecordHistory::displaySource($value); @endphp @endif
                                 <td>{{ $field === 'role' && filled($value) ? \App\Models\User::labelForRole((string) $value) : (filled($value) ? $value : '—') }}</td>
                             @endforeach
                         </tr>

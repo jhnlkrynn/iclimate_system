@@ -184,6 +184,7 @@ abstract class CrudController extends Controller
 
         return view('crud.print', [
             'title' => $this->title.'s',
+            'routeName' => $this->routeName,
             'columns' => $this->columns,
             'rows' => $rows,
             'total' => $total,

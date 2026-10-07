@@ -668,7 +668,7 @@ class PagePerformanceTest extends TestCase
         } finally {
             unset($_SERVER['DB_PGSQL_DISABLE_PREPARES']);
         }
-        $this->assertSame([], $off, 'switched off: Laravel\'s own prepare + execute is used');
+        $this->assertSame([\PDO::ATTR_TIMEOUT => 3], $off, 'switched off: Laravel\'s own prepare + execute is used');
 
         $_SERVER['DB_PERSISTENT'] = 'true';
         try {
@@ -676,7 +676,74 @@ class PagePerformanceTest extends TestCase
         } finally {
             unset($_SERVER['DB_PERSISTENT']);
         }
-        $this->assertSame([$disablePrepares => true, \PDO::ATTR_PERSISTENT => true], $both, 'one options list holds both settings');
+        $this->assertSame([\PDO::ATTR_TIMEOUT => 3, $disablePrepares => true, \PDO::ATTR_PERSISTENT => true], $both, 'one options list holds every setting');
+    }
+
+    public function test_an_unreachable_database_is_given_up_on_well_inside_the_request_time_limit(): void
+    {
+        $connections = fn (): array => (require config_path('database.php'))['connections'];
+
+        // The wait is a PDO option on purpose: pdo_pgsql ignores a connect_timeout written in the DSN and waits its
+        // default 30 s, which is PHP's whole request time limit (the request then died with a fatal error).
+        $drivers = array_keys(array_filter(['pgsql' => extension_loaded('pdo_pgsql'), 'mysql' => extension_loaded('pdo_mysql'), 'mariadb' => extension_loaded('pdo_mysql')]));
+        if ($drivers === []) {
+            $this->markTestSkipped('Neither pdo_pgsql nor pdo_mysql is installed.');
+        }
+
+        foreach ($drivers as $name) {
+            $this->assertSame(3, $connections()[$name]['options'][\PDO::ATTR_TIMEOUT] ?? null, $name.' gives up after 3 seconds by default');
+        }
+
+        // A zero or empty setting must not bring the endless wait back.
+        $_SERVER['DB_CONNECT_TIMEOUT'] = '0';
+        try {
+            foreach ($drivers as $name) {
+                $this->assertSame(1, $connections()[$name]['options'][\PDO::ATTR_TIMEOUT] ?? null, $name.' always has a wait limit');
+            }
+        } finally {
+            unset($_SERVER['DB_CONNECT_TIMEOUT']);
+        }
+    }
+
+    public function test_one_failed_connect_answers_for_the_rest_of_the_request(): void
+    {
+        if (! extension_loaded('pdo_pgsql')) {
+            $this->markTestSkipped('pdo_pgsql is not installed.');
+        }
+
+        // Nothing listens on port 1: the connect is refused at once, so the test needs no network.
+        $config = ['driver' => 'pgsql', 'host' => '127.0.0.1', 'port' => 1, 'database' => 'postgres', 'username' => 'u', 'password' => 'p',
+            'options' => [\PDO::ATTR_TIMEOUT => 1]];
+        $connector = new StartupSearchPathPostgresConnector;
+        $fail = function () use ($connector, $config): \PDOException {
+            try {
+                $connector->connect($config);
+            } catch (\PDOException $exception) {
+                return $exception;
+            }
+            $this->fail('The connect was expected to fail.');
+        };
+
+        StartupSearchPathPostgresConnector::forgetUnreachable();
+        try {
+            $first = $fail();
+            $second = $fail();
+
+            $this->assertNull($first->getPrevious(), 'the first call really tried to connect');
+            $this->assertSame($first, $second->getPrevious(), 'the second call was answered without connecting again');
+            $this->assertSame($first->getMessage(), $second->getMessage());
+
+            // Another server is still tried.
+            $this->assertNull((function () use ($connector, $config) {
+                try {
+                    $connector->connect(['port' => 2] + $config);
+                } catch (\PDOException $exception) {
+                    return $exception->getPrevious();
+                }
+            })());
+        } finally {
+            StartupSearchPathPostgresConnector::forgetUnreachable();
+        }
     }
 
     public function test_the_connector_sends_the_schema_as_a_startup_option_only_when_it_is_safe(): void
