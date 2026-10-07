@@ -266,7 +266,7 @@ class NotificationController extends CrudController
     {
         $updated = $this->baseQuery($request)
             ->where('is_read', false)
-            ->update(['is_read' => true]);
+            ->update(['is_read' => true] + (\App\Support\SchemaCache::hasColumn('notifications', 'read_at') ? ['read_at' => now()] : []));   // Manuscript – Naicel: read_at
         SystemAuditLogger::record('Marked All Notifications Read', $request, [
             'updated_count' => $updated,
         ]);

@@ -36,7 +36,7 @@
         // MAO's "Records": Climate Records and Rice Production are two tabs of one item.
         'records' => ['climate-records.index', ['climate-records.*', 'rice-productions.*']],
         'heatmap' => ['heat-map.index', ['heat-map.*']],
-        'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
+        'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*', 'mao.alerts.*']],   // Manuscript – Naicel: + Send Alert
         'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
         'mao-planner' => ['mao.planner.index', ['mao.planner.*', 'calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],

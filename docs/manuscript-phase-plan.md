@@ -114,6 +114,6 @@ add what is missing. Each phase is one commit, so any phase can be reverted on i
 | 3 Barangays and heat map layers | done |
 | 4 Climate monitoring and impact analysis | done |
 | 5 Yield prediction and forecasting | done |
-| 6 Advisory alerts | to do |
+| 6 Advisory alerts | done |
 | 7 Reports | to do |
 | 8 IT settings, security, maintenance, models | to do |

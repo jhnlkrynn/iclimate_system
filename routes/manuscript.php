@@ -73,4 +73,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
+    // Phase 6: Send Alert (MAO, opened from Advisories).
+    Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/alerts')->name('mao.alerts.')->group(function () {
+        Route::get('/', [AdvisoryAlertController::class, 'index'])->name('index');
+        Route::post('/', [AdvisoryAlertController::class, 'store'])->middleware('throttle:20,1,post-mao-alerts')->name('store');
+        Route::post('{batch}/cancel', [AdvisoryAlertController::class, 'cancel'])->middleware('throttle:20,1,post-mao-alerts-cancel')->name('cancel');
+    });
 });
