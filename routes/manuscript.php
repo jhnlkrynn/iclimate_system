@@ -118,6 +118,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('models/upload', [ModelManagementController::class, 'uploadModel'])->middleware('throttle:10,10,post-admin-models-upload')->name('models.upload');
     });
 
+    // Farmer Survey & Model Feedback – Naicel (2026-10-09): the farmer's survey, and Settings → Model Feedback (IT).
+    Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->prefix('farmer/survey')->name('farmer.survey.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\FarmerSurveyController::class, 'show'])->name('show');
+        Route::post('/', [\App\Http\Controllers\FarmerSurveyController::class, 'store'])->middleware('throttle:20,1,post-farmer-survey')->name('store');
+    });
+    Route::middleware('role:'.User::ROLE_IT_EXPERT)->prefix('admin/feedback')->name('admin.feedback.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ModelFeedbackController::class, 'index'])->name('index');
+        Route::get('insights', [\App\Http\Controllers\ModelFeedbackController::class, 'insights'])->middleware('throttle:60,1,get-admin-feedback-insights')->name('insights');
+        Route::put('responses/{response}', [\App\Http\Controllers\ModelFeedbackController::class, 'update'])->whereNumber('response')->middleware('throttle:120,1,put-admin-feedback')->name('update');
+        Route::post('decision', [\App\Http\Controllers\ModelFeedbackController::class, 'decide'])->middleware('throttle:10,1,post-admin-feedback-decision')->name('decide');
+    });
+
     // Phase 6: Send Alert (MAO, opened from Advisories).
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/alerts')->name('mao.alerts.')->group(function () {
         Route::get('/', [AdvisoryAlertController::class, 'index'])->name('index');

@@ -33,6 +33,7 @@
             ['admin.backups.index', 'Backups', ['admin.backups.*'], [\App\Models\User::ROLE_IT_EXPERT]],
             ['admin.maintenance.index', 'Maintenance Records', ['admin.maintenance.*'], [\App\Models\User::ROLE_IT_EXPERT]],
             ['admin.models.index', 'ML Models', ['admin.models.*'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.feedback.index', 'Model Feedback', ['admin.feedback.*'], [\App\Models\User::ROLE_IT_EXPERT]],   // Farmer Survey – Naicel (2026-10-09)
         ],
     ];
     $tabs = array_values(array_filter($groups[$group] ?? [], fn (array $tab): bool => \Illuminate\Support\Facades\Route::has($tab[0]) && in_array($role, $tab[3], true)));

@@ -20,5 +20,12 @@
 
         {{-- Farmer – Naicel: the two simple charts. Not part of the timed refresh (their numbers change with a save). --}}
         @include('dashboards.farmer.charts')
+
+        {{-- Farmer Survey – Naicel (2026-10-09): the way in to the short survey about the predictions and advice. --}}
+        <section class="fh-card fh-survey" aria-labelledby="fhSurveyTitle" data-fh-survey>
+            <h2 id="fhSurveyTitle" class="fh-kicker">{{ __('farmer.survey.home_title') }}</h2>
+            <p class="fh-words">{{ __('farmer.survey.home_text') }}</p>
+            <a class="mfd-btn" href="{{ route('farmer.survey.show') }}" style="align-self: flex-start">{{ __('farmer.survey.open') }}</a>
+        </section>
     </div>
 </x-app-layout>
