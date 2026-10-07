@@ -38,7 +38,7 @@ final class PreparedDashboards
 
     public const IT_MAX_STALE_SECONDS = 3600;
 
-    public const IT_LATEST_KEY = 'dashboard:it:overview:3:latest';
+    public const IT_LATEST_KEY = 'dashboard:it:overview:4:latest';
 
     /** MAO Operations, the whole assembled page (about 100 queries to build); a data change shows on the next visit, as above. */
     public const OPERATIONS_SECONDS = 300;
@@ -94,7 +94,7 @@ final class PreparedDashboards
 
     public static function itKey(string $token): string
     {
-        return 'dashboard:it:overview:3:'.$token;
+        return 'dashboard:it:overview:4:'.$token;
     }
 
     // ------------------------------------------------------------------ MAO Operations

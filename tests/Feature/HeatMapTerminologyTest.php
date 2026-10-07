@@ -48,7 +48,7 @@ class HeatMapTerminologyTest extends TestCase
     {
         $pages = [
             User::ROLE_FARMER => ['/farmer/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
-            User::ROLE_MAO => ['/mao/dashboard', '/mao/operations', '/heat-map', '/planting-advisories', '/notifications'],
+            User::ROLE_MAO => ['/mao/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
             User::ROLE_IT_EXPERT => ['/admin/dashboard', '/heat-map', '/notifications'],
         ];
 
@@ -76,9 +76,10 @@ class HeatMapTerminologyTest extends TestCase
             ->assertSee('<h1 class="visually-hidden">Heat Map</h1>', false)
             ->assertSee('Farm risk');
 
-        $this->actingAs($this->user(User::ROLE_MAO))->get('/mao/operations')
+        // The MAO dashboard's preview card is named "Heat Map" too (the Operations page was removed, 2026-10).
+        $this->actingAs($this->user(User::ROLE_MAO))->get('/mao/dashboard')
             ->assertOk()
-            ->assertSee('Heat Map &amp; Forecast', false);
+            ->assertSee('<h2 id="mhdMapTitle">Heat Map</h2>', false);
     }
 
     public function test_views_scripts_and_translations_never_say_risk_map(): void

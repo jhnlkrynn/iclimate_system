@@ -224,6 +224,7 @@ export function initNotificationsPopup() {
                     <h3>${escapeHtml(note.title)}</h3>
                     <p class="fad-m-meta"><time datetime="${escapeHtml(note.created_at || '')}">${escapeHtml(note.time || '')}</time> · ${escapeHtml(note.ago || '')}</p>
                     <div class="fad-m-body ic-notif-message">${escapeHtml(note.message || '').replace(/\n/g, '<br>')}</div>
+                    ${note.link_url ? `<p><a class="fad-btn is-primary" href="${escapeHtml(note.link_url)}" data-ic-notif-link>${escapeHtml(note.link_label || 'Open')}</a></p>` : ''}
                 </article>`,
             actions: isAll() && state.canManage ? `<button type="button" class="fad-btn is-quiet" data-ic-notif-edit="${note.id}">Edit</button>` : footer(),
         });

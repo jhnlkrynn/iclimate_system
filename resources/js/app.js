@@ -6,7 +6,7 @@ import Alpine from 'alpinejs';
 // rendering logic exists in exactly one place. initBarangayRiskMap() itself
 // no-ops on any page without a #barangayRiskMap element.
 import { initBarangayRiskMap } from './barangay-risk-map';
-import { initHeatMap } from './heat-map';
+import { initHeatMap, initHeatMapPreview } from './heat-map';
 import { initUiEnhancements } from './ui-enhancements';
 import { registerChartExplainer } from './chart-explainer';
 import '../css/chart-explainer.css';
@@ -91,7 +91,7 @@ const chartSelector = [
     '#farmerWeatherTrendChart',
 ].join(',');
 
-const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap, #mfdFarmMap, #heatMapCanvas';
+const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap, #mfdFarmMap, #heatMapCanvas, #heatMapPreviewCanvas';
 
 // Inline dashboard scripts are parsed before this deferred module executes. Give
 // every consumer one stable promise instead of making it race dynamic imports.
@@ -159,6 +159,7 @@ window.iClimateVisualsReady = (async () => {
     }
     // The Heat Map page's panel works without Leaflet too (its barangay list); the map needs it.
     initHeatMap();
+    initHeatMapPreview();
 })();
 
 window.Alpine = Alpine;

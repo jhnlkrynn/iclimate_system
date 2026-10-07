@@ -10,10 +10,6 @@
  */
 
 
-/* ---- views/advisories/index.blade.php (2) */
-html[data-theme="dark"] body .advisory-safety-card { border-color: color-mix(in srgb, #cc9e33 30%, var(--dk-border)); }
-html[data-theme="dark"] body .advisory-safety-note { border-color: var(--dk-border-strong); }
-
 /* ---- views/advisories/show.blade.php (2) */
 html[data-theme="dark"] body .advisory-back-btn { border-color: var(--dk-border-strong) !important; }
 html[data-theme="dark"] body .advisory-back-btn:hover,
@@ -103,6 +99,15 @@ html[data-theme="dark"] body .farmer-org-legend-item { background: var(--dk-surf
 html[data-theme="dark"] body .farmer-org-legend-item:hover { background: var(--dk-surface-3); }
 html[data-theme="dark"] body .farmer-org-legend-count { color: var(--dk-ink); }
 html[data-theme="dark"] body .farmer-org-chart-status { color: var(--dk-ink); }
+
+/* ---- views/crud/print.blade.php (4) */
+html[data-theme="dark"] body { color: var(--dk-ink); background: var(--dk-surface-2); }
+html[data-theme="dark"] body .print-actions button,
+html[data-theme="dark"] body .print-actions a { background: var(--dk-surface-2); color: #9de7ba; }
+html[data-theme="dark"] body thead th { background: var(--dk-surface-2); }
+@media print {
+html[data-theme="dark"] body thead th { background: var(--dk-surface-2) !important; }
+}
 
 /* ---- views/farm-boundaries/edit.blade.php (1) */
 html[data-theme="dark"] body .boundary-point { border-color: var(--dk-border-strong); }
@@ -223,7 +228,7 @@ html[data-theme="dark"] body .candidate-warning { border-color: color-mix(in srg
 html[data-theme="dark"] body .badge-green { border-color: color-mix(in srgb, #33cc6b 30%, var(--dk-border)); }
 html[data-theme="dark"] body .badge-yellow { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
 
-/* ---- css/app.css (76) */
+/* ---- css/app.css (79) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
 html[data-theme="dark"] body .ic-skeleton { background-color: var(--dk-surface-2); }
@@ -314,6 +319,12 @@ html[data-theme="dark"] body .ic-skel-lines > span:not(.visually-hidden) { backg
 html[data-theme="dark"] body .ic-updated { color: var(--dk-muted); }
 html[data-theme="dark"] body .ic-no-data { background: var(--dk-surface-2); color: var(--dk-muted); }
 html[data-theme="dark"] body .ic-no-data strong { color: var(--dk-ink-mid); }
+html[data-theme="dark"] body .ic-tab { border-color: var(--dk-border-strong); background: var(--dk-surface-2); color: var(--dk-ink); }
+html[data-theme="dark"] body .ic-tab:hover { color: #9de7ba; }
+@media print {
+html[data-theme="dark"] body,
+html[data-theme="dark"] body .page-shell { background: var(--dk-surface-2) !important; }
+}
 
 /* ---- css/ui-refresh.css (47) */
 html[data-theme="dark"] body .card:hover,
@@ -446,7 +457,7 @@ html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-watch { 
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.is-danger { border-color: color-mix(in srgb, #cc4533 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-risk-badge.is-watch { color: var(--dk-ink); }
 
-/* ---- css/farmer-advisories.css (10) */
+/* ---- css/farmer-advisories.css (13) */
 html[data-theme="dark"] body .fad,
 html[data-theme="dark"] body .fad-modal { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --rule: var(--dk-border-strong); --line: var(--dk-border-strong); --field: var(--dk-surface-2); --ink: var(--dk-ink); --muted: var(--dk-muted); --head-bg: var(--dk-surface-2); --good-bg: var(--dk-surface-2); --good-line: color-mix(in srgb, #55aa79 30%, var(--dk-border)); --watch-ink: #e7ca9d; --watch-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --watch-line: color-mix(in srgb, #cc9833 30%, var(--dk-border)); --danger-ink: #e7a49d; --danger-bg: var(--dk-surface-2); --danger-line: color-mix(in srgb, #cc4533 30%, var(--dk-border)); --info-ink: #9dc4e7; --info-bg: var(--dk-surface-2); --info-line: color-mix(in srgb, #3885c7 30%, var(--dk-border)); }
 html[data-theme="dark"] body .fad-btn.is-quiet { background: var(--dk-surface-2); }
@@ -458,6 +469,9 @@ html[data-theme="dark"] body :is(.fad, .fad-modal) .fad-input::placeholder { col
 html[data-theme="dark"] body .fad-m-x { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .fad-btn.is-vote { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .fad-skel { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .fad.adv .adv-sev { background: var(--dk-surface-2); color: #9de7ba; }
+html[data-theme="dark"] body .fad.adv .adv-sev.is-moderate { background: color-mix(in srgb, #c39922 16%, var(--dk-surface)); color: #e7d09d; }
+html[data-theme="dark"] body .fad.adv .adv-sev.is-high { background: color-mix(in srgb, #c32222 16%, var(--dk-surface)); color: #e79d9d; }
 
 /* ---- css/farmer-calendar.css (4) */
 html[data-theme="dark"] body .fcal-day { background: var(--dk-surface-2); }
@@ -489,7 +503,7 @@ html[data-theme="dark"] body .fpred .btn-outline-success,
 html[data-theme="dark"] body .fpred .btn-outline-primary,
 html[data-theme="dark"] body .fpred .btn-outline-secondary { background: var(--dk-surface-2); }
 
-/* ---- css/it-dashboard.css (9) */
+/* ---- css/it-dashboard.css (10) */
 html[data-theme="dark"] body .itd-meter { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-table.is-roles tbody tr:hover th { background: var(--dk-surface-3); }
 html[data-theme="dark"] body .itd-table tbody tr:hover td { background: var(--dk-surface-3); }
@@ -500,6 +514,7 @@ html[data-theme="dark"] body .itd-filters input { background: var(--dk-surface-2
 html[data-theme="dark"] body .itd-range button { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-chart-state { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .itd-heat td { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .itd .itd-section-title { color: var(--dk-ink); }
 
 /* ---- css/it-pages.css (17) */
 html[data-theme="dark"] body .mfd.itd.itp .btn:is(.btn-light, .btn-outline-primary, .btn-outline-success, .btn-outline-secondary, .btn-outline-dark) { background: var(--dk-surface-2) !important; }
@@ -522,7 +537,7 @@ html[data-theme="dark"] body .mfd.itd.itp .thread-link.active { background: var(
 html[data-theme="dark"] body .mfd.itd.itp .bubble-row:not(.mine) .bubble { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd.itd.itp .msg-compose { background: var(--dk-surface-2); }
 
-/* ---- css/mao-dashboard.css (12) */
+/* ---- css/mao-dashboard.css (15) */
 html[data-theme="dark"] body .mtd { --bg: var(--dk-surface-2); --card: var(--dk-surface-2); --line: var(--dk-border-strong); --rule: var(--dk-border-strong); --ink: var(--dk-ink); --ink-2: var(--dk-ink-mid); --muted: var(--dk-muted); --ok-bg: var(--dk-surface-2); --ok-ink: #9de7c4; --warn-bg: color-mix(in srgb, #bd8d28 18%, var(--dk-surface)); --warn-ink: #e7ca9d; --crit-bg: var(--dk-surface-2); --crit-ink: #e7a49d; --info-bg: var(--dk-surface-2); --info-ink: #9dc4e7; }
 html[data-theme="dark"] body .mtd-btn.is-quiet { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mtd-soft-error { border-color: color-mix(in srgb, #cc9833 30%, var(--dk-border)); }
@@ -535,6 +550,9 @@ html[data-theme="dark"] body .mtd-day.is-flagged { border-color: color-mix(in sr
 html[data-theme="dark"] body .mtd-flag { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mtd-badge.is-high { background: color-mix(in srgb, #c35622 16%, var(--dk-surface)); color: #e7b19d; border-color: color-mix(in srgb, #cc6433 30%, var(--dk-border)); }
 html[data-theme="dark"] body .mtd-badge.is-sev { border-color: color-mix(in srgb, #cc4533 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mhd-action.is-waiting { border-color: color-mix(in srgb, #cc9e33 30%, var(--dk-border)); }
+html[data-theme="dark"] body .mhd-map-frame { background: var(--dk-surface-2); }
+html[data-theme="dark"] body .mhd-map-canvas { background: var(--dk-surface-2); }
 
 /* ---- css/info-modal.css (10) */
 html[data-theme="dark"] body .ic-notif-tabs { background: var(--dk-surface-2); }

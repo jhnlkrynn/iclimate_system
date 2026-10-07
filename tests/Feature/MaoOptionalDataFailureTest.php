@@ -41,7 +41,7 @@ class MaoOptionalDataFailureTest extends TestCase
         $user = $this->maoUser();
 
         $this->actingAs($user)->get('/mao/dashboard')->assertOk();
-        $this->actingAs($user)->get('/mao/operations')->assertOk();
+        $this->actingAs($user)->get('/mao/operations')->assertRedirect('/mao/dashboard');   // removed page (2026-10)
 
         $weatherJson = $this->actingAs($user)->getJson('/mao/dashboard/weather')->assertOk()->json();
         $this->assertFalse($weatherJson['ok']);
@@ -65,8 +65,11 @@ class MaoOptionalDataFailureTest extends TestCase
         $response = $this->actingAs($user)->get('/planting-advisories')->assertOk();
         $content = (string) $response->getContent();
 
-        $this->assertStringContainsString('Advisory Information Temporarily Unavailable', $content);
-        $this->assertStringNotContainsString('No active advisories are available for your location.', $content);
+        // Advisories list (2026-10): one status line says the source is unreachable; the page never says "none right now".
+        $this->assertStringContainsString('data-adv-check="unavailable"', $content);
+        $this->assertStringContainsString('Advisory information is temporarily unavailable.', $content);
+        $this->assertStringNotContainsString('data-adv-empty', $content);
+        $this->assertStringNotContainsString('No planting advisory right now.', $content);
     }
 
     public function test_heat_map_and_risk_endpoints_render_with_placeholder_or_empty_risk_data(): void
@@ -104,8 +107,9 @@ class MaoOptionalDataFailureTest extends TestCase
 
         $routes = [
             '/mao/dashboard',
-            '/mao/operations',
             '/calendar',
+            '/field-reports',
+            '/reports',
             '/climate-records',
             '/planting-advisories',
             '/farmer-profiles',
@@ -153,13 +157,14 @@ class MaoOptionalDataFailureTest extends TestCase
         $user = $this->maoUser();
 
         $queries = [
-            '/mao/operations?schedule_season[]=foo&schedule_barangay[]=bar&schedule_status[]=baz&fb_barangay[]=luyahan',
-            '/planting-advisories?search[]=test&type[]=planting&status[]=published&target_barangay[]=Binubusan',
+            '/mao/dashboard?year[]=2026',
+            '/planting-advisories?search[]=test&type[]=planting&show[]=all&status[]=published&target_barangay[]=Binubusan',
+            '/field-reports?unresolved[]=1&status[]=Pending',
             '/farmer-profiles?search[]=john&barangay[]=Binubusan&farm_type[]=Rainfed',
             '/calendar?year[]=2026&month[]=10',
             '/calendar?year=-999&month=99',
+            '/calendar?barangay[]=Prenza',
             '/messages/search?q[]=alice',
-            '/ai-admin/topics?q[]=rice',
             '/notifications?search[]=alert&type[]=Warning&filter[]=unread',
         ];
 

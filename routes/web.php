@@ -245,7 +245,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:'.User::ROLE_MAO)->group(function () {
         Route::get('/mao/dashboard/live', [DashboardController::class, 'maoLive'])->middleware('throttle:30,1,get-mao-dashboard-live')->name('mao.dashboard.live');
-        Route::get('/mao/operations', [DashboardController::class, 'maoOperations'])->name('mao.operations');
+        // The Operations page was removed (2026-10): its parts live on Advisories, Calendar, Field Reports and Reports.
+        // The old address opens the dashboard. (DashboardController::maoOperations is kept, unused, for the cleanup commit.)
+        Route::get('/mao/operations', fn () => redirect()->route('mao.dashboard'))->name('mao.operations');
     });
 
 
@@ -348,9 +350,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         |--------------------------------------------------------------------------
         */
 
+        // Advisory Management moved into the Advisories page (2026-10): the old address opens its "All" view, keeping
+        // a watched analytics run. (PlantingAdvisoryController::adminIndex is kept, unused, for the cleanup commit.)
         Route::get(
             'management/advisories',
-            [PlantingAdvisoryController::class, 'adminIndex']
+            fn (\Illuminate\Http\Request $request) => redirect()->route('planting-advisories.index', array_filter(['show' => 'all', 'run' => $request->query('run')]))
         )
             ->middleware(
                 'role:'.
@@ -811,9 +815,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('system-health.index');
 
-        // Chatbot vocabulary and language filter: IT Experts and MAO only.
+        // Chatbot Knowledge (vocabulary and language filter): IT only since 2026-10. MAO no longer has it.
         Route::prefix('ai-admin')
-            ->middleware('role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT)
+            ->middleware('role:'.User::ROLE_IT_EXPERT)
             ->name('ai-admin.')
             ->group(function () {
                 Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');

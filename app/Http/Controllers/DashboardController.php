@@ -26,6 +26,7 @@ use App\Services\Analytics\FarmerDashboardService;
 use App\Services\Analytics\ItDashboardInsights;
 use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
+use App\Services\Analytics\MaoHomeService;
 use App\Services\FarmerOrganizationSummaryService;
 use App\Services\Risk\HeatMapPanel;
 use App\Services\SystemAuditLogger;
@@ -41,6 +42,7 @@ use App\Support\DashboardData;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
 use App\Support\SchemaCache;
+use App\Support\RiskMapInitialData;
 use App\Support\StaleCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -59,6 +61,9 @@ class DashboardController extends Controller
     /** Per-farmer overview: short, because it carries live weather. */
     private const FARMER_OVERVIEW_CACHE_SECONDS = 60;
 
+    /** The saved-data MAO home payload is shared and can be prepared ahead of the first visit. */
+    private const MAO_HOME_CACHE_SECONDS = 90;
+
     /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
 
@@ -76,10 +81,17 @@ class DashboardController extends Controller
         'harvest-check' => ['refresh' => [], 'slots' => ['harvest']],
     ];
 
-    /** MAO overview: the prepared shared payload (PreparedDashboards) plus what depends on who is signed in. */
-    public function mao(Request $request, MaoDashboardService $mao, PreparedDashboards $dashboards): View
+    /** MAO overview: the incoming saved-data home contract, retained behind the shared stale cache. */
+    public function mao(Request $request, MaoHomeService $home): View
     {
-        return view('dashboards.mao', ['mao' => $mao->forUser($dashboards->mao(), $request->user())]);
+        return view('dashboards.mao', [
+            'mao' => StaleCache::scoped(
+                'mao-home',
+                fn (string $token): string => $this->maoHomeCacheKey($token),
+                self::MAO_HOME_CACHE_SECONDS,
+                fn (): array => $home->payload(),
+            ),
+        ]);
     }
 
     /**
@@ -107,7 +119,20 @@ class DashboardController extends Controller
      */
     public function warmSharedDashboards(): array
     {
+        // Populate the saved risk-map inputs before the prepared dashboard payloads are warmed.
+        rescue(fn () => RiskMapInitialData::payloads(false), null, false);
+        StaleCache::prepareScoped(
+            'mao-home',
+            fn (string $token): string => $this->maoHomeCacheKey($token),
+            self::MAO_HOME_CACHE_SECONDS,
+            fn (): array => app(MaoHomeService::class)->payload(),
+        );
         return app(PreparedDashboards::class)->warm();
+    }
+
+    private function maoHomeCacheKey(?string $token = null): string
+    {
+        return 'dashboard:mao:home:v2'.($token === null ? '' : ':'.$token);
     }
 
     /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */
@@ -553,14 +578,27 @@ class DashboardController extends Controller
         // ~80 Supabase round trips, longer than a request may run).
         $payload = $dashboards->it();
 
-        $tab = in_array($request->query('tab'), self::IT_TABS, true) ? $request->query('tab') : 'overview';
+        // IT Dashboard (2026-10): one screen — System Status, Users by Role, Errors and Failed Jobs, Security. No tabs.
+        return view('dashboards.it-expert', ['it' => $payload]);
+    }
 
-        return view('dashboards.it-expert', [
-            'it' => $payload,
-            'tab' => $tab,
-            // The Overview's 30-day activity chart comes with the page, so opening the dashboard is one request.
-            'activityInitial' => $tab === 'overview' ? rescue(fn (): array => $it->activity(30), null, false) : null,
-        ]);
+    /**
+     * The IT overview that is already prepared (by the scheduled warm-up, the IT dashboard or its Refresh button),
+     * for the System Health page, which carries Usage Patterns, Resources and the Data Pipeline since 2026-10.
+     * Read only: it never builds the overview, so that page calls no service and queues nothing. Null when no copy
+     * has been prepared yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function preparedItOverview(): ?array
+    {
+        $fresh = Cache::get(PreparedDashboards::itKey(CacheScope::token('it-dashboard')));
+        if (is_array($fresh)) {
+            return $fresh;
+        }
+        $latest = Cache::get(PreparedDashboards::IT_LATEST_KEY);
+
+        return is_array($latest) && is_array($latest['value'] ?? null) ? $latest['value'] : null;
     }
 
     /**

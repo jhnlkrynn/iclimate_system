@@ -322,229 +322,45 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) { :is(.fad, .fad-modal) *, :is(.fad, .fad-modal) *::before, :is(.fad, .fad-modal) *::after { transition: none !important; animation: none !important; } }
 
-/* Farmer advisory grid: the local barangay advisory sits in the same grid as the other cards and fills its cell. */
-.fad-cards-item { display: flex; min-width: 0; }
-.fad-cards-item > .fad-card { flex: 1 1 auto; min-width: 0; }
-.fad-acard-place { margin: 0; font-weight: 600; color: var(--ink); }
-.fad-barangay-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.fad-barangay-picker .fad-input { width: auto; min-width: 220px; max-width: 100%; }
+/* ------------------------------------------------------------------ Advisories list (2026-10)
+   One list: each item has a severity colour on its left edge, the barangay, the valid dates, one sentence of
+   recommendation and one "What to do". */
+.fad.adv .adv-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.fad.adv .adv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fad.adv .adv-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border: 1px solid var(--rule); border-radius: 999px; background: var(--card); color: var(--ink); font-size: .9375rem; font-weight: 600; text-decoration: none; }
+.fad.adv .adv-chip:hover { border-color: var(--brand); }
+.fad.adv .adv-chip.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.fad.adv .adv-chip-count { font-size: .8125rem; font-weight: 700; opacity: .75; }
+.fad.adv .adv-filter { display: flex; align-items: center; gap: 8px; }
+.fad.adv .adv-filter .fad-input { min-width: 200px; }
+.fad.adv .adv-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.fad.adv .adv-item { display: grid; gap: 8px; padding: 16px 20px; background: var(--card); border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; }
+.fad.adv .adv-item.is-moderate { border-left-color: #f2b134; }
+.fad.adv .adv-item.is-high { border-left-color: #c62828; }
+.fad.adv .adv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.fad.adv .adv-sev { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .8125rem; font-weight: 800; background: #dff1e3; color: #14532d; }
+.fad.adv .adv-sev.is-moderate { background: #fdefc8; color: #6b4a00; }
+.fad.adv .adv-sev.is-high { background: #fbdcdc; color: #8a1616; }
+.fad.adv .adv-area { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.fad.adv .adv-valid { font-size: .9375rem; color: var(--muted); }
+.fad.adv .adv-valid-label { font-weight: 600; }
+.fad.adv .adv-status { margin-left: auto; }
+.fad.adv .adv-rec { margin: 0; font-size: 1.0625rem; line-height: 1.5; color: var(--ink); }
+.fad.adv .adv-do, .fad.adv .adv-activity { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--ink); }
+.fad.adv .adv-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-top: 4px; }
+.fad.adv .adv-source { font-size: .875rem; color: var(--muted); }
+.fad.adv .adv-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+html[data-theme="dark"] .fad.adv .adv-sev { background: #1e4a2c; color: #c9f1d5; }
+html[data-theme="dark"] .fad.adv .adv-sev.is-moderate { background: #57430c; color: #ffe6a3; }
+html[data-theme="dark"] .fad.adv .adv-sev.is-high { background: #5c1c1c; color: #ffd0d0; }
+.fad.adv .adv-filter .fad-label { margin: 0; white-space: nowrap; }
+.fad.adv .adv-filter .fad-input { width: auto; flex: 0 1 240px; }
 
-/* ------------------------------------------------------------ farmer advisory cards: compact */
-/* Smaller, tighter cards that are easy to scan: 3 per row when there is room, 2 on tablets, 1 on phones. Same content
-   and order (location → risk → advisory → what is happening → what to do → source / dates → View Details). */
-.fad-farmer-lists { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-.fad-farmer-lists .fad-list { gap: 12px; }
-.fad-farmer-lists .fad-list-head { padding-bottom: 8px; }
-.fad-farmer-lists .fad-list-head h2 { font-size: 1.3125rem; }
-.fad-farmer-lists .fad-cards { gap: 12px; grid-template-columns: minmax(0, 1fr); }
-@container fad (min-width: 520px) { .fad-farmer-lists .fad-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container fad (min-width: 820px) { .fad-farmer-lists .fad-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
-
-.fad-farmer-lists .fad-acard,
-.fad-farmer-lists .fad-cards-item > .fad-card { gap: 6px; padding: 14px 16px; border-radius: 6px; }
-.fad-farmer-lists .fad-cards-item > .fad-card { display: flex; flex-direction: column; }
-.fad-farmer-lists :is(.fad-acard, .fad-card) .fad-kicker { font-size: .6875rem !important; letter-spacing: .6px; }
-.fad-farmer-lists .fad-acard-place { font-size: .9375rem; line-height: 1.3; }
-.fad-farmer-lists :is(.fad-acard, .fad-card) .fad-support { font-size: .8125rem; line-height: 1.35; }
-.fad-farmer-lists .fad-acard-tags { gap: 6px; }
-.fad-farmer-lists .fad-badge { padding: 2px 6px; font-size: .6875rem; }
-.fad-farmer-lists :is(.fad-acard, .fad-card) .fad-title { font-size: 1.0625rem; line-height: 1.25; }
-.fad-farmer-lists .fad-card .fad-lead { font-size: .9375rem; line-height: 1.3; }
-.fad-farmer-lists .fad-card .fad-body { font-size: .875rem; line-height: 1.4; }
-.fad-farmer-lists .fad-card h4.fad-label { margin-top: 4px; font-size: .6875rem !important; }
-
-/* Facts: label above its text, so a sentence uses the card's width instead of a narrow right-aligned column. */
-.fad-farmer-lists .fad-acard-facts > div { display: block; padding: 5px 0; }
-.fad-farmer-lists .fad-acard-facts dt { font-size: .6875rem; letter-spacing: .6px; }
-.fad-farmer-lists .fad-acard-facts dd { font-size: .875rem; font-weight: 500; line-height: 1.4; text-align: left; }
-/* The local weather card's readings stay one tight line each: label left, value right. */
-.fad-farmer-lists .fad-card .fad-acard-facts > div { display: flex; justify-content: space-between; gap: 2px 10px; padding: 3px 0; }
-.fad-farmer-lists .fad-card .fad-acard-facts dd { font-weight: 600; text-align: right; }
-
-.fad-farmer-lists .fad-acard-foot { gap: 8px; padding-top: 2px; }
-.fad-farmer-lists .fad-meta,
-.fad-farmer-lists .fad-acard-foot .fad-meta { gap: 0; font-size: .75rem; line-height: 1.4; }
-.fad-farmer-lists .fad-view { min-width: 0; min-height: 34px; padding: 4px 14px; font-size: .8125rem; border-radius: 5px; }
-/* Each card is only as tall as its content (no empty space stretched to the tallest card in the row). */
-.fad-farmer-lists .fad-cards { align-items: start; }
-.fad-farmer-lists .fad-card > .fad-view { align-self: flex-start; }
-/* Every card ends the same way: source and dates, then the View Details button below them. */
-.fad-farmer-lists .fad-acard-foot { flex-direction: column; align-items: flex-start; }
-
-/* ------------------------------------------------------------ farmer advisories: featured card, icons, outlook */
-.fad-ico { display: inline-flex; align-items: center; margin-right: 5px; color: var(--brand); vertical-align: -3px; }
-.fad-ico .mtd-svg { width: 15px; height: 15px; }
-.fad-farmer-lists .fad-acard-place { display: flex; align-items: center; }
-/* PAGASA cards carry a blue edge and iClimate guidance a green one, so the two sources never look alike. */
-.fad-farmer-lists .fad-acard.is-official { border-left: 3px solid var(--info); }
-.fad-farmer-lists .fad-acard.is-local { border-left: 3px solid var(--brand); }
-.fad-farmer-lists .fad-acard-tags { justify-content: space-between; }
-
-/* Icon chips: current readings, the values an advice is based on, and today's Lian forecast. */
-.fad-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.fad-chips li { display: inline-flex; align-items: center; padding: 3px 9px; border: 1px solid var(--good-line); border-radius: 999px; background: var(--good-bg); color: var(--ink); font-size: .8125rem; font-weight: 600; line-height: 1.4; }
-.fad-chips li.fad-chips-label { padding-left: 0; border: 0; background: none; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
-.fad-chips li.fad-chips-time { border-color: var(--rule); background: var(--subtle); color: var(--muted); font-weight: 500; }
-.fad-chips.is-small li { padding: 1px 7px; font-size: .75rem; }
-.fad-strip { padding: 8px 10px; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; }
-
-/* Featured "For your barangay" card: the whole row, readings in one line, the two answers side by side when wide. */
-.fad-farmer-lists .fad-cards-item:has(.fad-feature) { grid-column: 1 / -1; }
-.fad-farmer-lists .fad-feature { gap: 8px; border-left: 3px solid var(--brand); }
-.fad-feature-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 12px; }
-.fad-feature-head .fad-title { display: flex; align-items: center; }
-.fad-feature-body { display: grid; gap: 8px 20px; grid-template-columns: minmax(0, 1fr); }
-@container fad (min-width: 640px) { .fad-feature-body { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.fad-feature-body h4 { margin: 0 0 2px; }
-.fad-feature-body p { margin: 0; }
-.fad-feature-foot { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; padding-top: 6px; border-top: 1px solid var(--line); }
-.fad-feature-foot .fad-meta { display: flex; flex-direction: column; gap: 0; }
-
-/* PAGASA agri outlook: its own table values, two per row, and short item lists. */
-.fad-outlook { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; padding: 8px 10px; background: var(--info-bg); border: 1px solid var(--info-line); border-radius: 6px; }
-.fad-outlook > div { min-width: 0; }
-.fad-outlook > div.is-wide { grid-column: 1 / -1; }
-.fad-outlook dt { display: flex; align-items: center; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
-.fad-outlook dd { margin: 0; font-size: .875rem; font-weight: 700; color: var(--ink); }
-.fad-outlook .fad-ico { color: var(--info); }
-.fad-taglist { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.fad-taglist li { padding: 1px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--subtle); font-size: .75rem; line-height: 1.5; color: var(--ink); }
-.fad-farmer-lists .fad-acard h4.fad-label { margin: 2px 0 0; font-size: .6875rem !important; }
-
-/* ============================================================ Advisories page (scoped to .fad-advisories) */
-/* One consistent look for the Advisories page only: 12px cards, 10px controls, soft borders and light shadows, the
-   iClimate deep green with light green and soft blue accents. Other pages that use .fad-* are not affected. */
-.fad-advisories {
-    --radius: 12px; --radius-sm: 10px;
-    --shadow: 0 1px 2px rgba(13, 49, 31, .05), 0 3px 10px rgba(13, 49, 31, .05);
-    --btn-h: 40px;
-    gap: 20px;
-}
-.fad-advisories :is(.fad-card, .fad-acard, .fad-filters, .fad-strip, .fad-banner, .fad-empty) { border-radius: var(--radius); }
-.fad-advisories :is(.fad-card, .fad-acard) { border-color: #dfe7e2; box-shadow: var(--shadow); }
-
-/* Buttons: one height, radius, icon spacing, hover and focus everywhere on the page. */
-.fad-advisories .fad-btn { min-height: var(--btn-h); padding: 8px 16px; gap: 8px; border-radius: var(--radius-sm); font-size: .875rem; }
-.fad-advisories .fad-btn .mtd-svg { width: 16px; height: 16px; }
-.fad-advisories .fad-btn.is-quiet { background: #fff; border-color: #cfdcd4; color: var(--brand); }
-.fad-advisories .fad-btn.is-quiet:hover { background: var(--good-bg); border-color: var(--brand); }
-.fad-advisories .fad-btn:focus-visible { outline: 3px solid rgba(31, 111, 178, .45); outline-offset: 2px; }
-.fad-advisories .fad-btn[disabled], .fad-advisories .fad-btn[aria-busy="true"] { opacity: .7; cursor: progress; }
-.fad-advisories .fad-farmer-lists .fad-view { min-height: 36px; padding: 6px 14px; font-size: .8125rem; }
-.fad-advisories .fad-input { min-height: var(--btn-h); border-radius: var(--radius-sm); border-color: #cfdcd4; }
-
-/* Hero: deep green with a soft light-green glow, clear title and a status pill. */
-.fad-advisories .fad-hero {
-    align-items: center; padding: 24px 28px; border-radius: 14px; box-shadow: var(--shadow);
-    background: radial-gradient(circle at 92% 10%, rgba(116, 198, 157, .28), transparent 42%), linear-gradient(135deg, #0d4a2e 0%, #0f5132 55%, #17663f 100%);
-}
-.fad-advisories .fad-hero h1 { font-size: 2rem; line-height: 1.15; }
-.fad-advisories .fad-hero-text { gap: 6px; }
-.fad-advisories .fad-hero-text > p:not(.fad-hero-status) { max-width: 640px; font-size: .9375rem; line-height: 1.5; }
-.fad-advisories .fad-hero-status {
-    justify-self: start; min-height: 0; margin-top: 4px; padding: 5px 12px; gap: 8px;
-    border: 1px solid rgba(255, 255, 255, .22); border-radius: 999px; background: rgba(255, 255, 255, .1); color: #e3f4ea; font-size: .8125rem;
-}
-.fad-dot { width: 8px; height: 8px; border-radius: 50%; background: #ffd166; flex: none; }
-.fad-dot.is-good { background: #74c69d; box-shadow: 0 0 0 3px rgba(116, 198, 157, .25); }
-.fad-advisories .fad-hero .fad-btn.is-light { color: var(--brand); box-shadow: 0 1px 2px rgba(0, 0, 0, .15); }
-
-/* Barangay selector: one compact, aligned toolbar row. */
-.fad-advisories .fad-barangay-picker { gap: 10px; padding: 10px 14px; background: var(--card); border: 1px solid #dfe7e2; border-radius: var(--radius); box-shadow: var(--shadow); }
-.fad-advisories .fad-barangay-picker .fad-label { display: inline-flex; align-items: center; color: var(--ink); }
-.fad-advisories .fad-barangay-picker .fad-input { min-width: 240px; }
-
-/* Summary: three stat cards of equal height with an icon tile, the details in a quiet footer. */
-.fad-advisories .fad-summary { gap: 16px; align-items: stretch; }
-@container fad (min-width: 900px) { .fad-advisories .fad-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@container fad (min-width: 600px) and (max-width: 899.98px) { .fad-advisories .fad-summary > :last-child { grid-column: auto; } }
-.fad-advisories .fad-stat { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; padding: 16px 18px; }
-.fad-stat-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; }
-.fad-stat-icon .mtd-svg { width: 20px; height: 20px; }
-.fad-stat-icon.is-info { background: var(--info-bg); color: var(--info); }
-.fad-stat-icon.is-good { background: var(--good-bg); color: var(--good); }
-.fad-stat-icon.is-brand { background: #e3efe8; color: var(--brand); }
-.fad-stat-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; height: 100%; }
-.fad-advisories .fad-stat .fad-value { font-size: 1.125rem; line-height: 1.3; }
-.fad-advisories .fad-stat .fad-kpi { font-size: 1.75rem; line-height: 1.1; }
-.fad-advisories .fad-stat .fad-support { font-size: .8125rem; line-height: 1.45; }
-.fad-advisories .fad-stat .fad-card-foot { flex-direction: column; align-items: flex-start; gap: 2px; margin-top: auto; padding-top: 10px; }
-.fad-stat-split { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.fad-stat-split strong { color: var(--ink); }
-.fad-advisories .fad-details summary { min-height: 0; font-size: .8125rem; }
-
-/* Safety reminder: one horizontal information line. */
-.fad-banner { display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px 14px; background: var(--info-bg); border: 1px solid var(--info-line); color: var(--info-ink); }
-.fad-banner p { margin: 0; font-size: .875rem; line-height: 1.45; }
-.fad-banner-icon { display: inline-flex; color: var(--info); }
-
-/* Filters: one aligned, responsive row; the buttons sit at the end of the row. */
-.fad-advisories .fad-filters > summary { min-height: 48px; padding: 6px 18px; border-radius: var(--radius); }
-.fad-advisories .fad-filters[open] > summary { border-radius: var(--radius) var(--radius) 0 0; }
-.fad-advisories .fad-filter-form { gap: 12px 14px; padding: 14px 18px 16px; }
-.fad-advisories .fad-field { gap: 6px; }
-@container fad (min-width: 860px) {
-    .fad-advisories .fad-filter-form { grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto; align-items: end; }
-    .fad-advisories .fad-filter-form:has(#fadBarangay) { grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)) auto; }
-    .fad-advisories .fad-field.is-search { grid-column: auto; }
-    .fad-advisories .fad-filter-actions { grid-column: auto; padding-top: 0; padding-right: 0; flex-wrap: nowrap; }
-}
-
-/* Section headings: Georgia titles, one size, a thin green rule; actions (Update Profile) on the right. */
-.fad-advisories .fad-farmer-lists { gap: 24px; }
-.fad-advisories .fad-farmer-lists .fad-list-head { align-items: center; padding-bottom: 8px; border-bottom-width: 2px; }
-.fad-advisories .fad-farmer-lists .fad-list-head h2 { font-size: 1.375rem; line-height: 1.2; }
-.fad-advisories .fad-farmer-lists .fad-list-head .fad-support { margin-top: 2px; }
-
-/* Card grids: as many columns as fit (1, 2 or 3), so one or two cards fill the row instead of leaving blank space. */
-.fad-advisories .fad-farmer-lists .fad-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 14px; align-items: stretch; }
-.fad-advisories .fad-farmer-lists .fad-acard { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
-.fad-acard-main, .fad-acard-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.fad-acard-side { gap: 8px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
-.fad-advisories .fad-farmer-lists .fad-acard-facts { border-top: 0; }
-.fad-advisories .fad-farmer-lists .fad-acard-facts > div:last-child { border-bottom: 0; }
-
-/* Wide card (iClimate Lian guidance, national outlook): content on the left, basis and record details on the right. */
-.fad-advisories .fad-farmer-lists .fad-acard.is-wide { grid-column: 1 / -1; }
-@container fad (min-width: 760px) {
-    .fad-advisories .fad-farmer-lists .fad-acard.is-wide { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 0 24px; align-items: start; }
-    .fad-advisories .fad-farmer-lists .fad-acard.is-wide .fad-acard-side { margin-top: 0; padding: 0 0 0 20px; border-top: 0; border-left: 1px solid var(--line); align-self: stretch; }
-    .fad-advisories .fad-farmer-lists .fad-acard.is-wide .fad-acard-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
-    .fad-advisories .fad-farmer-lists .fad-acard.is-wide .fad-acard-facts > div { border-bottom: 0; }
-}
-
-/* Featured barangay card: full row, a little more room. */
-.fad-advisories .fad-farmer-lists .fad-feature { padding: 16px 18px; }
-
-/* Today in Lian: weather tiles, each an icon, a value and a label. */
-.fad-advisories .fad-strip { padding: 12px 14px; background: var(--card); border: 1px solid #dfe7e2; box-shadow: var(--shadow); }
-.fad-strip-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 0 0 10px; }
-.fad-strip-time { display: inline-flex; align-items: center; font-size: .75rem; color: var(--muted); }
-.fad-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.fad-tiles li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; background: var(--subtle); border: 1px solid var(--line); border-radius: var(--radius-sm); }
-.fad-tile-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--good-bg); color: var(--brand); }
-.fad-tile-icon .mtd-svg { width: 17px; height: 17px; }
-.fad-tiles strong { display: block; font-size: 1rem; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
-.fad-tiles small { display: block; font-size: .6875rem; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
-
-/* Chips and the PAGASA outlook block keep the page's radius. */
-.fad-advisories .fad-outlook { border-radius: var(--radius-sm); }
-.fad-advisories .fad-taglist li { border-radius: 6px; }
-.fad-advisories .fad-farmer-lists .fad-acard.is-official { border-left: 3px solid var(--info); }
-.fad-advisories .fad-farmer-lists .fad-acard.is-local { border-left: 3px solid var(--brand); }
-/* Wide card: record details start at the top of their column. Outlook values: three across when they fit. */
-.fad-advisories .fad-farmer-lists .fad-acard.is-wide .fad-acard-foot { margin-top: 0; }
-.fad-advisories .fad-outlook { grid-template-columns: repeat(auto-fit, minmax(min(100%, 96px), 1fr)); }
-/* Tablet: the third summary card takes the full second row (no lone half-width card); filters in three columns. */
-@container fad (min-width: 600px) and (max-width: 899.98px) {
-    .fad-advisories .fad-summary > :last-child { grid-column: 1 / -1; }
-}
-@container fad (min-width: 520px) and (max-width: 859.98px) {
-    .fad-advisories .fad-filter-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .fad-advisories .fad-field.is-search, .fad-advisories .fad-filter-actions { grid-column: 1 / -1; }
-}
-/* Barangay selector: label, then the dropdown and Show side by side even on phones. */
-.fad-advisories .fad-barangay-picker .fad-input { flex: 1 1 180px; min-width: 0; max-width: 340px; }
-.fad-advisories .fad-barangay-picker .fad-label { flex: 0 0 auto; }
-.fad-advisories .fad-barangay-picker .fad-btn { flex: 0 0 auto; }
-@container fad (max-width: 519.98px) { .fad-advisories .fad-barangay-picker .fad-label { flex-basis: 100%; } .fad-advisories .fad-barangay-picker .fad-input { max-width: none; } }
+/* Typhoon Safety Check-Ins on the Advisories page (staff). */
+.fad.adv .adv-checkin-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
+.fad.adv .adv-checkin-counts > div { padding: 12px 16px; border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; background: var(--card); }
+.fad.adv .adv-checkin-counts > div.is-moderate { border-left-color: #f2b134; }
+.fad.adv .adv-checkin-counts > div.is-high { border-left-color: #c62828; }
+.fad.adv .adv-checkin-counts dt { font-size: .875rem; font-weight: 600; color: var(--muted); }
+.fad.adv .adv-checkin-counts dd { margin: 0; font-size: 1.75rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+@container fad (max-width: 520px) { .fad.adv .adv-checkin-counts { grid-template-columns: minmax(0, 1fr); } }

@@ -306,9 +306,10 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->actingAs($farmer)
             ->get(route('planting-advisories.index'))
             ->assertOk()
-            ->assertSee('<h3 class="fad-title">Municipal</h3>', false)
-            ->assertSee('<h3 class="fad-title">Matabungkay</h3>', false)
-            ->assertDontSee('<h3 class="fad-title">Prenza</h3>', false);
+            // Advisories list (2026-10): one item per advisory; its title is the item's (screen-reader) heading.
+            ->assertSee('<h3 class="adv-title visually-hidden">Municipal</h3>', false)
+            ->assertSee('<h3 class="adv-title visually-hidden">Matabungkay</h3>', false)
+            ->assertDontSee('<h3 class="adv-title visually-hidden">Prenza</h3>', false);
     }
 
     public function test_farmer_sees_only_the_newest_forecast_run_of_a_rule_and_older_runs_are_kept(): void
@@ -321,12 +322,13 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => '16-Day Heavy Rainfall Warning', 'summary' => 'Newer forecast run', 'advisory_rule_id' => $rule->id]));
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Written by MAO', 'summary' => 'Hand-written advisory']));
 
-        $this->actingAs($farmer)->get(route('planting-advisories.index'))
+        $html = $this->actingAs($farmer)->get(route('planting-advisories.index'))
             ->assertOk()
             ->assertSee('Newer forecast run')
             ->assertDontSee('Older forecast run')
             ->assertSee('Hand-written advisory')
-            ->assertSee('<p class="fad-kpi">2</p>', false);                  // the count matches the list
+            ->getContent();
+        $this->assertSame(2, substr_count($html, 'data-adv-item='));         // the list has exactly the two
         $this->assertSame(3, PlantingAdvisory::query()->count());            // nothing is deleted
     }
 
@@ -336,12 +338,13 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Rain advisory', 'advisory_type' => 'climate']));
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Water advisory', 'advisory_type' => 'irrigation']));
 
+        // The kind chips (2026-10) send ?type=; the older ?advisory_type= still works. Each is cached on its own.
         $this->actingAs($farmer)->get(route('planting-advisories.index', ['advisory_type' => 'climate']))
-            ->assertSee('<h3 class="fad-title">Rain advisory</h3>', false)
-            ->assertDontSee('<h3 class="fad-title">Water advisory</h3>', false);
-        $this->actingAs($farmer)->get(route('planting-advisories.index', ['advisory_type' => 'irrigation']))
-            ->assertSee('<h3 class="fad-title">Water advisory</h3>', false)
-            ->assertDontSee('<h3 class="fad-title">Rain advisory</h3>', false);
+            ->assertSee('<h3 class="adv-title visually-hidden">Rain advisory</h3>', false)
+            ->assertDontSee('<h3 class="adv-title visually-hidden">Water advisory</h3>', false);
+        $this->actingAs($farmer)->get(route('planting-advisories.index', ['type' => 'irrigation']))
+            ->assertSee('<h3 class="adv-title visually-hidden">Water advisory</h3>', false)
+            ->assertDontSee('<h3 class="adv-title visually-hidden">Rain advisory</h3>', false);
     }
 
     public function test_farmer_can_use_refresh_pagasa(): void
@@ -361,10 +364,13 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Bureau advisory', 'source' => PlantingAdvisory::SOURCE_PAGASA_LEGACY,
             'source_url' => 'https://www.pagasa.dost.gov.ph/regional-forecast/ncrprsd']));
 
+        // The list shows valid dates as Lian days (2026-10); the exact time is in the advisory's Details.
         $this->actingAs($farmer)->get(route('planting-advisories.index'))
-            ->assertSee($until->copy()->timezone('Asia/Manila')->format('M j, Y').' · 4:44 PM')   // 08:44 UTC is 4:44 PM in Lian
-            ->assertSee('iClimate guidance from forecast data')
-            ->assertSee('PAGASA (official advisory)');
+            ->assertSee($until->copy()->timezone('Asia/Manila')->format('M j, Y'))
+            ->assertSee('Official PAGASA Advisory');
+        $timed = PlantingAdvisory::query()->where('title', 'Timed advisory')->firstOrFail();
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$timed, 'modal' => 1]))->assertOk()
+            ->assertSee('4:44 PM');                                           // 08:44 UTC is 4:44 PM in Lian
     }
 
     public function test_view_opens_the_advisory_in_a_popup_and_the_full_page_still_works(): void
@@ -435,7 +441,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Dry advisory', 'advisory_type' => 'irrigation', 'severity' => 'moderate']));
 
         $this->actingAs($mao)
-            ->get(route('planting-advisories.index', ['advisory_type' => 'irrigation', 'severity' => 'moderate']))
+            ->get(route('planting-advisories.index', ['advisory_type' => 'irrigation']))
             ->assertOk()
             ->assertSee('Dry advisory');
 
@@ -444,7 +450,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
             'message' => '',
             'advisory_type' => 'planting',
             'status' => 'published',
-        ])->assertSessionHasErrors(['title', 'message']);
+        ])->assertSessionHasErrors(['message'])->assertSessionDoesntHaveErrors(['title']);
     }
 
     private function openMeteoPayload(float $rainfall = 10, float $probability = 40, float $temperature = 31, float $wind = 12): array

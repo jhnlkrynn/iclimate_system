@@ -61,7 +61,9 @@ class MaoDashboardInteractionsTest extends TestCase
         $this->notify($mao, 'Already read', true);
         $this->notify($other, 'Someone else');
 
-        $data = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->viewData('mao');
+        // The count the bell and the live dashboard endpoint use (the 2026-10 dashboard page itself has no attention list).
+        $service = app(\App\Services\Analytics\MaoDashboardService::class);
+        $data = $service->forUser($service->payload(), $mao);
 
         $this->assertSame(2, $data['unread_notifications']);
         $this->assertContains('2 Unread Notifications', array_column($data['attention'], 'title'));
@@ -75,6 +77,7 @@ class MaoDashboardInteractionsTest extends TestCase
         $this->actingAs($mao)->get(route('notifications.show', $note))->assertOk();
 
         $this->assertTrue($note->fresh()->is_read);
-        $this->assertSame(0, $this->actingAs($mao)->get(route('mao.dashboard'))->viewData('mao')['unread_notifications']);
+        $service = app(\App\Services\Analytics\MaoDashboardService::class);
+        $this->assertSame(0, $service->forUser($service->payload(), $mao)['unread_notifications']);
     }
 }

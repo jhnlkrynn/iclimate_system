@@ -175,7 +175,8 @@ class FarmerAdvisorySourcesTest extends TestCase
             'api.open-meteo.com/*' => Http::response('unavailable', 503)]);
         $farmer = User::factory()->farmer()->create(['barangay' => null]);
         $this->actingAs($farmer)->postJson(route('planting-advisories.refresh-pagasa'))->assertOk();
-        $this->get(route('planting-advisories.index'))->assertOk()->assertSee('PAGASA Connected')
+        // Advisories list (2026-10): one status line says which source was unreachable; PAGASA's advisory still shows.
+        $this->get(route('planting-advisories.index'))->assertOk()->assertSee('data-adv-check="forecast_down"', false)
             ->assertSee('Current forecast data is temporarily unavailable.')->assertSee('Official PAGASA Advisory')
             ->assertDontSee('No Active Advisories for Lian');
     }
@@ -187,8 +188,9 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->actingAs($farmer)->postJson(route('planting-advisories.refresh-pagasa'))
             ->assertOk()->assertJsonPath('weather.available', true);
         $page = $this->get(route('planting-advisories.index'))->assertOk();
-        $page->assertSee('iClimate Local Farming Guidance')->assertSee('No active PAGASA advisory currently includes Lian.')
-            ->assertDontSee('No Active Advisories for Lian');
+        // Advisories list (2026-10): the local guidance is in the list under its source; nothing claims to be official.
+        $page->assertSee('Open-Meteo + iClimate Local Guidance')->assertDontSee('Official PAGASA Advisory')
+            ->assertDontSee('data-adv-empty', false);
         $this->assertSame(0, PlantingAdvisory::fromPagasaOnline()->count());
         $this->assertGreaterThan(0, PlantingAdvisory::active()->count());
     }
@@ -200,7 +202,7 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->actingAs($farmer)->postJson(route('planting-advisories.refresh-pagasa'))->assertOk();
         $this->get(route('planting-advisories.index'))->assertOk()
             ->assertSee('PAGASA advisories are temporarily unavailable. Showing the latest available local guidance.')
-            ->assertSee('iClimate Local Farming Guidance')->assertDontSee('No Active Advisories for Lian');
+            ->assertSee('Open-Meteo + iClimate Local Guidance')->assertDontSee('data-adv-empty', false);
     }
 
     public function test_both_sources_unavailable_returns_diagnostics_and_does_not_show_empty_success(): void
@@ -234,8 +236,9 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->assertSame($requests, count(Http::recorded()));
         $this->assertSame($before, PlantingAdvisory::count());
         $this->get(route('planting-advisories.index'))->assertOk()
-            // The farmer's barangay first, then all of Lian, then wider PAGASA bulletins that include Lian.
-            ->assertSeeInOrder(['San Diego Farm Weather Guidance', 'All of Lian', 'Official PAGASA Advisories', 'Weather Advisory']);
+            // Advisories list (2026-10): one list; within a severity the farmer's own barangay comes first.
+            ->assertSee('San Diego Farm Weather Guidance')->assertSee('Weather Advisory')
+            ->assertSee('<span class="adv-area">San Diego</span>', false);
     }
 
     public function test_warm_municipal_cache_still_starts_the_first_registered_barangay_refresh(): void

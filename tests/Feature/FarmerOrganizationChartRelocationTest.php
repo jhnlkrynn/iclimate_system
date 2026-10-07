@@ -41,15 +41,14 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $organization = FarmerOrganization::query()->where('name', 'Balibago Farmers Association')->firstOrFail();
         FarmerProfile::factory()->create(['farmer_organization_id' => $organization->id]);
 
+        // MAO Dashboard (2026-10): one "Registered farmers" tile that opens Farmer Profiles, where the organizations are.
         $response = $this->actingAs($mao)
             ->get(route('mao.dashboard'))
             ->assertOk()
-            ->assertSee('Farmers with Profiles')
-            ->assertSee(FarmerOrganization::count().' Farmer Organizations')
-            ->assertSee('href="'.route('farmer-profiles.index').'"', false);
+            ->assertSee('Registered farmers')
+            ->assertSee('href="'.route('farmer-profiles.index').'" data-kpi="farmers"', false);
 
-        $farmers = collect($response->viewData('mao')['kpis'])->firstWhere('key', 'farmers');
-        $this->assertSame('1', $farmers['value']);
+        $this->assertSame(1, $response->viewData('mao')['farmers']);
     }
 
     public function test_mao_labels_farmer_profiles_and_farmer_accounts_separately_with_the_same_counts_as_it(): void
@@ -60,14 +59,11 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         User::factory()->create(['role' => User::ROLE_FARMER]);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
+        // MAO Dashboard (2026-10): "Registered farmers" counts farmer profiles (not sign-in accounts), and says so.
         $response = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk();
-        $kpi = collect($response->viewData('mao')['kpis'])->firstWhere('key', 'farmers');
-
-        $this->assertSame('Farmers with Profiles', $kpi['label']);
-        $this->assertSame((string) FarmerProfile::count(), $kpi['value']);
-        $this->assertStringContainsString(User::where('role', User::ROLE_FARMER)->count().' farmer accounts', $kpi['context']);
-        $this->assertStringContainsString('Farmer accounts counts everyone who can sign in as a farmer', $kpi['tip']);
-        $response->assertSee('Farmer Accounts')->assertDontSee('Registered Farmers');
+        $this->assertSame(FarmerProfile::count(), $response->viewData('mao')['farmers']);
+        $this->assertNotSame(User::where('role', User::ROLE_FARMER)->count(), $response->viewData('mao')['farmers']);
+        $response->assertSee('Farmer profiles on file');
 
         // The IT dashboard counts the same farmer accounts.
         $integrity = app(\App\Services\Analytics\ItDashboardService::class)->payload()['integrity'];

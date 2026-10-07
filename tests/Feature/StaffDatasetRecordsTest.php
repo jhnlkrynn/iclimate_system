@@ -98,12 +98,16 @@ class StaffDatasetRecordsTest extends TestCase
     {
         $total = $this->climate()->count();
         $it = $this->it();
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);          // climate data is the MAO's to edit; IT views it (2026-10)
         $copy = ClimateRecord::query()->create(['record_date' => '2025-12-01', 'rainfall' => 87.6, 'temperature' => 26.95, 'humidity' => 81, 'season' => 'Dry', 'source' => ClimateRecordController::AMBULONG_SOURCE]);
         ClimateRecord::query()->create(['record_date' => '2025-12-05', 'rainfall' => 3, 'temperature' => 27, 'humidity' => 80, 'season' => 'Dry', 'source' => 'MAO field log']);
 
         // The copy replaces its station month (no duplicate); the other source is a separate record.
-        $html = $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
+        $html = $this->actingAs($mao)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
         $this->assertStringContainsString(route('climate-records.edit', $copy->id), $html);
+        // IT sees the same list, without Edit or Create.
+        $this->actingAs($it)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))
+            ->assertDontSee('/edit"', false)->assertDontSee('Create Climate Record');
 
         // Dataset rows have no View / Edit / Delete: only the two entered rows (newest, so on page 1) have Edit
         // links, each twice (desktop table and phone card).

@@ -23,6 +23,11 @@ class RiceProductionController extends CrudController
 
     protected string $title = 'Rice Production Record';
 
+    /** Production data is the MAO's to enter and correct; IT views it (2026-10). */
+    protected array $manageableRoles = [\App\Models\User::ROLE_MAO];
+
+    protected bool $printable = true;
+
     protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year'];
 
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];

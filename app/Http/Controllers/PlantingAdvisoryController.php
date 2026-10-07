@@ -9,18 +9,20 @@ use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
+use App\Services\Advisories\AdvisoryPublishedNotifier;
 use App\Services\Advisories\AdvisoryWeatherService;
 use App\Services\Advisories\LocalFarmGuidanceService;
 use App\Services\Advisories\PagasaAdvisoryService;
-use App\Services\Advisories\PagasaBulletinParser;
 use App\Services\Advisory\AdvisoryVerificationService;
 use App\Services\Analytics\AnalyticsDispatcher;
+use App\Services\Risk\HeatMapPanel;
 use App\Services\SystemAuditLogger;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\BusinessClock;
 use App\Support\CacheScope;
 use App\Support\FarmerAdvisoryView;
+use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
 use App\Support\PageCache;
 use App\Support\SchemaCache;
@@ -29,7 +31,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -42,225 +43,216 @@ class PlantingAdvisoryController extends Controller
 
     private const STATUSES = ['pending_review', 'published', 'expired', 'rejected', 'archived'];
 
-    public function index(Request $request, TyphoonSafetyService $typhoonSafety, LianBarangayWeatherService $barangayWeather): View
+    /** The staff list's views: what farmers see now, what waits for approval, or everything on file. */
+    private const VIEWS = ['active', 'pending', 'all'];
+
+    /** How many advisories the staff "All" view lists (newest first). */
+    private const ALL_VIEW_LIMIT = 100;
+
+    /**
+     * Advisories (2026-10): one list. Each item shows a severity colour, the barangay, the valid dates, one sentence of
+     * recommendation and one "What to do". Planting is the type shown first; another type appears only as a chip
+     * when an advisory of that type exists.
+     */
+    public function index(Request $request): View
     {
         // A watched analytics run changes by the second, so that view is never reused.
         if ($request->query('run') !== null) {
-            return view('advisories.index', $this->indexData($request, $typhoonSafety, $barangayWeather));
+            return view('advisories.index', $this->indexData($request));
         }
 
-        // Private to the person (their barangay, their own typhoon reply) and reused for a minute; any
-        // advisory, feedback or profile change rebuilds it. About eight database round trips to build.
+        // Private to the person (their barangay) and reused for a minute; any advisory, feedback or profile change
+        // rebuilds it.
         return view('advisories.index', PageCache::forUser(
             (int) $request->user()->id,
             'advisories-index',
             60,
-            fn (): array => $this->indexData($request, $typhoonSafety, $barangayWeather),
-            // Every filter the page's form sends must be listed, or a filtered request is served the unfiltered page.
-            PageCache::queryVary($request, ['page', 'type', 'advisory_type', 'severity', 'status', 'barangay', 'target_barangay', 'search', 'q']),
+            fn (): array => $this->indexData($request),
+            // Everything the page's links send must be listed, or a filtered request is served the unfiltered page.
+            PageCache::queryVary($request, ['type', 'advisory_type', 'show', 'target_barangay']) + ['locale' => FarmerLanguage::resolve($request)],
         ));
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function indexData(Request $request, TyphoonSafetyService $typhoonSafety, LianBarangayWeatherService $barangayWeatherService): array
+    private function indexData(Request $request): array
     {
-        $pagasaSummary = Cache::get('pagasa-advisories:status', Cache::get(PagasaAdvisoryService::CHECK_KEY, []));
-        $isFarmer = $request->user()->role === User::ROLE_FARMER;
-        $farmerBarangay = $isFarmer ? $request->user()->registeredBarangay() : null;
-        // Barangay picker: "" = My Barangay, "all" = All Lian Barangays, or one Lian barangay by name.
-        $rawTargetBarangay = is_string($request->query('target_barangay')) ? trim($request->query('target_barangay')) : '';
-        $viewAllBarangays = $isFarmer && strtolower($rawTargetBarangay) === 'all';
-        $selectedBarangay = $viewAllBarangays ? null : (LianBarangays::canonicalName($rawTargetBarangay) ?? $farmerBarangay);
-        $myBarangayAdvisories = collect();
-        $otherBarangayAdvisories = collect();
-        $lianWideAdvisories = collect();
-        $officialPagasaAdvisories = collect();
-        $additionalPagasaInformation = collect();
-        $barangayAdvisory = null;
-        $cardWeather = null;
-        $query = $this->filteredQuery($request, applyBarangay: ! $isFarmer);
+        $user = $request->user();
+        $isFarmer = $user->role === User::ROLE_FARMER;
+        $canManage = $this->canManage($request);
+        $locale = $isFarmer ? FarmerLanguage::resolve($request) : 'en';
+        $farmerBarangay = $isFarmer ? LianBarangays::canonicalName($user->registeredBarangay()) : null;
+        // A farmer always reads their own barangay (plus Lian-wide advice); staff may pick one.
+        $barangay = $isFarmer ? $farmerBarangay
+            : LianBarangays::canonicalName(is_string($request->query('target_barangay')) ? $request->query('target_barangay') : null);
+        $show = ! $isFarmer && in_array($request->query('show'), self::VIEWS, true) ? $request->query('show') : 'active';
 
-        if ($isFarmer) {
-            $all = $query->active()->latestRuns()->latest('valid_from')->latest('created_at')->get()->unique('id')
-                // A PAGASA bulletin that only names other Batangas towns does not apply to Lian (stored rows too).
-                ->reject(fn (PlantingAdvisory $advisory) => $advisory->isOfficialPagasa()
-                    && PagasaBulletinParser::namesOnlyOtherBatangasTowns((string) ($advisory->content ?: $advisory->message)))
-                // PAGASA can update a bulletin's text without a new issue time (the agri outlook), which stores a second
-                // row of the same bulletin; only its newest version is shown.
-                ->sortByDesc(fn (PlantingAdvisory $advisory) => [$advisory->created_at?->timestamp ?? 0, $advisory->id])
-                ->unique(fn (PlantingAdvisory $advisory) => $advisory->isOfficialPagasa() && data_get($advisory->metadata, 'bulletin_family')
-                    ? 'pagasa:'.data_get($advisory->metadata, 'bulletin_family')
-                    : 'id:'.$advisory->id)
-                ->values();
-            $groups = $this->farmerGroups($all, $selectedBarangay, $viewAllBarangays);
-            // The barangay's iClimate advice goes into the weather card only when that card can show it (current
-            // weather available); otherwise it stays a normal card, so valid advice never disappears.
-            $cardWeather = $selectedBarangay ? $barangayWeatherService->cachedForBarangay($selectedBarangay) : null;
-            $barangayAdvisory = is_array($cardWeather) && ($cardWeather['status'] ?? null) !== 'unavailable'
-                ? $groups['barangay']->first(fn (PlantingAdvisory $advisory) => data_get($advisory->metadata, 'source_type') === 'iclimate')
-                : null;
-            $myBarangayAdvisories = $groups['barangay']->reject(fn (PlantingAdvisory $advisory) => $barangayAdvisory && $advisory->is($barangayAdvisory))->values();
-            $otherBarangayAdvisories = $groups['other'];
-            $lianWideAdvisories = $groups['lian'];
-            $officialPagasaAdvisories = $groups['pagasa'];
-            $additionalPagasaInformation = $groups['additional'];
-            $shown = collect([$barangayAdvisory])->filter()->concat($myBarangayAdvisories)->concat($otherBarangayAdvisories)
-                ->concat($lianWideAdvisories)->concat($officialPagasaAdvisories)->concat($additionalPagasaInformation);
-            $official = $shown->filter(fn (PlantingAdvisory $advisory) => $advisory->isOfficialPagasa());
+        $rows = PlantingAdvisory::query()
+            ->with(['weatherData'])
+            ->when($show === 'active', fn ($query) => $query->active()->latestRuns())
+            ->when($show === 'pending', fn ($query) => $query->pendingReview())
+            ->when($isFarmer || $barangay, fn ($query) => $query->forBarangay($barangay))
+            ->latest('valid_from')->latest('created_at')
+            ->when($show === 'all', fn ($query) => $query->limit(self::ALL_VIEW_LIMIT))
+            ->get();
+        if ($show === 'active') {
+            // Each provider check stores its own copy of an unchanged advisory; the list shows it once.
+            $rows = $rows->unique(fn (PlantingAdvisory $a): string => $a->title.'|'.$a->displaySummary().'|'.$a->target_barangay)->values();
         }
-        $barangayWeather = $isFarmer ? $cardWeather : ($selectedBarangay ? $barangayWeatherService->cachedForBarangay($selectedBarangay) : null);
-        // The farmer's Typhoon Safety Check-In is on the Farmer Home page (only during a typhoon), not here.
-        $activeTyphoonSafetyEvent = null;
-        $summary = Arr::only($this->advisorySummary(), ['lastWeather', 'latestPagasaAdvisory', 'activeCount', 'pagasaAdvisoryCount']);
-        $pagasaCheck = $pagasaSummary;
-        $localCheck = Cache::get(LocalFarmGuidanceService::STATUS_KEY, []);
-        $pagasaCheckedAt = is_array($pagasaCheck) ? ($pagasaCheck['checked_at'] ?? null) : null;
-        $checkedAt = $pagasaCheckedAt ? Carbon::parse($pagasaCheckedAt) : null;
-        $pagasaFailed = ! empty($pagasaCheck) && ! ($pagasaCheck['ok'] ?? count($pagasaCheck['errors'] ?? []) < ($pagasaCheck['sources_checked'] ?? 0));
-        $pagasaComplete = ! empty($pagasaCheck) && ($pagasaCheck['sources_checked'] ?? 0) > 0 && empty($pagasaCheck['errors']);
 
-        if ($isFarmer) {
-            // These counts cover every visible, de-duplicated advisory across the clearly separated sections, and
-            // the latest official update is one that applies to Lian.
-            $summary['activeCount'] = $shown->count();
-            $summary['pagasaAdvisoryCount'] = $official->count();
-            $summary['latestPagasaAdvisory'] = $official->sortByDesc(fn (PlantingAdvisory $advisory) => $advisory->published_at?->timestamp ?? 0)->first();
-        }
+        $typeOf = fn (PlantingAdvisory $a): string => strtolower((string) ($a->advisory_type ?: $a->type)) ?: PlantingAdvisory::TYPE_PLANTING;
+        $counts = $rows->countBy($typeOf);
+        // Planting first and always there; the other types only when they are in use.
+        $types = collect([PlantingAdvisory::TYPE_PLANTING => (int) ($counts[PlantingAdvisory::TYPE_PLANTING] ?? 0)])
+            ->union($counts->except(PlantingAdvisory::TYPE_PLANTING)->sortKeys());
+        // ?advisory_type= is the older name of ?type= and still works (saved links).
+        $asked = $request->query('type') ?? $request->query('advisory_type');
+        $type = match (true) {
+            is_string($asked) && $types->has(strtolower($asked)) => strtolower($asked),
+            // No planting advisory at all: open on the first kind that has one, never on an empty page.
+            $types[PlantingAdvisory::TYPE_PLANTING] === 0 && $types->count() > 1 => (string) $types->keys()->get(1),
+            default => PlantingAdvisory::TYPE_PLANTING,
+        };
+        $rank = ['critical' => 0, 'high' => 1, 'moderate' => 2, 'low' => 3, 'information' => 4];
 
         return [
-            'advisories' => $isFarmer ? collect() : $query->latest('valid_from')->paginate(CrudController::PER_PAGE)->withQueryString(),
+            'items' => $rows->filter(fn (PlantingAdvisory $a): bool => $typeOf($a) === $type)
+                // Most severe first; within a severity the nearest place first (own barangay, Lian, province, region,
+                // national outlook), then newest.
+                ->sortBy(fn (PlantingAdvisory $a): array => [$rank[$a->severity] ?? 5, match (true) {
+                    $barangay !== null && $a->target_barangay === $barangay => 0,
+                    str_contains(strtolower((string) data_get($a->metadata, 'scope_name')), 'national') => 5,
+                    default => ['barangay' => 1, 'municipality' => 2, 'province' => 3, 'regional' => 4, 'national' => 5][data_get($a->metadata, 'scope_type', 'municipality')] ?? 2,
+                }])
+                ->map(fn (PlantingAdvisory $a): array => $this->listItem($a, $locale))->values(),
+            'types' => $types,
+            'type' => $type,
+            'show' => $show,
+            'pendingCount' => $isFarmer ? 0 : PlantingAdvisory::query()->pendingReview()->count(),
+            'barangay' => $barangay,
+            'barangays' => LianBarangays::all(),
+            'farmerBarangay' => $farmerBarangay,
+            'isFarmer' => $isFarmer,
+            'canManage' => $canManage,
+            'locale' => $locale,
             // Farmers read MAO posts here as read-only Announcements (no reactions, comments or posting).
             'announcements' => $isFarmer
                 ? \App\Models\FeedPost::query()->with('author:id,name')->whereNull('archived_at')->latest()->take(10)->get()
                 : collect(),
-            'myBarangayAdvisories' => $myBarangayAdvisories,
-            'otherBarangayAdvisories' => $otherBarangayAdvisories,
-            'viewAllBarangays' => $viewAllBarangays,
-            'lianWideAdvisories' => $lianWideAdvisories,
-            'officialPagasaAdvisories' => $officialPagasaAdvisories,
-            'additionalPagasaInformation' => $additionalPagasaInformation,
-            'barangayAdvisory' => $barangayAdvisory,
-            'barangayWeather' => $barangayWeather,
-            'farmerBarangay' => $farmerBarangay,
-            'selectedBarangay' => $selectedBarangay,
-            ...$summary,
-            'activeTyphoonSafetyEvent' => $activeTyphoonSafetyEvent,
-            'typhoonSafetyResponse' => SchemaCache::hasTable('typhoon_safety_responses') && $activeTyphoonSafetyEvent
-                ? TyphoonSafetyResponse::query()
-                    ->where('user_id', $request->user()->id)
-                    ->where('event_key', $activeTyphoonSafetyEvent['key'])
-                    ->first()
-                : null,
-            'types' => self::TYPES,
-            'severities' => self::SEVERITIES,
-            // Farmers only ever see published advisories, so the other statuses would always return nothing.
-            'statuses' => $isFarmer ? [PlantingAdvisory::STATUS_PUBLISHED] : self::STATUSES,
-            'barangays' => LianBarangays::all(),
-            'canManage' => $this->canManage($request),
-            'pagasaSummary' => $pagasaSummary,
-            'advisoryCheck' => [
-                'checked_at' => $checkedAt,
-                'last_successful_check' => is_array($pagasaCheck) && ! empty($pagasaCheck['last_successful_check'])
-                    ? Carbon::parse($pagasaCheck['last_successful_check'])
-                    : null,
-                'unavailable' => $pagasaFailed,
-                'pagasa_connected' => ! $pagasaFailed && ! empty($pagasaCheck),
-                'pagasa_complete' => $pagasaComplete,
-                'weather_available' => $localCheck['available'] ?? ($summary['lastWeather'] && ! $summary['lastWeather']->isOutdated()),
-                'weather_checked' => ! empty($localCheck),
-                'weather_unavailable' => ! empty($localCheck) && ! ($localCheck['source_connected'] ?? false),
-                'weather_checked_at' => ! empty($localCheck['checked_at']) ? Carbon::parse($localCheck['checked_at']) : null,
-                'needs_refresh' => ! Cache::has(PagasaAdvisoryService::CHECK_KEY) || empty($localCheck)
-                    || Carbon::parse($localCheck['checked_at'])->lt(now()->subMinutes(10))
-                    || ($selectedBarangay && LocalFarmGuidanceService::needsBarangayRefresh($selectedBarangay)),
-                'all_checked' => $pagasaComplete && ! empty($localCheck) && ($localCheck['source_connected'] ?? false),
-            ],
             'analyticsRun' => $this->requestedAnalyticsRun($request),
-            'lianForecast' => $isFarmer ? $this->lianForecast() : null,
+            'check' => $this->lastCheck(),
+            // Typhoon Safety Check-Ins (moved here from the former Operations page): staff only.
+            'checkIns' => $isFarmer ? null : $this->typhoonCheckIns(),
         ];
     }
 
     /**
-     * Today's Open-Meteo forecast for Lian (the same records the Lian-wide rules are calculated from), for the "All of
-     * Lian" conditions line. Null when there is no forecast for today; an outdated one is marked so it is never shown
-     * as current.
+     * While a typhoon advisory is in effect: how many farmers answered Safe / Needs Help / not yet, and who needs help.
      *
-     * @return array{rainfall_mm: ?float, probability: ?float, temperature_max: ?float, humidity: ?float, wind_speed: ?float, fetched_at: ?Carbon, freshness: string}|null
+     * @return array<string, mixed>
      */
-    private function lianForecast(): ?array
+    private function typhoonCheckIns(): array
     {
-        $today = BusinessClock::today()->toDateString();
-        $record = ExternalWeatherData::query()->latestSuccessful()->whereDate('forecast_date', $today)->first();
-        if (! $record) {
-            return null;
+        $event = rescue(fn () => app(TyphoonSafetyService::class)->activeEvent(), null, false);
+        if (! $event || ! SchemaCache::hasTable('typhoon_safety_responses')) {
+            return ['event' => null];
         }
-        $number = fn ($value) => is_numeric($value) ? (float) $value : null;
+        $responses = rescue(fn () => TyphoonSafetyResponse::query()->with('farmer.farmerProfile:id,user_id,barangay')->where('event_key', $event['key'])->latest('responded_at')->get(), collect(), false);
+        $farmers = rescue(fn (): int => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count(), 0, false);
 
         return [
-            'rainfall_mm' => $number($record->rainfall_mm),
-            'probability' => $number($record->precipitation_probability),
-            'temperature_max' => $number($record->temperature_max),
-            'humidity' => $number($record->humidity),
-            'wind_speed' => $number($record->wind_speed),
-            'fetched_at' => $record->fetched_at,
-            'freshness' => $record->freshnessLabel(),
+            'event' => $event,
+            'safe' => $responses->where('status', TyphoonSafetyResponse::STATUS_SAFE)->count(),
+            'needs_help' => $responses->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->values(),
+            'no_response' => max(0, $farmers - $responses->pluck('user_id')->unique()->count()),
         ];
     }
 
     /**
-     * The farmer's advisories in the order they matter to them:
-     *  - barangay: the selected barangay (an iClimate or MAO advisory for it, or a PAGASA bulletin that names it);
-     *  - other: other Lian barangays (only when something is happening there, i.e. moderate or worse, or PAGASA
-     *    names them; every barangay when "All Lian Barangays" is chosen);
-     *  - lian: municipality-wide Lian advisories (local guidance, or PAGASA bulletins that name Lian);
-     *  - pagasa: wider PAGASA bulletins (Batangas Province, CALABARZON) that include Lian, scope kept as issued;
-     *  - additional: national outlooks, as supporting information.
-     * Each list is most serious first, then newest.
+     * Whether the saved advisories are current: the scheduler checks PAGASA and the forecast, and the page only says
+     * what the last check found. An unreachable source is never shown as "no advisories".
      *
-     * @param  Collection<int, PlantingAdvisory>  $advisories
-     * @return array<string, Collection<int, PlantingAdvisory>>
+     * @return array{state: string, checked_at: ?Carbon}
      */
-    private function farmerGroups(Collection $advisories, ?string $selectedBarangay, bool $viewAllBarangays): array
+    private function lastCheck(): array
     {
-        $groups = ['barangay' => collect(), 'other' => collect(), 'lian' => collect(), 'pagasa' => collect(), 'additional' => collect()];
-        $serious = [PlantingAdvisory::SEVERITY_MODERATE, PlantingAdvisory::SEVERITY_HIGH, PlantingAdvisory::SEVERITY_CRITICAL];
+        $pagasa = Cache::get('pagasa-advisories:status', Cache::get(PagasaAdvisoryService::CHECK_KEY, []));
+        $pagasa = is_array($pagasa) ? $pagasa : [];
+        $local = Cache::get(LocalFarmGuidanceService::STATUS_KEY, []);
+        $local = is_array($local) ? $local : [];
 
-        foreach ($advisories as $advisory) {
-            $view = new FarmerAdvisoryView($advisory);
-            $barangays = $view->affectedBarangays();
-            $isPagasa = $view->isPagasa();
+        $pagasaDown = $pagasa !== [] && ! ($pagasa['ok'] ?? count($pagasa['errors'] ?? []) < ($pagasa['sources_checked'] ?? 0));
+        $forecastDown = $local !== [] && ! ($local['source_connected'] ?? ($local['available'] ?? false));
+        $times = array_filter([$pagasa['checked_at'] ?? null, $local['checked_at'] ?? null]);
 
-            $group = match (true) {
-                $isPagasa && str_contains(strtolower((string) data_get($advisory->metadata, 'scope_name')), 'national') => 'additional',
-                $selectedBarangay !== null && in_array($selectedBarangay, $barangays, true) => 'barangay',
-                $barangays !== [] => ($viewAllBarangays || $isPagasa || in_array($advisory->severity, $serious, true)) ? 'other' : null,
-                $isPagasa && $view->originalScope() !== null => 'pagasa',
-                default => 'lian',
-            };
+        return [
+            'state' => match (true) {
+                $pagasa === [] && $local === [] => 'unchecked',
+                $pagasaDown && ($forecastDown || $local === []) => 'unavailable',
+                $pagasaDown => 'pagasa_down',
+                $forecastDown => 'forecast_down',
+                default => 'ok',
+            },
+            'checked_at' => $times === [] ? null : rescue(fn () => Carbon::parse(max($times)), null, false),
+        ];
+    }
 
-            if ($group !== null) {
-                $groups[$group]->push($advisory);
-            }
+    /**
+     * One row of the list: colour, place, dates, one sentence of recommendation and one "What to do".
+     *
+     * @return array<string, mixed>
+     */
+    private function listItem(PlantingAdvisory $advisory, string $locale): array
+    {
+        $view = new FarmerAdvisoryView($advisory);
+        $tz = BusinessClock::timezone();
+        $from = $advisory->valid_from?->copy()->timezone($tz);
+        $until = $advisory->valid_until?->copy()->timezone($tz);
+        $level = match ($advisory->severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL, PlantingAdvisory::SEVERITY_HIGH => 'high',
+            PlantingAdvisory::SEVERITY_MODERATE => 'moderate',
+            default => 'low',
+        };
+        $activityDate = rescue(fn () => filled(data_get($advisory->metadata, 'mao_activity_date')) ? Carbon::parse(data_get($advisory->metadata, 'mao_activity_date')) : null, null, false);
+
+        return [
+            'advisory' => $advisory,
+            'level' => $level,
+            'level_label' => trans('farmer.heat_map.level.'.$level, [], $locale),
+            // An official bulletin keeps its own geographic scope (for example "Batangas Province"): never renamed to Lian.
+            'area' => $advisory->target_barangay ?: (data_get($advisory->metadata, 'scope_name') ?: trans('farmer.advisories_page.all_lian', [], $locale)),
+            'valid' => match (true) {
+                $from && $until => $from->isSameDay($until) ? $from->format('M j, Y') : $from->format('M j').' – '.$until->format('M j, Y'),
+                (bool) $until => trans('farmer.advisories_page.until', ['date' => $until->format('M j, Y')], $locale),
+                (bool) $from => trans('farmer.advisories_page.from', ['date' => $from->format('M j, Y')], $locale),
+                default => null,
+            },
+            'recommendation' => self::oneSentence($view->farmerEffect()),
+            'action' => self::oneSentence($view->farmerAction()),
+            'activity' => filled(data_get($advisory->metadata, 'mao_activity')) ? (string) data_get($advisory->metadata, 'mao_activity') : null,
+            'activity_date' => $activityDate?->format('M j, Y'),
+            'official' => $view->isPagasa(),
+            'source' => $view->farmerSourceLabel(),
+        ];
+    }
+
+    /** The first sentence of a text, so every row stays one line of advice. */
+    public static function oneSentence(string $text): string
+    {
+        $text = trim((string) preg_replace('/\s+/', ' ', $text));
+        if (preg_match('/^(.+?[.!?])(\s|$)/u', $text, $m)) {
+            $text = $m[1];
         }
 
-        $order = fn (Collection $list) => $list->sortBy(fn (PlantingAdvisory $advisory) => [
-            -1 * (int) $advisory->priority,
-            -1 * ($advisory->valid_from?->timestamp ?? 0),
-        ])->values();
-        $groups = array_map($order, $groups);
-        // Province-wide bulletins before regional ones.
-        $groups['pagasa'] = $groups['pagasa']->sortBy(fn (PlantingAdvisory $advisory) => ['province' => 1, 'regional' => 2][data_get($advisory->metadata, 'scope_type')] ?? 3)->values();
-
-        return $groups;
+        return (string) str($text)->limit(220);
     }
 
     /**
      * Header figures shared by both advisory pages: seven separate queries
      * (~300 ms each against Supabase) that only change when an advisory or the
-     * weather record is saved. Cached for a minute, and a change to the data it
-     * reads retires it at once (CacheScope 'advisories-summary').
+     * weather record is saved. Cached for a minute, and changes to the data it
+     * reads retire it through the scoped invalidation token.
      *
      * @return array<string, mixed>
      */
@@ -293,19 +285,59 @@ class PlantingAdvisoryController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    /**
+     * The MAO's form opens already filled in from the system's recommendation for the barangay (this week's Heat Map
+     * rating), so the MAO reviews it, changes what is needed, then approves and publishes.
+     */
+    public function create(Request $request, HeatMapPanel $panel): View
     {
         $this->authorizeManage($request);
+        $suggestions = $this->suggestions($panel);
+        $barangay = LianBarangays::canonicalName(is_string($request->query('barangay')) ? $request->query('barangay') : null);
+        $suggested = $suggestions[$barangay ?? ''] ?? null;
 
         return view('advisories.form', [
-            'advisory' => new PlantingAdvisory(['status' => PlantingAdvisory::STATUS_PENDING_REVIEW]),
+            'advisory' => new PlantingAdvisory([
+                'status' => PlantingAdvisory::STATUS_PENDING_REVIEW,
+                'advisory_type' => PlantingAdvisory::TYPE_PLANTING,
+                'target_barangay' => $barangay,
+                'message' => $suggested['recommendation'] ?? null,
+                'recommended_action' => $suggested['action'] ?? null,
+                'severity' => $suggested['severity'] ?? PlantingAdvisory::SEVERITY_LOW,
+                'valid_until' => BusinessClock::today()->addDays(6),
+            ]),
             'action' => route('planting-advisories.store'),
             'method' => 'POST',
             'types' => self::TYPES,
-            'severities' => self::SEVERITIES,
-            'statuses' => self::STATUSES,
             'barangays' => LianBarangays::all(),
+            'suggestions' => $suggestions,
+            'prefilled' => $suggested !== null,
         ]);
+    }
+
+    /**
+     * The system's recommendation per barangay ('' = all of Lian, taken from the highest-rated barangay), from the
+     * same saved forecast rating the Heat Map shows. Empty when nothing is saved yet.
+     *
+     * @return array<string, array{recommendation: string, action: string, severity: string}>
+     */
+    private function suggestions(HeatMapPanel $panel): array
+    {
+        $week = rescue(fn (): array => $panel->ranges('en')['week'] ?? [], [], false);
+        $rank = ['high' => 3, 'moderate' => 2, 'low' => 1];
+        $suggestions = [];
+        $worst = null;
+        foreach ((array) ($week['barangays'] ?? []) as $name => $b) {
+            if (! isset($rank[$b['level']])) {
+                continue;
+            }
+            $suggestions[$name] = ['recommendation' => $b['meaning'], 'action' => $b['action'], 'severity' => $b['level']];
+            if ($worst === null || $rank[$b['level']] > $rank[$suggestions[$worst]['severity']]) {
+                $worst = $name;
+            }
+        }
+
+        return $worst === null ? [] : ['' => $suggestions[$worst]] + $suggestions;
     }
 
     public function store(Request $request): RedirectResponse
@@ -313,18 +345,24 @@ class PlantingAdvisoryController extends Controller
         $this->authorizeManage($request);
         $data = $this->validated($request);
 
-        $advisory = PlantingAdvisory::query()->create($this->payload($request, $data) + [
+        $payload = $this->payload($request, $data);
+        $published = $payload['status'] === PlantingAdvisory::STATUS_PUBLISHED;
+
+        $advisory = PlantingAdvisory::query()->create($payload + [
             'posted_by' => $request->user()->id,
             'generated_automatically' => false,
-            'requires_review' => $data['status'] !== PlantingAdvisory::STATUS_PUBLISHED,
-            'published_at' => $data['status'] === PlantingAdvisory::STATUS_PUBLISHED ? now() : null,
+            'requires_review' => ! $published,
+            'published_at' => $published ? now() : null,
+            'approved_by' => $published ? $request->user()->id : null,
+            'approved_at' => $published ? now() : null,
         ]);
         SystemAuditLogger::forModel('created', $advisory, $request, [
             'target_barangay' => $advisory->target_barangay,
             'status' => $advisory->status,
         ]);
 
-        return redirect()->route('planting-advisories.show', $advisory)->with('success', 'Advisory saved successfully.');
+        return redirect()->route('planting-advisories.show', $advisory)
+            ->with('success', $published ? $this->publishedMessage($advisory) : 'Advisory saved for review. Farmers do not see it yet.');
     }
 
     public function show(Request $request, PlantingAdvisory $plantingAdvisory, AdvisoryVerificationService $verification, AdvisoryWeatherService $advisoryWeather): View
@@ -439,9 +477,9 @@ class PlantingAdvisoryController extends Controller
             'action' => route('planting-advisories.update', $plantingAdvisory),
             'method' => 'PUT',
             'types' => self::TYPES,
-            'severities' => self::SEVERITIES,
-            'statuses' => self::STATUSES,
             'barangays' => LianBarangays::all(),
+            'suggestions' => [],
+            'prefilled' => false,
         ]);
     }
 
@@ -450,17 +488,20 @@ class PlantingAdvisoryController extends Controller
         $this->authorizeManage($request);
         $data = $this->validated($request);
 
-        $plantingAdvisory->update($this->payload($request, $data) + [
-            'published_at' => $data['status'] === PlantingAdvisory::STATUS_PUBLISHED
-                ? ($plantingAdvisory->published_at ?? now())
-                : $plantingAdvisory->published_at,
-        ]);
+        $payload = $this->payload($request, $data, $plantingAdvisory);
+        $nowPublished = $payload['status'] === PlantingAdvisory::STATUS_PUBLISHED;
+        $newlyPublished = $nowPublished && $plantingAdvisory->status !== PlantingAdvisory::STATUS_PUBLISHED;
+
+        $plantingAdvisory->update($payload + [
+            'published_at' => $nowPublished ? ($plantingAdvisory->published_at ?? now()) : $plantingAdvisory->published_at,
+        ] + ($newlyPublished ? ['requires_review' => false, 'approved_by' => $request->user()->id, 'approved_at' => now()] : []));
         SystemAuditLogger::forModel('updated', $plantingAdvisory, $request, [
             'target_barangay' => $plantingAdvisory->target_barangay,
             'status' => $plantingAdvisory->status,
         ]);
 
-        return redirect()->route('planting-advisories.show', $plantingAdvisory)->with('success', 'Advisory updated successfully.');
+        return redirect()->route('planting-advisories.show', $plantingAdvisory)
+            ->with('success', $newlyPublished ? $this->publishedMessage($plantingAdvisory) : 'Advisory updated successfully.');
     }
 
     public function destroy(Request $request, PlantingAdvisory $plantingAdvisory): RedirectResponse
@@ -483,6 +524,8 @@ class PlantingAdvisoryController extends Controller
             'valid_until' => ['nullable', 'date', 'after:valid_from'],
         ]);
 
+        $newlyPublished = $advisory->status !== PlantingAdvisory::STATUS_PUBLISHED;
+
         $advisory->update(array_filter([
             'title' => $data['title'] ?? null,
             'content' => $data['message'] ?? null,
@@ -502,7 +545,7 @@ class PlantingAdvisoryController extends Controller
             'target_barangay' => $advisory->target_barangay,
         ]);
 
-        return back()->with('success', 'Advisory Published. The advisory is now visible to selected farmers.');
+        return back()->with('success', $newlyPublished ? $this->publishedMessage($advisory) : 'Advisory Published. The advisory is now visible to selected farmers.');
     }
 
     public function reject(Request $request, PlantingAdvisory $advisory): RedirectResponse
@@ -573,9 +616,9 @@ class PlantingAdvisoryController extends Controller
             ? ($requestedBarangay ?? $request->user()->registeredBarangay())
             : $requestedBarangay;
         $summary = $pagasa->fetchAndStore($this->canManage($request), (int) config('services.pagasa.request_budget', 15));
-        // Each refresh retires only what depends on it: the services bump the advisory check status, and new or
-        // changed advisories / weather rows retire their own readers through their model events (CacheScope).
         $weather = $local->refresh($barangay);
+        // The provider services retire their own dependent cache scopes; keep unrelated
+        // prepared pages warm after a refresh.
 
         if (! ($summary['ok'] ?? false) && ! ($weather['available'] ?? false)) {
             if ($request->expectsJson()) {
@@ -608,8 +651,7 @@ class PlantingAdvisoryController extends Controller
             ->first();
     }
 
-    /** @param  bool  $applyBarangay  Staff filter by barangay; farmers pick a barangay with the page's picker instead. */
-    private function filteredQuery(Request $request, bool $applyBarangay = true)
+    private function filteredQuery(Request $request)
     {
         $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
         $advisoryType = is_string($request->query('advisory_type')) ? trim($request->query('advisory_type')) : '';
@@ -632,7 +674,7 @@ class PlantingAdvisoryController extends Controller
             ->when($type !== '', fn ($query) => $query->where('advisory_type', strtolower($type)))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
-            ->when($applyBarangay && $targetBarangay !== '', function ($query) use ($targetBarangay) {
+            ->when($targetBarangay !== '', function ($query) use ($targetBarangay) {
                 $query->forBarangay($targetBarangay);
             });
     }
@@ -640,33 +682,51 @@ class PlantingAdvisoryController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'message' => ['required_without:content', 'nullable', 'string'],
-            'content' => ['required_without:message', 'nullable', 'string'],
-            'recommended_action' => ['nullable', 'string'],
-            'advisory_type' => ['required_without:type', 'nullable', Rule::in(self::TYPES)],
-            'type' => ['required_without:advisory_type', 'nullable', Rule::in(['Climate', 'Planting', 'Harvesting', 'Irrigation', 'climate', 'planting', 'harvesting', 'irrigation'])],
+            // The form's order: Barangay, Recommendation, What to do, Valid until, Severity, then the optional MAO Activity.
             'target_barangay' => ['nullable', 'string', Rule::in(LianBarangays::all())],
-            'severity' => ['nullable', Rule::in(self::SEVERITIES)],
-            'status' => ['required', Rule::in(array_merge(self::STATUSES, ['Draft', 'Published']))],
+            'message' => ['required_without:content', 'nullable', 'string', 'max:2000'],
+            'content' => ['required_without:message', 'nullable', 'string', 'max:2000'],
+            'recommended_action' => ['nullable', 'string', 'max:2000'],
             'valid_from' => ['nullable', 'date'],
             'valid_until' => ['nullable', 'date', 'after_or_equal:valid_from'],
+            'severity' => ['nullable', Rule::in(self::SEVERITIES)],
+            'mao_activity' => ['nullable', 'string', 'max:255'],
+            'mao_activity_date' => ['nullable', 'date', 'required_with:mao_activity'],
+            // Filled in by the system when the form leaves them out: a planting advisory, titled by its barangay.
+            'title' => ['nullable', 'string', 'max:255'],
+            'advisory_type' => ['nullable', Rule::in(self::TYPES)],
+            'type' => ['nullable', Rule::in(['Climate', 'Planting', 'Harvesting', 'Irrigation', 'climate', 'planting', 'harvesting', 'irrigation'])],
+            'status' => ['nullable', Rule::in(array_merge(self::STATUSES, ['Draft', 'Published']))],
+        ], [
+            'message.required_without' => 'Write the recommendation.',
+            'mao_activity_date.required_with' => 'Choose the date of the MAO activity.',
         ]);
 
         $data['message'] = $data['message'] ?? $data['content'];
-        $data['advisory_type'] = $data['advisory_type'] ?? strtolower((string) $data['type']);
+        $data['advisory_type'] = $data['advisory_type'] ?? (filled($data['type'] ?? null) ? strtolower((string) $data['type']) : PlantingAdvisory::TYPE_PLANTING);
         $data['severity'] = $data['severity'] ?? 'information';
+        $data['status'] = $data['status'] ?? PlantingAdvisory::STATUS_PENDING_REVIEW;
+        $data['title'] = filled($data['title'] ?? null)
+            ? $data['title']
+            : str($data['advisory_type'])->headline().' Advisory – '.(($data['target_barangay'] ?? null) ?: 'All of Lian');
 
         return $data;
     }
 
-    private function payload(Request $request, array $data): array
+    private function payload(Request $request, array $data, ?PlantingAdvisory $existing = null): array
     {
         $status = match ($data['status']) {
             'Published' => PlantingAdvisory::STATUS_PUBLISHED,
             'Draft' => PlantingAdvisory::STATUS_PENDING_REVIEW,
             default => $data['status'],
         };
+
+        // The optional MAO Activity (for example a seed distribution day) is kept with the advisory and shown on the Calendar.
+        $metadata = Arr::except((array) ($existing?->metadata ?? []), ['mao_activity', 'mao_activity_date']);
+        if (filled($data['mao_activity'] ?? null)) {
+            $metadata['mao_activity'] = trim((string) $data['mao_activity']);
+            $metadata['mao_activity_date'] = Carbon::parse($data['mao_activity_date'])->toDateString();
+        }
 
         return [
             'title' => $data['title'],
@@ -681,10 +741,31 @@ class PlantingAdvisoryController extends Controller
             'severity' => $data['severity'],
             'priority' => $this->priorityForSeverity($data['severity']),
             'status' => $status,
-            'valid_from' => $data['valid_from'] ?? now(),
-            'valid_until' => $data['valid_until'] ?? now()->addDays(7),
+            'valid_from' => $data['valid_from'] ?? ($existing?->valid_from ?? now()),
+            'valid_until' => $this->validUntil($data['valid_until'] ?? null) ?? now()->addDays(7),
             'source' => 'MAO-Reviewed Advisory',
+            'metadata' => $metadata === [] ? null : $metadata,
         ];
+    }
+
+    /** A day picked in the form means "until the end of that day" in Lian; a full date and time is kept as given. */
+    private function validUntil(?string $value): ?Carbon
+    {
+        if (! filled($value)) {
+            return null;
+        }
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)
+            ? Carbon::parse($value, BusinessClock::timezone())->endOfDay()->utc()
+            : Carbon::parse($value);
+    }
+
+    /** Alerts the farmers the advisory is for (once, when it is first published) and says how many were told. */
+    private function publishedMessage(PlantingAdvisory $advisory): string
+    {
+        $count = rescue(fn (): int => app(AdvisoryPublishedNotifier::class)->notify($advisory), 0);
+
+        return 'Advisory published. '.($count === 1 ? '1 farmer was' : number_format($count).' farmers were').' notified.';
     }
 
     private function priorityForSeverity(string $severity): int
@@ -692,9 +773,10 @@ class PlantingAdvisoryController extends Controller
         return ['information' => 20, 'low' => 35, 'moderate' => 55, 'high' => 80, 'critical' => 100][$severity] ?? 50;
     }
 
+    /** Advisories are written, approved and published by the MAO. IT reads them (view-only since 2026-10). */
     private function canManage(Request $request): bool
     {
-        return in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true);
+        return $request->user()->role === User::ROLE_MAO;
     }
 
     private function authorizeManage(Request $request): void
@@ -702,19 +784,14 @@ class PlantingAdvisoryController extends Controller
         abort_unless($this->canManage($request), 403);
     }
 
-    /**
-     * Active advisories are public farm advice for Lian, so a farmer may open any of them: Lian-wide ones, PAGASA
-     * and iClimate guidance, and advice for any Lian barangay (the page's barangay picker and "Other Lian
-     * barangays" list show them). Drafts and expired advisories are already refused by isActive().
-     */
     private function isVisibleToFarmer(PlantingAdvisory $advisory, User $farmer): bool
     {
         if ($advisory->isOfficialPagasa() || data_get($advisory->metadata, 'source_type') === 'iclimate') {
-            return true;
+            return true; // Public weather advice can be opened after using Target Barangay.
         }
 
         return empty($advisory->target_barangay)
             || $advisory->target_scope === 'municipality'
-            || LianBarangays::canonicalName($advisory->target_barangay) !== null;
+            || $advisory->target_barangay === $farmer->registeredBarangay();
     }
 }

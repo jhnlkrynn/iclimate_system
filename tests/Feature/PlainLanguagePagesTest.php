@@ -55,7 +55,9 @@ class PlainLanguagePagesTest extends TestCase
     public function test_management_page_stays_plain_for_mao(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_MAO]);
-        $response = $this->actingAs($user)->get('/management/advisories');
+        // Advisory Management moved into the Advisories page (2026-10): the old address opens its "All" view.
+        $this->actingAs($user)->get('/management/advisories')->assertRedirect(route('planting-advisories.index', ['show' => 'all']));
+        $response = $this->actingAs($user)->get(route('planting-advisories.index', ['show' => 'all']));
         $response->assertOk();
         $text = $this->visibleText($response->getContent());
         foreach (self::FORBIDDEN as $term) {

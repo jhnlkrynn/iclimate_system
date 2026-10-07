@@ -310,10 +310,11 @@ class BarangayInsightTest extends TestCase
             ->assertSee('data-heat-map-panel', false)
             ->assertDontSee('data-insight-url', false);
 
-        // The pop-up stays where it was not replaced: the MAO dashboard's map.
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('mao.dashboard'))
-            ->assertOk()
-            ->assertSee('data-insight-url="'.url('/heat-map/insight').'"', false);
+        // No page offers the pop-up any more (the dashboards lost their full maps in 2026-10); its endpoint still
+        // answers (see the tests above) until the cleanup commit decides what to do with it.
+        foreach ([[User::ROLE_MAO, 'mao.dashboard'], [User::ROLE_IT_EXPERT, 'admin.dashboard']] as [$role, $route]) {
+            $this->actingAs(User::factory()->create(['role' => $role]))->get(route($route))->assertOk()->assertDontSee('data-insight-url', false);
+        }
     }
 
     private function groqAnswer(Request $request)

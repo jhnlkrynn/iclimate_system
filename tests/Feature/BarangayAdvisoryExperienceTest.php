@@ -45,12 +45,14 @@ class BarangayAdvisoryExperienceTest extends TestCase
         $this->assertSame($latitude, $result['barangay_weather']['latitude']);
         $this->assertSame($longitude, $result['barangay_weather']['longitude']);
 
+        $stored = PlantingAdvisory::query()->where('generation_key', 'local-current:San Diego')->firstOrFail();
+        // Advisories list (2026-10): the barangay's own guidance is an item of the list, named by its barangay and
+        // source. The weather numbers themselves are read on the Forecast page, not here.
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
-            ->assertSeeInOrder(['For your barangay', 'San Diego, Lian, Batangas', 'Local Farming Advisory', 'Barangay San Diego, Lian', 'Current conditions', 'What is happening', 'What farmers can do', 'Based on: current weather + forecast data for San Diego'])
-            ->assertSee('29.4°C')->assertSee('82%')->assertSee('9.2 mm')->assertSee('76%')
+            ->assertSee('data-adv-item="'.$stored->id.'"', false)
+            ->assertSee('<span class="adv-area">San Diego</span>', false)
             ->assertSee('Open-Meteo + iClimate Local Guidance');
 
-        $stored = PlantingAdvisory::query()->where('generation_key', 'local-current:San Diego')->firstOrFail();
         $this->assertStringContainsString('29.4 °C', $stored->summary);
         $this->assertStringContainsString('9.2 mm', $stored->summary);
         $this->assertSame('barangay', $stored->metadata['scope_type']);
@@ -88,14 +90,14 @@ class BarangayAdvisoryExperienceTest extends TestCase
         $this->officialAdvisory($author, 'PAGASA Weekly Weather Outlook', 'national', 'National Outlook');
 
         $page = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk();
-        // The province bulletin keeps its own scope and only says it includes Lian; it never claims a barangay.
+        // Advisories list (2026-10): an official bulletin keeps its own scope as its place (never the farmer's
+        // barangay), and the national outlook comes after the provincial bulletin.
         $page->assertSeeInOrder([
-            'Official PAGASA Advisories',
-            'This PAGASA advisory includes Lian, Batangas. PAGASA scope: Batangas Province.',
+            '<span class="adv-area">Batangas Province</span>',
             'Batangas Provincial Weather Forecast',
-            'Other PAGASA Information',
+            '<span class="adv-area">National Outlook</span>',
             'PAGASA Weekly Weather Outlook',
-        ])->assertDontSee('Scope: San Diego')->assertDontSee('Affected barangays: San Diego');
+        ], false)->assertDontSee('<span class="adv-area">San Diego</span>', false);
     }
 
     public function test_failed_refresh_returns_stale_barangay_weather_without_claiming_it_is_current(): void
@@ -123,10 +125,14 @@ class BarangayAdvisoryExperienceTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => Http::response($this->weatherPayload())]);
         app(LocalFarmGuidanceService::class)->refresh('Malaruhatan');
         $mao = User::factory()->maoPersonnel()->create();
+        $requests = count(Http::recorded());
 
         $this->actingAs($mao)->get(route('planting-advisories.index', ['target_barangay' => 'Malaruhatan']))
-            ->assertOk()->assertSee('Local Farming Advisory')->assertSee('Malaruhatan, Lian')
-            ->assertSee('29.4°C')->assertSee('9.2 mm');
+            // Advisories list (2026-10): the picked barangay's guidance is an item of the list; no weather card.
+            ->assertOk()->assertSee('<span class="adv-area">Malaruhatan</span>', false)
+            ->assertSee('Open-Meteo + iClimate Local Guidance')
+            ->assertSee('<option value="Malaruhatan" selected>', false);
+        $this->assertSame($requests, count(Http::recorded()));                   // the page only read what was prepared
     }
 
     private function officialAdvisory(User $author, string $title, string $scopeType, string $scopeName): PlantingAdvisory
@@ -142,6 +148,8 @@ class BarangayAdvisoryExperienceTest extends TestCase
             'valid_until' => now()->addHours(6),
             'published_at' => now()->subHour(),
             'posted_by' => $author->id,
+            // One kind and one severity, so the list's order depends on the scope alone (the factory picks them at random).
+            'type' => 'Climate', 'advisory_type' => 'climate', 'severity' => 'information',
             'metadata' => ['scope_type' => $scopeType, 'scope_name' => $scopeName, 'is_official' => true],
         ]);
     }

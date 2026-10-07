@@ -31,12 +31,35 @@
                         <button class="btn btn-outline-primary" type="submit" data-loading-text="Updating...">Mark All Read</button>
                     </form>
                 @endif
+                @if ($printable ?? false)
+                    {{-- Opens the print page with every row that matches the current search and filters. --}}
+                    <a class="btn btn-outline-light" href="{{ route($routeName.'.index', array_merge(request()->except(['page', 'print']), ['print' => 1])) }}" target="_blank" rel="noopener" data-print-list data-fast-nav-bound="true">Print</a>
+                @endif
                 @if ($canManage)
                     <a class="btn btn-light" href="{{ route($routeName.'.create') }}">Create {{ $title }}</a>
                 @endif
             </div>
         </div>
     </section>
+
+    @if (in_array($routeName, ['climate-records', 'rice-productions'], true))
+        {{-- Records (2026-10): Climate Records and Rice Production are two tabs of one sidebar item. --}}
+        <nav class="ic-tabs mb-4" aria-label="Records" data-records-tabs>
+            @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production'] as $tabRoute => $tabLabel)
+                <a href="{{ route($tabRoute.'.index') }}" @class(['ic-tab', 'is-active' => $routeName === $tabRoute]) @if ($routeName === $tabRoute) aria-current="page" @endif>{{ $tabLabel }}</a>
+            @endforeach
+        </nav>
+    @endif
+    @if ($routeName === 'field-reports')
+        {{-- Unresolved field issues (moved here from the former Operations page): everything not yet Resolved. --}}
+        @php $unresolvedOnly = request()->boolean('unresolved'); @endphp
+        <nav class="ic-tabs mb-4" aria-label="Show field reports" data-field-report-tabs>
+            <a href="{{ route('field-reports.index') }}" @class(['ic-tab', 'is-active' => ! $unresolvedOnly]) @if (! $unresolvedOnly) aria-current="page" @endif>All</a>
+            <a href="{{ route('field-reports.index', ['unresolved' => 1]) }}" @class(['ic-tab', 'is-active' => $unresolvedOnly]) @if ($unresolvedOnly) aria-current="page" @endif>
+                Unresolved<span class="ic-tab-count">{{ number_format($unresolvedCount ?? 0) }}</span>
+            </a>
+        </nav>
+    @endif
 
     @if ($routeName === 'farmer-profiles' && isset($farmerOrganizationChart))
         <details class="ic-collapse mb-4" open>

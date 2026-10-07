@@ -446,6 +446,7 @@
                 </div>
             @endif
         @endif
+        @include('model-evaluation._candidate')
         <div class="col-12">
             <div class="me-panel">
                 <div class="me-panel-header">

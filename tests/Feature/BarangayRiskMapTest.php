@@ -481,12 +481,12 @@ class BarangayRiskMapTest extends TestCase
 
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
 
+        // MAO Dashboard (2026-10): a small Heat Map preview that opens the Heat Map page, not the full map component.
         $response->assertOk();
-        $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('id="riskMapLegend"', false);
-        $response->assertDontSee('id="riskMeaningTitle"', false);
-        $response->assertDontSee('class="risk-map-meaning"', false);
-        $response->assertSee('Lian Municipality Heat Map');
+        $response->assertSee('id="mhdMapTitle"', false);
+        $response->assertSee('href="'.route('heat-map.index').'"', false);
+        $response->assertDontSee('id="barangayRiskMap"', false);
+        $response->assertDontSee('data-risk-map-refresh', false);
     }
 
     /**
@@ -642,27 +642,21 @@ class BarangayRiskMapTest extends TestCase
 
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
+        // IT Dashboard (2026-10): no Heat Map tab; IT opens the Heat Map page from the sidebar like everyone else.
         $this->actingAs($itExpert)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Heat Map')
-            ->assertSee('id="itd-panel-heatmap"', false)
-            ->assertSee('id="barangayRiskMap"', false)
-            ->assertSee('id="riskMapLegend"', false)
-            ->assertDontSee('id="riskMeaningTitle"', false)
-            ->assertDontSee('class="risk-map-meaning"', false)
-            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
+            ->assertSee('href="'.route('heat-map.index').'"', false)
+            ->assertDontSee('id="itd-panel-heatmap"', false)
+            ->assertDontSee('id="barangayRiskMap"', false);
+        $this->actingAs($itExpert)->get(route('heat-map.index'))->assertOk()->assertSee('id="heatMapCanvas"', false);
 
+        // MAO Dashboard (2026-10): the preview card links to the Heat Map page; the page reads saved data (no refresh control).
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $response = $this->actingAs($mao)->get(route('mao.dashboard'));
         $response->assertOk();
-        $response->assertSee('id="barangayRiskMap"', false);
-        $response->assertSee('id="riskMapLegend"', false);
-        $response->assertDontSee('id="riskMeaningTitle"', false);
-        $response->assertDontSee('class="risk-map-meaning"', false);
-        $response->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
-        $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // MAO is management-level: the refresh control is present.
-        $response->assertSee('data-risk-map-refresh', false);
+        $response->assertSee('Open Heat Map');
+        $response->assertSee('href="'.route('heat-map.index').'"', false);
+        $response->assertDontSee('data-risk-map-refresh', false);
     }
 
     public function test_farmers_own_barangay_is_highlighted_on_the_full_map(): void
@@ -726,22 +720,16 @@ class BarangayRiskMapTest extends TestCase
     public function test_the_heat_map_page_and_the_mao_dashboard_map_draw_the_same_19_boundaries(): void
     {
         Cache::flush();
-        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $farmerResponse = $this->actingAs($farmer)->get(route('heat-map.index'));
-        $maoResponse = $this->actingAs($mao)->get(route('mao.dashboard'));
-
-        // Heat Map page (2026-10): its own map with the weekly rating; the MAO dashboard keeps the shared map
-        // component until its own redesign. Both draw the same boundary file, for every role.
-        $farmerResponse->assertOk()->assertSee('id="heatMapCanvas"', false);
-        $maoResponse->assertOk()->assertSee('id="barangayRiskMap"', false)
-            ->assertSee('data-risk-map-url="'.url('/api/lian/risk-map').'"', false);
-        foreach ([$farmerResponse, $maoResponse] as $response) {
+        // Since 2026-10 the Heat Map page is the one map for every role (the MAO dashboard has a small preview of it
+        // and the IT dashboard none): each role's page points at the same boundary file and the same three levels.
+        foreach ([$farmer, User::factory()->create(['role' => User::ROLE_MAO]), User::factory()->create(['role' => User::ROLE_IT_EXPERT])] as $user) {
+            $response = $this->actingAs($user)->get(route('heat-map.index'))->assertOk();
+            $response->assertSee('id="heatMapCanvas"', false);
             $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
             $response->assertSee('Low');
             $response->assertSee('Moderate');

@@ -53,6 +53,9 @@
             <div class="frec-panel-head"><h2 id="frecDetailTitle">Details</h2></div>
             @if($routeName === 'notifications' && $record->message)
                 <p class="frec-message">{{ $record->message }}</p>
+                @if($record->type === 'Advisory')
+                    <p><a class="fad-btn is-primary" href="{{ route('planting-advisories.index') }}" data-notif-advisories>{{ __('farmer.advisories_page.open', [], \App\Support\FarmerLanguage::resolve(request())) }}</a></p>
+                @endif
             @endif
             <dl class="frec-detail">
                 @foreach($facts as $label => $value)

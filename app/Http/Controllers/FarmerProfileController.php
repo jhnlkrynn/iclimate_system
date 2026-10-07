@@ -20,6 +20,8 @@ class FarmerProfileController extends CrudController
 
     protected string $title = 'Farmer Profile';
 
+    protected bool $printable = true;
+
     protected array $columns = ['full_name' => 'Full Name', 'contact_number' => 'Contact', 'farmerOrganization.name' => 'Organization', 'barangay' => 'Barangay', 'farm_area' => 'Farm Area', 'farm_type' => 'Farm Type'];
 
     protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type'];

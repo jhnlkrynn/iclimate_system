@@ -185,7 +185,7 @@
         <x-it.page-header kicker="Private Conversations" title="Messages" lede="Send private messages to MAO staff and farmers, and review your conversations.">
             <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private Channel</span></span>
             <div class="itd-header-actions">
-                <a href="{{ route('community-feed.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])Community Feed</a>
+                <a href="{{ route('community-feed.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])Announcements</a>
             </div>
         </x-it.page-header>
         @endif
