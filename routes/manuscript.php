@@ -62,6 +62,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('impact/{analysis}', [WeatherAnalysisController::class, 'show'])->whereNumber('analysis')->name('impact.show');
         });
 
+        // Phase 5: Yield Prediction (farmer) and Yield Forecast (MAO). The model runs after the response.
+        Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->group(function () {
+            Route::get('yield', [YieldPredictionController::class, 'farmer'])->name('yield');
+            Route::post('yield', [YieldPredictionController::class, 'farmerStore'])->middleware('throttle:10,1,post-analysis-yield')->name('yield.store');
+        });
+        Route::middleware('role:'.User::ROLE_MAO)->group(function () {
+            Route::get('forecast', [YieldPredictionController::class, 'mao'])->name('forecast');
+            Route::post('forecast', [YieldPredictionController::class, 'maoStore'])->middleware('throttle:20,1,post-analysis-forecast')->name('forecast.store');
+        });
     });
 
 });
