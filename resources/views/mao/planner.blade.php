@@ -15,6 +15,12 @@
                 <h2 id="mplActivitiesTitle">MAO Activities</h2>
                 <p>Sorted by date. An activity for All Barangays shows in every barangay's list.</p>
             </div>
+            @if (! $activitiesAvailable)
+                <div class="fad-empty is-watch" role="status">
+                    <p class="fad-lead">MAO planning is temporarily unavailable.</p>
+                    <p class="fad-body">The planning database update has not reached this environment yet. Farmer activity records remain available below.</p>
+                </div>
+            @else
             <form class="itd-filters" method="GET" action="{{ route('mao.planner.index') }}">
                 <label>Barangay
                     <select name="barangay" onchange="this.form.submit()">
@@ -58,6 +64,7 @@
                 <x-no-data note="No MAO activity matches. Use Add Activity to plan one." />
             @endforelse
             @if ($activities->hasPages())<div>{{ $activities->links() }}</div>@endif
+            @endif
         </section>
 
         <section class="itp-section" aria-labelledby="mplFarmerTitle">

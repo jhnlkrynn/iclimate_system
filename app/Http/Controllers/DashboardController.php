@@ -403,6 +403,7 @@ class DashboardController extends Controller
     {
         // Use today's month, not the newest stored record, which can belong to a different season.
         return ClimateRecord::seasonForMonth(BusinessClock::month());
+        
     }
 
     private function maoOperationsPendingAdvisoryCount(): int
