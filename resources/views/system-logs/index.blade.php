@@ -65,6 +65,8 @@
         <div class="eyebrow mb-2">Activity</div>
         <h1 class="h2 fw-bold mb-2">System Logs</h1>
         <p class="mb-0" style="color: var(--ic-ink-mid);">See who did what, and when.</p>
+        {{-- Manuscript – Naicel (2026-10-08): every log matching the filters as a CSV file. --}}
+        <a class="btn btn-outline-light mt-3" href="{{ route('admin.system-logs.export', request()->except(['page'])) }}" data-fast-nav-bound="true" data-export-logs>Export CSV</a>
     </section>
 
     <div class="sl-cards">

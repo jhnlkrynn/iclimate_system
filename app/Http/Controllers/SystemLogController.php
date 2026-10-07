@@ -30,7 +30,30 @@ class SystemLogController extends CrudController
     public function index(Request $request): View
     {
         $this->authorizeView($request);
+        // Manuscript – Naicel (2026-10-08): the filters moved to filtered() unchanged, so the CSV export uses the same ones.
+        [$query, $filters, $options] = $this->filtered($request);
 
+        $logs = $query->latest('id')->paginate(CrudController::PER_PAGE)->withQueryString();
+        $rows = $logs->getCollection()->map(fn (SystemLog $log) => SystemLogPresenter::present($log));
+
+        return view('system-logs.index', [
+            'logs' => $logs,
+            'rows' => $rows,
+            'summary' => $this->summary(),
+            'actions' => array_keys($options['actions']),
+            'users' => $options['users'],
+            'roles' => [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT],
+            'filters' => $filters,
+        ]);
+    }
+
+    /**
+     * The logs that match the page's search and filters.
+     *
+     * @return array{0: Builder, 1: array<string, string>, 2: array<string, mixed>}
+     */
+    private function filtered(Request $request): array
+    {
         $search = trim((string) $request->query('search', ''));
         $actionLabel = (string) $request->query('action', '');
         $userId = (string) $request->query('user', '');
@@ -77,18 +100,31 @@ class SystemLogController extends CrudController
             $query->where('created_at', '>=', $start)->where('created_at', '<', $start->copy()->addDay());
         }
 
-        $logs = $query->latest('id')->paginate(CrudController::PER_PAGE)->withQueryString();
-        $rows = $logs->getCollection()->map(fn (SystemLog $log) => SystemLogPresenter::present($log));
+        return [$query, ['search' => $search, 'action' => $actionLabel, 'role' => $role, 'date' => $date, 'user' => $userId], $options];
+    }
 
-        return view('system-logs.index', [
-            'logs' => $logs,
-            'rows' => $rows,
-            'summary' => $this->summary(),
-            'actions' => array_keys($options['actions']),
-            'users' => $options['users'],
-            'roles' => [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT],
-            'filters' => ['search' => $search, 'action' => $actionLabel, 'role' => $role, 'date' => $date, 'user' => $userId],
-        ]);
+    /** Manuscript – Naicel (2026-10-08): every log matching the filters as CSV (newest first, at most 50,000 rows). */
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorizeView($request);
+        [$query] = $this->filtered($request);
+        \App\Services\SystemAuditLogger::record('Exported System Logs', $request, ['filters' => array_filter($request->only(['search', 'action', 'user', 'role', 'date']))]);
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Time', 'User', 'Role', 'Action', 'Status', 'Description', 'IP address', 'Path']);
+            $written = 0;
+            $query->with('user')->orderByDesc('id')->chunk(1000, function ($logs) use ($out, &$written) {
+                foreach ($logs as $log) {
+                    $row = SystemLogPresenter::present($log);
+                    fputcsv($out, [$row['long'], $row['user'], $row['role'], $row['action'], $row['status'], $row['description'], $row['technical']['IP address'], $row['technical']['Route / path']]);
+                    if (++$written >= 50000) {
+                        return false;
+                    }
+                }
+            });
+            fclose($out);
+        }, 'system-logs-'.now(\App\Support\BusinessClock::timezone())->format('Y-m-d-His').'.csv', ['Content-Type' => 'text/csv']);
     }
 
     /**

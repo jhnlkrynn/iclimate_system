@@ -36,6 +36,22 @@ class WeatherAnalysisService
 
     public function __construct(private readonly ProjectYieldDataset $yields) {}
 
+    /** The thresholds above, or what IT saved on System Settings (Phase 8). */
+    public static function heavyRainMm(): float
+    {
+        return (float) \App\Support\SystemSettings::get('heavy_rain_month_mm', self::HEAVY_RAIN_MM);
+    }
+
+    public static function dryMonthMm(): float
+    {
+        return (float) \App\Support\SystemSettings::get('dry_month_mm', self::DRY_MONTH_MM);
+    }
+
+    public static function hotMonthC(): float
+    {
+        return (float) \App\Support\SystemSettings::get('hot_month_c', self::HOT_MONTH_C);
+    }
+
     /**
      * Every month on record, oldest first: date, year, month, season and the four readings.
      *
@@ -103,9 +119,9 @@ class WeatherAnalysisService
         $label = fn (object $m) => date('M Y', mktime(0, 0, 0, $m->month, 1, $m->year));
 
         return [
-            'heavy_rain' => $months->filter(fn ($m) => $m->rainfall !== null && $m->rainfall >= self::HEAVY_RAIN_MM)->map($label)->values()->all(),
-            'dry' => $months->filter(fn ($m) => $m->rainfall !== null && $m->rainfall < self::DRY_MONTH_MM)->map($label)->values()->all(),
-            'hot' => $months->filter(fn ($m) => $m->temperature !== null && $m->temperature >= self::HOT_MONTH_C)->map($label)->values()->all(),
+            'heavy_rain' => $months->filter(fn ($m) => $m->rainfall !== null && $m->rainfall >= self::heavyRainMm())->map($label)->values()->all(),
+            'dry' => $months->filter(fn ($m) => $m->rainfall !== null && $m->rainfall < self::dryMonthMm())->map($label)->values()->all(),
+            'hot' => $months->filter(fn ($m) => $m->temperature !== null && $m->temperature >= self::hotMonthC())->map($label)->values()->all(),
         ];
     }
 

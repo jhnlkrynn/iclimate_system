@@ -25,6 +25,15 @@
             ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
             ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
         ],
+        // IT: System Settings and the pages next to it.
+        'settings' => [
+            ['admin.settings.index', 'System Settings', ['admin.settings.index'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.settings.security', 'Security', ['admin.settings.security'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.permissions.index', 'Roles & Permissions', ['admin.permissions.*'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.backups.index', 'Backups', ['admin.backups.*'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.maintenance.index', 'Maintenance Records', ['admin.maintenance.*'], [\App\Models\User::ROLE_IT_EXPERT]],
+            ['admin.models.index', 'ML Models', ['admin.models.*'], [\App\Models\User::ROLE_IT_EXPERT]],
+        ],
     ];
     $tabs = array_values(array_filter($groups[$group] ?? [], fn (array $tab): bool => \Illuminate\Support\Facades\Route::has($tab[0]) && in_array($role, $tab[3], true)));
 @endphp

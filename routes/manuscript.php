@@ -11,10 +11,14 @@
 */
 
 use App\Http\Controllers\AdvisoryAlertController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BarangayProfileController;
+use App\Http\Controllers\MaintenanceRecordController;
+use App\Http\Controllers\ModelManagementController;
 use App\Http\Controllers\FarmerApprovalController;
 use App\Http\Controllers\FarmerReportController;
 use App\Http\Controllers\ReportExtrasController;
+use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\RecordImportController;
 use App\Http\Controllers\RecordValidationController;
 use App\Http\Controllers\UserPasswordResetController;
@@ -84,6 +88,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->prefix('farmer/my-reports')->name('farmer.reports.')->group(function () {
         Route::get('/', [FarmerReportController::class, 'index'])->name('index');
         Route::get('pdf', [FarmerReportController::class, 'pdf'])->middleware('throttle:10,1,get-farmer-reports-pdf')->name('pdf');
+    });
+
+    // Phase 8: System Settings, Security, Roles & Permissions (IT).
+    Route::middleware('role:'.User::ROLE_IT_EXPERT)->prefix('admin')->name('admin.')->group(function () {
+        Route::get('settings', [SystemSettingsController::class, 'general'])->name('settings.index');
+        Route::post('settings', [SystemSettingsController::class, 'saveGeneral'])->middleware('throttle:20,1,post-admin-settings')->name('settings.save');
+        Route::get('settings/security', [SystemSettingsController::class, 'security'])->name('settings.security');
+        Route::post('settings/security', [SystemSettingsController::class, 'saveSecurity'])->middleware('throttle:20,1,post-admin-security')->name('settings.security.save');
+        Route::get('permissions', [SystemSettingsController::class, 'permissions'])->name('permissions.index');
+        Route::post('permissions', [SystemSettingsController::class, 'savePermissions'])->middleware('throttle:20,1,post-admin-permissions')->name('permissions.save');
+
+        // System Logs as CSV, with the page's filters.
+        Route::get('system-logs/export', [\App\Http\Controllers\SystemLogController::class, 'export'])->middleware('throttle:10,1,get-system-logs-export')->name('system-logs.export');
+
+        // Backups, Maintenance Records, ML Models.
+        Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('backups', [BackupController::class, 'store'])->middleware('throttle:5,10,post-admin-backups')->name('backups.store');
+        Route::get('backups/{file}/download', [BackupController::class, 'download'])->where('file', '[A-Za-z0-9_\-.]+')->middleware('throttle:10,1,get-admin-backup-download')->name('backups.download');
+        Route::post('backups/{file}/restore', [BackupController::class, 'restore'])->where('file', '[A-Za-z0-9_\-.]+')->middleware('throttle:3,10,post-admin-backup-restore')->name('backups.restore');
+        Route::get('maintenance', [MaintenanceRecordController::class, 'index'])->name('maintenance.index');
+        Route::post('maintenance', [MaintenanceRecordController::class, 'store'])->middleware('throttle:30,1,post-admin-maintenance')->name('maintenance.store');
+        Route::put('maintenance/{record}', [MaintenanceRecordController::class, 'update'])->whereNumber('record')->name('maintenance.update');
+        Route::delete('maintenance/{record}', [MaintenanceRecordController::class, 'destroy'])->whereNumber('record')->name('maintenance.destroy');
+        Route::get('models', [ModelManagementController::class, 'index'])->name('models.index');
+        Route::post('models/compare', [ModelManagementController::class, 'compare'])->middleware('throttle:5,10,post-admin-models-compare')->name('models.compare');
+        Route::post('models/retrain', [ModelManagementController::class, 'retrain'])->middleware('throttle:5,10,post-admin-models-retrain')->name('models.retrain');
+        Route::post('models/dataset', [ModelManagementController::class, 'uploadDataset'])->middleware('throttle:10,10,post-admin-models-dataset')->name('models.dataset');
+        Route::post('models/upload', [ModelManagementController::class, 'uploadModel'])->middleware('throttle:10,10,post-admin-models-upload')->name('models.upload');
     });
 
     // Phase 6: Send Alert (MAO, opened from Advisories).

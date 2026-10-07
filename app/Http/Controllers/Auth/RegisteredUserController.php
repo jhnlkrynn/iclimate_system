@@ -73,7 +73,7 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($validated['password']),
                 'barangay' => $barangay,
                 // Manuscript – Naicel: Pending until the MAO approves the sign-up (config iclimate.farmer_approval).
-                'status' => config('iclimate.farmer_approval') ? User::STATUS_PENDING : User::STATUS_ACTIVE,
+                'status' => \App\Support\SystemSettings::farmerApproval() ? User::STATUS_PENDING : User::STATUS_ACTIVE,
             ]);
 
             FarmerProfile::create([

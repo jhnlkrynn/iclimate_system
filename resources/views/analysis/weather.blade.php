@@ -100,7 +100,7 @@
                 {{-- Staff: climate risk signals and climate vs yield. --}}
                 <section class="fad-card mt-3" aria-labelledby="waRiskTitle" data-climate-indicators>
                     <h2 class="h5 fw-bold" id="waRiskTitle">Climate risk signals</h2>
-                    <p class="small text-muted">Months above or below planning thresholds (not official PAGASA warnings): heavy rain {{ (int) \App\Services\Climate\WeatherAnalysisService::HEAVY_RAIN_MM }} mm or more, dry below {{ (int) \App\Services\Climate\WeatherAnalysisService::DRY_MONTH_MM }} mm, hot at {{ (int) \App\Services\Climate\WeatherAnalysisService::HOT_MONTH_C }} °C average or more.</p>
+                    <p class="small text-muted">Months above or below planning thresholds (not official PAGASA warnings): heavy rain {{ (int) \App\Services\Climate\WeatherAnalysisService::heavyRainMm() }} mm or more, dry below {{ (int) \App\Services\Climate\WeatherAnalysisService::dryMonthMm() }} mm, hot at {{ (int) \App\Services\Climate\WeatherAnalysisService::hotMonthC() }} °C average or more.</p>
                     <div class="row g-3">
                         @foreach (['heavy_rain' => 'Heavy-rain months', 'dry' => 'Dry months', 'hot' => 'Hot months'] as $key => $title)
                             <div class="col-md-4">
