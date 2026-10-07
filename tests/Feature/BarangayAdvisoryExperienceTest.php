@@ -46,7 +46,7 @@ class BarangayAdvisoryExperienceTest extends TestCase
         $this->assertSame($longitude, $result['barangay_weather']['longitude']);
 
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
-            ->assertSeeInOrder(['My Barangay', 'San Diego, Lian', 'iClimate Barangay Advisory'])
+            ->assertSeeInOrder(['For your barangay', 'San Diego, Lian, Batangas', 'Local Farming Advisory', 'Barangay San Diego, Lian', 'Current conditions', 'What is happening', 'What farmers can do', 'Based on: current weather + forecast data for San Diego'])
             ->assertSee('29.4°C')->assertSee('82%')->assertSee('9.2 mm')->assertSee('76%')
             ->assertSee('Open-Meteo + iClimate Local Guidance');
 
@@ -88,14 +88,14 @@ class BarangayAdvisoryExperienceTest extends TestCase
         $this->officialAdvisory($author, 'PAGASA Weekly Weather Outlook', 'national', 'National Outlook');
 
         $page = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk();
+        // The province bulletin keeps its own scope and only says it includes Lian; it never claims a barangay.
         $page->assertSeeInOrder([
-            'Official PAGASA Updates',
+            'Official PAGASA Advisories',
+            'This PAGASA advisory includes Lian, Batangas. PAGASA scope: Batangas Province.',
             'Batangas Provincial Weather Forecast',
-            'Scope: Batangas Province',
-            'Relevant to: San Diego, Lian',
-            'Additional Regional / National Information',
+            'Other PAGASA Information',
             'PAGASA Weekly Weather Outlook',
-        ])->assertDontSee('Scope: San Diego');
+        ])->assertDontSee('Scope: San Diego')->assertDontSee('Affected barangays: San Diego');
     }
 
     public function test_failed_refresh_returns_stale_barangay_weather_without_claiming_it_is_current(): void
@@ -125,7 +125,7 @@ class BarangayAdvisoryExperienceTest extends TestCase
         $mao = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($mao)->get(route('planting-advisories.index', ['target_barangay' => 'Malaruhatan']))
-            ->assertOk()->assertSee('iClimate Barangay Advisory')->assertSee('Malaruhatan, Lian')
+            ->assertOk()->assertSee('Local Farming Advisory')->assertSee('Malaruhatan, Lian')
             ->assertSee('29.4°C')->assertSee('9.2 mm');
     }
 

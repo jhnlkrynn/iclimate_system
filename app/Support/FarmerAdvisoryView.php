@@ -109,6 +109,154 @@ class FarmerAdvisoryView
             : 'Lian, Batangas';
     }
 
+    /**
+     * Lian barangays the advisory names: an iClimate or MAO advisory's own barangay, or the barangays a PAGASA
+     * bulletin itself names next to Lian. PAGASA is never credited with a barangay it did not name.
+     *
+     * @return list<string>
+     */
+    public function affectedBarangays(): array
+    {
+        if (! $this->isPagasa()) {
+            return $this->advisory->target_barangay ? [$this->advisory->target_barangay] : [];
+        }
+
+        $text = (string) ($this->advisory->content ?: $this->advisory->message);
+
+        return preg_match('/\bLian\b/i', $text)
+            ? array_values(array_intersect(LianBarangays::all(), (array) data_get($this->advisory->metadata, 'pagasa_barangay_matches', [])))
+            : [];
+    }
+
+    /** The place line at the top of a farmer card. */
+    public function farmerLocation(): string
+    {
+        if ($this->isNationalOutlook()) {
+            return 'Philippines (national outlook)';
+        }
+        if ($this->isPagasa()) {
+            return 'Lian, Batangas';
+        }
+
+        return $this->advisory->target_barangay
+            ? $this->advisory->target_barangay.', Lian, Batangas'
+            : 'All of Lian, Batangas';
+    }
+
+    /** PAGASA's own coverage when it is wider than Lian (kept as issued), or null for Lian-level bulletins. */
+    public function originalScope(): ?string
+    {
+        if (! $this->isPagasa()) {
+            return null;
+        }
+
+        $name = strtolower((string) data_get($this->advisory->metadata, 'scope_name'));
+
+        return match (true) {
+            str_contains($name, 'national') => 'Whole country (national outlook)',
+            data_get($this->advisory->metadata, 'scope_type') === 'regional' => 'CALABARZON region',
+            data_get($this->advisory->metadata, 'scope_type') === 'province' || ($this->affectedBarangays() === [] && data_get($this->advisory->metadata, 'scope_type') === 'barangay') => 'Batangas Province',
+            default => null,
+        };
+    }
+
+    /**
+     * "What is happening" on an Advisories card. PAGASA bulletins written in capitals ("THE REST OF THE COUNTRY
+     * WILL…") are shown in normal sentence case: the same words, easier to read.
+     */
+    public function cardEffect(): string
+    {
+        $text = $this->farmerEffect();
+
+        return preg_match('/\p{Lu}{4,}/u', $text) && ! preg_match('/\p{Ll}/u', $text)
+            ? ucfirst(mb_strtolower($text))
+            : $text;
+    }
+
+    public function isNationalOutlook(): bool
+    {
+        return $this->isPagasa() && str_contains(strtolower((string) data_get($this->advisory->metadata, 'scope_name')), 'national');
+    }
+
+    /** For a wider PAGASA bulletin: say plainly what it covers, without claiming a Lian or barangay bulletin. */
+    public function coverageNote(): ?string
+    {
+        return match (true) {
+            $this->isNationalOutlook() => 'National outlook — supporting information, not specific to Lian.',
+            $this->originalScope() !== null => 'This PAGASA advisory includes Lian, Batangas.',
+            default => null,
+        };
+    }
+
+    /**
+     * The status badge on an Advisories card, from the advisory's own severity (set by the rule thresholds or by
+     * PAGASA's warning level). "Information" advice, such as a chance to skip irrigation, is shown as Advice,
+     * never as a Low risk.
+     *
+     * @return array{label: string, tone: string, icon: string}
+     */
+    public function statusBadge(): array
+    {
+        return match ($this->advisory->severity) {
+            PlantingAdvisory::SEVERITY_CRITICAL => ['label' => 'Severe', 'tone' => 'danger', 'icon' => 'alert'],
+            PlantingAdvisory::SEVERITY_HIGH => ['label' => 'High', 'tone' => 'danger', 'icon' => 'alert'],
+            PlantingAdvisory::SEVERITY_MODERATE => ['label' => 'Moderate', 'tone' => 'watch', 'icon' => 'alert'],
+            PlantingAdvisory::SEVERITY_LOW => ['label' => 'Low', 'tone' => 'good', 'icon' => 'check'],
+            default => ['label' => $this->isPagasa() ? 'Information' : 'Advice', 'tone' => 'info', 'icon' => 'info'],
+        };
+    }
+
+    /**
+     * PAGASA's own table for the agri outlook, exactly as published (stored when it was fetched). For a row saved
+     * before the table was read, the four weather values are read from the stored bulletin text; lists that cannot
+     * be split reliably are left to the View Details popup.
+     *
+     * @return array{weather: array<string, string>, crops: array<string, list<string>>, farm_operations: list<string>}|null
+     */
+    public function pagasaDetails(): ?array
+    {
+        if (! $this->isPagasa()) {
+            return null;
+        }
+        $stored = data_get($this->advisory->metadata, 'pagasa_details');
+        if (is_array($stored) && ! empty($stored['weather'])) {
+            return ['weather' => (array) $stored['weather'], 'crops' => (array) ($stored['crops'] ?? []), 'farm_operations' => (array) ($stored['farm_operations'] ?? [])];
+        }
+
+        $text = (string) ($this->advisory->content ?: $this->advisory->message);
+        $range = '(\d+(?:\.\d+)?\s*[–-]\s*\d+(?:\.\d+)?)';
+        $weather = array_filter([
+            'rainfall_mm' => preg_match('/Rainfall \(mm\):\s*'.$range.'/u', $text, $m) ? $m[1] : null,
+            'relative_humidity_percent' => preg_match('/Relative Humidity \(%\):\s*'.$range.'/u', $text, $m) ? $m[1] : null,
+            'rainy_days' => preg_match('/Rainy Days[^:]*:\s*'.$range.'/u', $text, $m) ? $m[1] : null,
+            'temperature_c' => preg_match('/Temperature \(°C\):\s*((?:Upland|Lowland)[^A-Z]*?(?:;\s*(?:Upland|Lowland)[^A-Z]*?)?)\s+(?=[A-Z]{3,})/u', $text, $m) ? trim($m[1]) : null,
+        ]);
+
+        return $weather ? ['weather' => $weather, 'crops' => [], 'farm_operations' => []] : null;
+    }
+
+    /**
+     * The forecast values an iClimate rule advisory was calculated from (stored with it), for a short "Based on"
+     * line: rainfall, rain chance, highest temperature and wind. Empty for advice without stored values.
+     *
+     * @return array<string, string>  icon => text
+     */
+    public function basedOn(): array
+    {
+        $basis = (array) data_get($this->advisory->metadata, 'weather_basis', []);
+        if ($this->isPagasa() || $basis === []) {
+            return [];
+        }
+        $number = fn ($value) => is_numeric($value) ? rtrim(rtrim(number_format((float) $value, 1, '.', ''), '0'), '.') : null;
+
+        return array_filter([
+            'rain' => ($v = $number($basis['expected_rainfall_mm'] ?? $basis['rainfall_24h_mm'] ?? null)) !== null ? $v.' mm rain' : null,
+            'weather' => ($v = $number($basis['rain_probability_percent'] ?? $basis['precip_probability_percent'] ?? null)) !== null ? $v.'% chance' : null,
+            'temperature' => ($v = $number($basis['maximum_temperature_c'] ?? $basis['temperature_c'] ?? null)) !== null ? $v.'°C' : null,
+            'wind' => ($v = $number($basis['maximum_wind_speed_kmh'] ?? $basis['wind_speed_kmh'] ?? null)) !== null ? $v.' km/h wind' : null,
+        ]);
+    }
+
     public function farmerRiskLevel(): string
     {
         return match ($this->advisory->severity) {
@@ -130,12 +278,25 @@ class FarmerAdvisoryView
 
     public function farmerEffect(): string
     {
+        // iClimate's current barangay guidance starts with a list of readings (shown separately on the card); its
+        // plain answer is the topic in its title, e.g. "Rain Expected in the Next 24 Hours" → "Rain expected in the next 24 hours."
+        if (str_starts_with((string) $this->advisory->generation_key, 'local-current:') && str_contains((string) $this->advisory->title, ': ')) {
+            return ucfirst(strtolower(rtrim(substr((string) $this->advisory->title, strrpos((string) $this->advisory->title, ': ') + 2), '.'))).'.';
+        }
+
         return $this->quickSummary()[0] ?? ($this->farmEffects()[0] ?? 'Weather conditions may affect rice fields.');
     }
 
     public function farmerAction(): string
     {
-        return $this->actions()[0] ?? 'Check your field before doing farm work.';
+        $actions = $this->actions();
+
+        // Advice often opens with what is happening ("Rain is likely today."); the card's "What to do" is the first
+        // sentence that tells the farmer what to do ("Consider delaying fertilizer ...").
+        return collect($actions)->first(fn (string $sentence) => (bool) preg_match(
+            '/^(?:Check|Consider|Avoid|Delay|Postpone|Clear|Keep|Move|Use|Wait|Water|Plant|Harvest|Prepare|Inspect|Continue|Follow|Drain|Secure|Protect|Apply|Ask|Stay|Do not|Don\'t|Pause|Make|Give|Reduce|Remove|Cover|Store|Monitor|Watch|Suriin|Iwasan|Ihanda|Hintayin|Bantayan|Ituloy)\b/i',
+            $sentence,
+        )) ?? $actions[0] ?? 'Check your field before doing farm work.';
     }
 
     public function farmerSourceLabel(): string

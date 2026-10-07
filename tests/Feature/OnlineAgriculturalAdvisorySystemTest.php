@@ -390,13 +390,14 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->actingAs($farmer)->get(route('planting-advisories.show', $advisory))->assertOk()->assertSee('<html', false);
     }
 
-    public function test_popup_follows_the_same_access_rules_as_the_advisory_page(): void
+    public function test_popup_opens_any_lian_barangay_advisory_but_never_a_draft(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $other = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Other barangay', 'target_barangay' => 'Matabungkay', 'target_scope' => 'barangay']));
         $draft = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Draft', 'status' => 'pending_review']));
 
-        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertForbidden();
+        // Advice for another Lian barangay is public farm advice: the barangay picker shows it, so it opens.
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertOk();
         $this->actingAs($farmer)->get(route('planting-advisories.show', [$draft, 'modal' => 1]))->assertForbidden();
     }
 

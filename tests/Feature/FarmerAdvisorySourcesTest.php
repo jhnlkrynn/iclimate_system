@@ -187,7 +187,7 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->actingAs($farmer)->postJson(route('planting-advisories.refresh-pagasa'))
             ->assertOk()->assertJsonPath('weather.available', true);
         $page = $this->get(route('planting-advisories.index'))->assertOk();
-        $page->assertSee('iClimate Local Advisory')->assertSee('No active official advisories currently apply to Lian.')
+        $page->assertSee('iClimate Local Farming Guidance')->assertSee('No active PAGASA advisory currently includes Lian.')
             ->assertDontSee('No Active Advisories for Lian');
         $this->assertSame(0, PlantingAdvisory::fromPagasaOnline()->count());
         $this->assertGreaterThan(0, PlantingAdvisory::active()->count());
@@ -200,7 +200,7 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->actingAs($farmer)->postJson(route('planting-advisories.refresh-pagasa'))->assertOk();
         $this->get(route('planting-advisories.index'))->assertOk()
             ->assertSee('PAGASA advisories are temporarily unavailable. Showing the latest available local guidance.')
-            ->assertSee('iClimate Local Advisory')->assertDontSee('No Active Advisories for Lian');
+            ->assertSee('iClimate Local Farming Guidance')->assertDontSee('No Active Advisories for Lian');
     }
 
     public function test_both_sources_unavailable_returns_diagnostics_and_does_not_show_empty_success(): void
@@ -234,7 +234,8 @@ class FarmerAdvisorySourcesTest extends TestCase
         $this->assertSame($requests, count(Http::recorded()));
         $this->assertSame($before, PlantingAdvisory::count());
         $this->get(route('planting-advisories.index'))->assertOk()
-            ->assertSeeInOrder(['San Diego Farm Weather Guidance', 'Official PAGASA Updates', 'Weather Advisory', 'Lian-wide Guidance']);
+            // The farmer's barangay first, then all of Lian, then wider PAGASA bulletins that include Lian.
+            ->assertSeeInOrder(['San Diego Farm Weather Guidance', 'All of Lian', 'Official PAGASA Advisories', 'Weather Advisory']);
     }
 
     public function test_warm_municipal_cache_still_starts_the_first_registered_barangay_refresh(): void
