@@ -294,6 +294,10 @@ class ReportsHeatmapNotificationsTest extends TestCase
             ->assertSee('About this report')
             ->assertSee('Comparing barangay or season performance', false)
             ->assertSee('Result Summary')
+            // The reports table has no Barangay column (2026-10); the barangay filter stays.
+            ->assertSee('<th>Yield/Ha</th><th>Total</th>', false)
+            ->assertDontSee('<th>Barangay</th><th>Yield/Ha</th>', false)
+            ->assertSee('name="barangay"', false)
             ->assertSee('15.00 tons')
             ->assertSee('3.00 t/ha')
             ->assertSee('Weather During This Period')

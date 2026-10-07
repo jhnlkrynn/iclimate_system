@@ -10,7 +10,7 @@
         $tiles = [
             ['key' => 'farmers', 'label' => 'Registered farmers', 'icon' => 'farmers', 'href' => route('farmer-profiles.index'),
                 'value' => $num($mao['farmers']), 'unit' => null, 'note' => 'Farmer profiles on file'],
-            ['key' => 'area', 'label' => 'Area planted this season', 'icon' => 'sprout', 'href' => route('calendar.index'),
+            ['key' => 'area', 'label' => 'Area planted this season', 'icon' => 'sprout', 'href' => route('mao.planner.index'),
                 'value' => $num($mao['area']['hectares'], 1), 'unit' => 'ha',
                 'note' => $mao['area']['hectares'] === null ? 'No planting plans recorded for '.$mao['season'].' yet' : 'From '.$mao['area']['plans'].' planting '.($mao['area']['plans'] === 1 ? 'plan' : 'plans').' · '.$mao['season']],
             ['key' => 'yield', 'label' => 'Expected yield vs last season', 'icon' => 'yield', 'href' => route('weather-predictions.index'),

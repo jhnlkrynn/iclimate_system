@@ -339,7 +339,7 @@ class MaoDashboardHomeTest extends TestCase
         // The menu is in the page twice (side bar and phone drawer): the same eleven labels each time.
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
         $labels = array_map('html_entity_decode', $labels[1]);
-        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'Calendar', 'Records', 'Farmers', 'Field Reports', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
+        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Field Reports', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
         $this->assertSame(0, count($labels) % 11);
         $nav = [implode(' | ', $labels)];
 

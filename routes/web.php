@@ -1054,6 +1054,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 
+// MAO/IT – Kaye: MAO Planner (the MAO's own activities as a list; replaces the calendar grid for MAO accounts).
+Route::middleware(['auth', 'verified', 'role:'.User::ROLE_MAO])->prefix('mao/planner')->name('mao.planner.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\MaoPlannerController::class, 'index'])->name('index');
+    Route::post('/', [\App\Http\Controllers\MaoPlannerController::class, 'store'])->name('store');
+    Route::put('{activity}', [\App\Http\Controllers\MaoPlannerController::class, 'update'])->name('update');
+    Route::delete('{activity}', [\App\Http\Controllers\MaoPlannerController::class, 'destroy'])->name('destroy');
+});
+// End MAO/IT – Kaye
+
+
 /*
 |--------------------------------------------------------------------------
 | Profile

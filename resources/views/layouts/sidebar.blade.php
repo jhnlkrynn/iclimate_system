@@ -38,6 +38,7 @@
         'heatmap' => ['heat-map.index', ['heat-map.*']],
         'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
         'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
+        'mao-planner' => ['mao.planner.index', ['mao.planner.*', 'calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],
@@ -86,7 +87,8 @@
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Advisories', 'advisories', 'advisories'),
-            $navLink('Calendar', 'calendar', 'calendar'),
+            // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
+            $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
             $navLink('Records', 'records', 'climate-records'),
             $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Field Reports', 'field-reports', 'reports'),
