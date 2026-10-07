@@ -54,6 +54,17 @@ class BarangayWeekRiskService
 
     private const RANK = ['low' => 1, 'moderate' => 2, 'high' => 3];
 
+    /**
+     * Manuscript – Naicel (2026-10-08): IT can change these limits on System Settings (Risk thresholds); without a
+     * saved value the constant above is used.
+     */
+    private static function limit(string $key, float $default): float
+    {
+        $value = \App\Support\SystemSettings::get('risk_'.$key);
+
+        return is_numeric($value) ? (float) $value : $default;
+    }
+
     public function __construct(
         private readonly LianBarangayWeatherService $weather,
         private readonly BarangayRiskMapService $map,
@@ -165,10 +176,10 @@ class BarangayWeekRiskService
             'days_covered' => count($days),
             'rain_total_mm' => $rain === [] ? null : round(array_sum($rain), 1),
             'wettest_day_mm' => $rain === [] ? null : round(max($rain), 1),
-            'heavy_rain_days' => count(array_filter($rain, fn (float $v): bool => $v >= self::HEAVY_RAIN_MM)),
+            'heavy_rain_days' => count(array_filter($rain, fn (float $v): bool => $v >= self::limit('heavy_rain_mm', self::HEAVY_RAIN_MM))),
             'wind_max_kmh' => $wind === [] ? null : round(max($wind), 1),
             'temp_max_c' => $temp === [] ? null : round(max($temp), 1),
-            'hot_days' => count(array_filter($temp, fn (float $v): bool => $v >= self::HOT_DAY_C)),
+            'hot_days' => count(array_filter($temp, fn (float $v): bool => $v >= self::limit('hot_day_c', self::HOT_DAY_C))),
             'farm_type' => strtolower($farmType) === 'irrigated' ? 'Irrigated' : 'Rainfed',
         ];
         if ($rain === [] && $wind === [] && $temp === []) {
@@ -183,13 +194,13 @@ class BarangayWeekRiskService
 
         $reasons = [];
         if ($facts['heavy_rain_days'] > 0) {
-            $reasons[] = ['key' => 'heavy_rain', 'level' => $facts['heavy_rain_days'] >= 3 || $facts['wettest_day_mm'] >= self::VERY_HEAVY_RAIN_MM ? 'high' : 'moderate', 'dates' => $dates('rainfall', self::HEAVY_RAIN_MM)];
+            $reasons[] = ['key' => 'heavy_rain', 'level' => $facts['heavy_rain_days'] >= 3 || $facts['wettest_day_mm'] >= self::limit('very_heavy_rain_mm', self::VERY_HEAVY_RAIN_MM) ? 'high' : 'moderate', 'dates' => $dates('rainfall', self::limit('heavy_rain_mm', self::HEAVY_RAIN_MM))];
         }
-        if ($facts['wind_max_kmh'] !== null && $facts['wind_max_kmh'] >= self::STRONG_WIND_KMH) {
-            $reasons[] = ['key' => 'strong_wind', 'level' => $facts['wind_max_kmh'] >= self::STORM_WIND_KMH ? 'high' : 'moderate', 'dates' => $dates('wind_speed_max', self::STRONG_WIND_KMH)];
+        if ($facts['wind_max_kmh'] !== null && $facts['wind_max_kmh'] >= self::limit('strong_wind_kmh', self::STRONG_WIND_KMH)) {
+            $reasons[] = ['key' => 'strong_wind', 'level' => $facts['wind_max_kmh'] >= self::limit('storm_wind_kmh', self::STORM_WIND_KMH) ? 'high' : 'moderate', 'dates' => $dates('wind_speed_max', self::limit('strong_wind_kmh', self::STRONG_WIND_KMH))];
         }
         if ($facts['hot_days'] > 0) {
-            $reasons[] = ['key' => 'heat', 'level' => $facts['hot_days'] >= 3 ? 'high' : 'moderate', 'dates' => $dates('temperature_max', self::HOT_DAY_C)];
+            $reasons[] = ['key' => 'heat', 'level' => $facts['hot_days'] >= 3 ? 'high' : 'moderate', 'dates' => $dates('temperature_max', self::limit('hot_day_c', self::HOT_DAY_C))];
         }
         $rainDays = count(array_filter($rain, fn (float $v): bool => $v >= self::RAIN_DAY_MM));
         if ($facts['farm_type'] === 'Rainfed' && count($rain) >= self::MIN_DAYS_FOR_DRY && $rainDays === 0) {

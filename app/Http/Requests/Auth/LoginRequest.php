@@ -75,7 +75,7 @@ class LoginRequest extends FormRequest
         $requiresCaptcha = $captcha->requiresCaptcha($this, 'login');
 
         if ($requiresCaptcha && ! $captcha->validate($this, 'login', $this->input('captcha_answer'))) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::lockoutSeconds());
             $captcha->recordFailedAttempt($this, 'login');
             $this->auditFailure('captcha');
 
@@ -91,7 +91,7 @@ class LoginRequest extends FormRequest
         }
 
         if (! $authenticated) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::lockoutSeconds());
             $captcha->recordFailedAttempt($this, 'login');
             $this->auditFailure('credentials');
 
@@ -102,7 +102,7 @@ class LoginRequest extends FormRequest
 
         if (($status = Auth::user()?->status) !== User::STATUS_ACTIVE) {
             Auth::logout();
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::lockoutSeconds());
             $captcha->recordFailedAttempt($this, 'login');
             $this->auditFailure(strtolower((string) $status).' account');
 
@@ -128,7 +128,7 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), max(3, (int) \App\Support\SystemSettings::get('lockout_attempts', 5)))) {   // Manuscript – Naicel: Security settings
             return;
         }
 
@@ -148,6 +148,12 @@ class LoginRequest extends FormRequest
     /**
      * Get the rate limiting throttle key for the request.
      */
+    /** Manuscript – Naicel (2026-10-08): how long a lockout lasts (Security settings; default 1 minute). */
+    private static function lockoutSeconds(): int
+    {
+        return 60 * max(1, (int) \App\Support\SystemSettings::get('lockout_minutes', 1));
+    }
+
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());

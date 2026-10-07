@@ -23,6 +23,10 @@ class AdvisoryPublishedNotifier
      */
     public function notify(PlantingAdvisory $advisory, ?string $category = null): int
     {
+        // Manuscript – Naicel (2026-10-08): IT can switch these alerts off (System Settings > Notifications).
+        if (! \App\Support\SystemSettings::get('notify_farmers_on_publish', true)) {
+            return 0;
+        }
         $target = LianBarangays::canonicalName($advisory->target_barangay);
 
         // A farmer with farms in several barangays hears about an advisory for any of them (each farmer once).

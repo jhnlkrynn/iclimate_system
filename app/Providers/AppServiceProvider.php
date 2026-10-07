@@ -65,7 +65,23 @@ class AppServiceProvider extends ServiceProvider
         // end MAO/IT – Naicel
 
         // One password rule everywhere a password is chosen (registration, IT-created accounts, change, reset).
-        \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
+        // Manuscript – Naicel (2026-10-08): IT sets the policy on Security settings (defaults: 8, mixed case, numbers, symbols).
+        \Illuminate\Validation\Rules\Password::defaults(function () {
+            $s = \App\Support\SystemSettings::class;
+            $rule = \Illuminate\Validation\Rules\Password::min(max(8, (int) $s::get('password_min_length', 8)));
+            $rule = $s::get('password_mixed_case', true) ? $rule->mixedCase() : $rule;
+            $rule = $s::get('password_numbers', true) ? $rule->numbers() : $rule;
+
+            return $s::get('password_symbols', true) ? $rule->symbols() : $rule;
+        });
+        // Manuscript – Naicel: session timeout from Security settings (read from the settings file: no query).
+        if (is_numeric($timeout = \App\Support\SystemSettings::get('session_timeout_minutes'))) {
+            config(['session.lifetime' => max(5, (int) $timeout)]);
+        }
+        // Manuscript – Naicel: the system name IT set (System Settings) is the name in every page title.
+        if (($name = \App\Support\SystemSettings::get('system_name')) !== \App\Support\SystemSettings::DEFAULTS['system_name']) {
+            config(['app.name' => (string) $name]);
+        }
 
         // Same as the built-in "eloquent" user provider, minus the per-request user query.
         \Illuminate\Support\Facades\Auth::provider('cached-eloquent', fn ($app, array $config) => new \App\Auth\CachedEloquentUserProvider($app['hash'], $config['model']));

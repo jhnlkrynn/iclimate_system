@@ -55,6 +55,7 @@
         // existing item, so the menu stays short.
         'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*']],
         'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
+        'it-settings' => ['admin.settings.index', ['admin.settings.*', 'admin.permissions.*', 'admin.backups.*', 'admin.maintenance.*', 'admin.models.*']],
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
@@ -98,9 +99,6 @@
             $navLink('Farmers', 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
-            $navLink('Records', 'records', 'climate-records'),
-            $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
-            ...((\App\Http\Middleware\FieldReportsUi::enabled()) ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
             $navLink('Predictions', 'weather', 'weather'),
             $navLink('Reports', 'reports', 'reports'),
             $navLink('Announcements', 'community', 'community'),
@@ -117,6 +115,8 @@
             $navLink('User Management', 'user-management', 'user-management'),
             $navLink('System Health', 'system-health', 'system-health'),
             $navLink('System Logs', 'system-logs', 'system-logs'),
+            // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
+            $navLink('Settings', 'it-settings', 'system-health'),
             $navLink('Messages', 'messages', 'messages'),
             // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
