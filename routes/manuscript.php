@@ -10,10 +10,14 @@
 |
 */
 
+use App\Http\Controllers\AdvisoryAlertController;
+use App\Http\Controllers\BarangayProfileController;
 use App\Http\Controllers\FarmerApprovalController;
 use App\Http\Controllers\RecordImportController;
 use App\Http\Controllers\RecordValidationController;
 use App\Http\Controllers\UserPasswordResetController;
+use App\Http\Controllers\WeatherAnalysisController;
+use App\Http\Controllers\YieldPredictionController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -41,4 +45,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('{type}/{id}/validate', [RecordValidationController::class, 'validateRecord'])->where('type', $types)->whereNumber('id')->middleware('throttle:120,1,post-records-validate')->name('validate');
         Route::post('{type}/{id}/unvalidate', [RecordValidationController::class, 'unvalidate'])->where('type', $types)->whereNumber('id')->middleware('throttle:120,1,post-records-unvalidate')->name('unvalidate');
     });
+
+    // Phase 3: Barangays (MAO, a tab of Records).
+    Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/barangays')->name('mao.barangays.')->group(function () {
+        Route::get('/', [BarangayProfileController::class, 'index'])->name('index');
+        Route::put('{barangay}', [BarangayProfileController::class, 'update'])->middleware('throttle:60,1,put-mao-barangay')->name('update');
+    });
+
 });

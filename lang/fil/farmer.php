@@ -983,6 +983,51 @@ return [
         'today' => 'ngayon',
         'and' => 'at',
         'days_count' => ':count araw',
+        // Manuscript – Naicel (2026-10-08): mga layer ng mapa (App\Services\Risk\BarangayMapLayers).
+        'layers' => [
+            'label' => 'Layer ng mapa',
+            'flood' => 'Madalas bahain',
+            'drought' => 'Madalas tagtuyot',
+            'yield' => 'Inaasahang ani',
+            'flood_title' => 'Mga barangay na madalas bahain',
+            'drought_title' => 'Mga barangay na madalas tagtuyot',
+            'yield_title' => 'Inaasahang ani ng palay ngayong panahon',
+            'flood_levels' => ['high' => 'Madalas bahain', 'low' => 'Hindi madalas bahain', 'nodata' => 'Hindi pa natitingnan'],
+            'drought_levels' => ['high' => 'Madalas tagtuyot', 'low' => 'Hindi madalas tagtuyot', 'nodata' => 'Hindi pa natitingnan'],
+            'yield_levels' => ['low' => 'Maganda (4.5 t/ha pataas)', 'moderate' => 'Katamtaman (3.5 hanggang 4.5 t/ha)', 'high' => 'Mababa (wala pang 3.5 t/ha)', 'nodata' => 'Wala pang tantiya'],
+            'flood_meaning' => [
+                'high' => 'Nakalista ang barangay na ito sa MAO bilang madalas bahain. Maaaring malubog ang mabababang bukid pagkatapos ng malakas na ulan.',
+                'low' => 'Wala ang barangay na ito sa listahan ng MAO ng madalas bahain.',
+                'nodata' => 'Hindi pa ito namamarkahan ng MAO.',
+            ],
+            'flood_action' => [
+                'high' => 'Linisin ang mga kanal bago ang tag-ulan, at itaon ang pagtatanim para hindi bata ang palay pagdating ng bagyo.',
+                'low' => 'Bantayan pa rin ang lingguhang panganib at ang mga abiso kapag malakas ang ulan.',
+                'nodata' => 'Magtanong sa MAO tungkol sa pagbaha sa inyong lugar.',
+            ],
+            'drought_meaning' => [
+                'high' => 'Nakalista ang barangay na ito sa MAO bilang madalas tagtuyot. Maaaring kulangin sa tubig ang sahod-ulan na bukid sa tag-araw.',
+                'low' => 'Wala ang barangay na ito sa listahan ng MAO ng madalas tagtuyot.',
+                'nodata' => 'Hindi pa ito namamarkahan ng MAO.',
+            ],
+            'drought_action' => [
+                'high' => 'Magtanim kapag tuloy-tuloy na ang ulan, gumamit ng binhing matibay sa tagtuyot, at magtipid ng tubig.',
+                'low' => 'Tingnan pa rin ang taya ng ulan bago magtanim.',
+                'nodata' => 'Magtanong sa MAO tungkol sa tagtuyot sa inyong lugar.',
+            ],
+            'yield_meaning' => ':value t/ha ang karaniwang inaasahan mula sa :count tantiya ng bukid ngayong panahon.',
+            'yield_none' => 'Wala pang bukid sa barangay na ito ang may tantiya.',
+            'yield_action' => [
+                'low' => 'Ituloy ang pagsunod sa kalendaryo ng pagtatanim at sa mga abiso.',
+                'moderate' => 'Tingnan ang oras ng pag-abono at ang tubig; magtanong sa technician ng MAO kung paano tataas ang ani.',
+                'high' => 'Magpapunta ng technician ng MAO: ang mababang inaasahang ani ay maaaring dahil sa panahon, tubig o peste.',
+                'nodata' => 'Ilagay ang petsa ng pagtatanim at laki ng bukid sa Aking Bukid para magkaroon ng tantiya.',
+            ],
+            'count' => '{0} Walang barangay|[1,*] :count barangay',
+            'source' => 'Mula sa talaan ng MAO tungkol sa mga barangay.',
+            'yield_source' => 'Karaniwan ng mga naka-save na tantiya ng ani ng bukid. Gabay sa pagpaplano, hindi pangako.',
+        ],
+        // End Manuscript – Naicel
     ],
 
     // Mga Payo (2026-10): isang listahan.

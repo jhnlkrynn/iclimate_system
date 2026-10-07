@@ -52,6 +52,10 @@
             @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production'] as $tabRoute => $tabLabel)
                 <a href="{{ route($tabRoute.'.index') }}" @class(['ic-tab', 'is-active' => $routeName === $tabRoute]) @if ($routeName === $tabRoute) aria-current="page" @endif>{{ $tabLabel }}</a>
             @endforeach
+            {{-- Manuscript – Naicel (2026-10-08): Barangays (location, rice area, risk classification) is a third tab for the MAO. --}}
+            @if (auth()->user()?->role === \App\Models\User::ROLE_MAO && \Illuminate\Support\Facades\Route::has('mao.barangays.index'))
+                <a href="{{ route('mao.barangays.index') }}" class="ic-tab">Barangays</a>
+            @endif
         </nav>
     @endif
     {{-- Manuscript – Naicel (2026-10-08): Farmers and Farmer Approvals are two tabs of one sidebar item. --}}
