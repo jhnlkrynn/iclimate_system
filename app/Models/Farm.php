@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * One of a farmer's farms (2026-10). Planting / harvest records (farmer_planting_schedules.farm_id) and yield estimates
+ * belong to a farm. The farmer's first active farm is also mirrored on farmer_profiles (App\Services\Farmer\FarmService).
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -20,6 +24,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Farm extends Model
 {
     use HasFactory;
+
+    public const FARM_TYPES = FarmerPlantingSchedule::FARM_TYPES;
+
+    protected $fillable = ['user_id', 'name', 'barangay', 'area_hectares', 'farm_type', 'archived_at'];
+
+    protected $casts = [
+        'area_hectares' => 'decimal:2',
+        'archived_at' => 'datetime',
+    ];
 
     public const SIZE_EXACT = 'exact';
 
@@ -91,6 +104,10 @@ class Farm extends Model
         return $query->whereNull('archived_at');
     }
 
+    public function hasArea(): bool
+    {
+        return (float) ($this->area_hectares ?? 0) > 0;
+    }
     public function scopeOwnedBy(Builder $query, User|int $user): Builder
     {
         return $query->where('user_id', $user instanceof User ? $user->getKey() : $user);

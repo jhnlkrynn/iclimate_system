@@ -47,6 +47,7 @@ class FarmerPlantingSchedule extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    // Farmer – Naicel (2026-10): the farm this planting / harvest record belongs to (null on records older than farms).
     /** Which of the farmer's farms this plan is for. */
     public function farm(): BelongsTo
     {

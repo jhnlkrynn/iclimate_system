@@ -142,6 +142,17 @@ class DashboardController extends Controller
     /** The farmer's prepared Home (built from saved data when there is none for the current data yet). */
     private function preparedFarmerPayload(User $user, FarmerDashboardService $farmer): array
     {
+        $user = $request->user();
+        // Farmer – Naicel (2026-10): missing farm information goes to the notification bell, and ?farm= opens Home
+        // for one of the farmer's other farms (the selector is shown with two or more farms).
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($user);
+        $farmId = $this->farmerOtherFarmId($request);
+
+        $key = FarmerDashboardService::cacheKey($user, null, $farmId);
+        $payload = Cache::get($key);
+        if (! is_array($payload)) {
+            $payload = $farmer->payload($user, farmId: $farmId);
+            Cache::put($key, $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         $snapshot = CacheScope::snapshot('farmer-dashboard');
         $payload = Cache::get(FarmerDashboardService::cacheKey($user, token: CacheScope::tokenAt($snapshot)));
         if (! is_array($payload)) {
@@ -151,6 +162,18 @@ class DashboardController extends Controller
         }
 
         return $payload;
+    }
+
+    /** Farmer – Naicel: ?farm= when it is one of the farmer's own active farms other than the primary one; else null. */
+    private function farmerOtherFarmId(Request $request): ?int
+    {
+        if (! is_numeric($request->query('farm'))) {
+            return null;
+        }
+        $farms = app(\App\Services\Farmer\FarmService::class);
+        $farm = $farms->selected($request->user(), $request->query('farm'));
+
+        return $farm !== null && ! $farms->isPrimary($request->user(), $farm) ? (int) $farm->id : null;
     }
 
     /**
@@ -194,6 +217,9 @@ class DashboardController extends Controller
         $user = $request->user();
         $retry = self::FARMER_RETRY[$request->query('retry')] ?? null;
 
+        $farmId = $this->farmerOtherFarmId($request);
+        $payload = $farmer->payload($user, forceWeather: $request->boolean('refresh'), refresh: $retry['refresh'] ?? [], farmId: $farmId);
+        Cache::put(FarmerDashboardService::cacheKey($user, null, $farmId), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         if ($retry !== null && ! $request->boolean('refresh')) {
             // Only the yield card, from the stored estimate: no dashboard rebuild. While it is still being prepared nothing
             // is sent, so the placeholder stays; a ready estimate, or the reason there is none, replaces it.

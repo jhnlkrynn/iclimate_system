@@ -40,6 +40,23 @@ class WarmFarmerYields extends Command
                 $this->warn("Farmer {$farmer->id}".($farm ? " farm {$farm->id}" : '').': '.$exception->getMessage());
             }
 
+        User::query()
+            ->where('role', User::ROLE_FARMER)
+            ->where('status', User::STATUS_ACTIVE)
+            ->with('farmerProfile')
+            ->orderBy('id')
+            ->each(function (User $farmer) use ($dashboard, &$done, &$failed): void {
+                try {
+                    $dashboard->prepareYieldEstimate($farmer);
+                    // A farmer's other farms (2026-10) each keep their own estimate; the first farm is the one above.
+                    if (\App\Support\SchemaCache::hasTable('farms')) {
+                        \App\Models\Farm::query()->where('user_id', $farmer->id)->active()->orderBy('id')->pluck('id')->slice(1)
+                            ->each(fn (int $farmId) => $dashboard->prepareYieldEstimate($farmer, $farmId));
+                    }
+                    $done++;
+                } catch (Throwable $exception) {
+                    $failed++;
+                    $this->warn("Farmer {$farmer->id}: ".$exception->getMessage());
             if (! ($result['failed'] ?? false)) {
                 $done++;
                 $inARow = 0;

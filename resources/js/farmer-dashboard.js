@@ -3,14 +3,23 @@
 // shows is saved data (FarmerDashboardService); nothing here asks a weather provider or runs a model, except Refresh,
 // which also asks the server for the latest weather. All wording comes from the page (data-text-* attributes).
 
+import { initFarmerMyFarm } from './farmer-my-farm';
+import { initFarmerHomeCharts } from './farmer-home-charts';
+import { initForecastSurvey } from './farmer-forecast-survey';
+
 const REFRESH_EVERY_MS = 300000;
 // While the yield card is a placeholder: look again after these waits (about 4 minutes in all), then leave it to the
 // 5-minute refresh. The estimate is normally ready within seconds of the page being sent.
 const HARVEST_CHECKS_MS = [4000, 6000, 10000, 15000, 20000, 30000, 45000, 60000, 60000];
 
 export function initFarmerDashboard() {
+    // The other farmer pages' scripts start here too, so the shared app.js needs no change (Farmer – Naicel).
+    initFarmerMyFarm();
+    initForecastSurvey();
+
     const root = document.querySelector('[data-farmer-dashboard]');
     if (!root) return;
+    initFarmerHomeCharts(root);
 
     const $ = (selector) => root.querySelector(selector);
     const t = (name) => root.dataset[name] || '';
@@ -38,10 +47,11 @@ export function initFarmerDashboard() {
         const label = $('[data-mfd-refresh-text]');
         if (force && button) { button.disabled = true; if (label) label.textContent = t('textRefreshing'); }
         try {
-            const query = new URLSearchParams();
-            if (force) query.set('refresh', '1');
-            if (retry) query.set('retry', retry);
-            const res = await fetch(root.dataset.liveUrl + (query.toString() ? '?' + query : ''), { headers: { Accept: 'application/json' }, loader: false });
+            // The live URL may already carry ?farm= (the farm selector).
+            const url = new URL(root.dataset.liveUrl, window.location.href);
+            if (force) url.searchParams.set('refresh', '1');
+            if (retry) url.searchParams.set('retry', retry);
+            const res = await fetch(url, { headers: { Accept: 'application/json' }, loader: false });
             if (!res.ok) throw new Error('bad status ' + res.status);
             const data = await res.json();
             Object.entries(data.slots).forEach(([key, html]) => {
@@ -91,6 +101,12 @@ export function initFarmerDashboard() {
 
     root.addEventListener('click', (e) => {
         if (e.target.closest('[data-mfd-refresh]')) refresh({ force: true });
+    });
+
+    // The farm selector (shown with two or more farms): Home opens again for the chosen farm.
+    root.addEventListener('change', (e) => {
+        const select = e.target.closest('[data-fh-farm-select]');
+        if (select) select.form.submit();
     });
     setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);
 

@@ -28,6 +28,17 @@ class PrepareFarmerYieldEstimate implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 120;
 
+    /** $farmId: one of the farmer's other farms (2026-10); null is the primary farm, the one on the farmer's profile. */
+    public function __construct(public int $userId, public ?int $farmId = null) {}
+
+    /** Queues the estimate unless one is already waiting for this farmer (and farm). */
+    public static function queueFor(int $userId, ?int $farmId = null): void
+    {
+        if (Cache::add(self::lockKey($userId, $farmId), true, now()->addMinutes(10))) {
+            self::dispatch($userId, $farmId)
+                ->onConnection((string) config('services.farming_ai.queue_connection', 'database'))
+                ->onQueue((string) config('services.farming_ai.queue', 'analytics'))
+                ->afterCommit();
     /** One estimate per farmer waits in the queue at a time (held until it has run, at most 10 minutes). */
     public int $uniqueFor = 600;
 
@@ -81,6 +92,7 @@ class PrepareFarmerYieldEstimate implements ShouldBeUnique, ShouldQueue
 
     public static function lockKey(int $userId, ?int $farmId = null): string
     {
+        return 'dashboard:farmer-prediction:queued:'.$userId.($farmId !== null ? ':farm:'.$farmId : '');
         return 'dashboard:farmer-prediction:queued:'.$userId.($farmId ? ':farm:'.$farmId : '');
     }
 
@@ -88,6 +100,8 @@ class PrepareFarmerYieldEstimate implements ShouldBeUnique, ShouldQueue
     {
         try {
             $user = User::query()->with('farmerProfile')->find($this->userId);
+            if ($user !== null && $user->role === User::ROLE_FARMER) {
+                $dashboard->prepareYieldEstimate($user, $this->farmId);
             // Only the farmer's own farm still in use; an archived or someone else's farm is not estimated.
             $farm = $this->farmId !== null ? Farm::query()->ownedBy($this->userId)->active()->find($this->farmId) : null;
             if ($user !== null && $user->role === User::ROLE_FARMER && ($this->farmId === null || $farm !== null)) {

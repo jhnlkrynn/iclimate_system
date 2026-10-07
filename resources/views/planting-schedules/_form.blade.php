@@ -34,6 +34,16 @@
     <div id="scheduleDateWarning" class="{{ $inModal ? 'fad-m-note is-watch' : 'alert alert-warning' }} d-none" role="status" aria-live="polite"></div>
 
     <div class="{{ $c['grid'] }}">
+        {{-- Farmer – Naicel (2026-10): which of the farmer's farms this planting belongs to (asked with two or more farms). --}}
+        @php $farmOptions = auth()->user()?->role === \App\Models\User::ROLE_FARMER ? \App\Http\Controllers\FarmerPlantingScheduleController::farmOptions(request()) : collect(); @endphp
+        @if ($farmOptions->count() > 1)
+            <div class="{{ $c['field'] }}">
+                <label class="{{ $c['label'] }}" for="farm_id">{{ __('farmer.activity.farm') }}</label>
+                <select class="{{ $c['select'] }}" id="farm_id" name="farm_id">
+                    @foreach ($farmOptions as $farmOption)
+                        <option value="{{ $farmOption->id }}" @selected((int) old('farm_id', $schedule->farm_id ?? $farmOptions->first()->id) === $farmOption->id)>{{ $farmOption->name }}</option>
+                    @endforeach
+                </select>
         @php $planFarms = $farms ?? collect(); @endphp
         @if ($planFarms->isNotEmpty())
             {{-- Which of the farmer's farms the plan is for (their own farms only; defaults to the farm they are viewing). --}}
