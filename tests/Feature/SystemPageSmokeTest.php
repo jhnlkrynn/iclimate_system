@@ -117,7 +117,7 @@ class SystemPageSmokeTest extends TestCase
     public function test_every_mao_page_opens_with_optional_services_down(): void
     {
         $this->assertPagesOpen($this->user(User::ROLE_MAO), [
-            '/mao/dashboard' => 'Kailangan ng Aksyon',
+            '/mao/dashboard' => 'Needs Action',
             '/mao/operations' => 'Barangay',     // removed page: redirects (see REDIRECTS)
             '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',

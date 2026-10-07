@@ -72,7 +72,7 @@ class DashboardController extends Controller
     private const IT_LIVE_SLOTS = ['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
 
     /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
-    public const FARMER_SLOTS = ['message', 'typhoon', 'weather', 'risk', 'harvest', 'week'];
+    public const FARMER_SLOTS = ['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'];   // Farmer – Naicel (2026-10-08): + kpis
 
     /** ?retry=harvest-check: the yield card's placeholder asks whether the background estimate is saved yet (reads only). */
     private const FARMER_RETRY = [
@@ -82,6 +82,10 @@ class DashboardController extends Controller
     /** MAO overview: the incoming saved-data home contract, retained behind the shared stale cache. */
     public function mao(Request $request, MaoHomeService $home): View
     {
+        // MAO Dashboard – Naicel (2026-10-08): English, or Filipino when the MAO picked it with the page's selector.
+        // The prepared figures below are shared by every MAO account and carry no words; the page writes them.
+        app()->setLocale(\App\Support\MaoLanguage::of($request->user()));
+
         return view('dashboards.mao', [
             'mao' => StaleCache::scoped(
                 'mao-home',
@@ -134,7 +138,22 @@ class DashboardController extends Controller
 
     private function maoHomeCacheKey(?string $token = null): string
     {
-        return 'dashboard:mao:home:v2'.($token === null ? '' : ':'.$token);
+        return 'dashboard:mao:home:v3'.($token === null ? '' : ':'.$token);
+    }
+
+    /**
+     * MAO Dashboard – Naicel (2026-10-08): the dashboard's language selector. Saves English or Filipino on the MAO's
+     * account, puts the "no data yet" bell notifications in that language, then shows the dashboard again.
+     */
+    public function maoLanguage(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'language' => ['required', 'string', Rule::in(array_keys(\App\Support\MaoLanguage::SUPPORTED))],
+        ]);
+        FarmerLanguage::store($request, $request->user(), $validated['language']);
+        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->sync($request->user()->refresh()), null, false);
+
+        return redirect()->route('mao.dashboard');
     }
 
     /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */

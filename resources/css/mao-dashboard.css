@@ -267,3 +267,15 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mhd-reading { margin: 44px 0 0; padding: 12px 16px; border-left: 4px solid var(--brand); border-radius: 4px; background: var(--subtle, #f8faf9); font-size: 1.0625rem; font-weight: 600; color: var(--ink); }
 
 .mhd-reading-flat { margin: 0 0 12px; }
+
+/* MAO Dashboard – Naicel (2026-10-08): the English / Filipino selector in the green header (same look as the farmer's),
+   and the tiles' second row: on a wide screen four tiles to a row, a last row with fewer tiles is simply shorter. */
+.mhd-lang { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+.mhd-lang label { margin: 0; font-size: .875rem; font-weight: 600; color: #b9e4cb; }
+.mhd-lang select {
+    min-height: 44px; padding: 6px 30px 6px 10px; border: 1px solid #fff; border-radius: 4px; background-color: #fff; color: var(--brand);
+    font-size: .875rem; font-weight: 600; cursor: pointer;
+}
+.mhd-lang select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+html[data-theme="dark"] body .mhd-lang select { border-color: var(--dk-border-strong); background-color: var(--dk-surface-2); color: var(--dk-ink); }
+@media (max-width: 767.98px) { .mhd-lang { width: 100%; } .mhd-lang select { flex: 1 1 auto; } }

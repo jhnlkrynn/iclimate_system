@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\Cache;
  * MAO/IT – Naicel (2026-10-07): data the MAO has not added yet goes to the notification bell, not to empty cards on the
  * MAO dashboard. Same behaviour as the farmer reminders (App\Services\Farmer\FarmerMissingInfoNotifier).
  *
- * One notification per missing item, for every MAO account, in the MAO's language (Filipino unless their saved language
- * is English), each linking to the page where the data is added. It is never duplicated (the item is the notification's
+ * One notification per missing item, for every MAO account, in the MAO's language (English unless they picked
+ * Filipino), each linking to the page where the data is added. It is never duplicated (the item is the notification's
  * category, e.g. "mao-setup:climate_month") and it is removed once the data exists:
  *  - climate_month      no climate record dated this month                      → Climate Records, Add
  *  - production_season  no rice production record for the current rice season  → Rice Production, Add
@@ -177,9 +177,9 @@ class MaoMissingDataNotifier
         return $url ? ['url' => $url, 'label' => trans('mao.missing.open', [], self::locale($user))] : null;
     }
 
-    /** Filipino unless the MAO saved English (the wording the office asked for: "Walang climate records ngayong buwan"). */
+    /** English unless the MAO picked Filipino on the MAO Dashboard (App\Support\MaoLanguage, 2026-10-08). */
     public static function locale(?User $user): string
     {
-        return $user?->getAttribute('preferred_language') === 'en' ? 'en' : 'fil';
+        return \App\Support\MaoLanguage::of($user);
     }
 }
