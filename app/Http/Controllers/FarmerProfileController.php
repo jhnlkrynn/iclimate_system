@@ -26,7 +26,8 @@ class FarmerProfileController extends CrudController
 
     protected bool $printable = true;
 
-    protected array $columns = ['full_name' => 'Full Name', 'contact_number' => 'Contact', 'farmerOrganization.name' => 'Organization', 'barangay' => 'Barangay', 'farm_area' => 'Farm Area', 'farm_type' => 'Farm Type'];
+    // MAO list (2026-10): no contact number or address; total_farm_area and account_status are FarmerProfile accessors.
+    protected array $columns = ['full_name' => 'Name', 'barangay' => 'Barangay', 'farm_type' => 'Farm Type', 'total_farm_area' => 'Total Farm Area', 'account_status' => 'Status'];
 
     protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type'];
 
@@ -150,11 +151,22 @@ class FarmerProfileController extends CrudController
         return $view;
     }
 
+    /** Staff "View" pop-up (?modal=1): the farmer's details and farms, with [Mensahe]; every other case is unchanged. */
+    public function show(Request $request, int $id): View
+    {
+        if (! $request->boolean('modal') || $request->user()->role === User::ROLE_FARMER) {
+            return parent::show($request, $id);
+        }
+        $this->authorizeView($request);
+
+        return view('farmer-profiles._modal', ['record' => $this->findRecord($request, $id), 'canManage' => $this->canManage($request)]);
+    }
+
     protected function baseQuery(Request $request): Builder
     {
         return FarmerProfile::query()
             // farmerOrganization is shown per row; loading it here is one query for the page, not one per row.
-            ->with(['user', 'farmBoundary', 'farmerOrganization'])
+            ->with(['user', 'farmBoundary', 'farmerOrganization', 'farms'])
             ->when(
                 $request->user()->role === User::ROLE_FARMER,
                 fn (Builder $query) => $query->where('user_id', $request->user()->id),

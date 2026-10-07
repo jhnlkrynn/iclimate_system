@@ -16,7 +16,7 @@ class RedirectItFromFieldPages
 {
     /** Route names (with wildcards) that are no longer IT pages. */
     private const FIELD_PAGES = [
-        'heat-map.*', 'planting-advisories.*', 'management.advisories.*', 'advisory-feedback.*', 'farmer-profiles.*',
+        'heat-map.*', 'planting-advisories.*', 'management.advisories.*', 'advisory-feedback.*', 'farmer-profiles.index',
         'community-feed.*', 'announcements.*', 'climate-records.*', 'rice-productions.*', 'weather-predictions.*',
         'rice-yield-predictions.*', 'weather-feedback.*', 'reports.*', 'calendar.*', 'field-reports.*',
     ];
@@ -27,7 +27,9 @@ class RedirectItFromFieldPages
             return $next($request);
         }
 
-        // The IT dashboard's Data Integrity card opens the farmer list filtered to the records that need fixing.
+        // Only the Farmer Profiles list is off limits: IT still corrects one farmer's profile from User Management
+        // (the Modify Farmer Profile form), and the IT dashboard's Data Integrity card opens the list filtered to the
+        // records that need fixing.
         if ($request->routeIs('farmer-profiles.index') && $request->filled('integrity')) {
             return $next($request);
         }
