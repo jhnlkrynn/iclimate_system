@@ -17,7 +17,8 @@ function css(root, name, fallback) {
 export async function initFarmerHomeCharts(root) {
     const harvest = read(root, 'harvest');
     const weather = read(root, 'weather');
-    if (!harvest && !weather) return;
+    const compare = read(root, 'compare');
+    if (!harvest && !weather && !compare) return;
 
     await window.iClimateVisualsReady;
     const Chart = window.Chart;
@@ -71,6 +72,26 @@ export async function initFarmerHomeCharts(root) {
                     y: { position: 'left', title: { display: !narrow, text: weather.text.temp, font: { size: FONT } }, ticks: { font: { size: FONT }, callback: (v) => v + '°' } },
                     y1: { display: weather.has_rain, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: !narrow, text: weather.text.rain, font: { size: FONT } }, ticks: { font: { size: FONT }, callback: (v) => v + '%' } },
                 },
+            },
+        });
+    }
+
+    // Farmer – Naicel (2026-10-08): "Yield Comparison": this season's estimate, the usual Lian yield and the farmer's
+    // last harvest as two or three bars in t/ha. One colour per figure, the same in both themes.
+    const compareCanvas = root.querySelector('#fhCompareChart');
+    if (compare && compareCanvas) {
+        const colors = { estimate: brand, usual: '#6b7f8c', last: warm };
+        new Chart(compareCanvas, {
+            type: 'bar',
+            data: { labels: compare.labels, datasets: [{ data: compare.values, backgroundColor: compare.keys.map((k) => colors[k] || brand), borderRadius: 6, maxBarThickness: 44 }] },
+            options: {
+                ...common,
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, title: { display: !narrow, text: compare.text.axis, font: { size: FONT } }, ticks: { font: { size: FONT } } },
+                    y: { ticks: { font: { size: FONT } }, grid: { display: false } },
+                },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.parsed.x.toFixed(2) + ' t/ha' } } },
             },
         });
     }

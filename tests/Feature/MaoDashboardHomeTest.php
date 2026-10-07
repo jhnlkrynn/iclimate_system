@@ -116,13 +116,15 @@ class MaoDashboardHomeTest extends TestCase
 
         // A tile is shown only with a figure (2026-10-07): no farmer has a saved yield estimate here, so that tile is left out.
         preg_match_all('#data-kpi="([a-z]+)"#', $html, $tiles);
-        $this->assertSame(['farmers', 'area', 'risk'], $tiles[1]);
+        // Since 2026-10-08 a second row follows: farmers with a planting plan, harvests due and advisories in effect
+        // (rice production has no records here, so it is left out too). MaoDashboardFiguresTest checks their numbers.
+        $this->assertSame(['farmers', 'area', 'risk', 'plans', 'harvests', 'advisories'], $tiles[1]);
         foreach (['Registered farmers', 'Area planted this season', 'High-risk barangays'] as $label) {
             $this->assertStringContainsString($label, $html, $label);
         }
         $this->assertStringNotContainsString('Expected yield vs last season', $html);
-        // In reading order: tiles, Kailangan ng Aksyon, the Heat Map preview, the charts.
-        $order = array_map(fn (string $marker) => strpos($html, $marker), ['data-mao-kpis', 'Kailangan ng Aksyon', 'id="mhdMapTitle"', 'Rice Yield by Year 2020–2025']);
+        // In reading order: tiles, Needs Action ("Kailangan ng Aksyon" in Filipino), the Heat Map preview, the charts.
+        $order = array_map(fn (string $marker) => strpos($html, $marker), ['data-mao-kpis', 'Needs Action', 'id="mhdMapTitle"', 'Rice Yield by Year 2020–2025']);
         $this->assertNotContains(false, $order);
         $sorted = $order;
         sort($sorted);
@@ -162,7 +164,7 @@ class MaoDashboardHomeTest extends TestCase
         $this->assertStringContainsString('0 Farmer profiles on file', $this->tile($html, 'farmers'));   // a real count of zero
         // MAO/IT – Naicel (2026-10-07): a figure that cannot be worked out is not shown at all (no "Walang datos pa" card);
         // what the MAO can add is asked for in the bell instead (MaoMissingDataNotificationTest).
-        foreach (['area', 'yield', 'risk'] as $key) {
+        foreach (['area', 'yield', 'risk', 'plans', 'harvests', 'production'] as $key) {
             $this->assertStringNotContainsString('data-kpi="'.$key.'"', $html, $key);
         }
         // No saved forecast: no map card; no yield records: no yield or weather-impact chart; no planting dates: no

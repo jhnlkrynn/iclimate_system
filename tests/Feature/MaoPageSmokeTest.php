@@ -39,7 +39,7 @@ class MaoPageSmokeTest extends TestCase
         $user = $this->maoUser();
 
         $routes = [
-            '/mao/dashboard' => 'Kailangan ng Aksyon',
+            '/mao/dashboard' => 'Needs Action',
             '/heat-map' => 'Heat Map',
             '/calendar' => 'Calendar',
             '/climate-records' => 'Climate Records',

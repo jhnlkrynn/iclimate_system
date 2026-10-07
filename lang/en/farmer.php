@@ -1144,6 +1144,44 @@ return [
         'weather_none' => 'The 14-day forecast is not ready yet.',
         'season' => ['wet' => 'Wet :year', 'dry' => 'Dry :years'],
     ],
+    // Farmer Home's key figures and the yield comparison (2026-10-08, App\Services\Farmer\FarmerHomeKpis).
+    'kpis' => [
+        'title' => 'My farm in numbers',
+        'days' => 'day|days',
+        'days_ago' => 'day ago|days ago',
+        'tons' => 'ton|tons',
+        'farm' => [
+            'label' => 'Farm size',
+            'type' => ['irrigated' => 'Irrigated', 'rainfed' => 'Rainfed'],
+            'farms' => ':count farms',
+        ],
+        'crop' => [
+            'to_planting' => 'Days to planting',
+            'planting_on' => 'Planting on :date',
+            'to_harvest' => 'Days to harvest',
+            'harvest_on' => 'Harvest around :date',
+            'progress' => ':percent% of the growing time has passed',
+            'passed' => 'Harvest date passed',
+            'record' => 'Record your harvest in My Farm.',
+        ],
+        'expected' => [
+            'label' => 'Expected harvest this season',
+            'note' => ':yield t/ha × :area ha',
+        ],
+        'rain' => [
+            'label' => 'Rainy days, next :days days',
+            'of' => 'of :days',
+            'heavy' => 'Heavy rain on :count day|Heavy rain on :count days',
+            'no_heavy' => 'No heavy rain expected',
+        ],
+        'compare' => [
+            'title' => 'Yield Comparison',
+            'sub' => 'Tons per hectare (t/ha).',
+            'estimate' => 'Expected this season',
+            'usual' => 'Usual in Lian',
+            'last' => 'My last harvest',
+        ],
+    ],
     'missing_info' => [
         'open' => 'Open',
         'barangay' => ['title' => 'Add your barangay', 'message' => 'So you can see the risk and advice for your area.'],

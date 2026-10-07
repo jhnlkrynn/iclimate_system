@@ -265,6 +265,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // The Operations page was removed (2026-10): its parts live on Advisories, Calendar, Field Reports and Reports.
         // The old address opens the dashboard.
         Route::get('/mao/operations', fn () => redirect()->route('mao.dashboard'))->name('mao.operations');
+        // MAO Dashboard – Naicel (2026-10-08): the dashboard's English / Filipino selector, saved on the MAO's account.
+        Route::post('/mao/dashboard/language', [DashboardController::class, 'maoLanguage'])
+            ->middleware('throttle:20,1,post-mao-dashboard-language')->name('mao.dashboard.language');
     });
 
 

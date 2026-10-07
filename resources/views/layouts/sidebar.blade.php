@@ -55,6 +55,7 @@
         // existing item, so the menu stays short.
         'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*']],
         'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
+        'it-settings' => ['admin.settings.index', ['admin.settings.*', 'admin.permissions.*', 'admin.backups.*', 'admin.maintenance.*', 'admin.models.*']],
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
@@ -88,23 +89,24 @@
     } elseif ($isMao) {
         // MAO (2026-10): eleven items in one list, each page once. Records opens Climate Records, with Rice Production
         // as its second tab. Chatbot Knowledge is an IT page.
+        // MAO Dashboard – Naicel (2026-10-08): the menu follows the MAO's language (English unless Filipino was picked
+        // on the MAO Dashboard): lang/{en,fil}/mao.php, section "nav".
+        $maoLocale = \App\Support\MaoLanguage::of($user);
+        $maoNav = fn (string $key): string => __('mao.nav.'.$key, [], $maoLocale);
         $primaryGroup = [
-            $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLink('Heat Map', 'heatmap', 'heatmap'),
-            $navLink('Advisories', 'advisories', 'advisories'),
+            $navLink($maoNav('dashboard'), 'dashboard', 'dashboard'),
+            $navLink($maoNav('heat_map'), 'heatmap', 'heatmap'),
+            $navLink($maoNav('advisories'), 'advisories', 'advisories'),
             // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
-            $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
-            $navLink('Records', 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
-            $navLink('Farmers', 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
+            $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
+            $navLink($maoNav('records'), 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
+            $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
-            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
-            $navLink('Records', 'records', 'climate-records'),
-            $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
-            ...((\App\Http\Middleware\FieldReportsUi::enabled()) ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
-            $navLink('Predictions', 'weather', 'weather'),
-            $navLink('Reports', 'reports', 'reports'),
-            $navLink('Announcements', 'community', 'community'),
-            $navLink('Messages', 'messages', 'messages'),
+            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
+            $navLink($maoNav('predictions'), 'weather', 'weather'),
+            $navLink($maoNav('reports'), 'reports', 'reports'),
+            $navLink($maoNav('announcements'), 'community', 'community'),
+            $navLink($maoNav('messages'), 'messages', 'messages'),
         ];
         $moreGroup = [];
         $publishingGroup = [];
@@ -117,6 +119,8 @@
             $navLink('User Management', 'user-management', 'user-management'),
             $navLink('System Health', 'system-health', 'system-health'),
             $navLink('System Logs', 'system-logs', 'system-logs'),
+            // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
+            $navLink('Settings', 'it-settings', 'system-health'),
             $navLink('Messages', 'messages', 'messages'),
             // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
@@ -139,7 +143,8 @@
             $labelId = $idPrefix.'-section-'.$index;
             $html .= '<div class="sidebar-group" role="group" aria-labelledby="'.$labelId.'">';
             $html .= '<div class="sidebar-section" id="'.$labelId.'">'.e($sectionLabel).'</div>';
-            $html .= '<div class="sidebar-stack">';
+            // --sb-count: how many links, so the stylesheet can cap how far they spread (resources/css/sidebar.css).
+            $html .= '<div class="sidebar-stack" style="--sb-count: '.count($links).'">';
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $href = $anchor ? route($route).'#'.$anchor : route($route);

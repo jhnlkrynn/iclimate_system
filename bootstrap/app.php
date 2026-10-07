@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             ReadPreparedPredictionsOnly::class,
             // MAO/IT – Kaye: the agricultural pages are not IT pages; an IT account that opens one goes to the IT dashboard.
             \App\Http\Middleware\RedirectItFromFieldPages::class,
+            // Manuscript – Naicel (2026-10-08): Maintenance mode and Roles & Permissions (System Settings; no query).
+            \App\Http\Middleware\SystemMaintenanceMode::class,
+            \App\Http\Middleware\CheckModuleAccess::class,
         ]);
 
         $middleware->api(append: [

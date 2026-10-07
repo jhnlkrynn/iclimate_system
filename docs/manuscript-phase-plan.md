@@ -116,4 +116,4 @@ add what is missing. Each phase is one commit, so any phase can be reverted on i
 | 5 Yield prediction and forecasting | done |
 | 6 Advisory alerts | done |
 | 7 Reports | done |
-| 8 IT settings, security, maintenance, models | to do |
+| 8 IT settings, security, maintenance, models | done |
