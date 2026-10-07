@@ -25,6 +25,8 @@ class FarmerMyFarmController extends Controller
     public function __invoke(Request $request): View
     {
         $user = $request->user();
+        // Farmer – Naicel (2026-10): missing farm information goes to the notification bell.
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($user);
         $profile = $user->farmerProfile;
         $farms = ActiveFarm::farms($user);
         $current = ActiveFarm::current($user);
@@ -68,7 +70,7 @@ class FarmerMyFarmController extends Controller
             'harvests' => $this->harvests($schedules),
             'events' => $this->upcoming($schedules),
             'printedAt' => BusinessClock::now(),
-        ]);
+        ] + $this->activityData($request, $farms, $current));
     }
 
     private function seasonLabel(FarmerPlantingSchedule $schedule): ?string
@@ -130,4 +132,116 @@ class FarmerMyFarmController extends Controller
 
         return array_slice($events, 0, 10);
     }
+
+    // ------------------------------------------------------------------ Farmer – Naicel (2026-10)
+
+    /**
+     * The Activity Calendar (all of the farmer's own planting and harvest dates, with the farm's name when there are two
+     * or more farms) and the actual-harvest question for the latest harvest without a yield.
+     *
+     * @param  Collection<int, Farm>  $farms
+     * @return array<string, mixed>
+     */
+    private function activityData(Request $request, Collection $farms, ?Farm $current): array
+    {
+        $user = $request->user();
+        $all = SchemaCache::hasTable('farmer_planting_schedules')
+            ? FarmerPlantingSchedule::query()->where('user_id', $user->id)->orderByDesc('planting_date')->get()
+            : collect();
+        // Archived farms keep their records, so their names are still needed beside those records.
+        $names = ActiveFarm::available() ? Farm::query()->ownedBy($user)->pluck('farm_name', 'id') : collect();
+        $primaryId = $farms->first()?->getKey();
+        $farmName = fn (FarmerPlantingSchedule $s): ?string => $names->get($s->farm_id ?? $primaryId);
+        $survey = app(\App\Services\Farmer\YieldSurveyService::class);
+        $pending = $survey->pending($user);
+
+        return [
+            'activityFarms' => $farms->map(fn (Farm $f): array => ['id' => $f->getKey(), 'name' => $f->farm_name])->values()->all(),
+            'activityFarmId' => $current?->getKey(),
+            'calendar' => $this->calendar($request, $all, $farmName, $farms->count() > 1),
+            'yieldSurvey' => $pending === null ? null : [
+                'id' => $pending->id,
+                'farm' => $farms->count() > 1 ? $farmName($pending) : null,
+                'season' => $this->seasonLabel($pending),
+                'harvested_on' => $pending->harvested_on ?? $pending->harvestDateForPlanning(),
+                'predicted' => $survey->predictedFor($pending)['value'],
+            ],
+        ];
+    }
+
+    /**
+     * One month (?month=YYYY-MM, this month by default) of the farmer's own planting dates, harvest dates and expected
+     * harvests, as a month grid and as a list (the phone shows the list).
+     *
+     * @param  Collection<int, FarmerPlantingSchedule>  $schedules
+     * @return array<string, mixed>
+     */
+    private function calendar(Request $request, Collection $schedules, \Closure $farmName, bool $showFarm): array
+    {
+        $today = \Carbon\CarbonImmutable::parse(BusinessClock::today()->toDateString());
+        $asked = $request->query('month');
+        $month = is_string($asked) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $asked) ? \Carbon\CarbonImmutable::parse($asked.'-01') : $today->startOfMonth();
+        if (abs($month->year - $today->year) > 5) {
+            $month = $today->startOfMonth();
+        }
+
+        $byDate = [];
+        $add = function ($date, string $kind, FarmerPlantingSchedule $s) use (&$byDate, $month, $farmName, $showFarm): void {
+            if ($date === null || $date->format('Y-m') !== $month->format('Y-m')) {
+                return;
+            }
+            $byDate[$date->format('Y-m-d')][] = [
+                'kind' => $kind,
+                'label' => __('farmer.activity.'.$kind),
+                'farm' => $showFarm ? $farmName($s) : null,
+                'edit' => route('farmer.planting-schedules.edit', $s->id),
+            ];
+        };
+        foreach ($schedules as $s) {
+            $add($s->planting_date, 'planted', $s);
+            if ($s->harvested_on) {
+                $add($s->harvested_on, 'harvested', $s);
+            } elseif ($s->progress_status !== 'Harvested') {
+                $add($s->harvestDateForPlanning(), 'expected', $s);
+            }
+        }
+        ksort($byDate);
+
+        $weeks = [];
+        $cursor = $month->startOfWeek(\Carbon\CarbonImmutable::SUNDAY);
+        $last = $month->endOfMonth()->endOfWeek(\Carbon\CarbonImmutable::SATURDAY);
+        while ($cursor <= $last) {
+            $week = [];
+            for ($i = 0; $i < 7; $i++) {
+                $key = $cursor->format('Y-m-d');
+                $week[] = [
+                    'date' => $key,
+                    'day' => $cursor->day,
+                    'in_month' => $cursor->month === $month->month,
+                    'is_today' => $cursor->isSameDay($today),
+                    'label' => $cursor->locale(app()->getLocale())->translatedFormat('F j, Y'),
+                    'events' => $cursor->month === $month->month ? ($byDate[$key] ?? []) : [],
+                ];
+                $cursor = $cursor->addDay();
+            }
+            $weeks[] = $week;
+        }
+
+        return [
+            'title' => $month->locale(app()->getLocale())->translatedFormat('F Y'),
+            'month' => $month->format('Y-m'),
+            'prev' => route('farmer.my-farm', ['month' => $month->subMonth()->format('Y-m')]).'#activity',
+            'next' => route('farmer.my-farm', ['month' => $month->addMonth()->format('Y-m')]).'#activity',
+            'default_date' => $month->format('Y-m') === $today->format('Y-m') ? $today->toDateString() : $month->toDateString(),
+            'min' => $today->subYears(3)->toDateString(),
+            'max' => $today->addYear()->toDateString(),
+            'weeks' => $weeks,
+            'list' => collect($byDate)->map(fn (array $events, string $date): array => [
+                'date' => \Carbon\CarbonImmutable::parse($date),
+                'events' => $events,
+            ])->values()->all(),
+        ];
+    }
+
+    // ------------------------------------------------------------------ end Farmer – Naicel
 }

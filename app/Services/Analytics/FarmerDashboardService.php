@@ -176,6 +176,8 @@ final class FarmerDashboardService
             'week' => $week,
             'advisory' => $advisory,
             'typhoon' => $typhoon,
+            // Farmer – Naicel (2026-10): the two Home charts; one farm's harvests when the farmer has two or more farms.
+            'charts' => app(\App\Services\Farmer\FarmerHomeCharts::class)->for($user, ActiveFarm::farms($user)->count() > 1 ? $farm : null, $barangay),
         ];
     }
 

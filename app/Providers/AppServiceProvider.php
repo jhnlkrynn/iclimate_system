@@ -39,6 +39,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Farmer – Naicel (2026-10): after a farm or profile is saved anywhere (e.g. the farm form), the farmer's
+        // missing-info notifications are checked again on their next page (FarmerMissingInfoNotifier::syncOnPageLoad).
+        // The listener returns nothing on purpose: a listener that returns false stops the ones after it.
+        foreach ([\App\Models\Farm::class, \App\Models\FarmerProfile::class] as $farmerRecord) {
+            $farmerRecord::saved(static function ($record): void {
+                if ($record->user_id) {
+                    \Illuminate\Support\Facades\Cache::forget(\App\Services\Farmer\FarmerMissingInfoNotifier::pageCheckKey((int) $record->user_id));
+                }
+            });
+        }
+        // end Farmer – Naicel
+
         // One password rule everywhere a password is chosen (registration, IT-created accounts, change, reset).
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
 

@@ -218,10 +218,11 @@ class FarmerAdvisorySourcesTest extends TestCase
     public function test_first_visit_before_any_scheduled_check_does_not_display_a_confirmed_empty_state(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => null]);
-        // Opening the page never starts a check (the scheduler fetches PAGASA and the weather); it says nothing is checked yet.
+        // Opening the page never starts a check (the scheduler fetches PAGASA and the weather). 2026-10: with nothing to
+        // show, a farmer sees only the page title — never a confirmed "none", and no "checking" box either.
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
-            ->assertDontSee('data-fad-auto-refresh', false)->assertSee('Checking the latest advisories')
-            ->assertDontSee('No Active Advisories for Lian');
+            ->assertDontSee('data-fad-auto-refresh', false)->assertDontSee('Checking the latest advisories')
+            ->assertDontSee('data-adv-empty', false)->assertDontSee('No Active Advisories for Lian');
         Http::assertNothingSent();
     }
 
