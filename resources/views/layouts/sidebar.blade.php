@@ -51,6 +51,10 @@
         'system-logs' => ['system-logs.index', ['system-logs.*']],
         'system-health' => ['system-health.index', ['system-health.*', 'model-registry.*', 'model-evaluation.*', 'testing.*']],
         'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
+        // Manuscript – Naicel (2026-10-08): pages of the manuscript modules (routes/manuscript.php) open as tabs of an
+        // existing item, so the menu stays short.
+        'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*']],
+        // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
     ];
@@ -90,7 +94,7 @@
             // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
             $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
             $navLink('Records', 'records', 'climate-records'),
-            $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
+            $navLink('Farmers', 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
             $navLink('Predictions', 'weather', 'weather'),

@@ -50,6 +50,10 @@
             @endforeach
         </nav>
     @endif
+    {{-- Manuscript – Naicel (2026-10-08): Farmers and Farmer Approvals are two tabs of one sidebar item. --}}
+    @if ($routeName === 'farmer-profiles')
+        @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
+    @endif
     @if ($routeName === 'field-reports')
         {{-- Unresolved field issues (moved here from the former Operations page): everything not yet Resolved. --}}
         @php $unresolvedOnly = request()->boolean('unresolved'); @endphp

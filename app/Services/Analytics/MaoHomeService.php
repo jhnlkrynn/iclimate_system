@@ -187,6 +187,15 @@ class MaoHomeService
         $event = rescue(fn () => $this->typhoon->activeEvent(), null, false);
 
         return [
+            // Manuscript – Naicel (2026-10-08): farmer sign-ups waiting for approval (shown only when there are some).
+            [
+                'key' => 'farmer-approvals',
+                'label' => 'Farmer sign-ups to approve',
+                // Shown only while someone is waiting (null hides the action).
+                'count' => rescue(fn (): ?int => \App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING)->count() ?: null, null, false),
+                'href' => route('mao.farmer-approvals.index'),
+                'action' => 'Review',
+            ],
             [
                 'key' => 'advisories',
                 'label' => 'Advisories to approve',

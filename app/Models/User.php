@@ -40,6 +40,24 @@ class User extends Authenticatable
 
     public const STATUS_INACTIVE = 'Inactive';
 
+    // Manuscript – Naicel (2026-10-08): a farmer sign-up waits for MAO approval (config iclimate.farmer_approval).
+    public const STATUS_PENDING = 'Pending';
+
+    public const STATUS_REJECTED = 'Rejected';
+
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_PENDING, self::STATUS_REJECTED];
+
+    /** What a person who cannot sign in is told, by account status. */
+    public static function signInRefusal(?string $status): string
+    {
+        return match ($status) {
+            self::STATUS_PENDING => 'Your account is waiting for approval by the Municipal Agriculture Office. You can log in once it is approved.',
+            self::STATUS_REJECTED => 'Your registration was not approved by the Municipal Agriculture Office. Please visit or contact the office.',
+            default => 'This account is inactive. Please contact the administrator.',
+        };
+    }
+    // End Manuscript – Naicel
+
     public const ONLINE_WINDOW_MINUTES = 2;
 
     /**
@@ -191,6 +209,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_active_at' => 'datetime',
+            // Manuscript – Naicel
+            'last_login_at' => 'datetime',
+            'approved_at' => 'datetime',
         ];
     }
 }

@@ -26,6 +26,12 @@ return [
     'field_reports_ui' => (bool) env('FIELD_REPORTS_UI', false),
 
     /*
+    | Manuscript – Naicel (2026-10-08): a farmer who signs up (web or mobile) waits for MAO approval (Farmer Approvals
+    | page) before they can log in. Set ICLIMATE_FARMER_APPROVAL=false to make new farmer accounts active at once.
+    */
+    'farmer_approval' => (bool) env('ICLIMATE_FARMER_APPROVAL', true),
+
+    /*
     | The Candidate Model and Season Calendar Retraining sections of the Model Evaluation page. Off by default
     | (hidden for now); the files, the report and python_scripts/retrain_yield_season.py are kept.
     */
