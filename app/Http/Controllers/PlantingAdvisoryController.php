@@ -249,43 +249,6 @@ class PlantingAdvisoryController extends Controller
     }
 
     /**
-     * Header figures shared by both advisory pages: seven separate queries
-     * (~300 ms each against Supabase) that only change when an advisory or the
-     * weather record is saved. Cached for a minute, and any advisory save
-     * retires it at once (DashboardData::version()).
-     *
-     * @return array<string, mixed>
-     */
-    private function advisorySummary(): array
-    {
-        return Cache::remember('advisories:summary:v'.DashboardData::version(), now()->addSeconds(60), fn (): array => [
-            'lastWeather' => ExternalWeatherData::query()->latest('fetched_at')->first(),
-            'latestPagasaAdvisory' => PlantingAdvisory::query()->fromPagasaOnline()->latest('published_at')->get()
-                ->first(fn (PlantingAdvisory $advisory) => $advisory->isOfficialPagasa()),
-            'activeCount' => PlantingAdvisory::query()->active()->count(),
-            'pagasaAdvisoryCount' => PlantingAdvisory::query()->active()->fromPagasaOnline()->count(),
-            'pendingCount' => PlantingAdvisory::query()->pendingReview()->count(),
-            'highRiskCount' => PlantingAdvisory::query()->whereIn('severity', ['high', 'critical'])->whereIn('status', ['published', 'pending_review'])->count(),
-            'expiredTodayCount' => PlantingAdvisory::query()->where('status', 'expired')->where('updated_at', '>=', BusinessClock::todayUtc())->where('updated_at', '<', BusinessClock::todayUtc()->addDay())->count(),
-        ]);
-    }
-
-    public function adminIndex(Request $request): View
-    {
-        $this->authorizeManage($request);
-
-        return view('advisories.management', [
-            'advisories' => $this->filteredQuery($request)->latest('created_at')->paginate(CrudController::PER_PAGE)->withQueryString(),
-            ...$this->advisorySummary(),
-            'types' => self::TYPES,
-            'severities' => self::SEVERITIES,
-            'statuses' => self::STATUSES,
-            'barangays' => LianBarangays::all(),
-            'analyticsRun' => $this->requestedAnalyticsRun($request),
-        ]);
-    }
-
-    /**
      * The MAO's form opens already filled in from the system's recommendation for the barangay (this week's Heat Map
      * rating), so the MAO reviews it, changes what is needed, then approves and publishes.
      */
@@ -648,34 +611,6 @@ class PlantingAdvisoryController extends Controller
             ->where('type', 'advisory_ai')
             ->where('requested_by', $request->user()->id)
             ->first();
-    }
-
-    private function filteredQuery(Request $request)
-    {
-        $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
-        $advisoryType = is_string($request->query('advisory_type')) ? trim($request->query('advisory_type')) : '';
-        $type = is_string($request->query('type')) ? trim($request->query('type')) : '';
-        $status = is_string($request->query('status')) ? trim($request->query('status')) : '';
-        $severity = is_string($request->query('severity')) ? trim($request->query('severity')) : '';
-        $targetBarangay = is_string($request->query('target_barangay')) ? trim($request->query('target_barangay')) : '';
-
-        return PlantingAdvisory::query()
-            ->with(['weatherData', 'rule'])
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($builder) use ($search) {
-                    $builder->where('title', 'like', "%{$search}%")
-                        ->orWhere('summary', 'like', "%{$search}%")
-                        ->orWhere('message', 'like', "%{$search}%")
-                        ->orWhere('target_barangay', 'like', "%{$search}%");
-                });
-            })
-            ->when($advisoryType !== '', fn ($query) => $query->where('advisory_type', $advisoryType))
-            ->when($type !== '', fn ($query) => $query->where('advisory_type', strtolower($type)))
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
-            ->when($targetBarangay !== '', function ($query) use ($targetBarangay) {
-                $query->forBarangay($targetBarangay);
-            });
     }
 
     private function validated(Request $request): array

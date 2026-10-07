@@ -4,9 +4,7 @@ use App\Http\Controllers\AIChatController;
 use App\Http\Controllers\AiAdminController;
 use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
-use App\Http\Controllers\BarangayInsightController;
 use App\Http\Controllers\CalendarController;
-use App\Http\Controllers\CandidatePredictionController;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\CommunityFeedController;
 use App\Http\Controllers\DashboardController;
@@ -72,11 +70,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/heat-map', [DashboardController::class, 'heatMap'])
         ->middleware('farmer.language')
         ->name('heat-map.index');
-
-    // Barangay AI Insight pop-up (Heat Map's Barangays Monitored list, and the MAO dashboard's).
-    Route::get('/heat-map/insight/{barangay}', BarangayInsightController::class)
-        ->middleware('throttle:30,1,get-heat-map-insight-barangay')
-        ->name('heat-map.insight');
 
     /*
     |--------------------------------------------------------------------------
@@ -246,7 +239,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:'.User::ROLE_MAO)->group(function () {
         Route::get('/mao/dashboard/live', [DashboardController::class, 'maoLive'])->middleware('throttle:30,1,get-mao-dashboard-live')->name('mao.dashboard.live');
         // The Operations page was removed (2026-10): its parts live on Advisories, Calendar, Field Reports and Reports.
-        // The old address opens the dashboard. (DashboardController::maoOperations is kept, unused, for the cleanup commit.)
+        // The old address opens the dashboard.
         Route::get('/mao/operations', fn () => redirect()->route('mao.dashboard'))->name('mao.operations');
     });
 
@@ -285,8 +278,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |
     */
 
-    // The candidate model test page moved to Model Evaluation (2026-10); both URLs open it. Its features join Model
-    // Evaluation in Phase 8; CandidatePredictionController is kept until the end-of-plan cleanup.
+    // The candidate model test page was removed (2026-10); both of its URLs open Model Evaluation.
     Route::get(
         '/testing/candidate-rice-yield',
         fn () => redirect()->route('model-evaluation.index')
@@ -351,7 +343,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         */
 
         // Advisory Management moved into the Advisories page (2026-10): the old address opens its "All" view, keeping
-        // a watched analytics run. (PlantingAdvisoryController::adminIndex is kept, unused, for the cleanup commit.)
+        // a watched analytics run.
         Route::get(
             'management/advisories',
             fn (\Illuminate\Http\Request $request) => redirect()->route('planting-advisories.index', array_filter(['show' => 'all', 'run' => $request->query('run')]))
