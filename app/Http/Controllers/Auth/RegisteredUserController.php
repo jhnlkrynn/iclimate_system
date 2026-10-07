@@ -88,6 +88,8 @@ class RegisteredUserController extends Controller
         });
 
         event(new Registered($user));
+        // MAO – Naicel (2026-10-09): a sign-up that waits for approval goes to every MAO's notification bell.
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         // Manuscript – Naicel: a sign-up that waits for approval is told so.
         return redirect('/')

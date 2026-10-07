@@ -6,6 +6,13 @@ return [
 
     // MAO Dashboard – Naicel (2026-10-08): the MAO menu and the MAO Dashboard in the MAO's language (App\Support\MaoLanguage).
     // lang/fil/mao.php must keep the same keys (MaoDashboardLanguageTest).
+    // MAO – Naicel (2026-10-09): the bell notification for a farmer sign-up that waits for approval (FarmerApprovalNotifier).
+    'approval' => [
+        'title' => 'New farmer sign-up to approve: :name',
+        'message' => ':name of :barangay registered and is waiting for your approval.',
+        'message_no_barangay' => ':name registered and is waiting for your approval.',
+        'open' => 'Review',
+    ],
     'nav' => [
         'dashboard' => 'Dashboard',
         'heat_map' => 'Heat Map',
