@@ -924,6 +924,8 @@ return [
         'meaning_title' => 'What it means',
         'action_title' => 'What to do now',
         'numbers_title' => 'Forecast numbers',
+        'outlook_title' => 'Lian forecast numbers',
+        'rain_range' => 'Rain in the period (by barangay)',
         'rain_total' => 'Rain in the period',
         'wettest_day' => 'Wettest day',
         'wind_max' => 'Strongest wind',
@@ -931,6 +933,7 @@ return [
         'farm_type' => 'Most common farm type',
         'days_covered' => 'Based on :count of :days days in the saved forecast.',
         'source' => 'From the saved daily weather forecast. A planning guide, not an official warning.',
+        'delayed' => 'The forecast could not be updated yet. This is the last saved forecast.',
         'meaning' => [
             'calm' => 'No heavy rain, strong wind or extreme heat is expected in this period.',
             'heavy_rain' => [

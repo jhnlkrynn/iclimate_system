@@ -159,20 +159,30 @@ class DashboardController extends Controller
      * Heat Map (2026-10): the map with one panel beside it. Both ranges ([This Week], [2 Weeks]) come with the page,
      * from the saved daily forecast only, so the toggle and a barangay click never wait for a request.
      */
-    public function heatMap(Request $request, HeatMapPanel $panel): View
+    public function heatMap(Request $request, HeatMapPanel $panel, LianBarangayWeatherService $weather): View
     {
         $user = $request->user();
         $farmer = $user?->role === User::ROLE_FARMER;
         $locale = $farmer ? FarmerLanguage::resolve($request) : 'en';
+        $ownBarangay = $farmer ? LianBarangays::canonicalName($user->registeredBarangay()) : null;
+
+        // The page shows the saved forecast at once. When the shared barangay weather is due (the scheduler is behind
+        // or has not run yet), the one shared refresh — and the risk rating from it — runs after this response; it is
+        // locked and at most once a minute, however many people open the page.
+        rescue(fn () => $weather->refreshIfDue($ownBarangay), report: false);
+        $ranges = $panel->ranges($locale);
 
         return view('heat-map.index', [
-            'ranges' => $panel->ranges($locale),
+            'ranges' => $ranges,
             'range' => $request->query('range') === '2weeks' ? '2weeks' : 'week',
             'locale' => $locale,
             // The farmer's own barangay is outlined; every role still sees and can click all 19.
-            'ownBarangay' => $farmer ? LianBarangays::canonicalName($user->registeredBarangay()) : null,
+            'ownBarangay' => $ownBarangay,
             // Farmers read plain words; MAO/IT also get the forecast numbers.
             'showNumbers' => ! $farmer,
+            // A barangay without a forecast while new weather is on its way: heat-map.js reads the page again shortly.
+            'updating' => collect($ranges)->contains(fn (array $r): bool => $r['counts']['nodata'] > 0)
+                && rescue(fn (): bool => $weather->isDue(), false, false),
         ]);
     }
 

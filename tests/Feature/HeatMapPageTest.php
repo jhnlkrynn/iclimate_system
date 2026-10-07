@@ -47,13 +47,16 @@ class HeatMapPageTest extends TestCase
      *
      * @param  array<string, array<int, array<string, mixed>>>  $hazards
      */
-    private function storeForecasts(array $hazards = [], ?array $only = null): void
+    private function storeForecasts(array $hazards = [], ?array $only = null, ?\DateTimeInterface $fetchedAt = null): void
     {
+        $fetched = CarbonImmutable::instance($fetchedAt ?? now());
+        // Day 0 is the day the forecast was fetched (Philippine time), as the provider returns it.
+        $shift = (int) CarbonImmutable::now('Asia/Manila')->startOfDay()->diffInDays($fetched->timezone('Asia/Manila')->startOfDay(), false);
         $records = [];
         foreach ($only ?? LianBarangays::all() as $barangay) {
             $records[$barangay] = [
-                'barangay' => $barangay, 'temperature_c' => 28.0, 'fetched_at' => now()->toIso8601String(), 'observed_at' => now()->toIso8601String(),
-                'daily' => array_map(fn (int $i) => $this->day($i, $hazards[$barangay][$i] ?? []), range(0, 15)),
+                'barangay' => $barangay, 'temperature_c' => 28.0, 'fetched_at' => $fetched->toIso8601String(), 'observed_at' => $fetched->toIso8601String(),
+                'daily' => array_map(fn (int $i) => $this->day($i + $shift, $hazards[$barangay][$i] ?? []), range(0, 15)),
             ];
         }
         Cache::forever(LianBarangayWeatherService::STORE_KEY, ['records' => $records, 'status' => []]);
@@ -242,22 +245,93 @@ class HeatMapPageTest extends TestCase
 
     // ------------------------------------------------------------ saved data only
 
-    public function test_the_page_reads_saved_data_only_and_says_no_data_when_there_is_none(): void
+    public function test_with_nothing_saved_the_page_says_no_data_in_one_language_and_asks_for_the_weather_once(): void
     {
+        // Staff read English only (the screenshot mixed "Walang datos pa" with an English note).
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('Walang datos pa', $this->panelView($html, 'week:summary'));
+        $this->assertSame('Lian this week No data yet It appears here after the next update.', $this->panelView($html, 'week:summary'));
+        $this->assertStringNotContainsString('Walang datos pa', $html);
         $this->assertStringNotContainsString('low risk', $this->panelView($html, 'week:summary'));
-        Http::assertNothingSent();
+        // The shared weather is due, so ONE batched request for all 19 ran after the response (here it failed, and
+        // each barangay was tried once on its own); the page tells heat-map.js to read it again shortly.
+        $this->assertStringContainsString('data-heat-map-updating', $html);
+        $this->assertCount(1 + 19, Http::recorded());
 
-        // A farmer reads it in their language.
-        $farmer = $this->actingAs($this->farmer())->get(route('heat-map.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('No data yet', $this->panelView($farmer, 'week:summary'));
+        // A Filipino farmer reads it all in Filipino; a second view in the same minute asks the provider nothing.
+        $farmer = $this->actingAs($this->farmer('Prenza', 'fil'))->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertSame('Lian ngayong linggo Walang datos pa Lalabas ito pagkatapos ng susunod na update.', $this->panelView($farmer, 'week:summary'));
+        $this->assertCount(1 + 19, Http::recorded());
 
-        // With saved forecasts the page shows them with their time, still without any provider call.
+        // With current saved forecasts the page shows them with their time and makes no provider call at all.
         $this->storeForecasts();
         $ready = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
         $this->assertStringContainsString('Updated: ', $this->panelView($ready, 'week:summary'));
-        Http::assertNothingSent();
+        $this->assertStringNotContainsString('data-heat-map-updating', $ready);
+        $this->assertStringNotContainsString('could not be updated', $ready);
+        $this->assertCount(1 + 19, Http::recorded());
+    }
+
+    public function test_an_old_saved_forecast_still_rates_its_remaining_days_and_says_it_is_delayed(): void
+    {
+        // Saved 2 days ago: its days 2..15 are today onwards, so Matabungkay's heavy rain on its day 3 is tomorrow.
+        $this->storeForecasts(['Matabungkay' => [3 => ['rainfall' => 60.0]]], fetchedAt: now()->subDays(2));
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $summary = $this->panelView($html, 'week:summary');
+        $this->assertStringStartsWith('Lian this week 1 barangay is at high risk', $summary);
+        $this->assertStringContainsString('Updated: '.now('Asia/Manila')->subDays(2)->format('M j'), $summary);
+        $this->assertStringContainsString('The forecast could not be updated yet. This is the last saved forecast.', $summary);
+        $this->assertStringContainsString('The forecast could not be updated yet.', $this->panelView($html, 'week:Matabungkay'));
+        // Only the past days are dropped: the 16 saved days still cover both periods in full.
+        $this->assertStringNotContainsString('Based on', $this->panelView($html, 'week:Matabungkay'));
+        $this->assertStringNotContainsString('Based on', $this->panelView($html, '2weeks:Matabungkay'));
+    }
+
+    public function test_a_forecast_whose_days_have_all_passed_is_no_data_never_low(): void
+    {
+        $this->storeForecasts(['Prenza' => [2 => ['rainfall' => 30.0]]], fetchedAt: now()->subDays(17));
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('No data yet', $this->panelView($html, 'week:summary'));
+        $this->assertStringContainsString('Prenza No data', $this->panelView($html, 'week:Prenza'));
+        $this->assertStringNotContainsString('Low risk', $this->panelView($html, 'week:Prenza'));
+    }
+
+    public function test_the_summary_gives_lian_forecast_numbers_from_the_barangays_own_forecasts(): void
+    {
+        $this->storeForecasts([
+            'Matabungkay' => [1 => ['rainfall' => 60.0, 'temperature_max' => 34.2]],
+            'Prenza' => [2 => ['rainfall' => 30.0, 'wind_speed_max' => 41.0]],
+            'Kapito' => [9 => ['rainfall' => 55.0]],
+        ]);
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+
+        // 7 calm days are 7 × 4.0 mm; Matabungkay has 6 × 4.0 + 60.0. Nothing is a separate municipal figure.
+        $this->assertStringContainsString('Lian forecast numbers Rain in the period (by barangay) 28.0–84.0 mm Wettest day 60.0 mm Strongest wind 41 km/h Hottest day 34.2 °C', $this->panelView($html, 'week:summary'));
+        // [2 Weeks] counts 14 days and Kapito's day 10.
+        $this->assertStringContainsString('Rain in the period (by barangay) 56.0–112.0 mm Wettest day 60.0 mm', $this->panelView($html, '2weeks:summary'));
+
+        // Farmers keep plain words: no numbers block.
+        $farmer = $this->panelView($this->actingAs($this->farmer())->get(route('heat-map.index'))->getContent(), 'week:summary');
+        $this->assertStringNotContainsString('forecast numbers', strtolower($farmer));
+        $this->assertDoesNotMatchRegularExpression('/\d\s?(mm|km\/h|°C)/', $farmer);
+    }
+
+    public function test_the_map_shows_the_forecast_rating_and_never_the_current_risk_row(): void
+    {
+        // The current risk (HeatmapArea, used by the dashboards and /api/lian/risk-map) says High for Prenza…
+        \App\Models\HeatmapArea::query()->updateOrCreate(['barangay' => 'Prenza'], [
+            'latitude' => 14.0128685, 'longitude' => 120.6398701, 'risk_level' => 'High', 'risk_type' => 'Drought', 'risk_score' => 0.8,
+            'rainfall_status' => 'Low rainfall', 'description' => 'Computed test rating.', 'risk_computed_at' => now(),
+        ]);
+        // …while its saved forecast is calm for both periods.
+        $this->storeForecasts();
+
+        $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('Prenza Low risk This Week', $this->panelView($html, 'week:Prenza'));
+
+        $api = collect($this->getJson('/api/lian/risk-map')->assertOk()->json('barangays'))->firstWhere('barangay', 'Prenza');
+        $this->assertSame('High', $api['risk_level']);
     }
 
     public function test_a_barangay_without_a_saved_forecast_is_no_data_never_low(): void

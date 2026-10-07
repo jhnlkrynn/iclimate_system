@@ -404,6 +404,10 @@ class BarangayRiskMapService
 
         $this->refreshScheduled = true;
         app()->terminating(function (): void {
+            // Once only: an application that serves several requests calls every terminating callback again.
+            if (! $this->refreshScheduled) {
+                return;
+            }
             rescue(fn () => $this->refreshForCurrentWeather(), report: false);
             $this->refreshScheduled = false;
         });

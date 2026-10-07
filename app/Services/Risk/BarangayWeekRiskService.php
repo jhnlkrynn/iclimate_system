@@ -21,6 +21,9 @@ use Throwable;
  *   no rain      (rainfed barangays only) no day with RAIN_DAY_MM or more in the whole period = Moderate
  * No hazard = Low. A barangay with no saved forecast days is "nodata", never Low.
  *
+ * A forecast that could not be refreshed stays in use for its days that have not passed yet, with its own time;
+ * the period is marked "delayed" once the oldest one is DELAYED_AFTER_HOURS old.
+ *
  * These limits are working defaults and must be checked by the Municipal Agriculture Office before they are treated
  * as official advice (the same caveat as config/farmer_dashboard.php).
  */
@@ -43,6 +46,9 @@ class BarangayWeekRiskService
 
     public const RAIN_DAY_MM = 1.0;
 
+    /** A saved forecast older than this is behind the provider's model runs and is shown as delayed. */
+    public const DELAYED_AFTER_HOURS = 6;
+
     /** A dry spell is only called when most of the period is covered by the forecast. */
     private const MIN_DAYS_FOR_DRY = 5;
 
@@ -56,7 +62,7 @@ class BarangayWeekRiskService
     /**
      * All 19 barangays for one range.
      *
-     * @return array{range: string, days: int, state: string, updated_at: ?CarbonImmutable, counts: array<string, int>, barangays: array<string, array<string, mixed>>}
+     * @return array{range: string, days: int, state: string, updated_at: ?CarbonImmutable, delayed: bool, counts: array<string, int>, barangays: array<string, array<string, mixed>>}
      */
     public function forRange(string $range): array
     {
@@ -64,7 +70,7 @@ class BarangayWeekRiskService
         $days = self::RANGES[$range];
         $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
 
-        $records = rescue(fn (): array => $this->weather->snapshot(), [], false);
+        $records = rescue(fn (): array => $this->weather->savedForecasts(), [], false);
         $farmTypes = rescue(fn (): array => $this->map->dominantFarmTypes(), [], false);
 
         $barangays = [];
@@ -90,6 +96,7 @@ class BarangayWeekRiskService
             'days' => $days,
             'state' => $counts['nodata'] === count($barangays) ? 'nodata' : 'ok',
             'updated_at' => $updated,
+            'delayed' => $updated !== null && $updated->lessThan(CarbonImmutable::now()->subHours(self::DELAYED_AFTER_HOURS)),
             'counts' => $counts,
             'barangays' => $barangays,
         ];

@@ -30,7 +30,8 @@ class RefreshBarangayRiskMap implements ShouldBeUnique, ShouldQueue
     public function handle(BarangayRiskMapService $riskMap): void
     {
         try {
-            $riskMap->riskMap(refresh: true);
+            // From the shared barangay weather: the provider is asked only when that weather is due.
+            $riskMap->refreshForCurrentWeather(force: true);
         } finally {
             Cache::forget(BarangayRiskMapService::REFRESH_LOCK_KEY);
         }
