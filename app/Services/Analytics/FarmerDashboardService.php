@@ -3,6 +3,7 @@
 namespace App\Services\Analytics;
 
 use App\Enums\PredictionType;
+use App\Models\Farm;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
@@ -12,6 +13,7 @@ use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
 use App\Services\Weather\FarmerDashboardWeatherService;
+use App\Support\ActiveFarm;
 use App\Support\CacheScope;
 use App\Support\FarmerAdvisoryView;
 use App\Support\FarmerLanguage;
@@ -35,8 +37,9 @@ use Throwable;
  *   5. week     - the next 7 days' weather icons, and the latest planting advisory for the farmer's area
  * plus the Typhoon Safety Check-In, only while a typhoon advisory is in effect.
  *
- * A page never calls a provider or runs a model: weather is the stored reading, the yield is the estimate
- * PrepareFarmerYieldEstimate stored. Old data shows with its time; no data at all says "Walang datos pa".
+ * A page never calls a provider or runs a model: weather is the stored reading, the yield is the last verified estimate
+ * (prepared by iclimate:warm-farmer-yields, or after a response by PrepareFarmerYieldEstimate when it is missing or due).
+ * Old data shows with its time; no data at all says "Walang datos pa".
  */
 final class FarmerDashboardService
 {
@@ -77,25 +80,62 @@ final class FarmerDashboardService
      * the shared data the page reads changes (CacheScope 'farmer-dashboard') or when the farmer's own rows do
      * (notifications, profile, plans, farm outline: PageCache::flushUser).
      */
-    public static function cacheKey(User $user, ?string $locale = null, ?string $token = null): string
+    public static function cacheKey(User $user, ?string $locale = null, ?string $token = null, int|false|null $farmId = false): string
     {
-        return 'dashboard:farmer:home:'.$user->id.':'.($locale ?? app()->getLocale())
+        // Per farm too: the Home of each of the farmer's farms is its own page.
+        $farmId = $farmId === false ? ActiveFarm::current($user)?->getKey() : $farmId;
+
+        return 'dashboard:farmer:home:'.$user->id.($farmId ? ':farm'.$farmId : '').':'.($locale ?? app()->getLocale())
             .':u'.PageCache::userVersion((int) $user->id).':'.($token ?? CacheScope::token('farmer-dashboard'));
     }
 
-    /** Drops the stored page in every language (after the farmer changes something it shows). */
+    /** Drops the stored page of every farm in every language (after the farmer changes something it shows). */
     public static function forgetCached(User $user): void
     {
-        foreach (array_keys(FarmerLanguage::SUPPORTED) as $locale) {
-            Cache::forget(self::cacheKey($user, $locale));
+        foreach ([null, ...ActiveFarm::farms($user)->modelKeys()] as $farmId) {
+            foreach (array_keys(FarmerLanguage::SUPPORTED) as $locale) {
+                Cache::forget(self::cacheKey($user, $locale, farmId: $farmId));
+            }
         }
     }
 
-    /** The stored yield estimate is dropped whenever the farmer's profile or planting schedule changes (see AppServiceProvider). */
-    public static function predictionCacheKey(int $userId): string
+    /**
+     * The last verified yield estimate of one farm (per farmer AND farm: one farm's estimate is never shown for another).
+     * Without a farm id it is the farmer's primary farm (or, before the farms table exists, the farmer's single estimate).
+     */
+    public static function predictionCacheKey(int $userId, ?int $farmId = null): string
     {
-        return 'dashboard:farmer-prediction:'.$userId;
+        $farmId ??= self::primaryFarmId($userId);
+
+        return 'dashboard:farmer-prediction:'.$userId.($farmId ? ':farm:'.$farmId : '');
     }
+
+    /** A recent failed estimate run for that farm, so page loads do not call a failing model service again before it is due. */
+    public static function predictionFailureKey(int $userId, ?int $farmId = null): string
+    {
+        $farmId ??= self::primaryFarmId($userId);
+
+        return 'dashboard:farmer-prediction:failed:'.$userId.($farmId ? ':farm:'.$farmId : '');
+    }
+
+    private static function primaryFarmId(int $userId): ?int
+    {
+        if (! ActiveFarm::available()) {
+            return null;
+        }
+        $id = Farm::query()->ownedBy($userId)->active()->orderByDesc('is_primary')->orderBy('id')->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    /** A shown estimate this old is made again in the background (iclimate:warm-farmer-yields normally does it every 3 hours). */
+    public const REFRESH_AFTER_HOURS = 6;
+
+    /** How long a model service failure blocks another try. */
+    public const FAILURE_RETRY_MINUTES = 5;
+
+    /** How long missing farm or weather records block another try (they do not change soon). */
+    public const MISSING_RECORDS_RETRY_MINUTES = 30;
 
     // ------------------------------------------------------------------ payload
 
@@ -107,14 +147,16 @@ final class FarmerDashboardService
     {
         $now = CarbonImmutable::now(self::TIMEZONE);
         $profile = $user->farmerProfile;
+        // The farm the farmer is viewing (My Farm selector); its barangay is the one these cards are for.
+        $farm = ActiveFarm::current($user);
         $barangay = $user->registeredBarangay();
 
         $weather = $this->weather($forceWeather || in_array('weather', $refresh, true), $now);
         $week = $this->week($weather, $now);
         // A stored barangay that is not one official name (e.g. a bare "Poblacion": Lian has five) is never guessed.
-        $stored = trim((string) ($profile?->barangay ?: $user->barangay));
+        $stored = $farm !== null ? '' : trim((string) ($profile?->barangay ?: $user->barangay));
         $risk = $barangay === null && $stored !== '' ? ['state' => 'unverified', 'stored' => $stored] : $this->riskStatus($barangay);
-        $harvest = $this->harvest($this->prediction($user, in_array('harvest', $refresh, true)), $profile, $now);
+        $harvest = $this->harvest($this->prediction($user, $farm, in_array('harvest', $refresh, true)), $farm, fn () => $profile, $now);
         $typhoon = $this->typhoonCheckIn($user);
         $advisory = $this->latestPlantingAdvisory($barangay);
 
@@ -124,6 +166,9 @@ final class FarmerDashboardService
             'greeting' => __('farmer.greeting.'.$this->period($now), ['name' => $this->displayName($user)]),
             'barangay' => $barangay,
             'place' => $barangay ? __('farmer.place', ['barangay' => $barangay]) : __('farmer.place_default'),
+            // Which farm the page is about (null: no farms at all, or before the farms table exists).
+            'farm' => $farm !== null ? ['id' => $farm->getKey(), 'name' => $farm->farm_name, 'barangay' => $farm->barangay] : null,
+            'has_farms' => $farm !== null || ! ActiveFarm::available(),
             'message' => $this->message($week, $risk, $typhoon, $advisory),
             'weather' => $weather,
             'risk' => $risk,
@@ -420,81 +465,137 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ 4. expected yield this season
 
     /**
-     * The stored model result for this farmer, or why there is none. A page never runs the model: with nothing
-     * stored it queues PrepareFarmerYieldEstimate and shows a placeholder. Successes are kept 6 hours, missing records
-     * 30 minutes and an unreachable model service 5 minutes (so the card says why instead of never filling).
+     * One farm's estimate for this season (the farm the farmer is viewing). A page never runs the model and never waits:
+     *   - the farm's last verified estimate is shown at once with its own time, even while a newer one is being made;
+     *   - one that is due (REFRESH_AFTER_HOURS old, made for an earlier month, or the farm/plan changed) is prepared
+     *     again in the background (PrepareFarmerYieldEstimate::queueFor: once per farm, after the response);
+     *   - with none yet, the card says it is being prepared and the same single background run makes it;
+     *   - a farm without any size gets no estimate at all (state needs_size): no size is ever made up;
+     *   - a failed run is remembered for a few minutes (FAILURE_RETRY_MINUTES, MISSING_RECORDS_RETRY_MINUTES), so page
+     *     loads do not call a failing service again, and it never replaces a verified estimate.
+     * Commands and jobs (no page waiting) may run the model when nothing is stored.
      *
-     * @return array{state: string, result: ?array<string, mixed>, cause?: string}  state: ok | error | loading
+     * @return array{state: string, result: ?array<string, mixed>, cause?: string}  state: ok | error | loading | needs_size
      */
-    private function prediction(User $user, bool $refresh): array
+    private function prediction(User $user, ?Farm $farm, bool $refresh): array
     {
-        $key = self::predictionCacheKey($user->id);
-        if ($refresh) {
-            Cache::forget($key);
+        $farmId = $farm?->getKey();
+        if ($farm !== null && $farm->modelArea() === null) {
+            return ['state' => 'needs_size', 'result' => null];
         }
 
-        $stored = Cache::get($key);
-        if (! is_array($stored)) {
+        $estimate = self::currentEstimate($user->id, $farmId);
+        $failed = is_array(Cache::get(self::predictionFailureKey($user->id, $farmId)));
+
+        if (! $failed && ($estimate === null || $refresh || self::isDue($estimate))) {
             if (\App\Support\InteractiveRequest::isPageRequest()) {
-                \App\Jobs\PrepareFarmerYieldEstimate::queueFor($user->id);
-                // A synchronous queue has already stored it.
-                $stored = Cache::get($key);
-                if (! is_array($stored)) {
-                    return ['state' => 'loading', 'result' => null];
-                }
-            } else {
-                $stored = $this->runYieldModel($user, $user->farmerProfile);
+                \App\Jobs\PrepareFarmerYieldEstimate::queueFor($user->id, $farmId);
+            } elseif ($estimate === null) {
+                $this->runYieldModel($user, $farm);
             }
+            $estimate = self::currentEstimate($user->id, $farmId);
         }
 
-        if ($stored['failed'] ?? false) {
-            return ['state' => 'error', 'result' => null, 'cause' => ($stored['lacks_records'] ?? false) ? 'records' : 'service'];
+        if ($estimate !== null) {
+            return ['state' => 'ok', 'result' => $estimate];
         }
 
-        $yield = $stored['yield_tons_per_hectare'] ?? $stored['predicted_yield'] ?? null;
-        if (! is_numeric($yield) || (float) $yield <= 0) {
-            return ['state' => 'error', 'result' => null, 'cause' => 'service'];
+        $failure = Cache::get(self::predictionFailureKey($user->id, $farmId));
+        if (is_array($failure)) {
+            return ['state' => 'error', 'result' => null, 'cause' => ($failure['lacks_records'] ?? false) ? 'records' : 'service'];
         }
 
-        return ['state' => 'ok', 'result' => $stored];
+        return ['state' => 'loading', 'result' => null];
     }
 
-    /** Runs the yield model for this farmer now and stores the result (used by the background job and the warm-up command). */
-    public function prepareYieldEstimate(User $user): void
+    /**
+     * Runs the yield model for one farm now and stores the result (the background job and the warm-up command). Without
+     * a farm it is the farmer's single estimate from the profile (before the farms table exists).
+     */
+    public function prepareYieldEstimate(User $user, ?Farm $farm = null): array
     {
-        Cache::forget(self::predictionCacheKey($user->id));
-        $this->runYieldModel($user, $user->farmerProfile);
+        // No farm named (an older plan, a profile change): the farmer's primary farm, with that farm's own size.
+        if ($farm === null && ActiveFarm::available()) {
+            $farm = Farm::query()->ownedBy($user)->active()->orderByDesc('is_primary')->orderBy('id')->first();
+        }
+        $result = $this->runYieldModel($user, $farm);
         self::forgetCached($user);
+
+        return $result;
     }
 
-    /** @return array<string, mixed> the model's result with the time it ran, or ['failed' => true, 'lacks_records' => bool] */
-    private function runYieldModel(User $user, $profile): array
+    /**
+     * After a change to the farm's size, type or location, or to one of its planting plans: that farm's estimate is due
+     * again (it stays on screen with its time until the new one replaces it) and a past failure no longer blocks the run.
+     */
+    public static function estimateInputsChanged(int $userId, ?int $farmId = null): void
     {
-        $key = self::predictionCacheKey($user->id);
-        $farmType = $profile?->farm_type ?: \App\Models\FarmerProfile::FARM_TYPE_RAINFED;
+        $stored = Cache::get(self::predictionCacheKey($userId, $farmId));
+        if (is_array($stored)) {
+            Cache::forever(self::predictionCacheKey($userId, $farmId), ['inputs_changed' => true] + $stored);
+        }
+        Cache::forget(self::predictionFailureKey($userId, $farmId));
+    }
+
+    /**
+     * @return array<string, mixed> the model's result with the time it ran, or ['failed' => true, 'lacks_records' => bool]
+     */
+    private function runYieldModel(User $user, ?Farm $farm): array
+    {
+        $farmId = $farm?->getKey();
+        $profile = $user->farmerProfile;
+        $farmType = $farm?->farm_type ?: ($profile?->farm_type ?: \App\Models\FarmerProfile::FARM_TYPE_RAINFED);
+        // The farm's own area; never another farm's. A farm without a size is not run (see prediction()).
+        $area = $farm?->modelArea();
 
         try {
-            $prediction = $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, null, $user, [], PredictionType::RICE_YIELD->value);
+            $prediction = $farm !== null && $area === null
+                ? ['success' => false, 'missing_inputs' => ['area']]
+                : $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, $area, $user, [], PredictionType::RICE_YIELD->value);
 
-            if ($prediction['success'] ?? false) {
+            if (($prediction['success'] ?? false) && is_numeric($prediction['yield_tons_per_hectare'] ?? $prediction['predicted_yield'] ?? null)) {
                 $prediction['ran_at'] = CarbonImmutable::now(self::TIMEZONE)->toIso8601String();
-                Cache::put($key, $prediction, now()->addHours(6));
+                // Which farm, and how its size was known: an estimate made from an estimated size says so on the card.
+                $prediction['farm_id'] = $farmId;
+                $prediction['farm_size_basis'] = $farm?->farm_size_method;
+                $prediction['farm_size_range'] = $farm?->farm_size_method === Farm::SIZE_ESTIMATED ? $farm->farm_size_estimate_range : null;
+                // Kept until a newer estimate replaces it: a later failure or a missed warm-up never empties the card.
+                Cache::forever(self::predictionCacheKey($user->id, $farmId), $prediction);
+                Cache::forget(self::predictionFailureKey($user->id, $farmId));
 
                 return $prediction;
             }
 
-            Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
+            Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
             $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
         } catch (Throwable $e) {
-            Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'exception' => $e::class, 'message' => $e->getMessage()]);
+            Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'exception' => $e::class, 'message' => $e->getMessage()]);
             $lacksRecords = false;
         }
 
+        // Missing farm data means the last estimate no longer fits this farm (e.g. its size was removed), so it is
+        // dropped and the card says what to add. A service that could not be reached keeps the last verified estimate.
+        if ($lacksRecords) {
+            Cache::forget(self::predictionCacheKey($user->id, $farmId));
+        }
         // Missing records do not change soon (30 minutes); a service that could not be reached is tried again sooner.
-        $failed = ['failed' => true, 'lacks_records' => $lacksRecords];
-        Cache::put($key, $failed, now()->addMinutes($lacksRecords ? 30 : 5));
+        $failed = ['failed' => true, 'lacks_records' => $lacksRecords, 'at' => CarbonImmutable::now(self::TIMEZONE)->toIso8601String()];
+        Cache::put(self::predictionFailureKey($user->id, $farmId), $failed, now()->addMinutes($lacksRecords ? self::MISSING_RECORDS_RETRY_MINUTES : self::FAILURE_RETRY_MINUTES));
 
         return $failed;
+    }
+
+    /** True when a shown estimate should be made again in the background. */
+    private static function isDue(array $estimate): bool
+    {
+        if (($estimate['inputs_changed'] ?? false) === true) {
+            return true;
+        }
+        $ranAt = rescue(fn () => CarbonImmutable::parse((string) ($estimate['ran_at'] ?? '')), null, false);
+        $month = (string) ($estimate['target_month'] ?? '');
+
+        return $ranAt === null || $ranAt->lt(CarbonImmutable::now()->subHours(self::REFRESH_AFTER_HOURS))
+            || ($month !== '' && $month !== CarbonImmutable::now(self::TIMEZONE)->format('Y-m'));
     }
 
     /**
@@ -502,50 +603,116 @@ final class FarmerDashboardService
      * usual Lian yield: Normal, Mas mataas or Mas mababa. state: ok | loading | nodata (with a reason).
      *
      * @param  array<string, mixed>  $prediction
+     * @param  callable(): mixed  $profile  the farmer's profile, read only when there is no farm and no estimate to show
      * @return array<string, mixed>
      */
-    private function harvest(array $prediction, $profile, CarbonImmutable $now): array
+    private function harvest(array $prediction, ?Farm $farm, callable $profile, CarbonImmutable $now): array
     {
         $seasonLabel = $this->seasonYield->seasonLabel($now);
-        $missingArea = (float) ($profile?->farm_area ?? 0) <= 0;
 
-        if ($prediction['state'] === 'loading') {
-            return ['state' => 'loading', 'season' => $seasonLabel];
+        if ($prediction['state'] === 'needs_size') {
+            return ['state' => 'nodata', 'season' => $seasonLabel, 'reason' => __('farms.yield.needs_size'),
+                'needs_area' => true, 'farm_id' => $farm?->getKey()];
         }
+
         if ($prediction['state'] !== 'ok') {
+            $missingArea = $farm !== null ? ! $farm->hasSize() : (float) ($profile()?->farm_area ?? 0) <= 0;
+            // Without a farm size no estimate can be made, so the card asks for it at once instead of "being prepared".
+            if ($prediction['state'] === 'loading' && ! $missingArea) {
+                return ['state' => 'loading', 'season' => $seasonLabel];
+            }
+
             return [
                 'state' => 'nodata',
                 'season' => $seasonLabel,
                 'reason' => match (true) {
-                    $missingArea => __('farmer.home.harvest.need_area'),
+                    $missingArea => $farm !== null ? __('farms.yield.needs_size') : __('farmer.home.harvest.need_area'),
                     ($prediction['cause'] ?? null) === 'records' => __('farmer.home.harvest.need_records'),
-                    default => __('farmer.home.no_data_note'),
+                    default => __('farmer.home.harvest.unavailable'),
                 },
                 'needs_area' => $missingArea,
+                'farm_id' => $farm?->getKey(),
             ];
         }
 
         $result = $prediction['result'];
         $month = ! empty($result['target_month']) ? CarbonImmutable::parse($result['target_month'].'-01') : $now;
+        $range = ($result['farm_size_basis'] ?? null) === Farm::SIZE_ESTIMATED ? (Farm::ESTIMATE_RANGES[$result['farm_size_range'] ?? ''] ?? null) : null;
 
         return ['state' => 'ok', 'season' => $seasonLabel]
             + $this->seasonYield->describe((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), (int) $month->month)
-            + ['ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null];
+            + [
+                'ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null,
+                // An estimate made from an estimated farm size says so, with the range the farmer picked.
+                'size_note' => $range !== null ? __('farms.yield.estimated_size', ['range' => \App\Support\FarmSize::rangeLabel((string) $result['farm_size_range'])]) : null,
+            ];
     }
 
-    /** This farmer's expected yield this season, the same card data Farmer Home shows (the Predictions page uses it too). */
-    public function seasonEstimate(User $user): array
+    /**
+     * The expected yield this season for one of the farmer's farms (the farm they are viewing when none is given): the
+     * same card data Farmer Home shows, so the Predictions page shows the same number.
+     */
+    public function seasonEstimate(User $user, ?Farm $farm = null): array
     {
-        return $this->harvest($this->prediction($user, false), $user->farmerProfile, CarbonImmutable::now(self::TIMEZONE));
+        $farm ??= ActiveFarm::current($user);
+
+        return $this->harvest($this->prediction($user, $farm, false), $farm, fn () => $user->farmerProfile, CarbonImmutable::now(self::TIMEZONE));
     }
 
-    /** The stored estimate for one farmer, or null when none is saved (the Predictions page reads farmers' estimates). */
-    public static function storedEstimate(int $userId): ?array
+    /**
+     * The stored estimate for one farm (the farmer's primary farm when no farm is given), or null when none is saved
+     * for this season. The Predictions page and MAO Home average these.
+     */
+    public static function storedEstimate(int $userId, ?int $farmId = null): ?array
     {
-        $stored = Cache::get(self::predictionCacheKey($userId));
+        return self::currentEstimate($userId, $farmId);
+    }
+
+    /**
+     * Every active farmer's saved estimates for this season, one per farm (a farmer with two farms counts twice, each
+     * farm with its own barangay), optionally only the farms in one barangay. The farms are read in one query; before
+     * the farms table exists it is one estimate per farmer, by the farmer's barangay.
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    public static function storedEstimates(?string $barangay = null): \Illuminate\Support\Collection
+    {
+        if (ActiveFarm::available()) {
+            return Farm::query()->active()
+                ->when($barangay !== null, fn ($q) => $q->where('barangay', $barangay))
+                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE))
+                ->get(['id', 'user_id'])
+                ->map(fn (Farm $farm): ?array => self::currentEstimate((int) $farm->user_id, (int) $farm->getKey()))
+                ->filter()->values();
+        }
+
+        $farmers = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)
+            ->with('farmerProfile:id,user_id,barangay')->get(['id', 'barangay', 'role']);
+        if ($barangay !== null) {
+            $farmers = $farmers->filter(fn (User $f): bool => $f->registeredBarangay() === $barangay);
+        }
+
+        return $farmers->map(fn (User $f): ?array => self::currentEstimate((int) $f->id))->filter()->values();
+    }
+
+    /**
+     * The farm's last verified estimate when it was made for the current season (an estimate from an earlier season is
+     * not this season's), else null.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function currentEstimate(int $userId, ?int $farmId = null): ?array
+    {
+        $stored = Cache::get(self::predictionCacheKey($userId, $farmId));
         $yield = is_array($stored) && ! ($stored['failed'] ?? false) ? ($stored['yield_tons_per_hectare'] ?? $stored['predicted_yield'] ?? null) : null;
+        if (! is_numeric($yield) || (float) $yield <= 0) {
+            return null;
+        }
 
-        return is_numeric($yield) && (float) $yield > 0 ? $stored : null;
+        $now = CarbonImmutable::now(self::TIMEZONE);
+        $month = rescue(fn () => ! empty($stored['target_month']) ? CarbonImmutable::parse($stored['target_month'].'-01', self::TIMEZONE) : null, null, false);
+
+        return $month === null || \App\Support\RiceSeason::window($month)['start']->equalTo(\App\Support\RiceSeason::window($now)['start']) ? $stored : null;
     }
 
     // ------------------------------------------------------------------ 5b. latest planting advisory

@@ -802,6 +802,7 @@ return [
             'preparing' => 'Inihahanda pa ang inyong tantiya.',
             'need_area' => 'Ilagay ang laki ng bukid para makita ang tantiya.',
             'need_records' => 'Kulang pa ang datos ng panahon para sa tantiya.',
+            'unavailable' => 'Hindi pa makuha ang tantiya ngayon. Susubukan namin ulit nang kusa.',
             'add_area' => 'Ilagay ang laki ng bukid',
         ],
         'week' => [

@@ -125,10 +125,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->middleware('farmer.redirect:farmer.my-farm')->name('farmer.dashboard.farm-map');
         });
 
-        // "Aking Bukid": the farmer's own farm, planting schedule, harvest records and upcoming dates.
+        // "Aking Bukid": the farmer's farms (My Farms), and the current farm's planting schedule, harvest records and dates.
         Route::get('/farmer/my-farm', \App\Http\Controllers\FarmerMyFarmController::class)
             ->middleware('farmer.language')
             ->name('farmer.my-farm');
+
+        // A farmer's farms: add, edit, remove (archive), set as primary, map, and the My Farm selector. Every {farm} is
+        // looked up among the signed-in farmer's own farms only (FarmController::ownFarm).
+        Route::middleware('farmer.language')->prefix('/farmer/farms')->name('farmer.farms.')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\FarmController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\FarmController::class, 'store'])->middleware('throttle:20,1,post-farmer-farms')->name('store');
+            Route::post('/active', [\App\Http\Controllers\FarmController::class, 'select'])->middleware('throttle:60,1,post-farmer-farms-active')->name('select');
+            Route::get('/{farm}/edit', [\App\Http\Controllers\FarmController::class, 'edit'])->whereNumber('farm')->name('edit');
+            Route::put('/{farm}', [\App\Http\Controllers\FarmController::class, 'update'])->whereNumber('farm')->name('update');
+            Route::delete('/{farm}', [\App\Http\Controllers\FarmController::class, 'destroy'])->whereNumber('farm')->name('destroy');
+            Route::post('/{farm}/primary', [\App\Http\Controllers\FarmController::class, 'primary'])->whereNumber('farm')->name('primary');
+            Route::get('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'map'])->whereNumber('farm')->name('map');
+            Route::put('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'saveMap'])->whereNumber('farm')->middleware('throttle:10,1,put-farmer-farm-map')->name('map.update');
+            Route::delete('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'deleteMap'])->whereNumber('farm')->name('map.destroy');
+        });
 
         Route::get(
             '/farmer/planting-schedules/create',

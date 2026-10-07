@@ -791,6 +791,7 @@ return [
             'preparing' => 'Your estimate is being prepared.',
             'need_area' => 'Add your farm size to see your estimate.',
             'need_records' => 'Not enough weather records yet for an estimate.',
+            'unavailable' => 'Estimate is temporarily unavailable. We’ll try again automatically.',
             'add_area' => 'Add farm size',
         ],
         'week' => [

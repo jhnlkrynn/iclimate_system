@@ -6,7 +6,6 @@ use App\Models\FarmerProfile;
 use Carbon\CarbonInterface;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ServiceProvider;
 use PDO;
 
@@ -120,23 +119,47 @@ class AppServiceProvider extends ServiceProvider
         // to one person also retire that person's private pages.
         \App\Support\CacheScope::listen();
 
-        // A farmer's expected yield depends on their farm area, farm type and planting schedule, so it must not outlive an edit
-        // to any of them. The 6-hour prediction cache is dropped for that one farmer.
-        foreach ([FarmerProfile::class, \App\Models\FarmerPlantingSchedule::class] as $model) {
-            $forgetFarmer = static function ($record): void {
-                if ($record->user_id) {
-                    Cache::forget(\App\Services\Analytics\FarmerDashboardService::predictionCacheKey((int) $record->user_id));
-                    // The new estimate is made in the background, so the dashboard never waits for the model.
-                    \App\Jobs\PrepareFarmerYieldEstimate::queueFor((int) $record->user_id);
-                }
-            };
-            $model::saved(static function ($record) use ($forgetFarmer): void {
-                if ($record->wasRecentlyCreated || $record->wasChanged()) {
-                    $forgetFarmer($record);
-                }
-            });
-            $model::deleted($forgetFarmer);
-        }
+        // A farm's expected yield depends on its size, type and location and on its planting plans, so a change to any of
+        // them makes THAT farm's estimate due: the new one is started now (after the response), and the last estimate
+        // stays on the card with its time until it is replaced. Another farm, or another farmer, is not touched.
+        $estimateAgain = static function (int $userId, ?int $farmId): void {
+            \App\Services\Analytics\FarmerDashboardService::estimateInputsChanged($userId, $farmId);
+            \App\Jobs\PrepareFarmerYieldEstimate::queueFor($userId, $farmId);
+        };
+
+        \App\Models\Farm::saved(static function (\App\Models\Farm $farm) use ($estimateAgain): void {
+            // An archived farm is no longer estimated.
+            if ($farm->archived_at === null && ($farm->wasRecentlyCreated || $farm->wasChanged(\App\Models\Farm::ESTIMATE_INPUTS))) {
+                $estimateAgain((int) $farm->user_id, (int) $farm->getKey());
+            }
+        });
+
+        $planChanged = static function (\App\Models\FarmerPlantingSchedule $plan) use ($estimateAgain): void {
+            if ($plan->user_id) {
+                $estimateAgain((int) $plan->user_id, \App\Support\ActiveFarm::available() ? ($plan->farm_id ? (int) $plan->farm_id : null) : null);
+            }
+        };
+        \App\Models\FarmerPlantingSchedule::saved(static function ($plan) use ($planChanged): void {
+            if ($plan->wasRecentlyCreated || $plan->wasChanged()) {
+                $planChanged($plan);
+            }
+        });
+        \App\Models\FarmerPlantingSchedule::deleted($planChanged);
+
+        // The farmer profile's farm fields (registration, the mobile app, MAO edits): written to the farmer's primary farm
+        // (their first farm is made from them). Before the farms table exists, the profile is still the farm.
+        FarmerProfile::saved(static function (FarmerProfile $profile) use ($estimateAgain): void {
+            if (! $profile->user_id || ! ($profile->wasRecentlyCreated || $profile->wasChanged(['barangay', 'farm_area', 'farm_type']))) {
+                return;
+            }
+            if (\App\Support\ActiveFarm::available()) {
+                app(\App\Services\Farms\FarmService::class)->fromProfile($profile);
+            } else {
+                $estimateAgain((int) $profile->user_id, null);
+            }
+        });
+        FarmerProfile::deleted(static fn (FarmerProfile $profile) => $profile->user_id && ! \App\Support\ActiveFarm::available()
+            ? $estimateAgain((int) $profile->user_id, null) : null);
     }
 
     private function createMysqlDatabaseForMigrations(): void

@@ -54,6 +54,7 @@ final class CacheScope
         FarmerProfile::class => ['farmers'],
         FarmerOrganization::class => ['farmers'],
         FarmBoundary::class => ['farmers'],
+        \App\Models\Farm::class => ['farmers'],
         FarmerPlantingSchedule::class => ['planting'],
         ClimateRecord::class => ['climate'],
         RiceProduction::class => ['rice', 'sample-text' => ['remarks', 'created_at']],
@@ -92,7 +93,7 @@ final class CacheScope
 
     /** Rows owned by one person (user_id): that person's private caches are retired too. */
     public const OWNED_BY_USER = [
-        Notification::class, AdvisoryFeedback::class, FarmerProfile::class, FarmBoundary::class,
+        Notification::class, AdvisoryFeedback::class, FarmerProfile::class, FarmBoundary::class, \App\Models\Farm::class,
         FarmerPlantingSchedule::class, TyphoonSafetyResponse::class,
     ];
 

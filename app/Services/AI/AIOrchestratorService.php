@@ -14,6 +14,7 @@ use App\Services\Risk\BarangayRiskMapService;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\LianBarangays;
+use App\Support\ActiveFarm;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Arr;
@@ -762,7 +763,9 @@ class AIOrchestratorService
             return $this->predictionService->answer($user, $question);
         }
 
-        if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && ! $this->hasArea($entities) && ! $user->farmerProfile?->farm_area) {
+        $activeFarm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
+        $hasSavedFarmArea = $activeFarm?->modelArea() !== null || (! ActiveFarm::available() && (float) ($user->farmerProfile?->farm_area ?? 0) > 0);
+        if ($intent === IntentClassifierService::RICE_YIELD_PREDICTION && ! $this->hasArea($entities) && ! $hasSavedFarmArea) {
             return $this->clarification($language, $memory, 'rice_yield_prediction', 'I can predict your rice yield. What farm area in hectares should I use? For example: 2.5 hectares.', 'Kaya kong i-predict ang rice yield mo. Ilang ektarya ang gagamitin ko? Halimbawa: 2.5 hectares.');
         }
 
@@ -805,7 +808,7 @@ class AIOrchestratorService
      */
     private function climateRisk(User $user, string $question, string $language, array $memory, array $entities): array
     {
-        $barangay = (string) ($entities['barangay'] ?? $user->barangay ?? $user->farmerProfile?->barangay ?? '');
+        $barangay = (string) ($entities['barangay'] ?? ($user->role === User::ROLE_FARMER ? $user->registeredBarangay() : ($user->barangay ?? $user->farmerProfile?->barangay)) ?? '');
 
         if ($barangay !== '') {
             return $this->climateRiskForBarangay($user, $question, $language, $memory, $barangay);
@@ -958,7 +961,7 @@ class AIOrchestratorService
      */
     private function advisories(User $user, string $question, string $language, array $memory): array
     {
-        $barangay = $user->barangay ?? $user->farmerProfile?->barangay;
+        $barangay = $user->role === User::ROLE_FARMER ? $user->registeredBarangay() : ($user->barangay ?? $user->farmerProfile?->barangay);
         $advisories = PlantingAdvisory::query()
             ->active()
             ->forBarangay($barangay)

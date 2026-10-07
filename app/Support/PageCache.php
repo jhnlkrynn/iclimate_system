@@ -48,7 +48,12 @@ class PageCache
     {
         // Also keyed by the shared data the page reads: a page for one person is built partly from shared data
         // (counts, recent records), so a change there must rebuild it too. The reverse never happens.
-        $prefix = 'page:user:'.$userId.':v'.self::userVersion($userId).':'.$name.':';
+        // A farmer's page is also per farm (the farm picked in the My Farm selector), so switching farms never shows
+        // another farm's barangay and switching back reads the stored page.
+        $user = auth()->user();
+        $farm = $user !== null && (int) $user->getKey() === $userId && $user->role === \App\Models\User::ROLE_FARMER
+            ? \App\Support\ActiveFarm::current($user)?->getKey() : null;
+        $prefix = 'page:user:'.$userId.':v'.self::userVersion($userId).($farm ? ':farm'.$farm : '').':'.$name.':';
 
         return self::remember(fn (string $token): string => $prefix.$token.self::suffix($vary), $name, $ttlSeconds, $build);
     }

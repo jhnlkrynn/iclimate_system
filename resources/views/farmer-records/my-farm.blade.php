@@ -24,22 +24,94 @@
             </div>
         </header>
 
-        <section class="frec-panel" aria-labelledby="fmfInfoTitle">
-            <div class="frec-panel-head is-row">
-                <h2 id="fmfInfoTitle">{{ __('farmer.my_farm_page.info') }}</h2>
-                <a class="fad-btn is-quiet is-compact fmf-no-print" href="{{ route('profile.edit') }}">{{ __('farmer.my_farm_page.edit_profile') }}</a>
-            </div>
-            <dl class="fmf-facts">
-                <div><dt>{{ __('farmer.my_farm_page.barangay') }}</dt><dd>{{ $farm['barangay'] ?: __('farmer.home.no_data') }}</dd></div>
-                <div><dt>{{ __('farmer.my_farm_page.size') }}</dt><dd>{{ $farm['area'] ? __('farmer.my_farm_page.hectares', ['value' => number_format($farm['area'], 2)]) : __('farmer.home.no_data') }}</dd></div>
-                <div><dt>{{ __('farmer.my_farm_page.type') }}</dt><dd>{{ $farm['type'] ?: __('farmer.home.no_data') }}</dd></div>
-            </dl>
-        </section>
+        @if (session('success'))
+            <div class="frec-note fmf-no-print" role="status">{{ session('success') }}</div>
+        @endif
+
+        @if ($available)
+            {{-- My Farms: every farm of this farmer, each with its own location, size and map. --}}
+            <section class="frec-panel fmf-no-print" aria-labelledby="ffmListTitle" data-my-farms>
+                <div class="frec-panel-head is-row">
+                    <h2 id="ffmListTitle">{{ __('farms.title') }}</h2>
+                    <a class="fad-btn is-compact" href="{{ route('farmer.farms.create') }}">+ {{ $farms ? __('farms.add_another') : __('farms.add') }}</a>
+                </div>
+                @if ($farms)
+                    <p class="fad-m-small mb-0">{{ __('farms.intro') }}</p>
+                    <ul class="ffm-cards">
+                        @foreach ($farms as $f)
+                            <li class="ffm-card @if ($f['current']) is-current @endif" data-farm-card="{{ $f['id'] }}">
+                                <div class="ffm-card-head">
+                                    <h3>{{ $f['name'] }}</h3>
+                                    <div class="ffm-badges">
+                                        @if ($f['primary'])<span class="fad-badge is-good">{{ __('farms.primary') }}</span>@endif
+                                        @if ($f['current'])<span class="fad-badge is-info">{{ __('farms.current') }}</span>@endif
+                                    </div>
+                                </div>
+                                <p class="ffm-card-place">{{ $f['barangay'] ? __('farms.location_line', ['barangay' => $f['barangay']]) : __('farms.no_barangay') }}@if ($f['location']) · {{ $f['location'] }}@endif</p>
+                                <p class="ffm-card-size">{{ $f['size']['text'] }}@if ($f['size']['note'])<small>{{ $f['size']['note'] }}</small>@endif</p>
+                                <p class="ffm-card-map"><span class="fad-badge {{ $f['mapped'] ? 'is-good' : 'is-muted' }}">{{ $f['mapped'] ? __('farms.mapped') : __('farms.not_mapped') }}</span></p>
+                                <div class="ffm-card-actions">
+                                    @unless ($f['current'])
+                                        <form method="POST" action="{{ route('farmer.farms.select') }}">
+                                            @csrf
+                                            <input type="hidden" name="farm_id" value="{{ $f['id'] }}">
+                                            <button type="submit" class="fad-btn is-quiet is-compact">{{ __('farms.view') }}</button>
+                                        </form>
+                                    @endunless
+                                    <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.edit', $f['id']) }}">{{ __('farms.edit') }}</a>
+                                    <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.map', $f['id']) }}">{{ __('farms.map_action') }}</a>
+                                    @unless ($f['primary'])
+                                        <form method="POST" action="{{ route('farmer.farms.primary', $f['id']) }}">
+                                            @csrf
+                                            <button type="submit" class="fad-btn is-quiet is-compact">{{ __('farms.set_primary') }}</button>
+                                        </form>
+                                    @endunless
+                                    <form method="POST" action="{{ route('farmer.farms.destroy', $f['id']) }}"
+                                        data-ic-confirm="{{ count($farms) === 1 ? __('farms.remove_only_confirm', ['name' => $f['name']]) : __('farms.remove_confirm', ['name' => $f['name']]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="fad-btn is-quiet is-compact ffm-remove">{{ __('farms.remove') }}</button>
+                                    </form>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="ffm-empty">
+                        <strong>{{ __('farms.add_first') }}</strong>
+                        <p class="fad-m-small mb-0">{{ __('farms.add_first_note') }}</p>
+                        <a class="fad-btn" href="{{ route('farmer.farms.create') }}">+ {{ __('farms.add') }}</a>
+                    </div>
+                @endif
+            </section>
+        @endif
+
+        @if (! $available || $current)
+            <section class="frec-panel" aria-labelledby="fmfInfoTitle">
+                <div class="frec-panel-head is-row">
+                    <h2 id="fmfInfoTitle">{{ $current ? $farm['name'] : __('farmer.my_farm_page.info') }}</h2>
+                    @if ($current)
+                        <a class="fad-btn is-quiet is-compact fmf-no-print" href="{{ route('farmer.farms.edit', $current) }}">{{ __('farms.edit') }}</a>
+                    @else
+                        <a class="fad-btn is-quiet is-compact fmf-no-print" href="{{ route('profile.edit') }}">{{ __('farmer.my_farm_page.edit_profile') }}</a>
+                    @endif
+                </div>
+                <dl class="fmf-facts">
+                    <div><dt>{{ __('farmer.my_farm_page.barangay') }}</dt><dd>{{ $farm['barangay'] ?: __('farmer.home.no_data') }}</dd></div>
+                    @if ($farm['size'])
+                        <div><dt>{{ __('farmer.my_farm_page.size') }}</dt><dd>{{ $farm['size']['text'] }}@if ($farm['size']['note'])<small class="d-block fad-m-small">{{ $farm['size']['note'] }}</small>@endif</dd></div>
+                    @else
+                        <div><dt>{{ __('farmer.my_farm_page.size') }}</dt><dd>{{ $farm['area'] ? __('farmer.my_farm_page.hectares', ['value' => number_format($farm['area'], 2)]) : __('farmer.home.no_data') }}</dd></div>
+                    @endif
+                    <div><dt>{{ __('farmer.my_farm_page.type') }}</dt><dd>{{ $farm['type'] ?: __('farmer.home.no_data') }}</dd></div>
+                </dl>
+            </section>
+        @endif
 
         <section class="frec-panel" aria-labelledby="fmfScheduleTitle">
             <div class="frec-panel-head is-row">
                 <h2 id="fmfScheduleTitle">{{ __('farmer.my_farm_page.schedule') }}</h2>
-                <a class="fad-btn is-quiet is-compact fmf-no-print" href="{{ route('farmer.planting-schedules.create') }}">{{ __('farmer.my_farm_page.add_schedule') }}</a>
+                <a class="fad-btn is-quiet is-compact fmf-no-print" href="{{ route('farmer.planting-schedules.create', $current ? ['farm' => $current->getKey()] : []) }}">{{ __('farmer.my_farm_page.add_schedule') }}</a>
             </div>
             @if ($schedules)
                 <div class="frec-table-wrap">
