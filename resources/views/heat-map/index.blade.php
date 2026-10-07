@@ -11,8 +11,12 @@
         $colors = \App\Services\Risk\HeatMapPanel::COLORS;
         $levels = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => $b['level'])->all())->all();
         $labels = collect(['low', 'moderate', 'high', 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
-        $hasNoData = collect($ranges)->contains(fn (array $r) => $r['counts']['nodata'] > 0);
+        $hasNoData = collect($ranges)->except($layerKeys ?? [])->contains(fn (array $r) => $r['counts']['nodata'] > 0);   // Manuscript – Naicel: weekly ranges only
         $mapData = ['levels' => $levels, 'colors' => $colors, 'labels' => $labels, 'yours' => $t('your_barangay')];
+        // Manuscript – Naicel (2026-10-08): the layer ranges (flood / drought / yield) carry their own level names.
+        $layerKeys = $layerKeys ?? [];
+        $mapData['layers'] = $layerKeys;
+        $mapData['labelsByRange'] = collect($ranges)->only($layerKeys)->map(fn (array $r) => $r['labels'] ?? [])->all();
     @endphp
     <div class="hmx" data-heat-map data-range="{{ $range }}" lang="{{ $locale }}" @if ($updating ?? false) data-heat-map-updating @endif>
         <h1 class="visually-hidden">{{ $t('title') }}</h1>
@@ -30,7 +34,18 @@
                 @endforeach
             </div>
 
-            <div class="hmx-legend" role="group" aria-label="{{ $t('legend') }}">
+            {{-- Manuscript – Naicel (2026-10-08): map layer choice; a layer shows instead of the weekly risk. --}}
+            @if ($layerKeys !== [])
+                <label class="hmx-layer">
+                    <span>{{ $t('layers.label') }}</span>
+                    <select data-heat-map-layer>
+                        <option value="" @selected(! in_array($range, $layerKeys, true))>{{ $t('legend') }}</option>
+                        @foreach ($layerKeys as $layerKey)<option value="{{ $layerKey }}" @selected($range === $layerKey)>{{ $t('layers.'.$layerKey) }}</option>@endforeach
+                    </select>
+                </label>
+            @endif
+            {{-- End Manuscript – Naicel --}}
+            <div class="hmx-legend" role="group" aria-label="{{ $t('legend') }}" data-heat-map-legend="risk" @if (in_array($range, $layerKeys, true)) hidden @endif>
                 <span class="hmx-legend-title">{{ $t('legend') }}</span>
                 @foreach (['low', 'moderate', 'high'] as $level)
                     <span class="hmx-legend-item"><span class="hmx-dot" style="--hmx-color: {{ $colors[$level] }}"></span>{{ $labels[$level] }}</span>
@@ -39,6 +54,15 @@
                     <span class="hmx-legend-item"><span class="hmx-dot" style="--hmx-color: {{ $colors['nodata'] }}"></span>{{ $labels['nodata'] }}</span>
                 @endif
             </div>
+            {{-- Manuscript – Naicel (2026-10-08): one legend per map layer, shown with its layer. --}}
+            @foreach ($layerKeys as $layerKey)
+                <div class="hmx-legend" role="group" aria-label="{{ $t('layers.'.$layerKey) }}" data-heat-map-legend="{{ $layerKey }}" @if ($range !== $layerKey) hidden @endif>
+                    <span class="hmx-legend-title">{{ $t('layers.'.$layerKey) }}</span>
+                    @foreach ($ranges[$layerKey]['labels'] as $level => $levelLabel)
+                        <span class="hmx-legend-item"><span class="hmx-dot" style="--hmx-color: {{ $colors[$level] }}"></span>{{ $levelLabel }}</span>
+                    @endforeach
+                </div>
+            @endforeach
         </div>
 
         <aside class="hmx-panel" aria-live="polite" data-heat-map-panel>
@@ -85,7 +109,7 @@
                         @if ($r['delayed'])
                             <p class="hmx-source" data-heat-map-delayed>{{ $t('delayed') }}</p>
                         @endif
-                        <p class="hmx-source">{{ $t('source') }}</p>
+                        <p class="hmx-source">{{ $r['source'] ?? $t('source') }}</p>{{-- Manuscript – Naicel: a layer names its own source --}}
                     @endif
                 </section>
 
@@ -94,8 +118,9 @@
                     <section class="hmx-view" data-heat-map-view="{{ $key }}:{{ $name }}" hidden>
                         <button type="button" class="hmx-back" data-heat-map-pick="">&larr; {{ $t('back') }}</button>
                         <h2 class="hmx-title">{{ $b['name'] }}</h2>
-                        <p class="hmx-badge is-{{ $b['level'] }}" data-heat-map-level>{{ $b['level'] === 'nodata' ? $b['label'] : $t('risk_of', ['level' => $b['label']]) }}</p>
-                        <p class="hmx-when">{{ $t($key === 'week' ? 'this_week' : 'two_weeks') }}</p>
+                        {{-- Manuscript – Naicel: a layer (flood / drought / yield) shows its own level name and title. --}}
+                        <p class="hmx-badge is-{{ $b['level'] }}" data-heat-map-level>{{ $b['level'] === 'nodata' || ($r['layer'] ?? false) ? $b['label'] : $t('risk_of', ['level' => $b['label']]) }}</p>
+                        <p class="hmx-when">{{ ($r['layer'] ?? false) ? $r['title'] : $t($key === 'week' ? 'this_week' : 'two_weeks') }}</p>
 
                         <h3 class="hmx-sub">{{ $t('meaning_title') }}</h3>
                         <p class="hmx-text" data-heat-map-meaning>{{ $b['meaning'] }}</p>

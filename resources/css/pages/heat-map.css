@@ -85,3 +85,12 @@ html[data-theme="dark"] .hmx-badge.is-low { background: #1e4a2c; color: #c9f1d5;
 html[data-theme="dark"] .hmx-badge.is-moderate { background: #57430c; color: #ffe6a3; }
 html[data-theme="dark"] .hmx-badge.is-high { background: #5c1c1c; color: #ffd0d0; }
 html[data-theme="dark"] .hmx-badge.is-nodata { background: #2c363c; color: #d5dde2; }
+
+/* Manuscript – Naicel (2026-10-08): the map layer choice (Flood-prone / Drought-prone / Expected yield), under the
+   This Week / 2 Weeks switch. */
+.hmx-layer { position: absolute; top: 3.75rem; right: .75rem; z-index: 500; display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .4rem .3rem .8rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); font-size: .82rem; font-weight: 700; color: #2c3d35; }
+.hmx-layer select { border: 0; background: #eef4f0; border-radius: 999px; padding: .3rem .6rem; font-weight: 700; color: #14532d; }
+.hmx-legend[hidden] { display: none; }
+html[data-theme="dark"] .hmx-layer { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
+html[data-theme="dark"] .hmx-layer select { background: #22322a; color: #e2ebe6; }
+/* End Manuscript – Naicel */

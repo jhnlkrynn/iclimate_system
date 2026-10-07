@@ -35,6 +35,10 @@
                     {{-- Opens the print page with every row that matches the current search and filters. --}}
                     <a class="btn btn-outline-light" href="{{ route($routeName.'.index', array_merge(request()->except(['page', 'print']), ['print' => 1])) }}" target="_blank" rel="noopener" data-print-list data-fast-nav-bound="true">Print</a>
                 @endif
+                {{-- Manuscript – Naicel (2026-10-08): CSV import for climate and production records. --}}
+                @if ($canManage && isset(\App\Http\Controllers\RecordValidationController::TYPES[$routeName]))
+                    <a class="btn btn-outline-light" href="{{ route('records.import', $routeName) }}" data-record-import>Import CSV</a>
+                @endif
                 @if ($canManage)
                     <a class="btn btn-light" href="{{ route($routeName.'.create') }}">Create {{ $title }}</a>
                 @endif
@@ -48,7 +52,15 @@
             @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production'] as $tabRoute => $tabLabel)
                 <a href="{{ route($tabRoute.'.index') }}" @class(['ic-tab', 'is-active' => $routeName === $tabRoute]) @if ($routeName === $tabRoute) aria-current="page" @endif>{{ $tabLabel }}</a>
             @endforeach
+            {{-- Manuscript – Naicel (2026-10-08): Barangays (location, rice area, risk classification) is a third tab for the MAO. --}}
+            @if (auth()->user()?->role === \App\Models\User::ROLE_MAO && \Illuminate\Support\Facades\Route::has('mao.barangays.index'))
+                <a href="{{ route('mao.barangays.index') }}" class="ic-tab">Barangays</a>
+            @endif
         </nav>
+    @endif
+    {{-- Manuscript – Naicel (2026-10-08): Farmers and Farmer Approvals are two tabs of one sidebar item. --}}
+    @if ($routeName === 'farmer-profiles')
+        @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
     @endif
     @if ($routeName === 'field-reports')
         {{-- Unresolved field issues (moved here from the former Operations page): everything not yet Resolved. --}}
@@ -158,6 +170,17 @@
                                     <td>
                                         @if ($field === 'is_read')
                                             <span class="badge text-bg-{{ $record->is_read ? 'success' : 'warning' }}">{{ $record->is_read ? 'Read' : 'Unread' }}</span>
+                                        {{-- Manuscript – Naicel (2026-10-08): Validated badge, with Validate / Undo for the MAO. --}}
+                                        @elseif ($field === 'verification' && isset(\App\Http\Controllers\RecordValidationController::TYPES[$routeName]))
+                                            @php $state = (string) data_get($record, $field); @endphp
+                                            <span @class(['badge', 'text-bg-success' => $state === 'Validated', 'text-bg-warning' => $state === 'Not validated', 'text-bg-light' => $state === 'Published dataset'])>{{ $state }}</span>
+                                            @if ($canManage && data_get($record, 'id') && $state !== 'Published dataset')
+                                                <form class="d-inline" method="POST" action="{{ route($state === 'Validated' ? 'records.unvalidate' : 'records.validate', ['type' => $routeName, 'id' => data_get($record, 'id')]) }}" data-loading="true">
+                                                    @csrf
+                                                    <button class="btn btn-link btn-sm p-0 ms-1" type="submit" data-loading-text="Saving...">{{ $state === 'Validated' ? 'Undo' : 'Validate' }}</button>
+                                                </form>
+                                            @endif
+                                        {{-- End Manuscript – Naicel --}}
                                         @elseif ($field === 'farm_type' && data_get($record, $field))
                                             <span class="badge text-bg-{{ data_get($record, $field) === 'Irrigated' ? 'info' : 'secondary' }}">{{ data_get($record, $field) }}</span>
                                         @else

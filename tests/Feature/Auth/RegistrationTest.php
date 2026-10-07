@@ -51,7 +51,7 @@ class RegistrationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
-        $response->assertSessionHas('success', 'Account created successfully. Please log in using your email and password.');
+        $response->assertSessionHas('success', 'Account created. The Municipal Agriculture Office will review it; you can log in once it is approved.');   // Manuscript – Naicel: sign-ups wait for approval
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
             'barangay' => 'Balibago',
@@ -82,7 +82,7 @@ class RegistrationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
-        $response->assertSessionHas('success', 'Account created successfully. Please log in using your email and password.');
+        $response->assertSessionHas('success', 'Account created. The Municipal Agriculture Office will review it; you can log in once it is approved.');   // Manuscript – Naicel: sign-ups wait for approval
         $this->assertDatabaseHas('users', [
             'email' => 'org-user@example.com',
             'barangay' => 'Binubusan',

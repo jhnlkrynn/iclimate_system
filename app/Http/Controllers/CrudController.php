@@ -421,7 +421,7 @@ abstract class CrudController extends Controller
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
             'barangay' => ['nullable', 'string', 'max:255', Rule::in(\App\Support\LianBarangays::all())],
-            'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])],
+            'status' => ['required', Rule::in(User::STATUSES)],   // Manuscript – Naicel: Pending / Rejected too
         ];
     }
 

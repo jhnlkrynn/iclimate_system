@@ -72,7 +72,8 @@ class RegisteredUserController extends Controller
                 'role' => User::ROLE_FARMER,
                 'password' => Hash::make($validated['password']),
                 'barangay' => $barangay,
-                'status' => User::STATUS_ACTIVE,
+                // Manuscript – Naicel: Pending until the MAO approves the sign-up (config iclimate.farmer_approval).
+                'status' => config('iclimate.farmer_approval') ? User::STATUS_PENDING : User::STATUS_ACTIVE,
             ]);
 
             FarmerProfile::create([
@@ -88,8 +89,11 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        // Manuscript – Naicel: a sign-up that waits for approval is told so.
         return redirect('/')
-            ->with('success', 'Account created successfully. Please log in using your email and password.');
+            ->with('success', $user->status === User::STATUS_PENDING
+                ? 'Account created. The Municipal Agriculture Office will review it; you can log in once it is approved.'
+                : 'Account created successfully. Please log in using your email and password.');
     }
 
     /** The barangays with a registered farmer association (LianFarmTypes, which the organizations are seeded from). */

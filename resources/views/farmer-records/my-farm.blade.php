@@ -21,6 +21,10 @@
             </div>
             <div class="fad-hero-actions fmf-no-print">
                 <button type="button" class="fad-btn is-light" onclick="window.print()">{{ __('farmer.my_farm_page.print') }}</button>
+                {{-- Manuscript – Naicel (2026-10-08): My Reports (prediction and advisory summaries, PDF). --}}
+                @if (\Illuminate\Support\Facades\Route::has('farmer.reports.index'))
+                    <a class="fad-btn is-light" href="{{ route('farmer.reports.index') }}" data-my-reports-link>{{ __('my_reports.title') }}</a>
+                @endif
             </div>
         </header>
 

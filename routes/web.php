@@ -1112,3 +1112,6 @@ Route::middleware('auth')->group(function () {
 
 
 require __DIR__.'/auth.php';
+
+// Manuscript – Naicel (2026-10-08): the manuscript modules (docs/manuscript-phase-plan.md) have their own route file.
+require __DIR__.'/manuscript.php';

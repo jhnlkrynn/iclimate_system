@@ -16,8 +16,12 @@ use Illuminate\Support\Facades\Cache;
  */
 class AdvisoryPublishedNotifier
 {
-    /** @return int how many farmers were alerted */
-    public function notify(PlantingAdvisory $advisory): int
+    /**
+     * @param  ?string  $category  Manuscript – Naicel (2026-10-08): 'weather' for a hazard alert (typhoon, flood, drought,
+     *                             heat), so the farmer dashboard shows it as a weather alert
+     * @return int how many farmers were alerted
+     */
+    public function notify(PlantingAdvisory $advisory, ?string $category = null): int
     {
         $target = LianBarangays::canonicalName($advisory->target_barangay);
 
@@ -39,7 +43,9 @@ class AdvisoryPublishedNotifier
         }
 
         $now = now();
-        Notification::query()->insert($farmers->map(function (User $farmer) use ($target, $now): array {
+        // Manuscript – Naicel (2026-10-08): each alert names its advisory, so the MAO sees how many farmers read it.
+        $tracked = \App\Support\SchemaCache::hasColumn('notifications', 'planting_advisory_id');
+        Notification::query()->insert($farmers->map(function (User $farmer) use ($target, $now, $tracked, $advisory, $category): array {
             $locale = $farmer->preferred_language === 'fil' ? 'fil' : 'en';
 
             return [
@@ -50,7 +56,7 @@ class AdvisoryPublishedNotifier
                 'is_read' => false,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ];
+            ] + ($tracked ? ['planting_advisory_id' => $advisory->getKey()] : []) + ($category ? ['category' => $category] : []);
         })->all());
 
         foreach ($farmers as $farmer) {
