@@ -49,7 +49,7 @@ class HeatMapTerminologyTest extends TestCase
         $pages = [
             User::ROLE_FARMER => ['/farmer/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
             User::ROLE_MAO => ['/mao/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
-            User::ROLE_IT_EXPERT => ['/admin/dashboard', '/heat-map', '/notifications'],
+            User::ROLE_IT_EXPERT => ['/admin/dashboard', '/notifications'],
         ];
 
         $problems = [];

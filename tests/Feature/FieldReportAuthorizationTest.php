@@ -36,11 +36,13 @@ class FieldReportAuthorizationTest extends TestCase
         $this->assertDatabaseHas('field_reports', ['id' => $report->id]);
     }
 
-    public function test_mao_and_it_personnel_keep_full_access(): void
+    public function test_mao_keeps_full_access_and_it_is_sent_to_its_dashboard(): void
     {
         $report = $this->report();
+        // Field Reports is a MAO page; IT is the system controller (2026-10).
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('field-reports.index'))->assertRedirect(route('admin.dashboard'));
 
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+        foreach ([User::ROLE_MAO] as $role) {
             $staff = User::factory()->create(['role' => $role]);
 
             $this->actingAs($staff)->get(route('field-reports.index'))->assertOk()->assertSee('Stem borer in lower paddies');
