@@ -38,6 +38,7 @@
         'heatmap' => ['heat-map.index', ['heat-map.*']],
         'advisories' => ['planting-advisories.index', ['planting-advisories.*', 'management.advisories.*']],
         'calendar' => ['calendar.index', ['calendar.*', 'farmer.planting-schedules.*']],
+        'mao-planner' => ['mao.planner.index', ['mao.planner.*', 'calendar.*']],
         'community' => ['community-feed.index', ['community-feed.*']],
         'messages' => ['messages.index', ['messages.*']],
         'notifications' => ['notifications.index', ['notifications.*']],
@@ -86,7 +87,8 @@
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('Heat Map', 'heatmap', 'heatmap'),
             $navLink('Advisories', 'advisories', 'advisories'),
-            $navLink('Calendar', 'calendar', 'calendar'),
+            // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
+            $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
             $navLink('Records', 'records', 'climate-records'),
             $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
             $navLink('Field Reports', 'field-reports', 'reports'),
@@ -98,44 +100,27 @@
         $moreGroup = [];
         $publishingGroup = [];
     } else {
-        // IT Personnel: four groups so every page fits on a laptop screen without scrolling the menu; each page appears once.
+        // IT Personnel (2026-10): the system controller, not agricultural staff. One short list: the system pages and
+        // Messages. Model Evaluation opens from System Health; Profile is in the top bar. The agricultural pages send IT
+        // back to this dashboard (App\Http\Middleware\RedirectItFromFieldPages); their routes and controllers are unchanged.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLink('Heat Map', 'heatmap', 'heatmap'),
-            $navLink('Reports', 'reports', 'reports'),
+            $navLink('User Management', 'user-management', 'user-management'),
+            $navLink('System Health', 'system-health', 'system-health'),
+            $navLink('System Logs', 'system-logs', 'system-logs'),
             $navLink('Messages', 'messages', 'messages'),
+            // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
+            ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
         ];
         $moreGroup = [];
         $publishingGroup = [];
-        $itSections = [
-            ['Main Menu', $primaryGroup],
-            ['Management', [
-                $navLink('User Management', 'user-management', 'user-management'),
-                $navLink('Farmer Profiles', 'farmer-profiles', 'farmer-profiles'),
-                $navLink('Planting Advisories', 'advisories', 'advisories'),
-                $navLink('Announcements', 'community', 'community'),
-                // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
-                ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
-            ]],
-            ['Data', [
-                $navLink('Climate Records', 'climate-records', 'climate-records'),
-                $navLink('Rice Production', 'rice-production', 'rice-production'),
-                $navLink('Predictions', 'weather', 'weather'),
-            ]],
-            ['System', [
-                $navLink('System Health', 'system-health', 'system-health'),
-                $navLink('System Logs', 'system-logs', 'system-logs'),
-            ]],
-        ];
     }
 
-    $sidebarSections = isset($itSections)
-        ? $itSections
-        : array_values(array_filter([
-            ['Main Menu', $primaryGroup],
-            [$isFarmer ? 'My Farm' : 'More Tools', $moreGroup],
-            ['Community & Updates', $publishingGroup],
-        ], fn ($section) => ! empty($section[1])));
+    $sidebarSections = array_values(array_filter([
+        ['Main Menu', $primaryGroup],
+        [$isFarmer ? 'My Farm' : 'More Tools', $moreGroup],
+        ['Community & Updates', $publishingGroup],
+    ], fn ($section) => ! empty($section[1])));
 
     // Flat sections (a small label over its links); the open page, or any page under it, is marked active.
     $renderSidebarNav = function (string $idPrefix) use ($sidebarSections, $sidebarIcon): string {

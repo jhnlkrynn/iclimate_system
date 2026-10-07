@@ -35,13 +35,13 @@ class RoleAuthorizationTest extends TestCase
         $this->actingAs($mao)->get(route('users.index'))->assertForbidden();
     }
 
-    public function test_it_expert_has_full_module_access(): void
+    public function test_it_expert_opens_system_pages_and_is_sent_back_from_field_pages(): void
     {
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
         $this->actingAs($itExpert)->get(route('admin.dashboard'))->assertOk();
         $this->actingAs($itExpert)->get(route('users.index'))->assertOk();
-        $this->actingAs($itExpert)->get(route('climate-records.index'))->assertOk();
+        $this->actingAs($itExpert)->get(route('climate-records.index'))->assertRedirect(route('admin.dashboard'));
     }
 
     public function test_only_it_expert_can_access_the_candidate_testing_page(): void

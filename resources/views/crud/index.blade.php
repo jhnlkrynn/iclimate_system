@@ -163,7 +163,7 @@
                                         @else
                                             @php $value = data_get($record, $field); @endphp
                                             @if ($routeName === 'climate-records' && $field === 'source') @php $value = \App\Services\Climate\ClimateRecordHistory::displaySource($value); @endphp @endif
-                                            @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
+                                            @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : ($routeName === 'farmer-profiles' ? '' : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set')) }}@endif
                                         @endif
                                     </td>
                                 @endforeach
@@ -210,7 +210,7 @@
                                     @else
                                         @php $value = data_get($record, $field); @endphp
                                         @if ($routeName === 'climate-records' && $field === 'source') @php $value = \App\Services\Climate\ClimateRecordHistory::displaySource($value); @endphp @endif
-                                        @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set') }}@endif
+                                        @if ($field === 'role' && filled($value)){{ \App\Models\User::labelForRole((string) $value) }}@else{{ filled($value) ? $value : ($routeName === 'farmer-profiles' ? '' : (data_get($record, 'is_source_dataset') ? 'Not available' : 'Not set')) }}@endif
                                     @endif
                                 </div>
                             </div>
@@ -253,4 +253,43 @@
             </div>
         @endif
     </div>
+    @if ($routeName === 'farmer-profiles')
+        {{-- [Mensahe] in the farmer pop-up: opens (or starts) the conversation through the existing Messages routes and
+             shows that conversation page inside the pop-up. ponytail: an iframe of the Messages page (?embed=1 hides the
+             menus), so sending, attachments and live updates are the real feature; build a native thread only if the
+             frame proves too slow on phones. --}}
+        <script>
+            document.addEventListener('click', async (event) => {
+                const button = event.target.closest('[data-mensahe]');
+                if (!button || button.disabled) return;
+                const modal = window.iClimateModal;
+                const name = button.dataset.mensaheName || 'Farmer';
+                button.disabled = true;
+                try {
+                    const response = await fetch(@json(route('messages.open')), {
+                        method: 'POST', credentials: 'same-origin',
+                        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify({ recipient_id: button.dataset.mensahe }),
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.redirect) throw new Error('open');
+                    const frame = document.createElement('iframe');
+                    frame.src = data.redirect + '?embed=1';
+                    frame.title = 'Messages with ' + name;
+                    frame.className = 'fp-mensahe-frame';
+                    modal.open({ title: 'Mensahe: ' + name, description: 'Private conversation with this farmer.', icon: 'info', size: 'wide', body: frame });
+                } catch (error) {
+                    button.disabled = false;
+                    modal.open({ title: 'Mensahe', icon: 'danger', tone: 'danger', size: 'compact', body: '<p class="fad-m-body">The conversation could not be opened. Please try again.</p>' });
+                }
+            });
+        </script>
+        <style>
+            .fp-farms { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+            .fp-farms li { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--line, #e3e8e5); border-radius: 6px; }
+            .fp-farms span { font-size: .9375rem; color: var(--muted, #5b6660); }
+            .fp-mensahe-frame { display: block; width: 100%; height: 100%; min-height: 60vh; border: 0; }
+            .ic-modal .fad-m-scroll:has(> .fp-mensahe-frame) { padding: 0; display: block; }
+        </style>
+    @endif
 </x-app-layout>

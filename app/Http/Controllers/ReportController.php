@@ -159,7 +159,7 @@ class ReportController extends CrudController
 
         abort_unless($request->filled('report'), 404);
         $report = $this->reportHistory()->findOrFail($request->integer('report'));
-        $columns = $this->displayColumns($report->savedColumns(), $report->typeKey());
+        $columns = $this->displayColumns($report->savedColumns(), $report->typeKey(), forExport: true);
         $records = $this->displayRows(collect($report->savedRecords()), $report->typeKey());
         $filename = Str::slug($report->title).'.csv';
 
@@ -190,11 +190,17 @@ class ReportController extends CrudController
         });
     }
 
-    /** Hide presentation-only fields from the Climate Records report without changing saved report data. */
-    private function displayColumns(array $columns, string $type): array
+    /**
+     * Hide presentation-only fields without changing saved report data: wind speed on the Climate Records report, and
+     * the Barangay column on screen and in print (the barangay filter stays; the CSV export keeps the column).
+     */
+    private function displayColumns(array $columns, string $type, bool $forExport = false): array
     {
         if ($type === 'climate_records') {
             unset($columns['wind_speed']);
+        }
+        if (! $forExport) {
+            unset($columns['barangay']);
         }
 
         return $columns;

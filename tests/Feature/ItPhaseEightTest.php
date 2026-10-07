@@ -104,33 +104,24 @@ class ItPhaseEightTest extends TestCase
 
     // ------------------------------------------------------------ view-only
 
-    public function test_it_reads_advisories_but_cannot_create_edit_approve_or_archive_them(): void
+    public function test_it_is_sent_to_its_dashboard_from_advisories_and_cannot_change_them(): void
     {
         $it = $this->it();
         $published = $this->advisory();
         $pending = $this->advisory('pending_review');
 
-        $list = $this->actingAs($it)->get(route('planting-advisories.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('data-adv-item="'.$published->id.'"', $list);
-        foreach (['New Advisory', 'Review and publish', '>Edit<'] as $control) {
-            $this->assertStringNotContainsString($control, $list, $control);
-        }
-        // IT still sees what waits for approval, read-only.
-        $waiting = $this->actingAs($it)->get(route('planting-advisories.index', ['show' => 'pending']))->assertOk()->getContent();
-        $this->assertStringContainsString('data-adv-item="'.$pending->id.'"', $waiting);
-        $this->assertStringNotContainsString('Review and publish', $waiting);
-        $this->actingAs($it)->get(route('planting-advisories.show', $published))->assertOk();
-
+        // Advisories are not an IT page (2026-10): every address sends IT to its dashboard and nothing is changed.
         $fields = ['message' => 'Changed by IT.', 'valid_until' => now()->addDays(3)->toDateString(), 'status' => 'published'];
-        $this->actingAs($it)->get(route('planting-advisories.create'))->assertForbidden();
-        $this->actingAs($it)->post(route('planting-advisories.store'), $fields)->assertForbidden();
-        $this->actingAs($it)->get(route('planting-advisories.edit', $pending))->assertForbidden();
-        $this->actingAs($it)->put(route('planting-advisories.update', $pending), $fields)->assertForbidden();
-        $this->actingAs($it)->delete(route('planting-advisories.destroy', $published))->assertForbidden();
+        $this->actingAs($it)->get(route('planting-advisories.index'))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->get(route('planting-advisories.show', $published))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->get(route('planting-advisories.create'))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->post(route('planting-advisories.store'), $fields)->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->put(route('planting-advisories.update', $pending), $fields)->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->delete(route('planting-advisories.destroy', $published))->assertRedirect(route('admin.dashboard'));
         foreach (['approve', 'publish', 'archive'] as $action) {
-            $this->actingAs($it)->post(route('management.advisories.'.$action, $pending))->assertForbidden();
+            $this->actingAs($it)->post(route('management.advisories.'.$action, $pending))->assertRedirect(route('admin.dashboard'));
         }
-        $this->actingAs($it)->post(route('management.advisories.reject', $pending), ['rejection_reason' => 'x'])->assertForbidden();
+        $this->actingAs($it)->post(route('management.advisories.reject', $pending), ['rejection_reason' => 'x'])->assertRedirect(route('admin.dashboard'));
 
         $this->assertSame(['pending_review', 'Plant this week.'], [$pending->fresh()->status, $pending->fresh()->message]);
         $this->assertSame('published', $published->fresh()->status);
@@ -165,24 +156,20 @@ class ItPhaseEightTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_id' => $farmer->id, 'title' => 'From IT']);
     }
 
-    public function test_it_views_climate_records_and_rice_production_without_changing_them(): void
+    public function test_it_is_sent_to_its_dashboard_from_climate_records_and_rice_production(): void
     {
         $it = $this->it();
         $record = ClimateRecord::query()->create(['record_date' => '2026-09-05', 'rainfall' => 12, 'temperature' => 28, 'humidity' => 80, 'season' => 'Wet', 'source' => 'MAO field log']);
 
+        // Records are not IT pages (2026-10): every address sends IT to its dashboard and nothing is changed.
         foreach (['climate-records', 'rice-productions'] as $module) {
-            $list = $this->actingAs($it)->get(route($module.'.index'))->assertOk()->getContent();
-            $this->assertStringNotContainsString('href="'.route($module.'.create').'"', $list, $module);
-            $this->assertStringNotContainsString('/edit"', $list, $module);
-            $this->assertStringNotContainsString('data-ic-confirm="Delete this record?', $list, $module);
-            $this->assertStringContainsString('data-print-list', $list, $module);                 // viewing and printing stay
-            $this->actingAs($it)->get(route($module.'.create'))->assertForbidden();
-            $this->actingAs($it)->post(route($module.'.store'), [])->assertForbidden();
+            $this->actingAs($it)->get(route($module.'.index'))->assertRedirect(route('admin.dashboard'));
+            $this->actingAs($it)->get(route($module.'.create'))->assertRedirect(route('admin.dashboard'));
+            $this->actingAs($it)->post(route($module.'.store'), [])->assertRedirect(route('admin.dashboard'));
         }
-        $this->actingAs($it)->get(route('climate-records.show', $record->id))->assertOk();
-        $this->actingAs($it)->get(route('climate-records.edit', $record->id))->assertForbidden();
-        $this->actingAs($it)->put(route('climate-records.update', $record->id), ['rainfall' => 999])->assertForbidden();
-        $this->actingAs($it)->delete(route('climate-records.destroy', $record->id))->assertForbidden();
+        $this->actingAs($it)->get(route('climate-records.show', $record->id))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->put(route('climate-records.update', $record->id), ['rainfall' => 999])->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($it)->delete(route('climate-records.destroy', $record->id))->assertRedirect(route('admin.dashboard'));
         $this->assertSame(12.0, (float) $record->fresh()->rainfall);
 
         // The MAO still enters and corrects them.

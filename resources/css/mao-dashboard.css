@@ -254,3 +254,11 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mhd-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--mhd-color, #8a939b); border: 1px solid rgba(0, 0, 0, .25); }
 .mhd .mtd-header .ic-updated { color: rgba(255, 255, 255, .85); }
 @media (max-width: 560px) { .mhd-action { grid-template-columns: 44px minmax(0, 1fr); } .mhd-action .mtd-btn { grid-column: 1 / -1; width: 100%; } }
+
+/* MAO dashboard charts: one per row on a phone, two per row on a wide screen; the weather-impact reading under its chart. */
+.mhd-charts { display: grid; gap: var(--gap, 20px); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .mhd-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mhd-charts .mtd-chart { height: 320px; }
+.mhd-reading { margin: 44px 0 0; padding: 12px 16px; border-left: 4px solid var(--brand); border-radius: 4px; background: var(--subtle, #f8faf9); font-size: 1.0625rem; font-weight: 600; color: var(--ink); }
+
+.mhd-reading-flat { margin: 0 0 12px; }

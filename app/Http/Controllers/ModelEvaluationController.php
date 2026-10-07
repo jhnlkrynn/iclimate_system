@@ -33,6 +33,8 @@ class ModelEvaluationController extends Controller
         return view('model-evaluation.index', [
             'evaluation' => (array) data_get($run?->result, 'evaluation', []),
             'analyticsRun' => $run,
+            // MAO/IT – Kaye: harvests where the farmer's actual yield can be compared with the predicted one.
+            'retraining' => rescue(fn (): array => \App\Support\YieldCorrections::summary(), ['count' => 0, 'rows' => collect()], false),
         ]);
     }
 }
