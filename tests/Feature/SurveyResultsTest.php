@@ -55,8 +55,9 @@ class SurveyResultsTest extends TestCase
     public function test_mao_dashboard_shows_survey_results(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO, 'status' => User::STATUS_ACTIVE]);
+        // No answers yet: the Survey Results cards are left out (2026-10-07: no empty sections on the MAO dashboard).
         $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()
-            ->assertSee('Survey Results: Forecast Accuracy')->assertSee('No farmer has answered the forecast survey yet.');
+            ->assertDontSee('Survey Results: Forecast Accuracy')->assertDontSee('No farmer has answered the forecast survey yet.');
 
         Cache::flush();
         $answer = fn (string $accuracy, ?string $observed = null) => WeatherForecastFeedback::factory()->accuracy($accuracy, $observed)
