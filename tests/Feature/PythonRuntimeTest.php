@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\CandidatePredictionController;
+use App\Services\MachineLearning\RiceYieldShadowComparisonService;
 use App\Support\PythonRuntime;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
@@ -129,8 +129,10 @@ class PythonRuntimeTest extends TestCase
 
         $this->assertSame($python, PythonRuntime::executable());
 
-        $run = new \ReflectionMethod(CandidatePredictionController::class, 'runCandidateRiceYield');
-        $result = $run->invoke(app(CandidatePredictionController::class), ['month' => 10, 'rainfall' => 226.4]);
+        // The candidate test page's controller was removed in the 2026-10 cleanup; the shadow comparison runs the
+        // same script the same way.
+        $run = new \ReflectionMethod(RiceYieldShadowComparisonService::class, 'runCandidateRiceYield');
+        $result = $run->invoke(app(RiceYieldShadowComparisonService::class), ['month' => 10, 'rainfall' => 226.4]);
 
         $this->assertSame(4.2, (float) $result['predicted_yield']);
         [$path, $venv, $script] = explode("\n", trim(File::get($this->tempDir.DIRECTORY_SEPARATOR.'started.txt')));

@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * GET /heat-map/insight/{barangay}?lang=en|fil — the Barangay AI Insight pop-up (Heat Map and MAO dashboard).
+ * The Barangay AI Insight answer (JSON) for one barangay, ?lang=en|fil. It has NO route since the 2026-10 cleanup:
+ * the pop-up that called it was replaced by the Heat Map's side panel and no page asks for it any more. The code is
+ * kept (with App\Services\AI\BarangayInsightService) so the feature can be routed again; add `auth` when doing so.
  * Never answers 500: when anything fails the pop-up still shows its verified values from the map.
  */
 class BarangayInsightController extends Controller

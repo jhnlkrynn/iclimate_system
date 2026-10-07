@@ -56,6 +56,26 @@ class BarangayInsightTest extends TestCase
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
     }
 
+    /**
+     * The insight answer for one barangay, as that user. The endpoint lost its route in the 2026-10 cleanup (no page
+     * calls it), so the kept controller and service are called directly.
+     *
+     * @param  array{barangay: string, lang?: string}  $params
+     */
+    private function insight(User $user, array $params): \Illuminate\Testing\TestResponse
+    {
+        $request = \Illuminate\Http\Request::create('/heat-map/insight/'.rawurlencode($params['barangay']), 'GET', array_filter(['lang' => $params['lang'] ?? null]));
+        $this->actingAs($user->fresh());                 // the signed-in user (binding the request below resolves it from the guard)
+        $request->setLaravelSession(app('session.store'));
+        // Answered as a web request would be (App\Support\InteractiveRequest): saved weather is read, never fetched.
+        $request->setRouteResolver(fn () => new \Illuminate\Routing\Route('GET', '/heat-map/insight/{barangay}', []));
+        app()->instance('request', $request);
+
+        return \Illuminate\Testing\TestResponse::fromBaseResponse(
+            app(\App\Http\Controllers\BarangayInsightController::class)($request, $params['barangay'], app(BarangayInsightService::class))
+        );
+    }
+
     public function test_every_lian_barangay_opens_an_insight_with_exactly_the_maps_values(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'San Diego']);
@@ -64,7 +84,7 @@ class BarangayInsightTest extends TestCase
         $this->assertCount(19, LianBarangays::all());
         foreach (LianBarangays::all() as $barangay) {
             $entry = $map[$barangay];
-            $response = $this->actingAs($farmer)->getJson(route('heat-map.insight', ['barangay' => $barangay, 'lang' => 'en']))->assertOk();
+            $response = $this->insight($farmer, ['barangay' => $barangay, 'lang' => 'en'])->assertOk();
             $data = $response->json('data');
 
             $this->assertSame('ok', $response->json('status'));
@@ -99,24 +119,23 @@ class BarangayInsightTest extends TestCase
     public function test_the_insight_is_kept_until_the_weather_or_risk_changes(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $url = fn (string $lang) => route('heat-map.insight', ['barangay' => 'Bagong Pook', 'lang' => $lang]);
 
-        $first = $this->actingAs($mao)->getJson($url('en'))->assertOk();
-        $again = $this->actingAs($mao)->getJson($url('en'))->assertOk();
+        $first = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
+        $again = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
         $this->assertCount(1, $this->groqContexts, 'Same data: the explanation is reused.');
         $this->assertFalse($first->json('insight.cached'));
         $this->assertTrue($again->json('insight.cached'));
         $this->assertSame($first->json('insight.text'), $again->json('insight.text'));
         $this->assertSame($first->json('signature'), $again->json('signature'));
 
-        $this->actingAs($mao)->getJson($url('fil'))->assertOk();
+        $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'fil'])->assertOk();
         $this->assertCount(2, $this->groqContexts, 'Each language has its own explanation.');
 
         // New weather and a new rating: a new explanation, once.
         $this->travel(11)->minutes();
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
-        $newer = $this->actingAs($mao)->getJson($url('en'))->assertOk();
-        $this->actingAs($mao)->getJson($url('en'))->assertOk();
+        $newer = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
+        $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
 
         $this->assertCount(3, $this->groqContexts);
         $this->assertNotSame($first->json('signature'), $newer->json('signature'));
@@ -126,10 +145,9 @@ class BarangayInsightTest extends TestCase
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Balibago']);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $url = route('heat-map.insight', ['barangay' => 'Balibago', 'lang' => 'en']);
 
-        $forFarmer = $this->actingAs($farmer)->getJson($url)->assertOk();
-        $forMao = $this->actingAs($mao)->getJson($url)->assertOk();
+        $forFarmer = $this->insight($farmer, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
+        $forMao = $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
 
         $this->assertSame($forFarmer->json('data'), $forMao->json('data'));
         $this->assertSame($forFarmer->json('insight.text'), $forMao->json('insight.text'));
@@ -144,7 +162,7 @@ class BarangayInsightTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $entry = collect($this->getJson('/api/lian/risk-map')->json('barangays'))->firstWhere('barangay', 'Binubusan');
 
-        $response = $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Binubusan', 'lang' => 'en']))->assertOk();
+        $response = $this->insight($mao, ['barangay' => 'Binubusan', 'lang' => 'en'])->assertOk();
 
         $this->assertSame('ok', $response->json('status'));
         $this->assertSame('unavailable', $response->json('insight.status'));
@@ -159,7 +177,7 @@ class BarangayInsightTest extends TestCase
         $this->mock(BarangayRiskMapService::class, fn ($mock) => $mock->shouldReceive('detailFor')->andThrow(new \RuntimeException('database down')));
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Bungahan']))
+        $this->insight($mao, ['barangay' => 'Bungahan'])
             ->assertOk()
             ->assertJson(['status' => 'unavailable', 'message' => 'AI insight is temporarily unavailable.']);
     }
@@ -172,7 +190,7 @@ class BarangayInsightTest extends TestCase
             'action' => 'Monitor everything.',
         ];
 
-        $response = $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'San Diego']))->assertOk();
+        $response = $this->insight($mao, ['barangay' => 'San Diego'])->assertOk();
 
         $this->assertSame('unavailable', $response->json('insight.status'));
         $this->assertStringNotContainsStringIgnoringCase('typhoon', (string) $response->getContent());
@@ -241,7 +259,7 @@ class BarangayInsightTest extends TestCase
 
         foreach (['Bagong Pook', 'Balibago', 'Binubusan', 'Bungahan', 'San Diego'] as $barangay) {
             foreach (['en', 'fil'] as $language) {
-                $insight = $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => $barangay, 'lang' => $language]))->json('insight');
+                $insight = $this->insight($mao, ['barangay' => $barangay, 'lang' => $language])->json('insight');
                 $this->assertSame('ok', $insight['status']);
                 $this->assertLessThanOrEqual(BarangayInsightService::MAX_INSIGHT_SENTENCES, preg_match_all('/[.!?](\s|$)/', $insight['text']));
                 $this->assertLessThanOrEqual(BarangayInsightService::MAX_ACTION_SENTENCES, preg_match_all('/[.!?](\s|$)/', $insight['action']));
@@ -261,7 +279,7 @@ class BarangayInsightTest extends TestCase
         app(BarangayRiskMapService::class)->refreshForCurrentWeather(force: true);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $response = $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Cumba']))->assertOk();
+        $response = $this->insight($mao, ['barangay' => 'Cumba'])->assertOk();
 
         $this->assertNull($response->json('data.risk_level'));
         $this->assertSame('unavailable', $response->json('data.risk_status'));
@@ -275,7 +293,7 @@ class BarangayInsightTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $this->travel(45)->minutes();
 
-        $response = $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Prenza']))->assertOk();
+        $response = $this->insight($mao, ['barangay' => 'Prenza'])->assertOk();
 
         $this->assertSame('delayed', $response->json('data.weather_status'));
         $this->assertSame('latest_available', $response->json('freshness'));
@@ -288,16 +306,18 @@ class BarangayInsightTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Kapito']);
         $this->actingAs($farmer)->postJson(route('farmer.dashboard.language'), ['language' => 'fil'])->assertOk();
 
-        $this->actingAs($farmer)->getJson(route('heat-map.insight', ['barangay' => 'Kapito']))->assertOk()->assertJson(['language' => 'fil']);
-        $this->actingAs($farmer)->getJson(route('heat-map.insight', ['barangay' => 'Kapito', 'lang' => 'en']))->assertOk()->assertJson(['language' => 'en']);
+        $this->insight($farmer, ['barangay' => 'Kapito'])->assertOk()->assertJson(['language' => 'fil']);
+        $this->insight($farmer, ['barangay' => 'Kapito', 'lang' => 'en'])->assertOk()->assertJson(['language' => 'en']);
     }
 
     public function test_guests_and_unknown_barangays(): void
     {
-        $this->getJson(route('heat-map.insight', ['barangay' => 'San Diego']))->assertUnauthorized();
+        // The endpoint has no route since the 2026-10 cleanup (no page calls it), so no guest can reach it.
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('heat-map.insight'));
+        $this->getJson('/heat-map/insight/San%20Diego')->assertNotFound();
 
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->getJson(route('heat-map.insight', ['barangay' => 'Calatagan']))->assertNotFound()->assertJson(['status' => 'not_found']);
+        $this->insight($mao, ['barangay' => 'Calatagan'])->assertNotFound()->assertJson(['status' => 'not_found']);
     }
 
     public function test_the_heat_map_page_uses_its_panel_instead_of_the_insight_pop_up(): void

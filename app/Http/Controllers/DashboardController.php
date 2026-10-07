@@ -71,9 +71,6 @@ class DashboardController extends Controller
     /** Sections the IT refresh button re-renders (partials under dashboards/it). */
     private const IT_LIVE_SLOTS = ['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
 
-    /** Tabs of the IT dashboard (?tab=...). */
-    private const IT_TABS = ['overview', 'heatmap', 'security', 'users', 'resources', 'activity'];
-
     /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
     public const FARMER_SLOTS = ['message', 'typhoon', 'weather', 'risk', 'harvest', 'week'];
 
@@ -274,12 +271,6 @@ class DashboardController extends Controller
                 : 'Stored climate records',
             'checked_at' => now((string) config('services.weather.timezone', 'Asia/Manila'))->toIso8601String(),
         ]);
-    }
-
-    /** MAO Operations: the prepared page for these filters (PreparedDashboards); built by maoOperationsData(). */
-    public function maoOperations(Request $request, PreparedDashboards $dashboards): View
-    {
-        return view('dashboards.mao-operations', $dashboards->maoOperations($request));
     }
 
     /**

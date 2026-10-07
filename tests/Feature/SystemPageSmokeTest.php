@@ -22,6 +22,7 @@ class SystemPageSmokeTest extends TestCase
 
     /** Pages that intentionally answer with a redirect instead of a page of their own. */
     private const REDIRECTS = [
+        '/ai-admin/topics',           // Chatbot Knowledge is hidden from the interface (CHATBOT_KNOWLEDGE_UI=false): opens the dashboard
         '/mao/operations',            // the Operations page was removed; its address opens the MAO dashboard (2026-10)
         '/management/advisories',     // Advisory Management moved into the Advisories page (2026-10)
         '/ai-farming-assistant',      // Climora lives in the widget on every page

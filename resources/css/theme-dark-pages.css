@@ -223,11 +223,6 @@ html[data-theme="dark"] body .sl-table td[data-label]::before { color: var(--dk-
 }
 html[data-theme="dark"] body .sl-raw { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
 
-/* ---- views/testing/candidate-predictions.blade.php (3) */
-html[data-theme="dark"] body .candidate-warning { border-color: color-mix(in srgb, #cca133 30%, var(--dk-border)); }
-html[data-theme="dark"] body .badge-green { border-color: color-mix(in srgb, #33cc6b 30%, var(--dk-border)); }
-html[data-theme="dark"] body .badge-yellow { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
-
 /* ---- css/app.css (79) */
 html[data-theme="dark"] body table.ic-row-hover tbody tr:hover,
 html[data-theme="dark"] body .ic-row-hover .ic-table-card-row:hover { background-color: var(--dk-surface-3); }
@@ -587,57 +582,6 @@ html[data-theme="dark"] body .ic-chartinfo__muted { color: var(--dk-muted); }
 html[data-theme="dark"] body .ic-chartinfo__tag { color: #a4e0cb; }
 html[data-theme="dark"] body .ic-chartinfo__tag.is-forecast { color: #e7ca9d; }
 html[data-theme="dark"] body .ic-chartinfo__row dt { color: #a2e2c3; }
-
-/* ---- css/pages/mao-operations.css (47) */
-html[data-theme="dark"] body .mao-console { --mao-ink: var(--dk-ink); --mao-muted: var(--dk-ink-mid); --mao-line: var(--dk-border-strong); }
-html[data-theme="dark"] body .mao-console .btn-light { background: var(--dk-surface-2) !important; }
-html[data-theme="dark"] body .mao-console .btn-light:hover { background: var(--dk-surface-3) !important; }
-html[data-theme="dark"] body .mao-console .btn-outline-light { border-color: var(--dk-border-strong) !important; }
-html[data-theme="dark"] body .mao-console .btn-outline-light:hover { background: var(--dk-surface-3) !important; border-color: var(--dk-border-strong) !important; }
-html[data-theme="dark"] body .mao-console .btn-outline-primary:hover { background: var(--dk-surface-3) !important; }
-html[data-theme="dark"] body .mao-chip { border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .mao-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mao-modal-content { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mao-panel { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .list-mark { border-color: color-mix(in srgb, #3ec18f 30%, var(--dk-border)); }
-html[data-theme="dark"] body .mao-risk-badge-severe { color: #e79d9d; }
-html[data-theme="dark"] body .mao-risk-badge-high { color: #e7b29d; }
-html[data-theme="dark"] body .mao-risk-badge-moderate { color: #e7c49d; }
-html[data-theme="dark"] body .mao-risk-badge-nodata { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .mao-risk-badge-low { color: #9de7b9; }
-html[data-theme="dark"] body .status-pill.risk-badge-lg.low { background: color-mix(in srgb, #28bd5b 18%, var(--dk-surface)); color: #9de7b9; }
-html[data-theme="dark"] body .status-pill.risk-badge-lg.moderate { background: color-mix(in srgb, #c3b522 16%, var(--dk-surface)); color: #e7c49d; }
-html[data-theme="dark"] body .status-pill.risk-badge-lg.high { background: color-mix(in srgb, #bd7d28 18%, var(--dk-surface)); color: #e7b29d; }
-html[data-theme="dark"] body .status-pill.risk-badge-lg.severe { background: color-mix(in srgb, #c32222 16%, var(--dk-surface)); color: #e79d9d; }
-html[data-theme="dark"] body .quick-action { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .risk-card { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .risk-card.moderate { border-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); background: color-mix(in srgb, #c3b422 16%, var(--dk-surface)); }
-html[data-theme="dark"] body .risk-card.high { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .risk-card.severe { background: color-mix(in srgb, #c32222 16%, var(--dk-surface)); }
-html[data-theme="dark"] body .variable-info-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .live-weather-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .forecast-strip-day { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .source-badge { background: var(--dk-surface-2); color: #9dcbe7; }
-html[data-theme="dark"] body .chart-box { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .chart-interpretation { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .chart-render-state { background: var(--dk-surface-2); color: var(--dk-ink-mid); }
-html[data-theme="dark"] body .layer-btn { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .map-popup-badge { color: #a8dcc6; }
-html[data-theme="dark"] body .map-popup-takeaway { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .map-popup-box { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .map-detail-panel { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .map-detail-close { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .risk-level-card { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .risk-level-card.moderate { border-left-color: color-mix(in srgb, #ccad33 30%, var(--dk-border)); }
-html[data-theme="dark"] body .mao-highlight { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .empty-soft { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .schedule-monitor-card { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .dashboard-group { background: var(--dk-surface-2); }
-html[data-theme="dark"] body .dashboard-tabs { border-bottom-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .mao-card,
-html[data-theme="dark"] body .mao-panel { border-color: var(--dk-border-strong); background: var(--dk-surface-2); }
-html[data-theme="dark"] body .mao-panel-header,
-html[data-theme="dark"] body .mao-modal-header { background: var(--dk-surface-2); }
 
 /* ---- css/pages/weather-predictions.css (21) */
 html[data-theme="dark"] body .wpx .wpx-panel h2 { color: var(--dk-ink); }

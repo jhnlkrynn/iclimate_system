@@ -153,8 +153,7 @@ class RiceYieldShadowComparisonService
     | Run Candidate Python Model
     |--------------------------------------------------------------------------
     |
-    | Mirrors CandidatePredictionController::runCandidateRiceYield() — the
-    | candidate .pkl model is only reachable via this direct script
+    | The candidate .pkl model is only reachable via this direct script
     | invocation, not through the production Python analytics HTTP service
     | (PythonAnalyticsClient), which has no knowledge of the candidate model.
     */

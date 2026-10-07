@@ -185,7 +185,7 @@ CSS_FILES = ['app.css', 'ui-refresh.css', 'glass-system.css', 'farmer-dashboard.
              'farmer-records.css', 'farmer-messages.css', 'farmer-predictions.css', 'it-dashboard.css', 'it-pages.css', 'mao-dashboard.css',
              'info-modal.css', 'risk-overview.css', 'chart-explainer.css', 'animations.css',
              # page styles that used to be <style> blocks inside the Blade views
-             'pages/mao-operations.css', 'pages/weather-predictions.css', 'pages/community-feed.css']
+             'pages/weather-predictions.css', 'pages/community-feed.css']
 SKIP_VIEWS = ('welcome', 'auth/', 'layouts/guest', 'errors/', 'reports/print', 'emails/')
 
 if __name__ == '__main__':
