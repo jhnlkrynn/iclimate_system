@@ -24,12 +24,22 @@ return new class extends Migration
         $linkBoundaries = Schema::hasColumn('farm_boundaries', 'farm_id');
         $linkPlans = Schema::hasTable('farmer_planting_schedules') && Schema::hasColumn('farmer_planting_schedules', 'farm_id');
 
-        DB::table('farmer_profiles')->orderBy('id')->chunkById(200, function ($profiles) use ($linkBoundaries, $linkPlans): void {
+        DB::table('farmer_profiles')
+            ->select(['id', 'user_id', 'barangay', 'farm_area', 'farm_type'])
+            ->orderBy('id')
+            ->chunkById(200, function ($profiles) use ($linkBoundaries, $linkPlans): void {
             $withFarm = DB::table('farms')->whereIn('user_id', $profiles->pluck('user_id'))->pluck('user_id')->flip();
             $boundaries = $linkBoundaries
-                ? DB::table('farm_boundaries')->whereIn('farmer_profile_id', $profiles->pluck('id'))->whereNull('farm_id')->orderBy('id')->get()->groupBy('farmer_profile_id')
+                ? DB::table('farm_boundaries')
+                    ->select(['id', 'farmer_profile_id', 'barangay', 'calculated_area_hectares'])
+                    ->whereIn('farmer_profile_id', $profiles->pluck('id'))
+                    ->whereNull('farm_id')
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy('farmer_profile_id')
                 : collect();
 
+            $pending = [];
             foreach ($profiles as $profile) {
                 if (isset($withFarm[$profile->user_id])) {
                     continue;
@@ -47,10 +57,11 @@ return new class extends Migration
                 $barangay = LianBarangays::canonicalName($profile->barangay)
                     ?? ($boundary !== null ? LianBarangays::canonicalName($boundary->barangay ?? null) : null);
                 $type = in_array($profile->farm_type, ['Irrigated', 'Rainfed'], true) ? $profile->farm_type : null;
-                $now = now();
-
-                DB::transaction(function () use ($profile, $boundary, $size, $method, $barangay, $type, $now, $linkPlans): void {
-                    $farmId = DB::table('farms')->insertGetId([
+                $pending[] = [
+                    'profile_id' => (int) $profile->id,
+                    'user_id' => (int) $profile->user_id,
+                    'boundary_id' => $boundary?->id,
+                    'farm' => [
                         'user_id' => $profile->user_id,
                         'farm_name' => 'Farm 1',
                         'barangay' => $barangay,
@@ -60,18 +71,63 @@ return new class extends Migration
                         'farm_size_unit' => $size !== null ? 'hectares' : null,
                         'farm_type' => $type,
                         'is_primary' => true,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-
-                    if ($boundary !== null) {
-                        DB::table('farm_boundaries')->where('id', $boundary->id)->whereNull('farm_id')->update(['farm_id' => $farmId]);
-                    }
-                    if ($linkPlans) {
-                        DB::table('farmer_planting_schedules')->where('user_id', $profile->user_id)->whereNull('farm_id')->update(['farm_id' => $farmId]);
-                    }
-                });
+                    ],
+                ];
             }
+
+            if ($pending === []) {
+                return;
+            }
+
+            $now = now();
+            $farmRows = array_map(static fn (array $item): array => $item['farm'] + [
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $pending);
+            $userIds = array_column($pending, 'user_id');
+
+            DB::transaction(function () use ($farmRows, $pending, $userIds, $linkPlans): void {
+                DB::table('farms')->insert($farmRows);
+
+                // Each pending user had no farm before this chunk's insert, so the first row is the one just created.
+                $farmIds = DB::table('farms')
+                    ->whereIn('user_id', $userIds)
+                    ->orderBy('id')
+                    ->get(['id', 'user_id'])
+                    ->groupBy('user_id')
+                    ->map(static fn ($farms): int => (int) $farms->first()->id);
+
+                $boundaryCases = [];
+                foreach ($pending as $item) {
+                    $farmId = $farmIds->get($item['user_id']);
+                    if ($farmId === null) {
+                        throw new RuntimeException("Farm backfill failed for user {$item['user_id']}.");
+                    }
+
+                    if ($item['boundary_id'] !== null) {
+                        $boundaryCases[] = 'WHEN '.(int) $item['boundary_id'].' THEN '.(int) $farmId;
+                    }
+                }
+                if ($boundaryCases !== []) {
+                    $boundaryIds = array_filter(array_column($pending, 'boundary_id'));
+                    DB::table('farm_boundaries')
+                        ->whereIn('id', $boundaryIds)
+                        ->whereNull('farm_id')
+                        ->update(['farm_id' => DB::raw('CASE id '.implode(' ', $boundaryCases).' ELSE farm_id END')]);
+                }
+
+                if ($linkPlans) {
+                    $scheduleCases = [];
+                    foreach ($pending as $item) {
+                        $farmId = $farmIds->get($item['user_id']);
+                        $scheduleCases[] = 'WHEN '.(int) $item['user_id'].' THEN '.(int) $farmId;
+                    }
+                    DB::table('farmer_planting_schedules')
+                        ->whereIn('user_id', $userIds)
+                        ->whereNull('farm_id')
+                        ->update(['farm_id' => DB::raw('CASE user_id '.implode(' ', $scheduleCases).' ELSE farm_id END')]);
+                }
+            });
         });
     }
 

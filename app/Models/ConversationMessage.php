@@ -15,6 +15,7 @@ class ConversationMessage extends Model
         'attachment_path',
         'attachment_name',
         'attachment_mime',
+        'client_message_id',
         'read_at',
     ];
 

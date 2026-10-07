@@ -32,7 +32,10 @@
         .msg-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--msg-line); border-radius:999px; padding:.5rem .85rem; background:rgba(45,106,79,.06); color:var(--msg-ink); font-family:'DM Mono', monospace; font-size:.875rem; font-weight:500; letter-spacing:.02em; }
         .msg-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .msg-shell { display:grid; grid-template-columns:340px minmax(0,1fr); gap:1rem; margin-top:1rem; align-items:stretch; min-height:clamp(620px, calc(100vh - 210px), 860px); }
-        .msg-panel { border:1.5px solid var(--ic-sand-dark); border-radius:18px; background:linear-gradient(145deg, var(--ic-paper), #f7fbf8); box-shadow:0 .7rem 1.6rem rgba(31,42,36,.06); overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+        .msg-panel { border:1.5px solid var(--ic-sand-dark); border-radius:18px; background:linear-gradient(145deg, var(--ic-paper), #f7fbf8); box-shadow:0 .7rem 1.6rem rgba(31,42,36,.06); overflow:hidden; display:flex; flex-direction:column; min-height:0; position:relative; }
+        .msg-load-state { position:absolute; z-index:4; top:.75rem; right:.75rem; display:flex; align-items:center; gap:.6rem; max-width:min(100% - 1.5rem, 420px); padding:.5rem .7rem; border:1px solid var(--msg-line); border-radius:999px; background:rgba(255,255,255,.96); box-shadow:0 .4rem 1rem rgba(31,42,36,.12); color:var(--msg-muted); font-size:.875rem; }
+        .msg-load-state.is-error { color:#9b3027; border-color:#efc2bd; }
+        .msg-load-state button { border:0; border-radius:999px; padding:.2rem .65rem; background:#1F5A46; color:#fff; font-size:.8rem; font-weight:700; }
         .msg-head { padding:1rem; border-bottom:1px solid var(--msg-line); background:rgba(243,246,244,.6); flex:0 0 auto; }
 
         /* ---- Search + tabs ---- */
@@ -46,8 +49,13 @@
         .msg-search-result { display:flex; align-items:center; gap:.6rem; padding:.55rem .7rem; cursor:pointer; border-bottom:1px solid var(--msg-line); }
         .msg-search-result:last-child { border-bottom:none; }
         .msg-search-result:hover { background:rgba(0,0,0,.035); }
+        .msg-search-result.is-focused { background:rgba(82,183,136,.12); }
+        .msg-search-result .avatar-wrap { flex:0 0 auto; }
+        .msg-search-result .avatar-status { width:9px; height:9px; }
         .msg-search-result.is-loading { opacity:.55; cursor:wait; pointer-events:none; }
         .msg-search-result.is-loading::after { content:""; width:14px; height:14px; margin-left:auto; flex-shrink:0; border:2px solid rgba(45,106,79,.25); border-top-color:var(--ic-green-500); border-radius:50%; animation:msgSpin .6s linear infinite; }
+        .msg-search-loading { display:flex; align-items:center; gap:.5rem; padding:.7rem; color:var(--msg-muted); font-size:.875rem; }
+        .msg-search-loading::before { content:""; width:14px; height:14px; flex:0 0 auto; border:2px solid rgba(45,106,79,.25); border-top-color:var(--ic-green-500); border-radius:50%; animation:msgSpin .6s linear infinite; }
         @keyframes msgSpin { to { transform:rotate(360deg); } }
         .msg-search-empty { padding:.6rem .7rem; color:var(--msg-muted); font-size:.875rem; line-height:1.45; }
         .msg-tabs { display:flex; gap:.4rem; margin-top:.75rem; overflow-x:auto; }
@@ -268,7 +276,7 @@
                 @endif
             </aside>
 
-            <main class="msg-panel">
+            <main class="msg-panel" id="conversationPanel">
                 @if($activeConversation)
                     @php($other = $activeConversation->otherParticipant($currentUser))
                     <div class="msg-head">
@@ -330,6 +338,7 @@
                             <textarea name="body" id="composeInput" class="compose-input" rows="1" placeholder="Type a message..."></textarea>
                             <button class="compose-send" id="composeSend" type="submit" aria-label="Send">➤</button>
                         </form>
+                        <div class="small mt-1 ps-2" id="composeStatus" role="status" aria-live="polite"></div>
                         <div class="small text-muted mt-1 ps-2">Press Enter to send &middot; Shift + Enter for a new line</div>
                     </div>
                 @else
@@ -362,16 +371,20 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const wrap = document.querySelector('.msg-wrap');
+            if (!wrap) return;
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
                 ?? document.querySelector('input[name="_token"]')?.value;
             const currentUserId = Number(wrap.dataset.currentUserId);
             const searchUrl = wrap.dataset.searchUrl;
             const openUrl = wrap.dataset.openUrl;
-            const pollUrl = wrap.dataset.pollUrl;
-            const sendUrl = wrap.dataset.sendUrl;
-            const typingUrl = wrap.dataset.typingUrl;
-            const unsendUrlBase = wrap.dataset.unsendUrlBase;
+            let pollUrl = wrap.dataset.pollUrl;
+            let sendUrl = wrap.dataset.sendUrl;
+            let typingUrl = wrap.dataset.typingUrl;
+            let unsendUrlBase = wrap.dataset.unsendUrlBase;
             let lastMessageId = Number(wrap.dataset.lastMessageId || 0);
+            let activeConversationId = Number(wrap.dataset.conversationId || 0);
+            let navigationSequence = 0;
+            let navigationController = null;
 
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -383,6 +396,46 @@
             const tabs = document.querySelectorAll('.msg-tab');
             const threadLinks = document.querySelectorAll('.thread-link');
             let activeTabRole = 'all';
+
+            const isConversationPayload = (data) => Boolean(
+                data
+                && Number(data.conversation_id) > 0
+                && data.other
+                && Array.isArray(data.messages)
+                && data.messages.every((message) => message && typeof message === 'object' && message.id !== undefined)
+                && typeof data.poll_url === 'string'
+                && typeof data.send_url === 'string'
+                && typeof data.typing_url === 'string'
+                && typeof data.unsend_url_base === 'string'
+            );
+
+            const loadConversationUrl = async (url, signal) => {
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                    signal,
+                });
+                const contentType = response.headers.get('content-type') || '';
+                if (!response.ok) throw new Error(`Conversation request failed (${response.status})`);
+                if (!contentType.includes('application/json')) throw new Error('Conversation response was not JSON');
+                const data = await response.json();
+                if (!isConversationPayload(data)) throw new Error('Conversation response was incomplete');
+                return data;
+            };
+
+            const removeConversationLoadState = () => {
+                document.querySelector('[data-conversation-load-state]')?.remove();
+            };
+
+            const showConversationLoadState = (message, { error = false, retry = null, fallbackUrl = null } = {}) => {
+                removeConversationLoadState();
+                const state = document.createElement('div');
+                state.dataset.conversationLoadState = 'true';
+                state.className = `msg-load-state${error ? ' is-error' : ''}`;
+                state.innerHTML = `<span>${escapeHtml(message)}</span>${retry ? '<button type="button">Retry</button>' : ''}${fallbackUrl ? `<a href="${escapeHtml(fallbackUrl)}">Open normally</a>` : ''}`;
+                if (retry) state.querySelector('button')?.addEventListener('click', retry, { once: true });
+                conversationPanel?.append(state);
+            };
 
             const applyThreadFilters = () => {
                 const query = (document.getElementById('threadSearch')?.value || '').trim().toLowerCase();
@@ -402,36 +455,111 @@
                 });
             });
 
+            threadLinks.forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    if (link.classList.contains('active')) return;
+                    void navigateToConversation(link.href, link);
+                });
+            });
+
             /* ---------------- Search (existing threads + new recipients) ---------------- */
             const searchInput = document.getElementById('threadSearch');
             const searchResults = document.getElementById('searchResults');
-            const knownOtherIds = new Set(Array.from(threadLinks)
-                .map((link) => link.dataset.otherId)
-                .filter(Boolean));
-
             let searchDebounce = null;
+            let searchAbortController = null;
+            let searchRequestSequence = 0;
+            let focusedSearchResult = -1;
+
+            const setSearchVisibility = (visible) => {
+                searchResults?.classList.toggle('show', visible);
+                searchInput?.setAttribute('aria-expanded', visible ? 'true' : 'false');
+            };
+
+            const closeSearchResults = () => {
+                setSearchVisibility(false);
+                clearTimeout(searchDebounce);
+                searchAbortController?.abort();
+                searchRequestSequence += 1;
+            };
 
             const renderSearchResults = (recipients) => {
+                focusedSearchResult = -1;
                 if (!recipients.length) {
-                    searchResults.innerHTML = '<div class="msg-search-empty">No matching people found.</div>';
-                    searchResults.classList.add('show');
+                    searchResults.innerHTML = '<div class="msg-search-empty">No matching accounts found.</div>';
+                    setSearchVisibility(true);
                     return;
                 }
 
                 searchResults.innerHTML = recipients.map((recipient) => `
-                    <div class="msg-search-result" data-recipient-id="${recipient.id}">
-                        <div class="avatar" style="width:32px;height:32px;font-size:.875rem;">${escapeHtml(recipient.name.charAt(0).toUpperCase())}</div>
-                        <div>
+                    <div class="msg-search-result" role="option" tabindex="-1" data-recipient-id="${recipient.id}">
+                        <div class="avatar-wrap">
+                            <div class="avatar" style="width:32px;height:32px;font-size:.875rem;">${escapeHtml((recipient.name || 'U').charAt(0).toUpperCase())}</div>
+                            <span class="avatar-status ${recipient.online ? 'online' : ''}"></span>
+                        </div>
+                        <div class="flex-grow-1" style="min-width:0;">
                             <div class="fw-bold" style="font-size:.95rem;">${escapeHtml(recipient.name)}</div>
-                            <div class="text-muted" style="font-size:.875rem;">${escapeHtml(recipient.role)}</div>
+                            <div class="text-muted" style="font-size:.875rem;">${escapeHtml(recipient.role)} · ${recipient.online ? 'Online' : 'Offline'}</div>
                         </div>
                     </div>
                 `).join('');
-                searchResults.classList.add('show');
+                setSearchVisibility(true);
+            };
 
-                searchResults.querySelectorAll('[data-recipient-id]').forEach((row) => {
-                    row.addEventListener('click', () => openConversationWith(row.dataset.recipientId, row));
+            const renderSearchLoading = () => {
+                searchResults.innerHTML = '<div class="msg-search-loading">Loading accounts...</div>';
+                setSearchVisibility(true);
+            };
+
+            const fetchSearchResults = async (query, requestId) => {
+                searchAbortController?.abort();
+                const controller = new AbortController();
+                searchAbortController = controller;
+                renderSearchLoading();
+
+                try {
+                    const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                        signal: controller.signal,
+                    });
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!response.ok || !contentType.includes('application/json')) throw new Error(`Search failed (${response.status})`);
+                    const data = await response.json();
+                    if (requestId !== searchRequestSequence || controller.signal.aborted) return;
+                    renderSearchResults(Array.isArray(data.recipients) ? data.recipients : []);
+                } catch (error) {
+                    if (controller.signal.aborted || requestId !== searchRequestSequence) return;
+                    searchResults.innerHTML = '<div class="msg-search-empty">Unable to load accounts. Try again.</div>';
+                    setSearchVisibility(true);
+                } finally {
+                    if (requestId === searchRequestSequence) searchAbortController = null;
+                }
+            };
+
+            const requestSearch = (query, { immediate = false } = {}) => {
+                clearTimeout(searchDebounce);
+                searchRequestSequence += 1;
+                searchAbortController?.abort();
+                const requestId = searchRequestSequence;
+                renderSearchLoading();
+                if (immediate) {
+                    void fetchSearchResults(query, requestId);
+                    return;
+                }
+                searchDebounce = setTimeout(() => void fetchSearchResults(query, requestId), 250);
+            };
+
+            const updateFocusedSearchResult = (direction) => {
+                const rows = Array.from(searchResults?.querySelectorAll('[data-recipient-id]') || []);
+                if (!rows.length) return;
+                focusedSearchResult = (focusedSearchResult + direction + rows.length) % rows.length;
+                rows.forEach((row, index) => {
+                    const focused = index === focusedSearchResult;
+                    row.classList.toggle('is-focused', focused);
+                    row.setAttribute('aria-selected', focused ? 'true' : 'false');
                 });
+                rows[focusedSearchResult].scrollIntoView({ block: 'nearest' });
             };
 
             let openingConversation = false;
@@ -439,6 +567,7 @@
             const openConversationWith = async (recipientId, rowEl) => {
                 if (openingConversation) return;
                 openingConversation = true;
+                closeSearchResults();
                 rowEl?.classList.add('is-loading');
                 rowEl?.setAttribute('aria-disabled', 'true');
 
@@ -452,13 +581,20 @@
                         },
                         body: JSON.stringify({ recipient_id: recipientId }),
                     });
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!response.ok || !contentType.includes('application/json')) throw new Error(`Conversation start failed (${response.status})`);
                     const data = await response.json();
                     if (data.redirect) {
-                        window.location.href = data.redirect;
-                        return;
+                        await navigateToConversation(data.redirect);
+                    } else {
+                        throw new Error('Conversation redirect was missing');
                     }
                 } catch (error) {
-                    window.location.href = '{{ route('messages.index') }}';
+                    showConversationLoadState('Unable to start conversation.', {
+                        error: true,
+                        retry: () => void openConversationWith(recipientId, rowEl),
+                        fallbackUrl: '{{ route('messages.index') }}',
+                    });
                     return;
                 } finally {
                     openingConversation = false;
@@ -467,35 +603,48 @@
                 }
             };
 
+            searchResults?.addEventListener('click', (event) => {
+                const row = event.target.closest('[data-recipient-id]');
+                if (row) void openConversationWith(row.dataset.recipientId, row);
+            });
+
+            searchInput?.setAttribute('role', 'combobox');
+            searchInput?.setAttribute('aria-controls', 'searchResults');
+            searchInput?.setAttribute('aria-expanded', 'false');
+            searchResults?.setAttribute('role', 'listbox');
+
+            searchInput?.addEventListener('focus', () => {
+                if (!searchResults.classList.contains('show')) requestSearch(searchInput.value.trim(), { immediate: true });
+            });
+
+            searchInput?.addEventListener('click', () => {
+                if (!searchResults.classList.contains('show')) requestSearch(searchInput.value.trim(), { immediate: true });
+            });
+
             searchInput?.addEventListener('input', () => {
                 applyThreadFilters();
-
                 const query = searchInput.value.trim();
-                clearTimeout(searchDebounce);
-
-                if (query === '') {
-                    searchResults.classList.remove('show');
-                    return;
-                }
-
-                searchDebounce = setTimeout(async () => {
-                    try {
-                        const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
-                            headers: { 'Accept': 'application/json' },
-                            loader: false, // live search while typing: no full-screen overlay
-                        });
-                        const data = await response.json();
-                        const notYetMessaged = (data.recipients || []).filter((r) => !knownOtherIds.has(String(r.id)));
-                        renderSearchResults(notYetMessaged);
-                    } catch (error) {
-                        /* silent: search is a progressive enhancement over the visible thread list */
-                    }
-                }, 250);
+                requestSearch(query, { immediate: query === '' });
             });
 
             document.addEventListener('click', (event) => {
-                if (!searchResults.contains(event.target) && event.target !== searchInput) {
-                    searchResults.classList.remove('show');
+                if (!searchResults?.contains(event.target) && event.target !== searchInput) {
+                    closeSearchResults();
+                }
+            });
+
+            searchInput?.addEventListener('keydown', (event) => {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    updateFocusedSearchResult(event.key === 'ArrowDown' ? 1 : -1);
+                } else if (event.key === 'Enter') {
+                    const row = searchResults?.querySelectorAll('[data-recipient-id]')[focusedSearchResult];
+                    if (row) {
+                        event.preventDefault();
+                        void openConversationWith(row.dataset.recipientId, row);
+                    }
+                } else if (event.key === 'Escape') {
+                    closeSearchResults();
                 }
             });
 
@@ -530,16 +679,28 @@
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' && unsendModal?.classList.contains('show')) closeUnsendModal();
             });
-            unsendSubmit?.addEventListener('click', () => {
+            unsendSubmit?.addEventListener('click', async () => {
                 if (!pendingUnsendForm) return;
-                pendingUnsendForm.dataset.confirmed = 'true';
-                pendingUnsendForm.submit();
+                const form = pendingUnsendForm;
+                const bubbleRow = form.closest('[data-message-id]');
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    });
+                    if (!response.ok) throw new Error('Unable to unsend message');
+                    bubbleRow?.remove();
+                    closeUnsendModal();
+                } catch (error) {
+                    form.querySelector('.msg-unsend')?.setAttribute('aria-label', 'Unsend failed; try again');
+                }
             });
 
             bindUnsendForms(document);
 
             /* ---------------- Chat window: render, scroll, poll ---------------- */
-            const chatWindow = document.getElementById('chatWindow');
+            let conversationPanel = document.getElementById('conversationPanel');
+            let chatWindow = document.getElementById('chatWindow');
 
             const isNearBottom = () => {
                 if (!chatWindow) return true;
@@ -562,7 +723,7 @@
                 const checkHtml = isMine
                     ? `<span class="msg-check ${message.read_at ? 'seen' : ''}" data-message-id="${message.id}">${message.read_at ? '✓✓' : '✓'}</span>`
                     : '';
-                const unsendHtml = (isMine && unsendUrlBase)
+                const unsendHtml = (isMine && !message.pending && !message.failed && unsendUrlBase)
                     ? `<form class="msg-actions" method="POST" action="${unsendUrlBase.replace(/\/0$/, '/' + message.id)}" data-unsend-form>
                             <input type="hidden" name="_token" value="${csrfToken}">
                             <input type="hidden" name="_method" value="DELETE">
@@ -570,13 +731,15 @@
                        </form>`
                     : '';
 
-                return `<div class="bubble-row ${isMine ? 'mine' : ''}" data-message-id="${message.id}">
+                const pendingClass = message.pending ? ' pending' : (message.failed ? ' failed' : '');
+                const pendingStatus = message.pending ? '<span class="msg-send-state">Sending...</span>' : (message.failed ? '<span class="msg-send-state">Failed to send — press Send to retry</span>' : '');
+                return `<div class="bubble-row ${isMine ? 'mine' : ''}${pendingClass}" data-message-id="${message.id}">
                     <div class="bubble">
                         ${bodyHtml}
                         ${attachmentHtml}
                         <div class="msg-meta">
                             <span>${escapeHtml(message.sender_name)} &middot; ${escapeHtml(message.human_time)}</span>
-                            ${checkHtml}
+                            ${checkHtml}${pendingStatus}
                         </div>
                         ${unsendHtml}
                     </div>
@@ -609,25 +772,33 @@
                 });
             };
 
-            const typingIndicator = document.getElementById('typingIndicator');
-            const statusDot = document.getElementById('headerStatusDot');
-            const statusText = document.getElementById('headerStatusText');
+            let typingIndicator = document.getElementById('typingIndicator');
+            let statusDot = document.getElementById('headerStatusDot');
+            let statusText = document.getElementById('headerStatusText');
 
             let pollTimer = null;
             let pollInFlight = false;
+            let pollGeneration = 0;
             const POLL_INTERVAL_MS = 8000;
 
             const poll = async () => {
                 if (!pollUrl || pollInFlight || document.hidden) return;
                 pollInFlight = true;
+                const requestGeneration = pollGeneration;
+                const requestConversationId = activeConversationId;
+                const requestPollUrl = pollUrl;
 
                 try {
-                    const response = await fetch(`${pollUrl}?after_id=${lastMessageId}`, {
+                    const response = await fetch(`${requestPollUrl}?after_id=${lastMessageId}`, {
                         headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin',
                         loader: false, // background polling
                     });
                     if (!response.ok) return;
                     const data = await response.json();
+
+                    // A response for an older thread must never mutate the newly selected thread.
+                    if (requestGeneration !== pollGeneration || requestConversationId !== activeConversationId || requestPollUrl !== pollUrl) return;
 
                     appendMessages(data.messages || []);
                     applyReadReceipts(data.own_read_receipts);
@@ -642,7 +813,7 @@
                 } catch (error) {
                     /* silent: one failed poll should not stop the loop */
                 } finally {
-                    pollInFlight = false;
+                    if (requestGeneration === pollGeneration) pollInFlight = false;
                 }
             };
 
@@ -654,7 +825,122 @@
             const stopPolling = () => {
                 if (pollTimer) clearInterval(pollTimer);
                 pollTimer = null;
+                pollGeneration += 1;
+                pollInFlight = false;
             };
+
+            const conversationMarkup = (data) => {
+                const other = data.other || {};
+                const online = Boolean(other.online);
+                return `
+                    <div class="msg-head">
+                        <a class="msg-back-link" href="{{ route('messages.index') }}">&larr; Back to Messages</a>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="avatar-wrap"><div class="avatar">${escapeHtml((other.name || 'U').charAt(0).toUpperCase())}</div><span class="avatar-status ${online ? 'online' : ''}" id="headerStatusDot"></span></div>
+                            <div><h2 class="h5 fw-bold mb-0">${escapeHtml(other.name || 'Conversation')}</h2><div class="small text-muted" id="headerStatusText">${escapeHtml(other.role || 'User')} &middot; ${online ? 'Online' : 'Offline'}</div></div>
+                        </div>
+                    </div>
+                    <div class="chat-window" id="chatWindow">${(data.messages || []).map(renderMessage).join('')}</div>
+                    <div class="msg-typing" id="typingIndicator">${escapeHtml(other.name || 'They')} is typing...</div>
+                    <div class="msg-compose-wrap">
+                        <div id="composeFileChip" class="compose-file-chip" style="display:none;"><span id="composeFileName"></span><button type="button" class="compose-file-remove" id="composeFileRemove" aria-label="Remove attachment">&times;</button></div>
+                        <form class="msg-compose" id="composeForm" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="_token" value="${escapeHtml(csrfToken)}">
+                            <input type="file" name="attachment" id="attachmentInput" class="d-none">
+                            <button type="button" class="compose-icon-btn" id="attachTrigger" title="Attach a file" aria-label="Attach a file">📎</button>
+                            <button type="button" class="compose-icon-btn" id="emojiTrigger" title="Emoji" aria-label="Emoji">🙂</button>
+                            <div class="emoji-popover" id="emojiPopover">${['😀','😂','😍','👍','🙏','🌾','🌧️','☀️','😢','😡','🎉','❤️'].map((emoji) => `<button type="button" class="emoji-option">${emoji}</button>`).join('')}</div>
+                            <textarea name="body" id="composeInput" class="compose-input" rows="1" placeholder="Type a message..."></textarea>
+                            <button class="compose-send" id="composeSend" type="submit" aria-label="Send">➤</button>
+                        </form>
+                        <div class="small mt-1 ps-2" id="composeStatus" role="status" aria-live="polite"></div>
+                        <div class="small text-muted mt-1 ps-2">Press Enter to send &middot; Shift + Enter for a new line</div>
+                    </div>`;
+            };
+
+            const refreshConversationElements = () => {
+                conversationPanel = document.getElementById('conversationPanel');
+                chatWindow = document.getElementById('chatWindow');
+                typingIndicator = document.getElementById('typingIndicator');
+                statusDot = document.getElementById('headerStatusDot');
+                statusText = document.getElementById('headerStatusText');
+            };
+
+            const commitConversationData = (data, url, activeLink = null) => {
+                stopPolling();
+                activeConversationId = Number(data.conversation_id);
+                pollUrl = data.poll_url;
+                sendUrl = data.send_url;
+                typingUrl = data.typing_url;
+                unsendUrlBase = data.unsend_url_base;
+                lastMessageId = Number(data.last_message_id || 0);
+                wrap.dataset.pollUrl = pollUrl;
+                wrap.dataset.sendUrl = sendUrl;
+                wrap.dataset.typingUrl = typingUrl;
+                wrap.dataset.unsendUrlBase = unsendUrlBase;
+                document.querySelectorAll('.thread-link').forEach((link) => link.classList.toggle('active', link === activeLink));
+                document.querySelector('.msg-shell')?.classList.add('has-active');
+                const nextPanel = document.createElement('template');
+                nextPanel.innerHTML = conversationMarkup(data);
+                if (!nextPanel.content.querySelector('#chatWindow, .msg-empty')) {
+                    throw new Error('Conversation markup was incomplete');
+                }
+                conversationPanel.replaceChildren(...nextPanel.content.childNodes);
+                refreshConversationElements();
+                bindUnsendForms(conversationPanel);
+                bindCompose();
+                scrollToBottom(false);
+                startPolling();
+                removeConversationLoadState();
+                return url;
+            };
+
+            const navigateToConversation = async (url, activeLink = null, { historyMode = 'push' } = {}) => {
+                const requestId = ++navigationSequence;
+                navigationController?.abort();
+                const controller = new AbortController();
+                navigationController = controller;
+                activeLink?.classList.add('is-loading');
+                stopPolling();
+                showConversationLoadState('Loading conversation...');
+
+                try {
+                    const data = await loadConversationUrl(url, controller.signal);
+                    if (requestId !== navigationSequence || controller.signal.aborted) return false;
+
+                    commitConversationData(data, url, activeLink);
+                    if (historyMode === 'push' && window.location.href !== url) {
+                        window.history.pushState({ messagesConversationId: Number(data.conversation_id) }, '', url);
+                    }
+                    return true;
+                } catch (error) {
+                    if (controller.signal.aborted || requestId !== navigationSequence) return false;
+                    showConversationLoadState('Unable to load conversation.', {
+                        error: true,
+                        retry: () => void navigateToConversation(url, activeLink, { historyMode: 'none' }),
+                        fallbackUrl: url,
+                    });
+                    startPolling();
+                    return false;
+                } finally {
+                    if (requestId === navigationSequence) {
+                        navigationController = null;
+                        activeLink?.classList.remove('is-loading');
+                    }
+                }
+            };
+
+            window.addEventListener('popstate', () => {
+                const match = window.location.pathname.match(/\/messages\/(\d+)\/?$/);
+                if (!match) {
+                    window.location.reload();
+                    return;
+                }
+
+                const activeLink = Array.from(document.querySelectorAll('.thread-link'))
+                    .find((link) => link.href === window.location.href || link.href.replace(/\/$/, '') === window.location.href.replace(/\/$/, ''));
+                void navigateToConversation(window.location.href, activeLink, { historyMode: 'none' });
+            });
 
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
@@ -668,112 +954,124 @@
             startPolling();
 
             /* ---------------- Compose: attachment, emoji, enter-to-send, AJAX submit, typing ping ---------------- */
-            const composeForm = document.getElementById('composeForm');
-            const composeInput = document.getElementById('composeInput');
-            const composeSend = document.getElementById('composeSend');
-            const attachTrigger = document.getElementById('attachTrigger');
-            const attachmentInput = document.getElementById('attachmentInput');
-            const composeFileChip = document.getElementById('composeFileChip');
-            const composeFileName = document.getElementById('composeFileName');
-            const composeFileRemove = document.getElementById('composeFileRemove');
-            const emojiTrigger = document.getElementById('emojiTrigger');
-            const emojiPopover = document.getElementById('emojiPopover');
+            let composeForm;
+            let composeInput;
+            let composeSend;
+            let attachTrigger;
+            let attachmentInput;
+            let composeFileChip;
+            let composeFileName;
+            let composeFileRemove;
+            let emojiTrigger;
+            let emojiPopover;
 
-            const autoResize = () => {
-                if (!composeInput) return;
-                composeInput.style.height = 'auto';
-                composeInput.style.height = `${Math.min(composeInput.scrollHeight, 120)}px`;
+            const bindCompose = () => {
+                composeForm = document.getElementById('composeForm');
+                composeInput = document.getElementById('composeInput');
+                composeSend = document.getElementById('composeSend');
+                attachTrigger = document.getElementById('attachTrigger');
+                attachmentInput = document.getElementById('attachmentInput');
+                composeFileChip = document.getElementById('composeFileChip');
+                composeFileName = document.getElementById('composeFileName');
+                composeFileRemove = document.getElementById('composeFileRemove');
+                emojiTrigger = document.getElementById('emojiTrigger');
+                emojiPopover = document.getElementById('emojiPopover');
+                if (!composeForm || composeForm.dataset.bound === 'true') return;
+                composeForm.dataset.bound = 'true';
+
+                const autoResize = () => {
+                    if (!composeInput) return;
+                    composeInput.style.height = 'auto';
+                    composeInput.style.height = `${Math.min(composeInput.scrollHeight, 120)}px`;
+                };
+
+                composeInput?.addEventListener('input', autoResize);
+                attachTrigger?.addEventListener('click', () => attachmentInput?.click());
+                attachmentInput?.addEventListener('change', () => {
+                    const file = attachmentInput.files?.[0];
+                    if (file) {
+                        composeFileName.textContent = file.name;
+                        composeFileChip.style.display = 'inline-flex';
+                    } else {
+                        composeFileChip.style.display = 'none';
+                    }
+                });
+                composeFileRemove?.addEventListener('click', () => {
+                    attachmentInput.value = '';
+                    composeFileChip.style.display = 'none';
+                });
+
+                emojiTrigger?.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    emojiPopover?.classList.toggle('show');
+                });
+                emojiPopover?.querySelectorAll('.emoji-option').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        composeInput.value += btn.textContent;
+                        composeInput.focus();
+                        autoResize();
+                    });
+                });
+
+                let lastTypingPing = 0;
+                composeInput?.addEventListener('input', () => {
+                    if (!typingUrl) return;
+                    const now = Date.now();
+                    if (now - lastTypingPing < 3000) return;
+                    lastTypingPing = now;
+                    fetch(typingUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken } }).catch(() => {});
+                });
+
+                composeInput?.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        composeForm?.requestSubmit();
+                    }
+                });
+
+                composeForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const body = composeInput.value.trim();
+                    const hasAttachment = attachmentInput?.files?.length > 0;
+                    if (!body && !hasAttachment) return;
+
+                    const clientMessageId = composeForm.dataset.clientMessageId || (window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+                    composeForm.dataset.clientMessageId = clientMessageId;
+                    const pendingId = `pending-${clientMessageId}`;
+                    const status = document.getElementById('composeStatus');
+                    composeSend.disabled = true;
+                    if (status) { status.textContent = 'Sending...'; status.className = 'small mt-1 ps-2 text-muted'; }
+                    chatWindow?.insertAdjacentHTML('beforeend', renderMessage({ id: pendingId, sender_id: currentUserId, sender_name: 'You', body, attachment_name: attachmentInput?.files?.[0]?.name, pending: true }));
+                    scrollToBottom(true);
+
+                    const formData = new FormData(composeForm);
+                    formData.append('client_message_id', clientMessageId);
+                    try {
+                        const response = await fetch(sendUrl, { method: 'POST', headers: { 'Accept': 'application/json' }, body: formData });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok || !data.message) throw new Error(data.message || 'Unable to send message');
+                        chatWindow?.querySelector(`[data-message-id="${pendingId}"]`)?.replaceWith(document.createRange().createContextualFragment(renderMessage(data.message)));
+                        lastMessageId = Math.max(lastMessageId, Number(data.message.id || 0));
+                        composeInput.value = '';
+                        composeForm.dataset.clientMessageId = '';
+                        autoResize();
+                        attachmentInput.value = '';
+                        composeFileChip.style.display = 'none';
+                        if (status) status.textContent = '';
+                        composeInput.focus();
+                    } catch (error) {
+                        const pending = chatWindow?.querySelector(`[data-message-id="${pendingId}"]`);
+                        pending?.classList.remove('pending');
+                        pending?.classList.add('failed');
+                        pending?.querySelector('.msg-send-state')?.replaceChildren(document.createTextNode('Failed to send — press Send to retry'));
+                        if (status) { status.textContent = 'Failed to send — your message is still here. Press Send to retry.'; status.className = 'small mt-1 ps-2 text-danger'; }
+                    } finally {
+                        composeSend.disabled = false;
+                    }
+                });
             };
 
-            composeInput?.addEventListener('input', autoResize);
-
-            attachTrigger?.addEventListener('click', () => attachmentInput?.click());
-            attachmentInput?.addEventListener('change', () => {
-                const file = attachmentInput.files?.[0];
-                if (file) {
-                    composeFileName.textContent = file.name;
-                    composeFileChip.style.display = 'inline-flex';
-                } else {
-                    composeFileChip.style.display = 'none';
-                }
-            });
-            composeFileRemove?.addEventListener('click', () => {
-                attachmentInput.value = '';
-                composeFileChip.style.display = 'none';
-            });
-
-            emojiTrigger?.addEventListener('click', (event) => {
-                event.stopPropagation();
-                emojiPopover?.classList.toggle('show');
-            });
-            emojiPopover?.querySelectorAll('.emoji-option').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    composeInput.value += btn.textContent;
-                    composeInput.focus();
-                    autoResize();
-                });
-            });
-            document.addEventListener('click', (event) => {
-                if (emojiPopover && !emojiPopover.contains(event.target) && event.target !== emojiTrigger) {
-                    emojiPopover.classList.remove('show');
-                }
-            });
-
-            let lastTypingPing = 0;
-            composeInput?.addEventListener('input', () => {
-                if (!typingUrl) return;
-                const now = Date.now();
-                if (now - lastTypingPing < 3000) return;
-                lastTypingPing = now;
-                fetch(typingUrl, {
-                    method: 'POST',
-                    loader: false, // typing indicator ping
-                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                }).catch(() => {});
-            });
-
-            composeInput?.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    composeForm?.requestSubmit();
-                }
-            });
-
-            composeForm?.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                const body = composeInput.value.trim();
-                const hasAttachment = attachmentInput?.files?.length > 0;
-                if (!body && !hasAttachment) return;
-
-                composeSend.disabled = true;
-                const formData = new FormData(composeForm);
-
-                try {
-                    const response = await fetch(sendUrl, {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json' },
-                        body: formData,
-                    });
-                    const data = await response.json();
-
-                    if (response.ok && data.message) {
-                        appendMessages([data.message]);
-                        scrollToBottom(true);
-                    }
-                } catch (error) {
-                    /* silent: the message stays in the input so the user can retry */
-                    composeSend.disabled = false;
-                    return;
-                }
-
-                composeInput.value = '';
-                autoResize();
-                attachmentInput.value = '';
-                composeFileChip.style.display = 'none';
-                composeSend.disabled = false;
-                composeInput.focus();
-            });
+            bindCompose();
         });
     </script>
 </x-app-layout>
