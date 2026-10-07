@@ -26,6 +26,8 @@ class PrintListsTest extends TestCase
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-07 09:30:00', 'Asia/Manila'));
         Http::fake(['*' => Http::response([], 500)]);
+        // The Field Reports print page is checked with its pages switched on (hidden by default: FIELD_REPORTS_UI=false).
+        config(['iclimate.field_reports_ui' => true]);
     }
 
     private function mao(): User

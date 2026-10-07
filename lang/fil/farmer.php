@@ -740,7 +740,7 @@ return [
 
     // ------------------------------------------------------------------ 2026-10 simpleng mga pahina ng magsasaka (Phase 2)
     'nav' => [
-        'home' => 'Tahanan',
+        'home' => 'Dashboard',
         'forecast' => 'Taya ng Panahon',
         'heat_map' => 'Mapa ng Panganib',
         'advisories' => 'Payo',

@@ -194,13 +194,14 @@ class MaoHomeService
                 'href' => route('planting-advisories.index', ['show' => 'pending']),
                 'action' => 'Review',
             ],
-            [
+            // MAO/IT – Naicel (2026-10-07): unresolved field reports only while the Field Reports pages are shown.
+            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [[
                 'key' => 'field-reports',
                 'label' => 'Unresolved field reports',
                 'count' => rescue(fn (): int => FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count(), null, false),
                 'href' => route('field-reports.index', ['unresolved' => 1]),
                 'action' => 'Open',
-            ],
+            ]] : []),
             [
                 'key' => 'check-ins',
                 'label' => '"Needs Help" check-ins',

@@ -312,7 +312,8 @@ class AdvisoriesListTest extends TestCase
         ])->assertSessionHas('success', 'Advisory saved for review. Farmers do not see it yet.');
         $advisory = PlantingAdvisory::query()->latest('id')->firstOrFail();
         $this->assertSame('pending_review', $advisory->status);
-        $this->assertSame(0, Notification::query()->count());
+        // No advisory alert yet. (The MAO's own "no data yet" reminders are Announcements, not advisory alerts.)
+        $this->assertSame(0, Notification::query()->where('type', 'Advisory')->count());
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertDontSee('Draft recommendation.');
 
         // Review: the same form, with the text to edit and the two buttons.
@@ -349,7 +350,7 @@ class AdvisoriesListTest extends TestCase
         }
         // Advisories the system publishes by itself never alert anyone.
         $this->advisory(['title' => 'System', 'generated_automatically' => true]);
-        $this->assertSame(2, Notification::query()->count());
+        $this->assertSame(2, Notification::query()->where('type', 'Advisory')->count());   // MAO "no data yet" reminders are not alerts
     }
 
     public function test_farmers_and_guests_cannot_create_or_publish(): void

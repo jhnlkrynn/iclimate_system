@@ -36,7 +36,12 @@ class SavedDataStatesTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $filipinoFarmer->id, 'barangay' => 'Prenza']);
 
         // Staff pages say "Walang datos pa"; a farmer's Predictions page says it in the farmer's own language.
-        foreach ([[$mao, '/mao/dashboard', 'walang datos pa'], [$mao, '/weather-predictions', 'walang datos pa'], [$farmer, '/weather-predictions', 'no data yet'],
+        // The MAO dashboard leaves sections without data out entirely (2026-10-07): no "Walang datos pa" and no error there.
+        $text = $this->visible($this->actingAs($mao)->get('/mao/dashboard')->assertOk()->getContent());
+        foreach (['walang datos pa', 'weather is temporarily unavailable', 'forecast is not available right now', 'please try again later'] as $gone) {
+            $this->assertStringNotContainsString($gone, $text, "/mao/dashboard: {$gone}");
+        }
+        foreach ([[$mao, '/weather-predictions', 'walang datos pa'], [$farmer, '/weather-predictions', 'no data yet'],
             [$filipinoFarmer, '/weather-predictions', 'walang datos pa'], [$mao, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
             $text = $this->visible($this->actingAs($user)->get($path)->assertOk()->getContent());
 

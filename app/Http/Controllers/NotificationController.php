@@ -205,7 +205,8 @@ class NotificationController extends CrudController
         // Farmer – Naicel (2026-10): a missing-info notification (category "setup:*") links to the page where the
         // farmer adds it. Every other notification keeps the link it had.
         $setupLocale = $request->user()->role === User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve($request) : 'en';
-        $setupLink = fn (UserNotification $note): array => ($link = \App\Services\Farmer\FarmerMissingInfoNotifier::linkFor($note->category, $setupLocale, $request->user()))
+        $setupLink = fn (UserNotification $note): array => ($link = \App\Services\Farmer\FarmerMissingInfoNotifier::linkFor($note->category, $setupLocale, $request->user())
+                ?? \App\Services\Mao\MaoMissingDataNotifier::linkFor($note->category, $request->user()))   // MAO/IT – Naicel: "no data yet" (mao-setup:*)
             ? ['link_url' => $link['url'], 'link_label' => $link['label']]
             : [];
         // end Farmer – Naicel

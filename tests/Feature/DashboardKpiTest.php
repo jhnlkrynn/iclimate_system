@@ -102,6 +102,7 @@ class DashboardKpiTest extends TestCase
 
     public function test_mao_field_report_kpi_counts_only_unresolved(): void
     {
+        config(['iclimate.field_reports_ui' => true]);   // the KPI exists only while the Field Reports pages are shown
         $reporter = User::factory()->create(['role' => User::ROLE_FARMER]);
         foreach ([FieldReport::STATUS_PENDING, FieldReport::STATUS_VERIFIED, FieldReport::STATUS_RESOLVED] as $status) {
             FieldReport::query()->forceCreate([

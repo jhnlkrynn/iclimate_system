@@ -34,8 +34,12 @@
         .sl-empty { text-align: center; padding: 2.5rem 1rem; color: #64748b; }
         .sl-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 
-        /* Card layout on phones: no horizontal scroll */
-        @media (max-width: 767.98px) {
+        /* Card layout while the content column is narrow: no horizontal scroll. MAO/IT – Naicel (2026-10-07): up to 991px,
+           because from 768px the fixed sidebar now sits beside the page and the table no longer fits there. */
+        .sl-pager nav { max-width: 100%; }
+        .sl-pager nav > div { flex-wrap: wrap; row-gap: .5rem; }
+        .sl-pager .pagination { flex-wrap: wrap; }
+        @media (max-width: 991.98px) {
             .sl-table thead { display: none; }
             .sl-table, .sl-table tbody, .sl-table tr, .sl-table td { display: block; width: 100%; }
             .sl-table tr { padding: .75rem 0; border-bottom: 1px solid rgba(95,143,120,.25); }
