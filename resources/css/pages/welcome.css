@@ -1901,7 +1901,8 @@ select.form-input option { color: var(--ink); }
 html, body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden would make the body a scroll box and the sticky navbar would scroll away with the page. */
+  overflow-x: clip;
 }
 body {
   text-rendering: optimizeLegibility;
