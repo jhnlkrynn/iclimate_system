@@ -79,7 +79,10 @@ class HeatMapTerminologyTest extends TestCase
         // The MAO dashboard's preview card is named "Heat Map" too (the Operations page was removed, 2026-10). Since
         // 2026-10-07 the card is shown only once a forecast is saved, so its name is checked in the view itself.
         $this->actingAs($this->user(User::ROLE_MAO))->get('/mao/dashboard')->assertOk();
-        $this->assertStringContainsString('<h2 id="mhdMapTitle">Heat Map</h2>', file_get_contents(resource_path('views/dashboards/mao.blade.php')));
+        // The card's name comes from the MAO language file (English with a Filipino selector), "Heat Map" in both.
+        $this->assertStringContainsString('<h2 id="mhdMapTitle">{{ $t(\'map.title\') }}</h2>', file_get_contents(resource_path('views/dashboards/mao.blade.php')));
+        $this->assertSame('Heat Map', trans('mao.dashboard.map.title', [], 'en'));
+        $this->assertSame('Heat Map', trans('mao.dashboard.map.title', [], 'fil'));
     }
 
     public function test_views_scripts_and_translations_never_say_risk_map(): void

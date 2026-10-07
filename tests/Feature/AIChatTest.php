@@ -243,6 +243,9 @@ class AIChatTest extends TestCase
         Http::fake(function (): never {
             throw new ConnectionException('Connection refused');
         });
+        // The model cannot run at all: the service is unreachable and there is no local Python either. (With a working
+        // local Python, PythonService answers from the same trained model, which is a real estimate, not a made-up one.)
+        config(['iclimate.python_binary' => base_path('storage/framework/testing/no-python-here')]);
 
         $user = User::factory()->create([
             'role' => User::ROLE_FARMER,

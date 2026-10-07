@@ -92,7 +92,7 @@ final class FarmerDashboardService
     /** Drops the stored page of every farm in every language (after the farmer changes something it shows). */
     public static function forgetCached(User $user): void
     {
-        foreach ([null, ...ActiveFarm::farms($user)->modelKeys()] as $farmId) {
+        foreach ([null, ...ActiveFarm::farms($user)->pluck('id')->all()] as $farmId) {
             foreach (array_keys(FarmerLanguage::SUPPORTED) as $locale) {
                 Cache::forget(self::cacheKey($user, $locale, farmId: $farmId));
             }

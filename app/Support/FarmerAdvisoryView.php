@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * Turns an advisory into the plain-language pieces shown in the farmer's advisory popup
@@ -17,6 +18,9 @@ use Illuminate\Support\Carbon;
  */
 class FarmerAdvisoryView
 {
+    /** How an instruction starts ("Consider delaying...", "Do not spray..."), as opposed to "Rain is likely today." */
+    private const ACTION_START = '/^(consider|delay|postpone|check|inspect|avoid|do not|don\'t|drain|clear|harvest|secure|prepare|keep|monitor|watch|move|store|wait|ask|follow|plan|protect|cover|stay|irrigate|continue|schedule|use|apply|make sure|ensure|reinforce|repair|plant|dry|bring|tie|stop|start|finish|listen|be ready)\b/i';
+
     /** Short explanations per kind of weather, worded with "may/can" so they never overstate the advisory. */
     private const FARM_EFFECTS = [
         'typhoon' => [
@@ -130,12 +134,30 @@ class FarmerAdvisoryView
 
     public function farmerEffect(): string
     {
+        // Local barangay guidance: its summary is a list of readings (shown separately on the card); what they mean is
+        // the condition named in the title ("San Diego Farm Weather Guidance: Rain Expected in the Next 24 Hours").
+        $title = (string) $this->advisory->title;
+        if (str_starts_with((string) $this->advisory->generation_key, 'local-current:') && str_contains($title, ': ')) {
+            $condition = trim(Str::after($title, ': '));
+            if ($condition !== '') {
+                return Str::finish(Str::ucfirst(Str::lower($condition)), '.');
+            }
+        }
+
         return $this->quickSummary()[0] ?? ($this->farmEffects()[0] ?? 'Weather conditions may affect rice fields.');
     }
 
+    /** "What to do": the first sentence that is an action, not an opening statement of what is happening. */
     public function farmerAction(): string
     {
-        return $this->actions()[0] ?? 'Check your field before doing farm work.';
+        $actions = $this->actions();
+        foreach ($actions as $sentence) {
+            if (preg_match(self::ACTION_START, $sentence)) {
+                return $sentence;
+            }
+        }
+
+        return $actions[0] ?? 'Check your field before doing farm work.';
     }
 
     public function farmerSourceLabel(): string

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Advisories\PagasaBulletinParser;
-use App\Support\LianBarangays;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -83,81 +82,31 @@ class FarmerAdvisoryLocalizationTest extends TestCase
         return (string) $this->actingAs($farmer)->get(route('planting-advisories.index', $query))->assertOk()->getContent();
     }
 
-    public function test_san_diego_farmer_sees_their_barangay_first_then_other_barangays_lian_and_pagasa(): void
-    {
-        $this->seedAdvisories();
-        $html = $this->page($this->farmer('San Diego'));
-
-        $this->assertSeeInOrderHtml($html, [
-            'For your barangay', 'San Diego, Lian, Batangas', 'San Diego Field Check',
-            'Other Lian Barangays', 'Matabungkay Heavy Rain Advisory',
-            'All of Lian', 'Lian Drainage Reminder',
-            'Official PAGASA Advisories', 'This PAGASA advisory includes Lian, Batangas. PAGASA scope: Batangas Province.', 'Batangas Provincial Weather Forecast',
-            'Other PAGASA Information', 'PAGASA Weekly Weather Outlook',
-        ]);
-        // PAGASA's own barangay bulletin is listed with the barangays PAGASA named, under other barangays.
-        $this->assertStringContainsString('Affected barangays: Binubusan, Matabungkay', $html);
-        // Other Batangas towns are never shown; routine advice for other barangays waits for "All Lian Barangays".
-        foreach (['Thunderstorm Advisory No. 9', 'Lipa Rain Warning', 'Balibago Routine Advice', 'Prenza MAO Notice'] as $hidden) {
-            $this->assertStringNotContainsString($hidden, $html, $hidden);
-        }
-    }
-
-    public function test_each_barangays_farmer_gets_their_own_advice_first(): void
+    /**
+     * The Advisories page is one list since Phase 5 (2026-10): a farmer reads the advice for their own barangay and for
+     * all of Lian, never another barangay's. The list itself is covered by AdvisoriesListTest.
+     */
+    public function test_a_farmer_reads_their_own_barangay_and_lian_wide_advice_only(): void
     {
         $this->seedAdvisories();
 
-        // Matabungkay: its own iClimate advice and the PAGASA bulletin that names it come first.
-        $this->assertSeeInOrderHtml($this->page($this->farmer('Matabungkay')), [
-            'For your barangay', 'Matabungkay, Lian, Batangas', 'Matabungkay Heavy Rain Advisory', 'Rainfall Advisory No. 3', 'All of Lian',
-        ]);
-        // Balibago: its routine advice is its own; Matabungkay's warning is listed under other barangays.
-        $balibago = $this->page($this->farmer('Balibago'));
-        $this->assertSeeInOrderHtml($balibago, ['For your barangay', 'Balibago Routine Advice', 'Other Lian Barangays', 'Matabungkay Heavy Rain Advisory', 'All of Lian']);
-        $this->assertStringNotContainsString('Thunderstorm Advisory No. 9', $balibago);
-        // Prenza: the MAO notice for Prenza is theirs.
-        $this->assertSeeInOrderHtml($this->page($this->farmer('Prenza')), ['For your barangay', 'Prenza MAO Notice', 'Other Lian Barangays']);
-    }
-
-    public function test_the_barangay_picker_shows_my_barangay_all_and_each_barangay(): void
-    {
-        $this->seedAdvisories();
-        $farmer = $this->farmer('San Diego');
-        $html = $this->page($farmer);
-
-        $this->assertMatchesRegularExpression('#<label class="fad-label" for="fadBarangayPicker">.*?Barangay</label>#s', $html);
-        $this->assertStringContainsString('>My Barangay (San Diego)</option>', $html);
-        $this->assertStringContainsString('<option value="all" >All Lian Barangays</option>', $html);
-        foreach (LianBarangays::all() as $barangay) {
-            $this->assertStringContainsString('<option value="'.e($barangay).'"', $html, $barangay);
+        $sanDiego = $this->page($this->farmer('San Diego'));
+        foreach (['San Diego Field Check', 'Lian Drainage Reminder', 'Batangas Provincial Weather Forecast', 'PAGASA Weekly Weather Outlook'] as $shown) {
+            $this->assertStringContainsString($shown, $sanDiego, $shown);
+        }
+        foreach (['Matabungkay Heavy Rain Advisory', 'Balibago Routine Advice', 'Prenza MAO Notice', 'Rainfall Advisory No. 3'] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $sanDiego, $hidden);
         }
 
-        // All Lian Barangays: every barangay's advice, no "For your barangay" section.
-        $all = $this->page($farmer, ['target_barangay' => 'all']);
-        $this->assertSeeInOrderHtml($all, ['Lian Barangays', 'All of Lian']);
-        foreach (['San Diego Field Check', 'Balibago Routine Advice', 'Prenza MAO Notice', 'Matabungkay Heavy Rain Advisory'] as $shown) {
-            $this->assertStringContainsString($shown, $all, $shown);
+        // Matabungkay: its own advice and the PAGASA bulletin that names it.
+        $matabungkay = $this->page($this->farmer('Matabungkay'));
+        foreach (['Matabungkay Heavy Rain Advisory', 'Rainfall Advisory No. 3', 'Lian Drainage Reminder'] as $shown) {
+            $this->assertSame(1, substr_count($matabungkay, '>'.$shown.'<'), $shown.' is listed once');
         }
-        $this->assertStringNotContainsString('For your barangay', $all);
-        $this->assertStringNotContainsString('Thunderstorm Advisory No. 9', $all);
+        $this->assertStringNotContainsString('San Diego Field Check', $matabungkay);
 
-        // One barangay: its advice first, labelled as that barangay (not "your barangay").
-        $this->assertSeeInOrderHtml($this->page($farmer, ['target_barangay' => 'prenza']), ['Barangay', 'Prenza, Lian, Batangas', 'Prenza MAO Notice']);
-    }
-
-    public function test_every_advisory_is_listed_once_with_source_and_times(): void
-    {
-        $this->seedAdvisories();
-        $html = $this->page($this->farmer('Matabungkay'));
-
-        foreach (['Matabungkay Heavy Rain Advisory', 'Rainfall Advisory No. 3', 'Lian Drainage Reminder', 'Batangas Provincial Weather Forecast'] as $title) {
-            $this->assertSame(1, substr_count($html, '<h3 class="fad-title">'.$title.'</h3>'), $title);
-        }
-        $this->assertStringContainsString('Source: PAGASA', $html);
-        $this->assertStringContainsString('Published:', $html);
-        $this->assertStringContainsString('Updated:', $html);
-        $this->assertStringContainsString('Valid until:', $html);
-        $this->assertStringContainsString('View Details', $html);
+        // The MAO notice for Prenza is Prenza's.
+        $this->assertStringContainsString('Prenza MAO Notice', $this->page($this->farmer('Prenza')));
     }
 
     public function test_a_farmer_without_a_barangay_still_gets_lian_advice(): void
@@ -165,9 +114,11 @@ class FarmerAdvisoryLocalizationTest extends TestCase
         $this->seedAdvisories();
         $html = $this->page($this->farmer(null));
 
-        $this->assertStringContainsString('Add your barangay to your profile', $html);
-        $this->assertSeeInOrderHtml($html, ['Other Lian Barangays', 'Matabungkay Heavy Rain Advisory', 'All of Lian', 'Lian Drainage Reminder', 'Official PAGASA Advisories']);
-        $this->assertStringNotContainsString('Lipa Rain Warning', $html);
+        $this->assertStringContainsString('Lian Drainage Reminder', $html);
+        $this->assertStringContainsString('Batangas Provincial Weather Forecast', $html);
+        foreach (['San Diego Field Check', 'Matabungkay Heavy Rain Advisory', 'Prenza MAO Notice'] as $hidden) {
+            $this->assertStringNotContainsString($hidden, $html, $hidden);
+        }
     }
 
     public function test_the_parser_keeps_only_bulletins_that_reach_lian(): void
@@ -211,15 +162,5 @@ class FarmerAdvisoryLocalizationTest extends TestCase
         // "What to do" is the first sentence that is an action, not the opening statement of what is happening.
         $advisory->update(['recommended_action' => 'Rain is likely today. Consider delaying fertilizer or pesticide application when possible.']);
         $this->assertSame('Consider delaying fertilizer or pesticide application when possible.', (new \App\Support\FarmerAdvisoryView($advisory->fresh()))->farmerAction());
-    }
-
-    private function assertSeeInOrderHtml(string $html, array $texts): void
-    {
-        $position = 0;
-        foreach ($texts as $text) {
-            $found = strpos($html, e($text), $position);
-            $this->assertNotFalse($found, "\"{$text}\" was not found after the previous item.");
-            $position = $found + strlen(e($text));
-        }
     }
 }

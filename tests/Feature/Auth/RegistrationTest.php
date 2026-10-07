@@ -200,6 +200,100 @@ class RegistrationTest extends TestCase
         $this->assertSame([], array_values(array_diff($offered, \App\Support\LianBarangays::all())), 'Every registration choice must be an official Lian barangay name.');
     }
 
+    /** A sign-up saves one user, one farmer profile and one first farm, and nothing twice (2026-10-08). */
+    public function test_a_new_farmer_is_saved_once_with_a_profile_and_a_first_farm_and_waits_for_approval(): void
+    {
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', $this->validSignUp());
+
+        $response->assertRedirect('/');
+        $response->assertSessionHasNoErrors();
+        $this->assertGuest();
+
+        $user = User::query()->where('email', 'new-farmer@example.com')->sole();
+        $this->assertSame(User::ROLE_FARMER, $user->role);
+        $this->assertSame(User::STATUS_PENDING, $user->status);
+        $this->assertTrue(Hash::check('Password123!', $user->password));
+        $this->assertDatabaseCount('farmer_profiles', 1);
+        $this->assertDatabaseHas('farmer_profiles', ['user_id' => $user->id, 'barangay' => 'Balibago', 'farm_type' => 'Irrigated']);
+        $this->assertSame(1, \App\Models\Farm::query()->where('user_id', $user->id)->count());
+        $this->assertDatabaseHas('farms', ['user_id' => $user->id, 'barangay' => 'Balibago', 'is_primary' => true]);
+    }
+
+    public function test_with_approval_switched_off_a_new_farmer_is_active_and_can_log_in_and_open_the_dashboard(): void
+    {
+        config(['iclimate.farmer_approval' => false]);
+
+        $this->withSession($this->captchaSession('register', '7'))->post('/register', $this->validSignUp())->assertRedirect('/');
+
+        $user = User::query()->where('email', 'new-farmer@example.com')->sole();
+        $this->assertSame(User::STATUS_ACTIVE, $user->status);
+        $this->actingAs($user)->get(route($user->dashboardRoute()))->assertOk();
+        $this->actingAs($user)->get(route($user->dashboardRoute()))->assertOk();   // and again on refresh
+    }
+
+    /** Only farmers sign up here: a role sent with the form is ignored, never saved. */
+    public function test_a_sign_up_can_never_create_a_mao_or_it_account(): void
+    {
+        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $index => $role) {
+            $this->withSession($this->captchaSession('register', '7'))
+                ->post('/register', $this->validSignUp(['email' => "staff{$index}@example.com", 'role' => $role, 'status' => User::STATUS_ACTIVE]))
+                ->assertRedirect('/');
+
+            $this->assertSame(User::ROLE_FARMER, User::query()->where('email', "staff{$index}@example.com")->sole()->role);
+        }
+
+        $this->assertSame(0, User::query()->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])->count());
+    }
+
+    public function test_a_wrong_form_gets_validation_messages_and_saves_nothing(): void
+    {
+        $wrong = [
+            'name' => ['name' => ''],
+            'email' => ['email' => 'not-an-email'],
+            'password' => ['password_confirmation' => 'Different123!'],
+            'barangay' => ['barangay' => 'Not A Barangay'],
+            'farmer_organization_id' => ['farmer_organization_id' => 999999],
+        ];
+
+        foreach ($wrong as $field => $change) {
+            $response = $this->from('/register')->withSession($this->captchaSession('register', '7'))->post('/register', $this->validSignUp($change));
+
+            $response->assertRedirect('/register');
+            $response->assertSessionHasErrors($field);
+        }
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('farmer_profiles', 0);
+    }
+
+    /** Fields the form does not require may be left out or sent empty. */
+    public function test_empty_optional_fields_do_not_stop_a_sign_up(): void
+    {
+        $this->withSession($this->captchaSession('register', '7'))
+            ->post('/register', $this->validSignUp(['farmer_organization_id' => '', 'contact_number' => '', 'farm_area' => '', 'preferred_language' => '']))
+            ->assertRedirect('/')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', ['email' => 'new-farmer@example.com', 'contact_number' => null]);
+        $this->assertDatabaseHas('farmer_profiles', ['full_name' => 'New Farmer', 'farmer_organization_id' => null]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $change
+     * @return array<string, mixed>
+     */
+    private function validSignUp(array $change = []): array
+    {
+        return $change + [
+            'name' => 'New Farmer',
+            'email' => 'new-farmer@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Balibago',
+            'captcha_answer' => '7',
+        ];
+    }
+
     private function captchaSession(string $context, string $answer): array
     {
         return [

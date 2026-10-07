@@ -396,14 +396,17 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
         $this->actingAs($farmer)->get(route('planting-advisories.show', $advisory))->assertOk()->assertSee('<html', false);
     }
 
-    public function test_popup_opens_any_lian_barangay_advisory_but_never_a_draft(): void
+    public function test_popup_opens_the_farmers_own_barangay_advisory_but_never_another_barangays_or_a_draft(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $own = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Own barangay', 'target_barangay' => 'Prenza', 'target_scope' => 'barangay']));
         $other = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Other barangay', 'target_barangay' => 'Matabungkay', 'target_scope' => 'barangay']));
         $draft = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Draft', 'status' => 'pending_review']));
 
-        // Advice for another Lian barangay is public farm advice: the barangay picker shows it, so it opens.
-        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertOk();
+        // Since the one-list Advisories page (Phase 5, 2026-10) a farmer reads their own barangay and Lian-wide advice
+        // only; the barangay picker is gone, so another barangay's advisory does not open for them either.
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$own, 'modal' => 1]))->assertOk();
+        $this->actingAs($farmer)->get(route('planting-advisories.show', [$other, 'modal' => 1]))->assertForbidden();
         $this->actingAs($farmer)->get(route('planting-advisories.show', [$draft, 'modal' => 1]))->assertForbidden();
     }
 

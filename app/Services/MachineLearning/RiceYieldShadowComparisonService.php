@@ -180,7 +180,8 @@ class RiceYieldShadowComparisonService
 
         $json = json_encode($payload, JSON_THROW_ON_ERROR);
 
-        $process = new Process([$pythonBinary, $script, $json], base_path());
+        // The one shared Python environment (PATH, virtualenv, single-process maths), the same as every other predictor.
+        $process = new Process([$pythonBinary, $script, $json], base_path(), PythonRuntime::environment($pythonBinary));
         $process->setTimeout(60);
         $process->run();
 
