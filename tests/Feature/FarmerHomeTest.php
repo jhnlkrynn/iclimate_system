@@ -180,7 +180,7 @@ class FarmerHomeTest extends TestCase
         $html = $this->home()->getContent();
 
         foreach (['My Farm Today', "Today's Highlights", 'Quick Actions', 'Reminders', 'Planting guide', 'This Month', 'Past Harvest',
-            'data-mfd-popup', 'Complete Farm Information', 'data-slot="today"', 'data-slot="highlights"', 'data-slot="quick"', '<canvas'] as $gone) {
+            'data-mfd-popup', 'Complete Farm Information', 'data-slot="today"', 'data-slot="highlights"', 'data-slot="quick"'] as $gone) {     // Home has two charts again since 2026-10 (FarmerNaicelFeaturesTest)
             $this->assertStringNotContainsString($gone, $html);
         }
     }
@@ -306,14 +306,18 @@ class FarmerHomeTest extends TestCase
         }
     }
 
-    public function test_no_rating_is_never_shown_as_low_and_no_barangay_asks_for_one(): void
+    public function test_no_rating_is_never_shown_as_low_and_no_barangay_goes_to_the_notification_bell(): void
     {
         $html = $this->home()->getContent();
         $this->assertStringNotContainsString('fh-risk-badge', $html);
         $this->assertStringContainsString('No data yet', $this->text($html));
 
-        $text = $this->text($this->home($this->farmer(barangay: null, attributes: ['email' => 'nb@example.test']))->getContent());
-        $this->assertStringContainsString('Add your barangay in your profile to see the risk.', $text);
+        // 2026-10: a missing barangay is a notification in the bell, not a card on Home.
+        $noBarangay = $this->farmer(barangay: null, attributes: ['email' => 'nb@example.test']);
+        $html = $this->home($noBarangay)->getContent();
+        $this->assertStringNotContainsString('Add your barangay in your profile to see the risk.', $this->text($html));
+        $this->assertStringNotContainsString('data-fh-risk', $html);
+        $this->assertDatabaseHas('notifications', ['user_id' => $noBarangay->id, 'category' => 'setup:barangay', 'title' => 'Add your barangay']);
     }
 
     // ------------------------------------------------------------ 4. expected yield this season
@@ -351,12 +355,15 @@ class FarmerHomeTest extends TestCase
         $this->assertNull(Cache::get(FarmerDashboardService::predictionCacheKey($farmer->id)), 'a service failure is kept only 5 minutes');
     }
 
-    public function test_a_missing_farm_size_says_what_to_add(): void
+    public function test_a_missing_farm_size_goes_to_the_notification_bell(): void
     {
-        $text = $this->text($this->home($this->farmer(area: null))->getContent());
+        // 2026-10: a missing farm size is a notification in the bell, not a card on Home.
+        $farmer = $this->farmer(area: null);
+        $html = $this->home($farmer)->getContent();
 
-        $this->assertStringContainsString('No data yet', $text);
-        $this->assertStringContainsString('Add your farm size to see your estimate.', $text);
+        $this->assertStringNotContainsString('Add your farm size to see your estimate.', $this->text($html));
+        $this->assertStringNotContainsString('data-fh-harvest', $html);
+        $this->assertDatabaseHas('notifications', ['user_id' => $farmer->id, 'category' => 'setup:farm_area', 'title' => 'Add your farm size']);
     }
 
     public function test_the_harvest_check_only_reads_and_answers_once_the_estimate_is_saved(): void
