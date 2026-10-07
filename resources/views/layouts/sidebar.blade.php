@@ -130,7 +130,8 @@
             $labelId = $idPrefix.'-section-'.$index;
             $html .= '<div class="sidebar-group" role="group" aria-labelledby="'.$labelId.'">';
             $html .= '<div class="sidebar-section" id="'.$labelId.'">'.e($sectionLabel).'</div>';
-            $html .= '<div class="sidebar-stack">';
+            // --sb-count: how many links, so the stylesheet can cap how far they spread (resources/css/sidebar.css).
+            $html .= '<div class="sidebar-stack" style="--sb-count: '.count($links).'">';
             foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $href = $anchor ? route($route).'#'.$anchor : route($route);
