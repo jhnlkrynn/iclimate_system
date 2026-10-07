@@ -202,6 +202,130 @@ class WeatherFeedbackService
         return ['result' => self::RESULT_SAVED, 'feedback' => $feedback];
     }
 
+    // ------------------------------------------------------------------ Farmer – Naicel (2026-10): the daily survey
+    //
+    // "Tama ba ang taya ng panahon kahapon?" on the Forecast page. Same table, same rules as the monthly check: stored
+    // data only, one answer per farmer per day (forecast_type "daily" + the unique key), never before the day has
+    // passed, "accurate" stores no observed condition. The forecast asked about is the stored daily forecast row for
+    // yesterday (external_weather_data); nothing is fetched.
+
+    /** The stored forecast for one past day, in the survey's vocabulary; null when none was saved for that day. */
+    public function storedDailyForecast(CarbonImmutable $day): ?array
+    {
+        $row = \App\Models\ExternalWeatherData::query()
+            ->whereDate('forecast_date', $day->toDateString())
+            ->orderByDesc('fetched_at')->orderByDesc('id')
+            ->first();
+        if (! $row) {
+            return null;
+        }
+
+        $rain = is_numeric($row->rainfall_mm) ? (float) $row->rainfall_mm : null;
+        $chance = is_numeric($row->precipitation_probability) ? (float) $row->precipitation_probability : null;
+        $wind = is_numeric($row->wind_speed) ? (float) $row->wind_speed : null;
+        $code = is_numeric($row->weather_code) ? (int) $row->weather_code : null;
+        $rainKey = \App\Services\Analytics\FarmerDashboardService::rainKey($rain, $chance);
+
+        $condition = match (true) {
+            $rainKey === 'heavy' => 'Heavy Rain',
+            $rainKey === 'moderate' => 'Moderate Rain',
+            $rainKey === 'light' => 'Light Rain',
+            $wind !== null && $wind >= (float) config('farmer_dashboard.strong_wind_kmh', \App\Services\Analytics\FarmerDashboardService::STRONG_WIND_KMH) => 'Strong Wind',
+            $code !== null && $code <= 1 => 'Sunny',
+            $code !== null => 'Cloudy',
+            default => 'No Rain',
+        };
+
+        return [
+            'condition' => $condition,
+            'rainfall_mm' => $rain,
+            'temperature_c' => is_numeric($row->temperature_max) ? (float) $row->temperature_max : (is_numeric($row->temperature) ? (float) $row->temperature : null),
+            'humidity_percent' => is_numeric($row->humidity) ? (float) $row->humidity : null,
+        ];
+    }
+
+    /**
+     * Yesterday's forecast, when this farmer has not answered about it yet and a forecast for it was saved.
+     *
+     * @return ?array{date: string, condition: string}
+     */
+    public function pendingDailyPrompt(User $user): ?array
+    {
+        if ($user->role !== User::ROLE_FARMER) {
+            return null;
+        }
+        $yesterday = CarbonImmutable::now(self::TIMEZONE)->subDay()->startOfDay();
+
+        $answered = WeatherForecastFeedback::query()
+            ->where('user_id', $user->id)
+            ->where('forecast_type', WeatherForecastFeedback::TYPE_DAILY)
+            ->whereDate('forecast_date', $yesterday->toDateString())
+            ->exists();
+        if ($answered) {
+            return null;
+        }
+        $forecast = $this->storedDailyForecast($yesterday);
+
+        return $forecast ? ['date' => $yesterday->toDateString(), 'condition' => $forecast['condition']] : null;
+    }
+
+    /** @return array{result: string, feedback: ?WeatherForecastFeedback} */
+    public function submitDaily(User $user, string $forecastDate, string $accuracy, ?string $observed): array
+    {
+        if ($user->role !== User::ROLE_FARMER) {
+            return ['result' => self::RESULT_NOT_FARMER, 'feedback' => null];
+        }
+
+        [$barangay, $failure] = $this->barangayFor($user);
+        if ($failure) {
+            return ['result' => $failure, 'feedback' => null];
+        }
+
+        $day = CarbonImmutable::parse($forecastDate, self::TIMEZONE)->startOfDay();
+        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
+        // Only a day that has passed, and only yesterday: the farmer still remembers it.
+        if (! $day->equalTo($today->subDay())) {
+            return ['result' => $day->greaterThanOrEqualTo($today) ? self::RESULT_NOT_OCCURRED : self::RESULT_NO_FORECAST, 'feedback' => null];
+        }
+
+        $forecast = $this->storedDailyForecast($day);
+        if (! $forecast) {
+            return ['result' => self::RESULT_NO_FORECAST, 'feedback' => null];
+        }
+
+        $exists = WeatherForecastFeedback::query()
+            ->where('user_id', $user->id)
+            ->where('forecast_type', WeatherForecastFeedback::TYPE_DAILY)
+            ->whereDate('forecast_date', $day->toDateString())
+            ->exists();
+        if ($exists) {
+            return ['result' => self::RESULT_DUPLICATE, 'feedback' => null];
+        }
+
+        try {
+            $feedback = WeatherForecastFeedback::query()->create([
+                'user_id' => $user->id,
+                'barangay' => $barangay,
+                'forecast_type' => WeatherForecastFeedback::TYPE_DAILY,
+                'forecast_date' => $day->toDateString(),
+                'monthly_weather_prediction_id' => null,
+                'forecast_condition' => $forecast['condition'],
+                'forecast_rainfall_mm' => $forecast['rainfall_mm'],
+                'forecast_temperature_c' => $forecast['temperature_c'],
+                'forecast_humidity_percent' => $forecast['humidity_percent'],
+                'accuracy' => $accuracy,
+                'observed_condition' => $accuracy === WeatherForecastFeedback::ACCURATE ? null : $observed,
+                'submitted_at' => now(),
+            ]);
+        } catch (QueryException $exception) {
+            return ['result' => self::RESULT_DUPLICATE, 'feedback' => null];
+        }
+
+        return ['result' => self::RESULT_SAVED, 'feedback' => $feedback];
+    }
+
+    // ------------------------------------------------------------------ end Farmer – Naicel
+
     public static function message(string $result): string
     {
         return match ($result) {

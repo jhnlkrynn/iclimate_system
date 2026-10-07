@@ -28,6 +28,11 @@
             </header>
         @endif
 
+        {{-- Farmer – Naicel (2026-10): "Tama ba ang taya ng panahon kahapon?" — small, can be skipped, one answer per day. --}}
+        @if ($isFarmer && ! empty($forecastSurvey))
+            @include('weather-predictions.partials.forecast-survey', ['survey' => $forecastSurvey])
+        @endif
+
         {{-- Weather: the stored daily forecast, days 1–7 or 1–14. --}}
         <section class="fad-card wpx-panel" id="weather" aria-labelledby="wpxWeatherTitle" data-wpx-weather>
             <div class="wpx-head">

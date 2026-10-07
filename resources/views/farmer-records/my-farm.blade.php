@@ -108,6 +108,9 @@
             </section>
         @endif
 
+        {{-- Farmer – Naicel: the Activity Calendar and "Ano ang tunay mong ani?". --}}
+        @include('farmer-records._activity')
+
         <section class="frec-panel" aria-labelledby="fmfScheduleTitle">
             <div class="frec-panel-head is-row">
                 <h2 id="fmfScheduleTitle">{{ __('farmer.my_farm_page.schedule') }}</h2>
@@ -141,7 +144,7 @@
             @endif
         </section>
 
-        <section class="frec-panel fmf-harvests" aria-labelledby="fmfHarvestTitle">
+        <section class="frec-panel fmf-harvests" id="harvests" aria-labelledby="fmfHarvestTitle">
             <div class="frec-panel-head is-row">
                 <h2 id="fmfHarvestTitle">{{ __('farmer.my_farm_page.harvests') }}</h2>
             </div>

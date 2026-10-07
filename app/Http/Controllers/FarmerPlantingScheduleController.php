@@ -60,6 +60,7 @@ class FarmerPlantingScheduleController extends Controller
         $data = $this->validated($request);
         $schedule = $request->user()->plantingSchedules()->create($this->normalized($data, $request));
         $predictions->refresh($schedule);
+        $this->afterSave($request, $schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Planting and harvest schedule saved.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
@@ -93,6 +94,7 @@ class FarmerPlantingScheduleController extends Controller
         $this->authorizeOwner($request, $schedule);
         $schedule->update($this->normalized($this->validated($request), $request));
         $predictions->refresh($schedule);
+        $this->afterSave($request, $schedule);
 
         return redirect()->route('farmer.my-farm')->with('success', 'Schedule updated.')
             ->with('schedule_warnings', $this->seasonWarnings($schedule));
@@ -107,6 +109,7 @@ class FarmerPlantingScheduleController extends Controller
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
         $schedule->delete();
+        app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->sync($request->user());      // Farmer – Naicel
 
         return redirect()->route('farmer.my-farm')->with('success', 'Schedule deleted.');
     }
@@ -308,4 +311,20 @@ class FarmerPlantingScheduleController extends Controller
     {
         return redirect()->route('calendar.index')->with('schedule_feature_warning', 'Farmer schedules are temporarily unavailable while the database update is completed.');
     }
+
+    // ------------------------------------------------------------------ Farmer – Naicel (2026-10)
+
+    /** A harvest typed on the form is kept with the yield predicted for it (stored only); the bell's reminders follow. */
+    private function afterSave(Request $request, FarmerPlantingSchedule $schedule): void
+    {
+        rescue(function () use ($request, $schedule): void {
+            $schedule->refresh();
+            if (is_numeric($schedule->actual_yield) && (float) $schedule->actual_yield > 0) {
+                app(\App\Services\Farmer\YieldSurveyService::class)->record($schedule, (float) $schedule->actual_yield);
+            }
+            app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->sync($request->user());
+        }, null, true);
+    }
+
+    // ------------------------------------------------------------------ end Farmer – Naicel
 }
