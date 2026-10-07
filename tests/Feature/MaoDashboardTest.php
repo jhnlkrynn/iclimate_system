@@ -202,8 +202,9 @@ class MaoDashboardTest extends TestCase
 
         $this->assertSame('error', $data['weather']['state']);
         $this->assertNull($this->kpi($data, 'weather'));
-        // Nothing saved and the source down: a calm "Walang datos pa", never an error or a Try again (Phase 1 sign-off).
-        $this->assertStringContainsString('Walang datos pa', $html);
+        // Nothing saved and the source down: never an error or a Try again (Phase 1 sign-off). Since 2026-10-07 a section
+        // without data is left out entirely, so there is no "Walang datos pa" card either.
+        $this->assertStringNotContainsString('Walang datos pa', $html);
         $this->assertStringNotContainsString('temporarily unavailable', $html);
         $this->assertStringNotContainsString('Current Rain', $html);
         $this->assertStringNotContainsString('Weather Outlook', $html);

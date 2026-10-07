@@ -51,6 +51,19 @@ class AppServiceProvider extends ServiceProvider
         }
         // end Farmer – Naicel
 
+        // MAO/IT – Naicel (2026-10-07): when a climate record, rice production record, advisory or planner activity is
+        // saved or deleted, every MAO's "no data yet" bell notifications are checked again after the response
+        // (MaoMissingDataNotifier). Void listeners, for the same reason as above.
+        foreach ([\App\Models\ClimateRecord::class, \App\Models\RiceProduction::class, \App\Models\PlantingAdvisory::class, \App\Models\MaoActivity::class] as $maoRecord) {
+            $maoRecord::saved(static function (): void {
+                \App\Services\Mao\MaoMissingDataNotifier::queueSyncAll();
+            });
+            $maoRecord::deleted(static function (): void {
+                \App\Services\Mao\MaoMissingDataNotifier::queueSyncAll();
+            });
+        }
+        // end MAO/IT – Naicel
+
         // One password rule everywhere a password is chosen (registration, IT-created accounts, change, reset).
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
 

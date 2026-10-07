@@ -82,6 +82,9 @@ class DashboardController extends Controller
     /** MAO overview: the incoming saved-data home contract, retained behind the shared stale cache. */
     public function mao(Request $request, MaoHomeService $home): View
     {
+        // MAO/IT – Naicel (2026-10-07): data not added yet becomes a bell notification instead of an empty card.
+        app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncOnPageLoad($request->user());
+
         return view('dashboards.mao', [
             'mao' => StaleCache::scoped(
                 'mao-home',
@@ -125,6 +128,8 @@ class DashboardController extends Controller
             self::MAO_HOME_CACHE_SECONDS,
             fn (): array => app(MaoHomeService::class)->payload(),
         );
+        // MAO/IT – Naicel: a new month or season starts without anyone saving a record; the MAO bell follows here too.
+        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncAll(), null, false);
         return app(PreparedDashboards::class)->warm();
     }
 
