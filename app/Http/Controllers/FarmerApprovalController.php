@@ -61,6 +61,7 @@ class FarmerApprovalController extends Controller
             'is_read' => false,
         ]);
         SystemAuditLogger::record('Approved Farmer Account', $request, ['record_type' => 'User', 'record_id' => $user->getKey()]);
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);   // the sign-up leaves every MAO's bell
 
         return back()->with('success', $user->name.' can now log in.');
     }
@@ -77,6 +78,7 @@ class FarmerApprovalController extends Controller
             'rejection_reason' => $data['reason'],
         ])->save();
         SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'User', 'record_id' => $user->getKey(), 'reason' => $data['reason']]);
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         return back()->with('success', $user->name.'\'s registration was rejected.');
     }

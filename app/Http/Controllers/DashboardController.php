@@ -125,6 +125,8 @@ class DashboardController extends Controller
         // after a save (MaoMissingDataNotifier), never while the dashboard loads. First, because a notification change
         // retires prepared copies that count notifications (the IT dashboard): the copies below are built after it.
         rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->syncAll(), null, false);
+        // MAO – Naicel (2026-10-09): farmer sign-ups waiting for approval are kept in step with the MAO bell here too.
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
         // Populate the saved risk-map inputs before the prepared dashboard payloads are warmed.
         rescue(fn () => RiskMapInitialData::payloads(false), null, false);
         StaleCache::prepareScoped(

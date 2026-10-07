@@ -97,6 +97,8 @@ class MobileAuthController extends Controller
 
             return $user->load('farmerProfile');
         });
+        // MAO – Naicel (2026-10-09): a sign-up that waits for approval goes to every MAO's notification bell.
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         return response()->json([
             'message' => $user->status === User::STATUS_PENDING ? 'Registration received. You can log in once the Municipal Agriculture Office approves it.' : 'Registration successful.',   // Manuscript – Naicel

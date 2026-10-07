@@ -163,6 +163,10 @@ class MaoMissingDataNotifier
      */
     public static function linkFor(?string $category, ?User $user = null): ?array
     {
+        // MAO – Naicel (2026-10-09): a farmer sign-up to approve links to Farmer Approvals.
+        if (($approval = FarmerApprovalNotifier::linkFor($category, $user)) !== null) {
+            return $approval;
+        }
         if (! is_string($category) || ! str_starts_with($category, self::CATEGORY_PREFIX)) {
             return null;
         }

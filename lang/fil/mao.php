@@ -6,6 +6,13 @@ return [
 
     // MAO Dashboard – Naicel (2026-10-08): ang menu ng MAO at ang MAO Dashboard sa wikang pinili ng MAO (App\Support\MaoLanguage).
     // Dapat pareho ang mga key sa lang/en/mao.php (MaoDashboardLanguageTest).
+    // MAO – Naicel (2026-10-09): notification sa kampana para sa sign-up ng magsasaka na naghihintay ng pag-apruba.
+    'approval' => [
+        'title' => 'Bagong sign-up ng magsasaka na aaprubahan: :name',
+        'message' => 'Nagrehistro si :name ng :barangay at naghihintay ng iyong pag-apruba.',
+        'message_no_barangay' => 'Nagrehistro si :name at naghihintay ng iyong pag-apruba.',
+        'open' => 'Suriin',
+    ],
     'nav' => [
         'dashboard' => 'Dashboard',
         'heat_map' => 'Heat Map',
