@@ -58,7 +58,7 @@ class FarmerPagesDesignTest extends TestCase
         $html = $this->actingAs($farmer)->get(route('messages.show', $conversation))->assertOk()->getContent();
         $this->assertStringContainsString('<div class="fad fmsg">', $html);
         $this->assertStringContainsString('When is the seed distribution?', $html);
-        foreach (['class="msg-wrap"', 'data-poll-url=', 'data-send-url=', 'id="threadSearch"', 'id="threadList"', 'id="chatWindow"', 'id="composeForm"', 'id="composeInput"', 'id="composeSend"', 'id="attachmentInput"', 'id="unsendConfirm"'] as $hook) {
+        foreach (['class="msg-wrap"', 'data-poll-url=', 'data-send-url=', 'id="threadSearch"', 'id="threadList"', 'id="chatWindow"', 'id="composeForm"', 'id="composeInput"', 'id="composeSend"', 'id="attachmentInput"', 'id="unsendConfirm"', 'data-conversation-load-state', 'pushState', 'popstate', 'AbortController', 'Open normally'] as $hook) {
             $this->assertStringContainsString($hook, $html, $hook);
         }
         // The unsend dialog is fixed-position, so it must sit outside the .fad size container.
