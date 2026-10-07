@@ -815,6 +815,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions.index'
         );
 
+        Route::get(
+            'weather-predictions/municipality-yield-status',
+            [WeatherPredictionController::class, 'municipalityYieldStatus']
+        )->middleware('farmer.language')->name('weather-predictions.municipality-yield-status');
+
 
         Route::get(
             'model-evaluation',

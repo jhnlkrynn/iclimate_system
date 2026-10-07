@@ -9,6 +9,7 @@ use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsDispatcher;
 use App\Services\Prediction\PredictionDateValidator;
+use App\Services\Prediction\MunicipalYieldForecastService;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\Prediction\ShortTermOutlookService;
 use App\Services\Weather\FarmerDashboardWeatherService;
@@ -21,6 +22,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class WeatherPredictionController extends Controller
 {
@@ -31,11 +33,12 @@ class WeatherPredictionController extends Controller
      *   - weather: [This Week] = days 1–7 or [Next 2 Weeks] = days 1–14 of the stored daily forecast (DailyForecastService);
      *     days it does not reach are "Tantiya" from the monthly model;
      *   - yield: this season's expected yield (auto-detected season). A farmer sees their own stored estimate (farm area
-     *     and type from the profile); MAO and IT see the average of farmers' stored estimates for the area shown.
+     *     and type from the profile); MAO and IT see the trained municipality model for All of Lian, or saved farmer
+     *     estimates when a barangay filter is selected.
      * Farmers read words (no millimetres); MAO and IT also see numbers. MAO can pick a barangay; IT can open the
      * technical details. No date or month picker, no provider call, no model run.
      */
-    public function index(Request $request, \App\Services\Weather\DailyForecastService $daily, \App\Services\Prediction\SeasonYield $seasonYield, \App\Services\Analytics\FarmerDashboardService $farmerHome): View
+    public function index(Request $request, \App\Services\Weather\DailyForecastService $daily, \App\Services\Prediction\SeasonYield $seasonYield, \App\Services\Analytics\FarmerDashboardService $farmerHome, MunicipalYieldForecastService $municipalYield): View
     {
         $user = $request->user();
         $role = $user->role;
@@ -56,20 +59,29 @@ class WeatherPredictionController extends Controller
             'barangay' => $barangay,
             'barangays' => $role === User::ROLE_MAO ? LianBarangays::all() : [],
             'forecast' => $daily->forLocation($barangay, $range === '2weeks' ? 14 : 7),
-            'yield' => $role === User::ROLE_FARMER ? $farmerHome->seasonEstimate($user) : $this->averageEstimate($barangay, $seasonYield),
+            'yield' => $role === User::ROLE_FARMER
+                ? $farmerHome->seasonEstimate($user)
+                : ($barangay === null ? $municipalYield->current(CarbonImmutable::now('Asia/Manila')) : $this->averageEstimate($barangay, $seasonYield)),
             'profileFarm' => $profile ? [
                 'area' => (float) ($profile->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null,
                 'type' => $profile->farm_type ? __('farmer.my_farm.water.'.strtolower((string) $profile->farm_type)) : null,
             ] : null,
-            'technical' => $role === User::ROLE_IT_EXPERT ? $this->technicalDetails() : null,
+            'technical' => $role === User::ROLE_IT_EXPERT ? $this->technicalDetails($municipalYield) : null,
             // Farmer – Naicel (2026-10): yesterday's forecast to ask the farmer about, once; null when answered or not saved.
             'forecastSurvey' => $role === User::ROLE_FARMER ? rescue(fn () => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt($user), null, false) : null,
         ]);
     }
 
+    public function municipalityYieldStatus(Request $request, MunicipalYieldForecastService $municipalYield): JsonResponse
+    {
+        abort_unless(in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true), 403);
+
+        return response()->json($municipalYield->status(CarbonImmutable::now('Asia/Manila')));
+    }
+
     /**
-     * MAO / IT: this season's expected yield for the area shown, as the average of the farmers' saved estimates
-     * (each made by the background job from that farmer's own farm). Nothing is run here.
+     * MAO / IT: a barangay filter keeps the historical saved-estimate view. All of Lian is handled by the
+     * municipality model service above.
      *
      * @return array<string, mixed>
      */
@@ -96,12 +108,13 @@ class WeatherPredictionController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function technicalDetails(): array
+    private function technicalDetails(?MunicipalYieldForecastService $municipalYield = null): array
     {
         $month = \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         $weather = rescue(fn () => app(PredictionOrchestrator::class)->preparedMonthlyWeatherForecasts([$month])[$month->format('Y-m')] ?? null, null, false);
         $model = rescue(fn () => \App\Models\MlModel::query()->where('purpose', \App\Models\MlModel::PURPOSE_RICE_YIELD)->where('is_active', true)->first(), null, false);
-        $lastYieldRun = \App\Services\Analytics\FarmerDashboardService::storedEstimates()->pluck('ran_at')->filter()->sort()->last();
+        $municipalRun = $municipalYield?->cached($month);
+        $lastYieldRun = $municipalRun['ran_at'] ?? \App\Services\Analytics\FarmerDashboardService::storedEstimates()->pluck('ran_at')->filter()->sort()->last();
 
         return [
             'weather' => [

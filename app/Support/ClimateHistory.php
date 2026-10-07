@@ -44,7 +44,14 @@ class ClimateHistory
      */
     public static function months(): Collection
     {
-        $entered = self::enteredMonths();
+        try {
+            $entered = self::enteredMonths();
+        } catch (Throwable $exception) {
+            // A transient database outage must not discard the verified
+            // Ambulong station history that is already bundled with iClimate.
+            report($exception);
+            $entered = collect();
+        }
 
         if ($entered->count() >= self::WINDOW) {
             return $entered;

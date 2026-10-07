@@ -25,7 +25,12 @@ final class PythonRuntime
             }
         }
 
-        foreach ([base_path('.venv/bin/python'), base_path('.venv/Scripts/python.exe')] as $candidate) {
+        foreach ([
+            base_path('.venv/bin/python'),
+            base_path('.venv/Scripts/python.exe'),
+            base_path('.venv-ml/bin/python'),
+            base_path('.venv-ml/Scripts/python.exe'),
+        ] as $candidate) {
             if (is_file($candidate) && is_executable($candidate)) {
                 return $candidate;
             }

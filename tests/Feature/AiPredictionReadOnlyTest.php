@@ -293,7 +293,7 @@ class AiPredictionReadOnlyTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertSame(0, Cache::get('predictions:cache_state')['yield_results']);
-        $this->assertSame(0, $this->pythonRequests(), 'the model is not run on a made-up farm area');
+        $this->assertSame(1, $this->pythonRequests(), 'only the municipality pass uses its legitimate workbook area');
     }
 
     public function test_after_warming_a_chat_yield_question_is_answered_without_any_training(): void

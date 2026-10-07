@@ -4,6 +4,7 @@ namespace App\Services\Prediction;
 
 use App\Enums\PredictionType;
 use App\Models\ClimateRecord;
+use App\Models\FarmerOrganization;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\DecisionSupportService;
@@ -95,7 +96,17 @@ class PredictionEngine
     {
         return array_values(array_filter(
             self::REQUIRED_MODEL_INPUTS,
-            fn (string $key): bool => ! isset($modelInput[$key]) || $modelInput[$key] === '',
+            function (string $key) use ($modelInput): bool {
+                $value = $modelInput[$key] ?? null;
+                if ($value === null || $value === '') {
+                    return true;
+                }
+                if ($key === 'season') {
+                    return false;
+                }
+
+                return ! is_numeric($value) || ! is_finite((float) $value) || (float) $value === -999.0;
+            },
         ));
     }
 
@@ -178,11 +189,57 @@ class PredictionEngine
     }
 
     /**
-     * The single "ask the trained model" path — calls the iClimate ML service
-     * (python_scripts/main.py, FastAPI). Shared by every feature that needs a
-     * raw model yield so results never diverge. There is NO fallback: on any
-     * failure (network error, invalid response) the yield is null and the error
-     * message is returned. A number is only ever returned if the model made it.
+     * Resolve the deployed model's Area feature for an All-of-Lian request.
+     *
+     * The deployed model was trained with a representative farm area, not a
+     * municipality total. For a municipality request use the authoritative
+     * organization area divided by its recorded farmer count. This is a
+     * municipality-level input and is never a farmer prediction or a selected
+     * farmer's farm size. Existing rice-production records and the maintained
+     * Lian farm-type workbook are legitimate fallbacks for older installations.
+     */
+    public function municipalityArea(): ?float
+    {
+        try {
+            $organizationArea = (float) FarmerOrganization::query()
+                ->whereNotNull('area_hectares')
+                ->where('area_hectares', '>', 0)
+                ->sum('area_hectares');
+            $organizationFarmers = (int) FarmerOrganization::query()
+                ->whereNotNull('farmer_count')
+                ->where('farmer_count', '>', 0)
+                ->sum('farmer_count');
+
+            if ($organizationArea > 0 && $organizationFarmers > 0) {
+                return round($organizationArea / $organizationFarmers, 2);
+            }
+        } catch (Throwable) {
+            // Continue through the data-backed fallbacks below.
+        }
+
+        try {
+            $productionArea = RiceProduction::query()->avg('area_hectares');
+            if (is_numeric($productionArea) && (float) $productionArea > 0) {
+                return round((float) $productionArea, 2);
+            }
+        } catch (Throwable) {
+            // Continue to the maintained municipality source below.
+        }
+
+        $records = \App\Support\LianFarmTypes::records();
+        $workbookArea = (float) $records->sum('area_hectares');
+        $workbookFarmers = (int) $records->sum('farmers');
+
+        return $workbookArea > 0 && $workbookFarmers > 0
+            ? round($workbookArea / $workbookFarmers, 2)
+            : null;
+    }
+
+    /**
+     * The single "ask the trained model" path — normally calls the iClimate ML
+     * service (python_scripts/main.py, FastAPI), with PythonService's controlled
+     * local inference path for a missing local service. Both paths load the same
+     * deployed artifact and feature schema; neither trains or invents a value.
      *
      * @return array{0: array<string, mixed>|null, 1: string|null} [yield, apiError]
      */
@@ -196,7 +253,7 @@ class PredictionEngine
             $yield = data_get($apiResult, 'rice_yield_prediction', $apiResult);
             $predicted = data_get($yield, 'predicted_yield');
 
-            if (is_numeric($predicted)) {
+            if (is_numeric($predicted) && is_finite((float) $predicted)) {
                 return [[
                     'predicted_yield' => round((float) $predicted, 2),
                     'unit' => data_get($yield, 'unit', 'tons/hectare'),

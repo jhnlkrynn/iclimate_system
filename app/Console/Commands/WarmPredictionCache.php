@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\FarmerProfile;
 use App\Services\Prediction\PredictionEngine;
+use App\Services\Prediction\MunicipalYieldForecastService;
 use App\Services\Prediction\PredictionOrchestrator;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -39,7 +40,7 @@ class WarmPredictionCache extends Command
     /** Yield results are warmed for this many months starting now. */
     private const YIELD_WARM_MONTHS = 3;
 
-    public function handle(PredictionOrchestrator $orchestrator, PredictionEngine $engine): int
+    public function handle(PredictionOrchestrator $orchestrator, PredictionEngine $engine, MunicipalYieldForecastService $municipalYield): int
     {
         $started = microtime(true);
         $start = CarbonImmutable::now('Asia/Manila')->startOfMonth();
@@ -91,6 +92,13 @@ class WarmPredictionCache extends Command
         }
 
         $yieldWarm = $this->warmYield($engine, $start);
+        $municipalStatus = $municipalYield->status($start);
+        $municipal = $municipalStatus['status'] === 'ready' && ! ($municipalStatus['stale'] ?? false)
+            ? ['state' => 'ok', 'reused' => true]
+            : ($municipalStatus['status'] === 'unavailable' ? ['state' => 'error'] : $municipalYield->prepare($start));
+        $this->line(($municipal['state'] ?? 'error') === 'ok'
+            ? (($municipal['reused'] ?? false) ? 'Reused the current All of Lian municipality yield forecast.' : 'Prepared the All of Lian municipality yield forecast.')
+            : 'Municipality yield forecast was not produced; the page will say unavailable.');
 
         Cache::forever(self::READY_KEY, [
             'ready' => $missing === [],
