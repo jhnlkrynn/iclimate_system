@@ -535,20 +535,22 @@ class ItDashboardTest extends TestCase
             ->assertOk()->assertSee('No Profile Farmer')->assertDontSee('Has Profile');
     }
 
-    public function test_sidebar_groups_it_navigation_and_lists_each_page_once(): void
+    public function test_sidebar_lists_only_the_system_pages_once_each(): void
     {
         $html = $this->page()->getContent();
         $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
 
-        // Four groups, so all 14 links fit a laptop screen without scrolling the menu.
-        foreach (['>Main Menu<', '>Management<', '>Data<', '>System<'] as $section) {
-            $this->assertStringContainsString($section, $html);
+        // IT is the system controller (2026-10): one list of system pages and Messages, no agricultural pages.
+        $this->assertStringContainsString('>Main Menu<', $html);
+        foreach (['>Management<', '>Data<', '>System<'] as $section) {
+            $this->assertStringNotContainsString($section, $html);
         }
-        $this->assertLessThan(strpos($html, '>Management<'), strpos($html, '>Main Menu<'));
-        $this->assertLessThan(strpos($html, '>System<'), strpos($html, '>Data<'));
         // The menu is rendered twice (desktop sidebar + mobile offcanvas), so a page listed once per menu appears exactly twice.
-        foreach ([route('users.index'), route('system-logs.index'), route('system-health.index'), route('reports.index'), route('farmer-profiles.index')] as $url) {
+        foreach ([route('users.index'), route('system-health.index'), route('system-logs.index'), route('messages.index')] as $url) {
             $this->assertSame(2, substr_count($sidebar, 'href="'.$url.'"'), $url);
+        }
+        foreach (['heat-map.index', 'reports.index', 'farmer-profiles.index', 'planting-advisories.index', 'community-feed.index', 'climate-records.index', 'rice-productions.index', 'weather-predictions.index'] as $gone) {
+            $this->assertStringNotContainsString('href="'.route($gone).'"', $sidebar, $gone);
         }
         // Chatbot Knowledge is hidden from the interface (CHATBOT_KNOWLEDGE_UI=false).
         $this->assertStringNotContainsString(route('ai-admin.home'), $html);

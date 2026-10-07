@@ -29,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
             TrackUserActivity::class,
             // No page request trains or rebuilds a model; it reads what the scheduled jobs prepared.
             ReadPreparedPredictionsOnly::class,
+            // MAO/IT – Kaye: the agricultural pages are not IT pages; an IT account that opens one goes to the IT dashboard.
+            \App\Http\Middleware\RedirectItFromFieldPages::class,
         ]);
 
         $middleware->api(append: [

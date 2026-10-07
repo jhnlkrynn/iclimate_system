@@ -8,19 +8,25 @@ use App\Models\FieldReport;
 use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
+use App\Models\WeatherForecastFeedback;
 use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
+use App\Services\Weather\WeatherFeedbackSummaryService;
+use App\Support\ClimateHistory;
+use App\Support\LianBarangays;
 use App\Support\ProjectYieldDataset;
 use App\Support\RiceSeason;
 use App\Support\SchemaCache;
+use App\Support\YieldCorrections;
 use Carbon\CarbonImmutable;
 use Throwable;
 
 /**
  * MAO Dashboard (2026-10): one screen, one purpose. Four KPI tiles (registered farmers, area planted this season,
  * expected yield against the last recorded season, high-risk barangays), the "Kailangan ng Aksyon" list (advisories to
- * approve, unresolved field reports, "Needs Help" check-ins), a small Heat Map preview and one bar chart of rice yield
- * by year. Everything is read from saved data: no provider is called and no model is run.
+ * approve, unresolved field reports, "Needs Help" check-ins), a small Heat Map preview and four charts: rice yield by
+ * year, monthly rainfall and temperature, rainfall against yield per season (the weather impact view) and planted area
+ * per barangay this season. Everything is read from saved data: no provider is called and no model is run.
  *
  * A figure that cannot be worked out is null and shown as "Walang datos pa", never as zero.
  */
@@ -60,7 +66,38 @@ class MaoHomeService
             ],
             'actions' => $this->actions(),
             'chart' => $this->yieldByYear(),
+            'climate' => rescue(fn (): array => $this->monthlyClimate(), ['state' => 'nodata'], false),
+            'impact' => rescue(fn (): array => $this->rainfallAgainstYield(), ['state' => 'nodata'], false),
+            'planted' => rescue(fn (): array => $this->plantedByBarangay($now), ['state' => 'nodata'], false),
+            'survey' => rescue(fn (): array => $this->surveyResults(), ['accuracy' => [], 'yield' => ['count' => 0, 'rows' => collect()]], false),
         ];
+    }
+
+    /**
+     * Survey Results: what farmers answered about the forecast (Tama / Medyo / Mali) for each month, and the yield the
+     * system predicted against the yield farmers harvested. Only answers that pass the feedback quality checks count.
+     *
+     * @return array{accuracy: array<int, array{month: string, reports: int, tama: int, medyo: int, mali: int}>, yield: array<string, mixed>}
+     */
+    private function surveyResults(): array
+    {
+        $share = fn (\Illuminate\Support\Collection $rows, string $answer): int => (int) round($rows->where('accuracy', $answer)->count() / $rows->count() * 100);
+
+        $accuracy = app(WeatherFeedbackSummaryService::class)->validatedObservations()
+            ->groupBy(fn (array $row): string => substr($row['forecast_date'], 0, 7))
+            ->sortKeysDesc()->take(6)
+            ->map(fn (\Illuminate\Support\Collection $rows, string $month): array => [
+                'month' => CarbonImmutable::parse($month.'-01')->format('F Y'),
+                'reports' => $rows->count(),
+                'tama' => $share($rows, WeatherForecastFeedback::ACCURATE),
+                'medyo' => $share($rows, WeatherForecastFeedback::PARTLY),
+                'mali' => $share($rows, WeatherForecastFeedback::DIFFERENT),
+            ])->values()->all();
+
+        $yield = YieldCorrections::summary();
+        $yield['rows'] = $yield['rows']->take(8);
+
+        return ['accuracy' => $accuracy, 'yield' => $yield];
     }
 
     /** "Wet season 2026" / "Dry season 2026–2027". */
@@ -203,5 +240,101 @@ class MaoHomeService
             'months' => $months,
             'source' => ProjectYieldDataset::SOURCE_NAME,
         ];
+    }
+    /**
+     * Rainfall (mm) and temperature (°C) for the latest twelve months on record, oldest first.
+     *
+     * @return array{state: string, labels?: array<int, string>, rainfall?: array<int, ?float>, temperature?: array<int, ?float>}
+     */
+    private function monthlyClimate(): array
+    {
+        $months = ClimateHistory::months()->take(12)->sortBy('record_date')->values();
+        if ($months->isEmpty()) {
+            return ['state' => 'nodata'];
+        }
+
+        return [
+            'state' => 'ok',
+            'labels' => $months->map(fn (object $m): string => CarbonImmutable::parse($m->record_date)->format('M Y'))->all(),
+            'rainfall' => $months->map(fn (object $m): ?float => is_numeric($m->rainfall) ? round((float) $m->rainfall, 1) : null)->all(),
+            'temperature' => $months->map(fn (object $m): ?float => is_numeric($m->temperature) ? round((float) $m->temperature, 1) : null)->all(),
+        ];
+    }
+
+    /** "Wet 2024" / "Dry 2024–2025": the rice season a month belongs to (the dry season runs November to April). */
+    private function seasonKey(int $year, int $month): string
+    {
+        if (RiceSeason::forMonth($month) === RiceSeason::WET) {
+            return RiceSeason::WET.' '.$year;
+        }
+        $start = $month >= 11 ? $year : $year - 1;
+
+        return RiceSeason::DRY.' '.$start.'–'.($start + 1);
+    }
+
+    /**
+     * The weather impact view: one point per rice season from CHART_FROM_YEAR, its average monthly rainfall against its
+     * average yield, with one plain sentence read from how the two move together. Three seasons are the least that
+     * can show a pattern.
+     *
+     * @return array{state: string, points?: array<int, array{x: float, y: float, label: string}>, reading?: string}
+     */
+    private function rainfallAgainstYield(): array
+    {
+        $yield = $this->yields->rows()->where('year', '>=', self::CHART_FROM_YEAR)
+            ->groupBy(fn (array $row): string => $this->seasonKey((int) $row['year'], (int) $row['month']))
+            ->map(fn ($rows): float => (float) $rows->avg('yield'));
+        $rain = (ClimateHistory::stationMonths() ?? collect())
+            ->groupBy(fn (object $m): string => $this->seasonKey((int) substr($m->record_date, 0, 4), (int) substr($m->record_date, 5, 2)))
+            ->map(fn ($rows): float => (float) $rows->avg('rainfall'));
+
+        $points = $yield->filter(fn (float $value, string $season): bool => $value > 0 && $rain->has($season))
+            ->map(fn (float $value, string $season): array => ['x' => round($rain[$season], 1), 'y' => round($value, 2), 'label' => $season])
+            ->values();
+        if ($points->count() < 3) {
+            return ['state' => 'nodata'];
+        }
+
+        // Pearson correlation between the two columns of points.
+        $mx = $points->avg('x');
+        $my = $points->avg('y');
+        $sxy = $points->sum(fn (array $p): float => ($p['x'] - $mx) * ($p['y'] - $my));
+        $sx = sqrt($points->sum(fn (array $p): float => ($p['x'] - $mx) ** 2));
+        $sy = sqrt($points->sum(fn (array $p): float => ($p['y'] - $my) ** 2));
+        $r = $sx > 0 && $sy > 0 ? $sxy / ($sx * $sy) : 0.0;
+
+        return [
+            'state' => 'ok',
+            'points' => $points->all(),
+            'reading' => match (true) {
+                $r >= 0.3 => 'Seasons with more rain tended to have higher yield.',
+                $r <= -0.3 => 'Seasons with more rain tended to have lower yield.',
+                default => 'In these seasons, rainfall alone does not explain the yield.',
+            }.' Based on '.$points->count().' seasons on record.',
+        ];
+    }
+
+    /**
+     * Hectares farmers planted this season, per barangay, largest first (from their saved planting dates).
+     *
+     * @return array{state: string, labels?: array<int, string>, values?: array<int, float>}
+     */
+    private function plantedByBarangay(CarbonImmutable $now): array
+    {
+        if (! SchemaCache::hasTable('farmer_planting_schedules')) {
+            return ['state' => 'nodata'];
+        }
+        $season = RiceSeason::window($now);
+        $areas = FarmerPlantingSchedule::query()
+            ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
+            ->get(['barangay', 'farm_area_hectares'])
+            ->groupBy(fn (FarmerPlantingSchedule $plan): string => (string) (LianBarangays::canonicalName($plan->barangay) ?? $plan->barangay))
+            ->map(fn ($plans): float => round((float) $plans->sum('farm_area_hectares'), 2))
+            ->filter(fn (float $hectares, string $barangay): bool => $barangay !== '' && $hectares > 0)
+            ->sortDesc();
+
+        return $areas->isEmpty()
+            ? ['state' => 'nodata']
+            : ['state' => 'ok', 'labels' => $areas->keys()->all(), 'values' => $areas->values()->all()];
     }
 }

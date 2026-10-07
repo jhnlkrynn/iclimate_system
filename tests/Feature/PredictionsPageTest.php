@@ -132,7 +132,9 @@ class PredictionsPageTest extends TestCase
     public function test_one_page_for_every_role_with_no_date_or_month_picker_and_no_outside_call(): void
     {
         $this->storeLianForecast(16);
-        $users = [$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO]), User::factory()->create(['role' => User::ROLE_IT_EXPERT])];
+        // IT reads model details on Model Evaluation; the Predictions page sends it back to its dashboard (2026-10).
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('weather-predictions.index'))->assertRedirect(route('admin.dashboard'));
+        $users = [$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])];
 
         foreach ($users as $user) {
             $html = $this->actingAs($user)->get(route('weather-predictions.index'))->assertOk()->getContent();
@@ -251,25 +253,14 @@ class PredictionsPageTest extends TestCase
         }
     }
 
-    public function test_only_it_gets_technical_details_without_model_performance_metrics(): void
+    public function test_it_is_sent_to_its_dashboard_and_no_other_role_gets_technical_details(): void
     {
         $this->prepareMonthlyForecasts();
         MlModel::query()->create(['purpose' => MlModel::PURPOSE_RICE_YIELD, 'name' => 'Rice yield model (production)', 'model_type' => 'random_forest', 'version' => '1.0.0',
             'file_path' => 'storage/models/rice_yield_model_final.pkl', 'rmse' => 0.412, 'mae' => 0.318, 'r2' => 0.871, 'status' => MlModel::STATUS_ACTIVE, 'is_active' => true]);
         $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $html = $this->actingAs($it)->get(route('weather-predictions.index'))->getContent();
-        $this->assertStringContainsString('<section class="fad-card wpx-tech" data-wpx-technical aria-labelledby="wpxTechnicalTitle">', $html);
-        $this->assertStringContainsString('Technical Details', $html);
-        $this->assertStringNotContainsString('<details', $html);
-        $this->assertStringNotContainsString('<summary', $html);
-        $this->assertStringNotContainsString('Show technical details', $html);
-        foreach (['monthly_weather_rf_v5', 'Rice yield model (production)', '1.0.0', '—', '68%'] as $value) {
-            $this->assertStringContainsString($value, $html, $value);
-        }
-        foreach (['RMSE', 'MAE', 'R²', 'Not recorded', 'Last run'] as $metric) {
-            $this->assertStringNotContainsString($metric, $html, $metric);
-        }
+        $this->actingAs($it)->get(route('weather-predictions.index'))->assertRedirect(route('admin.dashboard'));
         $this->assertSame(['rmse' => 0.412, 'mae' => 0.318, 'r2' => 0.871], MlModel::query()->firstOrFail()->only(['rmse', 'mae', 'r2']));
 
         foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])] as $other) {

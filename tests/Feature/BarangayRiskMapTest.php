@@ -620,7 +620,10 @@ class BarangayRiskMapTest extends TestCase
 
     public function test_shared_heat_map_page_is_available_to_every_account_role(): void
     {
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+        // IT is the system controller (2026-10): the Heat Map sends it back to its dashboard.
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
+
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
             $user = User::factory()->create(['role' => $role]);
 
             $this->actingAs($user)->get(route('heat-map.index'))
@@ -642,13 +645,13 @@ class BarangayRiskMapTest extends TestCase
 
         $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        // IT Dashboard (2026-10): no Heat Map tab; IT opens the Heat Map page from the sidebar like everyone else.
+        // IT Dashboard (2026-10): no Heat Map tab and no Heat Map menu item; the page sends IT back to its dashboard.
         $this->actingAs($itExpert)->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('href="'.route('heat-map.index').'"', false)
+            ->assertDontSee('href="'.route('heat-map.index').'"', false)
             ->assertDontSee('id="itd-panel-heatmap"', false)
             ->assertDontSee('id="barangayRiskMap"', false);
-        $this->actingAs($itExpert)->get(route('heat-map.index'))->assertOk()->assertSee('id="heatMapCanvas"', false);
+        $this->actingAs($itExpert)->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
 
         // MAO Dashboard (2026-10): the preview card links to the Heat Map page; the page reads saved data (no refresh control).
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
@@ -727,7 +730,7 @@ class BarangayRiskMapTest extends TestCase
 
         // Since 2026-10 the Heat Map page is the one map for every role (the MAO dashboard has a small preview of it
         // and the IT dashboard none): each role's page points at the same boundary file and the same three levels.
-        foreach ([$farmer, User::factory()->create(['role' => User::ROLE_MAO]), User::factory()->create(['role' => User::ROLE_IT_EXPERT])] as $user) {
+        foreach ([$farmer, User::factory()->create(['role' => User::ROLE_MAO])] as $user) {
             $response = $this->actingAs($user)->get(route('heat-map.index'))->assertOk();
             $response->assertSee('id="heatMapCanvas"', false);
             $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);

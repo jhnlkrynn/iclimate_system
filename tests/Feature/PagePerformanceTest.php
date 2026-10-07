@@ -38,8 +38,8 @@ class PagePerformanceTest extends TestCase
 
     private const PAGES = [
         User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/weather-predictions'],
-        User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/field-reports', '/calendar'],
-        User::ROLE_IT_EXPERT => ['/admin/dashboard', '/users', '/system-logs', '/system-health', '/system-health/model-registry', '/model-evaluation', '/ai-admin/topics', '/reports'],
+        User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/field-reports', '/calendar', '/mao/planner'],
+        User::ROLE_IT_EXPERT => ['/admin/dashboard', '/users', '/system-logs', '/system-health', '/system-health/model-registry', '/model-evaluation', '/ai-admin/topics', '/messages'],
     ];
 
     protected function setUp(): void

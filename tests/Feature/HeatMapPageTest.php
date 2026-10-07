@@ -196,7 +196,7 @@ class HeatMapPageTest extends TestCase
     {
         $this->storeForecasts(['Prenza' => [2 => ['rainfall' => 30.0]]]);
 
-        $staff = $this->panelView($this->actingAs($this->staff(User::ROLE_IT_EXPERT))->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
+        $staff = $this->panelView($this->actingAs($this->staff(User::ROLE_MAO))->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
         $this->assertStringContainsString('Forecast numbers Rain in the period 54.0 mm Wettest day 30.0 mm Strongest wind 12 km/h Hottest day 31.0 °C', $staff);
 
         $farmer = $this->panelView($this->actingAs($this->farmer())->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
@@ -232,10 +232,11 @@ class HeatMapPageTest extends TestCase
         $this->assertStringNotContainsString('Your barangay Prenza', $this->panelView($staff, 'week:summary'));
     }
 
-    public function test_every_role_opens_the_heat_map_and_guests_are_sent_to_login(): void
+    public function test_farmers_and_mao_open_the_heat_map_it_goes_to_its_dashboard_and_guests_to_login(): void
     {
         $this->storeForecasts();
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+        $this->actingAs($this->staff(User::ROLE_IT_EXPERT))->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
+        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
             $user = $role === User::ROLE_FARMER ? $this->farmer() : $this->staff($role);
             $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->assertSee('id="heatMapCanvas"', false);
         }

@@ -160,6 +160,15 @@
         }
     </style>
 
+    {{-- MAO/IT – Kaye: ?embed=1 is this page inside the Farmer Profiles [Mensahe] pop-up: the conversation only. --}}
+    @if (request()->boolean('embed'))
+        <style>
+            .sidebar-fixed, .topbar, #mobileSidebar, #icAiWidget, .ic-ai-launcher, .mfd-header, .msg-hero, .fad-hero, .msg-shell > aside, .msg-back-link, .sidebar-backdrop { display: none !important; }
+            .app-main { margin-left: 0 !important; }
+            .page-shell, .msg-wrap.mfd { padding: 0 !important; }
+            .msg-shell { grid-template-columns: minmax(0, 1fr) !important; min-height: 100vh !important; margin: 0 !important; }
+        </style>
+    @endif
     @if($isFarmerPage)
     {{-- #unsendConfirm stays outside .fad: .fad is a size container and would trap the fixed-position dialog. --}}
     <div class="fad fmsg">
