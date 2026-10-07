@@ -9,7 +9,8 @@
         $rangeUrl = fn (string $to) => route('weather-predictions.index', array_filter(['range' => $to === 'week' ? null : $to, 'barangay' => $barangay && $role === \App\Models\User::ROLE_MAO ? $barangay : null]));
         $y = $yield;
         $t = $technical;
-        $noData = $isFarmer ? __('farmer.home.no_data') : 'Walang datos pa';
+        $municipal = ($y['source'] ?? null) === 'municipal_model';
+        $noData = $isFarmer ? __('farmer.home.no_data') : ($municipal && ($y['state'] ?? null) === 'error' ? ($y['reason'] ?? __('farmer.predictions.yield_unavailable')) : 'Walang datos pa');
     @endphp
 
     {{-- Same page styling as before: farmers get the farmer page header; MAO and IT keep the staff page header. --}}
@@ -97,7 +98,8 @@
         </section>
 
         {{-- Expected yield this season: one big t/ha number and Normal / Mas mataas / Mas mababa. --}}
-        <section class="fad-card wpx-panel" id="yield" aria-labelledby="wpxYieldTitle" data-wpx-yield>
+        <section class="fad-card wpx-panel" id="yield" aria-labelledby="wpxYieldTitle" data-wpx-yield
+            @if ($municipal && ($y['state'] === 'loading' || ($y['stale'] ?? false))) data-municipal-yield-poll="{{ route('weather-predictions.municipality-yield-status') }}" @endif>
             <h2 id="wpxYieldTitle">{{ __('farmer.predictions.yield_title') }}</h2>
             <p class="fad-support">{{ $y['season'] }}@if ($staff) · {{ $barangay ? $barangay.', Lian' : __('farmer.predictions.all_lian') }}@endif</p>
             @if ($y['state'] === 'ok')
@@ -110,13 +112,18 @@
                     <p class="fad-support">{{ __('farmer.predictions.yield_profile', ['area' => number_format($profileFarm['area'], 2), 'type' => $profileFarm['type'] ?? '—']) }}
                         <a href="{{ route('profile.edit') }}">{{ __('farmer.predictions.edit_profile') }}</a></p>
                 @endif
-                @if ($staff)<p class="fad-support">{{ __('farmer.predictions.yield_average', ['count' => $y['count']]) }}</p>@endif
+                @if ($staff)
+                    <p class="fad-support">
+                        {{ ($y['source'] ?? null) === 'municipal_model' ? __('farmer.predictions.yield_model_source') : __('farmer.predictions.yield_average', ['count' => $y['count']]) }}
+                    </p>
+                    @if (($y['stale'] ?? false))<p class="fad-support">{{ __('farmer.predictions.yield_model_stale') }}</p>@endif
+                @endif
                 <x-updated-at :at="$y['ran_at']" :label="__('farmer.home.updated')" />
             @elseif ($y['state'] === 'loading')
                 <div class="ic-skel-lines" role="status"><span></span><span></span><span class="visually-hidden">{{ __('farmer.home.harvest.preparing') }}</span></div>
-                <p class="fad-support">{{ __('farmer.home.harvest.preparing') }}</p>
+                <p class="fad-support" data-municipal-yield-message>{{ ($municipal ? __('farmer.predictions.yield_model_preparing') : ($y['reason'] ?? __('farmer.home.harvest.preparing'))) }}</p>
             @else
-                <x-no-data :label="$noData" :note="$y['reason'] ?? null" />
+                <x-no-data :label="$noData" :note="$municipal ? null : ($y['reason'] ?? null)" />
                 @if ($isFarmer && ($y['needs_area'] ?? false))<a class="fad-btn is-quiet" href="{{ route('profile.edit') }}">{{ __('farmer.home.harvest.add_area') }}</a>@endif
             @endif
         </section>
@@ -145,3 +152,49 @@
     </div>
     @endunless
 </x-app-layout>
+
+@if ($municipal && ($y['state'] === 'loading' || ($y['stale'] ?? false)))
+<script>
+(() => {
+    const card = document.querySelector('[data-municipal-yield-poll]');
+    if (!card) return;
+    const url = card.dataset.municipalYieldPoll;
+    let timer = null, running = false, stopped = false;
+    const stop = () => { stopped = true; if (timer) { clearTimeout(timer); timer = null; } };
+    const formatTime = value => value ? new Date(value).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) : '';
+    const showReady = data => {
+        const loading = card.querySelector('.ic-skel-lines');
+        if (loading) loading.remove();
+        let value = card.querySelector('.wpx-big');
+        if (!value) { value = document.createElement('p'); value.className = 'wpx-big'; card.querySelector('#wpxYieldTitle').after(value); }
+        value.textContent = `${Number(data.yield).toFixed(2)} `;
+        const unit = document.createElement('small'); unit.textContent = data.unit || 't/ha'; value.append(unit);
+        const message = card.querySelector('[data-municipal-yield-message]');
+        if (message) message.textContent = `Expected average rice yield${data.generated_at ? ` · Updated ${formatTime(data.generated_at)}` : ''}`;
+        if (!data.refreshing) stop();
+    };
+    const showUnavailable = data => {
+        const loading = card.querySelector('.ic-skel-lines');
+        if (loading) loading.remove();
+        const message = card.querySelector('[data-municipal-yield-message]');
+        if (message) message.textContent = data.message || 'Yield forecast is temporarily unavailable.';
+        stop();
+    };
+    const poll = async () => {
+        if (stopped || document.hidden || running) return;
+        running = true;
+        try {
+            const response = await fetch(url, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
+            const data = await response.json();
+            if (data.status === 'ready') showReady(data);
+            else if (data.status === 'unavailable') showUnavailable(data);
+        } catch (_) { /* keep the temporary state; the next check retries */ }
+        running = false;
+        if (!stopped && !document.hidden) timer = setTimeout(poll, 2000);
+    };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && !stopped) poll(); });
+    timer = setTimeout(poll, 2000);
+    setTimeout(stop, 120000);
+})();
+</script>
+@endif

@@ -151,6 +151,11 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
         $this->assertLessThan(5000, $modelInput['rainfall_6m']);
     }
 
+    public function test_municipality_request_uses_a_real_municipality_area_when_no_production_rows_exist(): void
+    {
+        $this->assertGreaterThan(0, app(PredictionEngine::class)->municipalityArea());
+    }
+
     /**
      * @return array<string, mixed>
      */

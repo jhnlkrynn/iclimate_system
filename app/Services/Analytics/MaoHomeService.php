@@ -24,7 +24,7 @@ use Throwable;
 /**
  * MAO Dashboard (2026-10): one screen, one purpose. Four KPI tiles (registered farmers, area planted this season,
  * expected yield against the last recorded season, high-risk barangays), the "Kailangan ng Aksyon" list (advisories to
- * approve, unresolved field reports, "Needs Help" check-ins), a small Heat Map preview and four charts: rice yield by
+ * approve, "Needs Help" check-ins), a small Heat Map preview and four charts: rice yield by
  * year, monthly rainfall and temperature, rainfall against yield per season (the weather impact view) and planted area
  * per barangay this season. Everything is read from saved data: no provider is called and no model is run.
  *
@@ -203,7 +203,7 @@ class MaoHomeService
                 'href' => route('planting-advisories.index', ['show' => 'pending']),
                 'action' => 'Review',
             ],
-            // MAO/IT – Naicel (2026-10-07): unresolved field reports only while the Field Reports pages are shown.
+            // Field Reports remains available only when the existing UI switch is explicitly enabled.
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [[
                 'key' => 'field-reports',
                 'label' => 'Unresolved field reports',

@@ -98,6 +98,9 @@
             $navLink('Farmers', 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
+            $navLink('Records', 'records', 'climate-records'),
+            $navLink('Farmers', 'farmer-profiles', 'farmer-profiles'),
+            ...((\App\Http\Middleware\FieldReportsUi::enabled()) ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
             $navLink('Predictions', 'weather', 'weather'),
             $navLink('Reports', 'reports', 'reports'),
             $navLink('Announcements', 'community', 'community'),
