@@ -89,20 +89,24 @@
     } elseif ($isMao) {
         // MAO (2026-10): eleven items in one list, each page once. Records opens Climate Records, with Rice Production
         // as its second tab. Chatbot Knowledge is an IT page.
+        // MAO Dashboard – Naicel (2026-10-08): the menu follows the MAO's language (English unless Filipino was picked
+        // on the MAO Dashboard): lang/{en,fil}/mao.php, section "nav".
+        $maoLocale = \App\Support\MaoLanguage::of($user);
+        $maoNav = fn (string $key): string => __('mao.nav.'.$key, [], $maoLocale);
         $primaryGroup = [
-            $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLink('Heat Map', 'heatmap', 'heatmap'),
-            $navLink('Advisories', 'advisories', 'advisories'),
+            $navLink($maoNav('dashboard'), 'dashboard', 'dashboard'),
+            $navLink($maoNav('heat_map'), 'heatmap', 'heatmap'),
+            $navLink($maoNav('advisories'), 'advisories', 'advisories'),
             // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
-            $navLink(__('mao.planner.title', [], auth()->user()?->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en'), 'mao-planner', 'calendar'),
-            $navLink('Records', 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
-            $navLink('Farmers', 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
+            $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
+            $navLink($maoNav('records'), 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
+            $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
-            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink('Field Reports', 'field-reports', 'reports')] : []),
-            $navLink('Predictions', 'weather', 'weather'),
-            $navLink('Reports', 'reports', 'reports'),
-            $navLink('Announcements', 'community', 'community'),
-            $navLink('Messages', 'messages', 'messages'),
+            ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
+            $navLink($maoNav('predictions'), 'weather', 'weather'),
+            $navLink($maoNav('reports'), 'reports', 'reports'),
+            $navLink($maoNav('announcements'), 'community', 'community'),
+            $navLink($maoNav('messages'), 'messages', 'messages'),
         ];
         $moreGroup = [];
         $publishingGroup = [];

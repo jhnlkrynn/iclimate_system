@@ -71,7 +71,7 @@ class MaoMissingDataNotificationTest extends TestCase
 
     public function test_with_no_data_the_check_creates_one_notification_per_missing_item_in_filipino(): void
     {
-        $mao = $this->mao();
+        $mao = $this->mao(['preferred_language' => 'fil']);
         $this->scheduledCheck();
 
         $notes = $this->notes($mao);
@@ -92,9 +92,10 @@ class MaoMissingDataNotificationTest extends TestCase
         $this->assertCount(4, $this->notes($mao));
     }
 
-    public function test_the_notifications_follow_a_mao_whose_saved_language_is_english(): void
+    /** English is the MAO account's language unless Filipino was picked on the MAO Dashboard (2026-10-08). */
+    public function test_the_notifications_are_in_english_unless_the_mao_picked_filipino(): void
     {
-        $mao = $this->mao(['preferred_language' => 'en']);
+        $mao = $this->mao();
         $this->scheduledCheck();
 
         $this->assertSame('No climate records this month – add one', $this->notes($mao)['climate_month']->title);
@@ -116,7 +117,7 @@ class MaoMissingDataNotificationTest extends TestCase
 
     public function test_each_notification_in_the_bell_links_to_the_page_where_the_data_is_added(): void
     {
-        $mao = $this->mao();
+        $mao = $this->mao(['preferred_language' => 'fil']);
         $this->scheduledCheck();
 
         $items = collect($this->actingAs($mao)->getJson(route('notifications.feed'))->assertOk()->json('items'))->keyBy('title');
@@ -195,9 +196,9 @@ class MaoMissingDataNotificationTest extends TestCase
         foreach (['data-mao-planted', 'data-mao-survey', 'data-heat-map-preview', 'mhdMapTitle'] as $empty) {
             $this->assertStringNotContainsString($empty, $html, $empty);
         }
-        // Real figures stay: the farmer count (0 is a real number) and Kailangan ng Aksyon.
+        // Real figures stay: the farmer count (0 is a real number) and Needs Action.
         $this->assertStringContainsString('data-kpi="farmers"', $html);
-        $this->assertStringContainsString('Kailangan ng Aksyon', $html);
+        $this->assertStringContainsString('Needs Action', $html);
     }
 
     public function test_a_section_appears_once_it_has_data(): void

@@ -16,6 +16,7 @@ use App\Support\ClimateHistory;
 use App\Support\LianBarangays;
 use App\Support\ProjectYieldDataset;
 use App\Support\RiceSeason;
+use App\Support\SampleData;
 use App\Support\SchemaCache;
 use App\Support\YieldCorrections;
 use Carbon\CarbonImmutable;
@@ -54,9 +55,19 @@ class MaoHomeService
         return [
             'generated_at' => $now,
             'season' => rescue(fn (): string => $this->seasonLabel($now), '', false),
+            // The same season as its parts, so the page can write it in the MAO's language (lang mao.dashboard.season).
+            'season_parts' => rescue(fn (): ?array => $this->seasonParts(RiceSeason::window($now)), null, false),
             'farmers' => rescue(fn (): int => FarmerProfile::query()->count(), null, false),
             'area' => $this->areaPlanted($now),
             'yield' => $this->expectedYield($now),
+            // MAO Dashboard – Naicel (2026-10-08): four more figures and one more chart, all from saved records.
+            'plans' => rescue(fn (): ?array => $this->farmersWithPlan($now), null, false),
+            'harvests' => rescue(fn (): ?array => $this->harvestsDue($now), null, false),
+            'production' => rescue(fn (): ?array => $this->latestProduction(), null, false),
+            'advisories' => rescue(fn (): ?int => SchemaCache::hasTable('planting_advisories')
+                ? SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->count() : null, null, false),
+            'by_barangay' => rescue(fn (): array => $this->farmersByBarangay(), ['state' => 'nodata'], false),
+            // end MAO Dashboard – Naicel
             'risk' => [
                 'state' => $risk['state'],
                 'high' => $risk['state'] === 'ok' ? (int) ($risk['counts']['high'] ?? 0) : null,
@@ -88,6 +99,7 @@ class MaoHomeService
             ->sortKeysDesc()->take(6)
             ->map(fn (\Illuminate\Support\Collection $rows, string $month): array => [
                 'month' => CarbonImmutable::parse($month.'-01')->format('F Y'),
+                'ym' => $month,
                 'reports' => $rows->count(),
                 'tama' => $share($rows, WeatherForecastFeedback::ACCURATE),
                 'medyo' => $share($rows, WeatherForecastFeedback::PARTLY),
@@ -107,6 +119,114 @@ class MaoHomeService
 
         return $season['season'].' season '.($season['season'] === RiceSeason::WET ? $season['start']->year : $season['start']->year.'–'.$season['end']->year);
     }
+
+    /**
+     * A season without its English words: which one, and its year ("2026") or years ("2026–2027").
+     *
+     * @param  array{season: string, start: CarbonImmutable, end: CarbonImmutable}  $window
+     * @return array{season: string, years: string}
+     */
+    private function seasonParts(array $window): array
+    {
+        return [
+            'season' => strtolower($window['season']),
+            'years' => $window['season'] === RiceSeason::WET ? (string) $window['start']->year : $window['start']->year.'–'.$window['end']->year,
+        ];
+    }
+
+    // ------------------------------------------------------------ MAO Dashboard – Naicel (2026-10-08): more figures
+
+    /**
+     * How many registered farmers saved a planting plan dated inside the current season, out of all registered farmers
+     * (farmer profiles, the same count as the first tile). Null when there are no registered farmers to compare with.
+     *
+     * @return array{with: int, of: int, percent: int}|null
+     */
+    private function farmersWithPlan(CarbonImmutable $now): ?array
+    {
+        $farmers = FarmerProfile::query()->count();
+        if ($farmers === 0 || ! SchemaCache::hasTable('farmer_planting_schedules')) {
+            return null;
+        }
+        $season = RiceSeason::window($now);
+        $with = FarmerPlantingSchedule::query()
+            ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
+            ->whereIn('user_id', FarmerProfile::query()->select('user_id'))
+            ->distinct()->count('user_id');
+
+        return ['with' => $with, 'of' => $farmers, 'percent' => (int) round($with / $farmers * 100)];
+    }
+
+    /** How many days ahead "harvests due" looks. */
+    public const HARVEST_DUE_DAYS = 30;
+
+    /**
+     * Planting plans whose harvest date falls in the next HARVEST_DUE_DAYS days and that have no harvest recorded yet,
+     * with their hectares. Null when no farmer has saved any planting plan (nothing to count from).
+     *
+     * @return array{count: int, hectares: float}|null
+     */
+    private function harvestsDue(CarbonImmutable $now): ?array
+    {
+        if (! SchemaCache::hasTable('farmer_planting_schedules') || ! FarmerPlantingSchedule::query()->exists()) {
+            return null;
+        }
+        $from = $now->toDateString();
+        $to = $now->addDays(self::HARVEST_DUE_DAYS)->toDateString();
+        $due = FarmerPlantingSchedule::query()
+            ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'harvested_on'), fn ($q) => $q->whereNull('harvested_on'))
+            ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield'), fn ($q) => $q->whereNull('actual_yield'))
+            ->get(['scheduled_harvest_date', 'harvest_month', 'farm_area_hectares'])
+            ->filter(function (FarmerPlantingSchedule $plan) use ($from, $to): bool {
+                $date = $plan->harvestDateForPlanning()?->toDateString();
+
+                return $date !== null && $date >= $from && $date <= $to;
+            });
+
+        return ['count' => $due->count(), 'hectares' => round((float) $due->sum('farm_area_hectares'), 2)];
+    }
+
+    /**
+     * Rice production of the latest year in the MAO's Rice Production records: total tons, hectares, the yield as
+     * total tons over total hectares (so a small plot does not count as much as a large one) and how many barangays
+     * reported. Null without records.
+     *
+     * @return array{year: int, production: float, area: float, yield: ?float, barangays: int}|null
+     */
+    private function latestProduction(): ?array
+    {
+        $latest = app(DashboardKpiService::class)->yieldByYear()->first();
+        if (! is_array($latest) || (float) $latest['production'] <= 0) {
+            return null;
+        }
+
+        return [
+            'year' => (int) $latest['year'],
+            'production' => round((float) $latest['production'], 1),
+            'area' => round((float) $latest['area'], 1),
+            'yield' => $latest['yield'] !== null ? round((float) $latest['yield'], 2) : null,
+            'barangays' => $latest['barangays']->count(),
+        ];
+    }
+
+    /**
+     * Registered farmers (farmer profiles) in each barangay, most first. A profile whose barangay is not one of Lian's
+     * 19 official names is left out of the chart (it is still in the "Registered farmers" count).
+     *
+     * @return array{state: string, labels?: array<int, string>, values?: array<int, int>, counted?: int}
+     */
+    private function farmersByBarangay(): array
+    {
+        $counts = FarmerProfile::query()->get(['barangay'])
+            ->map(fn (FarmerProfile $profile): ?string => LianBarangays::canonicalName($profile->barangay))
+            ->filter()->countBy()->sortDesc();
+
+        return $counts->isEmpty()
+            ? ['state' => 'nodata']
+            : ['state' => 'ok', 'labels' => $counts->keys()->all(), 'values' => $counts->values()->all(), 'counted' => (int) $counts->sum()];
+    }
+
+    // ------------------------------------------------------------ end MAO Dashboard – Naicel
 
     /**
      * Hectares in farmers' planting plans whose planting date falls in the current season; null when there are none.
@@ -147,6 +267,7 @@ class MaoHomeService
             'count' => $estimates->count(),
             'last' => $last['yield'] ?? null,
             'last_label' => $last['label'] ?? null,
+            'last_parts' => $last['parts'] ?? null,
             'change_percent' => $expected !== null && ! empty($last['yield']) ? round(($expected - $last['yield']) / $last['yield'] * 100, 1) : null,
         ];
     }
@@ -170,6 +291,7 @@ class MaoHomeService
 
                 return [
                     'label' => $window['season'].' season '.($window['season'] === RiceSeason::WET ? $window['start']->year : $window['start']->year.'–'.$window['end']->year),
+                    'parts' => $this->seasonParts($window),
                     'yield' => round((float) $rows->avg('yield'), 2),
                 ];
             })
@@ -266,6 +388,7 @@ class MaoHomeService
         return [
             'state' => 'ok',
             'labels' => $months->map(fn (object $m): string => CarbonImmutable::parse($m->record_date)->format('M Y'))->all(),
+            'months' => $months->map(fn (object $m): string => CarbonImmutable::parse($m->record_date)->format('Y-m'))->all(),
             'rainfall' => $months->map(fn (object $m): ?float => is_numeric($m->rainfall) ? round((float) $m->rainfall, 1) : null)->all(),
             'temperature' => $months->map(fn (object $m): ?float => is_numeric($m->temperature) ? round((float) $m->temperature, 1) : null)->all(),
         ];
@@ -316,6 +439,13 @@ class MaoHomeService
         return [
             'state' => 'ok',
             'points' => $points->all(),
+            // The reading as a key and a count, for the page's own language (lang mao.dashboard.impact).
+            'reading_key' => match (true) {
+                $r >= 0.3 => 'more',
+                $r <= -0.3 => 'less',
+                default => 'none',
+            },
+            'seasons' => $points->count(),
             'reading' => match (true) {
                 $r >= 0.3 => 'Seasons with more rain tended to have higher yield.',
                 $r <= -0.3 => 'Seasons with more rain tended to have lower yield.',

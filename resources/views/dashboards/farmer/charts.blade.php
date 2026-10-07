@@ -13,6 +13,13 @@
         'labels' => $weather['labels'], 'temperature' => $weather['temperature'], 'rain' => $weather['rain'], 'has_rain' => $weather['has_rain'],
         'text' => ['temp' => __('farmer.charts.temp'), 'rain' => __('farmer.charts.rain_chance')],
     ] : null;
+    // Farmer – Naicel (2026-10-08): the yield comparison (FarmerHomeKpis), shown only with at least two figures.
+    $compare = $f['compare'] ?? ['state' => 'nodata'];
+    $compareData = $compare['state'] === 'ok' ? [
+        'keys' => $compare['keys'], 'labels' => $compare['labels'], 'values' => $compare['values'],
+        'text' => ['axis' => __('farmer.charts.harvest_axis')],
+    ] : null;
+    $compareWords = $compareData ? collect($compare['labels'])->map(fn ($label, $i) => $label.' '.number_format($compare['values'][$i], 2).' t/ha')->implode(', ') : '';
     // What the harvest chart shows, in words, for screen readers.
     $harvestWords = $harvestData ? collect($harvest['labels'])->map(fn ($label, $i) => $label.' '.number_format($harvest['mine'][$i], 2).' t/ha')->implode(', ') : '';
 @endphp
@@ -41,4 +48,15 @@
             <p class="fh-words fh-chart-none" data-fh-chart-none>{{ __('farmer.charts.weather_none') }}</p>
         @endif
     </section>
+
+    @if ($compareData)
+    <section class="fh-card" aria-labelledby="fhCompareChartTitle" data-fh-chart="compare">
+        <h2 id="fhCompareChartTitle" class="fh-kicker">{{ __('farmer.kpis.compare.title') }}</h2>
+        <p class="fh-muted">{{ __('farmer.kpis.compare.sub') }}</p>
+        <div class="fh-chart-box is-short">
+            <canvas id="fhCompareChart" role="img" aria-label="{{ __('farmer.kpis.compare.title') }}: {{ $compareWords }}"></canvas>
+        </div>
+        <script type="application/json" data-fh-chart-data="compare">@json($compareData)</script>
+    </section>
+    @endif
 </div>

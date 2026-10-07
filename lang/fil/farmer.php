@@ -1155,6 +1155,44 @@ return [
         'weather_none' => 'Hindi pa handa ang taya para sa 14 na araw.',
         'season' => ['wet' => 'Tag-ulan :year', 'dry' => 'Tag-araw :years'],
     ],
+    // Mga pangunahing bilang ng Farmer Home at ang paghahambing ng ani (2026-10-08, App\Services\Farmer\FarmerHomeKpis).
+    'kpis' => [
+        'title' => 'Ang bukid ko sa mga bilang',
+        'days' => 'araw|araw',
+        'days_ago' => 'araw na ang nakalipas|araw na ang nakalipas',
+        'tons' => 'tonelada|tonelada',
+        'farm' => [
+            'label' => 'Laki ng bukid',
+            'type' => ['irrigated' => 'May patubig', 'rainfed' => 'Sahod-ulan'],
+            'farms' => ':count bukid',
+        ],
+        'crop' => [
+            'to_planting' => 'Araw bago magtanim',
+            'planting_on' => 'Pagtatanim sa :date',
+            'to_harvest' => 'Araw bago mag-ani',
+            'harvest_on' => 'Ani bandang :date',
+            'progress' => ':percent% na ng panahon ng pagtubo ang lumipas',
+            'passed' => 'Lumipas na ang petsa ng ani',
+            'record' => 'Itala ang ani mo sa Aking Bukid.',
+        ],
+        'expected' => [
+            'label' => 'Inaasahang ani ngayong season',
+            'note' => ':yield t/ha × :area ha',
+        ],
+        'rain' => [
+            'label' => 'Maulang araw, susunod na :days araw',
+            'of' => 'sa :days',
+            'heavy' => 'Malakas na ulan sa :count araw|Malakas na ulan sa :count araw',
+            'no_heavy' => 'Walang inaasahang malakas na ulan',
+        ],
+        'compare' => [
+            'title' => 'Paghahambing ng Ani',
+            'sub' => 'Tonelada bawat ektarya (t/ha).',
+            'estimate' => 'Inaasahan ngayong season',
+            'usual' => 'Karaniwan sa Lian',
+            'last' => 'Huling ani ko',
+        ],
+    ],
     'missing_info' => [
         'open' => 'Buksan',
         'barangay' => ['title' => 'Idagdag ang iyong barangay', 'message' => 'Para makita ang panganib at payo para sa inyong lugar.'],

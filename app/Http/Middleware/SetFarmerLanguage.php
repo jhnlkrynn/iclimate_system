@@ -15,7 +15,12 @@ class SetFarmerLanguage
 {
     public function handle(Request $request, Closure $next): Response
     {
-        app()->setLocale(FarmerLanguage::resolve($request));
+        // Farmers only: MAO staff who picked Filipino on their dashboard (App\Support\MaoLanguage) still read the pages
+        // shared with farmers (Heat Map, Weather Analysis) in English, as those pages are written for staff.
+        $user = $request->user();
+        if ($user === null || $user->role === \App\Models\User::ROLE_FARMER) {
+            app()->setLocale(FarmerLanguage::resolve($request));
+        }
 
         return $next($request);
     }
