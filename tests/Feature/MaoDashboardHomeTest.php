@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
- * MAO Dashboard (2026-10): four KPI tiles, the "Kailangan ng Aksyon" list, a small Heat Map preview and one bar chart,
+ * MAO Dashboard (2026-10): four KPI tiles, the "Kailangan ng Aksyon" list, a small Heat Map preview and four charts,
  * all from saved data. The Operations page is gone (its parts moved to Advisories, Calendar, Field Reports and
  * Reports), the MAO sidebar is one list of eleven pages, and Chatbot Knowledge belongs to IT.
  */
@@ -107,7 +107,7 @@ class MaoDashboardHomeTest extends TestCase
 
     // ------------------------------------------------------------ the page
 
-    public function test_the_dashboard_is_four_tiles_the_action_list_the_map_preview_and_one_chart(): void
+    public function test_the_dashboard_is_four_tiles_the_action_list_the_map_preview_and_the_charts(): void
     {
         $this->yieldRows([['year' => 2024, 'month' => 6, 'yield' => 3.8, 'split' => null]]);
         $html = $this->html();
@@ -117,13 +117,17 @@ class MaoDashboardHomeTest extends TestCase
         foreach (['Registered farmers', 'Area planted this season', 'Expected yield vs last season', 'High-risk barangays'] as $label) {
             $this->assertStringContainsString($label, $html, $label);
         }
-        // In reading order: tiles, Kailangan ng Aksyon, the Heat Map preview, the one chart.
+        // In reading order: tiles, Kailangan ng Aksyon, the Heat Map preview, the charts.
         $order = array_map(fn (string $marker) => strpos($html, $marker), ['data-mao-kpis', 'Kailangan ng Aksyon', 'id="mhdMapTitle"', 'Rice Yield by Year 2020–2025']);
         $this->assertNotContains(false, $order);
         $sorted = $order;
         sort($sorted);
         $this->assertSame($sorted, $order);
-        $this->assertSame(1, substr_count($html, '<canvas'));
+        // Four chart cards (yield, rainfall and temperature, weather impact, planted area); each draws or says why not.
+        foreach (['data-mao-yield', 'data-mao-climate', 'data-mao-impact', 'data-mao-planted'] as $card) {
+            $this->assertSame(1, substr_count($html, $card), $card);
+        }
+        $this->assertSame(1, substr_count($html, '<canvas id="riceYieldTrendChart"'));
 
         // What the old dashboard carried is not here any more: weather cards, the forecast row, the full map and its
         // overview, the climate chart, the planting guide, the data-source pop-up, the Refresh button, the Operations link.
@@ -154,10 +158,13 @@ class MaoDashboardHomeTest extends TestCase
             $this->assertStringContainsString('Walang datos pa', $this->tile($html, $key), $key);
             $this->assertDoesNotMatchRegularExpression('/\b0\b/', $this->tile($html, $key), $key);
         }
-        // No saved forecast: no map preview; no yield records: no chart. Each says so.
+        // No saved forecast: no map preview; no yield records: no yield or weather-impact chart; no planting dates: no
+        // planted-area chart. Each says so.
         $this->assertStringNotContainsString('data-heat-map-preview', $html);
-        $this->assertStringNotContainsString('<canvas', $html);
-        $this->assertSame(5, substr_count($html, 'Walang datos pa'));
+        foreach (['riceYieldTrendChart', 'maoImpactChart', 'maoPlantedChart'] as $canvas) {
+            $this->assertStringNotContainsString('id="'.$canvas.'"', $html, $canvas);
+        }
+        $this->assertGreaterThanOrEqual(5, substr_count($html, 'Walang datos pa'));
     }
 
     // ------------------------------------------------------------ the four tiles

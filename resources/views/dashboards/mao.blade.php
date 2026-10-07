@@ -104,50 +104,130 @@
             </section>
         </div>
 
-        {{-- 4. One chart --}}
-        <section class="mtd-card" aria-labelledby="mhdYieldTitle" data-mao-yield>
-            <div class="mtd-card-head">
-                <div>
-                    <h2 id="mhdYieldTitle">Rice Yield by Year {{ \App\Services\Analytics\MaoHomeService::CHART_FROM_YEAR }}–{{ \App\Services\Analytics\MaoHomeService::CHART_TO_YEAR }}</h2>
-                    <p class="mtd-sub">Average tons per hectare, from past records.</p>
+        {{-- 4. Four charts, all from saved records (MaoHomeService): no provider is called and no model is run. --}}
+        <div class="mhd-charts">
+            <section class="mtd-card" aria-labelledby="mhdYieldTitle" data-mao-yield>
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdYieldTitle">Rice Yield by Year {{ \App\Services\Analytics\MaoHomeService::CHART_FROM_YEAR }}–{{ \App\Services\Analytics\MaoHomeService::CHART_TO_YEAR }}</h2>
+                        <p class="mtd-sub">Average tons per hectare, from past records.</p>
+                    </div>
                 </div>
-            </div>
-            @if ($chart['state'] === 'ok')
-                <div class="mtd-chart">
-                    <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}"
-                        data-chart-source="{{ $chart['source'] }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
-                        data-chart-note="Historical data, not a forecast. A year with fewer than 12 monthly records is the average of the months on file."
-                        aria-label="Average rice yield by year, {{ $chart['labels'][0] }} to {{ end($chart['labels']) }}"></canvas>
+                @if ($chart['state'] === 'ok')
+                    <div class="mtd-chart">
+                        <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}"
+                            data-chart-source="{{ $chart['source'] }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
+                            data-chart-note="Historical data, not a forecast. A year with fewer than 12 monthly records is the average of the months on file."
+                            aria-label="Average rice yield by year, {{ $chart['labels'][0] }} to {{ end($chart['labels']) }}"></canvas>
+                    </div>
+                @else
+                    <x-no-data note="The chart needs recorded yields for at least one year." />
+                @endif
+            </section>
+
+            <section class="mtd-card" aria-labelledby="mhdClimateTitle" data-mao-climate>
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdClimateTitle">Rainfall and Temperature by Month</h2>
+                        <p class="mtd-sub">The latest 12 months on record. Blue is rain, orange is heat.</p>
+                    </div>
                 </div>
-            @else
-                <x-no-data note="The chart needs recorded yields for at least one year." />
-            @endif
-        </section>
+                @if ($mao['climate']['state'] === 'ok')
+                    <div class="mtd-chart">
+                        <canvas id="maoClimateChart" data-chart="{{ json_encode($mao['climate']) }}" data-chart-type="historical" data-chart-info-style="icon"
+                            aria-label="Monthly rainfall in millimetres and temperature in degrees Celsius, {{ $mao['climate']['labels'][0] }} to {{ end($mao['climate']['labels']) }}"></canvas>
+                    </div>
+                @else
+                    <x-no-data note="The chart needs monthly climate records." />
+                @endif
+            </section>
+
+            <section class="mtd-card" aria-labelledby="mhdImpactTitle" data-mao-impact>
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdImpactTitle">Weather Impact: Rain and Yield</h2>
+                        <p class="mtd-sub">Each dot is one rice season.</p>
+                    </div>
+                </div>
+                @if ($mao['impact']['state'] === 'ok')
+                    <div class="mtd-chart">
+                        <canvas id="maoImpactChart" data-chart="{{ json_encode($mao['impact']) }}" data-chart-type="historical" data-chart-info-style="icon"
+                            aria-label="Average monthly rainfall against average rice yield, one point per season"></canvas>
+                    </div>
+                    <p class="mhd-reading" data-mao-impact-reading>{{ $mao['impact']['reading'] }}</p>
+                @else
+                    <x-no-data note="The chart needs rainfall and yield records for at least three seasons." />
+                @endif
+            </section>
+
+            <section class="mtd-card" aria-labelledby="mhdPlantedTitle" data-mao-planted>
+                <div class="mtd-card-head">
+                    <div>
+                        <h2 id="mhdPlantedTitle">Planted Area by Barangay</h2>
+                        <p class="mtd-sub">Hectares planted this season ({{ $mao['season'] }}).</p>
+                    </div>
+                </div>
+                @if ($mao['planted']['state'] === 'ok')
+                    <div class="mtd-chart">
+                        <canvas id="maoPlantedChart" data-chart="{{ json_encode($mao['planted']) }}" data-chart-type="recorded" data-chart-unit="ha" data-chart-info-style="icon"
+                            aria-label="Hectares planted this season in each barangay"></canvas>
+                    </div>
+                @else
+                    <x-no-data note="No farmer has saved a planting date for this season yet." />
+                @endif
+            </section>
+        </div>
     </div>
 
     <script>
         (() => {
-            const canvas = document.getElementById('riceYieldTrendChart');
-            if (!canvas) return;
+            // Large, plain labels: this page is read by older staff.
+            const FONT = { size: 14 };
+            const axis = (text, extra = {}) => ({ title: { display: true, text, font: { size: 14, weight: '600' } }, ticks: { font: FONT }, grid: { color: '#eef2ef' }, ...extra });
+            const read = (id, attr = 'chart') => { const el = document.getElementById(id); return el ? [el, JSON.parse(el.dataset[attr] || '{}')] : [null, {}]; };
+            const base = (legend) => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: legend, position: 'bottom', labels: { font: FONT, usePointStyle: true } } } });
+
             const start = async () => {
-                try { await window.iClimateVisualsReady; } catch (e) { /* no chart library: the heading and source stay */ }
+                try { await window.iClimateVisualsReady; } catch (e) { /* no chart library: the headings and notes stay */ }
                 if (!window.Chart) return;
-                const cfg = JSON.parse(canvas.dataset.yield || '{}');
-                new window.Chart(canvas, {
+
+                const [yieldEl, y] = read('riceYieldTrendChart', 'yield');
+                if (yieldEl) new window.Chart(yieldEl, {
                     type: 'bar',
-                    data: { labels: cfg.labels || [], datasets: [{ label: 'Average yield (t/ha)', data: cfg.values || [], backgroundColor: '#0f5132', borderRadius: 4, maxBarThickness: 64 }] },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Yield (t/ha)' }, grid: { color: '#eef2ef' } }, x: { grid: { display: false } } },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { callbacks: {
-                                title: (items) => 'Year ' + items[0]?.label,
-                                label: (c) => 'Average yield: ' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : 'n/a') + ' t/ha',
-                                afterLabel: (c) => 'Records: ' + ((cfg.months || [])[c.dataIndex] || 0) + ' of 12 months',
-                            } },
-                        },
-                    },
+                    data: { labels: y.labels || [], datasets: [{ label: 'Average yield (t/ha)', data: y.values || [], backgroundColor: '#0f5132', borderRadius: 4, maxBarThickness: 64 }] },
+                    options: { ...base(false), scales: { y: axis('Yield (t/ha)', { beginAtZero: true }), x: { grid: { display: false }, ticks: { font: FONT } } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: {
+                            title: (items) => 'Year ' + items[0]?.label,
+                            label: (c) => 'Average yield: ' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : 'n/a') + ' t/ha',
+                            afterLabel: (c) => 'Records: ' + ((y.months || [])[c.dataIndex] || 0) + ' of 12 months',
+                        } } } },
+                });
+
+                const [climateEl, c] = read('maoClimateChart');
+                if (climateEl) new window.Chart(climateEl, {
+                    type: 'line',
+                    data: { labels: c.labels || [], datasets: [
+                        { label: 'Rainfall (mm)', data: c.rainfall || [], yAxisID: 'rain', borderColor: '#1f6fb2', backgroundColor: '#1f6fb2', borderWidth: 3, tension: .3, pointRadius: 4 },
+                        { label: 'Temperature (°C)', data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, borderDash: [6, 4], tension: .3, pointRadius: 4, pointStyle: 'rectRot' },
+                    ] },
+                    options: { ...base(true), interaction: { mode: 'index', intersect: false },
+                        scales: { rain: axis('Rainfall (mm)', { position: 'left', beginAtZero: true }), temp: axis('Temperature (°C)', { position: 'right', grid: { drawOnChartArea: false } }), x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } } } },
+                });
+
+                const [impactEl, i] = read('maoImpactChart');
+                if (impactEl) new window.Chart(impactEl, {
+                    type: 'line',   // dots only (showLine: false): the scatter controller is not in this app's Chart.js bundle
+                    data: { datasets: [{ label: 'Rice season', data: i.points || [], showLine: false, backgroundColor: '#0f5132', borderColor: '#0f5132', pointRadius: 7, pointHoverRadius: 9 }] },
+                    options: { ...base(false), scales: { x: axis('Average rainfall per month (mm)', { type: 'linear' }), y: axis('Yield (t/ha)') },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (p) => p.raw.label + ': ' + p.raw.x + ' mm rain, ' + p.raw.y.toFixed(2) + ' t/ha' } } } },
+                });
+
+                const [plantedEl, p] = read('maoPlantedChart');
+                if (plantedEl) new window.Chart(plantedEl, {
+                    type: 'bar',
+                    data: { labels: p.labels || [], datasets: [{ label: 'Planted area (ha)', data: p.values || [], backgroundColor: '#198754', borderRadius: 4, maxBarThickness: 48 }] },
+                    options: { ...base(false), indexAxis: 'y', scales: { x: axis('Hectares', { beginAtZero: true }), y: { grid: { display: false }, ticks: { font: FONT } } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (b) => b.parsed.x + ' ha planted' } } } },
                 });
             };
             document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
