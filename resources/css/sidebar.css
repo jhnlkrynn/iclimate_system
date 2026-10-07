@@ -2,12 +2,17 @@
  * iClimate sidebar: the one navigation shell for Farmer, MAO and IT (markup: resources/views/layouts/sidebar.blade.php).
  *
  * 768px and wider (tablets, laptops, desktops; 2026-10-07, was 992px): fixed to the left edge at the full screen height
- * (100vh / 100dvh) on every page; only the page beside it scrolls. Link height and section spacing follow the window
- * height (clamp + vh), and on short windows (under 820px tall) the Appearance label and copyright line are dropped. When
- * a menu is still taller than the screen, only the menu scrolls inside the sidebar; the brand and the Light/Dark switch
- * stay in place. 768-991px uses a narrower sidebar so the page keeps room.
+ * (100vh / 100dvh) on every page; only the page beside it scrolls. The sidebar is three rows: brand on top, menu in the
+ * middle, Appearance + copyright at the bottom. The menu row takes all the height that is left and its links share it:
+ * each link grows with the space (52px, up to --sb-tab-max: 56-88px by window height) and shrinks to 30px on a short
+ * window, so a long menu (MAO) gets slightly lower links, a short one (Farmer, IT) taller ones, and nothing is cut off
+ * or scrolls. Once the links are at their largest, the space between them opens up to --sb-gap-max, no further: the
+ * stack's own height is capped from its link count (--sb-count, set in the markup). One set of rules for every role.
+ * Only under 600px of height are the Appearance label and copyright line dropped, and only under 480px (a window
+ * zoomed far in) may the menu scroll. 768-991px uses a narrower sidebar so the page keeps room.
  * Phones (under 768px): the sidebar is hidden; the same menu opens full screen (#mobileSidebar, a Bootstrap offcanvas)
- * from the menu button in the top bar, with a close button; choosing a page closes it (resources/js/app.js).
+ * from the menu button in the top bar, with a close button; choosing a page closes it (resources/js/app.js). Its links
+ * flex the same way (48px, 36-60px) before the menu scrolls.
  *
  * Selectors start with `html body .ic-sidebar` so they win over the older generic .sidebar-* / .offcanvas rules in
  * app.css and the layout's inline <style>.
@@ -24,8 +29,11 @@
     --sb-icon: rgba(255, 255, 255, .7);
     --sb-label: rgba(255, 255, 255, .6);
     --sb-hover: rgba(255, 255, 255, .07);
-    --sb-active-bg: rgba(127, 214, 181, .16);
+    --sb-active-bg: rgba(127, 214, 181, .2);
     --sb-accent: #8fdcb8;
+    /* Largest link height and largest space between links; both follow the window height. */
+    --sb-tab-max: clamp(56px, 9vh, 88px);
+    --sb-gap-max: clamp(6px, 3vh, 32px);
     --sb-divider: rgba(255, 255, 255, .1);
     --sb-switch-bg: rgba(0, 0, 0, .2);
 }
@@ -34,7 +42,7 @@ html[data-theme="dark"] {
     --sb-bg: linear-gradient(180deg, #0b261c 0%, #091d16 100%);
     --sb-bg-fixed: linear-gradient(180deg, rgba(11, 38, 28, .9) 0%, rgba(9, 29, 22, .94) 100%);
     --sb-edge: rgba(255, 255, 255, .06);
-    --sb-active-bg: rgba(127, 214, 181, .13);
+    --sb-active-bg: rgba(127, 214, 181, .17);
     --sb-switch-bg: rgba(0, 0, 0, .28);
 }
 
@@ -106,23 +114,22 @@ html body .ic-sidebar .ic-sb-nav {
     gap: 0;
     padding: 6px 12px 10px;
     overflow-x: hidden;
-    /* Desktop navigation is deliberately non-scrollable. The compact-height rules below make the complete role menu
-       fit between the brand and the docked appearance controls. */
+    /* Desktop navigation is deliberately non-scrollable: the links below share this row's height instead. */
     overflow-y: hidden;
     overscroll-behavior: none;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    /* Use spare height to separate sections instead of leaving a dead block above the footer. On short screens the
-       compact rules below remove that spare space naturally without creating a scroll area. */
-    justify-content: space-evenly;
+    justify-content: flex-start;
 }
 
 html body .ic-sidebar .ic-sb-nav::-webkit-scrollbar { display: none; }
 
-html body .ic-sidebar .sidebar-group { display: block; flex: none; min-height: 0; }
+/* Group and stack pass the menu row's height down to the links. */
+html body .ic-sidebar .sidebar-group { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 html body .ic-sidebar .sidebar-section {
-    margin: clamp(8px, 1.5vh, 16px) 10px 5px;
+    flex: none;
+    margin: clamp(6px, 1.4vh, 12px) 10px clamp(2px, .6vh, 5px);
     font-size: .6875rem;
     font-weight: 600;
     line-height: 1.3;
@@ -131,12 +138,17 @@ html body .ic-sidebar .sidebar-section {
     color: var(--sb-label);
 }
 
-html body .ic-sidebar .sidebar-group:first-child .sidebar-section { margin-top: clamp(8px, 1.2vh, 12px); }
+html body .ic-sidebar .sidebar-group:first-child .sidebar-section { margin-top: clamp(4px, 1vh, 8px); }
 
 html body .ic-sidebar .sidebar-stack {
     display: flex;
     flex-direction: column;
-    gap: clamp(2px, .45vh, 6px);
+    flex: 1 1 auto;
+    min-height: 0;
+    /* Never taller than its links at full size with the widest gaps: what is left over stays below the menu. */
+    max-height: calc(var(--sb-count, 12) * var(--sb-tab-max) + (var(--sb-count, 12) - 1) * var(--sb-gap-max));
+    justify-content: space-between;
+    gap: clamp(2px, .8vh, 6px);
     padding: 0;
     background: none;
     border: 0;
@@ -150,18 +162,19 @@ html body .ic-sidebar .sidebar-link {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 12px;
-    flex: none;
-    min-height: 44px;
-    max-height: none;
-    padding: 10px 14px;
+    gap: 14px;
+    /* Shares the menu's height: 52px, up to --sb-tab-max when there is room, down to 30px on a short window. */
+    flex: 1 1 52px;
+    min-height: 30px;
+    max-height: var(--sb-tab-max);
+    padding: 0 14px;
     border: 0;
     border-left: 3px solid transparent;
-    border-radius: 8px;
+    border-radius: 10px;
     color: var(--sb-text);
     background: transparent;
     box-shadow: none;
-    font-size: .90625rem;
+    font-size: clamp(.9375rem, 1.9vh, 1rem);
     font-weight: 500;
     line-height: 1.2;
     text-decoration: none;
@@ -177,8 +190,8 @@ html body .ic-sidebar .sidebar-label { min-width: 0; overflow: hidden; text-over
 html body .ic-sidebar .sidebar-icon {
     display: inline-grid;
     place-items: center;
-    width: 18px;
-    height: 18px;
+    width: clamp(18px, 2.4vh, 21px);
+    height: clamp(18px, 2.4vh, 21px);
     flex: none;
     color: var(--sb-icon);
     background: none;
@@ -187,7 +200,7 @@ html body .ic-sidebar .sidebar-icon {
     transition: color .2s ease;
 }
 
-html body .ic-sidebar .sidebar-icon svg { width: 18px; height: 18px; }
+html body .ic-sidebar .sidebar-icon svg { width: 100%; height: 100%; }
 
 html body .ic-sidebar .sidebar-link:hover {
     color: var(--sb-text-strong);
@@ -303,26 +316,26 @@ html body .ic-sidebar .sidebar-foot {
     color: var(--sb-label);
 }
 
-/* Short laptop windows: keep every link on screen by dropping the two least useful lines. */
-@media (min-width: 768px) and (max-height: 820px) {
+/* The narrower tablet sidebar (216px): a little less side padding so the longest label still fits on one line. */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    html body .ic-sidebar.sidebar-fixed .sidebar-link { gap: 10px; padding: 0 10px; font-size: .9375rem; }
+    html body .ic-sidebar.sidebar-fixed .sidebar-link:hover { padding-left: 10px; }
+}
+
+/* Short windows (a small laptop zoomed in): drop the two least useful lines so the links keep a readable height. */
+@media (min-width: 768px) and (max-height: 600px) {
     html body .ic-sidebar.sidebar-fixed .ic-sb-appearance-label,
     html body .ic-sidebar.sidebar-fixed .sidebar-foot { display: none; }
     html body .ic-sidebar.sidebar-fixed .ic-sb-foot { padding: 8px 0 10px; }
     html body .ic-sidebar.sidebar-fixed .ic-sb-logo { width: 30px; height: 30px; }
     html body .ic-sidebar.sidebar-fixed .ic-sb-brand { padding-top: 8px; padding-bottom: 7px; }
     html body .ic-sidebar.sidebar-fixed .ic-sb-nav { padding-top: 3px; padding-bottom: 7px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-section { margin-top: 7px; margin-bottom: 3px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-link { min-height: clamp(34px, 4.2vh, 38px); padding: 7px 12px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-link:hover { padding-left: 12px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-stack { gap: 2px; }
 }
 
-/* Very short windows (a 1366 x 768 laptop once the browser's own bars are counted): the tightest spacing that still
-   reads comfortably, so even the longest menu (IT, 14 links) fits. */
-@media (min-width: 768px) and (max-height: 700px) {
-    html body .ic-sidebar.sidebar-fixed .sidebar-link { min-height: 32px; padding-top: 6px; padding-bottom: 6px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-section { margin-top: 6px; margin-bottom: 2px; }
-    html body .ic-sidebar.sidebar-fixed .ic-sb-foot { padding: 6px 0 8px; }
+/* Last resort, not a normal desktop or laptop size: under 480px of height, once the links are at their 30px minimum
+   the menu scrolls inside its own row (no visible scrollbar); the brand and the Light/Dark switch stay in place. */
+@media (min-width: 768px) and (max-height: 480px) {
+    html body .ic-sidebar.sidebar-fixed .ic-sb-nav { overflow-y: auto; }
 }
 
 /* From 768px the content column owns vertical scrolling independently from the fixed sidebar. */
@@ -389,8 +402,11 @@ html body #mobileSidebar .ic-sb-nav {
 }
 html body #mobileSidebar .ic-sb-nav::-webkit-scrollbar { display: block; width: 6px; }
 html body #mobileSidebar .ic-sb-nav::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .22); border-radius: 999px; }
-html body #mobileSidebar .sidebar-section { margin-top: 16px; }
-html body #mobileSidebar .sidebar-link { height: 44px; font-size: .9375rem; }
+html body #mobileSidebar .sidebar-section { margin-top: 12px; }
+/* Touch sizes: 48px, up to 60px on a tall phone, down to 36px before the menu scrolls. */
+html body #mobileSidebar { --sb-tab-max: 60px; --sb-gap-max: 12px; }
+html body #mobileSidebar .sidebar-link { flex-basis: 48px; min-height: 36px; font-size: 1rem; }
+html body #mobileSidebar .sidebar-icon { width: 20px; height: 20px; }
 html body #mobileSidebar .sidebar-stack { gap: 2px; }
 html body #mobileSidebar .ic-theme-btn { height: 40px; }
 html body #mobileSidebar .ic-sb-foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
@@ -408,24 +424,17 @@ body:has(#mobileSidebar.show, #mobileSidebar.showing) #icAiLauncher { display: n
     min-height: 44px;
 }
 
-/* Compact spacing (2026-10-06): on a tall desktop screen the items were 44px with up to 6px between them and 16px
-   above each section label, which left the menu looking sparse. Items are now 40px with a steady 2px gap and 12px
-   above a label: still comfortable to click, never crowded. Screens 820px high or less keep their own tighter
-   rules above; the drawer keeps 44px items because it is used by touch. */
-@media (min-width: 768px) and (min-height: 820.02px) {
-    html body .ic-sidebar.sidebar-fixed .sidebar-stack { gap: 2px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-section { margin: 12px 10px 4px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-group:first-child .sidebar-section { margin-top: 8px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-link { min-height: 40px; padding: 8px 12px; }
-    html body .ic-sidebar.sidebar-fixed .sidebar-link:hover { padding-left: 12px; }
+/* A short phone: the copyright line makes room for the links. */
+@media (max-width: 767.98px) and (max-height: 640px) {
+    html body #mobileSidebar .sidebar-foot { display: none; }
 }
-html body #mobileSidebar .sidebar-section { margin-top: 12px; }
 
-/* Menu groups sit together at the top of the sidebar (2026-10-06). They used to be spread over the whole height
-   ("space-evenly"), which left gaps of 60-180px between sections on a normal screen. When a menu is taller than the
-   screen (the 14-item IT menu in a very short window) it now scrolls inside its own box instead of being cut off;
-   the brand above and the Light/Dark switch below stay in place. */
-html body .ic-sidebar.sidebar-fixed .ic-sb-nav {
-    justify-content: flex-start;
-    overflow-y: auto;
+/* A phone held sideways: the same two lines are dropped so the links keep a tappable height. */
+@media (max-width: 767.98px) and (max-height: 520px) {
+    html body #mobileSidebar .ic-sb-appearance-label,
+    html body #mobileSidebar .sidebar-foot { display: none; }
+    html body #mobileSidebar .ic-sb-drawer-head .ic-sb-brand { padding-top: 8px; padding-bottom: 8px; }
+    html body #mobileSidebar .ic-sb-nav { padding-bottom: 6px; }
+    html body #mobileSidebar .sidebar-section { margin-top: 6px; }
+    html body #mobileSidebar .sidebar-link { min-height: 32px; }
 }
