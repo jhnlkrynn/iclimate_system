@@ -380,6 +380,7 @@ html body #mobileSidebar .ic-sb-close {
 html body #mobileSidebar .ic-sb-close:hover { background: var(--sb-hover); }
 
 html body #mobileSidebar .ic-sb-nav {
+    justify-content: flex-start;   /* the menu starts under the brand, not in the middle of the full-screen drawer */
     flex-basis: auto;
     padding-bottom: 12px;
     overflow-y: auto;
@@ -393,6 +394,9 @@ html body #mobileSidebar .sidebar-link { height: 44px; font-size: .9375rem; }
 html body #mobileSidebar .sidebar-stack { gap: 2px; }
 html body #mobileSidebar .ic-theme-btn { height: 40px; }
 html body #mobileSidebar .ic-sb-foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+
+/* The chatbot button would sit on top of the full-screen menu; it comes back when the menu closes. */
+body:has(#mobileSidebar.show, #mobileSidebar.showing) #icAiLauncher { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
     html body .ic-sidebar .sidebar-link,
