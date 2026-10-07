@@ -8,9 +8,11 @@ use App\Support\LianBarangays;
 use App\Support\SchemaCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 
 /**
  * MAO Planner (2026-10): the MAO's activities as a list sorted by date, with a form to add one, and the farmers'
@@ -19,7 +21,7 @@ use Illuminate\View\View;
  */
 class MaoPlannerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $filters = $request->validate([
             'barangay' => ['nullable', Rule::in(LianBarangays::all())],
@@ -27,25 +29,50 @@ class MaoPlannerController extends Controller
             'farmer_barangay' => ['nullable', Rule::in(LianBarangays::all())],
         ]);
 
-        $activities = MaoActivity::query()->with('user:id,name')
-            // An activity for all barangays is part of every barangay's list.
-            ->when($filters['barangay'] ?? null, fn ($q, string $b) => $q->where(fn ($w) => $w->where('barangay', $b)->orWhereNull('barangay')))
-            ->when($filters['type'] ?? null, fn ($q, string $type) => $q->where('activity_type', $type))
-            ->orderBy('starts_on')->orderBy('id')
-            ->paginate(20, ['*'], 'page')->withQueryString();
+        $activitiesAvailable = SchemaCache::hasTable('mao_activities');
 
-        return view('mao.planner', [
+        if ($activitiesAvailable) {
+            $activities = MaoActivity::query()->with('user:id,name')
+                // An activity for all barangays is part of every barangay's list.
+                ->when($filters['barangay'] ?? null, fn ($q, string $b) => $q->where(fn ($w) => $w->where('barangay', $b)->orWhereNull('barangay')))
+                ->when($filters['type'] ?? null, fn ($q, string $type) => $q->where('activity_type', $type))
+                ->orderBy('starts_on')->orderBy('id')
+                ->paginate(20, ['*'], 'page')->withQueryString();
+        } else {
+            Log::warning('MAO planner is unavailable because its database table is missing.', [
+                'table' => 'mao_activities',
+                'user_id' => $request->user()?->id,
+                'route' => $request->route()?->getName(),
+            ]);
+
+            $activities = new LengthAwarePaginator(
+                items: [],
+                total: 0,
+                perPage: 20,
+                currentPage: LengthAwarePaginator::resolveCurrentPage('page'),
+                options: ['path' => $request->url(), 'query' => $request->query()],
+            );
+        }
+
+        $data = [
             'activities' => $activities,
+            'activitiesAvailable' => $activitiesAvailable,
             'farmerActivities' => $this->farmerActivities($filters['farmer_barangay'] ?? null),
             'filters' => $filters,
             'barangays' => LianBarangays::all(),
             'types' => MaoActivity::TYPES,
             'locale' => $request->user()->getAttribute('preferred_language') === 'fil' ? 'fil' : 'en',
-        ]);
+        ];
+
+        return response()->view('mao.planner', $data, $activitiesAvailable ? 200 : 503);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if (! SchemaCache::hasTable('mao_activities')) {
+            return back()->with('error', 'MAO planning is temporarily unavailable while the database update is completed.');
+        }
+
         MaoActivity::query()->create($this->validated($request) + ['user_id' => $request->user()->id]);
 
         return redirect()->route('mao.planner.index')->with('success', 'Activity added.');
