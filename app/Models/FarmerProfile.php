@@ -52,4 +52,22 @@ class FarmerProfile extends Model
     {
         return $this->hasMany(Farm::class, 'user_id', 'user_id');
     }
+
+    /**
+     * The farmer's whole farm area for the MAO list ("3.5 ha"): the sum of their farms with a known size, or the area
+     * on the profile when no farm has one. Null when neither is known, so the list shows nothing instead of a zero.
+     */
+    public function getTotalFarmAreaAttribute(): ?string
+    {
+        $known = $this->farms->whereNull('archived_at')->sum(fn (Farm $farm): float => (float) ($farm->knownHectares() ?? 0));
+        $hectares = $known > 0 ? $known : (float) $this->farm_area;
+
+        return $hectares > 0 ? rtrim(rtrim(number_format($hectares, 2), '0'), '.').' ha' : null;
+    }
+
+    /** Active / Inactive: the status of the farmer's login account. */
+    public function getAccountStatusAttribute(): ?string
+    {
+        return $this->user?->status;
+    }
 }

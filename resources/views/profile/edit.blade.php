@@ -12,10 +12,10 @@
         {{-- Staff accounts (IT and MAO): the IT dashboard design system (.mfd / .itd parts, IT page parts in it-pages.css).
              The three forms are the same partials every role uses. --}}
         <div class="mfd itd itp itp-form">
-            <x-it.page-header kicker="Account Center" title="Account" lede="Manage your account information, password, and account access." />
+            <x-it.page-header kicker="Profile Center" title="Profile" lede="Manage your account information, password, and account access." />
 
             <section class="itp-section" aria-labelledby="accountSummaryTitle">
-                <div class="itp-section-head"><h2 id="accountSummaryTitle">Account Summary</h2></div>
+                <div class="itp-section-head"><h2 id="accountSummaryTitle">Profile Summary</h2></div>
                 <div class="mfd-card itp-account">
                     <div class="itp-avatar" aria-hidden="true">{{ $initials ?: '?' }}</div>
                     <div class="itp-account-id">
@@ -44,7 +44,7 @@
     @else
     <section class="page-hero">
         <div>
-            <div class="eyebrow mb-2">Account Center</div>
+            <div class="eyebrow mb-2">Profile Center</div>
             <h1 class="h2 fw-bold mb-2">Profile</h1>
             <p class="mb-0" style="color: var(--ic-ink-mid);">Manage your account information, password, and account access.</p>
         </div>

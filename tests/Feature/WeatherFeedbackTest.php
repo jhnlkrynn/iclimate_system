@@ -75,10 +75,10 @@ class WeatherFeedbackTest extends TestCase
         $this->forecastFor($this->pastMonth);
         $payload = ['forecast_date' => $this->pastMonth->toDateString(), 'accuracy' => 'accurate'];
 
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
-            $user = User::factory()->create(['role' => $role, 'barangay' => 'Malaruhatan']);
-            $this->submitFeedback($user, $payload)->assertForbidden();
-        }
+        $this->submitFeedback(User::factory()->create(['role' => User::ROLE_MAO, 'barangay' => 'Malaruhatan']), $payload)->assertForbidden();
+        // IT is sent back to its dashboard from the forecast pages; nothing is saved either way.
+        $this->submitFeedback(User::factory()->create(['role' => User::ROLE_IT_EXPERT, 'barangay' => 'Malaruhatan']), $payload)->assertRedirect(route('admin.dashboard'));
+        $this->assertSame(0, \App\Models\WeatherForecastFeedback::query()->count());
 
         $this->app['auth']->guard()->logout();
         $this->post(route('weather-feedback.store'), $payload)->assertRedirect(route('login'));

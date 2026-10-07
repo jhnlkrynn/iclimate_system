@@ -16,7 +16,7 @@ class ItPagesDesignTest extends TestCase
 
     /** Route name => Georgia page title of the staff page. */
     private const PAGES = [
-        'profile.edit' => 'Account',
+        'profile.edit' => 'Profile',
         'weather-predictions.index' => 'Predictions',
         'community-feed.index' => 'Announcements',          // the Community Feed's name for MAO and IT (2026-10)
         'messages.index' => 'Messages',
@@ -36,7 +36,8 @@ class ItPagesDesignTest extends TestCase
     {
         $it = $this->it();
 
-        foreach (self::PAGES + ['system-health.index' => 'System Health'] as $route => $title) {
+        // Predictions and Announcements are MAO pages; IT is sent to its dashboard from them (RedirectItFromFieldPages).
+        foreach (['profile.edit' => 'Profile', 'messages.index' => 'Messages', 'system-health.index' => 'System Health'] as $route => $title) {
             $this->actingAs($it)->get(route($route))
                 ->assertOk()
                 ->assertSee('data-user-role="IT Expert"', false)
@@ -81,12 +82,13 @@ class ItPagesDesignTest extends TestCase
             ->assertSee('is-it-dashboard', false);
     }
 
-    public function test_account_page_shows_the_account_summary_and_keeps_every_form(): void
+    public function test_profile_page_shows_the_profile_summary_and_keeps_every_form(): void
     {
         foreach ([$this->it(), $this->mao()] as $user) {
             $this->actingAs($user)->get(route('profile.edit'))
                 ->assertOk()
-                ->assertSee('Account Summary')
+                ->assertSee('Profile Summary')
+                ->assertDontSee('Account Center')
                 ->assertSee($user->email)
                 ->assertSee($user->role)
                 ->assertSee('Profile Information')

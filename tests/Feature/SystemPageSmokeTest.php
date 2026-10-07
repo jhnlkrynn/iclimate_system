@@ -54,15 +54,18 @@ class SystemPageSmokeTest extends TestCase
         return $user;
     }
 
-    /** @param  array<string, string>  $pages  path => text the page must show */
-    private function assertPagesOpen(User $user, array $pages): void
+    /**
+     * @param  array<string, string>  $pages  path => text the page must show
+     * @param  array<int, string>  $alsoRedirects  paths that answer this role with a redirect
+     */
+    private function assertPagesOpen(User $user, array $pages, array $alsoRedirects = []): void
     {
         $problems = [];
         foreach ($pages as $path => $expected) {
             $response = $this->actingAs($user)->get($path);
             $status = $response->getStatusCode();
 
-            if (in_array($path, self::REDIRECTS, true)) {
+            if (in_array($path, [...self::REDIRECTS, ...$alsoRedirects], true)) {
                 if (! $response->isRedirect()) {
                     $problems[] = "{$path}: expected a redirect, got {$status}";
                 }
@@ -153,7 +156,7 @@ class SystemPageSmokeTest extends TestCase
             '/messages' => 'Messages',
             '/notifications' => 'Notifications',
             '/profile' => 'Profile',
-        ]);
+        ], ['/weather-predictions', '/planting-advisories', '/reports', '/heat-map']);   // not IT pages (2026-10): they open the IT dashboard
     }
 
     public function test_climora_answers_without_the_ai_provider_weather_or_prepared_predictions(): void

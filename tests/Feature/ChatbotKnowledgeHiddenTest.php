@@ -60,7 +60,7 @@ class ChatbotKnowledgeHiddenTest extends TestCase
         $pages = [
             User::ROLE_FARMER => ['farmer.dashboard', 'planting-advisories.index', 'messages.index'],
             User::ROLE_MAO => ['mao.dashboard', 'planting-advisories.index', 'messages.index', 'community-feed.index', 'reports.index'],
-            User::ROLE_IT_EXPERT => ['admin.dashboard', 'system-health.index', 'users.index', 'messages.index', 'community-feed.index'],
+            User::ROLE_IT_EXPERT => ['admin.dashboard', 'system-health.index', 'users.index', 'messages.index', 'system-logs.index'],
         ];
 
         foreach ($pages as $role => $routes) {
