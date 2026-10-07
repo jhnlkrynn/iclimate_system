@@ -162,7 +162,9 @@ final class FarmerDashboardService
         // With two or more farms the farmer's records are read for the farm being viewed; otherwise all of them.
         $onlyFarm = ActiveFarm::farms($user)->count() > 1 ? $farm : null;
         // Farmer – Naicel (2026-10-08): the key figures and the yield comparison, from the parts above and saved records.
-        $figures = app(\App\Services\Farmer\FarmerHomeKpis::class)->for($user, $farm, $onlyFarm, $harvest, $week, $now);
+        $charts = app(\App\Services\Farmer\FarmerHomeCharts::class)->for($user, $onlyFarm, $barangay);
+        $figures = app(\App\Services\Farmer\FarmerHomeKpis::class)->for($user, $farm, $onlyFarm, $harvest, $week, $now,
+            ['risk' => $risk, 'barangay' => $barangay, 'forecast' => $charts['weather']]);
 
         return [
             'generated_at' => $now,
@@ -181,7 +183,7 @@ final class FarmerDashboardService
             'advisory' => $advisory,
             'typhoon' => $typhoon,
             // Farmer – Naicel (2026-10): the two Home charts; one farm's harvests when the farmer has two or more farms.
-            'charts' => app(\App\Services\Farmer\FarmerHomeCharts::class)->for($user, $onlyFarm, $barangay),
+            'charts' => $charts,
             'kpis' => $figures['tiles'],
             'compare' => $figures['compare'],
         ];

@@ -1185,6 +1185,10 @@ return [
             'heavy' => 'Malakas na ulan sa :count araw|Malakas na ulan sa :count araw',
             'no_heavy' => 'Walang inaasahang malakas na ulan',
         ],
+        'risk' => ['label' => 'Panganib sa barangay ngayong linggo'],
+        'advisories' => ['label' => 'Mga advisory na umiiral', 'note' => 'Para sa barangay mo at buong Lian', 'none' => 'Walang advisory sa ngayon'],
+        'hot' => ['label' => 'Pinakamainit na araw, susunod na 7 araw'],
+        'usual' => ['label' => 'Karaniwang ani sa Lian', 'note' => 'Ngayong buwan, mula sa mga nakaraang ani'],
         'rain_week' => [
             'title' => 'Tsansa ng Ulan Ngayong Linggo',
             'sub' => 'Kapag mas mataas ang bar, mas malamang na umulan sa araw na iyon.',

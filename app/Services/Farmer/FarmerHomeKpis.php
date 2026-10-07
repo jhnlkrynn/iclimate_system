@@ -4,10 +4,12 @@ namespace App\Services\Farmer;
 
 use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
+use App\Models\PlantingAdvisory;
 use App\Models\User;
 use App\Services\Prediction\SeasonYield;
 use App\Support\ActiveFarm;
 use App\Support\FarmSize;
+use App\Support\SampleData;
 use App\Support\SchemaCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,11 +18,19 @@ use Illuminate\Database\Eloquent\Builder;
  * Farmer Home's key figures and its yield comparison (2026-10-08, Farmer – Naicel), from the farmer's own saved records
  * and the parts the page already shows. No provider is called and no model is run.
  *
- * Up to four tiles, each shown only when its figure exists (a missing one is asked for in the notification bell):
+ * Five tiles (2026-10-09). The farmer's own figures come first, each only when it exists (a missing one is asked for
+ * in the notification bell):
  *   - farm:     the size of the farm being viewed (a known size in hectares, or the estimate the farmer picked);
  *   - crop:     days until planting, or days until harvest with how far the crop is, from the current planting plan;
  *   - expected: this season's expected harvest in tons = the expected yield (t/ha) × the farm's known size;
  *   - rain:     how many of the next days have rain, from the same 7-day forecast as the "Next 7 Days" card.
+ * A farmer who has not saved a farm size or a planting plan yet would see only one or two of those, so the row is
+ * filled up to MAX_TILES with figures about their place, which need nothing from the farmer:
+ *   - risk:       the barangay's risk rating for this week (the same badge as the Barangay Risk card);
+ *   - advisories: how many published advisories are in effect for the barangay or all of Lian;
+ *   - hot:        the highest temperature in the next 7 days of the saved forecast;
+ *   - usual:      Lian's usual rice yield for this month, from past records.
+ * Every figure is a saved one; a figure that cannot be worked out is still left out, never shown as zero.
  *
  * The comparison is one small chart in t/ha: this season's estimate, the usual yield in Lian for this month, and the
  * farmer's last recorded harvest. It is shown with at least two of the three.
@@ -30,6 +40,9 @@ class FarmerHomeKpis
     /** A plan whose harvest date passed this long ago without a recorded harvest is no longer "the current crop". */
     public const OVERDUE_DAYS = 60;
 
+    /** How many tiles the row shows. */
+    public const MAX_TILES = 5;
+
     public function __construct(private readonly SeasonYield $seasonYield) {}
 
     /**
@@ -37,9 +50,11 @@ class FarmerHomeKpis
      * @param  ?Farm  $onlyFarm  with two or more farms: the farm whose plans count; otherwise null (all of the farmer's plans)
      * @param  array<string, mixed>  $harvest  the page's expected-yield card (FarmerDashboardService::harvest)
      * @param  array<string, mixed>  $week  the page's 7-day forecast (FarmerDashboardService::week)
+     * @param  ?array{risk?: array<string, mixed>, barangay?: ?string, forecast?: array<string, mixed>}  $place  the page's barangay risk card,
+     *                                              the barangay and the saved daily forecast (FarmerHomeCharts::weather); with it the row is filled up to MAX_TILES
      * @return array{tiles: array<int, array<string, mixed>>, compare: array<string, mixed>}
      */
-    public function for(User $user, ?Farm $farm, ?Farm $onlyFarm, array $harvest, array $week, CarbonImmutable $now): array
+    public function for(User $user, ?Farm $farm, ?Farm $onlyFarm, array $harvest, array $week, CarbonImmutable $now, ?array $place = null): array
     {
         $area = rescue(fn (): ?float => $this->knownArea($user, $farm), null, false);
 
@@ -49,6 +64,19 @@ class FarmerHomeKpis
             rescue(fn (): ?array => $this->expectedTile($harvest, $area), null, false),
             rescue(fn (): ?array => $this->rainTile($week), null, false),
         ]));
+
+        // Fill the row with the figures about the farmer's place, in this order, until there are MAX_TILES.
+        if ($place !== null) {
+            foreach (['riskTile', 'advisoriesTile', 'hotTile', 'usualTile'] as $filler) {
+                if (count($tiles) >= self::MAX_TILES) {
+                    break;
+                }
+                $tile = rescue(fn (): ?array => $this->{$filler}($place, $now), null, false);
+                if ($tile !== null) {
+                    $tiles[] = $tile;
+                }
+            }
+        }
 
         return [
             'tiles' => $tiles,
@@ -205,6 +233,76 @@ class FarmerHomeKpis
         return ['key' => 'rain', 'icon' => 'rain', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
             'value' => (string) $rainy, 'unit' => __('farmer.kpis.rain.of', ['days' => $days->count()]),
             'note' => $heavy > 0 ? trans_choice('farmer.kpis.rain.heavy', $heavy, ['count' => $heavy]) : __('farmer.kpis.rain.no_heavy')];
+    }
+
+    // ------------------------------------------------------------ the figures about the farmer's place
+
+    /**
+     * The barangay's risk rating for this week, as the Barangay Risk card shows it.
+     *
+     * @param  array<string, mixed>  $place
+     * @return array<string, mixed>|null
+     */
+    private function riskTile(array $place, CarbonImmutable $now): ?array
+    {
+        $risk = $place['risk'] ?? [];
+        if (($risk['state'] ?? null) !== 'ok' || empty($risk['label'])) {
+            return null;
+        }
+
+        return ['key' => 'risk', 'icon' => 'alert', 'href' => route('heat-map.index'), 'label' => __('farmer.kpis.risk.label'),
+            'value' => (string) $risk['label'], 'unit' => null, 'note' => (string) ($risk['barangay'] ?? $place['barangay'] ?? '')];
+    }
+
+    /**
+     * Published advisories in effect today for the farmer's barangay or for all of Lian. Zero is a real count.
+     *
+     * @param  array<string, mixed>  $place
+     * @return array<string, mixed>|null
+     */
+    private function advisoriesTile(array $place, CarbonImmutable $now): ?array
+    {
+        if (! SchemaCache::hasTable('planting_advisories')) {
+            return null;
+        }
+        $count = SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->forBarangay($place['barangay'] ?? null)->count();
+
+        return ['key' => 'advisories', 'icon' => 'advisory', 'href' => route('planting-advisories.index'), 'label' => __('farmer.kpis.advisories.label'),
+            'value' => (string) $count, 'unit' => null, 'note' => $count > 0 ? __('farmer.kpis.advisories.note') : __('farmer.kpis.advisories.none')];
+    }
+
+    /**
+     * The highest temperature of the next 7 days in the saved forecast, and the day it falls on.
+     *
+     * @param  array<string, mixed>  $place
+     * @return array<string, mixed>|null
+     */
+    private function hotTile(array $place, CarbonImmutable $now): ?array
+    {
+        $forecast = $place['forecast'] ?? [];
+        $days = array_filter(array_slice((array) ($forecast['temperature'] ?? []), 0, 7), fn ($value): bool => $value !== null);
+        if (($forecast['state'] ?? null) !== 'ok' || $days === []) {
+            return null;
+        }
+        $hottest = max($days);
+        $on = array_search($hottest, $days, true);
+
+        return ['key' => 'hot', 'icon' => 'temperature', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.hot.label'),
+            'value' => (string) (int) round((float) $hottest), 'unit' => '°C', 'note' => (string) ($forecast['labels'][$on] ?? '')];
+    }
+
+    /**
+     * Lian's usual rice yield for this month, from past records.
+     *
+     * @param  array<string, mixed>  $place
+     * @return array<string, mixed>|null
+     */
+    private function usualTile(array $place, CarbonImmutable $now): ?array
+    {
+        $usual = $this->seasonYield->usual((int) $now->month);
+
+        return $usual === null ? null : ['key' => 'usual', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.usual.label'),
+            'value' => number_format($usual, 2), 'unit' => 't/ha', 'note' => __('farmer.kpis.usual.note')];
     }
 
     /**

@@ -1174,6 +1174,10 @@ return [
             'heavy' => 'Heavy rain on :count day|Heavy rain on :count days',
             'no_heavy' => 'No heavy rain expected',
         ],
+        'risk' => ['label' => 'Barangay risk this week'],
+        'advisories' => ['label' => 'Advisories in effect', 'note' => 'For your barangay and all of Lian', 'none' => 'No advisory right now'],
+        'hot' => ['label' => 'Hottest day, next 7 days'],
+        'usual' => ['label' => 'Usual yield in Lian', 'note' => 'This month, from past harvests'],
         'rain_week' => [
             'title' => 'Chance of Rain This Week',
             'sub' => 'A taller bar means rain is more likely that day.',

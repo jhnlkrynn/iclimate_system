@@ -188,7 +188,9 @@ class FarmerHomeKpisTest extends TestCase
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
         $this->assertSame(1, preg_match('#<section class="fh-kpis"[^>]*data-fh-kpis>(.*?)</section>#s', $html, $m));
         preg_match_all('#data-fh-kpi="([a-z]+)"#', $m[1], $keys);
-        $this->assertSame(['farm', 'crop'], $keys[1]);                         // no estimate and no forecast here: those two tiles are left out
+        // No estimate and no forecast here, so "expected" and "rain" are left out; the row is filled with figures about the
+        // farmer's place that need nothing from the farmer (2026-10-09).
+        $this->assertSame(['farm', 'crop', 'advisories', 'usual'], $keys[1]);
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1])));
         $this->assertStringContainsString('Farm size 1.5 ha Irrigated', $text);
         $this->assertStringContainsString('Days to harvest 30 days', $text);
@@ -205,13 +207,43 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertStringContainsString('May patubig', $fil);
     }
 
-    public function test_a_farmer_with_nothing_saved_gets_no_empty_tiles(): void
+    public function test_a_farmer_with_nothing_saved_still_gets_real_figures_about_their_place_and_no_empty_tiles(): void
     {
         $html = $this->actingAs($this->farmer())->get(route('farmer.dashboard'))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('data-fh-kpis', $html);
-        $this->assertMatchesRegularExpression('/data-slot="kpis"\s+hidden/', $html);
+        // Nothing of their own is saved (no farm size, plan, estimate) and no forecast is stored: only the two figures
+        // that exist are shown. Zero advisories is a real count; the usual yield is 4.00 t/ha in this test's records.
+        preg_match_all('#data-fh-kpi="([a-z]+)"#', $html, $keys);
+        $this->assertSame(['advisories', 'usual'], $keys[1]);
+        $this->assertSame(1, preg_match('#<section class="fh-kpis"[^>]*data-fh-kpis>(.*?)</section>#s', $html, $m));
+        $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1])));
+        $this->assertStringContainsString('Advisories in effect 0 No advisory right now', $text);
+        $this->assertStringContainsString('Usual yield in Lian 4.00 t/ha', $text);
         $this->assertStringNotContainsString('data-fh-chart="compare"', $html);
+    }
+
+    public function test_the_row_is_filled_to_five_with_place_figures_after_the_farmers_own(): void
+    {
+        $farmer = $this->farmer();
+        $place = [
+            'risk' => ['state' => 'ok', 'label' => 'Low', 'barangay' => 'Prenza'],
+            'barangay' => 'Prenza',
+            'forecast' => ['state' => 'ok', 'labels' => ['Today', 'Sat 10', 'Sun 11'], 'temperature' => [30, 33, 31]],
+        ];
+        $tiles = fn (?\App\Models\Farm $farm, array $harvest, array $week): array => collect(app(FarmerHomeKpis::class)->for($farmer, $farm, null, $harvest, $week, $this->now, $place)['tiles'])->keyBy('key')->all();
+
+        // Nothing of the farmer's own: the four place figures.
+        $sparse = $tiles(null, ['state' => 'nodata'], ['state' => 'nodata', 'days' => []]);
+        $this->assertSame(['risk', 'advisories', 'hot', 'usual'], array_keys($sparse));
+        $this->assertSame(['Low', 'Prenza'], [$sparse['risk']['value'], $sparse['risk']['note']]);
+        $this->assertSame(['33', '°C', 'Sat 10'], [$sparse['hot']['value'], $sparse['hot']['unit'], $sparse['hot']['note']]);
+        $this->assertSame(['4.00', 't/ha'], [$sparse['usual']['value'], $sparse['usual']['unit']]);
+
+        // With all four of the farmer's own figures, one place figure completes the five.
+        $this->plan($farmer, '2026-07-28', '2026-11-05');
+        $full = $tiles($this->farm($farmer), ['state' => 'ok', 'yield' => 4.2], $this->week(['light', 'none', 'heavy']));
+        $this->assertSame(['farm', 'crop', 'expected', 'rain', 'risk'], array_keys($full));
+        $this->assertCount(FarmerHomeKpis::MAX_TILES, $full);
     }
 
     public function test_english_and_filipino_have_the_same_words_for_the_figures(): void
