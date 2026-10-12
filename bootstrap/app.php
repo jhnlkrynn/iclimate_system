@@ -34,6 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Manuscript – Naicel (2026-10-08): Maintenance mode and Roles & Permissions (System Settings; no query).
             \App\Http\Middleware\SystemMaintenanceMode::class,
             \App\Http\Middleware\CheckModuleAccess::class,
+            // Panel revision 4.4 A: an account on the default MAO password chooses its own first.
+            \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
 
         $middleware->api(append: [

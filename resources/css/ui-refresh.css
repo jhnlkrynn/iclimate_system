@@ -539,8 +539,8 @@ button.card:focus-visible,
     color: #fff;
     font-size: .66rem;
     font-weight: 800;
-    letter-spacing: .06em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     white-space: nowrap;
 }
 
@@ -963,8 +963,8 @@ button.legend-swatch[aria-pressed="true"] {
     color: #fff;
     font-size: .72rem;
     font-weight: 800;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .rmt-stats {

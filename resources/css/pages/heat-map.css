@@ -94,3 +94,46 @@ html[data-theme="dark"] .hmx-badge.is-nodata { background: #2c363c; color: #d5dd
 html[data-theme="dark"] .hmx-layer { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
 html[data-theme="dark"] .hmx-layer select { background: #22322a; color: #e2ebe6; }
 /* End Manuscript – Naicel */
+
+/* Farmers (2026-10): their own barangay in a big card above the map (green low, amber moderate, red high), the map
+   second. Sentence case, rounder cards. MAO keeps the full-screen map above. No hover movement. */
+.hmx.is-farmer { height: auto; min-height: 0; grid-template-columns: minmax(0, 1fr) 360px; }
+.hmx.is-farmer .hmx-map { height: 560px; border-radius: 24px; }
+.hmx.is-farmer .hmx-panel { max-height: 560px; border-radius: 24px; }
+.hmx.is-farmer .hmx-legend-title, .hmx.is-farmer .hmx-sub, .hmx.is-farmer .hmx-own-label { text-transform: none; letter-spacing: 0; font-size: .875rem; }
+.hmx-mine-wrap { grid-column: 1 / -1; }
+.hmx-mine {
+    --tone: #6b7a72; --tone-bg: #f2f4f3; --tone-line: #e0e5e2; --tone-ink: #1b1f1d;
+    display: flex; align-items: flex-start; gap: 20px; padding: 28px; border-radius: 24px;
+    background: var(--tone-bg); border: 1px solid var(--tone-line); color: var(--tone-ink);
+}
+.hmx-mine[hidden] { display: none; }
+.hmx-mine.is-low { --tone: #111111; --tone-bg: #f5f5f7; --tone-line: #e5e5e7; --tone-ink: #111111; }   /* no green tint */
+.hmx-mine.is-moderate { --tone: #b7791f; --tone-bg: #fdf5e4; --tone-line: #f1e0b8; --tone-ink: #5c3d00; }
+.hmx-mine.is-high { --tone: #c8372d; --tone-bg: #fcecea; --tone-line: #f3cfcb; --tone-ink: #7a1d17; }
+.hmx-mine-icon { flex: 0 0 auto; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--tone); color: #fff; }
+.hmx-mine .hmx-mine-icon svg { width: 46px; height: 46px; }
+.hmx-mine-text { display: grid; gap: 8px; min-width: 0; }
+.hmx-mine-label { margin: 0; font-size: 1rem; font-weight: 600; opacity: .8; }
+.hmx-mine h2 { margin: 0; font-size: clamp(1.625rem, 4vw, 2.25rem); font-weight: 700; line-height: 1.15; letter-spacing: -.02em; color: var(--tone-ink); }
+.hmx-mine-meaning { margin: 0; font-size: 1.125rem; line-height: 1.45; }
+.hmx-mine-action { margin: 0; padding: 12px 16px; border-radius: 16px; background: rgba(255, 255, 255, .7); font-size: 1.125rem; line-height: 1.45; }
+.hmx-mine-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 4px 0 0; font-size: .9375rem; font-weight: 600; }
+.hmx-mine-key .hmx-dot { width: 1rem; height: 1rem; }
+
+@media (max-width: 991.98px) {
+    .hmx.is-farmer { grid-template-columns: minmax(0, 1fr); }
+    .hmx.is-farmer .hmx-map { height: 52vh; height: 52dvh; min-height: 320px; }
+    .hmx.is-farmer .hmx-panel { max-height: none; }
+}
+@media (max-width: 575.98px) {
+    .hmx-mine { flex-direction: column; gap: 14px; padding: 22px 20px; }
+    .hmx-mine-icon { width: 68px; height: 68px; }
+    .hmx-mine .hmx-mine-icon svg { width: 38px; height: 38px; }
+}
+
+html[data-theme="dark"] .hmx-mine { --tone-bg: #18221d; --tone-line: #2a3a32; --tone-ink: #e4ece7; }
+html[data-theme="dark"] .hmx-mine.is-low { --tone: #333333; --tone-bg: #171717; --tone-line: #262626; --tone-ink: #f5f5f5; }
+html[data-theme="dark"] .hmx-mine.is-moderate { --tone-bg: #29210f; --tone-line: #4a3b18; --tone-ink: #fbe7bd; }
+html[data-theme="dark"] .hmx-mine.is-high { --tone-bg: #2c1513; --tone-line: #522521; --tone-ink: #ffdcd8; }
+html[data-theme="dark"] .hmx-mine-action { background: rgba(0, 0, 0, .22); }

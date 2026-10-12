@@ -36,11 +36,11 @@ class FarmerActivityController extends Controller
         $back = fn (array $errors) => redirect()->to(route('farmer.my-farm', array_filter(['month' => $this->monthOf($request->input('date'))])).'#activity')
             ->withErrors($errors, 'activity')->withInput()->with('fmf_activity_dialog', true);
 
-        $validator = Validator::make($request->only(['date', 'kind', 'farm_id']), [
+        $validator = Validator::make($request->only(['date', 'kind', 'farm_id', 'harvest_timing_reason', 'harvest_timing_reason_other']), [
             'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYears(3)->toDateString(), 'before_or_equal:'.$today->copy()->addYear()->toDateString()],
             'kind' => ['required', Rule::in([self::KIND_PLANTED, self::KIND_HARVESTED])],
             'farm_id' => ['required', 'integer'],
-        ], [
+        ] + \App\Support\HarvestTiming::rules(), [
             'date.*' => __('farmer.activity.errors.date'),
             'kind.*' => __('farmer.activity.errors.kind'),
             'farm_id.*' => __('farmer.activity.errors.farm'),
@@ -95,7 +95,13 @@ class FarmerActivityController extends Controller
             return $back(['date' => __('farmer.activity.errors.no_planting')]);
         }
 
-        $schedule->update(['harvested_on' => $date->toDateString(), 'progress_status' => 'Harvested']);
+        // Panel revision 1.3: an early or late harvest needs its reason (the dialog shows the reason list for it).
+        try {
+            $timing = \App\Support\HarvestTiming::attributes($schedule->harvestDateForPlanning(), $date, $data);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $back($e->errors());
+        }
+        $schedule->update(['harvested_on' => $date->toDateString(), 'progress_status' => 'Harvested'] + $timing);
         $missing->sync($user);
 
         // The actual-harvest question opens next (My Farm shows it for the latest harvest without a yield).

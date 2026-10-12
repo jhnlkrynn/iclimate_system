@@ -31,6 +31,7 @@
                 <div><dt>Message</dt><dd>{{ $record->message }}</dd></div>
             @endif
         </dl>
+        @include('partials.record-stamps', ['record' => $record])
     </section>
     @if ($routeName === 'farmer-profiles')
         <p class="fad-m-note">{{ $record->farmBoundary ? 'This farmer has saved a farm boundary. Open the full page to see it on the map.' : 'This farmer has not saved a farm boundary.' }}</p>

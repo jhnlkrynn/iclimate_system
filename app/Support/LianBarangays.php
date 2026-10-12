@@ -76,6 +76,35 @@ class LianBarangays
         return $includeAll ? ['' => 'All Barangays'] + $options : $options;
     }
 
+    /**
+     * Labels used by account-management forms. The stored values remain the
+     * canonical names used throughout the application, while the five
+     * poblacion barangays are presented in the shorter official form used by
+     * the user-facing account form.
+     *
+     * @return array<string, string> canonical value => display label
+     */
+    public static function userManagementOptions(): array
+    {
+        return collect(self::all())->mapWithKeys(function (string $barangay): array {
+            $label = preg_replace('/ \(Pob\.\)$/', '', $barangay) ?: $barangay;
+
+            return [$barangay => $label];
+        })->all();
+    }
+
+    /**
+     * Values accepted at the account-management boundary, including the
+     * shorter labels so direct requests are normalized just like form input.
+     */
+    public static function userManagementInputValues(): array
+    {
+        return array_values(array_unique(array_merge(
+            self::all(),
+            array_values(self::userManagementOptions()),
+        )));
+    }
+
     public static function coordinates(): array
     {
         return self::COORDINATES;

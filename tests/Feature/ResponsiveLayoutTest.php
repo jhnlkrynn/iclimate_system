@@ -81,7 +81,8 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('html body .app-main {', $sidebarCss);
         $this->assertStringContainsString('overflow-y: auto;', $sidebarCss);
         $this->assertStringContainsString('html body #mobileSidebar .ic-sb-nav', $sidebarCss);
-        $this->assertStringContainsString('data-theme-set="light"', file_get_contents(resource_path('views/layouts/sidebar.blade.php')));
-        $this->assertStringContainsString('data-theme-set="dark"', file_get_contents(resource_path('views/layouts/sidebar.blade.php')));
+        // One appearance (dark) since the 2026-10 redesign: no light/dark switch anywhere, dark set before the first paint.
+        $this->assertStringNotContainsString('data-theme-toggle', file_get_contents(resource_path('views/layouts/navigation.blade.php')));
+        $this->assertStringContainsString("setAttribute('data-theme','dark')", file_get_contents(resource_path('views/layouts/app.blade.php')));
     }
 }

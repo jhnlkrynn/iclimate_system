@@ -21,98 +21,69 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign In | {{ config('app.name', 'iClimate') }}</title>
+  <title>Sign in | {{ config('app.name', 'iClimate') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
-      --reg-green-dark: #174F3C;
-      --reg-green: #1F684F;
-      --reg-green-2: #2E7D5B;
+      /* Panel revision 4.5: the government palette (resources/css/gov-theme.css). */
+      --reg-green-dark: #1B5E20;
+      --reg-green: #2E7D32;
+      --reg-mint: #7FD6B5;
       --reg-green-bg: #F2F7F4;
-      --reg-border: #D7E3DC;
-      --reg-input-border: #CBD9D1;
-      --reg-text: #24312B;
-      --reg-text-2: #65736C;
+      --reg-border: #E3EAE6;
+      --reg-input-border: #D5DFD9;
+      --reg-text: #1F2937;
+      --reg-text-2: #4B5563;
       --reg-error: #B42318;
-      --reg-success: #16794A;
-      --reg-serif: Georgia, 'Times New Roman', serif;
-      --reg-sans: 'Inter', Arial, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --reg-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     }
     html, body { margin: 0; min-height: 100%; }
-    body { font-family: var(--reg-sans); font-size: 14px; line-height: 1.5; color: var(--reg-text); }
+    body { font-family: var(--reg-sans); font-size: 15px; line-height: 1.5; color: var(--reg-text); -webkit-font-smoothing: antialiased; }
     a { color: inherit; }
     button, input { font: inherit; }
     h1, h2, p, dl, dd { margin: 0; }
 
-    /* -- PAGE BACKGROUND ---------------------------------- */
-    body.login-page {
-      min-height: 100vh;
-      background-color: var(--reg-green-dark);
-      background-image:
-        linear-gradient(rgba(13,65,47,.76), rgba(13,65,47,.76)),
-        url('{{ asset('images/rice-hero-aerial.jpg') }}');
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      display: flex;
-      flex-direction: column;
-    }
-    .login-shell { flex: 1 1 auto; width: 100%; max-width: 1240px; margin: 0 auto; padding: 24px 32px; display: flex; flex-direction: column; }
-
-    .back-link-top {
-      align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
-      font-size: 14px; font-weight: 500; color: #E3F0E9; text-decoration: none; border-radius: 4px;
-    }
-    .back-link-top:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-    .back-link-top:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-
-    .login-main { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 24px 0; }
+    body.login-page { min-height: 100vh; background: #fff; }
+@include('auth.partials.split-styles')
 
     /* -- SIGN IN CARD -------------------------------------- */
-    .login-card {
-      flex: 0 1 480px; min-width: 0;
-      background: #fff; border: 1px solid var(--reg-border); border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(10,35,26,.18); padding: 36px;
-    }
-    .card-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
-    .card-logo img { height: 40px; width: auto; display: block; }
-    .card-logo-word { font-weight: 700; font-size: 20px; color: var(--reg-green-dark); }
+    .login-card { width: 100%; max-width: 400px; margin: auto 0; }
+    .card-logo { display: flex; justify-content: center; margin-bottom: 20px; }
+    .card-logo img { height: 48px; width: auto; display: block; }
 
-    .login-form-header { text-align: center; margin-bottom: 24px; }
-    .login-form-header h1 { font-family: var(--reg-serif); font-size: 28px; font-weight: 700; color: var(--reg-green-dark); line-height: 1.2; margin-bottom: 8px; }
+    .login-form-header { text-align: center; margin-bottom: 32px; }
+    .login-form-header h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; color: var(--reg-text); line-height: 1.15; margin-bottom: 6px; }
     .login-form-header p { font-size: 15px; color: var(--reg-text-2); }
-    .access-note { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--reg-text-2); }
-    .access-note svg { color: var(--reg-green-2); flex-shrink: 0; }
 
-    .auth-status, .auth-alert { display: flex; align-items: flex-start; gap: 10px; border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
+    .auth-status, .auth-alert { display: flex; align-items: flex-start; gap: 10px; border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
     .auth-status { background: var(--reg-green-bg); border: 1px solid var(--reg-border); color: var(--reg-green-dark); }
     .auth-alert { background: #FEF3F2; border: 1px solid #F4C7C3; color: var(--reg-error); }
     .auth-alert[hidden] { display: none; }
     .auth-alert svg { flex-shrink: 0; margin-top: 2px; }
 
     .form-group + .form-group, .form-group + .captcha-card { margin-top: 16px; }
-    .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--reg-text); margin-bottom: 6px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--reg-text-2); margin-bottom: 6px; }
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; height: 46px; background: #fff; border: 1px solid var(--reg-input-border); border-radius: 8px;
-      padding: 0 14px; font-size: 15px; font-weight: 400; color: var(--reg-text); outline: none;
-      transition: border-color .15s ease, box-shadow .15s ease;
+      width: 100%; height: 48px; background: #F6F8F7; border: 1px solid transparent; border-radius: 12px;
+      padding: 0 14px; font-size: 15px; color: var(--reg-text); outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .form-input.has-icon { padding-left: 40px; }
+    .form-input.has-icon { padding-left: 42px; }
     .form-input.has-toggle { padding-right: 46px; }
-    .form-input::placeholder { color: #8A968F; }
-    .form-input:focus { border-color: var(--reg-green); box-shadow: 0 0 0 3px rgba(31,104,79,.10); }
-    .form-input.is-invalid { border-color: var(--reg-error); }
-    .form-input.is-invalid:focus { box-shadow: 0 0 0 3px rgba(180,35,24,.10); }
-    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6E8A7D; }
+    .form-input::placeholder { color: #98A39D; }
+    .form-input:hover { background: #F1F4F2; }
+    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .form-input.is-invalid { border-color: var(--reg-error); background: #fff; }
+    .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
     .pwd-toggle {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
+      position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
       display: flex; align-items: center; justify-content: center;
-      color: var(--reg-text-2); background: none; border: none; border-radius: 6px; cursor: pointer;
+      color: var(--reg-text-2); background: none; border: none; border-radius: 8px; cursor: pointer;
     }
     .pwd-toggle:hover { color: var(--reg-green); }
     .pwd-toggle-slash[hidden] { display: none; }
@@ -125,121 +96,135 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='7' cy='7' r='6' stroke='%23B42318' stroke-width='1.4'/%3E%3Cpath d='M7 4v3.5' stroke='%23B42318' stroke-width='1.4' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='9.8' r='.8' fill='%23B42318'/%3E%3C/svg%3E");
     }
 
-    .captcha-card { background: var(--reg-green-bg); border: 1px solid var(--reg-border); border-radius: 8px; padding: 14px; text-align: center; }
+    .captcha-card { background: var(--reg-green-bg); border: 1px solid var(--reg-border); border-radius: 14px; padding: 14px; text-align: center; }
     .captcha-card label { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--reg-text); margin-bottom: 10px; }
-    .captcha-card label svg { color: var(--reg-green-2); }
-    .captcha-image { display: block; height: 56px; width: auto; max-width: 100%; margin: 0 auto 10px; border: 1px solid var(--reg-input-border); border-radius: 8px; background: #fff; }
+    .captcha-card label svg { color: var(--reg-green); }
+    .captcha-image { display: block; height: 56px; width: auto; max-width: 100%; margin: 0 auto 10px; border: 1px solid var(--reg-input-border); border-radius: 10px; background: #fff; }
     .captcha-field { max-width: 320px; margin: 0 auto; }
-    .captcha-field .form-input { text-align: center; text-transform: uppercase; letter-spacing: .12em; }
-    .captcha-field .form-input::placeholder { text-transform: none; letter-spacing: normal; }
+    .captcha-field .form-input { text-align: center; letter-spacing: .12em; }
+    .captcha-field .form-input::placeholder { letter-spacing: normal; }
     .captcha-field .field-error { justify-content: center; text-align: left; }
 
-    .form-row-split { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+    .form-row-split { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; }
     .checkbox-label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--reg-text); cursor: pointer; user-select: none; }
     .checkbox-label input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
-    .forgot-link, .login-register a { color: var(--reg-green); font-weight: 600; text-decoration: none; border-radius: 3px; }
+    .forgot-link, .login-register a { color: var(--reg-green); font-weight: 500; text-decoration: none; border-radius: 3px; }
     .forgot-link { font-size: 14px; }
-    .forgot-link:hover, .login-register a:hover { color: var(--reg-green-dark); text-decoration: underline; text-underline-offset: 3px; }
+    .forgot-link:hover, .login-register a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
     .btn-login {
-      width: 100%; height: 48px; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: var(--reg-green); color: #fff; border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color .15s ease;
+      width: 100%; height: 50px; margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: var(--reg-green-dark); color: #fff; border: none; border-radius: 980px;
+      font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
     }
-    .btn-login:hover { background: var(--reg-green-dark); }
+    .btn-login:hover { background: var(--reg-green); }
+    .btn-login:active { transform: scale(.98); }
     .btn-login:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
     .btn-login:disabled { opacity: .8; cursor: wait; }
     .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
-    .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 20px; }
+    .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 22px; }
 
-    /* -- WEATHER CARD -------------------------------------- */
-    .weather-card {
-      flex: 0 1 380px; min-width: 0;
-      background: rgba(13,46,34,.90); border: 1px solid rgba(255,255,255,.18); border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(10,35,26,.18); padding: 28px; color: #fff;
-    }
-    .weather-title { font-family: var(--reg-serif); font-size: 19px; font-weight: 700; line-height: 1.3; color: #fff; }
-    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #BFE3D0; margin-top: 4px; }
-    .weather-main { display: flex; align-items: center; gap: 16px; margin: 20px 0; }
-    .weather-icon { flex-shrink: 0; width: 52px; height: 52px; display: grid; place-items: center; color: #BFE3D0; font-size: 34px; line-height: 1; }
-    .weather-temp { font-family: var(--reg-serif); font-size: 32px; font-weight: 700; line-height: 1.1; color: #fff; }
-    .weather-cond { font-size: 15px; font-weight: 600; color: #BFE3D0; margin-top: 4px; }
-    .weather-card.is-unavailable .weather-cond { font-weight: 400; color: rgba(255,255,255,.86); margin-top: 0; }
+    /* -- WEATHER CARD: plain dark tile on the green panel --- */
+    .weather-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; color: #fff; }
+    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(255,255,255,.8); margin-top: 2px; }
+    .weather-main { display: flex; align-items: center; gap: 16px; margin: 22px 0; }
+    .weather-icon { flex-shrink: 0; width: 56px; height: 56px; display: grid; place-items: center; color: #fff; font-size: 34px; line-height: 1; }
+    .weather-temp { font-size: 48px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+    .weather-cond { font-size: 15px; font-weight: 500; color: rgba(255,255,255,.85); margin-top: 6px; }
+    .weather-card.is-unavailable .weather-cond { font-weight: 400; margin-top: 0; }
     .weather-card.is-unavailable .weather-temp { display: none; }
-    .weather-rows { border-top: 1px solid rgba(255,255,255,.14); }
-    .weather-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.14); }
-    .weather-row svg { flex-shrink: 0; color: #9FD3BA; }
-    .weather-row dt { flex: 1; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.74); }
-    .weather-row dd { font-size: 16px; font-weight: 600; color: #fff; }
-    .weather-updated { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #BFE3D0; margin-top: 16px; }
-    .weather-updated-dot { width: 6px; height: 6px; border-radius: 50%; background: #9FD3BA; flex-shrink: 0; }
-    .weather-card.is-unavailable .weather-updated-dot { background: rgba(255,255,255,.45); }
+    .weather-rows { border-top: 1px solid rgba(255,255,255,.22); }
+    .weather-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.22); }
+    .weather-row svg { flex-shrink: 0; color: #fff; opacity: .85; }
+    .weather-row dt { flex: 1; font-size: 14px; color: rgba(255,255,255,.82); }
+    .weather-row dd { font-size: 15px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+    .weather-updated { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,.8); margin-top: 16px; }
+    .weather-updated-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--reg-mint); flex-shrink: 0; }
+    .weather-card.is-unavailable .weather-updated-dot { background: rgba(255,255,255,.5); }
 
-    /* -- FOOTER -------------------------------------------- */
-    .login-foot { flex: 0 0 auto; background: rgba(12,42,31,.9); border-top: 1px solid rgba(255,255,255,.12); padding: 12px 32px; }
-    .login-foot-inner { max-width: 1176px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; }
-    .rf-brand { display: flex; align-items: center; gap: 10px; }
-    .rf-brand img { width: 22px; height: 22px; object-fit: contain; }
-    .rf-brand-text { display: flex; flex-direction: column; line-height: 1.4; }
-    .rf-brand-text strong, .rf-badge { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.92); }
-    .rf-brand-text span { font-size: 12px; color: rgba(255,255,255,.68); }
-    .rf-badges { display: flex; gap: 10px 24px; flex-wrap: wrap; }
-    .rf-badge { display: flex; align-items: center; gap: 8px; font-weight: 500; }
-    .rf-badge svg { color: #9FD3BA; flex-shrink: 0; }
-
-    /* -- RESPONSIVE ---------------------------------------- */
-    @media (max-width: 1024px) {
-      .login-shell { padding: 20px 24px; }
-      .login-main { gap: 24px; }
-      .login-card { padding: 32px; }
-      .weather-card { flex-basis: 340px; padding: 24px; }
-    }
-    @media (max-width: 820px) {
-      body.login-page { background-attachment: scroll; }
-      .login-main { flex-direction: column; align-items: center; justify-content: flex-start; padding: 16px 0 8px; }
-      .login-card, .weather-card { flex: 0 0 auto; width: 100%; max-width: 480px; }
-    }
-    @media (max-width: 560px) {
-      .login-shell { padding: 16px; }
-      .login-card, .weather-card { padding: 24px; }
-      .login-foot { padding: 14px 16px; }
-      .login-foot-inner { flex-direction: column; align-items: flex-start; }
-    }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
       .btn-spinner { animation-duration: 2s; }
     }
+    /* Panel revision 4.5 / 4.3: government strip, and inputs of at least 16px on phones (no auto-zoom). */
+    .gov-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; padding: 5px 12px; background: #0038A8; color: #fff; font-size: 13px; font-family: var(--reg-sans); }
+    .gov-strip strong { color: #FCD116; }
+    .gov-strip-seal { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; transform: scale(1.12); background: #fff; }
+    .gov-strip { align-items: center; }
+    body:has(.gov-strip) { flex-wrap: wrap; align-content: flex-start; }
+    .gov-strip { flex: 0 0 100%; }
+    @media (max-width: 767.98px) { .form-input, input, select { font-size: 16px !important; min-height: 44px; } }
   </style>
     @include('partials.global-loader')
 </head>
 <body class="login-page">
+  {{-- Panel revision 4.5: the government strip, as on every signed-in page. --}}
+  <div class="gov-strip" role="note"><img class="gov-strip-seal" src="{{ asset('images/lian-seal.jpg') }}" alt="Seal of the Municipality of Lian" width="22" height="22"><span>Republic of the Philippines</span><span aria-hidden="true">·</span><span>Province of Batangas</span><span aria-hidden="true">·</span><strong>Municipality of Lian · Municipal Agriculture Office</strong></div>
   {{-- Sign-in errors are shown inline in the card, so the toast is kept for session flashes only. --}}
   @if (session('success') || session('error'))
     <x-flash-toast />
   @endif
 
-  <div class="login-shell">
+  <div class="login-split">
+    <aside class="login-visual">
     <a href="{{ url('/') }}" class="back-link-top">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Back to Home
+      Back to home
     </a>
+    <p class="login-visual-copy">Climate-smart rice farming for Lian, Batangas.</p>
+      <section class="weather-card glass-card {{ $hasRealWeather ? '' : 'is-unavailable' }}" id="weatherCard" aria-labelledby="weatherTitle" data-weather-endpoint="{{ route('login.weather') }}">
+        <h2 class="weather-title" id="weatherTitle">Today's weather</h2>
+        <div class="weather-loc">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
+          Lian, Batangas
+        </div>
 
-    <main class="login-main">
+        <div class="weather-main">
+          {{-- Starts as the provider's emoji and is swapped for a matching line icon by the page script. --}}
+          <div class="weather-icon" id="weatherEmoji" aria-hidden="true">{{ $hasRealWeather ? $conditionEmoji : '🌦️' }}</div>
+          <div>
+            <div class="weather-temp" id="weatherTemp">{{ $temperature !== null ? $temperature.'°C' : '--' }}</div>
+            <div class="weather-cond" id="weatherCond">{{ $hasRealWeather ? $conditionLabel : $weatherUnavailable }}</div>
+          </div>
+        </div>
+
+        <dl class="weather-rows">
+          <div class="weather-row">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5c2 2.6 3.6 4.8 3.6 7a3.6 3.6 0 1 1-7.2 0c0-2.2 1.6-4.4 3.6-7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            <dt>Humidity</dt>
+            <dd id="weatherHumidity">{{ $humidity !== null ? $humidity.'%' : '--' }}</dd>
+          </div>
+          <div class="weather-row">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 6.5h8a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 10.5h11a2.2 2.2 0 1 1-2.2 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <dt>Wind speed</dt>
+            <dd id="weatherWind">{{ $windSpeed !== null ? $windSpeed.' km/h' : '--' }}</dd>
+          </div>
+          <div class="weather-row">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 10.5h8a3 3 0 0 0 .4-5.97A4.2 4.2 0 0 0 5.3 5.6 2.5 2.5 0 0 0 5 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 13v2M9 13v2M11.5 13v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <dt>Rainfall today</dt>
+            <dd id="weatherRainfall">{{ $rainfall !== null ? number_format((float) $rainfall, 1).' mm' : '--' }}</dd>
+          </div>
+        </dl>
+
+        <div class="weather-updated">
+          <span class="weather-updated-dot" aria-hidden="true"></span>
+          <span id="weatherUpdatedLabel">{{ $updatedLabel }}</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="login-panel">
+      @include('auth.partials.toggle')
       <div class="login-card">
         <div class="card-logo">
-          <img src="{{ asset('images/iclimate-icon.png') }}" alt="">
-          <div class="card-logo-word">iClimate</div>
+          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
         </div>
 
         <div class="login-form-header">
-          <h1>Sign In</h1>
-          <p>Access your iClimate account.</p>
-          <div class="access-note">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            Secure Account Access
-          </div>
+          <h1>Sign in</h1>
+          <p>Welcome back to iClimate.</p>
         </div>
 
         @if (session('status'))
@@ -251,11 +236,11 @@
           <span>{{ $signInError }}</span>
         </div>
 
-        <form method="POST" action="{{ route('login') }}" class="login-form" data-loader-text="Signing In...">
+        <form method="POST" action="{{ route('login') }}" class="login-form" data-loader-text="Signing in...">
           @csrf
 
           <div class="form-group">
-            <label for="email">Email Address</label>
+            <label for="email">Email address</label>
             <div class="input-wrap">
               <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2 5l6 4.2L14 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
               <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-input has-icon" placeholder="Enter your email address" autocomplete="username" aria-describedby="email-error" required autofocus/>
@@ -279,7 +264,7 @@
           <div class="captcha-card">
             <label for="captcha_answer">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Security Check
+              Security check
             </label>
             <img class="captcha-image" width="190" height="64" src="{{ route('captcha.image', ['context' => 'login', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
             <div class="captcha-field">
@@ -292,84 +277,21 @@
           <div class="form-row-split">
             <label class="checkbox-label" for="remember_me">
               <input type="checkbox" id="remember_me" name="remember" checked/>
-              Remember Me
+              Remember me
             </label>
-            @if (Route::has('password.request'))<a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>@endif
+            @if (Route::has('password.request'))<a href="{{ route('password.request') }}" class="forgot-link">Forgot password?</a>@endif
           </div>
 
-          <button class="btn-login" id="loginBtn" type="submit">Sign In</button>
+          <button class="btn-login" id="loginBtn" type="submit">Sign in</button>
         </form>
 
-        <p class="login-register">Don't have an account? <a href="{{ route('register') }}">Create Account</a></p>
+        <p class="login-register">New to iClimate? <a href="{{ route('register') }}">Create an account</a></p>
       </div>
 
-      <section class="weather-card {{ $hasRealWeather ? '' : 'is-unavailable' }}" id="weatherCard" aria-labelledby="weatherTitle" data-weather-endpoint="{{ route('login.weather') }}">
-        <h2 class="weather-title" id="weatherTitle">Today's Weather</h2>
-        <div class="weather-loc">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          Lian, Batangas
-        </div>
-
-        <div class="weather-main">
-          {{-- Starts as the provider's emoji and is swapped for a matching line icon by the page script. --}}
-          <div class="weather-icon" id="weatherEmoji" aria-hidden="true">{{ $hasRealWeather ? $conditionEmoji : '🌦️' }}</div>
-          <div>
-            <div class="weather-temp" id="weatherTemp">{{ $temperature !== null ? $temperature.'°C' : '--' }}</div>
-            <div class="weather-cond" id="weatherCond">{{ $hasRealWeather ? $conditionLabel : $weatherUnavailable }}</div>
-          </div>
-        </div>
-
-        <dl class="weather-rows">
-          <div class="weather-row">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5c2 2.6 3.6 4.8 3.6 7a3.6 3.6 0 1 1-7.2 0c0-2.2 1.6-4.4 3.6-7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-            <dt>Humidity</dt>
-            <dd id="weatherHumidity">{{ $humidity !== null ? $humidity.'%' : '--' }}</dd>
-          </div>
-          <div class="weather-row">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 6.5h8a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 10.5h11a2.2 2.2 0 1 1-2.2 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <dt>Wind Speed</dt>
-            <dd id="weatherWind">{{ $windSpeed !== null ? $windSpeed.' km/h' : '--' }}</dd>
-          </div>
-          <div class="weather-row">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 10.5h8a3 3 0 0 0 .4-5.97A4.2 4.2 0 0 0 5.3 5.6 2.5 2.5 0 0 0 5 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 13v2M9 13v2M11.5 13v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <dt>Rainfall Today</dt>
-            <dd id="weatherRainfall">{{ $rainfall !== null ? number_format((float) $rainfall, 1).' mm' : '--' }}</dd>
-          </div>
-        </dl>
-
-        <div class="weather-updated">
-          <span class="weather-updated-dot" aria-hidden="true"></span>
-          <span id="weatherUpdatedLabel">{{ $updatedLabel }}</span>
-        </div>
-      </section>
+      <p class="login-panel-foot">&copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</p>
     </main>
   </div>
 
-  <footer class="login-foot">
-    <div class="login-foot-inner">
-      <div class="rf-brand">
-        <img src="{{ asset('images/iclimate-icon.png') }}" alt="">
-        <div class="rf-brand-text">
-          <strong>iClimate &middot; Climate and Farming Information System for Lian, Batangas</strong>
-          <span>&copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</span>
-        </div>
-      </div>
-      <div class="rf-badges">
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5l5.5 2v3.8c0 3.6-2.4 6.1-5.5 7-3.1-.9-5.5-3.4-5.5-7V3.5l5.5-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-          Secure Access
-        </div>
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          Local Climate Information
-        </div>
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14V7M8 9C8 5.5 10 3 13.5 2.5 13.5 6 11.5 8.5 8 9ZM8 11C8 8.5 6.5 6.5 3 6c0 3 1.5 4.7 5 5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Climate-Smart Farming
-        </div>
-      </div>
-    </div>
-  </footer>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -438,14 +360,14 @@
       }
 
       loginBtn.disabled = true;
-      loginBtn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>Signing In...';
+      loginBtn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>Signing in...';
     });
 
     // Returning with the Back button restores the page from cache: make the button usable again.
     window.addEventListener('pageshow', (event) => {
       if (! event.persisted) return;
       loginBtn.disabled = false;
-      loginBtn.textContent = 'Sign In';
+      loginBtn.textContent = 'Sign in';
     });
 
     /* -- WEATHER ------------------------------------------- */

@@ -1,7 +1,7 @@
 @import './ui-tokens.css';
 /*
  * Landing page layer: applies the shared iClimate design language
- * (tokens, motion, card spotlight, live pulse, gradient CTAs, focus rings)
+ * (tokens, motion, focus rings)
  * to the public landing page's own components. Loaded after the page's
  * inline <style>, so equal-specificity rules here refine it. The landing
  * keeps its distinct hero, imagery, and section layouts.
@@ -25,23 +25,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Same brand underline the app draws under page titles. */
-.section-header .section-title::after,
-.about-text .section-title::after {
-    content: "";
-    display: block;
-    width: 56px;
-    height: 3px;
-    margin-top: .6rem;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--ic-mint), var(--ic-sky));
-    transform-origin: left center;
-}
-
-.section-header .section-title::after {
-    margin-inline: auto;
-}
-
 /* ---------------------------------------------------------- live signals */
 .hero-location svg,
 .eyebrow::before {
@@ -49,138 +32,38 @@
 }
 
 .hero-location {
-    position: relative;
-    width: fit-content;
-    align-self: flex-start;
-    padding: .38rem .8rem .38rem .7rem;
-    border: 1px solid rgba(127, 214, 181, .28);
-    border-radius: 999px;
-    background: rgba(13, 38, 30, .45);
-    backdrop-filter: blur(8px);
-    color: #b9e8d3;
+    display: block;
+    font-family: inherit;
+    font-size: .9375rem;
+    font-weight: 500;
+    color: var(--ic-mint);
 }
 
-.hero-map-dot {
-    animation: ic-live-pulse 2.2s ease-out infinite;
+.hero-location svg {
+    display: none;
 }
 
-/* ---------------------------------------------------------------- buttons */
-.btn-primary,
-.nav-cta {
-    position: relative;
-    overflow: hidden;
-    background-image: var(--ic-grad-brand);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(31, 90, 70, .35);
-}
-
-.btn-primary:hover,
-.nav-cta:hover {
-    background-image: var(--ic-grad-brand-hover);
-    color: #fff;
-    box-shadow: 0 12px 26px rgba(31, 90, 70, .42);
-}
-
-.btn-primary::after,
-.nav-cta::after {
+/* --------------------------------------------- magic card (Magic UI) */
+/* A mint glow on the card border that follows the pointer. The card itself
+   never moves; the glow is drawn as a thin ring just inside the border. */
+.magic-card::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: var(--ic-grad-sheen);
-    transform: translateX(-120%);
+    z-index: 2;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgba(127, 214, 181, .95), rgba(127, 214, 181, .2) 50%, transparent 80%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity .3s ease;
     pointer-events: none;
 }
 
-.btn-primary:hover::after,
-.nav-cta:hover::after {
-    transform: translateX(120%);
-    transition: transform .7s ease;
-}
-
-.btn:active,
-.nav-cta:active,
-.nav-login:active {
-    transform: translateY(0) scale(.97);
-}
-
-.btn:focus-visible,
-.nav-cta:focus-visible,
-.nav-login:focus-visible,
-.nav-link:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-    outline: none;
-    box-shadow: var(--ic-ring);
-}
-
-/* ------------------------------------------------------------------- nav */
-.nav-link {
-    color: #d6efe3;
-    transition: color .2s ease, background .2s ease;
-}
-
-.nav-link:hover {
-    background: rgba(255, 255, 255, .08);
-}
-
-.nav-link.active {
-    color: #fff;
-    background: rgba(127, 214, 181, .16);
-}
-
-.nav-link.active::after {
-    background: var(--ic-mint);
-    box-shadow: 0 0 8px rgba(127, 214, 181, .8);
-}
-
-/* ------------------------------------------------------ interactive cards */
-.feature-card,
-.pillar-card,
-.role-card,
-.mission-card,
-.contact-method,
-.trust-item,
-.hws-item,
-.footer-message-card,
-.contact-form-card {
-    transition-timing-function: cubic-bezier(.2, .8, .2, 1);
-}
-
-/* Pointer spotlight disabled: no green filled overlay on hover */
-.feature-card.ic-spot:hover,
-.pillar-card.ic-spot:hover,
-.role-card.ic-spot:hover,
-.mission-card.ic-spot:hover,
-.contact-method.ic-spot:hover,
-.trust-item.ic-spot:hover {
-    background-image: none;
-}
-
-.trust-item {
-    transition: transform .3s var(--ic-ease-spring), background .2s ease, border-color .2s ease, box-shadow .25s ease;
-}
-
-.trust-item:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--ic-lift-shadow);
-}
-
-.trust-icon,
-.fc-icon-wrap,
-.pillar-icon,
-.contact-method-icon,
-.footer-social-icon {
-    transition: transform .35s var(--ic-ease-spring) !important;
-}
-
-.trust-item:hover .trust-icon,
-.feature-card:hover .fc-icon-wrap,
-.pillar-card:hover .pillar-icon,
-.contact-method:hover .contact-method-icon,
-.footer-social-icon:hover {
-    transform: translateY(-2px) rotate(-6deg) scale(1.08) !important;
+.magic-card:hover::after {
+    opacity: 1;
 }
 
 .role-card--highlight {
@@ -200,17 +83,6 @@ select:focus-visible {
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-thumb { background: rgba(127, 214, 181, .38); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-
-@media (prefers-reduced-motion: reduce) {
-    .hero-map-dot { animation: none; }
-    .trust-item:hover,
-    .trust-item:hover .trust-icon,
-    .feature-card:hover .fc-icon-wrap,
-    .pillar-card:hover .pillar-icon,
-    .contact-method:hover .contact-method-icon {
-        transform: none !important;
-    }
-}
 
 /* ------------------------------------------------------------ spacing pass */
 /* Six feature cards in one row squeezed copy into ~120px columns and broke
@@ -234,4 +106,710 @@ select:focus-visible {
 .pillar-card p {
     hyphens: auto;
     overflow-wrap: break-word;
+}
+
+/* Keyboard focus for links and form fields (buttons and nav set their own). */
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: none;
+    box-shadow: var(--ic-ring);
+}
+
+/* ------------------------------------ interactive hover button (Magic UI) */
+/* A dot sits left of the label; on hover it grows to fill the button while the
+   label slides out and the same label with an arrow slides in. */
+.ihb {
+    position: relative;
+    overflow: hidden;
+    gap: 8px;
+}
+
+.ihb-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--iclimate-primary);
+    transition: transform .3s ease;
+}
+
+.ihb-label {
+    display: inline-block;
+    transition: transform .3s ease, opacity .3s ease;
+}
+
+.ihb-hover {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    opacity: 0;
+    transform: translateX(48px);
+    transition: transform .3s ease, opacity .3s ease;
+}
+
+.ihb:hover .ihb-dot,
+.ihb:focus-visible .ihb-dot { transform: scale(100.8); }
+
+.ihb:hover .ihb-label,
+.ihb:focus-visible .ihb-label { transform: translateX(48px); opacity: 0; }
+
+.ihb:hover .ihb-hover,
+.ihb:focus-visible .ihb-hover { transform: none; opacity: 1; }
+
+/* Once the dot has nearly filled the button, the button turns the same green so no
+   white edge shows round it. Leaving, it turns white straight away so the dot is seen shrinking. */
+.btn-primary.ihb,
+.nav-cta.ihb { transition: background-color 0s; }
+.btn-primary.ihb:hover,
+.btn-primary.ihb:focus-visible,
+.nav-cta.ihb:hover,
+.nav-cta.ihb:focus-visible {
+    background: var(--iclimate-primary);
+    transition: background-color 0s .22s;
+}
+
+.hero-inner {
+    position: relative;
+    z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ihb-dot,
+    .ihb-label,
+    .ihb-hover { transition: none; }
+}
+
+/* ======================================================= section redesign */
+/* About, Features, User roles and Contact share one look with the hero: the
+   plain page green, near-black tiles, left-aligned text and mint accents. */
+
+/* Plain backgrounds: every section sits on the same flat page green. */
+.hero,
+.about-section,
+.features-section,
+.roles-section,
+.contact-section {
+    background: var(--page-bg);
+}
+
+.hero::before {
+    content: none;
+}
+
+.about-section > .container,
+.features-section > .container,
+.roles-section > .container,
+.contact-section > .container {
+    position: relative;
+    z-index: 1;
+}
+
+.features-section,
+.roles-section,
+.contact-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.about-section::after,
+.features-section::before,
+.features-section::after,
+.roles-section::before,
+.contact-section::before,
+.tagline-flourish {
+    display: none;
+}
+
+.about-tagline {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--ic-mint);
+}
+
+.section-header h2,
+.contact-info h2,
+.how-block .section-header h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+}
+
+.section-header p {
+    font-size: 1.125rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .65);
+}
+
+.feature-card,
+.how-block,
+.role-card,
+.contact-form-card,
+.contact-details {
+    background: var(--surface-ink);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 24px;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.fc-icon-wrap,
+.how-step-icon,
+.role-icon-wrap--img,
+.cd-icon-wrap,
+.cfc-icon,
+.mission-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 0;
+    background: rgba(127, 214, 181, .1);
+    color: var(--ic-mint);
+    box-shadow: none;
+}
+
+.fc-icon-wrap [stroke],
+.how-step-icon [stroke],
+.cd-icon-wrap [stroke],
+.cfc-icon [stroke],
+.mission-icon [stroke] {
+    stroke: var(--ic-mint);
+}
+
+.fc-icon-wrap [fill]:not([fill="none"]) {
+    fill: var(--ic-mint);
+}
+
+/* ---------------------------------------------------------------- features */
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 28px;
+}
+
+.feature-card .fc-icon-wrap {
+    margin-bottom: 14px;
+}
+
+.feature-card h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.feature-card p {
+    font-size: .95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .62);
+}
+
+.fc-badge {
+    align-self: flex-start;
+    margin-top: auto;
+    font-size: .8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .8);
+    padding: 6px 12px;
+    border-radius: 980px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.how-block {
+    padding: 48px;
+}
+
+.how-step-num {
+    color: var(--ic-mint);
+    font-weight: 600;
+}
+
+.how-step-top::after {
+    border-top: 1px solid rgba(255, 255, 255, .12) !important;
+    background: none !important;
+}
+
+.how-step h3 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.how-step p {
+    font-size: .925rem;
+    color: rgba(255, 255, 255, .62);
+}
+
+/* -------------------------------------------------------------- user roles */
+.role-card {
+    align-items: flex-start;
+    text-align: left;
+    padding: 32px;
+}
+
+.role-card.role-card--highlight {
+    margin-top: 0;
+    padding-bottom: 32px;
+    background: var(--surface-ink);
+    border-color: rgba(127, 214, 181, .35);
+    box-shadow: none;
+}
+
+.role-icon-wrap--img {
+    width: 48px;
+    height: 48px;
+    margin: 0 0 20px;
+}
+
+.role-icon-wrap--img svg {
+    width: 24px;
+    height: 24px;
+}
+
+.role-workspace-label {
+    font-size: .8125rem;
+    font-weight: 500;
+    color: var(--ic-mint);
+}
+
+.role-card h3 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+.role-card p {
+    font-size: .95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .62);
+}
+
+.role-divider {
+    width: 100%;
+    background: rgba(255, 255, 255, .08);
+}
+
+.role-features-label {
+    font-size: .8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .5);
+}
+
+.role-features {
+    align-self: stretch;
+}
+
+.role-feature-item {
+    justify-content: flex-start;
+    font-size: .95rem;
+    color: rgba(255, 255, 255, .85);
+}
+
+.role-feature-item svg {
+    color: var(--ic-mint);
+}
+
+.role-cta {
+    align-self: stretch;
+    justify-content: center;
+    height: 44px;
+    border-radius: 980px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    background: transparent;
+    color: #fff;
+    font-weight: 500;
+    box-shadow: none;
+}
+
+.role-cta:hover {
+    border-color: #fff;
+    background: transparent;
+    color: #fff;
+    transform: none;
+}
+
+.role-card.role-card--highlight .role-cta {
+    background: #fff;
+    border-color: #fff;
+    color: var(--iclimate-primary);
+}
+
+.role-card.role-card--highlight .role-cta:hover {
+    background: rgba(255, 255, 255, .86);
+    color: var(--iclimate-primary);
+}
+
+/* ----------------------------------------------------------------- contact */
+.contact-info h2 {
+    margin-bottom: 14px;
+}
+
+.contact-info > p {
+    color: rgba(255, 255, 255, .65);
+}
+
+.contact-details {
+    padding: 8px 24px;
+    margin-top: 28px;
+    gap: 0;
+}
+
+.contact-details .cd-item {
+    padding: 16px 0;
+    align-items: flex-start;
+}
+
+.contact-details .cd-item + .cd-item {
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.cd-text strong {
+    font-size: .8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .55);
+}
+
+.cd-text span,
+.cd-hours-row span {
+    color: #fff;
+}
+
+.cd-hours-row span:first-child {
+    color: rgba(255, 255, 255, .65);
+}
+
+.contact-form-card {
+    padding: 36px;
+}
+
+.contact-form-card h3 {
+    font-size: 1.5rem;
+    letter-spacing: -0.025em;
+}
+
+.contact-form-card label {
+    font-size: .8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .65);
+}
+
+.contact-form-card .form-input {
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 12px;
+    color: #fff;
+}
+
+.contact-form-card .form-input::placeholder {
+    color: rgba(255, 255, 255, .38);
+}
+
+.contact-form-card .form-input:focus {
+    border-color: var(--ic-mint);
+    background: rgba(255, 255, 255, .06);
+    box-shadow: 0 0 0 3px rgba(127, 214, 181, .2);
+    outline: none;
+}
+
+.contact-form-card .form-input option {
+    background: var(--surface-ink);
+    color: #fff;
+}
+
+.contact-form-card .btn-dark {
+    height: 48px;
+    background: #fff;
+    color: var(--iclimate-primary);
+    border: 0;
+}
+
+.contact-form-card .btn-dark:hover {
+    background: rgba(255, 255, 255, .86);
+    color: var(--iclimate-primary);
+}
+
+.role-card--highlight .role-icon-wrap--img {
+    box-shadow: none;
+}
+
+.role-card.role-card--highlight .role-workspace-label {
+    color: var(--ic-mint);
+}
+
+.section-header {
+    max-width: 760px;
+}
+
+/* Contact: details on the left, form on the right, both full height. */
+.contact-grid {
+    align-items: stretch;
+}
+
+.contact-info .contact-details {
+    margin-top: 0;
+    height: 100%;
+}
+
+.cd-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cd-value {
+    color: #fff;
+}
+
+.cd-value:hover,
+.cd-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.cd-link {
+    margin-top: 4px;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--ic-mint);
+}
+
+/* Sections sit closer now the repeated blocks are gone. */
+.about-section,
+.features-section,
+.roles-section,
+.contact-section {
+    padding: 72px 0;
+}
+
+.cd-value {
+    font-size: .875rem;
+}
+
+/* ------------------------------------------------------------------ footer */
+/* Apple-style: one quiet brand block, three short link columns, a hairline, then the fine print. */
+.footer {
+    background: #0f2e24;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    padding: 64px 0 28px;
+    overflow: visible;
+}
+
+.ft-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
+    gap: 48px;
+    padding-bottom: 40px;
+}
+
+.ft-logo { display: inline-block; border-radius: 10px; }
+.ft-logo img { display: block; height: 56px; width: auto; }
+
+.ft-line {
+    max-width: 34ch;
+    margin: 18px 0 22px;
+    font-size: .9375rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, .62);
+}
+
+.ft-social { display: flex; gap: 10px; }
+.ft-social .footer-social-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .1);
+    color: rgba(255, 255, 255, .8);
+    transform: none !important;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.ft-social .footer-social-icon:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .2); color: #fff; }
+
+.ft-cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+}
+
+.ft-head {
+    margin: 0 0 14px;
+    font-size: .8125rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: #fff;
+}
+
+.ft-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ft-col li { font-size: .875rem; line-height: 1.45; color: rgba(255, 255, 255, .6); }
+.ft-col a { color: rgba(255, 255, 255, .6); text-decoration: none; transition: color .15s ease; }
+.ft-col a:hover { color: #fff; }
+.ft-col a:focus-visible,
+.ft-top-link:focus-visible,
+.ft-logo:focus-visible { outline: 2px solid var(--ic-mint); outline-offset: 3px; border-radius: 4px; }
+
+.ft-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    flex-wrap: wrap;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.ft-bottom p { margin: 0; font-size: .8125rem; color: rgba(255, 255, 255, .45); }
+.ft-top-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8125rem;
+    color: rgba(255, 255, 255, .6);
+    text-decoration: none;
+}
+.ft-top-link:hover { color: #fff; }
+
+@media (max-width: 900px) {
+    .ft-top { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+}
+@media (max-width: 560px) {
+    .footer { padding: 48px 0 24px; }
+    .ft-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+    .ft-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+.footer::before,
+.footer::after { content: none !important; display: none !important; }
+
+/* About: the mission statement sits on a plain tile instead of a photo. */
+.about-photo {
+    min-height: 0;
+    background: var(--surface-ink);
+    box-shadow: none;
+}
+
+.about-photo .mission-card {
+    position: static;
+    max-width: none;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+/* Hero map: Google Maps look. Light street map, untinted tiles, white info card,
+   white weather card along the bottom and an "Open in Google Maps" button at the top right. */
+.hero-map-panel,
+.hero-map.leaflet-container {
+    background: #f2efe9;
+}
+
+.hero-map-panel {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .2), 0 12px 40px rgba(0, 0, 0, .25);
+}
+
+.hero-map-panel::after {
+    content: none;
+}
+
+.hero-map .leaflet-tile-pane {
+    filter: none;
+}
+
+.hero-map.leaflet-container {
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+.hero-pin {
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .3));
+}
+
+.hero-map-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 7px 1px rgba(0, 0, 0, .3);
+    background: #fff;
+}
+
+.hero-map-tip .hero-map-card::after {
+    background: #fff;
+}
+
+/* The whole map is one link to Google Maps; it sits over the tiles and the red
+   border but under the pin, the office card and the weather card. */
+.hero-map-link {
+    position: absolute;
+    inset: 0;
+    z-index: 450;
+    cursor: pointer;
+}
+
+.hero-map-link:focus-visible {
+    outline: 3px solid #1a73e8;
+    outline-offset: -3px;
+    border-radius: inherit;
+}
+
+.hero-map-open {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    font-size: .875rem;
+    font-weight: 500;
+    color: #1a73e8;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+    transition: background-color .15s ease;
+}
+
+.hero-map-link:hover .hero-map-open {
+    background: #f1f3f4;
+}
+
+.hero-weather-strip {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+}
+
+.hero-weather-strip .hws-val {
+    color: #202124;
+}
+
+.hero-weather-strip .hws-label {
+    color: #5f6368;
+}
+
+.hero-weather-strip .hws-item + .hws-item {
+    border-left-color: #e6e6e6;
+}
+
+/* Office card on the map: all text in black. */
+.hero-map-card .hmc-office,
+.hero-map-card .hmc-location,
+.hero-map-card .hmc-live {
+    color: #000;
 }

@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 
 class FarmerPlantingSchedule extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
     public const SEASONS = ['Wet', 'Dry'];
 
@@ -25,6 +25,8 @@ class FarmerPlantingSchedule extends Model
         'historical_same_month_average', 'yield_difference',
         'comparison_interpretation', 'comparison_note', 'recommended_actions',
         'prediction_generated_at',
+        // Panel revision 1.3
+        'harvest_timing', 'harvest_timing_reason', 'harvest_timing_reason_other',
     ];
 
     protected $casts = [
@@ -46,6 +48,37 @@ class FarmerPlantingSchedule extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    // ------------------------------------------------------------ Panel revision 1.3: harvest timing
+
+    protected static function booted(): void
+    {
+        // Whatever path records a harvest date (Activity Calendar, the planting form, an import), its timing is kept
+        // right. The reason itself is asked for by the forms (App\Support\HarvestTiming::attributes()).
+        static::saving(function (self $schedule): void {
+            if (! \App\Support\SchemaCache::hasColumn($schedule->getTable(), 'harvest_timing')) {
+                return;
+            }
+            if ($schedule->isDirty(['harvested_on', 'scheduled_harvest_date', 'harvest_month']) || ($schedule->harvested_on && ! $schedule->harvest_timing)) {
+                $schedule->harvest_timing = $schedule->harvested_on
+                    ? \App\Support\HarvestTiming::classify($schedule->harvestDateForPlanning(), $schedule->harvested_on)
+                    : null;
+                if (! \App\Support\HarvestTiming::needsReason($schedule->harvest_timing)) {
+                    $schedule->harvest_timing_reason = null;
+                    $schedule->harvest_timing_reason_other = null;
+                }
+            }
+        });
+    }
+
+    /** "Early (12 days) – Heavy rain / flooding", "On time", or null before the harvest is recorded. */
+    public function harvestTimingSummary(?string $locale = null): ?string
+    {
+        return \App\Support\HarvestTiming::summary($this->harvest_timing, $this->harvestDateForPlanning(), $this->harvested_on,
+            $this->harvest_timing_reason, $this->harvest_timing_reason_other, $locale);
+    }
+
+    // ------------------------------------------------------------ end panel revision 1.3
 
     /** Which of the farmer's farms this plan is for. */
     public function farm(): BelongsTo

@@ -17,6 +17,11 @@
             ['rice-productions.index', 'Rice Production', ['rice-productions.*'], [$mao]],
             ['mao.barangays.index', 'Barangays', ['mao.barangays.*'], [$mao]],
         ],
+        // Panel revision 4.4: the MAO Office pages.
+        'mao-office' => [
+            ['mao.activity-log.index', 'Activity Log', ['mao.activity-log.*'], [$mao]],
+            ['mao.personnel.index', 'MAO Personnel', ['mao.personnel.*'], [$mao]],
+        ],
         // Predictions (Forecast for farmers) and the analysis pages.
         'analysis' => [
             ['weather-predictions.index', [$role === $farmerRole ? 'Forecast' : 'Predictions', 'Taya ng Panahon'], ['weather-predictions.*'], [$farmerRole, $mao]],

@@ -44,7 +44,7 @@
 .frec-table-wrap { border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
 .frec-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .frec-table th, .frec-table td { padding: 14px 16px; text-align: left; vertical-align: middle; border-top: 1px solid var(--line); color: var(--ink); }
-.frec-table thead th { border-top: 0; background: var(--head-bg); font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--head); white-space: nowrap; }
+.frec-table thead th { border-top: 0; background: var(--head-bg); font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--head); white-space: nowrap; }
 .frec-table tbody th { font-weight: 600; white-space: nowrap; }
 .frec-table tbody tr:nth-child(even) > * { background: #fbfcfb; }
 .frec-table tbody tr.is-mine > * { background: #f1f8f4; }
@@ -57,7 +57,7 @@
 .frec-card-head h3 { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
 .frec-facts, .frec-detail { margin: 0; border-top: 1px solid var(--line); }
 .frec-facts > div, .frec-detail > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.frec-facts dt, .frec-detail dt { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.frec-facts dt, .frec-detail dt { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--muted); }
 .frec-facts dd, .frec-detail dd { margin: 0; font-size: .9375rem; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .frec-card .fad-btn { width: 100%; }
 @container fad (max-width: 899.98px) {
@@ -114,7 +114,7 @@
 
 /* ------------------------------------------------------------------ "Aking Bukid" (farmer-records/my-farm). */
 .fmf .fmf-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 0; }
-.fmf .fmf-facts dt { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }
+.fmf .fmf-facts dt { font-size: .8rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #5b6660; }
 .fmf .fmf-facts dd { margin: 4px 0 0; font-size: 1.2rem; font-weight: 700; color: #1b1f1d; }
 .fmf .fmf-events { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .fmf .fmf-events li { display: flex; gap: 14px; align-items: baseline; padding: 10px 12px; border: 1px solid #e3e8e5; border-radius: 8px; }
@@ -144,7 +144,7 @@ html[data-theme="dark"] .fmf .fmf-events li { border-color: #2a3b33; }
 .fmf .fmf-cal-nav strong { font-size: 1.15rem; }
 .fmf .fmf-cal-nav .fad-btn { min-width: 44px; min-height: 44px; font-size: 1.4rem; line-height: 1; }
 .fmf .fmf-cal { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.fmf .fmf-cal th { padding: 6px 2px; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; text-align: center; }
+.fmf .fmf-cal th { padding: 6px 2px; font-size: .8rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #5b6660; text-align: center; }
 .fmf .fmf-cal td { height: 84px; padding: 0; border: 1px solid #e3e8e5; vertical-align: top; }
 .fmf .fmf-cal td.is-out { background: #f8faf9; }
 .fmf .fmf-cal td.is-today { box-shadow: inset 0 0 0 2px #198754; }
@@ -167,7 +167,7 @@ html[data-theme="dark"] .fmf .fmf-events li { border-color: #2a3b33; }
 .fmf .fmf-survey-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; }
 .fmf .fmf-survey-row .fmf-field { flex: 0 1 220px; margin: 0; }
 .fmf .fmf-survey-predicted { display: flex; flex-direction: column; gap: 2px; margin: 0; }
-.fmf .fmf-survey-predicted span { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }
+.fmf .fmf-survey-predicted span { font-size: .8rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: #5b6660; }
 .fmf .fmf-survey-predicted strong { font-size: 1.5rem; line-height: 1.2; }
 .fmf .fmf-survey-predicted small { font-size: .95rem; font-weight: 600; color: #5b6660; }
 .fmf .fmf-survey-actions, .fmf .fmf-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; }

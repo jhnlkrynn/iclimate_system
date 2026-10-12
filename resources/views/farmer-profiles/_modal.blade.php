@@ -6,7 +6,8 @@
     $hectares = fn ($value): ?string => (float) $value > 0 ? rtrim(rtrim(number_format((float) $value, 2), '0'), '.').' ha' : null;
     $details = array_filter([
         'Barangay' => $record->barangay,
-        'Organization' => $record->farmerOrganization?->name,
+        // Panel revision 1.1: every organization the farmer belongs to.
+        'Organizations' => $record->organization_names,
         'Farm type' => $record->farm_type,
         'Total farm area' => $record->total_farm_area,
         'Status' => $record->account_status,
@@ -30,6 +31,7 @@
                     <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
                 @endforeach
             </dl>
+            @include('partials.record-stamps', ['record' => $record])
         </section>
     @endif
     @if ($farms->isNotEmpty())

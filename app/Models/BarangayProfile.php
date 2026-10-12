@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class BarangayProfile extends Model
 {
+    use \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
+
     public const CLASSIFICATIONS = ['Low', 'Moderate', 'High'];
 
     protected $fillable = [

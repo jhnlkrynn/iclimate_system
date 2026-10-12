@@ -217,18 +217,21 @@ class CacheDependencyTest extends TestCase
         $this->assertTrue($page['generated_at']->lte($builtAt->copy()->addSecond()), 'the next visit is the copy the refresh stored, not another build');
     }
 
-    public function test_after_the_mao_refresh_stores_a_weather_snapshot_the_next_page_is_the_stored_copy(): void
+    /**
+     * The MAO dashboard is saved data only since Phase 6 (2026-10, MaoHomeService) and keeps its own prepared copy; the
+     * older refresh endpoint (mao.dashboard.live) builds a different payload and no page calls it any more. What still
+     * matters: building the page does not retire the copy it just stored.
+     */
+    public function test_after_the_mao_dashboard_is_built_the_next_visit_is_the_stored_copy(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $builtAt = now();
 
-        $this->actingAs($mao)->getJson(route('mao.dashboard.live', ['refresh' => 1]))->assertOk();
-        $this->assertGreaterThan(0, ExternalWeatherData::query()->count(), 'the refresh stored a weather snapshot while building');
+        $first = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->viewData('mao');
 
         $this->travel(5)->seconds();
-        $page = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->viewData('mao');
+        $second = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk()->viewData('mao');
 
-        $this->assertTrue($page['generated_at']->lte($builtAt->copy()->addSecond()), 'served from the copy the refresh stored');
+        $this->assertTrue($second['generated_at']->equalTo($first['generated_at']), 'served from the copy the first visit stored');
     }
 
     public function test_a_cold_dashboard_build_is_found_by_the_very_next_request(): void

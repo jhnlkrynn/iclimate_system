@@ -23,14 +23,32 @@
                         @php
                             $name = $field['name'];
                             $type = $field['type'] ?? 'text';
-                            $value = old($name, $record ? data_get($record, $name) : '');
+                            // Panel revision 1.1: a list of ticks (e.g. every organization a farmer belongs to).
+                            $checkedValues = $type === 'checkboxes' ? array_map('strval', (array) old($name, $record ? (data_get($record, $name) ?? []) : [])) : [];
+                            $value = $type === 'checkboxes' ? '' : old($name, $record ? data_get($record, $name) : '');
                             if (is_array($value)) { $value = json_encode($value, JSON_PRETTY_PRINT); }
                             if ($value instanceof \DateTimeInterface && in_array($type, ['date', 'month'], true)) { $value = $value->format($type === 'month' ? 'Y-m' : 'Y-m-d'); }
                         @endphp
-                        <div class="col-md-{{ $type === 'textarea' ? '12' : '6' }}">
+                        <div class="col-md-{{ in_array($type, ['textarea', 'checkboxes'], true) ? '12' : '6' }}">
                             <div class="soft-section p-3 h-100">
+                                @if ($type === 'checkboxes')
+                                    <fieldset>
+                                        <legend class="form-label fw-semibold">{{ $field['label'] }}</legend>
+                                        <input type="hidden" name="{{ $name }}_present" value="1">
+                                        <div class="check-grid @error($name) is-invalid @enderror" data-check-grid>
+                                            @foreach (($field['options'] ?? []) as $optionValue => $optionLabel)
+                                                <label class="check-tile">
+                                                    <input type="checkbox" name="{{ $name }}[]" value="{{ $optionValue }}" @checked(in_array((string) $optionValue, $checkedValues, true))>
+                                                    <span>{{ $optionLabel }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </fieldset>
+                                @else
                                 <label class="form-label fw-semibold" for="{{ $name }}">{{ $field['label'] }}</label>
-                                @if ($type === 'textarea')
+                                @endif
+                                @if ($type === 'checkboxes')
+                                @elseif ($type === 'textarea')
                                     <textarea class="form-control @error($name) is-invalid @enderror" id="{{ $name }}" name="{{ $name }}" rows="5">{{ $value }}</textarea>
                                 @elseif ($type === 'select')
                                     <select class="form-select @error($name) is-invalid @enderror" id="{{ $name }}" name="{{ $name }}" @if ($routeName === 'farmer-profiles' && $name === 'user_id') data-farmer-profile-user @endif>

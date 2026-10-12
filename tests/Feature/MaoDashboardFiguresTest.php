@@ -158,7 +158,8 @@ class MaoDashboardFiguresTest extends TestCase
             $this->assertStringContainsString($words, $english, $words);
         }
         $this->assertStringNotContainsString('Kailangan ng Aksyon', $english);
-        $this->assertMatchesRegularExpression('#<option value="en" lang="en"\s+selected\s*>English</option>#', $english);
+        // The language switch is the EN | FIL pair in the top bar; the language in use is the pressed one.
+        $this->assertMatchesRegularExpression('#<button type="submit" lang="en" aria-pressed="true"#', $english);
 
         $this->actingAs($mao)->post(route('mao.dashboard.language'), ['language' => 'fil'])->assertRedirect(route('mao.dashboard'));
         $this->assertSame('fil', $mao->fresh()->preferred_language);
@@ -168,7 +169,7 @@ class MaoDashboardFiguresTest extends TestCase
             $this->assertStringContainsString($words, $filipino, $words);
         }
         $this->assertStringNotContainsString('Needs Action', $filipino);
-        $this->assertMatchesRegularExpression('#<option value="fil" lang="fil"\s+selected\s*>Filipino \(Tagalog\)</option>#', $filipino);
+        $this->assertMatchesRegularExpression('#<button type="submit" lang="fil" aria-pressed="true"#', $filipino);
         // The menu follows: "Mga Magsasaka" instead of "Farmers".
         $this->assertStringContainsString('<span class="sidebar-label">Mga Magsasaka</span>', $filipino);
 

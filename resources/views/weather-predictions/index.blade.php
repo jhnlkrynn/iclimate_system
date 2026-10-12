@@ -18,15 +18,18 @@
     <div class="mfd itd itp">
         <x-it.page-header kicker="Weather and Rice Yield" title="Predictions" lede="The coming days' weather and this season's expected harvest for Lian." />
     @endunless
-    <div class="fad wpx" data-predictions>
+    <div @class(['fad', 'wpx', 'is-farmer' => $isFarmer]) data-predictions>
         {{-- Manuscript – Naicel (2026-10-08): Weather Analysis, Yield Prediction / Impact Analysis, Yield Forecast tabs. --}}
         @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
         @if ($isFarmer)
-            <header class="fad-hero">
-                <div class="fad-hero-text">
-                    <span class="fad-kicker">{{ __('farmer.nav.forecast') }}</span>
-                    <h1>{{ __('farmer.predictions.title') }}</h1>
-                    <p>{{ __('farmer.predictions.intro') }}</p>
+            {{-- Farmers (2026-10): the week's answer first, in one sentence, with what to do (WeatherPredictionController::plainForecast). --}}
+            @php $answer = $plain['answer']; @endphp
+            <header class="wpx-answer is-{{ $answer['tone'] }}" data-wpx-answer="{{ $answer['key'] }}">
+                <span class="wpx-answer-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $answer['icon']])</span>
+                <div class="wpx-answer-text">
+                    <p class="wpx-answer-place">{{ __('farmer.predictions.for_place', ['place' => $forecast['location']]) }}</p>
+                    <h1>{{ $answer['headline'] }}</h1>
+                    <p class="wpx-answer-action">{{ $answer['action'] }}</p>
                 </div>
             </header>
         @endif
@@ -40,9 +43,11 @@
         <section class="fad-card wpx-panel" id="weather" aria-labelledby="wpxWeatherTitle" data-wpx-weather>
             <div class="wpx-head">
                 <div>
-                    <h2 id="wpxWeatherTitle">{{ __('farmer.predictions.weather_title') }}</h2>
+                    <h2 id="wpxWeatherTitle">{{ $isFarmer ? __('farmer.predictions.days_title') : __('farmer.predictions.weather_title') }}</h2>
+                    @unless ($isFarmer)
                     <p class="fad-support">{{ __('farmer.predictions.for_place', ['place' => $forecast['location']]) }}
                         @if ($forecast['updated_at']) · <x-updated-at :at="$forecast['updated_at']" :label="__('farmer.home.updated')" />@endif</p>
+                    @endunless
                 </div>
                 <nav class="wpx-range" aria-label="{{ __('farmer.predictions.weather_title') }}">
                     <a href="{{ $rangeUrl('week') }}" @class(['is-active' => $range === 'week']) @if ($range === 'week') aria-current="page" @endif>{{ __('farmer.predictions.this_week') }}</a>
@@ -67,6 +72,54 @@
             @if ($forecast['state'] !== 'ok')
                 <x-no-data :label="$noData" :note="__('farmer.home.no_data_note')" />
             @else
+                @if ($isFarmer)
+                    {{-- Farmers: big day cards — day, one icon, one word, one temperature. The numbers are under "More details". --}}
+                    <ol class="wpx-days is-plain" data-days="{{ count($forecast['days']) }}">
+                        @foreach ($forecast['days'] as $i => $day)
+                            @php $plainDay = $plain['days'][$i]; @endphp
+                            <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
+                                <span class="wpx-day-name">{{ match ($i) { 0 => __('farmer.predictions.today'), 1 => __('farmer.predictions.tomorrow'), default => $day['date']->locale(app()->getLocale())->translatedFormat('D') } }}</span>
+                                <span class="wpx-day-date">{{ $day['date']->locale(app()->getLocale())->translatedFormat('M j') }}</span>
+                                <span class="wpx-day-icon is-{{ $plainDay['icon'] }}" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $plainDay['icon']])</span>
+                                <span class="wpx-day-words">{{ $plainDay['word'] }}</span>
+                                @if ($day['kind'] !== 'none' && $day['high'] !== null)<span class="wpx-day-temp">{{ $num($day['high']) }}°</span>@endif
+                                @if ($day['kind'] === 'estimate')<span class="wpx-badge">{{ __('farmer.predictions.estimate_badge') }}</span>@endif
+                            </li>
+                        @endforeach
+                    </ol>
+                    <details class="wpx-more" data-wpx-more>
+                        <summary>{{ __('farmer.predictions.more') }}</summary>
+                        <div class="wpx-more-scroll">
+                            <table class="wpx-more-table">
+                                <thead><tr>
+                                    <th scope="col">{{ __('farmer.predictions.day') }}</th>
+                                    <th scope="col">{{ __('farmer.predictions.weather') }}</th>
+                                    <th scope="col">{{ __('farmer.predictions.rain') }}</th>
+                                    <th scope="col">{{ __('farmer.predictions.chance') }}</th>
+                                    <th scope="col">{{ __('farmer.predictions.wind') }}</th>
+                                    <th scope="col">{{ __('farmer.predictions.temp') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach ($forecast['days'] as $i => $day)
+                                        <tr>
+                                            <th scope="row">{{ $i === 0 ? __('farmer.predictions.today') : $day['date']->locale(app()->getLocale())->translatedFormat('D, M j') }}</th>
+                                            @if ($day['kind'] === 'none')
+                                                <td colspan="5">{{ $noData }}</td>
+                                            @else
+                                                <td>{{ $day['condition'] }}</td>
+                                                <td>{{ collect([$day['rain_words'], $day['rain_mm'] === null ? null : $num($day['rain_mm'], 1).' mm'])->filter()->implode(' · ') ?: '—' }}</td>
+                                                <td>{{ $day['chance'] === null ? '—' : $num($day['chance']).'%' }}</td>
+                                                <td>{{ collect([$day['wind_words'], $day['wind_kmh'] === null ? null : $num($day['wind_kmh'], 1).' km/h'])->filter()->implode(' · ') ?: '—' }}</td>
+                                                <td>{{ $day['high'] === null ? '—' : $num($day['high']).'° / '.$num($day['low']).'°' }}</td>
+                                            @endif
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if ($forecast['updated_at'])<p class="fad-support"><x-updated-at :at="$forecast['updated_at']" :label="__('farmer.home.updated')" /></p>@endif
+                    </details>
+                @else
                 <ol class="wpx-days" data-days="{{ count($forecast['days']) }}">
                     @foreach ($forecast['days'] as $i => $day)
                         <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
@@ -91,6 +144,7 @@
                         </li>
                     @endforeach
                 </ol>
+                @endif
                 @if ($forecast['estimated'] > 0)
                     <p class="fad-support wpx-note" data-wpx-estimate-note>{{ __('farmer.predictions.estimate_note') }}</p>
                 @endif

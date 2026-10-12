@@ -95,7 +95,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $farmer = $this->farmer();
 
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('#<h1 class="fh-greeting"[^>]*>Good morning, Naicel!</h1>#', $html);
+        $this->assertMatchesRegularExpression('#<p class="ic-topbar-greeting">Good morning, Naicel!</p>#', $html);   // in the top bar now
 
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         Carbon::setTestNow(Carbon::parse('2026-10-07 07:00:00', 'UTC'));       // 3:00 PM in Lian

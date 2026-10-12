@@ -174,7 +174,7 @@ class FarmerHomeTest extends TestCase
         preg_match_all('/data-slot="([a-z]+)"/', $html, $m);
         $this->assertSame(['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'], $m[1]);   // + kpis (2026-10-08, FarmerHomeKpisTest)
         $this->assertMatchesRegularExpression('/data-slot="typhoon"\s+hidden/', $html, 'no typhoon: the check-in is hidden');
-        foreach (["Today's Message", 'Weather Today', 'Barangay Risk', 'Expected Yield This Season', 'Next 7 Days', 'Latest Planting Advice'] as $title) {
+        foreach (['Today', 'Weather today', 'Barangay risk', 'Expected yield this season', 'Next 7 days', 'Latest planting advice'] as $title) {
             $this->assertStringContainsString($title, $this->text($html));
         }
     }
@@ -252,7 +252,7 @@ class FarmerHomeTest extends TestCase
         $this->mockRisk('Moderate');
         $text = $this->text($this->home($farmer)->getContent());
 
-        $this->assertStringContainsString('Mensahe Ngayon', $text);
+        $this->assertMatchesRegularExpression('/Magandang panahon|Masamang panahon|Ngayong araw/', $text);   // the message card's headline
         $this->assertStringContainsString('Mahangin', $text);
         $this->assertStringContainsString('Katamtaman', $text);
         $this->assertStringContainsString('Susunod na 7 Araw', $text);
@@ -393,7 +393,10 @@ class FarmerHomeTest extends TestCase
     {
         $this->mockRisk('Low', 'Ideal planting period.');
         $this->fakeWeather([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-        $this->assertStringContainsString('Good weather for planting this week.', $this->text($this->home()->getContent()));
+        // The good-to-plant card shows only its headline ("Good weather"); the sentence repeated it and was removed.
+        $html = $this->home()->getContent();
+        $this->assertStringContainsString('data-fh-message="plant_good"', $html);
+        $this->assertStringContainsString('Good weather', $this->text($html));
 
         // Never cheerful next to a Moderate rating.
         $this->mockRisk('Moderate', 'Ideal planting period.');
@@ -419,7 +422,7 @@ class FarmerHomeTest extends TestCase
 
         $text = $this->text($this->home()->getContent());
 
-        $this->assertStringNotContainsString('Good weather for planting this week.', $text);
+        $this->assertStringNotContainsString('Good weather', $text);   // the good-to-plant headline
         $this->assertStringContainsString('Be careful if you plant this week.', $text);
     }
 

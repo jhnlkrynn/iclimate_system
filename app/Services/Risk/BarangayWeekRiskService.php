@@ -21,6 +21,9 @@ use Throwable;
  *   no rain      (rainfed barangays only) no day with RAIN_DAY_MM or more in the whole period = Moderate
  * No hazard = Low. A barangay with no saved forecast days is "nodata", never Low.
  *
+ * Panel revision 2.1: a fourth level, Severe (extreme rain, severe-tropical-storm wind, extreme heat, or an active
+ * typhoon advisory), and every limit read from config/weather_risk.php, which documents the full rule set.
+ *
  * A forecast that could not be refreshed stays in use for its days that have not passed yet, with its own time;
  * the period is marked "delayed" once the oldest one is DELAYED_AFTER_HOURS old.
  *
@@ -52,17 +55,23 @@ class BarangayWeekRiskService
     /** A dry spell is only called when most of the period is covered by the forecast. */
     private const MIN_DAYS_FOR_DRY = 5;
 
-    private const RANK = ['low' => 1, 'moderate' => 2, 'high' => 3];
+    // Panel revision 2.1: four levels (Severe added above High).
+    private const RANK = ['low' => 1, 'moderate' => 2, 'high' => 3, 'severe' => 4];
 
     /**
-     * Manuscript – Naicel (2026-10-08): IT can change these limits on System Settings (Risk thresholds); without a
-     * saved value the constant above is used.
+     * Manuscript – Naicel (2026-10-08): IT can change these limits on System Settings (Risk thresholds). Panel revision
+     * 2.1: without a saved value the limit comes from config/weather_risk.php (thresholds), else the constant above.
      */
     private static function limit(string $key, float $default): float
     {
         $value = \App\Support\SystemSettings::get('risk_'.$key);
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+        // Pure unit tests run the rule without the application: the defaults then apply.
+        $configured = function_exists('app') && app()->bound('config') ? config('weather_risk.thresholds.'.$key) : null;
 
-        return is_numeric($value) ? (float) $value : $default;
+        return is_numeric($configured) ? (float) $configured : $default;
     }
 
     public function __construct(
@@ -112,9 +121,17 @@ class BarangayWeekRiskService
 
         $barangays = [];
         $updated = null;
+        // Panel revision 2.1: an active typhoon / tropical cyclone advisory makes every rated barangay Severe.
+        $typhoon = rescue(fn () => app(\App\Services\TyphoonSafetyService::class)->activeEvent(), null, false);
         foreach (LianBarangays::all() as $name) {
             $record = is_array($records[$name] ?? null) ? $records[$name] : [];
             $rated = self::rate($this->daysInRange((array) ($record['daily'] ?? []), $today, $days), (string) ($farmTypes[$name] ?? 'Rainfed'));
+            if ($typhoon !== null && $rated['level'] !== 'nodata') {
+                array_unshift($rated['reasons'], ['key' => 'typhoon', 'level' => 'severe', 'dates' => []]);
+                $rated['level'] = 'severe';
+                $rated['reason'] = 'typhoon';
+                $rated['factor'] = ['key' => 'typhoon', 'value' => (string) ($typhoon['title'] ?? '')];
+            }
             $barangays[$name] = ['barangay' => $name] + $rated;
 
             $fetched = $rated['level'] !== 'nodata' && ! empty($record['fetched_at']) ? rescue(fn () => CarbonImmutable::parse($record['fetched_at'])->timezone(self::TIMEZONE), null, false) : null;
@@ -123,7 +140,7 @@ class BarangayWeekRiskService
             }
         }
 
-        $counts = ['high' => 0, 'moderate' => 0, 'low' => 0, 'nodata' => 0];
+        $counts = ['severe' => 0, 'high' => 0, 'moderate' => 0, 'low' => 0, 'nodata' => 0];
         foreach ($barangays as $b) {
             $counts[$b['level']]++;
         }
@@ -183,7 +200,7 @@ class BarangayWeekRiskService
             'farm_type' => strtolower($farmType) === 'irrigated' ? 'Irrigated' : 'Rainfed',
         ];
         if ($rain === [] && $wind === [] && $temp === []) {
-            return ['level' => 'nodata', 'reason' => 'nodata', 'reasons' => []] + $facts;
+            return ['level' => 'nodata', 'reason' => 'nodata', 'reasons' => [], 'factor' => ['key' => 'nodata', 'value' => null]] + $facts;
         }
 
         // The dates (Y-m-d) on which a measurement reaches a limit, so the panel can name the days.
@@ -192,19 +209,37 @@ class BarangayWeekRiskService
             array_filter($days, fn (array $d): bool => $number($d, $key) !== null && $number($d, $key) >= $limit),
         ));
 
+        // Panel revision 2.1: the rules and limits are documented in config/weather_risk.php.
         $reasons = [];
         if ($facts['heavy_rain_days'] > 0) {
-            $reasons[] = ['key' => 'heavy_rain', 'level' => $facts['heavy_rain_days'] >= 3 || $facts['wettest_day_mm'] >= self::limit('very_heavy_rain_mm', self::VERY_HEAVY_RAIN_MM) ? 'high' : 'moderate', 'dates' => $dates('rainfall', self::limit('heavy_rain_mm', self::HEAVY_RAIN_MM))];
+            $level = match (true) {
+                $facts['wettest_day_mm'] >= self::limit('extreme_rain_mm', 100.0) || ($facts['rain_total_mm'] ?? 0) >= self::limit('extreme_rain_total_mm', 200.0) => 'severe',
+                $facts['heavy_rain_days'] >= 3 || $facts['wettest_day_mm'] >= self::limit('very_heavy_rain_mm', self::VERY_HEAVY_RAIN_MM) => 'high',
+                default => 'moderate',
+            };
+            $reasons[] = ['key' => 'heavy_rain', 'level' => $level, 'dates' => $dates('rainfall', self::limit('heavy_rain_mm', self::HEAVY_RAIN_MM))];
         }
         if ($facts['wind_max_kmh'] !== null && $facts['wind_max_kmh'] >= self::limit('strong_wind_kmh', self::STRONG_WIND_KMH)) {
-            $reasons[] = ['key' => 'strong_wind', 'level' => $facts['wind_max_kmh'] >= self::limit('storm_wind_kmh', self::STORM_WIND_KMH) ? 'high' : 'moderate', 'dates' => $dates('wind_speed_max', self::limit('strong_wind_kmh', self::STRONG_WIND_KMH))];
+            $level = match (true) {
+                $facts['wind_max_kmh'] >= self::limit('severe_wind_kmh', 89.0) => 'severe',
+                $facts['wind_max_kmh'] >= self::limit('storm_wind_kmh', self::STORM_WIND_KMH) => 'high',
+                default => 'moderate',
+            };
+            $reasons[] = ['key' => 'strong_wind', 'level' => $level, 'dates' => $dates('wind_speed_max', self::limit('strong_wind_kmh', self::STRONG_WIND_KMH))];
         }
         if ($facts['hot_days'] > 0) {
-            $reasons[] = ['key' => 'heat', 'level' => $facts['hot_days'] >= 3 ? 'high' : 'moderate', 'dates' => $dates('temperature_max', self::limit('hot_day_c', self::HOT_DAY_C))];
+            $extremeDays = count(array_filter($temp, fn (float $v): bool => $v >= self::limit('extreme_heat_c', 38.0)));
+            $level = match (true) {
+                $extremeDays >= (int) self::limit('extreme_heat_days', 3) => 'severe',
+                $facts['hot_days'] >= 3 => 'high',
+                default => 'moderate',
+            };
+            $reasons[] = ['key' => 'heat', 'level' => $level, 'dates' => $dates('temperature_max', self::limit('hot_day_c', self::HOT_DAY_C))];
         }
-        $rainDays = count(array_filter($rain, fn (float $v): bool => $v >= self::RAIN_DAY_MM));
+        $rainDays = count(array_filter($rain, fn (float $v): bool => $v >= self::limit('rain_day_mm', self::RAIN_DAY_MM)));
         if ($facts['farm_type'] === 'Rainfed' && count($rain) >= self::MIN_DAYS_FOR_DRY && $rainDays === 0) {
-            $reasons[] = ['key' => 'dry', 'level' => 'moderate', 'dates' => []];
+            // A whole 14-day period without rain is worse than a dry week.
+            $reasons[] = ['key' => 'dry', 'level' => count($days) >= 14 ? 'high' : 'moderate', 'dates' => []];
         }
 
         // The worst hazard first; hazards of the same level keep the order above (rain, wind, heat, no rain).
@@ -214,7 +249,29 @@ class BarangayWeekRiskService
             'level' => $reasons[0]['level'] ?? 'low',
             'reason' => $reasons[0]['key'] ?? 'calm',
             'reasons' => $reasons,
+            // Panel revision 2.1: the main weather factor behind the level, for the map tooltip ("Heavy rainfall: 120 mm").
+            'factor' => self::mainFactor($reasons[0]['key'] ?? 'calm', $facts),
         ] + $facts;
+    }
+
+    /**
+     * Panel revision 2.1: the number behind the worst hazard.
+     *
+     * @param  array<string, mixed>  $facts
+     * @return array{key: string, value: ?string}
+     */
+    private static function mainFactor(string $reason, array $facts): array
+    {
+        $value = match ($reason) {
+            'heavy_rain' => $facts['wettest_day_mm'] !== null ? number_format((float) $facts['wettest_day_mm'], 0).' mm in one day'.($facts['rain_total_mm'] !== null ? ', '.number_format((float) $facts['rain_total_mm'], 0).' mm in total' : '') : null,
+            'strong_wind' => $facts['wind_max_kmh'] !== null ? number_format((float) $facts['wind_max_kmh'], 0).' km/h' : null,
+            'heat' => $facts['temp_max_c'] !== null ? number_format((float) $facts['temp_max_c'], 1).' °C, '.$facts['hot_days'].' hot day(s)' : null,
+            'dry' => '0 mm',
+            'calm' => $facts['rain_total_mm'] !== null ? number_format((float) $facts['rain_total_mm'], 0).' mm rain in the period' : null,
+            default => null,
+        };
+
+        return ['key' => $reason, 'value' => $value];
     }
 
     /**

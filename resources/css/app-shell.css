@@ -1,0 +1,418 @@
+/*
+ * Signed-in app shell, loaded last (layouts/app.blade.php): the same Apple-style language as the public pages.
+ *  - One appearance: dark, pure black with neutral greys; no background photo.
+ *  - Top bar: a floating dark frosted bar (menu button and logo left; farm, notifications, language, account right).
+ *  - Navigation: a floating drawer from the menu button; the page behind it is blurred and inactive until it closes.
+ * Selectors start with html[data-theme] / html body so they win over the older layers (theme.css, sidebar.css).
+ */
+
+/* ================================================================== THEMES */
+
+/* Pure black with neutral greys, no green tint. Green stays only in the logo and status colours. */
+
+html[data-theme="dark"] {
+    --ic-page-bg: #000000;
+    --ic-backdrop-base: #000000;
+    --ic-backdrop-overlay: linear-gradient(#000000, #000000);
+    --dk-surface: #111111;
+    --dk-surface-2: #171717;
+    --dk-surface-3: #1f1f1f;
+    --dk-field: #0a0a0a;
+    --dk-border: #262626;
+    --dk-border-strong: #333333;
+    --dk-ink: #f5f5f5;
+    --dk-ink-mid: #d4d4d4;
+    --dk-muted: #a1a1aa;
+}
+
+/* The logo that suits the bar behind it. */
+.ic-logo-for-light { display: none !important; }
+
+/* One type family everywhere: Inter, sentence case. */
+html body :is(h1, h2, h3, h4) { font-family: 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; }
+html body .text-uppercase { text-transform: none !important; }
+
+/* ================================================================== TOP BAR */
+html[data-theme] body .topbar.ic-topbar {
+    position: sticky;
+    top: 12px;
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 64px;
+    margin: 12px 16px 0;
+    padding: 0 10px;
+    border-radius: 22px;
+    corner-shape: squircle;
+    background: rgba(15, 45, 35, .95);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(255, 255, 255, .08);
+    box-shadow: 0 10px 30px rgba(6, 20, 15, .16) !important;
+    color: #fff;
+}
+
+html[data-theme="dark"] body .topbar.ic-topbar {
+    background: rgba(22, 22, 22, .85);
+    border-color: rgba(255, 255, 255, .08);
+}
+
+.ic-topbar-left,
+.ic-topbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.ic-topbar-brand { display: flex; align-items: center; padding: 0 6px; border-radius: 10px; }
+.ic-topbar-brand img { height: 44px; width: auto; display: block; }
+.ic-topbar-brand:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+
+.ic-icon-btn {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, .85);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.ic-icon-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+.ic-icon-btn:focus-visible,
+.ic-avatar-btn:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+.ic-icon-btn .topbar-bell-badge {
+    position: absolute; top: 3px; right: 1px;
+    display: grid; place-items: center;
+    min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 999px; background: #f04438; color: #fff;
+    font-size: 10px; font-weight: 600; line-height: 1;
+    border: 2px solid #0f2d23;
+}
+.ic-icon-btn .topbar-bell-badge[hidden] { display: none !important; }
+
+/* Light/dark switch: the moon offers dark while in light, the sun offers light while in dark. */
+
+/* Account button: the profile photo, or the initials on mint. */
+.ic-avatar-btn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-left: 4px;
+    padding: 0;
+    border: 2px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    overflow: hidden;
+    background: #7fd6b5;
+    color: #0e2f25;
+    font-size: .8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s ease;
+}
+.ic-avatar-btn:hover { border-color: rgba(255, 255, 255, .45); }
+.ic-avatar-btn img,
+.ic-account-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* The farmer's farm picker keeps its place, dressed for the dark bar. */
+.ic-topbar .topbar-farm select { border-radius: 10px; }
+
+/* ================================================================== ACCOUNT MENU */
+html body .ic-account-menu {
+    width: 290px;
+    margin-top: 12px !important;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .96);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(16, 40, 30, .08);
+    box-shadow: 0 24px 60px rgba(6, 20, 15, .22);
+}
+.ic-account-head { display: flex; align-items: center; gap: 12px; padding: 10px 10px 14px; margin-bottom: 6px; border-bottom: 1px solid rgba(16, 40, 30, .08); }
+.ic-account-avatar {
+    display: grid; place-items: center; flex: none;
+    width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+    background: #7fd6b5; color: #0e2f25; font-weight: 600; font-size: .875rem;
+}
+.ic-account-id { display: flex; flex-direction: column; min-width: 0; }
+.ic-account-id strong { font-size: .9375rem; font-weight: 600; color: #1e2b25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-account-id span { font-size: .8125rem; color: #65736c; }
+html body .ic-account-menu .dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 10px;
+    font-size: .9375rem; font-weight: 500; color: #1e2b25;
+}
+html body .ic-account-menu .dropdown-item svg { color: #65736c; flex: none; }
+html body .ic-account-menu .dropdown-item:hover,
+html body .ic-account-menu .dropdown-item.active { background: #f1f4f2; color: #1e2b25; }
+html body .ic-account-menu .dropdown-divider { margin: 6px 4px; border-color: rgba(16, 40, 30, .08); }
+html body .ic-account-menu .ic-account-logout,
+html body .ic-account-menu .ic-account-logout svg { color: #b42318; }
+
+html[data-theme="dark"] body .ic-account-menu { background: rgba(28, 28, 30, .96); border-color: rgba(255, 255, 255, .08); }
+html[data-theme="dark"] .ic-account-head,
+html[data-theme="dark"] body .ic-account-menu .dropdown-divider { border-color: rgba(255, 255, 255, .08); }
+html[data-theme="dark"] .ic-account-id strong,
+html[data-theme="dark"] body .ic-account-menu .dropdown-item { color: #e4ece7; }
+html[data-theme="dark"] .ic-account-id span,
+html[data-theme="dark"] body .ic-account-menu .dropdown-item svg { color: #9fb1a7; }
+html[data-theme="dark"] body .ic-account-menu .dropdown-item:hover,
+html[data-theme="dark"] body .ic-account-menu .dropdown-item.active { background: rgba(255, 255, 255, .06); color: #fff; }
+html[data-theme="dark"] body .ic-account-menu .ic-account-logout,
+html[data-theme="dark"] body .ic-account-menu .ic-account-logout svg { color: #f97066; }
+
+/* ================================================================== NAVIGATION DRAWER */
+/* A floating dark panel on the left; the blurred backdrop (layouts/app.blade.php) blocks the page until it closes. */
+html body #mobileSidebar.ic-sidebar.offcanvas {
+    top: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: min(320px, calc(100vw - 24px));
+    max-width: none;
+    height: auto;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 24px;
+    /* Near-solid, no blur of its own: the backdrop already blurs the page, and two blur layers flash in Chrome. */
+    background: #10302a;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+    overflow: hidden;
+    transition: transform .38s cubic-bezier(.32, .72, 0, 1), visibility .38s !important;
+    will-change: transform;
+    /* app.css gives every .offcanvas.show an ic-soft-rise animation (fill: both). On this drawer it replayed the
+       entrance after the slide (fade to 0 and back: the "flicker") and pinned transform while .hiding, so the
+       drawer could not slide out and vanished in one frame. The slide transition is the only motion here. */
+    animation: none;
+}
+html body #mobileSidebar.ic-sidebar.offcanvas-start { transform: translateX(calc(-100% - 24px)); }
+html body #mobileSidebar.ic-sidebar.offcanvas:is(.showing, .show:not(.hiding)) { transform: none; }
+html[data-theme="dark"] body #mobileSidebar.ic-sidebar.offcanvas { background: #141414; }
+
+/* The blurred cover behind the drawer fades in; its blur is fixed, only its opacity animates. */
+html body .offcanvas-backdrop { transition: opacity .3s ease !important; }
+html body .offcanvas-backdrop.fade:not(.show) { opacity: 0 !important; }
+
+/* The open page: a soft highlight, no bar on its left edge. */
+html body #mobileSidebar .sidebar-link,
+html body #mobileSidebar .sidebar-link.active { border-left: 0 !important; }
+html body #mobileSidebar .sidebar-link.active { background: rgba(255, 255, 255, .1); }
+html body #mobileSidebar .sidebar-link::after { content: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+    html body #mobileSidebar.ic-sidebar.offcanvas,
+    html body .offcanvas-backdrop { transition: none !important; }
+}
+html body #mobileSidebar .sidebar-section { text-transform: none; letter-spacing: 0; font-size: .8125rem; }
+html body #mobileSidebar .sidebar-link { border-radius: 12px; }
+html body #mobileSidebar .sidebar-foot { font-size: .75rem; }
+
+/* ================================================================== PROFILE PHOTO */
+.ic-photo-form { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.ic-photo-current {
+    display: grid; place-items: center; flex: none;
+    width: 88px; height: 88px; border-radius: 50%; overflow: hidden;
+    background: #7fd6b5; color: #0e2f25; font-size: 1.5rem; font-weight: 600;
+}
+.ic-photo-current img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ic-photo-body { flex: 1 1 260px; min-width: 0; }
+.ic-photo-title { font-size: 1.125rem; margin: 0 0 4px; }
+.ic-photo-hint { margin: 0 0 12px; color: var(--ic-muted); font-size: .9375rem; }
+.ic-photo-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ic-photo-actions form { margin: 0; }
+.ic-photo-error { margin: 10px 0 0; color: #b42318; font-size: .875rem; }
+.ic-photo-ok { margin: 10px 0 0; color: #16794a; font-size: .875rem; }
+.itp-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+
+@media (max-width: 575.98px) {
+    html[data-theme] body .topbar.ic-topbar { margin: 8px 8px 0; top: 8px; padding: 0 6px; height: 60px; }
+    .ic-topbar-brand img { height: 38px; }
+    .ic-topbar .topbar-farm label { display: none; }
+}
+
+/* Older glass layers draw an extra panel inside dropdowns; the account menu is one surface. */
+html body .ic-account-menu::before,
+html body .ic-account-menu::after { content: none !important; display: none !important; }
+html body .ic-account-menu form { margin: 0; background: transparent; }
+
+/* ================================================================== DISPLAY SETTINGS BOX */
+/* Language and light/dark sit together in one pill, apart from notifications and the account. */
+.ic-topbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 44px;
+    padding: 2px;
+    margin: 0 4px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .1);
+}
+.ic-topbar-group .ic-icon-btn { width: 38px; height: 38px; border-radius: 11px; }
+.ic-topbar-group-rule { width: 1px; height: 20px; background: rgba(255, 255, 255, .16); margin: 0 2px; }
+.ic-lang { display: flex; gap: 2px; margin: 0; }
+.ic-lang form { display: contents; }
+.ic-lang button {
+    height: 38px;
+    min-width: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: rgba(255, 255, 255, .7);
+    font-size: .8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.ic-lang button:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+.ic-lang button[aria-pressed="true"] { background: #fff; color: #0f2d23; }
+.ic-lang button:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+
+/* No photo: a person silhouette on mint. */
+.ic-avatar-btn svg { width: 24px; height: 24px; margin-top: 6px; }
+.ic-account-avatar svg { width: 26px; height: 26px; margin-top: 8px; }
+.ic-avatar-btn, .ic-account-avatar, .ic-photo-current { color: #0e2f25; }
+.ic-photo-current svg { width: 52px; height: 52px; margin-top: 18px; }
+.itp-avatar svg { width: 60%; height: 60%; margin-top: 20%; }
+
+@media (max-width: 575.98px) {
+    .ic-lang button { min-width: 36px; padding: 0 6px; }
+    .ic-topbar-group { margin: 0 2px; }
+}
+
+/* ================================================================== GREETING */
+.ic-topbar-greeting {
+    margin: 0 0 0 6px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, .16);
+    font-size: .9375rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .88);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (max-width: 767.98px) { .ic-topbar-greeting { display: none; } }
+
+/* ================================================================== FARMER: TODAY'S MESSAGE */
+/* One big card a farmer reads at a glance: green "Good weather" with a watering can, red "Bad weather" with a skip sign. */
+html body .mfd[data-farmer-dashboard] .fh-message {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 28px 32px;
+    border-radius: 24px;
+    border: 0;
+}
+html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-good { background: #111111; color: #fff; }   /* no green tint */
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.fh-mood-good { background: #f5f5f5; color: #111111; }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-text { color: rgba(17, 17, 17, .8); }
+html[data-theme="dark"] .fh-mood-good .fh-message-art { background: rgba(0, 0, 0, .06); color: #111111; }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child { background: #f5f5f5; color: #111111 !important; }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child :is(.fh-kpi-label, .fh-kpi-value, .fh-kpi-note, .fh-kpi-value small, .fh-kpi-label svg) { color: #111111; }
+html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-bad { background: #c8372d; color: #fff; }
+html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-info { background: var(--card, #fff); border: 1px solid var(--line, #e3eae6); }
+.fh-message-art {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 132px;
+    height: 110px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+}
+.fh-mood-info .fh-message-art { width: 64px; height: 64px; border-radius: 50%; background: #f0f0f2; color: #111111; }
+.fh-mood-info .fh-message-art svg { width: 30px; height: 30px; }
+.fh-art-water { width: 112px; height: 94px; }
+.fh-art-skip { width: 70px; height: 70px; }
+html body .mfd[data-farmer-dashboard] .fh-message-head {
+    margin: 0 0 6px;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: inherit;
+}
+html body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-text,
+html body .mfd[data-farmer-dashboard] .fh-mood-bad .fh-message-text { color: rgba(255, 255, 255, .92); }
+html body .mfd[data-farmer-dashboard] .fh-message-text { margin: 0; font-size: 1.25rem; font-weight: 500; line-height: 1.4; }
+
+/* Watering: the can tips, drops fall onto the sprout, the sprout sways. */
+.fh-art-can { transform-origin: 40px 45px; animation: fhCanTip 2.4s ease-in-out infinite; }
+.fh-drop { animation: fhDrop 1.2s ease-in infinite; }
+.fh-drop:nth-child(2) { animation-delay: .4s; }
+.fh-drop:nth-child(3) { animation-delay: .8s; }
+.fh-art-sprout { transform-origin: 93px 91px; animation: fhSway 2.4s ease-in-out infinite; }
+@keyframes fhCanTip { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-7deg); } }
+@keyframes fhDrop { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(34px); opacity: 0; } }
+@keyframes fhSway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
+/* Skip: a short bump now and then, like a card being played. */
+.fh-art-skip { animation: fhSkip 2.6s ease-in-out infinite; }
+@keyframes fhSkip { 0%, 70%, 100% { transform: scale(1) rotate(0deg); } 80% { transform: scale(1.12) rotate(-10deg); } 90% { transform: scale(1) rotate(6deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .fh-art-can, .fh-drop, .fh-art-sprout, .fh-art-skip { animation: none; }
+    .fh-drop { opacity: 1; }
+}
+@media (max-width: 575.98px) {
+    html body .mfd[data-farmer-dashboard] .fh-message { flex-direction: column; align-items: flex-start; padding: 22px; }
+    .fh-message-art { width: 112px; height: 92px; }
+}
+
+/* Phones: the logo keeps its size; "+ Add your first farm" becomes a round "+" so nothing is cut off. */
+.ic-topbar-brand { flex: none; }
+@media (max-width: 575.98px) {
+    .ic-topbar-right { gap: 2px; }
+    .ic-topbar .topbar-farm-add {
+        display: inline-grid; place-items: center;
+        width: 38px; height: 38px; padding: 0; border-radius: 12px;
+        font-size: 0; color: #fff; background: rgba(255, 255, 255, .1);
+    }
+    .ic-topbar .topbar-farm-add::before { content: "+"; font-size: 1.25rem; font-weight: 500; line-height: 1; }
+    .ic-topbar .topbar-farm select { max-width: 120px; }
+}
+
+/* No photo: a person silhouette on a dark grey disc. */
+html[data-theme="dark"] .ic-avatar-btn,
+html[data-theme="dark"] .ic-account-avatar { background: #2a2a2a; color: #d4d4d4; border-color: rgba(255, 255, 255, .14); }
+
+/* ================================================================== MONOCHROME ACCENTS */
+/* No green tint: the selected tab, the active range, primary buttons and text links are white on black. */
+html[data-theme="dark"] body .ic-tab.is-active,
+html[data-theme="dark"] body .wpx .wpx-range a.is-active,
+html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background: #f5f5f5 !important; color: #111111 !important; border-color: #f5f5f5 !important; }
+html[data-theme="dark"] body .wpx-more > summary,
+html[data-theme="dark"] body .mfd .fh-link { color: #f5f5f5 !important; }
+html[data-theme="dark"] body .btn-primary {
+    --bs-btn-bg: #f5f5f5; --bs-btn-border-color: #f5f5f5; --bs-btn-color: #111111;
+    --bs-btn-hover-bg: #ffffff; --bs-btn-hover-border-color: #ffffff; --bs-btn-hover-color: #111111;
+    --bs-btn-active-bg: #e5e5e5; --bs-btn-active-border-color: #e5e5e5; --bs-btn-active-color: #111111;
+}
+
+/* Dashboards' own brand colour: neutral greys instead of green. Header bands, primary buttons, active tabs,
+   card top edges and message bubbles all follow --brand; links follow --brand-ink / --dk-accent. Green, amber and
+   red stay only where they carry a status (good / careful / bad). */
+html[data-theme="dark"] {
+    --dk-accent: #f5f5f5;
+}
+html[data-theme="dark"] body :is(.fad, .fad-modal, .mfd, .mtd, .fcal) {
+    --brand: #262626;
+    --accent: #a1a1aa;
+    --brand-ink: #f5f5f5;
+}
+html[data-theme="dark"] body :is(.mfd, .mtd) :is(.mfd-kpi, .mtd-kpi, .itd-card, .mfd-card) { border-top-color: var(--line) !important; }
+html[data-theme="dark"] body .itd .mfd-kpi.is-ok,
+html[data-theme="dark"] body .itp-check.is-ok { border-top-color: var(--line) !important; }
+html[data-theme="dark"] body .mhd .mhd-tile:first-child { background: #f5f5f5; color: #111111 !important; }
+html[data-theme="dark"] body .mhd .mhd-tile:first-child * { color: #111111 !important; }
+html[data-theme="dark"] body .mao-hero { background: #171717; }
+html[data-theme="dark"] body :is(.mfd, .mtd) a:not([class*="btn"]):not([class*="tile"]):not([class*="kpi"]):not(.ic-tab) { color: #f5f5f5; }
+html[data-theme="dark"] body :is(.mfd-kicker, .mtd-kicker, .fh-kicker, .itd-kicker) { color: #a1a1aa !important; }

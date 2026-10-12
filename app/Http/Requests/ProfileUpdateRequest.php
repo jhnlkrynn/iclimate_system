@@ -32,6 +32,9 @@ class ProfileUpdateRequest extends FormRequest
             // Farmers keep their farm size and type here (the dashboard pop-ups were removed in 2026-10).
             'farm_area' => ['nullable', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
             'farm_type' => ['nullable', 'string', Rule::in(\App\Models\FarmerPlantingSchedule::FARM_TYPES)],
+            // Panel revision 1.1: every farmer organization the farmer belongs to.
+            'farmer_organization_ids' => ['nullable', 'array'],
+            'farmer_organization_ids.*' => ['integer', 'exists:farmer_organizations,id'],
         ];
     }
 }

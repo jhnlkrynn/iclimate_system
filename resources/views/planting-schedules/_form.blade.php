@@ -112,12 +112,24 @@
                 <input class="{{ $c['input'] }}{{ $invalid('actual_yield') }}" id="actual_yield" name="actual_yield" type="number" min="0.01" max="15" step="0.01" value="{{ old('actual_yield', $schedule->actual_yield) }}">
                 @error('actual_yield')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
                 <div class="{{ $c['help'] }}">After harvest only. Your total harvest in tons divided by your farm size in hectares. Your own records make your yield comparison more accurate.</div>
+                {{-- Panel revision 1.2: or type the harvest in sacks, kilograms or total tons. --}}
+                @include('partials.yield-converter', ['target' => '#actual_yield', 'area' => '#farm_area_hectares', 'converterInput' => $c['input'], 'converterHelp' => $c['help']])
             </div>
             <div class="{{ $c['field'] }}">
                 <label class="{{ $c['label'] }}" for="harvested_on">Date harvested</label>
                 <input class="{{ $c['input'] }}{{ $invalid('harvested_on') }}" id="harvested_on" name="harvested_on" type="date" max="{{ \App\Support\BusinessClock::today()->toDateString() }}" value="{{ old('harvested_on', $schedule->harvested_on?->format('Y-m-d')) }}">
                 @error('harvested_on')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
+                @if ($schedule->harvest_timing ?? null)
+                    <div class="{{ $c['help'] }}" data-harvest-timing-saved>{{ __('farmer.harvest_timing.label') }}: <strong>{{ $schedule->harvestTimingSummary() }}</strong></div>
+                @endif
             </div>
+            {{-- Panel revision 1.3: the reason for an early or late harvest. --}}
+            @if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'harvest_timing'))
+                @include('partials.harvest-timing-fields', [
+                    'timingWrap' => $c['full'], 'timingLabel' => $c['label'], 'timingInput' => $c['select'], 'timingError' => $c['error'],
+                    'timingReason' => $schedule->harvest_timing_reason ?? null, 'timingOther' => $schedule->harvest_timing_reason_other ?? null,
+                ])
+            @endif
         @endif
         <div class="{{ $c['full'] }}">
             <label class="{{ $c['label'] }}" for="notes">Notes (optional)</label>

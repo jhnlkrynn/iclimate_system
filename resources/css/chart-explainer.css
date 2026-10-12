@@ -104,8 +104,8 @@ html.ic-chartinfo-open { overflow: hidden; }
     padding: .1rem .55rem;
     font-size: .7rem;
     font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: #1f5a46;
     background: rgba(63, 166, 107, .18);
     border-radius: 999px;
@@ -145,8 +145,8 @@ html.ic-chartinfo-open { overflow: hidden; }
     margin: 0 0 .3rem;
     font-size: .8rem;
     font-weight: 700;
-    letter-spacing: .05em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: #23704b;
 }
 .ic-chartinfo__sec--notice {
@@ -161,7 +161,7 @@ html.ic-chartinfo-open { overflow: hidden; }
     background: rgba(79, 159, 196, .14);
     border-radius: 10px;
 }
-.ic-chartinfo__muted { color: #5b6b64; font-style: italic; }
+.ic-chartinfo__muted { color: #5b6b64; font-style: normal; }
 
 .ic-chartinfo__series { list-style: none; padding: 0 !important; margin-top: .4rem !important; }
 .ic-chartinfo__series li { margin-bottom: .2rem; }
@@ -170,7 +170,7 @@ html.ic-chartinfo-open { overflow: hidden; }
     padding: .05rem .45rem;
     font-size: .68rem;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: none;
     border-radius: 999px;
     background: rgba(63, 166, 107, .18);
     color: #1f5a46;

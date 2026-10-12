@@ -68,7 +68,7 @@ class ChatbotKnowledgeHiddenTest extends TestCase
             foreach ($routes as $route) {
                 $html = $this->actingAs($user)->get(route($route))->assertOk()->getContent();
                 // No menu item, button, card or link to it anywhere on the page.
-                $this->assertStringNotContainsString('Chatbot Knowledge', $html, "{$role} {$route}");
+                $this->assertStringNotContainsStringIgnoringCase('Chatbot Knowledge', $html, "{$role} {$route}");
                 $this->assertStringNotContainsString('/ai-admin', $html, "{$role} {$route}");
             }
         }
@@ -145,7 +145,7 @@ class ChatbotKnowledgeHiddenTest extends TestCase
 
         $html = $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->getContent();
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
-        $this->assertContains('Chatbot Knowledge', $labels[1]);
+        $this->assertContains('Chatbot knowledge', $labels[1]);
         $this->assertStringContainsString('href="'.route('ai-admin.home').'"', $html);
 
         $this->actingAs($it)->get(route('ai-admin.home'))->assertRedirect(route('ai-admin.index', ['resource' => 'topics']));
@@ -158,7 +158,7 @@ class ChatbotKnowledgeHiddenTest extends TestCase
         // Still not for MAO or farmers, in the menu or by URL.
         foreach ([User::ROLE_MAO => 'mao.dashboard', User::ROLE_FARMER => 'farmer.dashboard'] as $role => $dashboard) {
             $user = $this->user($role);
-            $this->actingAs($user)->get(route($dashboard))->assertOk()->assertDontSee('Chatbot Knowledge');
+            $this->actingAs($user)->get(route($dashboard))->assertOk()->assertDontSee('Chatbot knowledge');
             $this->actingAs($user)->get(route('ai-admin.index', 'topics'))->assertForbidden();
         }
     }

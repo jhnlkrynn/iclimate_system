@@ -546,20 +546,20 @@ class ItDashboardTest extends TestCase
         $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
 
         // IT is the system controller (2026-10): one list of system pages and Messages, no agricultural pages.
-        $this->assertStringContainsString('>Main Menu<', $html);
+        $this->assertStringContainsString('>Menu<', $html);
         foreach (['>Management<', '>Data<', '>System<'] as $section) {
             $this->assertStringNotContainsString($section, $html);
         }
-        // The menu is rendered twice (desktop sidebar + mobile offcanvas), so a page listed once per menu appears exactly twice.
+        // The menu is rendered once (the drawer; the fixed sidebar was removed in 2026-10), so each page is listed exactly once.
         foreach ([route('users.index'), route('system-health.index'), route('system-logs.index'), route('messages.index')] as $url) {
-            $this->assertSame(2, substr_count($sidebar, 'href="'.$url.'"'), $url);
+            $this->assertSame(1, substr_count($sidebar, 'href="'.$url.'"'), $url);
         }
         foreach (['heat-map.index', 'reports.index', 'farmer-profiles.index', 'planting-advisories.index', 'community-feed.index', 'climate-records.index', 'rice-productions.index', 'weather-predictions.index'] as $gone) {
             $this->assertStringNotContainsString('href="'.route($gone).'"', $sidebar, $gone);
         }
         // Chatbot Knowledge is hidden from the interface (CHATBOT_KNOWLEDGE_UI=false).
         $this->assertStringNotContainsString(route('ai-admin.home'), $html);
-        $this->assertStringNotContainsString('Chatbot Knowledge', $html);
+        $this->assertStringNotContainsStringIgnoringCase('Chatbot Knowledge', $html);
     }
 
     public function test_other_roles_keep_their_own_sidebar_sections(): void
@@ -573,6 +573,6 @@ class ItDashboardTest extends TestCase
         $this->assertStringNotContainsString('Field Reports', $html);
         $this->assertStringNotContainsString('More Tools', $html);
         $this->assertStringNotContainsString('>Management<', $html);
-        $this->assertStringNotContainsString('System Health', $html);
+        $this->assertStringNotContainsStringIgnoringCase('System Health', $html);
     }
 }

@@ -44,6 +44,9 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'farmer_organization_id' => ['nullable', 'integer', 'exists:farmer_organizations,id'],
+            // Panel revision 1.1: any other organizations the farmer belongs to.
+            'additional_organization_ids' => ['nullable', 'array', 'max:20'],
+            'additional_organization_ids.*' => ['integer', 'exists:farmer_organizations,id'],
             'barangay' => ['required_without:farmer_organization_id', 'nullable', 'string', Rule::in($this->manualBarangays())],
             'captcha_answer' => ['required', 'string', 'max:20'],
         ], [
@@ -76,13 +79,18 @@ class RegisteredUserController extends Controller
                 'status' => \App\Support\SystemSettings::farmerApproval() ? User::STATUS_PENDING : User::STATUS_ACTIVE,
             ]);
 
-            FarmerProfile::create([
+            $profile = FarmerProfile::create([
                 'user_id' => $user->id,
                 'farmer_organization_id' => $organization?->id,
                 'full_name' => $validated['name'],
                 'barangay' => $barangay,
                 'farm_type' => $farmType,
             ]);
+            // Panel revision 1.1: the main organization plus every other one ticked.
+            $others = array_map('intval', (array) ($validated['additional_organization_ids'] ?? []));
+            if ($others !== []) {
+                $profile->syncOrganizations(array_merge($organization ? [$organization->id] : [], $others), $organization?->id);
+            }
 
             return $user;
         });

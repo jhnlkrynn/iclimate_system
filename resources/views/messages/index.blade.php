@@ -26,10 +26,10 @@
             pointer-events:none;
         }
         .msg-hero > * { position:relative; z-index:1; }
-        .msg-hero h1 { font-family:'DM Serif Display', Georgia, serif; font-weight:400; letter-spacing:-0.01em; color:var(--msg-ink); }
-        .msg-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family:'DM Mono', monospace; font-size:.875rem; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:#74c69d; margin-bottom:.4rem; }
+        .msg-hero h1 { font-family: 'Inter', system-ui, sans-serif; font-weight:400; letter-spacing:-0.01em; color:var(--msg-ink); }
+        .msg-eyebrow { display:inline-flex; align-items:center; gap:8px; font-family: 'Inter', system-ui, sans-serif; font-size:.875rem; font-weight:500; text-transform: none; letter-spacing: 0; color:#74c69d; margin-bottom:.4rem; }
         .msg-eyebrow::before { content:none; }
-        .msg-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--msg-line); border-radius:999px; padding:.5rem .85rem; background:rgba(45,106,79,.06); color:var(--msg-ink); font-family:'DM Mono', monospace; font-size:.875rem; font-weight:500; letter-spacing:.02em; }
+        .msg-chip { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--msg-line); border-radius:999px; padding:.5rem .85rem; background:rgba(45,106,79,.06); color:var(--msg-ink); font-family: 'Inter', system-ui, sans-serif; font-size:.875rem; font-weight:500; letter-spacing:.02em; }
         .msg-pulse { width:8px; height:8px; border-radius:999px; background:#74c69d; box-shadow:0 0 0 5px rgba(116,198,157,.2); flex-shrink:0; }
         .msg-shell { display:grid; grid-template-columns:340px minmax(0,1fr); gap:1rem; margin-top:1rem; align-items:stretch; min-height:clamp(620px, calc(100vh - 210px), 860px); }
         .msg-panel { border:1.5px solid var(--ic-sand-dark); border-radius:18px; background:linear-gradient(145deg, var(--ic-paper), #f7fbf8); box-shadow:0 .7rem 1.6rem rgba(31,42,36,.06); overflow:hidden; display:flex; flex-direction:column; min-height:0; position:relative; }
@@ -70,28 +70,28 @@
 
         /* ---- Avatar + presence ---- */
         .avatar-wrap { position:relative; flex:0 0 auto; }
-        .avatar { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:rgba(82,183,136,.16); border:1px solid rgba(149,213,178,.3); color:#74c69d; font-family:'DM Mono', monospace; font-weight:700; }
+        .avatar { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:rgba(82,183,136,.16); border:1px solid rgba(149,213,178,.3); color:#74c69d; font-family: 'Inter', system-ui, sans-serif; font-weight:700; }
         .avatar-status { position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:999px; border:2px solid #fff; background:#c7d1cb; }
         .avatar-status.online { background:#52b788; }
 
         .thread-row-top { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; }
-        .thread-time { font-family:'DM Mono', monospace; font-size:.75rem; color:var(--msg-muted); flex-shrink:0; line-height:1.35; }
+        .thread-time { font-family: 'Inter', system-ui, sans-serif; font-size:.75rem; color:var(--msg-muted); flex-shrink:0; line-height:1.35; }
         .thread-preview-row { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
-        .unread-badge { flex-shrink:0; min-width:21px; min-height:21px; padding:.1rem .4rem; border-radius:999px; background:#C58B2A; color:#fff; font-family:'DM Mono', monospace; font-size:.75rem; font-weight:800; display:grid; place-items:center; line-height:1; }
+        .unread-badge { flex-shrink:0; min-width:21px; min-height:21px; padding:.1rem .4rem; border-radius:999px; background:#C58B2A; color:#fff; font-family: 'Inter', system-ui, sans-serif; font-size:.75rem; font-weight:800; display:grid; place-items:center; line-height:1; }
 
         .chat-window { flex:1 1 auto; min-height:0; overflow:auto; padding:1rem; background:rgba(243,246,244,.4); scroll-behavior:smooth; }
         .bubble-row { display:flex; margin-bottom:.8rem; }
         .bubble-row.mine { justify-content:flex-end; }
         .bubble { max-width:min(680px,82%); border:1px solid var(--msg-line); border-radius:14px; background:#fff; color:var(--msg-ink); padding:.7rem .85rem; }
         .mine .bubble { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
-        .msg-meta { color:var(--msg-muted); font-family:'DM Mono', monospace; font-size:.8rem; letter-spacing:.02em; margin-top:.3rem; display:flex; align-items:center; gap:.35rem; line-height:1.35; }
+        .msg-meta { color:var(--msg-muted); font-family: 'Inter', system-ui, sans-serif; font-size:.8rem; letter-spacing:.02em; margin-top:.3rem; display:flex; align-items:center; gap:.35rem; line-height:1.35; }
         .mine .msg-meta { color:rgba(255,255,255,.72); }
         .msg-check { font-size:.78rem; color:rgba(255,255,255,.8); }
         .msg-check.seen { color:#74c69d; }
         .msg-actions { display:flex; justify-content:flex-end; margin-top:.5rem; }
-        .msg-unsend { border:1px solid rgba(255,255,255,.52); border-radius:999px; background:rgba(255,255,255,.14); color:#fff; font-family:'DM Mono', monospace; font-size:.8rem; font-weight:700; padding:.25rem .6rem; line-height:1.2; }
+        .msg-unsend { border:1px solid rgba(255,255,255,.52); border-radius:999px; background:rgba(255,255,255,.14); color:#fff; font-family: 'Inter', system-ui, sans-serif; font-size:.8rem; font-weight:700; padding:.25rem .6rem; line-height:1.2; }
         .msg-unsend:hover { background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.82); color:#fff; text-decoration:none; }
-        .msg-typing { padding:0 1rem .5rem; color:var(--msg-muted); font-family:'DM Mono', monospace; font-size:.875rem; display:none; line-height:1.4; }
+        .msg-typing { padding:0 1rem .5rem; color:var(--msg-muted); font-family: 'Inter', system-ui, sans-serif; font-size:.875rem; display:none; line-height:1.4; }
         .msg-typing.show { display:block; }
 
         /* ---- Compose bar ---- */

@@ -200,16 +200,43 @@ class PredictionsPageTest extends TestCase
     public function test_farmers_read_words_and_staff_also_see_numbers(): void
     {
         $this->storeLianForecast(16, rain: 12.0, code: 95);                            // thunderstorm days with 12 mm
-        $farmer = $this->text($this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent());
+        $farmerHtml = $this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent();
         $mao = $this->text($this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('weather-predictions.index'))->getContent());
 
-        $this->assertStringContainsString('Moderate rain', $farmer);
+        // Farmers (2026-10): one answer and plain day cards; the numbers wait under the closed "More details".
+        $this->assertStringContainsString('Rain most days this week', $this->text($farmerHtml));
+        $this->assertSame(1, preg_match('#<details class="wpx-more" data-wpx-more>(.*?)</details>#s', $farmerHtml, $more));
+        $farmer = $this->text(str_replace($more[0], '', $farmerHtml));
+        $this->assertStringContainsString('Rain and thunder', $farmer);
         $this->assertDoesNotMatchRegularExpression('/\d\s*mm\b/', $farmer);
         $this->assertStringNotContainsString('km/h', $farmer);
+        $this->assertStringNotContainsString('%', $farmer);
+        $details = $this->text($more[1]);
+        $this->assertStringContainsString('Moderate rain · 12.0 mm', $details);
+        $this->assertStringContainsString('80%', $details);
+        $this->assertStringContainsString('14.0 km/h', $details);
 
         $this->assertStringContainsString('12.0 mm', $mao);
         $this->assertStringContainsString('80%', $mao);
         $this->assertStringContainsString('14.0 km/h', $mao);
+    }
+
+    public function test_the_farmers_answer_names_the_week_in_plain_words(): void
+    {
+        $this->storeLianForecast(16, rain: 60.0, code: 65);
+        $html = $this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent();
+        $this->assertStringContainsString('<header class="wpx-answer is-bad" data-wpx-answer="heavy_rain">', $html);
+        $this->assertStringContainsString('<h1>Heavy rain today</h1>', $html);
+
+        // The rules on their own: no rain is careful (hot at 35 °C), rain on most days is good, nothing saved is none.
+        $day = fn (int $i, ?string $rain, float $high = 31.0) => ['kind' => 'forecast', 'date' => CarbonImmutable::now('Asia/Manila')->addDays($i), 'rain_key' => $rain,
+            'icon' => $rain === 'none' ? 'sun' : 'rain', 'wind_words' => null, 'wind_kmh' => 5.0, 'high' => $high];
+        $answer = fn (array $days) => \App\Http\Controllers\WeatherPredictionController::plainForecast(['state' => 'ok', 'days' => $days])['answer']['key'];
+        $this->assertSame('dry', $answer(array_map(fn ($i) => $day($i, 'none'), range(0, 6))));
+        $this->assertSame('dry_hot', $answer(array_map(fn ($i) => $day($i, 'none', 35.5), range(0, 6))));
+        $this->assertSame('rainy', $answer(array_map(fn ($i) => $day($i, $i < 4 ? 'light' : 'none'), range(0, 6))));
+        $this->assertSame('mixed', $answer(array_map(fn ($i) => $day($i, $i < 2 ? 'moderate' : 'none'), range(0, 6))));
+        $this->assertSame('none', \App\Http\Controllers\WeatherPredictionController::plainForecast(['state' => 'nodata', 'days' => []])['answer']['key']);
     }
 
     public function test_a_day_never_names_two_different_rains(): void

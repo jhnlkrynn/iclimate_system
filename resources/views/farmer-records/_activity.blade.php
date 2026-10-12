@@ -40,6 +40,12 @@
                     <button type="button" class="fad-btn is-quiet" data-fmf-survey-skip>{{ __('farmer.yield_survey.skip') }}</button>
                 </div>
             </div>
+            {{-- Panel revision 1.2: or type the harvest in sacks, kilograms or tons; it is turned into t/ha. --}}
+            <label class="fmf-field">
+                <span>{{ app()->getLocale() === 'fil' ? 'Laki ng inani (ektarya)' : 'Area harvested (hectares)' }}</span>
+                <input class="fad-input" type="number" id="ysArea" min="0.01" step="0.01" inputmode="decimal" value="{{ $yieldSurvey['area'] ?? '' }}">
+            </label>
+            @include('partials.yield-converter', ['target' => '[name=actual_yield]', 'area' => '#ysArea', 'converterInput' => 'fad-input', 'converterHelp' => 'fad-support'])
             <p class="fad-support">{{ __('farmer.yield_survey.hint') }}</p>
             @if ($surveyErrors->any())<p class="fmf-error" role="alert">{{ $surveyErrors->first() }}</p>@endif
         </form>
@@ -68,7 +74,9 @@
                                     <button type="button" class="fmf-cal-day" data-fmf-activity-open="{{ $day['date'] }}" aria-label="{{ $day['label'] }}">
                                         <span class="fmf-cal-num">{{ $day['day'] }}</span>
                                         @foreach ($day['events'] as $event)
-                                            <span class="fmf-cal-event is-{{ $event['kind'] }}">{{ $event['label'] }}@if ($event['farm'])<small>{{ $event['farm'] }}</small>@endif</span>
+                                            <span class="fmf-cal-event is-{{ $event['kind'] }}"@if (! empty($event['timing_text'])) title="{{ $event['timing_text'] }}"@endif>{{ $event['label'] }}@if ($event['farm'])<small>{{ $event['farm'] }}</small>@endif
+                                                @if (! empty($event['timing']))<small class="timing-badge is-{{ \Illuminate\Support\Str::slug($event['timing']) }}">{{ \App\Support\HarvestTiming::timingLabel($event['timing']) }}</small>@endif
+                                            </span>
                                         @endforeach
                                     </button>
                                 @endif
@@ -85,7 +93,9 @@
                 @foreach ($row['events'] as $event)
                     <a class="fmf-cal-item is-{{ $event['kind'] }}" href="{{ $event['edit'] }}">
                         <strong>{{ $row['date']->locale(app()->getLocale())->translatedFormat('M j') }}</strong>
-                        <span>{{ $event['label'] }}@if ($event['farm']) · {{ $event['farm'] }}@endif</span>
+                        <span>{{ $event['label'] }}@if ($event['farm']) · {{ $event['farm'] }}@endif
+                            @if (! empty($event['timing_text']))<small class="timing-line is-{{ \Illuminate\Support\Str::slug($event['timing']) }}">{{ $event['timing_text'] }}</small>@endif
+                        </span>
                     </a>
                 @endforeach
             @empty
@@ -115,10 +125,12 @@
                     <span>{{ __('farmer.activity.farm') }}</span>
                     <select class="fad-input" name="farm_id" required>
                         @foreach ($activityFarms as $farmOption)
-                            <option value="{{ $farmOption['id'] }}" @selected((string) old('farm_id', $activityFarmId) === (string) $farmOption['id'])>{{ $farmOption['name'] }}</option>
+                            <option value="{{ $farmOption['id'] }}" data-expected-harvest="{{ $farmOption['expected_harvest'] ?? '' }}" @selected((string) old('farm_id', $activityFarmId) === (string) $farmOption['id'])>{{ $farmOption['name'] }}</option>
                         @endforeach
                     </select>
                 </label>
+                {{-- Panel revision 1.3: asked only when the harvest date is early or late. --}}
+                @include('partials.harvest-timing-fields', ['timingWrap' => 'fmf-field', 'timingInput' => 'fad-input', 'timingError' => 'fmf-error', 'timingBag' => 'activity'])
                 <div class="fmf-dialog-actions">
                     <button type="submit" class="fad-btn is-primary">{{ __('farmer.activity.save') }}</button>
                     <button type="button" class="fad-btn is-quiet" data-fmf-close>{{ __('farmer.activity.cancel') }}</button>

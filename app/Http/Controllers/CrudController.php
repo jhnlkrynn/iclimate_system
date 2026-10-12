@@ -63,11 +63,28 @@ abstract class CrudController extends Controller
     /** Column the farmer list is sorted by, newest first (the staff list sorts by id). */
     protected string $farmerSortColumn = 'id';
 
+    /**
+     * Panel revision 4.4 B: the module's barangay column. When set, an Agricultural Technologist / Extension Worker sees
+     * the records of their assigned barangays (App\Support\MaoScope) and can change only those.
+     */
+    protected ?string $barangayColumn = null;
+
+    /** Filters a module applies itself (applyCustomFilter) instead of a plain column match. */
+    protected array $customFilters = [];
+
+    /** More "OR" conditions for the search box (e.g. a related table), inside the same group as $searchable. */
+    protected function extraSearch(Builder $builder, string $search): void {}
+
+    protected function applyCustomFilter(Builder $query, string $field, string $value): void {}
+
     public function index(Request $request): View
     {
         $this->authorizeView($request);
 
         $query = $this->baseQuery($request);
+        if ($this->barangayColumn !== null) {
+            \App\Support\MaoScope::apply($query, $query->getModel()->getTable().'.'.$this->barangayColumn, $request->user());
+        }
         $search = is_string($request->query('search')) ? trim($request->query('search')) : '';
 
         if ($search !== '' && $this->searchable !== []) {
@@ -75,13 +92,16 @@ abstract class CrudController extends Controller
                 foreach ($this->searchable as $field) {
                     $builder->orWhere($field, 'like', "%{$search}%");
                 }
+                $this->extraSearch($builder, $search);
             });
         }
 
         foreach ($this->filterable as $field => $options) {
             $value = $request->query($field);
             if (is_string($value) && $value !== '') {
-                $query->where($field, $value);
+                in_array($field, $this->customFilters, true)
+                    ? $this->applyCustomFilter($query, $field, $value)
+                    : $query->where($field, $value);
             }
         }
 
@@ -98,6 +118,8 @@ abstract class CrudController extends Controller
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
             'printable' => $this->printable && ! $this->usesFarmerPages($request),
+            // Panel revision 4.4 B: "Showing your barangays: …" above a list limited to the MAO user's coverage.
+            'coverageBarangays' => $this->barangayColumn !== null ? \App\Support\MaoScope::barangays($request->user()) : null,
         ];
 
         if ($this->usesFarmerPages($request)) {
@@ -150,6 +172,7 @@ abstract class CrudController extends Controller
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
             'printable' => $this->printable,
+            'coverageBarangays' => $this->barangayColumn !== null ? \App\Support\MaoScope::barangays($request->user()) : null,
             'records' => new LengthAwarePaginator($filtered->forPage($page, $perPage)->values(), $filtered->count(), $perPage, $page, [
                 'path' => $request->url(),
                 'query' => $request->query(),
@@ -251,6 +274,7 @@ abstract class CrudController extends Controller
         $this->authorizeManage($request);
 
         $data = $this->prepareData($request, $this->validated($request));
+        $this->authorizeBarangayValue($request, $data);
         $record = $this->model::query()->create($data);
         SystemAuditLogger::forModel('created', $record, $request, [
             'module' => $this->title,
@@ -287,6 +311,7 @@ abstract class CrudController extends Controller
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
+        $this->authorizeRecordCoverage($request, $record);
 
         return view('crud.form', [
             'title' => 'Edit '.$this->title,
@@ -302,7 +327,10 @@ abstract class CrudController extends Controller
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
-        $record->update($this->prepareData($request, $this->validated($request, $record->id)));
+        $this->authorizeRecordCoverage($request, $record);
+        $data = $this->prepareData($request, $this->validated($request, $record->id));
+        $this->authorizeBarangayValue($request, $data);
+        $record->update($data);
         SystemAuditLogger::forModel('updated', $record, $request, [
             'module' => $this->title,
         ]);
@@ -314,13 +342,19 @@ abstract class CrudController extends Controller
     {
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
+        $this->authorizeRecordCoverage($request, $record);
         $recordId = $record->getKey();
+        // Read before the row is gone, for the MAO Activity Log (panel revision 4.4 D).
+        $barangay = $record->getAttribute('barangay');
+        $label = $record->getAttribute('full_name') ?? $record->getAttribute('name') ?? $record->getAttribute('title');
         $record->delete();
-        SystemAuditLogger::record('Deleted '.$this->title, $request, [
+        SystemAuditLogger::record('Deleted '.$this->title, $request, array_filter([
             'record_type' => class_basename($this->model),
             'record_id' => $recordId,
             'module' => $this->title,
-        ]);
+            'barangay' => $barangay,
+            'record_label' => $label,
+        ], fn ($value) => $value !== null && $value !== ''));
 
         return redirect()->route($this->routeName.'.index')->with('success', $this->title.' deleted successfully.');
     }
@@ -393,6 +427,26 @@ abstract class CrudController extends Controller
     {
         if (! $this->canManage($request)) {
             abort(403);
+        }
+    }
+
+    /** Panel revision 4.4 B: field MAO personnel change only the records of their own barangays. */
+    protected function authorizeRecordCoverage(Request $request, mixed $record): void
+    {
+        if ($this->barangayColumn !== null && is_object($record) && method_exists($record, 'getAttribute')
+            && ! \App\Support\MaoScope::canManageBarangay($record->getAttribute($this->barangayColumn), $request->user())) {
+            abort(403, 'This record belongs to a barangay outside your assigned coverage. You can view it in the municipal view, but only its assigned MAO personnel or the Municipal Agriculturist can change it.');
+        }
+    }
+
+    /** The barangay chosen on a create / edit form must be one of the user's barangays (panel revision 4.4 B). */
+    protected function authorizeBarangayValue(Request $request, array $data): void
+    {
+        if ($this->barangayColumn !== null && array_key_exists($this->barangayColumn, $data)
+            && ! \App\Support\MaoScope::canManageBarangay($data[$this->barangayColumn], $request->user())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $this->barangayColumn => 'You can only save records for your assigned barangays: '.implode(', ', $request->user()->coveredBarangays()).'.',
+            ]);
         }
     }
 

@@ -77,7 +77,7 @@ class FarmerPagesSimplificationTest extends TestCase
 
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('2.50 ha', $html);
+        $this->assertStringContainsString('2.5 ha', $html);   // the farm's size as My Farms shows it (multi-farm, 2026-10-07)
         $this->assertStringContainsString('Irrigated', $html);
         $this->assertStringContainsString('My Planting Schedule', $html);
         $this->assertStringContainsString('4.35', $html);

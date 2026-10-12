@@ -43,6 +43,7 @@
                 <dt class="col-sm-3">Updated</dt>
                 <dd class="col-sm-9">{{ $record->updated_at ?? 'Not set' }}</dd>
             </dl>
+            @include('partials.record-stamps', ['record' => $record])
         </div>
     </div>
 

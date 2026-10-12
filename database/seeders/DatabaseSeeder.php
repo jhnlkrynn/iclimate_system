@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             StaffLoginAccountSeeder::class,
+            MaoPersonnelSeeder::class,   // panel revision 4.4: the real MAO personnel of Lian
             FarmerOrganizationSeeder::class,
             KnowledgeBaseSeeder::class,
             AdvisoryRuleSeeder::class,

@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -33,7 +34,7 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         // Farm size and type belong to the farmer profile (saved below), not to the account.
-        $request->user()->fill($request->safe()->except(['farm_area', 'farm_type']));
+        $request->user()->fill($request->safe()->except(['farm_area', 'farm_type', 'farmer_organization_ids']));
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
@@ -60,7 +61,53 @@ class ProfileController extends Controller
             $profile->update($changes);
         }
 
+        // Panel revision 1.1: the farmer's organizations (the form always sends the marker, so "none ticked" clears them).
+        if ($request->user()->role === User::ROLE_FARMER && $request->has('farmer_organization_ids_present')) {
+            $profile = $request->user()->farmerProfile()->firstOrCreate([], [
+                'full_name' => $request->user()->name,
+                'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
+            ]);
+            $profile->syncOrganizations((array) ($request->validated('farmer_organization_ids') ?? []));
+        }
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Save a new profile photo (replacing the old file).
+     */
+    public function updatePhoto(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=4000,max_height=4000'],
+        ]);
+
+        $user = $request->user();
+        $old = $user->avatar_path;
+        $user->avatar_path = $request->file('photo')->store('avatars', 'public');
+        $user->save();
+
+        if ($old) {
+            Storage::disk('public')->delete($old);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'photo-updated');
+    }
+
+    /**
+     * Remove the profile photo; the initials show again.
+     */
+    public function destroyPhoto(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->avatar_path = null;
+            $user->save();
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'photo-removed');
     }
 
     /**

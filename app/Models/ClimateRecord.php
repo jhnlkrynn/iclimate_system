@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  */
 class ClimateRecord extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
     public const SEASON_WET = 'Wet';
 
@@ -94,6 +94,12 @@ class ClimateRecord extends Model
         'wind_speed' => 'decimal:2',
         'verified_at' => 'datetime',   // Manuscript – Naicel (2026-10-08): set by RecordValidationController only
     ];
+
+    /** Panel revision 4.4 C: the MAO user who validated the record. */
+    public function verifier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
 
     /** Manuscript – Naicel: "Validated" / "Not validated", for the record page (the Validated column). */
     public function getVerificationAttribute(): string

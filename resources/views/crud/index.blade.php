@@ -104,6 +104,15 @@
         ])
     @endif
 
+    {{-- Panel revision 4.4 B: a list limited to the MAO user's barangays says so. --}}
+    @if (! empty($coverageBarangays))
+        <p class="coverage-note" data-coverage-note>Showing records for your barangays: <strong>{{ implode(', ', $coverageBarangays) }}</strong>. Switch to the municipal view in the bar above to see all of Lian (read-only).</p>
+    @endif
+    {{-- Panel revision 1.4: find a farmer as you type (name, farmer ID, barangay or organization). --}}
+    @if ($routeName === 'farmer-profiles' && $canManage && \Illuminate\Support\Facades\Route::has('farmers.search'))
+        @include('partials.live-search', ['url' => route('farmers.search'), 'id' => 'farmerFinder', 'label' => 'Find a farmer', 'placeholder' => 'Type a name, farmer ID, barangay or organization', 'class' => 'mb-4'])
+    @endif
+
     @php
         $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
             + collect(array_keys($filterable))->filter(fn ($field) => request()->filled($field))->count();
@@ -120,10 +129,11 @@
         </summary>
         <div class="card filter-panel no-lift mb-4">
             <div class="card-body">
-                <form class="row g-3 align-items-end" method="GET" data-loading="true">
+                {{-- Panel revision 1.4: results update as you type (resources/js/panel-revisions.js, data-live-filter). --}}
+                <form class="row g-3 align-items-end" method="GET" action="{{ route($routeName.'.index') }}" data-live-filter data-text-none="No results found">
                     <div class="col-lg-{{ $filterable ? '4' : '8' }}">
-                        <label class="form-label fw-semibold">Search</label>
-                        <input class="form-control form-control-lg" name="search" value="{{ $search }}" placeholder="Search {{ strtolower($title) }} records">
+                        <label class="form-label fw-semibold" for="crudSearch">Search</label>
+                        <input class="form-control form-control-lg" id="crudSearch" type="search" name="search" value="{{ $search }}" autocomplete="off" placeholder="{{ $routeName === 'farmer-profiles' ? 'Name, farmer ID, barangay or organization' : 'Search '.strtolower($title).' records' }}">
                     </div>
                     @foreach ($filterable as $field => $options)
                         <div class="col-sm-6 col-lg-3">
@@ -269,7 +279,7 @@
         @else
             <div class="card-body">
                 <div class="empty-state text-center p-5">
-                    <div class="h5 mb-2">No records found</div>
+                    <div class="h5 mb-2">{{ $activeFilterCount ? 'No results found' : 'No records found' }}</div>
                     <p class="text-muted mb-3">Try a different search or filter.</p>
                     <a class="btn btn-outline-primary" href="{{ route($routeName.'.index') }}">Clear Filters</a>
                 </div>

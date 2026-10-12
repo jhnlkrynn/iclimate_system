@@ -55,6 +55,8 @@
         // existing item, so the menu stays short.
         'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*']],
         'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
+        // Panel revision 4.4: MAO Office = Activity Log and MAO Personnel.
+        'mao-office' => ['mao.activity-log.index', ['mao.activity-log.*', 'mao.personnel.*']],
         'it-settings' => ['admin.settings.index', ['admin.settings.*', 'admin.permissions.*', 'admin.backups.*', 'admin.maintenance.*', 'admin.models.*', 'admin.feedback.*']],
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
@@ -107,6 +109,7 @@
             $navLink($maoNav('reports'), 'reports', 'reports'),
             $navLink($maoNav('announcements'), 'community', 'community'),
             $navLink($maoNav('messages'), 'messages', 'messages'),
+            $navLink($maoNav('mao_office'), 'mao-office', 'system-logs'),   // panel revision 4.4
         ];
         $moreGroup = [];
         $publishingGroup = [];
@@ -116,23 +119,23 @@
         // back to this dashboard (App\Http\Middleware\RedirectItFromFieldPages); their routes and controllers are unchanged.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
-            $navLink('User Management', 'user-management', 'user-management'),
-            $navLink('System Health', 'system-health', 'system-health'),
-            $navLink('System Logs', 'system-logs', 'system-logs'),
+            $navLink('User management', 'user-management', 'user-management'),
+            $navLink('System health', 'system-health', 'system-health'),
+            $navLink('System logs', 'system-logs', 'system-logs'),
             // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
             $navLink('Settings', 'it-settings', 'system-health'),
             $navLink('Messages', 'messages', 'messages'),
             // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
-            ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot Knowledge', 'ai-admin', 'ai')] : []),
+            ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot knowledge', 'ai-admin', 'ai')] : []),
         ];
         $moreGroup = [];
         $publishingGroup = [];
     }
 
     $sidebarSections = array_values(array_filter([
-        ['Main Menu', $primaryGroup],
-        [$isFarmer ? 'My Farm' : 'More Tools', $moreGroup],
-        ['Community & Updates', $publishingGroup],
+        ['Menu', $primaryGroup],
+        [$isFarmer ? 'My farm' : 'More tools', $moreGroup],
+        ['Community and updates', $publishingGroup],
     ], fn ($section) => ! empty($section[1])));
 
     // Flat sections (a small label over its links); the open page, or any page under it, is marked active.
@@ -163,38 +166,15 @@
         return $html;
     };
 
-    // Light / Dark switch: resources/js/theme.js applies and remembers the choice; the inline script in
-    // layouts/app.blade.php sets it before the first paint so the page never flashes the other theme.
+    // The light/dark switch is in the top bar now (layouts/navigation.blade.php); the drawer keeps the credit line.
     $renderSidebarFoot = function (): string {
-        return '<div class="ic-sb-foot">'
-            .'<div class="ic-sb-appearance">'
-            .'<span class="ic-sb-appearance-label" aria-hidden="true">Appearance</span>'
-            .'<div class="ic-theme-switch" role="group" aria-label="Appearance">'
-            .'<button type="button" class="ic-theme-btn" data-theme-set="light" aria-pressed="true">'
-            .'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.8v1.7M9 14.5v1.7M1.8 9h1.7M14.5 9h1.7M3.9 3.9l1.2 1.2M12.9 12.9l1.2 1.2M3.9 14.1l1.2-1.2M12.9 5.1l1.2-1.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
-            .'<span>Light</span></button>'
-            .'<button type="button" class="ic-theme-btn" data-theme-set="dark" aria-pressed="false">'
-            .'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M14.8 11.2A6.3 6.3 0 0 1 6.8 3.2a6.3 6.3 0 1 0 8 8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'
-            .'<span>Dark</span></button>'
-            .'</div>'
-            .'</div>'
-            .'<div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div>'
-            .'</div>';
+        return '<div class="ic-sb-foot"><div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div></div>';
     };
 @endphp
 
-{{-- The one sidebar of the application shell (layouts/app.blade.php) for Farmer, MAO and IT: the same place, width, icons and
-     colours on every page; only the menu items differ by role. Styles: resources/css/sidebar.css. From 768px it is fixed
-     at the full screen height; below 768px it is hidden and the same menu opens full screen as the drawer below (button
-     in layouts/navigation.blade.php). --}}
-<aside class="ic-sidebar sidebar-fixed d-none d-md-flex flex-column" aria-label="Sidebar">
-    @include('layouts.partials.sidebar-brand')
-    <nav class="ic-sb-nav sidebar-nav-scroll" aria-label="Main menu">
-        {!! $renderSidebarNav('sb') !!}
-    </nav>
-    {!! $renderSidebarFoot() !!}
-</aside>
-
+{{-- The navigation of the application shell (layouts/app.blade.php) for Farmer, MAO and IT: a drawer opened from the
+     menu button in the top bar (layouts/navigation.blade.php) at every screen size; the page behind it is blurred and
+     inactive until it closes. Only the menu items differ by role. Styles: resources/css/sidebar.css and app-shell.css. --}}
 <div class="ic-sidebar ic-sidebar--drawer offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
     <div class="ic-sb-drawer-head">
         @include('layouts.partials.sidebar-brand')

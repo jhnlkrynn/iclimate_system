@@ -196,8 +196,13 @@
         }
     }
 
+    // Page changes (menu and tab links, reloads, GET filter forms) no longer cover the page with the gray skeleton:
+    // the next page simply replaces this one. Saves and other requests still show the small progress box.
+    var SHOW_PAGE_SKELETON = false;
+
     function show(message, options) {
         options = options || {};
+        if (options.kind === 'page' && !SHOW_PAGE_SKELETON) return null;
         var id = ++seq;
         var entry = { message: message || 'Loading...', timer: null, kind: options.kind || 'action' };
         var timeout = options.timeout === undefined ? SAFETY_MS : options.timeout;

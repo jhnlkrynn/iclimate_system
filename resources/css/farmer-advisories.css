@@ -16,7 +16,7 @@
     --danger: #c0392b; --danger-ink: #a12f23; --danger-bg: #fbe9e7; --danger-line: #f0c2bc;
     --info: #1f6fb2; --info-ink: #1a5c96; --info-bg: #e8f1f9; --info-line: #bcd6ec;
     --sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --serif: Georgia, "Times New Roman", Times, serif;
+    --serif: 'Inter', system-ui, sans-serif;
 }
 .fad {
     --gap: 24px;
@@ -41,7 +41,7 @@
 
 /* ------------------------------------------------------------ type roles */
 .fad-label, .fad-kicker {
-    font-size: .8125rem !important; font-weight: 600 !important; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    font-size: .8125rem !important; font-weight: 600 !important; line-height: 1.3; text-transform: none; letter-spacing: 1px; color: var(--muted);
 }
 :is(.fad, .fad-modal) .fad-value { font-size: 1.375rem; font-weight: 700; line-height: 1.25; color: var(--ink); }
 :is(.fad, .fad-modal) .fad-kpi { font-size: 1.875rem; font-weight: 700; line-height: 1.15; color: var(--ink); }
@@ -70,7 +70,7 @@
 
 .fad-badge {
     display: inline-flex; align-items: center; gap: 5px; width: fit-content; padding: 3px 8px; border: 1px solid transparent; border-radius: 4px;
-    font-size: .75rem; font-weight: 600; line-height: 1.4; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+    font-size: .75rem; font-weight: 600; line-height: 1.4; text-transform: none; letter-spacing: 0; white-space: nowrap;
 }
 .fad-badge .mtd-svg { width: 14px; height: 14px; }
 .fad-badge.is-good { background: var(--good-bg); color: var(--brand-ink, var(--brand)); border-color: var(--good-line); }
@@ -183,7 +183,7 @@
 }
 .fad-acard-facts { margin: 0; border-top: 1px solid var(--line); }
 .fad-acard-facts > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.fad-acard-facts dt { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.fad-acard-facts dt { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--muted); }
 .fad-acard-facts dd { margin: 0; font-size: .9375rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 .fad-acard-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 4px; }
 .fad-acard-foot .fad-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: .875rem; }

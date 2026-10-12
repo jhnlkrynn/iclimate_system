@@ -88,12 +88,14 @@
             @else
                 <div class="itd-table-wrap">
                     <table class="itd-table" data-farmer-activities>
-                        <thead><tr><th>Date</th><th>Activity</th><th>Farmer</th><th>Barangay</th><th>Farm</th><th class="itd-num">Area</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Activity</th><th>Harvest timing</th><th>Farmer</th><th>Barangay</th><th>Farm</th><th class="itd-num">Area</th></tr></thead>
                         <tbody>
                             @foreach ($farmerActivities as $row)
                                 <tr>
                                     <td class="itd-nowrap">{{ $row['date']->format('M j, Y') }}</td>
                                     <td><span class="mfd-pill {{ $row['kind'] === 'Planted' ? 'is-good' : ($row['kind'] === 'Harvested' ? 'is-info' : 'is-unk') }}">{{ $row['kind'] }}</span></td>
+                                    {{-- Panel revision 1.3 --}}
+                                    <td>@if (! empty($row['timing']))<span class="timing-line is-{{ \Illuminate\Support\Str::slug($row['timing']) }}">{{ $row['timing_text'] }}</span>@endif</td>
                                     <td>{{ $row['farmer'] }}</td>
                                     <td>{{ $row['barangay'] }}</td>
                                     <td>{{ $row['farm'] }}</td>

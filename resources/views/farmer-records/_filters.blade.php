@@ -14,10 +14,11 @@
             <span class="fad-count" aria-label="{{ $activeFilterCount }} active {{ $activeFilterCount === 1 ? 'filter' : 'filters' }}">{{ $activeFilterCount }}</span>
         @endif
     </summary>
-    <form class="fad-filter-form frec-filter-form" method="GET" action="{{ route($routeName.'.index') }}">
+    {{-- Panel revision 1.4: results update as you type (resources/js/panel-revisions.js, data-live-filter). --}}
+    <form class="fad-filter-form frec-filter-form" method="GET" action="{{ route($routeName.'.index') }}" data-live-filter data-text-none="{{ __('farmer.search.no_results') }}">
         <div class="fad-field is-search">
             <label class="fad-label" for="frecSearch">Search</label>
-            <input class="fad-input" id="frecSearch" type="search" name="search" value="{{ $search }}" placeholder="{{ $placeholder ?? 'Search' }}">
+            <input class="fad-input" id="frecSearch" type="search" name="search" value="{{ $search }}" autocomplete="off" enterkeyhint="search" placeholder="{{ $placeholder ?? 'Search' }}">
         </div>
         @foreach ($filterable as $field => $options)
             @continue(in_array($field, $hidden, true))

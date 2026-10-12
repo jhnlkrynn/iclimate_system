@@ -102,7 +102,7 @@ html body .ic-sidebar .ic-sb-brand {
 html body .ic-sidebar .ic-sb-logo { width: 34px; height: 34px; object-fit: contain; flex: none; }
 html body .ic-sidebar .ic-sb-brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
 html body .ic-sidebar .ic-sb-wordmark { font-size: 1.125rem; font-weight: 800; letter-spacing: -.01em; color: var(--sb-text-strong); }
-html body .ic-sidebar .ic-sb-place { margin-top: 2px; font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sb-label); }
+html body .ic-sidebar .ic-sb-place { margin-top: 2px; font-size: .6875rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--sb-label); }
 html body .ic-sidebar .ic-sb-brand:focus-visible { outline: 2px solid var(--sb-accent); outline-offset: 2px; border-radius: 8px; }
 
 /* ------------------------------------------------------------------ menu */
@@ -133,8 +133,8 @@ html body .ic-sidebar .sidebar-section {
     font-size: .6875rem;
     font-weight: 600;
     line-height: 1.3;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--sb-label);
 }
 
@@ -276,8 +276,8 @@ html body .ic-sidebar .ic-sb-appearance-label {
     margin: 0 4px 6px;
     font-size: .6875rem;
     font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--sb-label);
 }
 

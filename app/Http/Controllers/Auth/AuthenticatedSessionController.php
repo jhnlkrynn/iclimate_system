@@ -140,9 +140,9 @@ class AuthenticatedSessionController extends Controller
         $intended = $request->session()->pull('url.intended');
         $dashboard = route($user->dashboardRoute(), absolute: false);
 
+        // No "login successful" message: landing on the dashboard already says so.
         return redirect()
-            ->to(is_string($intended) && $this->roleMayOpen($user, $intended) ? $intended : $dashboard)
-            ->with('success', 'Login successful. Welcome back to iClimate.');
+            ->to(is_string($intended) && $this->roleMayOpen($user, $intended) ? $intended : $dashboard);
     }
 
     /**

@@ -91,7 +91,7 @@ class SystemPageSmokeTest extends TestCase
         $this->assertPagesOpen($farmer, $pages = [
             // Farmer Home's barangay risk card (2026-10). Community, Climate Records, Rice Production and the farm map
             // are no longer farmer pages; they redirect (FarmerPagesSimplificationTest).
-            '/farmer/dashboard' => 'Barangay Risk',
+            '/farmer/dashboard' => 'Barangay risk',
             '/heat-map' => 'Heat Map',
             '/planting-advisories' => 'Advisories',
             '/calendar' => 'Calendar',

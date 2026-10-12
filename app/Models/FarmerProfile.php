@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class FarmerProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
     public const FARM_TYPE_RAINFED = 'Rainfed';
 
@@ -36,10 +36,78 @@ class FarmerProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** The farmer's primary organization (sets the barangay and farm type at sign-up); always one of organizations(). */
     public function farmerOrganization(): BelongsTo
     {
         return $this->belongsTo(FarmerOrganization::class);
     }
+
+    // ------------------------------------------------------------ Panel revision 1.1: many organizations per farmer
+
+    protected static function booted(): void
+    {
+        // Code that sets only the primary organization (older forms, imports, seeders) keeps the membership list right.
+        static::saved(function (self $profile): void {
+            $primaryChanged = $profile->wasRecentlyCreated || $profile->wasChanged('farmer_organization_id');
+            if ($profile->farmer_organization_id && $primaryChanged && \App\Support\SchemaCache::hasTable('farmer_organization_members')
+                && ! $profile->organizations()->whereKey($profile->farmer_organization_id)->exists()) {
+                $profile->organizations()->attach($profile->farmer_organization_id, ['date_joined' => now()->toDateString()]);
+            }
+        });
+    }
+
+    /** Every organization the farmer belongs to, with the date they joined. */
+    public function organizations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(FarmerOrganization::class, 'farmer_organization_members')
+            ->withPivot('date_joined')
+            ->withTimestamps()
+            ->orderBy('farmer_organizations.name');
+    }
+
+    /**
+     * Sets the farmer's memberships. The primary organization is kept when it is still listed, otherwise the first one
+     * listed becomes primary (none listed: no primary). Dates joined of memberships that stay are kept.
+     *
+     * @param  array<int, int|string>  $organizationIds
+     */
+    public function syncOrganizations(array $organizationIds, ?int $primaryId = null): void
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $organizationIds))));
+        if ($primaryId && ! in_array($primaryId, $ids, true)) {
+            array_unshift($ids, $primaryId);
+        }
+        $existing = $this->organizations()->pluck('farmer_organizations.id')->all();
+        $today = now()->toDateString();
+        $this->organizations()->sync(collect($ids)->mapWithKeys(fn (int $id): array => [
+            $id => in_array($id, $existing, true) ? [] : ['date_joined' => $today],
+        ])->all());
+
+        $primary = $primaryId ?: (in_array((int) $this->farmer_organization_id, $ids, true) ? (int) $this->farmer_organization_id : ($ids[0] ?? null));
+        if ((int) $this->farmer_organization_id !== (int) $primary) {
+            $this->forceFill(['farmer_organization_id' => $primary])->saveQuietly();
+        }
+        $this->unsetRelation('organizations');
+    }
+
+    /** @return array<int, int> ids of every organization the farmer belongs to (for the form's ticks). */
+    public function getFarmerOrganizationIdsAttribute(): array
+    {
+        return $this->organizations->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    /** "Samahan A, Samahan B", or null. */
+    public function getOrganizationNamesAttribute(): ?string
+    {
+        $names = $this->organizations->pluck('name');
+        if ($names->isEmpty() && $this->farmerOrganization) {
+            $names = collect([$this->farmerOrganization->name]);
+        }
+
+        return $names->isEmpty() ? null : $names->implode(', ');
+    }
+
+    // ------------------------------------------------------------ end panel revision 1.1
 
     /** The farmer's most recently saved farm map (each farm now has its own: Farm::boundary()). */
     public function farmBoundary(): HasOne

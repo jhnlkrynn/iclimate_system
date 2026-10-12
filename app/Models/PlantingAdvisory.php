@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PlantingAdvisory extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
     public const TYPE_CLIMATE = 'climate';
 

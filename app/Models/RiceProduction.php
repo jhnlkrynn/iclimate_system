@@ -8,7 +8,7 @@ use Illuminate\Support\Carbon;
 
 class RiceProduction extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
     /**
      * yield_per_hectare unit: tons/hectare (t/ha). This is the unit assumed

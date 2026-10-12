@@ -406,18 +406,18 @@ class MaoDashboardTest extends TestCase
 
     public function test_the_page_follows_the_farmer_dashboard_type_system(): void
     {
-        // Same system as farmer-dashboard.css: Georgia for page and section titles, Inter for everything else.
+        // Inter for everything, titles included (the 2026-10 redesign dropped Georgia).
         $html = $this->page()->getContent();
         $css = file_get_contents(resource_path('css/mao-dashboard.css'));
 
         $this->assertStringContainsString('is-mao-dashboard', $html);                               // the page-level font rule applies
         $this->assertStringNotContainsString('<style>', substr($html, strpos($html, 'data-mao-dashboard') - 2000, 2000));  // no page-local stylesheet
         $this->assertMatchesRegularExpression('/body\.is-mao-dashboard, body\.is-mao-dashboard \*:not\(svg\):not\(svg \*\) \{ font-family: "Inter"/', $css);
-        $this->assertMatchesRegularExpression('/body\.is-mao-dashboard \.mtd h1, body\.is-mao-dashboard \.mtd h2[^{]*\{\s*font-family: Georgia/', $css);
+        $this->assertMatchesRegularExpression('/body\.is-mao-dashboard \.mtd h1, body\.is-mao-dashboard \.mtd h2[^{]*\{\s*font-family: \'Inter\'/', $css);
         $this->assertMatchesRegularExpression('/\.mtd \.mtd-header h1 \{[^}]*font-size: 2rem; font-weight: 700/', $css);                 // page title 32px, as .mfd h1
         $this->assertMatchesRegularExpression('/\.mtd \.mtd-section-title \{[^}]*font-size: 1\.5rem; font-weight: 700/', $css);         // section title 24px, as .mfd h2
         $this->assertMatchesRegularExpression('/\.mtd-kpi-value \{[^}]*font-size: 1\.75rem; font-weight: 700/', $css);                   // KPI value 28px, as .mfd-kpi-value
-        $this->assertMatchesRegularExpression('/\.mtd-kpi-label \{[^}]*font-size: \.8125rem; font-weight: 600[^}]*text-transform: uppercase/', $css);  // label 13px, as .mfd-kpi-label
+        $this->assertMatchesRegularExpression('/\.mtd-kpi-label \{[^}]*font-size: \.8125rem; font-weight: 600[^}]*text-transform: none/', $css);  // label 13px, as .mfd-kpi-label
         $this->assertStringContainsString('min-height: 44px', $css);                                // touch targets
         $this->assertStringNotContainsString('DM Mono', $css);
         preg_match_all('/font-size: ([\d.]+)rem/', $css, $sizes);

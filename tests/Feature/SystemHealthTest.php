@@ -135,7 +135,7 @@ class SystemHealthTest extends TestCase
     {
         $url = route('system-health.index');
 
-        $this->actingAs($this->it())->get(route('profile.edit'))->assertOk()->assertSee($url, false)->assertSee('System Health');
+        $this->actingAs($this->it())->get(route('profile.edit'))->assertOk()->assertSee($url, false)->assertSee('System health');
         $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('profile.edit'))->assertOk()->assertDontSee($url, false);
         $this->actingAs(User::factory()->farmer()->create())->get(route('profile.edit'))->assertOk()->assertDontSee($url, false);
     }

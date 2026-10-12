@@ -15,6 +15,8 @@ import { initAdvisoryModal } from './farmer-advisories';
 import { initInfoModal } from './info-modal';
 import { initNotificationsPopup } from './notifications-popup';
 import { initTheme, registerChartTheme } from './theme';
+import './app-magic';
+import { watchPanelRevisions } from './panel-revisions';   // thesis panel revisions (docs/panel-revisions.md)
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -191,6 +193,7 @@ function initApp() {
     initAdvisoryModal();
     initInfoModal();
     initNotificationsPopup();
+    watchPanelRevisions();
     bindSidebarDrawer();
     bindResponsiveTables();
 }
@@ -628,13 +631,15 @@ function bindFastNavigation() {
 }
 
 function lockSubmitButtons(form) {
-    form.querySelectorAll('button[type="submit"]').forEach((button) => {
+    // Deferred: the browser builds the form data after the submit event, and a disabled
+    // submitter is left out, so locking synchronously dropped the clicked button's name/value.
+    setTimeout(() => form.querySelectorAll('button[type="submit"]').forEach((button) => {
         button.disabled = true;
         if (button.dataset.loadingText) {
             if (!button.dataset.loadingOriginalText) button.dataset.loadingOriginalText = button.textContent;
             button.textContent = button.dataset.loadingText;
         }
-    });
+    }), 0);
 }
 
 function bindDeleteConfirmations() {

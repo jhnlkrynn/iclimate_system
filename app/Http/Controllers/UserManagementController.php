@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\LianBarangays;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserManagementController extends CrudController
 {
@@ -31,7 +33,7 @@ class UserManagementController extends CrudController
             ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel']],
             ['name' => 'contact_number', 'label' => 'Contact Number'],
             ['name' => 'address', 'label' => 'Address', 'type' => 'textarea'],
-            ['name' => 'barangay', 'label' => 'Barangay'],
+            ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => LianBarangays::userManagementOptions()],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => array_combine(User::STATUSES, User::STATUSES)],   // Manuscript – Naicel
         ];
     }
@@ -45,11 +47,18 @@ class UserManagementController extends CrudController
 
     protected function rules(Request $request, ?int $id = null): array
     {
-        return $this->userRules($id);
+        $rules = $this->userRules($id);
+        $rules['barangay'] = ['nullable', 'string', 'max:255', Rule::in(LianBarangays::userManagementInputValues())];
+
+        return $rules;
     }
 
     protected function prepareData(Request $request, array $data): array
     {
+        if (array_key_exists('barangay', $data) && $data['barangay'] !== null && $data['barangay'] !== '') {
+            $data['barangay'] = LianBarangays::canonicalName($data['barangay']) ?? $data['barangay'];
+        }
+
         return $this->hashPasswordWhenPresent($data);
     }
 

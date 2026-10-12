@@ -96,7 +96,7 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertOk();
         $response->assertSee('Lian, Batangas');
         $response->assertSee('Light Rain');
-        $response->assertSee('Weather Today');
+        $response->assertSee('Weather today');
         $response->assertSeeText('26°C');
         $response->assertDontSee('&deg;C', false);
         $response->assertDontSee('Â°C', false);
