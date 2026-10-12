@@ -11,7 +11,14 @@ use Carbon\CarbonImmutable;
  */
 final class HeatMapPanel
 {
-    public const COLORS = ['low' => '#2e7d32', 'moderate' => '#f2b134', 'high' => '#c62828', 'nodata' => '#8a939b'];
+    // Panel revision 2.1: Low green, Moderate yellow, High orange, Severe red (the defaults of config/weather_risk.php).
+    public const COLORS = ['low' => '#2E7D32', 'moderate' => '#F2C230', 'high' => '#EF6C00', 'severe' => '#C62828', 'nodata' => '#9CA3AF'];
+
+    /** @return array<string, string> level => colour, from config/weather_risk.php (falls back to COLORS) */
+    public static function colors(): array
+    {
+        return array_merge(self::COLORS, (array) config('weather_risk.colors', []));
+    }
 
     private const DISPLAY_NAMES = ['Barangay 1 (Pob.)' => 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)' => 'Barangay 5 / Tabok City (Poblacion)'];
 
@@ -67,6 +74,9 @@ final class HeatMapPanel
             'name' => self::displayName((string) $b['barangay']),
             'level' => $level,
             'label' => $this->t('level.'.$level, $locale),
+            // Panel revision 2.1: for the map tooltip: the main weather factor and what it can do to the crop.
+            'factor' => $this->factorText((array) ($b['factor'] ?? []) + ['facts' => $b], $locale),
+            'impact' => $this->t('impact.'.((string) ($b['factor']['key'] ?? ($level === 'nodata' ? 'nodata' : 'calm'))), $locale),
             'meaning' => $this->t('meaning.'.$key, $locale, $named),
             'action' => $this->t('action.'.$key, $locale),
             // A second hazard in the same period is named too, so a windy week is not hidden behind a rainy one.
@@ -124,11 +134,11 @@ final class HeatMapPanel
     private function countLines(array $counts, string $locale): array
     {
         $lines = [];
-        foreach (['high', 'moderate', 'low', 'nodata'] as $level) {
-            if ($level === 'nodata' && $counts[$level] === 0) {
+        foreach (['severe', 'high', 'moderate', 'low', 'nodata'] as $level) {
+            if (in_array($level, ['nodata', 'severe'], true) && ($counts[$level] ?? 0) === 0) {
                 continue;
             }
-            $lines[] = ['level' => $level, 'text' => trans_choice('farmer.heat_map.count_'.$level, $counts[$level], ['count' => $counts[$level]], $locale)];
+            $lines[] = ['level' => $level, 'text' => trans_choice('farmer.heat_map.count_'.$level, $counts[$level] ?? 0, ['count' => $counts[$level] ?? 0], $locale)];
         }
 
         return $lines;
@@ -165,6 +175,33 @@ final class HeatMapPanel
         $last = array_pop($words);
 
         return implode(', ', $words).' '.$this->t('and', $locale).' '.$last;
+    }
+
+    /**
+     * Panel revision 2.1: "Heavy rainfall: 120 mm in one day", "Strong wind: 70 km/h", "Typhoon advisory: …".
+     *
+     * @param  array{key?: string, value?: ?string}  $factor
+     */
+    private function factorText(array $factor, string $locale): ?string
+    {
+        $key = (string) ($factor['key'] ?? '');
+        if ($key === '' || $key === 'nodata') {
+            return null;
+        }
+        $label = $this->t('factor.'.$key, $locale);
+        $f = (array) ($factor['facts'] ?? []);
+        $n = fn ($v, int $d = 0): string => number_format((float) $v, $d);
+        // The numbers in the reader's language ("120 mm sa isang araw").
+        $value = match ($key) {
+            'heavy_rain' => isset($f['wettest_day_mm']) ? $this->t('factor_value.heavy_rain', $locale, ['day' => $n($f['wettest_day_mm']), 'total' => $n($f['rain_total_mm'] ?? $f['wettest_day_mm'])]) : null,
+            'strong_wind' => isset($f['wind_max_kmh']) ? $this->t('factor_value.strong_wind', $locale, ['kmh' => $n($f['wind_max_kmh'])]) : null,
+            'heat' => isset($f['temp_max_c']) ? $this->t('factor_value.heat', $locale, ['temp' => $n($f['temp_max_c'], 1), 'days' => (int) ($f['hot_days'] ?? 0)]) : null,
+            'dry' => $this->t('factor_value.dry', $locale),
+            'calm' => isset($f['rain_total_mm']) ? $this->t('factor_value.calm', $locale, ['total' => $n($f['rain_total_mm'])]) : null,
+            default => $factor['value'] ?? null,
+        };
+
+        return filled($value) ? $label.': '.$value : $label;
     }
 
     /** @param  array<string, mixed>  $replace */

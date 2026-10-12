@@ -11,8 +11,11 @@ use Throwable;
 
 class SystemAuditLogger
 {
-    public static function record(string $action, ?Request $request = null, array $context = [], ?User $user = null): void
+    public static function record(string $action, ?Request $request = null, array $context = [], ?User $user = null, ?Model $model = null): void
     {
+        // Panel revision 4.4 D: an MAO user's action also goes to the MAO Activity Log (no-op for other roles).
+        \App\Services\Mao\MaoActivityLogger::log($user ?? $request?->user(), $action, $context, $model);
+
         if (! \App\Support\SchemaCache::hasTable('system_logs')) {
             return;
         }
@@ -35,7 +38,7 @@ class SystemAuditLogger
         self::record(str($verb.' '.class_basename($model))->headline()->toString(), $request, [
             'record_type' => class_basename($model),
             'record_id' => $model->getKey(),
-        ] + $context);
+        ] + $context, null, $model);
     }
 
     private static function details(?Request $request, array $context): string

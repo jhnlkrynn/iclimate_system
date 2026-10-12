@@ -40,24 +40,43 @@ class MaoHomeService
 
     public const CHART_TO_YEAR = 2025;
 
+    /** @var array<int, string>|null panel revision 4.4 B: the barangays this payload is for (null = all of Lian) */
+    private ?array $scope = null;
+
     public function __construct(
         private readonly BarangayWeekRiskService $weekRisk,
         private readonly ProjectYieldDataset $yields,
         private readonly TyphoonSafetyService $typhoon,
+        private readonly ?MaoYieldAnalytics $analytics = null,
     ) {}
 
-    /** @return array<string, mixed> shared by every MAO user (cacheable) */
-    public function payload(): array
+    /**
+     * @param  array<int, string>|null  $barangays  panel revision 4.4 B: the MAO user's barangays (null = all of Lian).
+     *                                               Farmer, planting, harvest and risk figures follow it; the municipal
+     *                                               yield and weather series cover all of Lian either way.
+     * @return array<string, mixed> shared by every MAO user with the same scope (cacheable)
+     */
+    public function payload(?array $barangays = null): array
     {
         $now = CarbonImmutable::now(self::TIMEZONE);
+        $this->scope = $barangays === null ? null : array_values(array_intersect(LianBarangays::all(), $barangays));
         $risk = rescue(fn (): array => $this->weekRisk->forRange('week'), ['state' => 'nodata', 'counts' => [], 'barangays' => [], 'updated_at' => null], false);
+        if ($this->scope !== null && ($risk['state'] ?? null) === 'ok') {
+            $risk['barangays'] = array_intersect_key($risk['barangays'], array_flip($this->scope));
+            $risk['counts'] = array_merge(['high' => 0, 'moderate' => 0, 'low' => 0, 'severe' => 0, 'nodata' => 0],
+                collect($risk['barangays'])->countBy(fn (array $b): string => (string) $b['level'])->all());
+        }
+        $analytics = $this->analytics ?? app(MaoYieldAnalytics::class);
 
         return [
             'generated_at' => $now,
             'season' => rescue(fn (): string => $this->seasonLabel($now), '', false),
             // The same season as its parts, so the page can write it in the MAO's language (lang mao.dashboard.season).
             'season_parts' => rescue(fn (): ?array => $this->seasonParts(RiceSeason::window($now)), null, false),
-            'farmers' => rescue(fn (): int => FarmerProfile::query()->count(), null, false),
+            // Panel revision 4.1: every registered farmer account (not a sample, not only those with a profile).
+            'farmers' => rescue(fn (): int => $this->farmerAccounts()->count(), null, false),
+            'farmer_kpi' => rescue(fn (): array => $this->farmerKpi(), null, false),
+            'scope' => ['filtered' => $this->scope !== null, 'barangays' => $this->scope ?? []],
             'area' => $this->areaPlanted($now),
             'yield' => $this->expectedYield($now),
             // MAO Dashboard – Naicel (2026-10-08): four more figures and one more chart, all from saved records.
@@ -70,13 +89,18 @@ class MaoHomeService
             // end MAO Dashboard – Naicel
             'risk' => [
                 'state' => $risk['state'],
-                'high' => $risk['state'] === 'ok' ? (int) ($risk['counts']['high'] ?? 0) : null,
-                'names' => collect($risk['barangays'])->where('level', 'high')->keys()->all(),
+                // Panel revision 2.1: High and Severe both count as high-risk barangays on the tile.
+                'high' => $risk['state'] === 'ok' ? (int) ($risk['counts']['high'] ?? 0) + (int) ($risk['counts']['severe'] ?? 0) : null,
+                'names' => collect($risk['barangays'])->whereIn('level', ['high', 'severe'])->keys()->all(),
                 'levels' => collect($risk['barangays'])->map(fn (array $b): string => (string) $b['level'])->all(),
                 'updated_at' => $risk['updated_at'],
             ],
             'actions' => $this->actions(),
             'chart' => $this->yieldByYear(),
+            // Panel revisions 3.1, 3.2, 4.2: series the page's Year range / Season filter recomputes in the browser.
+            'yield_series' => rescue(fn (): array => $analytics->yieldByYear(), ['state' => 'nodata'], false),
+            'rain_yield' => rescue(fn (): array => $analytics->rainAndYield(), ['state' => 'nodata', 'periods' => []], false),
+            'accuracy' => rescue(fn (): array => $analytics->predictedActual($this->scope), ['state' => 'nodata'], false),
             'climate' => rescue(fn (): array => $this->monthlyClimate(), ['state' => 'nodata'], false),
             'impact' => rescue(fn (): array => $this->rainfallAgainstYield(), ['state' => 'nodata'], false),
             'planted' => rescue(fn (): array => $this->plantedByBarangay($now), ['state' => 'nodata'], false),
@@ -112,6 +136,51 @@ class MaoHomeService
         return ['accuracy' => $accuracy, 'yield' => $yield];
     }
 
+    // ------------------------------------------------------------ Panel revisions 4.1 / 4.4 B
+
+    /**
+     * Every registered farmer account (role Farmer, any status but Rejected), in the scope's barangays when there is
+     * one: the barangay on the farmer profile, or on the account when there is no profile yet.
+     */
+    private function farmerAccounts(?array $scope = null, bool $useScope = true): \Illuminate\Database\Eloquent\Builder
+    {
+        $scope = $useScope ? ($scope ?? $this->scope) : null;
+
+        return User::query()->where('role', User::ROLE_FARMER)->where('status', '!=', User::STATUS_REJECTED)
+            ->when($scope !== null, fn ($q) => $q->where(fn ($w) => $w
+                ->whereHas('farmerProfile', fn ($p) => $p->whereIn('barangay', $scope))
+                ->orWhere(fn ($u) => $u->whereDoesntHave('farmerProfile')->whereIn('users.barangay', $scope))));
+    }
+
+    /**
+     * The Total Farmers tile: all registered farmer accounts, how many are active / waiting for approval / have a farm
+     * profile, and whether the figure is filtered to the MAO user's barangays (then with the all-Lian total beside it).
+     *
+     * @return array{total: int, active: int, pending: int, with_profile: int, filtered: bool, barangays: array<int, string>, all_total: int}
+     */
+    private function farmerKpi(): array
+    {
+        $counts = $this->farmerAccounts()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        return [
+            'total' => (int) $counts->sum(),
+            'active' => (int) ($counts[User::STATUS_ACTIVE] ?? 0),
+            'pending' => (int) ($counts[User::STATUS_PENDING] ?? 0),
+            'with_profile' => (int) $this->farmerAccounts()->whereHas('farmerProfile')->count(),
+            'filtered' => $this->scope !== null,
+            'barangays' => $this->scope ?? [],
+            'all_total' => $this->scope !== null ? (int) $this->farmerAccounts(useScope: false)->count() : (int) $counts->sum(),
+        ];
+    }
+
+    /** Limits a query on a table with a barangay column to the scope (no-op for all of Lian). */
+    private function scoped(\Illuminate\Database\Eloquent\Builder $query, string $column = 'barangay'): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->scope === null ? $query : $query->whereIn($column, $this->scope);
+    }
+
+    // ------------------------------------------------------------ end panel revisions
+
     /** "Wet season 2026" / "Dry season 2026–2027". */
     private function seasonLabel(CarbonImmutable $now): string
     {
@@ -144,14 +213,14 @@ class MaoHomeService
      */
     private function farmersWithPlan(CarbonImmutable $now): ?array
     {
-        $farmers = FarmerProfile::query()->count();
+        $farmers = $this->scoped(FarmerProfile::query())->count();
         if ($farmers === 0 || ! SchemaCache::hasTable('farmer_planting_schedules')) {
             return null;
         }
         $season = RiceSeason::window($now);
         $with = FarmerPlantingSchedule::query()
             ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
-            ->whereIn('user_id', FarmerProfile::query()->select('user_id'))
+            ->whereIn('user_id', $this->scoped(FarmerProfile::query())->select('user_id'))
             ->distinct()->count('user_id');
 
         return ['with' => $with, 'of' => $farmers, 'percent' => (int) round($with / $farmers * 100)];
@@ -173,7 +242,7 @@ class MaoHomeService
         }
         $from = $now->toDateString();
         $to = $now->addDays(self::HARVEST_DUE_DAYS)->toDateString();
-        $due = FarmerPlantingSchedule::query()
+        $due = $this->scoped(FarmerPlantingSchedule::query())
             ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'harvested_on'), fn ($q) => $q->whereNull('harvested_on'))
             ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield'), fn ($q) => $q->whereNull('actual_yield'))
             ->get(['scheduled_harvest_date', 'harvest_month', 'farm_area_hectares'])
@@ -195,7 +264,14 @@ class MaoHomeService
      */
     private function latestProduction(): ?array
     {
-        $latest = app(DashboardKpiService::class)->yieldByYear()->first();
+        $kpis = app(DashboardKpiService::class);
+        $latest = $this->scope === null
+            ? $kpis->yieldByYear()->first()
+            // Panel revision 4.4 B: the MAO user's barangays added together.
+            : collect($this->scope)->flatMap(fn (string $b) => $kpis->yieldByYear($b))->groupBy('year')->sortKeysDesc()
+                ->map(fn ($rows, $year): array => ['year' => (int) $year, 'production' => (float) $rows->sum('production'), 'area' => (float) $rows->sum('area'),
+                    'yield' => $rows->sum('area') > 0 ? $rows->sum('production') / $rows->sum('area') : null, 'barangays' => $rows->flatMap(fn ($r) => $r['barangays'])->unique()->values()])
+                ->first();
         if (! is_array($latest) || (float) $latest['production'] <= 0) {
             return null;
         }
@@ -217,7 +293,7 @@ class MaoHomeService
      */
     private function farmersByBarangay(): array
     {
-        $counts = FarmerProfile::query()->get(['barangay'])
+        $counts = $this->scoped(FarmerProfile::query())->get(['barangay'])
             ->map(fn (FarmerProfile $profile): ?string => LianBarangays::canonicalName($profile->barangay))
             ->filter()->countBy()->sortDesc();
 
@@ -240,7 +316,7 @@ class MaoHomeService
                 return ['hectares' => null, 'plans' => 0];
             }
             $season = RiceSeason::window($now);
-            $plans = FarmerPlantingSchedule::query()
+            $plans = $this->scoped(FarmerPlantingSchedule::query())
                 ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
                 ->get(['farm_area_hectares']);
         } catch (Throwable) {
@@ -258,7 +334,9 @@ class MaoHomeService
     private function expectedYield(CarbonImmutable $now): array
     {
         // One saved estimate per farm (a farmer's farms are estimated separately).
-        $estimates = rescue(fn () => FarmerDashboardService::storedEstimates(), collect(), false);
+        $estimates = rescue(fn () => $this->scope === null
+            ? FarmerDashboardService::storedEstimates()
+            : collect($this->scope)->flatMap(fn (string $b) => FarmerDashboardService::storedEstimates($b))->values(), collect(), false);
         $expected = $estimates->isEmpty() ? null : round((float) $estimates->avg(fn (array $e): float => (float) ($e['yield_tons_per_hectare'] ?? $e['predicted_yield'] ?? 0)), 2);
         $last = rescue(fn (): ?array => $this->lastRecordedSeason($now), null, false);
 
@@ -314,7 +392,7 @@ class MaoHomeService
                 'key' => 'farmer-approvals',
                 'label' => 'Farmer sign-ups to approve',
                 // Shown only while someone is waiting (null hides the action).
-                'count' => rescue(fn (): ?int => \App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING)->count() ?: null, null, false),
+                'count' => rescue(fn (): ?int => $this->scoped(\App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING), 'users.barangay')->count() ?: null, null, false),
                 'href' => route('mao.farmer-approvals.index'),
                 'action' => 'Review',
             ],
@@ -465,7 +543,7 @@ class MaoHomeService
             return ['state' => 'nodata'];
         }
         $season = RiceSeason::window($now);
-        $areas = FarmerPlantingSchedule::query()
+        $areas = $this->scoped(FarmerPlantingSchedule::query())
             ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
             ->get(['barangay', 'farm_area_hectares'])
             ->groupBy(fn (FarmerPlantingSchedule $plan): string => (string) (LianBarangays::canonicalName($plan->barangay) ?? $plan->barangay))

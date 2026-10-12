@@ -1,5 +1,5 @@
 /*
- * Light / Dark appearance, the same for Farmer, MAO and IT.
+ * Appearance for Farmer, MAO and IT. Panel revision 4.5: locked to the white (light) government theme.
  *
  * The choice lives in localStorage ('iclimate-theme') on this device. An inline script at the top of
  * layouts/app.blade.php applies it to <html> (data-theme + Bootstrap's data-bs-theme) before any stylesheet loads, so
@@ -14,7 +14,8 @@ export function currentTheme() {
 }
 
 export function applyTheme(theme, { save = true } = {}) {
-    const value = theme === 'dark' ? 'dark' : 'light';
+    // Panel revision 4.5: the app has one appearance, the white government theme. Any request lands on light.
+    const value = 'light';
     const root = document.documentElement;
     root.setAttribute('data-theme', value);
     root.setAttribute('data-bs-theme', value);
@@ -117,6 +118,15 @@ const chartThemePlugin = {
 // Called by app.js right after Chart.js loads, before any page draws a chart.
 export function registerChartTheme(Chart) {
     Chart.register(chartThemePlugin);
+    // Panel revision 4.5: charts on white: dark-grey text, light gridlines, the government font, white tooltips.
+    Chart.defaults.color = '#374151';
+    Chart.defaults.borderColor = '#E5E7EB';
+    Chart.defaults.font.family = "'Inter', 'Roboto', system-ui, sans-serif";
+    Chart.defaults.plugins.tooltip.backgroundColor = '#FFFFFF';
+    Chart.defaults.plugins.tooltip.titleColor = '#1F2937';
+    Chart.defaults.plugins.tooltip.bodyColor = '#374151';
+    Chart.defaults.plugins.tooltip.borderColor = '#E5E7EB';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
 }
 
 function refreshCharts() {
@@ -134,6 +144,11 @@ export function initTheme() {
     if (document.documentElement.dataset.themeBound !== 'true') {
         document.documentElement.dataset.themeBound = 'true';
         document.addEventListener('click', (event) => {
+            // The top bar's single sun/moon button flips the theme; [data-theme-set] buttons pick one.
+            if (event.target.closest('[data-theme-toggle]')) {
+                applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+                return;
+            }
             const button = event.target.closest('[data-theme-set]');
             if (!button) return;
             applyTheme(button.dataset.themeSet);

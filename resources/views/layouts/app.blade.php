@@ -8,14 +8,15 @@
         <title>{{ isset($title) && trim((string) $title) !== '' ? trim((string) $title).' · '.config('app.name', 'iClimate') : config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-        {{-- Light / Dark: applied before any stylesheet so the page never flashes the other theme (resources/js/theme.js). --}}
-        <script>(function(){var t='light';try{t=localStorage.getItem('iclimate-theme')==='dark'?'dark':'light';}catch(e){}var d=document.documentElement;d.setAttribute('data-theme',t);d.setAttribute('data-bs-theme',t);d.style.colorScheme=t;})();</script>
-        @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/css/glass-system.css', 'resources/css/sidebar.css', 'resources/css/theme-dark-pages.css', 'resources/css/theme.css', 'resources/js/app.js'])
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        {{-- Panel revision 4.5: one appearance, the white government (LGU) theme, set before any stylesheet loads
+             (resources/js/theme.js keeps it). The dark-only stylesheet (theme-dark-pages.css) is no longer loaded. --}}
+        <meta name="color-scheme" content="light">
+        <meta name="theme-color" content="#0038A8">
+        <script>(function(){var d=document.documentElement;d.setAttribute('data-theme','light');d.setAttribute('data-bs-theme','light');d.style.colorScheme='light';})();</script>
+        @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/css/glass-system.css', 'resources/css/sidebar.css', 'resources/css/theme.css', 'resources/css/app-shell.css', 'resources/css/app-magic.css', 'resources/js/app.js'])
         <style>
             :root {
-                /* The landing page's rice-field photo, reused as the backdrop of every signed-in page (see BACKDROP in theme.css). */
-                --ic-backdrop-image: url('{{ asset('images/rice-hero-aerial.jpg') }}');
                 --iclimate-primary: #123F32;
                 --iclimate-primary-medium: #1F5A46;
                 --iclimate-accent: #8FAF9A;
@@ -125,7 +126,7 @@
                 line-height: 1.52;
             }
             .app-main {
-                margin-left: var(--sidebar-width);
+                margin-left: 0;
                 min-height: 100vh;
                 min-width: 0;
                 background: linear-gradient(180deg, #255b44 0%, #1f4d3a 100%);
@@ -140,7 +141,7 @@
             .topbar .btn-outline-dark { --bs-btn-color: #fff; --bs-btn-border-color: rgba(255,255,255,.5); --bs-btn-hover-bg: rgba(255,255,255,.12); --bs-btn-hover-border-color: var(--iclimate-accent-light); --bs-btn-hover-color: #fff; }
             .weather-strip { display: flex; align-items: center; gap: .65rem; padding: .52rem .75rem; border: 1px solid var(--glass-light-border); border-radius: 8px; background: var(--glass-light-bg); backdrop-filter: var(--glass-blur-soft); color: var(--ic-ink); }
             .weather-strip .pulse { width: 8px; height: 8px; border-radius: 999px; background: var(--iclimate-accent); }
-            h1, h2, h3, h4, .card-header .fw-semibold, .card-header .fw-bold { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; }
+            h1, h2, h3, h4, .card-header .fw-semibold, .card-header .fw-bold { font-family: 'Inter', system-ui, sans-serif; font-weight: 400; letter-spacing: -0.01em; }
             .card, .glass-card { background: var(--glass-light-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-light-border); border-radius: var(--ic-radius-lg); box-shadow: var(--glass-light-shadow); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease; }
             .card:hover, .module-tile:hover, .climate-chip:hover, .risk-card:hover { transform: translateY(-1px); box-shadow: var(--ic-shadow-md); border-color: rgba(95,143,120,.55); }
             .card.no-lift:hover { transform: none; }
@@ -156,7 +157,7 @@
             .page-hero .btn-outline-light { --bs-btn-color: #fff; --bs-btn-border-color: #fff; --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: #fff; --bs-btn-hover-color: var(--ic-ink); }
             .btn-light { --bs-btn-bg: var(--iclimate-surface); --bs-btn-border-color: var(--iclimate-border); --bs-btn-color: var(--iclimate-text); --bs-btn-hover-bg: #fff; --bs-btn-hover-border-color: var(--iclimate-accent); --bs-btn-hover-color: var(--iclimate-primary); --bs-btn-active-bg: #fff; --bs-btn-active-border-color: var(--iclimate-accent); box-shadow: none; }
             .btn-warning { --bs-btn-bg: var(--iclimate-warning); --bs-btn-border-color: var(--iclimate-warning); --bs-btn-color: #fff; --bs-btn-hover-bg: #a87420; --bs-btn-hover-border-color: #a87420; --bs-btn-hover-color: #fff; }
-            .form-label { font-family: 'DM Mono', monospace; font-size: var(--ic-readable-label); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: var(--ic-muted); }
+            .form-label { font-family: 'Inter', system-ui, sans-serif; font-size: var(--ic-readable-label); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ic-muted); }
             .form-control, .form-select { border-color: var(--ic-sand-dark); background-color: var(--ic-field); font-size: var(--text-base); line-height: 1.45; }
             .form-control:hover, .form-select:hover { border-color: rgba(82,183,136,.58); background-color: #fff; }
             .form-control:focus, .form-select:focus { border-color: var(--iclimate-accent); box-shadow: 0 0 0 .22rem rgba(143,175,154,.18); }
@@ -170,14 +171,14 @@
             }
             .page-hero > * { position: relative; z-index: 1; }
             .page-hero p, .page-hero .text-muted { color: rgba(255,255,255,.72) !important; }
-            .page-hero h1 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; letter-spacing: -0.01em; color: #fff; }
-            .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: var(--ic-readable-label); font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--iclimate-accent-light); }
+            .page-hero h1 { font-family: 'Inter', system-ui, sans-serif; font-weight: 400; letter-spacing: -0.01em; color: #fff; }
+            .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', system-ui, sans-serif; font-size: var(--ic-readable-label); font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--iclimate-accent-light); }
             .eyebrow::before { content: none; }
             .stat-card { overflow: hidden; position: relative; min-height: 136px; }
             .stat-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent, var(--ic-green-500)); }
             .stat-card::after { content: none; }
-            .stat-label { color: var(--ic-muted); font-family: 'DM Mono', monospace; font-size: var(--ic-readable-label); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
-            .stat-value { color: var(--ic-ink); font-family: 'DM Serif Display', serif; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1; margin-top: .45rem; letter-spacing: -0.01em; }
+            .stat-label { color: var(--ic-muted); font-family: 'Inter', system-ui, sans-serif; font-size: var(--ic-readable-label); font-weight: 500; text-transform: none; letter-spacing: 0; }
+            .stat-value { color: var(--ic-ink); font-family: 'Inter', system-ui, sans-serif; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1; margin-top: .45rem; letter-spacing: -0.01em; }
             .stat-dot { width: 2.2rem; height: 2.2rem; border-radius: 6px; background: color-mix(in srgb, var(--accent, var(--ic-green-500)) 14%, #edf7e7); border: 1px solid color-mix(in srgb, var(--accent, var(--ic-green-500)) 30%, #edf7e7); position: relative; z-index: 1; }
             .stat-dot::after { content: ""; position: absolute; inset: 9px 7px; border-top: 2px solid var(--accent, var(--ic-green-500)); opacity: .65; }
             .tone-green { --accent: var(--ic-green-500); } .tone-blue { --accent: var(--ic-green-700); } .tone-amber { --accent: var(--ic-amber); } .tone-coral { --accent: var(--ic-coral); }
@@ -191,7 +192,7 @@
             .table { --bs-table-bg: transparent; }
             .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
             .table-responsive > .table { margin-bottom: 0; }
-            .table thead th { color: var(--ic-muted); font-family: 'DM Mono', monospace; font-size: var(--ic-readable-label); text-transform: uppercase; letter-spacing: .07em; font-weight: 500; white-space: nowrap; background: rgba(240,247,244,.55); backdrop-filter: blur(6px); }
+            .table thead th { color: var(--ic-muted); font-family: 'Inter', system-ui, sans-serif; font-size: var(--ic-readable-label); text-transform: none; letter-spacing: 0; font-weight: 500; white-space: nowrap; background: rgba(240,247,244,.55); backdrop-filter: blur(6px); }
             .table td, .table th { vertical-align: middle; padding: .95rem 1rem; font-size: var(--text-sm); line-height: 1.45; }
             .table-hover tbody tr { transition: background .12s ease; }
             .table tbody tr { transition: background .15s ease; }
@@ -229,7 +230,7 @@
             .soft-section { background: var(--glass-light-bg); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-light-border); border-radius: var(--ic-radius-md); box-shadow: var(--glass-light-shadow); }
             .action-cluster { background: rgba(240,247,244,.5); backdrop-filter: blur(8px) saturate(150%); border: 1.5px solid var(--glass-light-border); border-radius: var(--ic-radius-md); padding: .35rem; }
             .risk-card { position: relative; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
-            .details-list dt { color: #496071; font-family: 'DM Mono', monospace; font-size: var(--ic-readable-label); text-transform: uppercase; letter-spacing: .06em; }
+            .details-list dt { color: #496071; font-family: 'Inter', system-ui, sans-serif; font-size: var(--ic-readable-label); text-transform: none; letter-spacing: 0; }
             .details-list dd { background: rgba(240,247,244,.5); backdrop-filter: blur(8px) saturate(150%); border: 1.5px solid var(--glass-light-border); border-radius: var(--ic-radius-md); padding: .7rem .85rem; }
             .interactive-card { cursor: default; }
             .interactive-card:hover .stat-label, .module-tile:hover .small { color: var(--ic-green-700) !important; }
@@ -279,7 +280,11 @@
             .page-shell .leaflet-container { max-width: 100%; }
             /* A table that is not already in a scroll area gets one from app.js (bindResponsiveTables). */
             .ic-table-scroll { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .offcanvas-backdrop.show { opacity: 1; background: rgba(13,31,24,.5); }
+            /* Blur on the backdrop itself, not only on .show: Bootstrap drops .show the moment closing starts, so the page
+               snapped from blurred to sharp in one frame. Now the blur fades out with the backdrop's opacity. */
+            .offcanvas-backdrop { background: rgba(6,14,11,.32); -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%); }
+            .offcanvas-backdrop.show { opacity: 1; }
+            html[data-theme="dark"] body .offcanvas-backdrop { background: rgba(0,0,0,.6); }
             @media (max-width: 991.98px) {
                 .topbar-inner { row-gap: .5rem; }
                 .topbar-actions { flex-wrap: nowrap; }
@@ -305,6 +310,8 @@
                 .ic-logout-actions { grid-template-columns: 1fr; }
             }
         </style>
+        {{-- Panel revision 4.5 / 4.3: the government theme and the phone rules, after every other style so they win. --}}
+        @vite('resources/css/gov-theme.css')
         @include('partials.global-loader')
     </head>
     <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>

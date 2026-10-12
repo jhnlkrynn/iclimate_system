@@ -106,6 +106,9 @@ class FarmerMyFarmController extends Controller
                 'season' => $this->seasonLabel($s),
                 'yield' => (float) $s->actual_yield,
                 'area' => is_numeric($s->farm_area_hectares) ? (float) $s->farm_area_hectares : null,
+                // Panel revision 1.3
+                'timing' => $s->harvest_timing,
+                'timing_text' => $s->harvestTimingSummary(app()->getLocale()),
             ])->values()->all();
     }
 
@@ -156,7 +159,13 @@ class FarmerMyFarmController extends Controller
         $pending = $survey->pending($user);
 
         return [
-            'activityFarms' => $farms->map(fn (Farm $f): array => ['id' => $f->getKey(), 'name' => $f->farm_name])->values()->all(),
+            // Panel revision 1.3: each farm's open planting's expected harvest, so the dialog can ask why a harvest is early or late.
+            'activityFarms' => $farms->map(fn (Farm $f): array => [
+                'id' => $f->getKey(),
+                'name' => $f->farm_name,
+                'expected_harvest' => $all->first(fn (FarmerPlantingSchedule $s): bool => (int) ($s->farm_id ?? $primaryId) === (int) $f->getKey()
+                    && $s->harvested_on === null && $s->progress_status !== 'Harvested')?->harvestDateForPlanning()?->toDateString(),
+            ])->values()->all(),
             'activityFarmId' => $current?->getKey(),
             'calendar' => $this->calendar($request, $all, $farmName, $farms->count() > 1),
             'yieldSurvey' => $pending === null ? null : [
@@ -165,6 +174,7 @@ class FarmerMyFarmController extends Controller
                 'season' => $this->seasonLabel($pending),
                 'harvested_on' => $pending->harvested_on ?? $pending->harvestDateForPlanning(),
                 'predicted' => $survey->predictedFor($pending)['value'],
+                'area' => is_numeric($pending->farm_area_hectares) ? (float) $pending->farm_area_hectares : null,   // panel revision 1.2
             ],
         ];
     }
@@ -195,6 +205,9 @@ class FarmerMyFarmController extends Controller
                 'label' => __('farmer.activity.'.$kind),
                 'farm' => $showFarm ? $farmName($s) : null,
                 'edit' => route('farmer.planting-schedules.edit', $s->id),
+                // Panel revision 1.3: "Early (12 days) – Heavy rain / flooding" on a recorded harvest.
+                'timing' => $kind === 'harvested' && $s->harvest_timing ? $s->harvest_timing : null,
+                'timing_text' => $kind === 'harvested' ? $s->harvestTimingSummary(app()->getLocale()) : null,
             ];
         };
         foreach ($schedules as $s) {

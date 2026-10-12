@@ -27,9 +27,17 @@
         $barangays = count(\App\Support\LianBarangays::all());
         $dueDays = \App\Services\Analytics\MaoHomeService::HARVEST_DUE_DAYS;
 
+        // Panel revision 4.1: all registered farmer accounts; labelled "(filtered)" when limited to the MAO user's barangays.
+        $fk = $mao['farmer_kpi'] ?? null;
+        $farmersFiltered = (bool) ($fk['filtered'] ?? false);
+        $farmersNote = $fk
+            ? ($farmersFiltered
+                ? $t('tiles.farmers.filtered_note', ['all' => $num($fk['all_total'])])
+                : $t('tiles.farmers.note')).' · '.$t('tiles.farmers.breakdown', ['active' => $num($fk['active']), 'pending' => $num($fk['pending'])])
+            : $t('tiles.farmers.note');
         $tiles = [
-            ['key' => 'farmers', 'label' => $t('tiles.farmers.label'), 'icon' => 'farmers', 'href' => route('farmer-profiles.index'),
-                'value' => $num($mao['farmers']), 'unit' => null, 'note' => $t('tiles.farmers.note')],
+            ['key' => 'farmers', 'label' => $farmersFiltered ? $t('tiles.farmers.label_filtered') : $t('tiles.farmers.label'), 'icon' => 'farmers', 'href' => route('farmer-profiles.index'),
+                'value' => $num($fk['total'] ?? $mao['farmers']), 'unit' => null, 'note' => $farmersNote],
             ['key' => 'area', 'label' => $t('tiles.area.label'), 'icon' => 'sprout', 'href' => route('mao.planner.index'),
                 'value' => $num($mao['area']['hectares'], 1), 'unit' => 'ha',
                 'note' => trans_choice('mao.dashboard.tiles.area.note', (int) $mao['area']['plans'], ['count' => $mao['area']['plans'], 'season' => $season])],
@@ -63,13 +71,25 @@
         $waiting = collect($actions)->sum(fn ($a) => (int) $a['count']);
         $showMap = $risk['state'] === 'ok';
         $byBarangay = $mao['by_barangay'] ?? ['state' => 'nodata'];
+        // Panel revisions 3.1 / 3.2 / 4.2: the full series; the Year range / Season filter is applied in the browser.
+        $series = $mao['yield_series'] ?? ['state' => 'nodata'];
+        $rainYield = $mao['rain_yield'] ?? ['state' => 'nodata', 'periods' => []];
+        $accuracy = $mao['accuracy'] ?? ['state' => 'nodata'];
         $charts = [
-            'yield' => $chart['state'] === 'ok',
+            'yield' => $chart['state'] === 'ok' && ($series['state'] ?? '') === 'ok',
             'climate' => $mao['climate']['state'] === 'ok',
-            'impact' => $mao['impact']['state'] === 'ok',
+            'impact' => $mao['impact']['state'] === 'ok' && ($rainYield['state'] ?? '') === 'ok',
             'planted' => $mao['planted']['state'] === 'ok',
             'farmers' => $byBarangay['state'] === 'ok',
+            'accuracy' => ($accuracy['state'] ?? '') === 'ok',
         ];
+        $filterYears = $series['years'] ?? [];
+        $filterFrom = $chartFilter['from'] ?? null;
+        $filterTo = $chartFilter['to'] ?? null;
+        // The panel's "Rice Yield by Year (2020–2025)" until the MAO picks another range.
+        $rangeFrom = $filterFrom ?? \App\Services\Analytics\MaoHomeService::CHART_FROM_YEAR;
+        $rangeTo = $filterTo ?? \App\Services\Analytics\MaoHomeService::CHART_TO_YEAR;
+        $filterSeason = $chartFilter['season'] ?? 'all';
 
         // The charts' words and month names in the page's language (the figures themselves are shared by every MAO).
         $climate = $mao['climate'];
@@ -86,7 +106,14 @@
         $text = [
             'yield' => ['dataset' => $t('charts.yield.dataset'), 'axis' => $t('charts.yield.axis'), 'year' => $t('charts.yield.tip_year'), 'value' => $t('charts.yield.tip_value'), 'records' => $t('charts.yield.tip_records'), 'months' => $t('charts.yield.tip_months')],
             'climate' => ['rain' => $t('charts.climate.rain'), 'temp' => $t('charts.climate.temp')],
-            'impact' => ['dataset' => $t('charts.impact.dataset'), 'x' => $t('charts.impact.axis_x'), 'y' => $t('charts.impact.axis_y'), 'rain' => $t('charts.impact.tip_rain')],
+            'impact' => ['dataset' => $t('charts.impact.dataset'), 'x' => $t('charts.impact.axis_x'), 'y' => $t('charts.impact.axis_y'), 'rain' => $t('charts.impact.tip_rain'),
+                'rainSeries' => $t('charts.impact.rain'), 'yieldSeries' => $t('charts.impact.yield'), 'axisRain' => $t('charts.impact.axis_rain'),
+                'more' => $t('charts.impact.more'), 'less' => $t('charts.impact.less'), 'none' => $t('charts.impact.none'), 'based' => $t('charts.impact.based')],
+            // Panel revisions 3.1 / 4.2
+            'filter' => ['invalid' => $t('filter.invalid'), 'avg' => $t('filter.summary_avg'), 'high' => $t('filter.summary_high'), 'low' => $t('filter.summary_low'), 'change' => $t('filter.summary_change'),
+                'title' => $t('charts.yield.title', ['from' => ':from', 'to' => ':to'])],
+            'accuracy' => ['predicted' => $t('charts.accuracy.predicted'), 'actual' => $t('charts.accuracy.actual'), 'none' => $t('charts.accuracy.none_in_range'),
+                'trained' => $t('charts.accuracy.trained'), 'heldOut' => $t('charts.accuracy.held_out'), 'error' => $t('charts.accuracy.error')],
             'planted' => ['dataset' => $t('charts.planted.dataset'), 'axis' => $t('charts.planted.axis'), 'tip' => $t('charts.planted.tip')],
             'farmers' => ['dataset' => $t('charts.farmers.dataset'), 'axis' => $t('charts.farmers.axis'), 'one' => trans_choice('mao.dashboard.charts.farmers.tip', 1), 'many' => trans_choice('mao.dashboard.charts.farmers.tip', 2)],
         ];
@@ -98,22 +125,19 @@
                 <span class="mtd-kicker">{{ $t('office') }}</span>
                 <h1>{{ $t('title') }}</h1>
                 <p class="mtd-place">@include('dashboards.mao.icon', ['name' => 'map']){{ $t('place') }} · {{ $season }}</p>
+                {{-- Panel revision 4.4 B: which barangays the figures below cover. --}}
+                @if (! empty($mao['scope']['filtered']))
+                    <p class="scope-pill is-filtered" data-mao-scope="filtered">{{ $t('scope.filtered', ['barangays' => implode(', ', $mao['scope']['barangays'])]) }}</p>
+                @else
+                    <p class="scope-pill" data-mao-scope="all">{{ $t('scope.municipal') }}</p>
+                @endif
             </div>
             <div class="mtd-tools">
-                {{-- MAO Dashboard – Naicel (2026-10-08): English / Filipino. A normal form post; with scripts it is sent as soon as a language is picked. --}}
-                <form class="mhd-lang" method="POST" action="{{ route('mao.dashboard.language') }}" data-mao-language>
-                    @csrf
-                    <label for="mhdLanguage">{{ $t('language') }}</label>
-                    <select id="mhdLanguage" name="language" aria-label="{{ $t('language_label') }}">
-                        @foreach (\App\Support\MaoLanguage::SUPPORTED as $code => $label)
-                            <option value="{{ $code }}" lang="{{ $code }}" @selected($locale === $code)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    <noscript><button type="submit" class="mtd-btn">{{ $t('language_apply') }}</button></noscript>
-                </form>
                 <x-updated-at :at="$mao['generated_at']" />
             </div>
         </header>
+        {{-- Panel revision 1.4: find a farmer as you type, from the dashboard. --}}
+        @include('partials.live-search', ['url' => route('farmers.search'), 'id' => 'maoFarmerFinder', 'label' => 'Find a farmer', 'placeholder' => 'Name, farmer ID, barangay or organization', 'class' => 'mhd-finder'])
 
         {{-- 1. KPI tiles: up to eight, four in a row on a wide screen --}}
         @if ($tiles !== [])
@@ -170,17 +194,58 @@
                 </div>
                 <a class="mhd-map-frame" href="{{ route('heat-map.index') }}" aria-label="{{ $t('map.open_label') }}" data-heat-map-preview>
                     <div id="heatMapPreviewCanvas" class="mhd-map-canvas" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"></div>
-                    <script type="application/json" data-heat-map-preview-levels>@json(['levels' => $risk['levels'], 'colors' => \App\Services\Risk\HeatMapPanel::COLORS])</script>
+                    <script type="application/json" data-heat-map-preview-levels>@json(['levels' => $risk['levels'], 'colors' => \App\Services\Risk\HeatMapPanel::colors()])</script>
                 </a>
                 <p class="mhd-legend">
-                    @foreach (['low', 'moderate', 'high'] as $level)
-                        <span><span class="mhd-dot" style="--mhd-color: {{ \App\Services\Risk\HeatMapPanel::COLORS[$level] }}"></span>{{ $t('map.'.$level) }}</span>
+                    @foreach (['low', 'moderate', 'high', 'severe'] as $level)   {{-- panel revision 2.1 --}}
+                        <span><span class="mhd-dot" style="--mhd-color: {{ \App\Services\Risk\HeatMapPanel::colors()[$level] }}"></span>{{ $t('map.'.$level) }}</span>
                     @endforeach
                     <x-updated-at :at="$risk['updated_at']" />
                 </p>
             </section>
             @endif
         </div>
+        @endif
+
+        {{-- Panel revisions 3.1 / 3.2 / 4.2: one Year range and Season filter for the yield, rain and prediction charts.
+             Works without scripts (a GET form); with scripts the charts and their totals change at once. --}}
+        @if ($charts['yield'] || $charts['impact'] || $charts['accuracy'])
+        <form class="mtd-card chart-filter" method="GET" action="{{ route('mao.dashboard') }}" data-chart-filter
+              data-years="{{ json_encode($filterYears) }}" aria-labelledby="chartFilterTitle">
+            <div class="chart-filter-head">
+                <h2 id="chartFilterTitle">{{ $t('filter.title') }}</h2>
+                <p class="mtd-sub">{{ $t('filter.applies') }}</p>
+            </div>
+            <div class="chart-filter-fields">
+                <label>
+                    <span>{{ $t('filter.from') }}</span>
+                    <select name="from" data-filter-from>
+                        @foreach ($filterYears as $yearOption)<option value="{{ $yearOption }}" @selected((int) $rangeFrom === (int) $yearOption)>{{ $yearOption }}</option>@endforeach
+                    </select>
+                </label>
+                <label>
+                    <span>{{ $t('filter.to') }}</span>
+                    <select name="to" data-filter-to>
+                        @foreach ($filterYears as $yearOption)<option value="{{ $yearOption }}" @selected((int) $rangeTo === (int) $yearOption)>{{ $yearOption }}</option>@endforeach
+                    </select>
+                </label>
+                <label>
+                    <span>{{ $t('filter.season') }}</span>
+                    <select name="season" data-filter-season>
+                        <option value="all" @selected($filterSeason === 'all')>{{ $t('filter.all_seasons') }}</option>
+                        <option value="Wet" @selected($filterSeason === 'Wet')>{{ $t('filter.wet') }}</option>
+                        <option value="Dry" @selected($filterSeason === 'Dry')>{{ $t('filter.dry') }}</option>
+                    </select>
+                </label>
+                <div class="chart-filter-presets" role="group" aria-label="{{ $t('filter.title') }}">
+                    <button type="button" data-filter-preset="3">{{ $t('filter.last3') }}</button>
+                    <button type="button" data-filter-preset="5">{{ $t('filter.last5') }}</button>
+                    <button type="button" data-filter-preset="all">{{ $t('filter.all') }}</button>
+                </div>
+                <noscript><button type="submit" class="mtd-btn">{{ $t('filter.apply') }}</button></noscript>
+            </div>
+            <p class="chart-filter-error" role="alert" data-filter-error @if (empty($chartFilter['error'])) hidden @endif>{{ $chartFilter['error'] ?? '' }}</p>
+        </form>
         @endif
 
         {{-- 4. The charts, all from saved records (MaoHomeService): no provider is called and no model is run. --}}
@@ -191,9 +256,9 @@
             @if ($showMap)
             @php
                 $riskCounts = array_count_values(array_map('strval', $risk['levels']));
-                $riskRated = array_sum(array_intersect_key($riskCounts, ['low' => 1, 'moderate' => 1, 'high' => 1]));
-                $riskSegments = array_map(fn (string $level): array => ['value' => (int) ($riskCounts[$level] ?? 0), 'color' => \App\Services\Risk\HeatMapPanel::COLORS[$level],
-                    'label' => $t('map.'.$level).': '.(int) ($riskCounts[$level] ?? 0)], ['low', 'moderate', 'high']);
+                $riskRated = array_sum(array_intersect_key($riskCounts, ['low' => 1, 'moderate' => 1, 'high' => 1, 'severe' => 1]));
+                $riskSegments = array_map(fn (string $level): array => ['value' => (int) ($riskCounts[$level] ?? 0), 'color' => \App\Services\Risk\HeatMapPanel::colors()[$level],
+                    'label' => $t('map.'.$level).': '.(int) ($riskCounts[$level] ?? 0)], ['low', 'moderate', 'high', 'severe']);
                 $riskLow = $riskRated > 0 ? (int) round(($riskCounts['low'] ?? 0) / $riskRated * 100) : 0;
             @endphp
             @if ($riskRated > 0)
@@ -214,12 +279,19 @@
             <section class="mtd-card" aria-labelledby="mhdYieldTitle" data-mao-yield>
                 <div class="mtd-card-head">
                     <div>
-                        <h2 id="mhdYieldTitle">{{ $t('charts.yield.title', ['from' => \App\Services\Analytics\MaoHomeService::CHART_FROM_YEAR, 'to' => \App\Services\Analytics\MaoHomeService::CHART_TO_YEAR]) }}</h2>
-                        <p class="mtd-sub">{{ $t('charts.yield.sub') }}</p>
+                        <h2 id="mhdYieldTitle" data-yield-title>{{ $t('charts.yield.title', ['from' => $rangeFrom, 'to' => $rangeTo]) }}</h2>
+                        <p class="mtd-sub">{{ $t('charts.yield.sub') }} · {{ $t('filter.municipal') }}</p>
                     </div>
                 </div>
+                {{-- Panel revision 3.1: totals for the selected years (recomputed in the browser when the range changes). --}}
+                <dl class="range-summary" data-yield-summary aria-live="polite">
+                    <div><dt>{{ $t('filter.summary_avg') }}</dt><dd data-sum="avg">—</dd></div>
+                    <div><dt>{{ $t('filter.summary_high') }}</dt><dd data-sum="high">—</dd></div>
+                    <div><dt>{{ $t('filter.summary_low') }}</dt><dd data-sum="low">—</dd></div>
+                    <div><dt>{{ $t('filter.summary_change') }}</dt><dd data-sum="change">—</dd></div>
+                </dl>
                 <div class="mtd-chart">
-                    <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}"
+                    <canvas id="riceYieldTrendChart" data-yield="{{ json_encode($chart) }}" data-series="{{ json_encode($series) }}"
                         data-chart-source="{{ $chart['source'] }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
                         data-chart-note="{{ $t('charts.yield.note') }}"
                         aria-label="{{ $t('charts.yield.aria', ['from' => $chart['labels'][0], 'to' => end($chart['labels'])]) }}"></canvas>
@@ -250,8 +322,9 @@
                         <p class="mtd-sub">{{ $t('charts.impact.sub') }}</p>
                     </div>
                 </div>
+                {{-- Panel revision 3.2: rainfall (bars, mm, left axis) and yield (line, t/ha, right axis) per rice season. --}}
                 <div class="mtd-chart">
-                    <canvas id="maoImpactChart" data-chart="{{ json_encode($impact) }}" data-chart-type="historical" data-chart-info-style="icon"
+                    <canvas id="maoImpactChart" data-chart="{{ json_encode($rainYield) }}" data-chart-type="historical" data-chart-info-style="icon"
                         aria-label="{{ $t('charts.impact.aria') }}"></canvas>
                 </div>
                 <p class="mhd-reading" data-mao-impact-reading>{{ $impactReading }}</p>
@@ -289,6 +362,75 @@
             </section>
             @endif
         </div>
+        @endif
+
+        {{-- Panel revision 4.2: predicted vs actual yield for the whole municipality of Lian, with the model's error. --}}
+        @if ($charts['accuracy'])
+        @php
+            $acc = $accuracy;
+            $pct = fn ($v) => $v === null ? '—' : rtrim(rtrim(number_format((float) $v, 1), '0'), '.').'%';
+        @endphp
+        <section class="mtd-card accuracy-card" aria-labelledby="mhdAccuracyTitle" data-mao-accuracy>
+            <div class="mtd-card-head">
+                <div>
+                    <h2 id="mhdAccuracyTitle">{{ $t('charts.accuracy.title') }}</h2>
+                    <p class="mtd-sub">{{ $t('charts.accuracy.sub') }}</p>
+                </div>
+                <div class="seg" role="group" aria-label="{{ $t('charts.accuracy.by') }}">
+                    <button type="button" data-accuracy-by="year" aria-pressed="true">{{ $t('charts.accuracy.by_year') }}</button>
+                    <button type="button" data-accuracy-by="season" aria-pressed="false">{{ $t('charts.accuracy.by_season') }}</button>
+                </div>
+            </div>
+            <dl class="range-summary" data-accuracy-summary aria-live="polite">
+                <div><dt>{{ $t('charts.accuracy.predicted') }}</dt><dd data-acc="predicted">{{ number_format($acc['overall']['predicted'] ?? 0, 2) }}</dd></div>
+                <div><dt>{{ $t('charts.accuracy.actual') }}</dt><dd data-acc="actual">{{ number_format($acc['overall']['actual'] ?? 0, 2) }}</dd></div>
+                <div><dt>{{ $t('charts.accuracy.difference') }}</dt><dd data-acc="difference">{{ number_format($acc['overall']['difference'] ?? 0, 2) }} t/ha</dd></div>
+                <div><dt>{{ $t('charts.accuracy.mape') }}</dt><dd data-acc="mape">{{ $pct($acc['overall']['mape'] ?? null) }}</dd></div>
+                <div><dt>{{ $t('charts.accuracy.accuracy') }}</dt><dd data-acc="accuracy">{{ $pct($acc['overall']['accuracy'] ?? null) }}</dd></div>
+            </dl>
+            <div class="mtd-chart">
+                <canvas id="maoAccuracyChart" data-chart="{{ json_encode(['months' => $acc['months']]) }}" data-chart-type="historical" data-chart-unit="t/ha" data-chart-info-style="icon"
+                    aria-label="{{ $t('charts.accuracy.aria') }}"></canvas>
+            </div>
+            @if (! empty($acc['test']))
+                <p class="mhd-reading" data-accuracy-test>{{ $t('charts.accuracy.test_note', ['mape' => rtrim(rtrim(number_format($acc['test']['mape'], 1), '0'), '.'), 'count' => $acc['test']['count']]) }} {{ $t('charts.accuracy.train_note') }}</p>
+            @endif
+            @if (! empty($acc['model']))<p class="mtd-sub">{{ $t('charts.accuracy.model', ['model' => $acc['model']]) }}</p>@endif
+
+            {{-- The rows behind the chart, for the selected years (filled by the page script; also readable without it). --}}
+            <div class="mtd-table-wrap">
+                <table class="mtd-table is-stack" data-accuracy-table>
+                    <thead><tr><th>{{ $t('charts.accuracy.period') }}</th><th>{{ $t('charts.accuracy.predicted') }}</th><th>{{ $t('charts.accuracy.actual') }}</th><th>{{ $t('survey.difference') }}</th><th>{{ $t('charts.accuracy.error') }}</th><th>{{ $t('charts.accuracy.months') }}</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            {{-- Optional drill-down: the same comparison per barangay, from farmers' own recorded harvests. --}}
+            <details class="accuracy-drill" data-accuracy-barangays>
+                <summary>{{ $t('charts.accuracy.barangay_title') }}</summary>
+                @if (empty($acc['barangays']))
+                    <p class="mtd-sub">{{ $t('charts.accuracy.barangay_none') }}</p>
+                @else
+                    <div class="mtd-table-wrap">
+                        <table class="mtd-table is-stack">
+                            <thead><tr><th>{{ $t('charts.accuracy.barangay') }}</th><th>{{ $t('charts.accuracy.predicted') }}</th><th>{{ $t('charts.accuracy.actual') }}</th><th>{{ $t('survey.difference') }}</th><th>MAPE</th><th>{{ $t('charts.accuracy.count') }}</th></tr></thead>
+                            <tbody>
+                                @foreach ($acc['barangays'] as $row)
+                                    <tr>
+                                        <td data-label="{{ $t('charts.accuracy.barangay') }}">{{ $row['barangay'] }}</td>
+                                        <td data-label="{{ $t('charts.accuracy.predicted') }}">{{ number_format($row['predicted'], 2) }}</td>
+                                        <td data-label="{{ $t('charts.accuracy.actual') }}">{{ number_format($row['actual'], 2) }}</td>
+                                        <td data-label="{{ $t('survey.difference') }}">{{ $row['difference'] > 0 ? '+' : '' }}{{ number_format($row['difference'], 2) }}</td>
+                                        <td data-label="MAPE">{{ $pct($row['mape']) }}</td>
+                                        <td data-label="{{ $t('charts.accuracy.count') }}">{{ $row['count'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </details>
+        </section>
         @endif
 
         {{-- Survey Results: farmers' answers about the forecast, and predicted against harvested yield. Saved answers only. --}}
@@ -360,17 +502,195 @@
                 try { await window.iClimateVisualsReady; } catch (e) { /* no chart library: the headings and notes stay */ }
                 if (!window.Chart) return;
 
+                // ---------------------------------------------------------------- panel revisions 3.1 / 3.2 / 4.2
+                // One Year range / Season filter (the form above the charts) redraws the yield, rain and prediction
+                // charts and their totals at once. All yields are t/ha.
+                const filterForm = document.querySelector('[data-chart-filter]');
+                const allYears = filterForm ? JSON.parse(filterForm.dataset.years || '[]') : [];
+                const fromSel = filterForm?.querySelector('[data-filter-from]');
+                const toSel = filterForm?.querySelector('[data-filter-to]');
+                const seasonSel = filterForm?.querySelector('[data-filter-season]');
+                const errorBox = filterForm?.querySelector('[data-filter-error]');
+                const f2 = (v) => (v == null || Number.isNaN(v) ? '—' : Number(v).toFixed(2));
+                const avg = (list) => { const v = list.filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+                const state = () => ({
+                    from: Number(fromSel?.value ?? allYears[0]),
+                    to: Number(toSel?.value ?? allYears[allYears.length - 1]),
+                    season: seasonSel?.value || 'all',
+                });
+
                 const [yieldEl, y] = read('riceYieldTrendChart', 'yield');
-                if (yieldEl) new window.Chart(yieldEl, {
+                const ys = yieldEl ? JSON.parse(yieldEl.dataset.series || '{}') : {};
+                const yieldChart = yieldEl ? new window.Chart(yieldEl, {
                     type: 'bar',
-                    data: { labels: y.labels || [], datasets: [{ label: T.yield.dataset, data: y.values || [], backgroundColor: '#0f5132', borderRadius: 999, borderSkipped: false, maxBarThickness: 46 }] },
+                    data: { labels: [], datasets: [{ label: T.yield.dataset, data: [], backgroundColor: '#2E7D32', borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }] },
                     options: { ...base(false), scales: { y: axis(T.yield.axis, { beginAtZero: true }), x: { grid: { display: false }, ticks: { font: FONT } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: {
                             title: (items) => T.yield.year + ' ' + items[0]?.label,
                             label: (c) => T.yield.value + ': ' + (c.parsed.y != null ? c.parsed.y.toFixed(2) : 'n/a') + ' t/ha',
-                            afterLabel: (c) => T.yield.records + ': ' + ((y.months || [])[c.dataIndex] || 0) + ' ' + T.yield.months,
+                            afterLabel: (c) => T.yield.records + ': ' + (yieldChart.$months?.[c.dataIndex] || 0) + ' ' + T.yield.months,
                         } } } },
-                });
+                }) : null;
+
+                const [impactEl, ry] = read('maoImpactChart');
+                const impactChart = impactEl ? new window.Chart(impactEl, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [
+                        { type: 'bar', label: T.impact.rainSeries, data: [], yAxisID: 'rain', backgroundColor: 'rgba(0, 56, 168, .55)', borderColor: '#0038A8', borderWidth: 1, borderRadius: 4, maxBarThickness: 34, order: 2 },
+                        { type: 'line', label: T.impact.yieldSeries, data: [], yAxisID: 'yield', borderColor: '#2E7D32', backgroundColor: '#2E7D32', borderWidth: 3, tension: .3, pointRadius: 5, pointHoverRadius: 7, order: 1 },
+                    ] },
+                    options: { ...base(true), interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            rain: axis(T.impact.axisRain, { position: 'left', beginAtZero: true }),
+                            yield: axis(T.yield.axis, { position: 'right', grid: { drawOnChartArea: false } }),
+                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } },
+                        },
+                        plugins: { legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } }, tooltip: { callbacks: {
+                            label: (c) => c.dataset.yAxisID === 'rain' ? `${T.impact.rainSeries}: ${c.parsed.y.toFixed(1)} mm` : `${T.impact.yieldSeries}: ${c.parsed.y.toFixed(2)} t/ha`,
+                        } } } },
+                }) : null;
+
+                const [accEl, acc] = read('maoAccuracyChart');
+                const accTable = document.querySelector('[data-accuracy-table] tbody');
+                let accBy = 'year';
+                const accChart = accEl ? new window.Chart(accEl, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [
+                        { type: 'bar', label: T.accuracy.actual, data: [], backgroundColor: 'rgba(46, 125, 50, .75)', borderRadius: 4, maxBarThickness: 32, order: 2 },
+                        { type: 'line', label: T.accuracy.predicted, data: [], borderColor: '#0038A8', backgroundColor: '#0038A8', borderWidth: 3, borderDash: [6, 4], pointRadius: 5, pointStyle: 'rectRot', order: 1 },
+                    ] },
+                    options: { ...base(true), interaction: { mode: 'index', intersect: false },
+                        scales: { y: axis(T.yield.axis, { beginAtZero: false }), x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } } },
+                        plugins: { legend: { display: true, position: 'bottom', labels: { font: FONT, usePointStyle: true } }, tooltip: { callbacks: {
+                            label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(2)} t/ha`,
+                            afterBody: (items) => {
+                                const row = accChart.$rows?.[items[0]?.dataIndex];
+                                return row ? [`${T.accuracy.error}: ${row.diff > 0 ? '+' : ''}${row.diff.toFixed(2)} t/ha (${row.ape.toFixed(1)}%)`] : [];
+                            },
+                        } } } },
+                }) : null;
+
+                const setSum = (box, key, text) => { const el = box?.querySelector(`[data-sum="${key}"], [data-acc="${key}"]`); if (el) el.textContent = text; };
+
+                const apply = () => {
+                    const s = state();
+                    if (errorBox) {
+                        const bad = s.from > s.to;
+                        errorBox.hidden = !bad;
+                        if (bad) { errorBox.textContent = T.filter.invalid; return; }   // keep the last valid charts
+                    }
+                    const inRange = (year) => year >= s.from && year <= s.to;
+
+                    // 3.1 Rice Yield by Year: the selected years, all months or one season.
+                    if (yieldChart) {
+                        const key = s.season === 'Wet' ? 'wet' : s.season === 'Dry' ? 'dry' : 'all';
+                        const idx = (ys.years || []).map((yr, i) => (inRange(yr) ? i : -1)).filter((i) => i >= 0);
+                        const labels = idx.map((i) => String(ys.years[i]));
+                        const values = idx.map((i) => (ys[key] || [])[i]);
+                        yieldChart.data.labels = labels;
+                        yieldChart.data.datasets[0].data = values;
+                        yieldChart.$months = idx.map((i) => (ys.months || [])[i]);
+                        yieldChart.update();
+                        const title = document.querySelector('[data-yield-title]');
+                        if (title) title.textContent = T.filter.title.replace(':from', s.from).replace(':to', s.to);
+                        const box = document.querySelector('[data-yield-summary]');
+                        const pairs = labels.map((l, i) => [l, values[i]]).filter((p) => p[1] != null);
+                        const hi = pairs.reduce((m, p) => (!m || p[1] > m[1] ? p : m), null);
+                        const lo = pairs.reduce((m, p) => (!m || p[1] < m[1] ? p : m), null);
+                        const first = pairs[0]?.[1];
+                        const last = pairs[pairs.length - 1]?.[1];
+                        setSum(box, 'avg', pairs.length ? f2(avg(pairs.map((p) => p[1]))) + ' t/ha' : '—');
+                        setSum(box, 'high', hi ? `${f2(hi[1])} t/ha (${hi[0]})` : '—');
+                        setSum(box, 'low', lo ? `${f2(lo[1])} t/ha (${lo[0]})` : '—');
+                        setSum(box, 'change', pairs.length > 1 && first ? `${last - first >= 0 ? '+' : ''}${f2(last - first)} t/ha (${(((last - first) / first) * 100).toFixed(1)}%)` : '—');
+                    }
+
+                    // 3.2 Weather Impact: rainfall bars and yield line per season, same range and season.
+                    if (impactChart) {
+                        const periods = (ry.periods || []).filter((p) => inRange(p.year) && (s.season === 'all' || p.season === s.season));
+                        impactChart.data.labels = periods.map((p) => p.label);
+                        impactChart.data.datasets[0].data = periods.map((p) => p.rain);
+                        impactChart.data.datasets[1].data = periods.map((p) => p.yield);
+                        impactChart.update();
+                        const reading = document.querySelector('[data-mao-impact-reading]');
+                        if (reading && periods.length >= 3) {
+                            const mx = avg(periods.map((p) => p.rain)); const my = avg(periods.map((p) => p.yield));
+                            let sxy = 0; let sx = 0; let sy = 0;
+                            periods.forEach((p) => { sxy += (p.rain - mx) * (p.yield - my); sx += (p.rain - mx) ** 2; sy += (p.yield - my) ** 2; });
+                            const r = sx > 0 && sy > 0 ? sxy / Math.sqrt(sx * sy) : 0;
+                            reading.textContent = (r >= 0.3 ? T.impact.more : r <= -0.3 ? T.impact.less : T.impact.none) + ' ' + T.impact.based.replace(':count', periods.length);
+                        } else if (reading) {
+                            reading.textContent = T.impact.based.replace(':count', periods.length);
+                        }
+                    }
+
+                    // 4.2 Predicted vs Actual for Lian, per year or season, with the error measures.
+                    if (accChart) {
+                        const months = (acc.months || []).filter((m) => inRange(m.season_year) && (s.season === 'all' || m.season === s.season));
+                        const groups = new Map();
+                        months.forEach((m) => {
+                            const key = accBy === 'year' ? String(m.year) : `${m.season} ${m.season === 'Dry' ? `${m.season_year}–${m.season_year + 1}` : m.season_year}`;
+                            if (!groups.has(key)) groups.set(key, []);
+                            groups.get(key).push(m);
+                        });
+                        const rows = [...groups.entries()].map(([label, list]) => {
+                            const p = avg(list.map((m) => m.predicted)); const a = avg(list.map((m) => m.actual));
+                            const trained = list.every((m) => m.split === 'TRAIN'); const held = list.every((m) => m.split === 'TEST');
+                            return { label, predicted: p, actual: a, diff: p - a, ape: Math.abs(p - a) / a * 100, count: list.length, split: trained ? T.accuracy.trained : held ? T.accuracy.heldOut : '' };
+                        });
+                        accChart.data.labels = rows.map((r) => r.label);
+                        accChart.data.datasets[0].data = rows.map((r) => Number(r.actual.toFixed(2)));
+                        accChart.data.datasets[1].data = rows.map((r) => Number(r.predicted.toFixed(2)));
+                        accChart.$rows = rows;
+                        accChart.update();
+
+                        const box = document.querySelector('[data-accuracy-summary]');
+                        const mape = months.length ? avg(months.map((m) => Math.abs(m.predicted - m.actual) / m.actual * 100)) : null;
+                        setSum(box, 'predicted', months.length ? f2(avg(months.map((m) => m.predicted))) : '—');
+                        setSum(box, 'actual', months.length ? f2(avg(months.map((m) => m.actual))) : '—');
+                        setSum(box, 'difference', months.length ? `${f2(avg(months.map((m) => m.predicted - m.actual)))} t/ha` : '—');
+                        setSum(box, 'mape', mape == null ? '—' : `${mape.toFixed(1)}%`);
+                        setSum(box, 'accuracy', mape == null ? '—' : `${Math.max(0, 100 - mape).toFixed(1)}%`);
+                        if (accTable) {
+                            const head = [...document.querySelectorAll('[data-accuracy-table] thead th')].map((th) => th.textContent);
+                            accTable.innerHTML = rows.length ? rows.map((r) => `<tr>
+                                <td data-label="${head[0]}">${r.label}${r.split ? ` <small class="split-tag">${r.split}</small>` : ''}</td>
+                                <td data-label="${head[1]}">${f2(r.predicted)}</td>
+                                <td data-label="${head[2]}">${f2(r.actual)}</td>
+                                <td data-label="${head[3]}">${r.diff > 0 ? '+' : ''}${f2(r.diff)}</td>
+                                <td data-label="${head[4]}">${r.ape.toFixed(1)}%</td>
+                                <td data-label="${head[5]}">${r.count}</td></tr>`).join('')
+                                : `<tr><td colspan="6">${T.accuracy.none}</td></tr>`;
+                        }
+                    }
+
+                    // Keep the choice in the address, so a refresh or a shared link opens the same view.
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('from', s.from); url.searchParams.set('to', s.to);
+                    s.season === 'all' ? url.searchParams.delete('season') : url.searchParams.set('season', s.season);
+                    window.history.replaceState(null, '', url);
+                };
+
+                if (filterForm) {
+                    [fromSel, toSel, seasonSel].forEach((el) => el && el.addEventListener('change', apply));
+                    filterForm.addEventListener('submit', (e) => { e.preventDefault(); apply(); });
+                    filterForm.querySelectorAll('[data-filter-preset]').forEach((btn) => btn.addEventListener('click', () => {
+                        const n = btn.dataset.filterPreset;
+                        const last = allYears[allYears.length - 1];
+                        const firstYear = n === 'all' ? allYears[0] : Math.max(allYears[0], last - Number(n) + 1);
+                        if (fromSel) fromSel.value = String(firstYear);
+                        if (toSel) toSel.value = String(last);
+                        filterForm.querySelectorAll('[data-filter-preset]').forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+                        apply();
+                    }));
+                }
+                document.querySelectorAll('[data-accuracy-by]').forEach((btn) => btn.addEventListener('click', () => {
+                    accBy = btn.dataset.accuracyBy;
+                    document.querySelectorAll('[data-accuracy-by]').forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+                    apply();
+                }));
+                apply();
+                // ---------------------------------------------------------------- end panel revisions
 
                 const [climateEl, c] = read('maoClimateChart');
                 if (climateEl) new window.Chart(climateEl, {
@@ -383,13 +703,7 @@
                         scales: { rain: axis(T.climate.rain, { position: 'left', beginAtZero: true }), temp: axis(T.climate.temp, { position: 'right', grid: { drawOnChartArea: false } }), x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } } } },
                 });
 
-                const [impactEl, i] = read('maoImpactChart');
-                if (impactEl) new window.Chart(impactEl, {
-                    type: 'line',   // dots only (showLine: false): the scatter controller is not in this app's Chart.js bundle
-                    data: { datasets: [{ label: T.impact.dataset, data: i.points || [], showLine: false, backgroundColor: '#0f5132', borderColor: '#0f5132', pointRadius: 7, pointHoverRadius: 9 }] },
-                    options: { ...base(false), scales: { x: axis(T.impact.x, { type: 'linear' }), y: axis(T.impact.y) },
-                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (p) => p.raw.label + ': ' + p.raw.x + ' ' + T.impact.rain + ', ' + p.raw.y.toFixed(2) + ' t/ha' } } } },
-                });
+                // (Weather Impact is drawn above with the Year range / Season filter: panel revision 3.2.)
 
                 const [plantedEl, p] = read('maoPlantedChart');
                 if (plantedEl) new window.Chart(plantedEl, {

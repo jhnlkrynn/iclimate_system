@@ -11,8 +11,6 @@
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden><span data-mfd-refresh-error-text>{{ __('farmer.state.refresh_failed') }}</span></div>
 
-        @include('dashboards.farmer.header')
-
         @foreach (\App\Http\Controllers\DashboardController::FARMER_SLOTS as $name)
             @php $html = view('dashboards.farmer.'.$name, ['f' => $f])->render(); @endphp
             <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
@@ -20,6 +18,9 @@
 
         {{-- Farmer – Naicel: the two simple charts. Not part of the timed refresh (their numbers change with a save). --}}
         @include('dashboards.farmer.charts')
+
+        {{-- Panel revision 4.4 C: the farmer's assigned MAO personnel. --}}
+        @include('partials.farmer-mao-contact', ['locale' => $f['locale'] ?? app()->getLocale()])
 
         {{-- Farmer Survey – Naicel (2026-10-09): the way in to the short survey about the predictions and advice. --}}
         <section class="fh-card fh-survey" aria-labelledby="fhSurveyTitle" data-fh-survey>

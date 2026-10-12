@@ -4,154 +4,86 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Create Account | {{ config('app.name', 'iClimate') }}</title>
+  <title>Create account | {{ config('app.name', 'iClimate') }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
-      --reg-green-dark: #0B5138;
-      --reg-green: #176447;
-      --reg-green-2: #176447;
-      --reg-green-bg: #F6F9F7;
-      --reg-border: #D9E5DF;
-      --reg-input-border: #CBD8D1;
-      --reg-text: #183A2D;
-      --reg-text-2: #65786F;
+      --reg-green-dark: #123F32;
+      --reg-green: #1F684F;
+      --reg-mint: #7FD6B5;
+      --reg-green-bg: #F6F8F7;
+      --reg-border: #E3EAE6;
+      --reg-input-border: #D5DFD9;
+      --reg-text: #1E2B25;
+      --reg-text-2: #65736C;
       --reg-error: #B42318;
       --reg-success: #16794A;
-      --reg-serif: Georgia, 'Times New Roman', serif;
-      --reg-sans: 'Inter', Arial, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --reg-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     }
     html, body { margin: 0; min-height: 100%; }
-    body { font-family: var(--reg-sans); font-size: 14px; line-height: 1.5; color: var(--reg-text); }
+    body { font-family: var(--reg-sans); font-size: 15px; line-height: 1.5; color: var(--reg-text); -webkit-font-smoothing: antialiased; }
     a { color: inherit; }
     button, input, select { font: inherit; }
     h1, h2, h3, p { margin: 0; }
     .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-    /* -- PAGE BACKGROUND ---------------------------------- */
-    body.register-page {
-      min-height: 100vh;
-      background-color: var(--reg-green-dark);
-      background-image:
-        linear-gradient(90deg, rgba(17,60,45,.92), rgba(17,60,45,.76)),
-        url('{{ asset('images/rice-contact-golden.jpg') }}');
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      display: flex;
-      flex-direction: column;
-    }
+    body.register-page { min-height: 100vh; background: #fff; }
+@include('auth.partials.split-styles')
 
-    .register-main { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 28px 48px; }
-    .register-grid {
-      width: 100%; max-width: 1320px;
-      display: grid;
-      grid-template-columns: minmax(0, 540px) minmax(0, 640px);
-      grid-template-rows: 1fr auto auto 1fr;
-      grid-template-areas: ". form" "intro form" "info form" ". form";
-      justify-content: center;
-      column-gap: 64px;
-    }
-    .reg-intro { grid-area: intro; }
-    .reg-info { grid-area: info; }
-    .form-card { grid-area: form; align-self: center; }
+    /* -- PHOTO SIDE: what a farmer account gives you ------ */
+    .reg-notes-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+    .reg-notes-sub { font-size: 14px; color: rgba(255,255,255,.8); margin-top: 2px; }
+    .perk-list { list-style: none; margin: 18px 0 0; padding: 18px 0 0; border-top: 1px solid rgba(255,255,255,.22); display: flex; flex-direction: column; gap: 10px; }
+    .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: #fff; }
+    .perk-item svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--reg-mint); }
+    .reg-notes-staff { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.22); font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.82); }
 
-    /* -- LEFT: INFORMATION PANEL --------------------------- */
-    .back-link-top {
-      display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
-      color: #CFE6DA; text-decoration: none; padding: 8px 10px; margin: 0 0 20px -10px; border-radius: 6px;
-    }
-    .back-link-top:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-    .reg-intro a:focus-visible, .reg-info a:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    /* -- FORM SIDE ----------------------------------------- */
+    .form-card { width: 100%; max-width: 440px; }
+    .login-form-header { text-align: center; margin-bottom: 8px; }
+    .card-logo { display: flex; justify-content: center; margin-bottom: 18px; }
+    .card-logo img { height: 48px; width: auto; display: block; }
+    .login-form-header h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 6px; }
+    .login-form-header p { font-size: 15px; color: var(--reg-text-2); }
 
-    .reg-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-    .reg-logo img { width: 44px; height: auto; display: block; }
-    .reg-logo-word { font-weight: 700; font-size: 22px; color: #fff; }
+    #formMessage { margin-top: 16px; padding: 10px 14px; font-size: 14px; color: var(--reg-error); background: #FEF3F2; border: 1px solid #F4C7C3; border-radius: 12px; }
 
-    .reg-headline { font-family: var(--reg-serif); font-size: clamp(30px, 2.8vw, 38px); font-weight: 700; color: #fff; line-height: 1.15; margin-bottom: 16px; text-wrap: balance; }
-    .reg-sub { font-size: 16px; color: rgba(255,255,255,.92); line-height: 1.55; margin-bottom: 24px; max-width: 480px; }
-
-    .perk-card { background: rgba(4,58,42,.55); border: 1px solid rgba(255,255,255,.25); border-radius: 10px; padding: 22px 24px; margin-bottom: 16px; }
-    .perk-header { padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.18); }
-    .perk-title { font-size: 15px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; }
-    .perk-sub { font-size: 14px; color: rgba(255,255,255,.78); margin-top: 4px; }
-    .perk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    .perk-item { display: flex; align-items: flex-start; gap: 12px; font-size: 16px; line-height: 1.5; color: rgba(255,255,255,.94); }
-    .perk-item svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 3px; color: #9FD3BA; }
-
-    .notice-card {
-      display: flex; gap: 14px; padding: 20px 22px;
-      background: rgba(4,58,42,.55); border: 1px solid rgba(255,255,255,.25); border-radius: 10px;
-    }
-    .notice-icon { flex-shrink: 0; margin-top: 1px; color: #BFE3D0; }
-    .notice-icon svg { display: block; width: 20px; height: 20px; }
-    .notice-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .notice-card p { font-size: 14px; color: rgba(255,255,255,.86); line-height: 1.55; }
-
-    /* -- RIGHT: REGISTRATION CARD -------------------------- */
-    .form-card {
-      width: 100%;
-      background: #fff; border: 1px solid var(--reg-border); border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,45,30,.12); padding: 28px 32px;
-    }
-    .form-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .form-card-icon {
-      width: 38px; height: 38px; border-radius: 8px; background: var(--reg-green-bg); border: 1px solid var(--reg-border);
-      color: var(--reg-green); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .form-card-header h2 { font-family: var(--reg-serif); font-size: 26px; font-weight: 700; color: #063D2B; line-height: 1.2; }
-    .form-card-sub { font-size: 14px; color: #687D74; margin-bottom: 10px; }
-
-    .role-pill {
-      display: inline-flex; align-items: center; gap: 8px; background: var(--reg-green-bg);
-      border: 1px solid var(--reg-border); border-radius: 6px; padding: 3px 10px;
-      font-size: 12px; line-height: 1.5; color: var(--reg-text-2);
-    }
-    .role-pill svg { color: var(--reg-green-2); flex-shrink: 0; }
-    .role-pill strong { font-weight: 600; color: var(--reg-green-dark); }
-
-    #formMessage {
-      margin-top: 16px; padding: 10px 14px; font-size: 14px; color: var(--reg-error);
-      background: #FEF3F2; border: 1px solid #F4C7C3; border-radius: 8px;
-    }
-
-    .form-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #DDE7E1; }
-    .form-section-title { font-size: 12px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--reg-green); margin-bottom: 10px; }
-    .form-row-2col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .form-section { margin-top: 24px; }
+    .form-section-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--reg-text); margin-bottom: 12px; }
+    .form-row-2col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .form-group { min-width: 0; }
     .form-group + .form-group, .form-row-2col + .form-group { margin-top: 14px; }
-    .form-row-2col + .pwd-helper { margin-top: 10px; }
+    .form-row-2col + .pwd-helper { margin-top: 12px; }
     .form-row-2col > .form-group + .form-group { margin-top: 0; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #173D30; margin-bottom: 5px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--reg-text-2); margin-bottom: 6px; }
 
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; min-width: 0; height: 44px; background: #fff; border: 1px solid var(--reg-input-border); border-radius: 8px;
-      padding: 0 14px; font-size: 14px; font-weight: 400; color: var(--reg-text); outline: none;
-      transition: border-color .15s ease, box-shadow .15s ease;
+      width: 100%; min-width: 0; height: 48px; background: var(--reg-green-bg); border: 1px solid transparent; border-radius: 12px;
+      padding: 0 14px; font-size: 15px; color: var(--reg-text); outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .form-input.has-icon { padding-left: 40px; }
-    .form-input.has-toggle { padding-right: 44px; }
-    .form-input::placeholder { color: #8A968F; }
-    .form-input:hover:not(:focus):not(:disabled):not(.is-invalid) { border-color: #7FA897; }
-    .form-input:focus { border-color: var(--reg-green); box-shadow: 0 0 0 3px rgba(23,100,71,.10); }
-    .form-input:disabled { background: var(--reg-green-bg); color: var(--reg-text-2); }
-    .form-input.is-invalid { border-color: var(--reg-error); }
-    .form-input.is-invalid:focus { box-shadow: 0 0 0 3px rgba(180,35,24,.10); }
+    .form-input.has-icon { padding-left: 42px; }
+    .form-input.has-toggle { padding-right: 46px; }
+    .form-input::placeholder { color: #98A39D; }
+    .form-input:hover:not(:focus):not(:disabled):not(.is-invalid) { background: #F1F4F2; }
+    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .form-input:disabled { color: var(--reg-text-2); }
+    .form-input.is-invalid { border-color: var(--reg-error); background: #fff; }
+    .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     select.form-input {
       appearance: none; -webkit-appearance: none; padding-right: 38px; cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center;
     }
-    .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6E8A7D; }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
     .pwd-toggle {
-      position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; padding: 0;
+      position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; padding: 0;
       display: flex; align-items: center; justify-content: center;
-      color: var(--reg-text-2); background: none; border: none; border-radius: 6px; cursor: pointer;
+      color: var(--reg-text-2); background: none; border: none; border-radius: 8px; cursor: pointer;
     }
     .pwd-toggle:hover { color: var(--reg-green); }
     .pwd-toggle-slash[hidden] { display: none; }
@@ -167,21 +99,21 @@
     .field-success::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='7' cy='7' r='6' stroke='%2316794A' stroke-width='1.4'/%3E%3Cpath d='M4.4 7.2l1.8 1.8 3.4-3.8' stroke='%2316794A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 
     /* -- PASSWORD HELPER ----------------------------------- */
-    .pwd-helper { background: #F5F8F6; border: 1px solid #DCE7E1; border-radius: 7px; padding: 14px 16px; }
+    .pwd-helper { background: var(--reg-green-bg); border-radius: 12px; padding: 14px 16px; }
     .pwd-strength-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .pwd-strength-label { font-size: 13px; color: var(--reg-text-2); white-space: nowrap; }
     .pwd-strength-label strong { font-weight: 600; color: var(--reg-text); }
     .pwd-strength-label.is-weak strong { color: var(--reg-error); }
     .pwd-strength-label.is-fair strong { color: #8A5A00; }
-    .pwd-strength-label.is-good strong { color: var(--reg-green-2); }
+    .pwd-strength-label.is-good strong { color: var(--reg-green); }
     .pwd-strength-label.is-strong strong { color: var(--reg-success); }
     .pwd-strength-track { flex: 1; height: 4px; border-radius: 2px; background: var(--reg-border); overflow: hidden; }
     .pwd-strength-fill { height: 100%; width: 0; border-radius: 2px; background: var(--reg-border); transition: width .2s ease, background-color .2s ease; }
     .pwd-strength-fill.is-weak { background: var(--reg-error); }
     .pwd-strength-fill.is-fair { background: #C98A1B; }
-    .pwd-strength-fill.is-good { background: var(--reg-green-2); }
+    .pwd-strength-fill.is-good { background: var(--reg-green); }
     .pwd-strength-fill.is-strong { background: var(--reg-success); }
-    .pwd-guide { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 16px; }
+    .pwd-guide { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 16px; }
     .pwd-guide-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--reg-text-2); }
     .pwd-guide-dot { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; border: 1.5px solid #A9B8B0; background: #fff; color: transparent; }
     .pwd-guide-item.is-met { color: var(--reg-success); font-weight: 500; }
@@ -189,98 +121,44 @@
 
     /* -- SECURITY CHECK ------------------------------------ */
     .captcha-card {
-      margin-top: 12px; background: #F7FAF8; border: 1px solid #DCE7E1; border-radius: 8px; padding: 16px;
-      display: grid; grid-template-columns: auto minmax(0, 280px); justify-content: center; align-items: start; gap: 10px 12px;
+      margin-top: 12px; background: var(--reg-green-bg); border-radius: 12px; padding: 16px;
+      display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px 12px;
     }
-    .captcha-card label { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600; color: #173D30; }
-    .captcha-card label svg { color: var(--reg-green-2); }
-    .captcha-image { display: block; height: 50px; width: auto; max-width: 100%; border: 1px solid var(--reg-input-border); border-radius: 8px; background: #fff; }
-    .captcha-field { min-width: 0; padding-top: 3px; }
-    .captcha-field .form-input { text-align: center; text-transform: uppercase; letter-spacing: .12em; }
-    .captcha-field .form-input::placeholder { text-transform: none; letter-spacing: normal; }
-    .captcha-field .field-error { justify-content: center; text-align: left; }
+    .captcha-card label { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--reg-text-2); }
+    .captcha-card label svg { color: var(--reg-green); }
+    .captcha-image { display: block; height: 48px; width: auto; max-width: 100%; border: 1px solid var(--reg-input-border); border-radius: 10px; background: #fff; }
+    .captcha-field { min-width: 0; }
+    .captcha-field .form-input { background: #fff; text-align: center; letter-spacing: .12em; }
+    .captcha-field .form-input::placeholder { letter-spacing: normal; }
 
     /* -- AGREEMENT + SUBMIT -------------------------------- */
     .terms-row { display: flex; align-items: flex-start; gap: 10px; }
-    .terms-row input { width: 16px; height: 16px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
-    .terms-row label { font-size: 14px; line-height: 1.4; color: var(--reg-text); cursor: pointer; }
-    .terms-row a, .login-register a { color: var(--reg-green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; border-radius: 3px; }
-    .terms-row a:hover, .login-register a:hover { color: var(--reg-green-dark); }
-    .terms-note { font-size: 12px; color: #6C7D75; margin: 4px 0 0 26px; }
-    #agreeTerms-error { margin-left: 26px; }
+    .terms-row input { width: 18px; height: 18px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
+    .terms-row label { font-size: 14px; line-height: 1.45; color: var(--reg-text); cursor: pointer; }
+    .terms-row a, .login-register a { color: var(--reg-green); font-weight: 500; text-decoration: none; border-radius: 3px; }
+    .terms-row a:hover, .login-register a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .terms-note { font-size: 13px; color: var(--reg-text-2); margin: 6px 0 0 28px; }
+    #agreeTerms-error { margin-left: 28px; }
 
     .btn-submit {
-      width: 100%; height: 46px; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: #0B5A3F; color: #fff; border: none; border-radius: 8px;
-      font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .15s ease;
+      width: 100%; height: 50px; margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: var(--reg-green-dark); color: #fff; border: none; border-radius: 980px;
+      font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
     }
-    .btn-submit:hover { background: #084A35; }
-    .btn-submit:focus-visible { outline: 3px solid rgba(23,100,71,.45); outline-offset: 2px; }
+    .btn-submit:hover { background: var(--reg-green); }
+    .btn-submit:active { transform: scale(.98); }
+    .btn-submit:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
     .btn-submit:disabled { opacity: .8; cursor: wait; }
     .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
-    .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 14px; }
+    .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 20px; }
 
-    /* -- FOOTER -------------------------------------------- */
-    .register-foot { flex: 0 0 auto; background: rgba(12,42,31,.9); border-top: 1px solid rgba(255,255,255,.12); padding: 12px 48px; }
-    .register-foot-inner { max-width: 1244px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; }
-    .rf-brand { display: flex; align-items: center; gap: 10px; }
-    .rf-brand img { width: 22px; height: 22px; object-fit: contain; }
-    .rf-brand-text, .rf-badge-text { display: flex; flex-direction: column; line-height: 1.35; }
-    .rf-brand-text strong, .rf-badge-text strong { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.92); }
-    .rf-brand-text span, .rf-badge-text span { font-size: 12px; color: rgba(255,255,255,.66); }
-    .rf-badges { display: flex; gap: 12px 28px; flex-wrap: wrap; }
-    .rf-badge { display: flex; align-items: center; gap: 8px; }
-    .rf-badge svg { color: #9FD3BA; flex-shrink: 0; }
-
-    /* -- RESPONSIVE ---------------------------------------- */
-    @media (min-width: 1600px) {
-      .register-grid { max-width: 1350px; grid-template-columns: minmax(0, 580px) minmax(0, 700px); column-gap: 70px; }
-      .register-foot-inner { max-width: 1350px; }
-    }
-    @media (max-width: 1340px) {
-      .register-main { padding: 24px 32px; }
-      .register-grid { column-gap: 48px; }
-      .register-foot { padding: 12px 32px; }
-    }
-    @media (max-width: 1180px) {
-      .register-main { padding: 24px; }
-      .register-grid { grid-template-columns: minmax(0, .62fr) minmax(0, 1fr); column-gap: 32px; }
-      .form-card { padding: 24px; }
-      .form-row-2col { gap: 12px; }
-      .perk-card { padding: 20px; }
-      .perk-item { font-size: 15px; }
-      .notice-card { padding: 18px; }
-    }
-    @media (max-width: 1000px) {
-      body.register-page { background-attachment: scroll; }
-      .register-grid {
-        max-width: 680px; grid-template-columns: minmax(0, 1fr); grid-template-rows: none;
-        grid-template-areas: "intro" "info" "form"; row-gap: 24px;
-      }
-      .form-row-2col { gap: 16px; }
-      .back-link-top { margin-bottom: 12px; }
-      .reg-logo { margin-bottom: 16px; }
-      .reg-logo img { width: 40px; }
-      .reg-logo-word { font-size: 20px; }
-      .reg-sub { margin-bottom: 0; max-width: none; }
-      .perk-card { margin-bottom: 16px; }
-    }
     @media (max-width: 560px) {
-      .register-main { padding: 20px; }
-      .reg-headline { font-size: 28px; }
-      .form-card { padding: 20px 16px; }
-      .form-card-header h2 { font-size: 24px; }
       .form-row-2col { grid-template-columns: minmax(0, 1fr); }
-      .captcha-card { grid-template-columns: minmax(0, 1fr); justify-items: center; }
-      .captcha-image { height: 52px; }
-      .captcha-field { width: 100%; max-width: 320px; padding-top: 0; }
+      .captcha-card { grid-template-columns: minmax(0, 1fr); }
       .pwd-strength-meta { flex-direction: column; align-items: stretch; gap: 6px; }
       .pwd-strength-track { flex: none; }
-      .register-foot { padding: 14px 20px; }
-      .register-foot-inner { flex-direction: column; align-items: flex-start; }
-      .rf-badge-text span { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
@@ -290,78 +168,47 @@
     @include('partials.global-loader')
 </head>
 <body class="register-page">
-  <main class="register-main">
-    <div class="register-grid">
+  <div class="login-split">
+    <aside class="login-visual">
+      <a href="{{ url('/') }}" class="back-link-top">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to home
+      </a>
+      <p class="login-visual-copy">Join the iClimate community.</p>
+      <section class="glass-card" aria-labelledby="regNotesTitle">
+        <h2 class="reg-notes-title" id="regNotesTitle">Rice farmer account</h2>
+        <p class="reg-notes-sub">Free for farmers in Lian, Batangas.</p>
+        <ul class="perk-list">
+          <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Climate records and advisories</li>
+          <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Seasonal planting recommendations</li>
+          <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Rice production information</li>
+          <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Community updates and notifications</li>
+        </ul>
+        <p class="reg-notes-staff">MAO staff and IT accounts are set up by the system administrators. Contact the Municipal Agriculture Office if you need staff access.</p>
+      </section>
+    </aside>
 
-      <!-- -- LEFT: INTRODUCTION -------------------------------- -->
-      <div class="reg-intro">
-        <a href="{{ route('login') }}" class="back-link-top">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Back to Login
-        </a>
-
-        <div class="reg-logo">
-          <img src="{{ asset('images/iclimate-icon.png') }}" alt="">
-          <div class="reg-logo-word">iClimate</div>
-        </div>
-
-        <h1 class="reg-headline">Join the iClimate Community</h1>
-        <p class="reg-sub">Create your free farmer account to access localized climate information and farming services for Lian, Batangas.</p>
-      </div>
-
-      <!-- -- LEFT: ACCOUNT INFORMATION ------------------------- -->
-      <div class="reg-info">
-        <div class="perk-card">
-          <div class="perk-header">
-            <div class="perk-title">Rice Farmer Account</div>
-            <div class="perk-sub">Public Registration &bull; Free Access</div>
-          </div>
-          <ul class="perk-list">
-            <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Climate records and advisories</li>
-            <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Seasonal planting recommendations</li>
-            <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Rice production information</li>
-            <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Community updates and notifications</li>
-          </ul>
-        </div>
-
-        <div class="notice-card" role="note">
-          <div class="notice-icon">
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1" fill="currentColor"/></svg>
-          </div>
-          <div>
-            <div class="notice-title">MAO Staff and IT Personnel Accounts</div>
-            <p>Accounts for Municipal Agriculture Office staff and IT personnel are created and managed by authorized system administrators. Contact the Municipal Agriculture Office if you require staff access.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- -- RIGHT: REGISTRATION CARD -------------------------- -->
+    <main class="login-panel">
+      @include('auth.partials.toggle')
       <div class="form-card">
-        <div class="form-card-header">
-          <div class="form-card-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 16c.6-3.4 2.6-5.2 5.5-5.2s4.9 1.8 5.5 5.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15 6v5M12.5 8.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h2>Create Your Account</h2>
-        </div>
-        <p class="form-card-sub">Register as a Rice Farmer in Lian, Batangas.</p>
-
-        <div class="role-pill">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14V7M8 9C8 5.5 10 3 13.5 2.5 13.5 6 11.5 8.5 8 9ZM8 11C8 8.5 6.5 6.5 3 6c0 3 1.5 4.7 5 5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span><strong>Rice Farmer</strong> &middot; Public Registration</span>
+        <div class="login-form-header">
+          <div class="card-logo"><img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate"></div>
+          <h1>Create account</h1>
+          <p>Register as a rice farmer in Lian, Batangas.</p>
         </div>
 
         <div id="formMessage" role="alert" @unless($errors->any()) hidden @endunless>Please check the highlighted fields below and try again.</div>
 
-        <form method="POST" action="{{ route('register') }}" class="register-form" data-loader-text="Creating Account...">
+        <form method="POST" action="{{ route('register') }}" class="register-form" data-loader-text="Creating account...">
           @csrf
           <input type="hidden" id="name" name="name" value="{{ old('name') }}">
 
           <section class="form-section" aria-labelledby="sectionPersonal">
-            <h3 class="form-section-title" id="sectionPersonal">Personal Information</h3>
+            <h3 class="form-section-title" id="sectionPersonal">Personal information</h3>
 
             <div class="form-row-2col">
               <div class="form-group">
-                <label for="firstName">First Name</label>
+                <label for="firstName">First name</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.2" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 13.5c.6-3 2.5-4.6 5.5-4.6s4.9 1.6 5.5 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                   <input type="text" id="firstName" name="first_name" value="{{ old('first_name') }}" class="form-input has-icon @error('name') is-invalid @enderror" placeholder="Juan" autocomplete="given-name" aria-describedby="firstName-error" @error('name') aria-invalid="true" @enderror required/>
@@ -369,7 +216,7 @@
                 <p class="field-error" id="firstName-error" @unless($errors->has('name')) hidden @endunless>{{ $errors->first('name') }}</p>
               </div>
               <div class="form-group">
-                <label for="lastName">Last Name</label>
+                <label for="lastName">Last name</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.2" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 13.5c.6-3 2.5-4.6 5.5-4.6s4.9 1.6 5.5 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                   <input type="text" id="lastName" name="last_name" value="{{ old('last_name') }}" class="form-input has-icon @error('name') is-invalid @enderror" placeholder="Dela Cruz" autocomplete="family-name" aria-describedby="lastName-error" required/>
@@ -379,7 +226,7 @@
             </div>
 
             <div class="form-group">
-              <label for="email">Email Address</label>
+              <label for="email">Email address</label>
               <div class="input-wrap">
                 <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M2 5l6 4.2L14 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                 <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-input has-icon @error('email') is-invalid @enderror" placeholder="your.email@example.com" autocomplete="username" aria-describedby="email-error" @error('email') aria-invalid="true" @enderror required/>
@@ -389,11 +236,11 @@
           </section>
 
           <section class="form-section" aria-labelledby="sectionFarm">
-            <h3 class="form-section-title" id="sectionFarm">Farm Information</h3>
+            <h3 class="form-section-title" id="sectionFarm">Farm information</h3>
 
             <div class="form-row-2col">
               <div class="form-group">
-                <label for="farmer_organization_id">Farmer's Organization</label>
+                <label for="farmer_organization_id">Farmer's organization</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 13V6l6-3 6 3v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13V8h6v5M1.5 13.2h13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <select id="farmer_organization_id" name="farmer_organization_id" class="form-input has-icon @error('farmer_organization_id') is-invalid @enderror" aria-describedby="farmer_organization_id-error">
@@ -413,7 +260,7 @@
               </div>
 
               <div class="form-group" id="assignedBarangayGroup" style="display:none;">
-                <label for="assignedBarangay">Farm Location / Barangay</label>
+                <label for="assignedBarangay">Farm location / barangay</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
                   <input type="text" id="assignedBarangay" class="form-input has-icon" value="" aria-describedby="assignedBarangay-hint" disabled>
@@ -422,7 +269,7 @@
               </div>
 
               <div class="form-group" id="manualBarangayGroup">
-                <label for="barangay">Farm Location / Barangay</label>
+                <label for="barangay">Farm location / barangay</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
                   <select id="barangay" name="barangay" class="form-input has-icon @error('barangay') is-invalid @enderror" aria-describedby="barangay-error" @error('barangay') aria-invalid="true" @enderror>
@@ -435,10 +282,28 @@
                 <p class="field-error" id="barangay-error" @unless($errors->has('barangay')) hidden @endunless>{{ $errors->first('barangay') }}</p>
               </div>
             </div>
+
+            {{-- Panel revision 1.1: a farmer can belong to more than one organization. The one chosen above is the main
+                 one (it sets the farm location); tick any others here. --}}
+            @if ($farmerOrganizations->count() > 1)
+              <fieldset class="form-group" data-additional-organizations>
+                <legend class="form-legend">Other organizations you belong to <span class="field-optional">(optional)</span></legend>
+                <p class="field-hint">Tick every other farmer organization you are a member of.</p>
+                <div class="check-grid">
+                  @foreach($farmerOrganizations as $organization)
+                    <label class="check-tile" data-org-tile="{{ $organization->id }}">
+                      <input type="checkbox" name="additional_organization_ids[]" value="{{ $organization->id }}" @checked(in_array((string) $organization->id, array_map('strval', (array) old('additional_organization_ids', [])), true))>
+                      <span>{{ $organization->name }}<small>{{ $organization->barangay }}</small></span>
+                    </label>
+                  @endforeach
+                </div>
+                <p class="field-error" @unless($errors->has('additional_organization_ids') || $errors->has('additional_organization_ids.*')) hidden @endunless>{{ $errors->first('additional_organization_ids') ?: $errors->first('additional_organization_ids.*') }}</p>
+              </fieldset>
+            @endif
           </section>
 
           <section class="form-section" aria-labelledby="sectionSecurity">
-            <h3 class="form-section-title" id="sectionSecurity">Account Security</h3>
+            <h3 class="form-section-title" id="sectionSecurity">Account security</h3>
 
             <div class="form-row-2col">
               <div class="form-group">
@@ -454,7 +319,7 @@
               </div>
 
               <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
+                <label for="confirmPassword">Confirm password</label>
                 <div class="input-wrap">
                   <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                   <input type="password" id="confirmPassword" name="password_confirmation" class="form-input has-icon has-toggle @error('password_confirmation') is-invalid @enderror" placeholder="Re-enter your password" autocomplete="new-password" aria-describedby="confirmPassword-error confirmPassword-success" required/>
@@ -485,7 +350,7 @@
             <div class="captcha-card">
               <label for="captcha_answer">
                 <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Security Check
+                Security check
               </label>
               <img class="captcha-image" width="190" height="64" src="{{ route('captcha.image', ['context' => 'register', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
               <div class="captcha-field">
@@ -500,46 +365,20 @@
 
             <div class="terms-row">
               <input type="checkbox" id="agreeTerms" aria-describedby="agreeTerms-error" required/>
-              <label for="agreeTerms">I agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</label>
+              <label for="agreeTerms">I agree to the <a href="#">Terms of use</a> and <a href="#">Privacy policy</a>.</label>
             </div>
             <p class="terms-note">Your information is used to provide climate and agricultural services through iClimate.</p>
             <p class="field-error" id="agreeTerms-error" hidden></p>
           </section>
 
-          <button class="btn-submit" id="createAccountBtn" type="submit">Create Account</button>
+          <button class="btn-submit" id="createAccountBtn" type="submit">Create account</button>
         </form>
 
-        <p class="login-register">Already have an account? <a href="{{ route('login') }}">Sign In</a></p>
+        <p class="login-register">Already have an account? <a href="{{ route('login') }}">Sign in</a></p>
       </div>
-
-    </div>
-  </main>
-
-  <footer class="register-foot">
-    <div class="register-foot-inner">
-      <div class="rf-brand">
-        <img src="{{ asset('images/iclimate-icon.png') }}" alt="">
-        <div class="rf-brand-text">
-          <strong>iClimate</strong>
-          <span>&copy; 2026 iClimate Research Group<br>Batangas State University ARASOF-Nasugbu</span>
-        </div>
-      </div>
-      <div class="rf-badges">
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5l5.5 2v3.8c0 3.6-2.4 6.1-5.5 7-3.1-.9-5.5-3.4-5.5-7V3.5l5.5-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-          <div class="rf-badge-text"><strong>Secure &amp; Reliable</strong><span>Your data is safe</span></div>
-        </div>
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          <div class="rf-badge-text"><strong>Local &amp; Relevant</strong><span>For Lian, Batangas</span></div>
-        </div>
-        <div class="rf-badge">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14V7M8 9C8 5.5 10 3 13.5 2.5 13.5 6 11.5 8.5 8 9ZM8 11C8 8.5 6.5 6.5 3 6c0 3 1.5 4.7 5 5Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div class="rf-badge-text"><strong>Climate-Smart</strong><span>Better decisions</span></div>
-        </div>
-      </div>
-    </div>
-  </footer>
+      <p class="login-panel-foot">&copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</p>
+    </main>
+  </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -718,14 +557,14 @@
 
       formMessage.hidden = true;
       submit.disabled = true;
-      submit.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>Creating Account...';
+      submit.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>Creating account...';
     });
 
     // Returning with the Back button restores the page from cache: make the button usable again.
     window.addEventListener('pageshow', (event) => {
       if (! event.persisted) return;
       submit.disabled = false;
-      submit.textContent = 'Create Account';
+      submit.textContent = 'Create account';
     });
   });
 </script>

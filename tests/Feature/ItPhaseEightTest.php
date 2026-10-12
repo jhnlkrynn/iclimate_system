@@ -88,12 +88,12 @@ class ItPhaseEightTest extends TestCase
     {
         $html = $this->actingAs($this->it())->get(route('admin.dashboard'))->getContent();
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
-        $this->assertNotContains('Chatbot Knowledge', $labels[1]);
-        foreach (['System Health', 'System Logs', 'User Management'] as $label) {
+        $this->assertNotContains('Chatbot knowledge', $labels[1]);
+        foreach (['System health', 'System logs', 'User management'] as $label) {
             $this->assertContains($label, $labels[1], $label);
         }
         // Chatbot Knowledge is hidden from the interface (see ChatbotKnowledgeHiddenTest).
-        $this->assertNotContains('Chatbot Knowledge', $labels[1]);
+        $this->assertNotContains('Chatbot knowledge', $labels[1]);
 
         foreach ([$this->mao(), User::factory()->farmer()->create()] as $other) {
             foreach (['admin.dashboard', 'system-health.index', 'model-evaluation.index', 'system-logs.index', 'users.index'] as $route) {

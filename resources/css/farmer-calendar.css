@@ -43,7 +43,7 @@
 .fcal-dot { width: 10px; height: 10px; border-radius: 2px; background: var(--k); }
 
 .fcal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 12px 16px 16px; }
-.fcal-weekday { padding: 6px 4px; font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); text-align: center; }
+.fcal-weekday { padding: 6px 4px; font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); text-align: center; }
 .fcal-day {
     display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 116px; padding: 8px;
     background: #fff; border: 1px solid var(--rule); border-radius: 4px; transition: border-color .15s, background-color .15s;
@@ -58,7 +58,7 @@
 .fcal-day.is-today .fcal-day-number { background: var(--brand); color: #fff; }
 .fcal-day-name { display: none; }
 /* the filled date circle marks today; the word is added only where a cell has room for it */
-.fcal-today-tag { display: none;  font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--brand-ink, var(--brand)); }
+.fcal-today-tag { display: none;  font-size: .75rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--brand-ink, var(--brand)); }
 
 .fcal-event {
     display: grid; gap: 4px; padding: 6px 8px; border: 1px solid var(--line); border-left: 3px solid var(--k); border-radius: 4px;
@@ -103,8 +103,8 @@
 .fcal-up-date { align-self: start; display: grid; justify-items: center; align-content: start; gap: 2px; padding: 6px 0; border: 1px solid var(--rule); border-radius: 4px; background: var(--subtle); }
 .fcal-up-date.is-now { border-color: var(--brand); background: var(--good-bg); }
 .fcal-up-day { font-size: .9375rem; font-weight: 700; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.fcal-up-date.is-now .fcal-up-day { font-size: .8125rem; color: var(--brand-ink, var(--brand)); text-transform: uppercase; letter-spacing: .5px; }
-.fcal-up-month { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.fcal-up-date.is-now .fcal-up-day { font-size: .8125rem; color: var(--brand-ink, var(--brand)); text-transform: none; letter-spacing: 0; }
+.fcal-up-month { font-size: .75rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
 .fcal-up-body { display: grid; gap: 6px; min-width: 0; }
 .fcal-up-title { font-size: 1rem; font-weight: 600; line-height: 1.35; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
 .fcal-up-title:hover { color: var(--brand-ink, var(--brand)); text-decoration: underline; }
@@ -124,7 +124,7 @@
 .fcal-record-title { font-size: 1.125rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
 .fcal-record-facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 0; }
 .fcal-record-facts > div { display: grid; gap: 2px; }
-.fcal-record-facts dt { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.fcal-record-facts dt { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--muted); }
 .fcal-record-facts dd { margin: 0; font-size: .9375rem; font-weight: 600; color: var(--ink); }
 .fcal-record-estimate { padding: 8px 12px; border-left: 4px solid var(--rule); border-radius: 4px; background: var(--subtle); font-size: .9375rem; color: var(--ink); }
 .fcal-record-estimate.is-good { border-left-color: var(--good); background: var(--good-bg); }

@@ -1,0 +1,87 @@
+/* Magic UI effects for the signed-in app (ported from the landing page, resources/css/landing.css).
+   The pointer tracking and the number ticker live in resources/js/app-magic.js and resources/js/ui-enhancements.js. */
+
+/* ------------------------------------------------- magic card (Magic UI) */
+/* A glow on the card border that follows the pointer (--mx/--my, set by app-magic.js). The card never moves:
+   the glow is a thin ring just inside the border, with no fill. A deeper mint on light cards so it still shows. */
+:root { --magic-glow: 31, 150, 108; --magic-glow-strength: 1; }
+html[data-theme="dark"] { --magic-glow: 127, 214, 181; --magic-glow-strength: .95; }
+/* The green lead tile on the farmer and MAO dashboards: a pale mint ring, since green on green does not show. */
+.mfd[data-farmer-dashboard] .fh-kpi:first-child, .mhd .mhd-tile:first-child { --magic-glow: 201, 242, 225; }
+
+:where(.card, .glass-card, .module-tile, .kpi-tile,
+    .mfd-card, .mfd-kpi, .itd-card, .fh-card, .fh-kpi,
+    .mtd-card, .mtd-tile, .mtd-kpi, .mhd-tile) {
+    position: relative;
+}
+
+:is(.card, .glass-card, .module-tile, .kpi-tile,
+    .mfd-card, .mfd-kpi, .itd-card, .fh-card, .fh-kpi,
+    .mtd-card, .mtd-tile, .mtd-kpi, .mhd-tile)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(var(--magic-glow), var(--magic-glow-strength)), rgba(var(--magic-glow), .2) 50%, transparent 80%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events: none;
+}
+
+:is(.card, .glass-card, .module-tile, .kpi-tile,
+    .mfd-card, .mfd-kpi, .itd-card, .fh-card, .fh-kpi,
+    .mtd-card, .mtd-tile, .mtd-kpi, .mhd-tile):hover::after {
+    opacity: 1;
+}
+
+/* ------------------------------------------------------ no hover lift */
+/* Cards and buttons never rise, sink or grow on hover or focus; the border glow above is the hover cue.
+   Overrides the lifts in layouts/app.blade.php (inline style), app.css, animations.css, glass-system.css,
+   ui-refresh.css, farmer-dashboard.css, mao-dashboard.css, chart-explainer.css, pages/community-feed.css and the
+   kpi-strip / ai-chat components. */
+:is(.card, .glass-card, .module-tile, .climate-chip, .risk-card, .stat-card, .soft-section, .kpi-tile,
+    .it-card, .mao-card, .feed-card, .farmer-org-card, .field-card,
+    .ic-card-interactive, .ic-button-interactive, .quick-action, .priority-card,
+    .btn, .ai-chip, .ic-ai-chip, .ic-info-btn, .ic-ai-toggle,
+    .ic-logout-cancel, .ic-logout-confirm-btn, .ic-action-close,
+    .fh-kpi, .mtd-kpi, .mhd-tile,
+    .weather-mini, .forecast-day, .forecast-strip-day, .weather-refresh-btn, .wp-tab-button,
+    .wp-result-card, .wp-advisory, .live-weather-card, .risk-level-card, .risk-weather-tile,
+    .risk-map-tool, .legend-swatch, .calendar-day, .wp-calendar-day,
+    .pagination .page-link, .composer-option, .manage-panel summary):is(:hover, :focus-visible),
+:is(.form-control, .form-select):focus {
+    transform: none !important;
+    translate: none !important;
+}
+
+/* --------------------------------------------------- blur fade (Magic UI) */
+/* The dashboard's main sections come in blurred and sharpen, top to bottom, once on page load. A part the farmer
+   dashboard's refresh replaces keeps its wrapper (.mfd-slot), so it does not play again. */
+@media (prefers-reduced-motion: no-preference) {
+    .page-shell:has([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) { animation: none; }
+
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > * {
+        animation: icBlurFade 1.2s cubic-bezier(.22, 1, .36, 1) var(--blur-delay, 0ms) backwards;
+    }
+
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(2) { --blur-delay: 70ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(3) { --blur-delay: 140ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(4) { --blur-delay: 210ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(5) { --blur-delay: 280ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(6) { --blur-delay: 350ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(7) { --blur-delay: 420ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(8) { --blur-delay: 490ms; }
+    :is([data-farmer-dashboard], [data-mao-dashboard], [data-it-dashboard]) > :nth-child(n+9) { --blur-delay: 560ms; }
+}
+
+@keyframes icBlurFade {
+    0% { opacity: 0; filter: blur(20px); transform: translateY(8px); }
+    35% { opacity: 1; filter: blur(10px); }
+    100% { opacity: 1; filter: blur(0); transform: none; }
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Municipality of Lian seal (placeholder)">
+  <!-- Placeholder seal: replace with the official seal of the Municipality of Lian (same file name). -->
+  <circle cx="32" cy="32" r="31" fill="#FFFFFF" stroke="#0038A8" stroke-width="2"/>
+  <circle cx="32" cy="32" r="25" fill="#E8F5E9" stroke="#2E7D32" stroke-width="1.5"/>
+  <path d="M32 14c4 5 6.5 9.5 6.5 14a6.5 6.5 0 0 1-13 0c0-4.5 2.5-9 6.5-14Z" fill="#2E7D32"/>
+  <path d="M32 34v14" stroke="#2E7D32" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M32 41c-4 0-7 2-8 6M32 41c4 0 7 2 8 6" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle cx="32" cy="9" r="2.2" fill="#FCD116"/>
+  <text x="32" y="59.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="6.5" font-weight="700" fill="#0038A8">LIAN</text>
+</svg>

@@ -154,20 +154,28 @@
             </div>
             @if ($harvests)
                 <div class="frec-table-wrap">
-                    <table class="frec-table">
+                    {{-- Panel revision 4.3: stacks into one card per harvest on a phone (.is-stack, data-label). --}}
+                    <table class="frec-table is-stack">
                         <thead><tr>
                             <th scope="col">{{ __('farmer.my_farm_page.harvested_on') }}</th>
                             <th scope="col">{{ __('farmer.my_farm_page.planted') }}</th>
                             <th scope="col">{{ __('farmer.my_farm_page.season') }}</th>
                             <th scope="col" class="is-num">{{ __('farmer.my_farm_page.yield') }} (t/ha)</th>
+                            <th scope="col">{{ __('farmer.harvest_timing.label') }}</th>
                         </tr></thead>
                         <tbody>
                             @foreach ($harvests as $row)
                                 <tr>
-                                    <th scope="row">{{ $date($row['harvested_on']) }}</th>
-                                    <td>{{ $date($row['planting_date']) }}</td>
-                                    <td>{{ $row['season'] ?? '—' }}</td>
-                                    <td class="is-num">{{ number_format($row['yield'], 2) }}</td>
+                                    <th scope="row" data-label="{{ __('farmer.my_farm_page.harvested_on') }}">{{ $date($row['harvested_on']) }}</th>
+                                    <td data-label="{{ __('farmer.my_farm_page.planted') }}">{{ $date($row['planting_date']) }}</td>
+                                    <td data-label="{{ __('farmer.my_farm_page.season') }}">{{ $row['season'] ?? '—' }}</td>
+                                    <td class="is-num" data-label="{{ __('farmer.my_farm_page.yield') }} (t/ha)">{{ number_format($row['yield'], 2) }}</td>
+                                    {{-- Panel revision 1.3 --}}
+                                    <td data-label="{{ __('farmer.harvest_timing.label') }}">
+                                        @if (! empty($row['timing']))
+                                            <span class="timing-line is-{{ \Illuminate\Support\Str::slug($row['timing']) }}">{{ $row['timing_text'] }}</span>
+                                        @else — @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

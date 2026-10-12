@@ -31,6 +31,9 @@ export function bindSpotlight() {
 const COUNT_SELECTOR = [
     '.stat-value', '.mao-value', '.it-value', '.it-pipeline-value',
     '.farmer-org-card-value', '.risk-level-value', '.field-value', '.wp-value',
+    // Dashboard key figures (farmer, MAO, IT): only the number; the unit sits in a sibling <small>.
+    '[data-fh-kpi-value]', '.mhd-tile-value > [data-kpi-value]', '.mtd-kpi-value > [data-kpi-value]',
+    '.mfd-kpi-value:not(.is-text) > span',
     '[data-count-up]',
 ].join(',');
 
@@ -79,7 +82,8 @@ function runCountUp(element) {
     // Bare years ("2026") read as dates, not quantities.
     if (!parsed.prefix && !parsed.suffix && !parsed.decimals && parsed.value >= 1900 && parsed.value <= 2100) return;
 
-    const duration = Math.min(1400, 700 + Math.log10(Math.abs(parsed.value) + 1) * 180);
+    // Number ticker (Magic UI), same feel as the landing page (window.icTick): easeOutExpo over 1.2s.
+    const duration = 1200;
     const start = performance.now();
     let lastWritten = formatCount(parsed, 0);
     element.textContent = lastWritten;
@@ -94,7 +98,7 @@ function runCountUp(element) {
         }
 
         const progress = Math.min(1, (now - start) / duration);
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
 
         lastWritten = progress < 1 ? formatCount(parsed, parsed.value * eased) : parsed.original;
         element.textContent = lastWritten;

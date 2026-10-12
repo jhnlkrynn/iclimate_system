@@ -240,7 +240,7 @@ class FarmerPlantingScheduleController extends Controller
             'actual_yield' => ['nullable', 'numeric', 'gt:0', 'max:15'],                          // tons per hectare; no rice field yields more
             'harvested_on' => ['nullable', 'date', 'after_or_equal:planting_date', 'before_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ] + \App\Support\HarvestTiming::rules());   // panel revision 1.3
     }
 
     private function normalized(array $data, Request $request): array
@@ -274,6 +274,16 @@ class FarmerPlantingScheduleController extends Controller
             if ($data['actual_yield'] !== null || $data['harvested_on'] !== null) {
                 $data['progress_status'] = 'Harvested';
             }
+        }
+
+        // Panel revision 1.3: On time / Early / Late against the expected harvest date; early or late needs a reason.
+        if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'harvest_timing')) {
+            $expected = $data['scheduled_harvest_date'] ?? ($data['harvest_month'] ? \Illuminate\Support\Carbon::parse($data['harvest_month'])->endOfMonth() : null);
+            $data = array_merge($data, ! empty($data['harvested_on'])
+                ? \App\Support\HarvestTiming::attributes($expected, $data['harvested_on'], $data)
+                : ['harvest_timing' => null, 'harvest_timing_reason' => null, 'harvest_timing_reason_other' => null]);
+        } else {
+            unset($data['harvest_timing_reason'], $data['harvest_timing_reason_other']);
         }
 
         return $data;

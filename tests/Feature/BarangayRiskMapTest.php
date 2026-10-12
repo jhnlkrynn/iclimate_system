@@ -799,7 +799,7 @@ class BarangayRiskMapTest extends TestCase
         $week = app(BarangayWeekRiskService::class)->forBarangay('Bagong Pook');
 
         $this->assertSame('high', $week['level'] ?? null);
-        $farmerResponse->assertSee('Bagong Pook, Lian, Batangas');
+        // (The "Bagong Pook, Lian, Batangas" line lived in the farmer dashboard header, removed in the 2026-10 redesign.)
         $farmerResponse->assertSee('<p class="fh-risk-badge is-danger">High</p>', false);
         $this->actingAs($user)->get(route('heat-map.index'))->assertOk()
             ->assertSee('<span class="hmx-badge is-high">High</span>', false);

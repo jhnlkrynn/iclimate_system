@@ -25,7 +25,7 @@ class ClimateRecordController extends CrudController
     protected bool $printable = true;
 
     // Manuscript – Naicel (2026-10-08): Validated (verified_at, set by RecordValidationController).
-    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source', 'verification' => 'Validated'];
+    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source', 'verification' => 'Validated', 'verified_by_label' => 'Validated by'];
 
     protected array $searchable = ['record_date', 'season', 'source'];
 
@@ -115,6 +115,9 @@ class ClimateRecordController extends CrudController
         $isIt = $request->user()?->role === User::ROLE_IT_EXPERT;
         // Manuscript – Naicel (2026-10-08): which entered rows the MAO validated; the station dataset is a published source.
         $verified = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->pluck('verified_at', 'id'), collect(), false);
+        // Panel revision 4.4 C: who validated each record, and when.
+        $validatedBy = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->with('verifier:id,name')->get(['id', 'verified_by', 'verified_at'])
+            ->mapWithKeys(fn (ClimateRecord $r) => [$r->id => trim(($r->verifier?->name ?? '').' · '.\App\Support\MaoStamp::format($r->verified_at), ' ·')]), collect(), false);
 
         $display = $rows->map(fn (object $row): object => (object) [
             'id' => $row->id,
@@ -132,6 +135,7 @@ class ClimateRecordController extends CrudController
             'source' => $row->source,
             // Manuscript – Naicel (2026-10-08): validation status, and the year and month filters.
             'verification' => $row->id === null ? 'Published dataset' : ($verified->has($row->id) ? 'Validated' : 'Not validated'),
+            'verified_by_label' => $row->id !== null ? ($validatedBy[$row->id] ?? null) : null,
             'year' => $row->record_date->format('Y'),
             'month' => $row->record_date->format('m'),
             'search_text' => $row->search_text,

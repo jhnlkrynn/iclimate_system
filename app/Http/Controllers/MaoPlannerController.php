@@ -120,14 +120,19 @@ class MaoPlannerController extends Controller
             return collect();
         }
 
-        return FarmerPlantingSchedule::query()->with(['farmer:id,name', 'farm:id,farm_name'])
-            ->latest('planting_date')->limit(200)->get()
+        $query = FarmerPlantingSchedule::query()->with(['farmer:id,name', 'farm:id,farm_name']);
+        \App\Support\MaoScope::apply($query);   // panel revision 4.4 B: the MAO user's barangays
+
+        return $query->latest('planting_date')->limit(200)->get()
             ->filter(fn (FarmerPlantingSchedule $plan): bool => $barangay === null || LianBarangays::canonicalName($plan->barangay) === $barangay)
             ->flatMap(function (FarmerPlantingSchedule $plan): array {
                 $row = fn ($date, string $kind): array => [
                     'date' => $date, 'kind' => $kind, 'farmer' => (string) ($plan->farmer?->name ?? 'Farmer'),
                     'barangay' => LianBarangays::canonicalName($plan->barangay) ?? $plan->barangay,
                     'farm' => $plan->farm?->farm_name, 'hectares' => (float) $plan->farm_area_hectares ?: null,
+                    // Panel revision 1.3: On time / Early / Late and the farmer's reason, on a recorded harvest.
+                    'timing' => $kind === 'Harvested' ? $plan->harvest_timing : null,
+                    'timing_text' => $kind === 'Harvested' ? $plan->harvestTimingSummary('en') : null,
                 ];
                 $harvest = $plan->harvested_on ?? $plan->harvestDateForPlanning();
 

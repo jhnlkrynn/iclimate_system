@@ -17,12 +17,12 @@
             <section class="itp-section" aria-labelledby="accountSummaryTitle">
                 <div class="itp-section-head"><h2 id="accountSummaryTitle">Profile Summary</h2></div>
                 <div class="mfd-card itp-account">
-                    <div class="itp-avatar" aria-hidden="true">{{ $initials ?: '?' }}</div>
+                    <div class="itp-avatar" aria-hidden="true">@if ($account->avatarUrl())<img src="{{ $account->avatarUrl() }}" alt="">@else<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="currentColor"/><path d="M4.8 20c.9-3.9 3.6-6.1 7.2-6.1s6.3 2.2 7.2 6.1" fill="currentColor"/></svg>@endif</div>
                     <div class="itp-account-id">
                         <span class="itp-account-name">{{ $account->name }}</span>
                         <span class="itp-account-email">{{ $account->email }}</span>
                         <div class="itp-account-pills">
-                            <span class="mfd-pill is-info">@include('dashboards.mao.icon', ['name' => 'farmers'])<span>{{ $account->roleLabel() }}</span></span>
+                            <span class="mfd-pill is-info">@include('dashboards.mao.icon', ['name' => 'farmers'])<span>{{ $account->isMao() ? $account->positionLabel() : $account->roleLabel() }}</span></span>
                             <span class="mfd-pill {{ $isActive ? 'is-good' : 'is-unk' }}">@include('dashboards.mao.icon', ['name' => $isActive ? 'check' : 'info'])<span>{{ $account->status }}</span></span>
                         </div>
                     </div>
@@ -30,9 +30,17 @@
                         <div><dt>Member since</dt><dd>{{ $account->created_at?->timezone('Asia/Manila')->format('M j, Y') ?? 'Not recorded' }}</dd></div>
                         <div><dt>Last active</dt><dd>{{ $account->last_active_at?->timezone('Asia/Manila')->format('M j, Y g:i A') ?? 'Not recorded' }}</dd></div>
                         <div><dt>Email verified</dt><dd>{{ $account->email_verified_at?->timezone('Asia/Manila')->format('M j, Y') ?? 'Not verified' }}</dd></div>
+                        @if ($account->isMao())
+                            {{-- Panel revision 4.4 --}}
+                            <div><dt>Station</dt><dd>{{ $account->station_type ?: 'Not set' }}</dd></div>
+                            <div><dt>Area covered</dt><dd>{{ $account->area_covered_ha !== null ? number_format((float) $account->area_covered_ha, 2).' ha' : '—' }}</dd></div>
+                            <div><dt>Barangays covered</dt><dd>{{ $account->coverageLabel() }}</dd></div>
+                        @endif
                     </dl>
                 </div>
             </section>
+
+            <div class="mfd-card">@include('profile.partials.update-photo-form', ['user' => $account])</div>
 
             <div class="itp-two">
                 <div class="mfd-card">@include('profile.partials.update-profile-information-form')</div>
@@ -51,6 +59,8 @@
     </section>
 
     <div class="row g-4">
+        {{-- Panel revision 4.4 C: "Your Agricultural Technologist: …" --}}
+        <div class="col-12">@include('partials.farmer-mao-contact', ['locale' => \App\Support\FarmerLanguage::resolve(request())])</div>
         @if ($farmSetup)
             {{-- What is still missing from the farm information (moved here from the dashboard). --}}
             <div class="col-12" data-farm-setup>
@@ -72,6 +82,14 @@
                 </div>
             </div>
         @endif
+
+        <div class="col-12">
+            <div class="card no-lift">
+                <div class="card-body p-4">
+                    @include('profile.partials.update-photo-form', ['user' => $account])
+                </div>
+            </div>
+        </div>
 
         <div class="col-xl-6">
             <div class="card no-lift h-100">

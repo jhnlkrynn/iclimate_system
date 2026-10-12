@@ -60,6 +60,28 @@
                 <x-input-error class="mt-2" :messages="$errors->get('barangay')" />
             </div>
 
+            {{-- Panel revision 1.1: a farmer can be registered under more than one farmer organization. --}}
+            @php
+                $orgChoices = \App\Models\FarmerOrganization::query()->orderBy('name')->get(['id', 'name', 'barangay']);
+                $orgTicked = array_map('strval', (array) old('farmer_organization_ids', $user->farmerProfile?->farmer_organization_ids ?? []));
+            @endphp
+            @if ($orgChoices->isNotEmpty())
+                <fieldset data-farmer-organizations>
+                    <legend class="block font-medium text-sm">{{ __('Farmer organizations') }}</legend>
+                    <p class="mt-1 text-sm text-[#44604E]">{{ __('Tick every organization you are a member of.') }}</p>
+                    <input type="hidden" name="farmer_organization_ids_present" value="1">
+                    <div class="check-grid mt-2">
+                        @foreach ($orgChoices as $org)
+                            <label class="check-tile">
+                                <input type="checkbox" name="farmer_organization_ids[]" value="{{ $org->id }}" @checked(in_array((string) $org->id, $orgTicked, true))>
+                                <span>{{ $org->name }}<small>{{ $org->barangay }}</small></span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <x-input-error class="mt-2" :messages="$errors->get('farmer_organization_ids')" />
+                </fieldset>
+            @endif
+
             {{-- Farm size and type: used for the expected yield on Home and shown on My Farm. --}}
             <div>
                 <x-input-label for="farm_area" :value="__('Farm size (hectares)')" />

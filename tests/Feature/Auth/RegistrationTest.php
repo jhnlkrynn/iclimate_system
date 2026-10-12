@@ -23,7 +23,7 @@ class RegistrationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'register']), false);
         $response->assertSee('Balibago Farmers Association');
-        $response->assertSee('Farm Location / Barangay');
+        $response->assertSee('Farm location / barangay');
         $response->assertSee('At least 8 characters');
         $response->assertSee('Uppercase letter');
         $response->assertSee('Symbol');

@@ -9,7 +9,7 @@
 body.is-mao-dashboard { --ic-sidebar-bg: #0f5132; }
 body.is-mao-dashboard, body.is-mao-dashboard *:not(svg):not(svg *) { font-family: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif !important; }
 body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashboard .mtd .risk-overview-title, body.is-mao-dashboard .mtd .risk-map-title {
-    font-family: Georgia, "Times New Roman", Times, serif !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 .mtd {
@@ -40,7 +40,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
     padding: 28px; border-radius: var(--radius); background: var(--brand); color: #fff;
 }
 .mtd-header-main { display: grid; gap: 4px; max-width: 760px; min-width: 0; }
-.mtd-kicker { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #b9e4cb; }
+.mtd-kicker { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: #b9e4cb; }
 .mtd .mtd-header h1 { font-size: 2rem; font-weight: 700; color: #fff; }
 .mtd-place { display: flex; align-items: center; gap: 8px; margin-top: 8px !important; font-size: 1rem; font-weight: 600; color: #fff; }
 .mtd-place .mtd-svg { width: 18px; height: 18px; color: #b9e4cb; }
@@ -110,7 +110,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-kpi-top { display: flex; align-items: center; gap: 10px; }
 .mtd-kpi-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 6px; background: var(--ok-bg); color: var(--brand-ink, var(--brand)); }
 .mtd-kpi-icon .mtd-svg { width: 18px; height: 18px; }
-.mtd-kpi-label { font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.mtd-kpi-label { font-size: .8125rem; font-weight: 600; line-height: 1.3; text-transform: none; letter-spacing: 1px; color: var(--muted); }
 .mtd-kpi-value { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; font-size: 1.75rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
 .mtd-kpi-value small { font-size: .9375rem; font-weight: 600; color: var(--muted); }
 .mtd-kpi-context { font-size: .9375rem; color: var(--ink-2); }
@@ -139,7 +139,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .mtd-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--subtle); min-width: 0; }
 .mtd-tile-icon { color: var(--brand-ink, var(--brand)); }
-.mtd-tile-label { font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.mtd-tile-label { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--muted); }
 .mtd-tile-label em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .mtd-tile strong { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .mtd-tile small { margin-left: 4px; font-size: .9375rem; font-weight: 600; }
@@ -170,7 +170,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 .mtd-watch li { padding: 12px 16px; border: 1px solid var(--line); border-radius: 4px; background: var(--subtle); }
 .mtd-watch-main { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .mtd-watch p { margin-top: 4px !important; font-size: .9375rem; color: var(--ink-2); }
-.mtd-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 4px; border: 1px solid transparent; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.mtd-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 4px; border: 1px solid transparent; font-size: .75rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .mtd-badge.is-high { background: #fdece4; color: #8a3a1d; border-color: #f2c7b3; } .mtd-badge.is-sev { background: var(--crit-bg); color: var(--crit-ink); border-color: #f0c2bc; }
 .mtd-clear { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; }
 .mtd-clear-body small { display: block; margin-top: 2px; }
@@ -188,7 +188,7 @@ body.is-mao-dashboard .mtd h1, body.is-mao-dashboard .mtd h2, body.is-mao-dashbo
 
 .mtd-table-wrap { overflow-x: auto; }
 .mtd-table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
-.mtd-table th { padding: 8px 10px; text-align: left; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); border-bottom: 2px solid var(--rule); white-space: nowrap; }
+.mtd-table th { padding: 8px 10px; text-align: left; font-size: .75rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); border-bottom: 2px solid var(--rule); white-space: nowrap; }
 .mtd-table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .mtd-table tr:last-child td { border-bottom: 0; }
 .mtd-nowrap { white-space: nowrap; }

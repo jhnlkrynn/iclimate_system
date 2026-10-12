@@ -44,11 +44,22 @@ export function initHeatMap() {
             dashArray: level === 'nodata' ? '4 4' : undefined,
         };
     };
-    const tooltipFor = (name) => `<strong>${escapeHtml(displayName(name))}</strong>${name === own ? ` <span class="your-barangay-pill">${escapeHtml(data.yours)}</span>` : ''}<br>${escapeHtml(labelOf(levelOf(name)))}`;
+    // Panel revision 2.1: name, risk level, the main weather factor and the possible crop impact.
+    const tooltipFor = (name) => {
+        const level = levelOf(name);
+        const detail = data.details?.[range]?.[name] || {};
+        const dot = `<span class="hmx-tip-dot" style="background:${escapeHtml(data.colors?.[level] || '#9CA3AF')}"></span>`;
+        return `<strong>${escapeHtml(displayName(name))}</strong>${name === own ? ` <span class="your-barangay-pill">${escapeHtml(data.yours)}</span>` : ''}`
+            + `<br>${dot}<b>${escapeHtml(labelOf(level))}</b>`
+            + (detail.factor ? `<br><span class="hmx-tip-line"><em>${escapeHtml(data.detailLabels?.factor || '')}:</em> ${escapeHtml(detail.factor)}</span>` : '')
+            + (detail.impact ? `<br><span class="hmx-tip-line"><em>${escapeHtml(data.detailLabels?.impact || '')}:</em> ${escapeHtml(detail.impact)}</span>` : '');
+    };
 
     const show = () => {
         const key = `${range}:${selected || 'summary'}`;
         views.forEach((view) => { view.hidden = view.dataset.heatMapView !== key; });
+        // Farmers: the own-barangay card above the map follows [This Week] / [2 Weeks] (a map layer keeps this week's).
+        root.querySelectorAll('[data-heat-map-mine-range]').forEach((card) => { card.hidden = card.dataset.heatMapMineRange !== (range === '2weeks' ? '2weeks' : 'week'); });
         root.dataset.range = range;
         root.querySelectorAll('[data-heat-map-range]').forEach((button) => {
             const active = button.dataset.heatMapRange === range;
@@ -110,7 +121,7 @@ export function initHeatMap() {
                     const next = fresh ? readLevels(fresh) : null;
                     if (!next || !hasRating(next.levels)) return update(delays.slice(1));
                     data = next;
-                    ['[data-heat-map-panel]', '[data-heat-map-legend="risk"]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
+                    ['[data-heat-map-panel]', '[data-heat-map-legend="risk"]', '[data-heat-map-mine]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
                         const target = root.querySelector(selector);
                         const source = fresh.querySelector(selector);
                         if (target && source) target.innerHTML = source.innerHTML;
@@ -128,7 +139,8 @@ export function initHeatMap() {
 
     if (!canvas || !window.L) return;
     const L = window.L;
-    const map = L.map(canvas, { zoomControl: true, scrollWheelZoom: true, zoomSnap: 0.25, minZoom: 11, maxZoom: 18 });
+    // Panel revision 2.1 / 4.3: pinch-zoom and tap work on phones (touchZoom, tap tolerance); the page still scrolls.
+    const map = L.map(canvas, { zoomControl: true, scrollWheelZoom: true, touchZoom: true, tapTolerance: 20, zoomSnap: 0.25, minZoom: 11, maxZoom: 18 });
     // OSM base -> opaque mask outside Lian (so only Lian's own place names show) -> the 19 risk polygons.
     map.createPane('hmxBase').style.zIndex = 200;
     const maskPane = map.createPane('hmxOutside');

@@ -1111,6 +1111,15 @@ Route::middleware('auth')->group(function () {
     )->name(
         'profile.destroy'
     );
+
+
+    // Profile photo shown in the top bar's account button.
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])
+        ->middleware('throttle:10,1')
+        ->name('profile.photo.update');
+
+    Route::delete('/profile/photo', [ProfileController::class, 'destroyPhoto'])
+        ->name('profile.photo.destroy');
 });
 
 
@@ -1118,3 +1127,6 @@ require __DIR__.'/auth.php';
 
 // Manuscript – Naicel (2026-10-08): the manuscript modules (docs/manuscript-phase-plan.md) have their own route file.
 require __DIR__.'/manuscript.php';
+
+// Thesis panel revisions (2026-10-10): docs/panel-revisions.md.
+require __DIR__.'/panel.php';

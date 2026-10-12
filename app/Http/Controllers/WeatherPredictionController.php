@@ -51,6 +51,7 @@ class WeatherPredictionController extends Controller
         };
 
         $profile = $role === User::ROLE_FARMER ? $user->farmerProfile : null;
+        $forecast = $daily->forLocation($barangay, $range === '2weeks' ? 14 : 7);
 
         return view('weather-predictions.index', [
             'role' => $role,
@@ -58,7 +59,9 @@ class WeatherPredictionController extends Controller
             'range' => $range,
             'barangay' => $barangay,
             'barangays' => $role === User::ROLE_MAO ? LianBarangays::all() : [],
-            'forecast' => $daily->forLocation($barangay, $range === '2weeks' ? 14 : 7),
+            'forecast' => $forecast,
+            // Farmers (2026-10): one plain answer for the week at the top, and one word per day.
+            'plain' => $role === User::ROLE_FARMER ? self::plainForecast($forecast) : null,
             'yield' => $role === User::ROLE_FARMER
                 ? $farmerHome->seasonEstimate($user)
                 : ($barangay === null ? $municipalYield->current(CarbonImmutable::now('Asia/Manila')) : $this->averageEstimate($barangay, $seasonYield)),
@@ -70,6 +73,63 @@ class WeatherPredictionController extends Controller
             // Farmer – Naicel (2026-10): yesterday's forecast to ask the farmer about, once; null when answered or not saved.
             'forecastSurvey' => $role === User::ROLE_FARMER ? rescue(fn () => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt($user), null, false) : null,
         ]);
+    }
+
+    /**
+     * Farmers: the week in one sentence (tone good / careful / bad / none, an icon, a headline and what to do) from the
+     * first 7 days, plus one everyday word and icon per shown day. Heavy rain or strong wind on any day wins; otherwise
+     * rain on most days is good for planting, and no rain at all is a careful week (hot when a day reaches 35 °C).
+     *
+     * @param  array<string, mixed>  $forecast  DailyForecastService::forLocation()
+     * @return array{answer: array<string, string>, days: array<int, array{word: string, icon: string}>}
+     */
+    public static function plainForecast(array $forecast): array
+    {
+        $t = fn (string $key, array $replace = []) => __('farmer.predictions.answer.'.$key, $replace);
+        $strongWind = (float) config('farmer_dashboard.strong_wind_kmh', \App\Services\Analytics\FarmerDashboardService::STRONG_WIND_KMH);
+        $when = fn (int $i, CarbonImmutable $date) => match ($i) {
+            0 => $t('today'),
+            1 => $t('tomorrow'),
+            default => $t('on_day', ['day' => $date->locale(app()->getLocale())->translatedFormat('l')]),
+        };
+
+        $days = array_map(function (array $d): array {
+            if ($d['kind'] === 'none') {
+                return ['word' => __('farmer.home.no_data'), 'icon' => 'info'];
+            }
+            $key = match (true) {
+                ($d['rain_key'] ?? null) === 'heavy' => 'heavy',
+                $d['wind_words'] !== null && in_array($d['icon'], ['sun', 'cloud-sun', 'weather'], true) => 'windy',
+                default => $d['icon'],
+            };
+
+            return ['word' => __('farmer.predictions.words.'.$key), 'icon' => $key === 'windy' ? 'wind' : ($key === 'heavy' ? 'rain' : $d['icon'])];
+        }, $forecast['days']);
+
+        $week = array_filter(array_slice($forecast['days'], 0, 7), fn (array $d): bool => $d['kind'] !== 'none');
+        $answer = fn (string $key, string $tone, string $icon, array $replace = []) => [
+            'key' => $key, 'tone' => $tone, 'icon' => $icon, 'headline' => $t($key.'.headline', $replace), 'action' => $t($key.'.action'),
+        ];
+        if ($forecast['state'] !== 'ok' || $week === []) {
+            return ['answer' => $answer('none', 'none', 'info'), 'days' => $days];
+        }
+        foreach ($week as $i => $d) {
+            if (($d['rain_key'] ?? null) === 'heavy') {
+                return ['answer' => $answer('heavy_rain', 'bad', 'storm', ['when' => $when($i, $d['date'])]), 'days' => $days];
+            }
+            if (($d['wind_kmh'] ?? null) !== null && $d['wind_kmh'] >= $strongWind) {
+                return ['answer' => $answer('strong_wind', 'bad', 'wind', ['when' => $when($i, $d['date'])]), 'days' => $days];
+            }
+        }
+        $rainy = count(array_filter($week, fn (array $d): bool => in_array($d['rain_key'] ?? null, ['light', 'moderate'], true)));
+        $hot = max(array_map(fn (array $d): float => (float) ($d['high'] ?? 0), $week)) >= 35;   // ponytail: fixed 35 °C "hot day"
+
+        return ['answer' => match (true) {
+            $rainy === 0 && $hot => $answer('dry_hot', 'careful', 'heat'),
+            $rainy === 0 => $answer('dry', 'careful', 'sun'),
+            $rainy * 2 > count($week) => $answer('rainy', 'good', 'rain'),
+            default => $answer('mixed', 'good', 'cloud-sun'),
+        }, 'days' => $days];
     }
 
     public function municipalityYieldStatus(Request $request, MunicipalYieldForecastService $municipalYield): JsonResponse

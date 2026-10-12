@@ -86,13 +86,20 @@ class DashboardController extends Controller
         // The prepared figures below are shared by every MAO account and carry no words; the page writes them.
         app()->setLocale(\App\Support\MaoLanguage::of($request->user()));
 
+        // Panel revision 4.4 B: a technologist's dashboard covers their barangays (or all of Lian in the municipal view);
+        // each scope has its own prepared copy.
+        $barangays = \App\Support\MaoScope::barangays($request->user());
+        $scopeKey = \App\Support\MaoScope::cacheKey($request->user());
+
         return view('dashboards.mao', [
             'mao' => StaleCache::scoped(
                 'mao-home',
-                fn (string $token): string => $this->maoHomeCacheKey($token),
+                fn (string $token): string => $this->maoHomeCacheKey($token).($scopeKey === 'all' ? '' : ':scope:'.$scopeKey),
                 self::MAO_HOME_CACHE_SECONDS,
-                fn (): array => $home->payload(),
+                fn (): array => $home->payload($barangays),
             ),
+            // Panel revision 3.1 / 3.2: the Year range and Season the charts open with (?from=2021&to=2025&season=Wet).
+            'chartFilter' => $this->maoChartFilter($request),
         ]);
     }
 
@@ -138,6 +145,27 @@ class DashboardController extends Controller
         return app(PreparedDashboards::class)->warm();
     }
 
+    /**
+     * Panel revision 3.1: the year range and season of the MAO dashboard's charts, from the query string. The page applies
+     * it in the browser too (and changes it without reloading); a start year after the end year is refused with a message.
+     *
+     * @return array{from: ?int, to: ?int, season: string, error: ?string}
+     */
+    private function maoChartFilter(Request $request): array
+    {
+        $year = fn (string $key): ?int => is_numeric($request->query($key)) && (int) $request->query($key) >= 1990 && (int) $request->query($key) <= 2100 ? (int) $request->query($key) : null;
+        $from = $year('from');
+        $to = $year('to');
+        $season = in_array($request->query('season'), ['Wet', 'Dry'], true) ? (string) $request->query('season') : 'all';
+        $error = null;
+        if ($from !== null && $to !== null && $from > $to) {
+            $error = 'The start year ('.$from.') cannot be after the end year ('.$to.'). Showing all years instead.';
+            $from = $to = null;
+        }
+
+        return ['from' => $from, 'to' => $to, 'season' => $season, 'error' => $error];
+    }
+
     private function maoHomeCacheKey(?string $token = null): string
     {
         return 'dashboard:mao:home:v3'.($token === null ? '' : ':'.$token);
@@ -155,7 +183,8 @@ class DashboardController extends Controller
         FarmerLanguage::store($request, $request->user(), $validated['language']);
         rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->sync($request->user()->refresh()), null, false);
 
-        return redirect()->route('mao.dashboard');
+        // Back to the page the switch was used on (it is in the top bar of every page).
+        return redirect()->back(302, [], route('mao.dashboard'));
     }
 
     /** Farmer Home: five plain parts from saved data (FarmerDashboardService), in one request. */
@@ -267,7 +296,7 @@ class DashboardController extends Controller
 
         return $request->expectsJson()
             ? response()->json(['language' => $validated['language']])
-            : redirect()->route('farmer.dashboard');
+            : redirect()->back(302, [], route('farmer.dashboard'));
     }
 
     public function farmerWeather(Request $request, FarmerDashboardWeatherService $weather): JsonResponse

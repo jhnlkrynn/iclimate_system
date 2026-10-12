@@ -53,10 +53,10 @@
     .lpl-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding: 44px 52px; }
     .lpl-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: auto; }
     .lpl-body { padding: 48px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .lpl-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.84rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+    .lpl-eyebrow { font-family: 'Inter', system-ui, sans-serif; font-size: 0.84rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
     .lpl-eyebrow::before { content: none; }
-    .lpl-headline { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
-    .lpl-headline em { font-style: italic; color: #2D6A4F; }
+    .lpl-headline { font-family: 'Inter', system-ui, sans-serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
+    .lpl-headline em { font-style: normal; color: #2D6A4F; }
     .lpl-sub { font-size: 1.04rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
     .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.92rem; color: #55645b; }
 
@@ -66,7 +66,7 @@
     .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: #44604E; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
     .back-link-top:hover { color: #2D6A4F; }
     .login-form-header { margin-bottom: 28px; }
-    .login-form-header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.7rem; font-weight: 400; color: #1B2B23; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .login-form-header h1 { font-family: 'Inter', system-ui, sans-serif; font-size: 1.7rem; font-weight: 400; color: #1B2B23; margin-bottom: 6px; letter-spacing: -0.02em; }
     .login-form-header p { font-size: 0.92rem; color: #5A7A64; line-height: 1.6; margin: 0; }
 
     /* Form field spacing to match login/register pages */

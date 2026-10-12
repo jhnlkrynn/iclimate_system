@@ -704,8 +704,8 @@ textarea {
     color: var(--iclimate-primary-medium);
     font-size: var(--text-sm);
     font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .iclimate-section-eyebrow::before {
@@ -996,8 +996,8 @@ textarea {
     flex: 0 0 auto;
     font-size: .7rem;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .05em;
+    text-transform: none;
+    letter-spacing: 0;
     color: var(--iclimate-green-700);
     white-space: nowrap;
 }
@@ -1069,8 +1069,8 @@ textarea {
     color: var(--iclimate-muted);
     font-size: .72rem;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .04em;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 .ic-table-card-value {
@@ -1405,13 +1405,13 @@ body .modal-body {
 
 .risk-map-detail-title { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--iclimate-text); font-weight: 700; }
 .risk-map-row-text { color: var(--iclimate-text-muted); font-size: .84rem; margin-top: .15rem; line-height: 1.45; }
-.risk-map-row-meta { color: var(--iclimate-text-muted); font-size: .7rem; margin-top: .35rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.risk-map-row-meta { color: var(--iclimate-text-muted); font-size: .7rem; margin-top: .35rem; font-weight: 600; text-transform: none; letter-spacing: 0; }
 ul.risk-map-row-text { margin: .15rem 0 0; padding-left: 1.1rem; }
 ul.risk-map-row-text li { margin-bottom: .15rem; }
 .risk-map-weather-heading { display: flex; align-items: center; gap: .4rem; text-transform: none; letter-spacing: normal; font-weight: 700; font-size: .85rem; }
 .weather-icon { display: inline-block; width: 30px; height: 30px; vertical-align: middle; flex: 0 0 auto; }
 .weather-icon-tooltip { width: 22px; height: 22px; vertical-align: -6px; margin-right: .25rem; }
-.weather-icon-fallback { color: var(--iclimate-text-muted); font-weight: 600; font-style: italic; }
+.weather-icon-fallback { color: var(--iclimate-text-muted); font-weight: 600; font-style: normal; }
 .farmer-weather-icon { display: inline-block; width: 34px; height: 34px; margin-right: .4rem; vertical-align: -9px; }
 /* Per-barangay weather markers drawn on the choropleth itself
    (resources/js/barangay-risk-map.js weatherMarkerIcon()). Sized and
@@ -1455,7 +1455,7 @@ ul.risk-map-row-text li { margin-bottom: .15rem; }
     font-size: .68rem;
     font-weight: 700;
     letter-spacing: .03em;
-    text-transform: uppercase;
+    text-transform: none;
     vertical-align: middle;
 }
 .leaflet-tooltip.your-barangay-tooltip {
@@ -1472,7 +1472,7 @@ body[data-user-role="Farmer"] * {
    to unrelated legacy cards, while these scoped rules define the new map UI. */
 .risk-map-card { background: #fff; border: 1px solid #d3dbd6; border-radius: 6px; padding: clamp(1rem, 2vw, 1.5rem); box-shadow: none; }
 .risk-map-card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.1rem; }
-.risk-map-section-label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .13em; margin-bottom: .35rem; }
+.risk-map-section-label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: 0; margin-bottom: .35rem; }
 .risk-map-card .risk-map-title { color: #172b24; font-size: clamp(1.2rem, 2vw, 1.55rem); margin: 0; }
 .risk-map-card .risk-map-subtitle { color: #66756f; font-size: .92rem; line-height: 1.55; max-width: 780px; margin: .35rem 0 0; }
 .risk-map-refresh { border: 1px solid #b9cec3; border-radius: 999px; background: #f7fbf8; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; padding: .55rem .85rem; white-space: nowrap; }
@@ -1497,12 +1497,12 @@ body[data-user-role="Farmer"] * {
 .risk-map-card .leaflet-tooltip { border: 0; border-radius: 7px; box-shadow: 0 3px 12px rgba(0,0,0,.18); color: #1f3029; font-size: .78rem; }
 .risk-map-popup { display: grid; gap: .35rem; min-width: 130px; }
 .risk-map-popup strong { color: #172b24; font-size: .95rem; }
-.risk-map-popup-risk, .risk-map-detail-risk { background: var(--risk-color); border-radius: 5px; color: #fff; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .04em; padding: .3rem .45rem; }
+.risk-map-popup-risk, .risk-map-detail-risk { background: var(--risk-color); border-radius: 5px; color: #fff; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: 0; padding: .3rem .45rem; }
 .risk-map-popup-hint { color: #687970; font-size: .72rem; }
 .risk-map-details { border-top: 1px solid #e3e9e5; margin-top: 1rem; padding-top: 1rem; }
 .risk-map-detail-content { align-items: center; display: flex; flex-wrap: wrap; gap: .65rem 1rem; }
 .risk-map-detail-content h3 { color: #172b24; font-size: 1.15rem; margin: .15rem 0 0; }
-.risk-map-detail-kicker { color: #66756f; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.risk-map-detail-kicker { color: #66756f; font-size: .7rem; font-weight: 800; text-transform: none; letter-spacing: 0; }
 .risk-map-detail-content p { color: #66756f; flex: 1 1 100%; font-size: .83rem; margin: 0; }
 .risk-map-detail-close { background: transparent; border: 0; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; margin-left: auto; padding: .3rem; }
 @media (max-width: 600px) {
@@ -1515,7 +1515,7 @@ body[data-user-role="Farmer"] * {
 /* Monthly forecast controls on the Heat Map page (partial rendered with forecast => true). */
 .risk-forecast { display: grid; gap: .85rem; margin-bottom: 1rem; }
 .risk-forecast-select { display: grid; gap: .3rem; min-width: 220px; }
-.risk-forecast-select label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-select label { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: 0; text-transform: none; }
 .risk-forecast-select .form-select { border-color: #b9cec3; border-radius: 10px; font-weight: 600; min-height: 44px; }
 .risk-forecast-timeline { display: flex; flex-wrap: wrap; gap: .4rem; }
 .risk-forecast-timeline button { background: #f7fbf8; border: 1px solid #d3e2d9; border-radius: 999px; color: #1f5a46; cursor: pointer; font-size: .8rem; font-weight: 700; min-height: 40px; min-width: 52px; padding: .45rem .8rem; }
@@ -1523,11 +1523,11 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-for { color: #52645c; font-size: .9rem; margin: 0; }
 .risk-forecast-for strong { color: #172b24; }
 .risk-forecast-overview { background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; padding: .85rem 1rem; }
-.risk-forecast-overview-head span { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-overview-head span { color: #1f5a46; font-size: .7rem; font-weight: 800; letter-spacing: 0; text-transform: none; }
 .risk-forecast-overview-head h3 { color: #172b24; font-size: 1.05rem; margin: .1rem 0 .55rem; }
 .risk-forecast-overview .risk-forecast-facts { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 .risk-forecast-facts { display: grid; gap: .45rem .9rem; margin: 0; }
-.risk-forecast-facts dt { color: #66756f; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.risk-forecast-facts dt { color: #66756f; font-size: .7rem; font-weight: 700; text-transform: none; letter-spacing: 0; }
 .risk-forecast-facts dd { color: #172b24; font-size: .85rem; margin: 0; }
 .risk-forecast-note { color: #66756f; font-size: .78rem; margin: .6rem 0 0; }
 .risk-forecast-empty { background: #fff8e6; border: 1px solid #f2d48a; border-radius: 12px; color: #5c4a12; display: grid; gap: .15rem; font-size: .85rem; padding: .75rem 1rem; }
@@ -1544,7 +1544,7 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-strip { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: .35rem; }
 .risk-forecast-strip span { border: 1px solid #e3e9e5; border-left: 4px solid var(--risk-color); border-radius: 8px; color: #52645c; font-size: .75rem; padding: .25rem .5rem; }
 .risk-forecast-strip span.is-active { background: #f1f7f3; border-color: #1f5a46; border-left-color: var(--risk-color); color: #172b24; }
-.risk-mode-badge { background: #eef4f0; border: 1px solid #c9d8ce; border-radius: 999px; color: #1f5a46; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .04em; margin-right: .35rem; padding: .15rem .55rem; text-transform: uppercase; vertical-align: 1px; }
+.risk-mode-badge { background: #eef4f0; border: 1px solid #c9d8ce; border-radius: 999px; color: #1f5a46; display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: 0; margin-right: .35rem; padding: .15rem .55rem; text-transform: none; vertical-align: 1px; }
 .risk-mode-badge.is-forecast { background: #1f5a46; border-color: #1f5a46; color: #fff; }
 .risk-forecast-info { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
 .risk-forecast-about { flex: 1 1 260px; }
@@ -1555,7 +1555,7 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-about-body p { margin: 0 0 .55rem; }
 .risk-forecast-about-body .risk-forecast-facts { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin-bottom: .55rem; }
 .risk-forecast-section + .risk-forecast-section { border-top: 1px solid #e3e9e5; margin-top: .5rem; padding-top: .5rem; }
-.risk-forecast-section h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: .06em; margin: 0 0 .3rem; text-transform: uppercase; }
+.risk-forecast-section h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: 0; margin: 0 0 .3rem; text-transform: none; }
 .risk-forecast-section p { color: #172b24; font-size: .82rem; margin: 0; }
 .risk-forecast-section .risk-forecast-lead { font-weight: 700; margin-bottom: .15rem; }
 .risk-forecast-section .risk-forecast-section-note { color: #66756f; font-size: .72rem; margin-top: .3rem; }
@@ -1565,7 +1565,7 @@ body[data-user-role="Farmer"] * {
 .risk-forecast-info--map { margin: -.4rem 0 .6rem; }
 .risk-forecast-toolbar { align-items: center; background: #f8fbf9; border: 1px solid #e3e9e5; border-radius: 12px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; justify-content: space-between; margin-bottom: .6rem; min-height: 60px; padding: .5rem .75rem; }
 .risk-forecast-toolbar-context { align-items: center; display: flex; flex-wrap: wrap; gap: .1rem .6rem; min-width: 0; }
-.risk-forecast-toolbar-label { color: #1f5a46; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.risk-forecast-toolbar-label { color: #1f5a46; font-size: .68rem; font-weight: 800; letter-spacing: 0; text-transform: none; }
 .risk-forecast-toolbar .risk-forecast-for { font-size: .85rem; }
 .risk-forecast-toolbar-controls { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem .75rem; min-width: 0; }
 .risk-forecast-toolbar .risk-forecast-timeline { flex-wrap: nowrap; }
@@ -1585,7 +1585,7 @@ body[data-user-role="Farmer"] * {
 .rf-detail .rf-facts { grid-template-columns: repeat(auto-fit, minmax(150px, max-content)); gap: .3rem 2rem; }
 .rf-detail .rf-facts dd { font-size: .95rem; font-weight: 600; }
 .rf-grid { display: grid; gap: .9rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.rf-block h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: .08em; margin: 0 0 .35rem; text-transform: uppercase; }
+.rf-block h4 { color: #1f5a46; font-size: .72rem; font-weight: 800; letter-spacing: 0; margin: 0 0 .35rem; text-transform: none; }
 .rf-block p { color: #172b24; font-size: .9rem; line-height: 1.45; margin: 0 0 .2rem; }
 /* Tiles size to their text and wrap as whole tiles, so words never break mid-way. */
 .rf-weather { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -1632,7 +1632,7 @@ body[data-user-role="Farmer"] * {
     .risk-forecast-toolbar { align-items: stretch; display: grid; }
     .risk-forecast-toolbar-controls { display: grid; gap: .5rem; }
     .risk-forecast-toolbar .risk-forecast-select { min-width: 0; order: -1; }
-    .risk-forecast-toolbar .risk-forecast-select label { clip: auto; color: #1f5a46; font-size: .7rem; font-weight: 800; height: auto; letter-spacing: .1em; margin: 0; position: static; text-transform: uppercase; width: auto; }
+    .risk-forecast-toolbar .risk-forecast-select label { clip: auto; color: #1f5a46; font-size: .7rem; font-weight: 800; height: auto; letter-spacing: 0; margin: 0; position: static; text-transform: none; width: auto; }
     .risk-forecast-toolbar .risk-forecast-timeline { overflow-x: auto; padding-bottom: .2rem; scrollbar-width: thin; }
     .risk-forecast-toolbar .risk-forecast-timeline button { flex: 0 0 auto; }
 }

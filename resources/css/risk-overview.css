@@ -10,8 +10,8 @@
     container: ro / inline-size; color: var(--ro-ink); font-family: "Inter", Arial, system-ui, sans-serif;
 }
 .risk-overview-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ro-brand); }
-.risk-overview-kicker { margin: 0 0 4px; font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--ro-brand); }
-.risk-overview .risk-overview-title { margin: 0; font-family: Georgia, "Times New Roman", serif !important; font-size: 1.375rem; font-weight: 700; line-height: 1.25; color: var(--ro-ink); }
+.risk-overview-kicker { margin: 0 0 4px; font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--ro-brand); }
+.risk-overview .risk-overview-title { margin: 0; font-family: 'Inter', system-ui, sans-serif !important; font-size: 1.375rem; font-weight: 700; line-height: 1.25; color: var(--ro-ink); }
 .risk-overview-for { margin: 4px 0 0; font-size: .875rem; color: var(--ro-muted); }
 
 .risk-overview-body { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: center; }
@@ -30,7 +30,7 @@
     background: transparent; color: var(--ro-ink); cursor: pointer; text-align: center;
 }
 .risk-donut-center strong { font-size: 2.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.risk-donut-center span { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--ro-muted); }
+.risk-donut-center span { font-size: .75rem; font-weight: 600; text-transform: none; letter-spacing: 1px; color: var(--ro-muted); }
 .risk-donut-center:hover { background: #f3faf6; }
 
 /* category rows */

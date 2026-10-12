@@ -276,7 +276,7 @@
     .ic-ai-msg-time {
         font-size: .75rem;
         color: #52665a;
-        font-family: 'DM Mono', monospace;
+        font-family: 'Inter', system-ui, sans-serif;
         margin-top: .3rem;
         padding: 0 .1rem;
     }
@@ -302,11 +302,11 @@
 
     .ic-ai-card-label {
         color: var(--ai-muted);
-        font-family: 'DM Mono', monospace;
+        font-family: 'Inter', system-ui, sans-serif;
         font-size: .68rem;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .04em;
+        text-transform: none;
+        letter-spacing: 0;
     }
 
     .ic-ai-card-value {
@@ -325,14 +325,14 @@
     .ai-feature-dot.tone-red { background: #d85b45; }
     .ai-feature-label { color: var(--ai-muted); font-weight: 800; }
     .ai-feature-value { color: var(--ai-ink); font-weight: 900; margin-left: auto; }
-    .ai-feature-status { color: var(--ai-muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+    .ai-feature-status { color: var(--ai-muted); font-size: .68rem; font-weight: 800; text-transform: none; letter-spacing: .03em; }
 
     .ic-ai-typing {
         display: none;
         align-items: center;
         gap: .55rem;
         color: var(--ai-muted);
-        font-family: 'DM Mono', monospace;
+        font-family: 'Inter', system-ui, sans-serif;
         font-size: .78rem;
         font-weight: 700;
         padding: .45rem .95rem .7rem;

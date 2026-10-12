@@ -8,18 +8,48 @@
          forecast while new weather is on its way, so heat-map.js reads this page again a few times until it has. --}}
     @php
         $t = fn (string $key, array $replace = []) => trans('farmer.heat_map.'.$key, $replace, $locale);
-        $colors = \App\Services\Risk\HeatMapPanel::COLORS;
+        $colors = \App\Services\Risk\HeatMapPanel::colors();   // panel revision 2.1: config/weather_risk.php
         $levels = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => $b['level'])->all())->all();
-        $labels = collect(['low', 'moderate', 'high', 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
+        $riskLevels = ['low', 'moderate', 'high', 'severe'];   // panel revision 2.1
+        $labels = collect([...$riskLevels, 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
         $hasNoData = collect($ranges)->except($layerKeys ?? [])->contains(fn (array $r) => $r['counts']['nodata'] > 0);   // Manuscript – Naicel: weekly ranges only
         $mapData = ['levels' => $levels, 'colors' => $colors, 'labels' => $labels, 'yours' => $t('your_barangay')];
+        // Panel revision 2.1: what the map tooltip / tap shows besides the name and level.
+        $mapData['details'] = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => ['factor' => $b['factor'] ?? null, 'impact' => $b['impact'] ?? null])->all())->all();
+        $mapData['detailLabels'] = ['factor' => $t('factor_title'), 'impact' => $t('impact_title')];
         // Manuscript – Naicel (2026-10-08): the layer ranges (flood / drought / yield) carry their own level names.
         $layerKeys = $layerKeys ?? [];
         $mapData['layers'] = $layerKeys;
         $mapData['labelsByRange'] = collect($ranges)->only($layerKeys)->map(fn (array $r) => $r['labels'] ?? [])->all();
     @endphp
-    <div class="hmx" data-heat-map data-range="{{ $range }}" lang="{{ $locale }}" @if ($updating ?? false) data-heat-map-updating @endif>
+    <div @class(['hmx', 'is-farmer' => ! $showNumbers]) data-heat-map data-range="{{ $range }}" lang="{{ $locale }}" @if ($updating ?? false) data-heat-map-updating @endif>
         <h1 class="visually-hidden">{{ $t('title') }}</h1>
+
+        {{-- Farmers (2026-10): their own barangay first, in colour and plain words with what to do; the map comes second.
+             One card per weekly range; heat-map.js shows the one for [This Week] or [2 Weeks]. --}}
+        @if ($ownBarangay && ! $showNumbers)
+            <div class="hmx-mine-wrap" data-heat-map-mine>
+                @foreach (['week', '2weeks'] as $key)
+                    @php $own = $ranges[$key]['barangays'][$ownBarangay] ?? null; @endphp
+                    @continue(! $own)
+                    <section class="hmx-mine is-{{ $own['level'] }}" data-heat-map-mine-range="{{ $key }}" aria-labelledby="hmxMine-{{ $key }}" @if ($key !== ($range === '2weeks' ? '2weeks' : 'week')) hidden @endif>
+                        <span class="hmx-mine-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => ['low' => 'check', 'moderate' => 'alert', 'high' => 'danger', 'severe' => 'danger'][$own['level']] ?? 'info'])</span>
+                        <div class="hmx-mine-text">
+                            <p class="hmx-mine-label">{{ $t('your_barangay') }} · {{ $t('mine_when.'.$key) }}</p>
+                            <h2 id="hmxMine-{{ $key }}">{{ $own['name'] }} — {{ $own['level'] === 'nodata' ? $own['label'] : $t('risk_of', ['level' => $own['label']]) }}</h2>
+                            <p class="hmx-mine-meaning">{{ $own['meaning'] }}</p>
+                            <p class="hmx-mine-action"><strong>{{ $t('action_title') }}:</strong> {{ $own['action'] }}</p>
+                            @if (! empty($own['factor']))<p class="hmx-mine-factor"><strong>{{ $t('factor_title') }}:</strong> {{ $own['factor'] }}</p>@endif
+                            <p class="hmx-mine-key"><span>{{ $t('mine_key') }}:</span>
+                                @foreach ($riskLevels as $level)
+                                    <span class="hmx-legend-item"><span class="hmx-dot" style="--hmx-color: {{ $colors[$level] }}"></span>{{ $labels[$level] }}</span>
+                                @endforeach
+                            </p>
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        @endif
 
         <div class="hmx-map">
             <div id="heatMapCanvas" class="hmx-canvas" role="application" aria-label="{{ $t('map_label') }}"
@@ -47,7 +77,7 @@
             {{-- End Manuscript – Naicel --}}
             <div class="hmx-legend" role="group" aria-label="{{ $t('legend') }}" data-heat-map-legend="risk" @if (in_array($range, $layerKeys, true)) hidden @endif>
                 <span class="hmx-legend-title">{{ $t('legend') }}</span>
-                @foreach (['low', 'moderate', 'high'] as $level)
+                @foreach ($riskLevels as $level)
                     <span class="hmx-legend-item"><span class="hmx-dot" style="--hmx-color: {{ $colors[$level] }}"></span>{{ $labels[$level] }}</span>
                 @endforeach
                 @if ($hasNoData)
@@ -97,7 +127,7 @@
                         <p class="hmx-hint">{{ $t('pick') }}</p>
                         <h3 class="hmx-sub">{{ $t('all_barangays') }}</h3>
                         <ul class="hmx-list">
-                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['high', 'moderate', 'low', 'nodata'], true))->values() as $b)
+                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['severe', 'high', 'moderate', 'low', 'nodata'], true))->values() as $b)
                                 <li><button type="button" class="hmx-row" data-heat-map-pick="{{ $b['barangay'] }}">
                                     <span class="hmx-dot" style="--hmx-color: {{ $colors[$b['level']] }}"></span>
                                     <span class="hmx-row-name">{{ $b['name'] }}</span>
@@ -121,6 +151,14 @@
                         {{-- Manuscript – Naicel: a layer (flood / drought / yield) shows its own level name and title. --}}
                         <p class="hmx-badge is-{{ $b['level'] }}" data-heat-map-level>{{ $b['level'] === 'nodata' || ($r['layer'] ?? false) ? $b['label'] : $t('risk_of', ['level' => $b['label']]) }}</p>
                         <p class="hmx-when">{{ ($r['layer'] ?? false) ? $r['title'] : $t($key === 'week' ? 'this_week' : 'two_weeks') }}</p>
+
+                        {{-- Panel revision 2.1: the main weather factor and the possible crop impact (also the map tooltip). --}}
+                        @if (! ($r['layer'] ?? false) && (! empty($b['factor']) || ! empty($b['impact'])))
+                            <dl class="hmx-factor" data-heat-map-factor>
+                                @if (! empty($b['factor']))<div><dt>{{ $t('factor_title') }}</dt><dd>{{ $b['factor'] }}</dd></div>@endif
+                                @if (! empty($b['impact']))<div><dt>{{ $t('impact_title') }}</dt><dd>{{ $b['impact'] }}</dd></div>@endif
+                            </dl>
+                        @endif
 
                         <h3 class="hmx-sub">{{ $t('meaning_title') }}</h3>
                         <p class="hmx-text" data-heat-map-meaning>{{ $b['meaning'] }}</p>

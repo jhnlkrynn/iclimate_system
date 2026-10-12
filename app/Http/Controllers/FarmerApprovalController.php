@@ -25,6 +25,8 @@ class FarmerApprovalController extends Controller
             ->where('role', User::ROLE_FARMER)
             ->with('farmerProfile:id,user_id,barangay,farm_type,farm_area,full_name,contact_number')
             ->when($barangay, fn ($q) => $q->where('barangay', $barangay));
+        // Panel revision 4.4 B: technologists review the sign-ups of their own barangays.
+        \App\Support\MaoScope::apply($query, 'users.barangay', $request->user());
 
         $query = match ($show) {
             'approved' => $query->where('status', User::STATUS_ACTIVE)->whereNotNull('approved_at')->latest('approved_at'),
@@ -60,7 +62,7 @@ class FarmerApprovalController extends Controller
             'category' => 'account',
             'is_read' => false,
         ]);
-        SystemAuditLogger::record('Approved Farmer Account', $request, ['record_type' => 'User', 'record_id' => $user->getKey()]);
+        SystemAuditLogger::record('Approved Farmer Account', $request, ['record_type' => 'Farmer account', 'record_id' => $user->getKey(), 'record_label' => $user->name, 'barangay' => $user->barangay]);
         rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);   // the sign-up leaves every MAO's bell
 
         return back()->with('success', $user->name.' can now log in.');
@@ -77,7 +79,7 @@ class FarmerApprovalController extends Controller
             'approved_by' => $request->user()->getKey(),
             'rejection_reason' => $data['reason'],
         ])->save();
-        SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'User', 'record_id' => $user->getKey(), 'reason' => $data['reason']]);
+        SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'Farmer account', 'record_id' => $user->getKey(), 'record_label' => $user->name, 'barangay' => $user->barangay, 'reason' => $data['reason']]);
         rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         return back()->with('success', $user->name.'\'s registration was rejected.');

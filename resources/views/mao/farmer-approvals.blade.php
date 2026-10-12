@@ -50,6 +50,10 @@
                                     <td>{{ $farmer->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</td>
                                     <td class="small">
                                         @if ($show === 'rejected'){{ $farmer->rejection_reason }}@elseif ($show === 'approved'){{ $farmer->approved_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}@endif
+                                        {{-- Panel revision 4.4 C: who decided, and when. --}}
+                                        @if ($show !== 'pending' && $farmer->approved_by && ($decider = \App\Models\User::query()->find($farmer->approved_by, ['id', 'name'])))
+                                            <div class="small text-muted">{{ $show === 'rejected' ? 'Rejected' : 'Approved' }} by: {{ $decider->name }}{{ $farmer->approved_at ? ' on '.\App\Support\MaoStamp::format($farmer->approved_at) : '' }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         @if ($show !== 'approved')

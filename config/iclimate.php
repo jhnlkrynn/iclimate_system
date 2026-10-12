@@ -53,6 +53,16 @@ return [
     'staff_account_password' => env('ICLIMATE_STAFF_ACCOUNT_PASSWORD'),
 
     /*
+    | Panel revision 4.4 A: MAO personnel accounts. New accounts, and accounts the Municipal Agriculturist resets, get the
+    | default password and must change it at their next sign-in. "Skip for now" is offered while
+    | MAO_ALLOW_SKIP_PASSWORD_CHANGE is true (testing / thesis defense); set it to false for real use.
+    | A new account's e-mail is firstnamelastname@<domain>, with 2, 3 … added when that address is taken.
+    */
+    'mao_default_password' => env('MAO_DEFAULT_PASSWORD', 'Password@123'),
+    'mao_email_domain' => env('MAO_EMAIL_DOMAIN', 'gmail.com'),
+    'mao_allow_skip_password_change' => (bool) env('MAO_ALLOW_SKIP_PASSWORD_CHANGE', true),
+
+    /*
     | Where iClimate operates. The single source is App\Support\LianLocation;
     | services.php reads the same constants. The timezone here is the BUSINESS
     | timezone (what "today" means). Stored timestamps stay UTC.

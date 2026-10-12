@@ -205,24 +205,9 @@ final class FarmerDashboardService
         };
     }
 
-    /** Given names only: a three-part name drops the last word (John Luke Reynon becomes John Luke). */
     private function displayName(User $user): string
     {
-        $parts = preg_split('/\s+/', trim((string) $user->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        // A family name can be two words ("Dela Cruz", "De Leon", "San Jose"): both are left out of the greeting.
-        if (count($parts) >= 3 && in_array(strtolower($parts[count($parts) - 2]), ['de', 'del', 'dela', 'delos', 'la', 'los', 'san', 'santa', 'santo', 'sta.', 'sto.'], true)) {
-            array_pop($parts);
-            if (count($parts) >= 3 && in_array(strtolower($parts[count($parts) - 2]), ['de'], true)) {
-                array_pop($parts);                                      // "De La Cruz", "De Los Santos"
-            }
-        }
-
-        return match (true) {
-            count($parts) >= 3 => implode(' ', array_slice($parts, 0, -1)),
-            count($parts) === 2 => $parts[0],
-            default => $parts[0] ?? __('farmer.farmer'),
-        };
+        return $user->greetingName();
     }
 
     /** A weather condition as the farmer reads it ("Light Rain" / "Mahinang Ulan"); an unknown provider phrase stays as given. */
@@ -403,7 +388,7 @@ final class FarmerDashboardService
 
             return ['state' => 'nodata'];
         }
-        $key = in_array($week['level'] ?? null, ['low', 'moderate', 'high'], true) ? $week['level'] : null;
+        $key = in_array($week['level'] ?? null, ['low', 'moderate', 'high', 'severe'], true) ? $week['level'] : null;   // panel revision 2.1: + severe
         if ($key === null) {
             return ['state' => 'nodata'];
         }
@@ -413,7 +398,7 @@ final class FarmerDashboardService
             'barangay' => $week['barangay'] ?? $barangay,
             'key' => $key,
             'label' => __('farmer.home.risk.level.'.$key),
-            'tone' => ['low' => 'good', 'moderate' => 'watch', 'high' => 'danger'][$key],
+            'tone' => ['low' => 'good', 'moderate' => 'watch', 'high' => 'danger', 'severe' => 'danger'][$key],
             'meaning' => __('farmer.home.risk.meaning.'.$key),
             // The Heat Map's planting rule as one key (DecisionSupportService::plantingAdvisory), for the main message.
             'planting_key' => $this->plantingKey((string) ($r['advisory']['planting'] ?? '')),
@@ -450,7 +435,7 @@ final class FarmerDashboardService
         if ($typhoon !== null) {
             return $make('typhoon', 'danger', 'storm');
         }
-        if (($risk['key'] ?? null) === 'high') {
+        if (in_array($risk['key'] ?? null, ['high', 'severe'], true)) {
             return $make('risk_high', 'danger', 'map');
         }
         foreach (array_slice($week['days'], 0, self::MESSAGE_LOOKAHEAD_DAYS + 1) as $day) {

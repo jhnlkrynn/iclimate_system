@@ -27,11 +27,22 @@ class FarmerProfileController extends CrudController
     protected bool $printable = true;
 
     // MAO list (2026-10): no contact number or address; total_farm_area and account_status are FarmerProfile accessors.
-    protected array $columns = ['full_name' => 'Name', 'barangay' => 'Barangay', 'farm_type' => 'Farm Type', 'total_farm_area' => 'Total Farm Area', 'account_status' => 'Status'];
+    // Panel revision 1.1: + Organizations (every organization the farmer belongs to).
+    protected array $columns = ['full_name' => 'Name', 'barangay' => 'Barangay', 'organization_names' => 'Organizations', 'farm_type' => 'Farm Type', 'total_farm_area' => 'Total Farm Area', 'account_status' => 'Status'];
 
-    protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type'];
+    // Panel revision 1.4: + RSBSA no. (the farmer ID); organization names and the record no. are searched in extraSearch().
+    protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type', 'rsbsa_no'];
+
+    // Panel revision 1.1: the organization filter matches ANY of the farmer's organizations.
+    protected array $customFilters = ['farmer_organization_id'];
+
+    /** Organization ids from the form, saved after the profile itself (panel revision 1.1). */
+    private ?array $pendingOrganizationIds = null;
 
     protected bool $farmerOwnRecordsOnly = true;
+
+    // Panel revision 4.4 B: technologists see and change the farmers of their own barangays.
+    protected ?string $barangayColumn = 'barangay';
 
     public function __construct()
     {
@@ -44,7 +55,9 @@ class FarmerProfileController extends CrudController
 
         $this->fields = [
             ['name' => 'user_id', 'label' => 'User', 'type' => 'select', 'options' => $this->userOptions([User::ROLE_FARMER])],
-            ['name' => 'farmer_organization_id', 'label' => 'Farmer Organization', 'type' => 'select', 'options' => $this->farmerOrganizationOptions()],
+            ['name' => 'farmer_organization_id', 'label' => 'Primary Farmer Organization', 'type' => 'select', 'options' => $this->farmerOrganizationOptions()],
+            // Panel revision 1.1: every organization the farmer is registered under.
+            ['name' => 'farmer_organization_ids', 'label' => 'All Farmer Organizations (tick every one)', 'type' => 'checkboxes', 'options' => $this->farmerOrganizationOptions()],
             ['name' => 'full_name', 'label' => 'Full Name'],
             ['name' => 'contact_number', 'label' => 'Contact Number'],
             ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => LianBarangays::options(false)],
@@ -67,6 +80,8 @@ class FarmerProfileController extends CrudController
                 Rule::unique('farmer_profiles', 'user_id')->ignore($existingId),
             ],
             'farmer_organization_id' => ['nullable', 'exists:farmer_organizations,id'],
+            'farmer_organization_ids' => ['nullable', 'array'],
+            'farmer_organization_ids.*' => ['integer', 'exists:farmer_organizations,id'],
             'full_name' => ['required', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'barangay' => ['required', Rule::in(LianBarangays::all())],
@@ -89,7 +104,7 @@ class FarmerProfileController extends CrudController
                 ->firstOrFail();
 
             $record = FarmerProfile::query()
-                ->with(['user', 'farmerOrganization'])
+                ->with(['user', 'farmerOrganization', 'organizations'])
                 ->where('user_id', $user->id)
                 ->first() ?? (object) ['user_id' => $user->id];
         }
@@ -111,19 +126,69 @@ class FarmerProfileController extends CrudController
         $this->authorizeManage($request);
 
         $data = $this->prepareData($request, $this->validated($request));
+        $this->authorizeBarangayValue($request, $data);
         $record = FarmerProfile::query()->where('user_id', $data['user_id'])->first();
 
         if ($record) {
+            $this->authorizeRecordCoverage($request, $record);
             $record->update($data);
+            $this->saveOrganizations($record);
             SystemAuditLogger::forModel('updated', $record, $request, ['module' => $this->title]);
 
             return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' updated successfully.');
         }
 
         $record = FarmerProfile::query()->create($data);
+        $this->saveOrganizations($record);
         SystemAuditLogger::forModel('created', $record, $request, ['module' => $this->title]);
 
         return redirect()->route($this->routeName.'.show', $record)->with('success', $this->title.' created successfully.');
+    }
+
+    public function update(Request $request, int $id): RedirectResponse|JsonResponse
+    {
+        $response = parent::update($request, $id);
+        $this->saveOrganizations(FarmerProfile::query()->findOrFail($id));
+
+        return $response;
+    }
+
+    /** Panel revision 1.1: the organization ticks are not a column; they are kept aside and saved as memberships. */
+    protected function prepareData(Request $request, array $data): array
+    {
+        $data = parent::prepareData($request, $data);
+        $this->pendingOrganizationIds = $request->has('farmer_organization_ids') || $request->has('farmer_organization_ids_present')
+            ? array_map('intval', (array) ($data['farmer_organization_ids'] ?? []))
+            : null;
+        unset($data['farmer_organization_ids']);
+
+        return $data;
+    }
+
+    private function saveOrganizations(FarmerProfile $record): void
+    {
+        if ($this->pendingOrganizationIds !== null) {
+            $record->syncOrganizations($this->pendingOrganizationIds, $record->farmer_organization_id ? (int) $record->farmer_organization_id : null);
+        }
+    }
+
+    /** Panel revision 1.1 / 1.4: search also matches organization names and the record no. */
+    protected function extraSearch(Builder $builder, string $search): void
+    {
+        $builder->orWhereHas('organizations', fn (Builder $q) => $q->where('farmer_organizations.name', 'like', "%{$search}%"))
+            ->orWhereHas('farmerOrganization', fn (Builder $q) => $q->where('name', 'like', "%{$search}%"));
+        if (ctype_digit($search)) {
+            $builder->orWhere('farmer_profiles.id', (int) $search);
+        }
+    }
+
+    /** Panel revision 1.1: a farmer is listed under every organization they belong to. */
+    protected function applyCustomFilter(Builder $query, string $field, string $value): void
+    {
+        if ($field === 'farmer_organization_id') {
+            $query->where(fn (Builder $q) => $q->where('farmer_organization_id', (int) $value)
+                ->orWhereHas('organizations', fn (Builder $m) => $m->where('farmer_organizations.id', (int) $value)));
+        }
     }
 
     /**
@@ -166,7 +231,7 @@ class FarmerProfileController extends CrudController
     {
         return FarmerProfile::query()
             // farmerOrganization is shown per row; loading it here is one query for the page, not one per row.
-            ->with(['user', 'farmBoundary', 'farmerOrganization', 'farms'])
+            ->with(['user', 'farmBoundary', 'farmerOrganization', 'organizations', 'farms'])
             ->when(
                 $request->user()->role === User::ROLE_FARMER,
                 fn (Builder $query) => $query->where('user_id', $request->user()->id),

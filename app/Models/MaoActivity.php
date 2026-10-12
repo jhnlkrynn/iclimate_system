@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class MaoActivity extends Model
 {
+    use \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
+
     public const TYPES = ['Planting Event', 'Harvesting', 'Training', 'Seed Distribution', 'Field Visit', 'Meeting', 'Other'];
 
     protected $fillable = ['user_id', 'activity_type', 'barangay', 'starts_on', 'ends_on', 'title', 'notes'];
