@@ -226,10 +226,51 @@
       *, *::before, *::after { transition-duration: .01ms !important; }
       .btn-spinner { animation-duration: 2s; }
     }
+
+    /* -- BIGGER TEXT: easier to read; same layout as above, every size one step up -- */
+    body { font-size: 16px; }
+    .reg-notes-title { font-size: 19px; }
+    .reg-notes-sub, .perk-item { font-size: 15.5px; }
+    .reg-notes-staff { font-size: 14px; }
+    .register-page .auth-toggle { max-width: 360px; }
+    .register-page .auth-toggle a { height: 38px; font-size: 15px; }
+    /* "safe": when the form is taller than the screen it starts at the top instead of being cut off above. */
+    .register-page .login-panel { justify-content: safe center; }
+    .form-card { max-width: 720px; }
+    .reg-head { min-height: 36px; }
+    .reg-head img { height: 36px; }
+    .reg-sub { font-size: 16px; }
+    #formMessage { font-size: 14.5px; padding: 4px 14px; }
+    .register-form, .form-section { gap: 16px; }
+    .form-row-2col { gap: 14px; }
+    .form-group label { font-size: 14px; line-height: 18px; margin-bottom: 5px; }
+    .form-input { height: 46px; font-size: 16px; }
+    .form-input.has-icon { padding-left: 40px; }
+    .org-ms-search { font-size: 16px; }
+    .org-ms-chip, .org-ms-more { height: 30px; font-size: 14px; }
+    .org-ms-option, .org-ms-empty { font-size: 15px; }
+    .org-ms-barangay { font-size: 14px; }
+    .field-hint, .field-error, .field-success { font-size: 13.5px; }
+    .pwd-strength-label { min-width: 104px; font-size: 14px; }
+    .pwd-strength-track { width: 64px; }
+    .pwd-guide-item { height: 26px; padding: 0 10px 0 7px; font-size: 13.5px; }
+    .captcha-row > label { font-size: 14px; }
+    .captcha-image { width: 124px; height: 44px; }
+    .terms-row input { width: 18px; height: 18px; }
+    .terms-row label { font-size: 15px; }
+    #agreeTerms-error { padding-left: 26px; }
+    .btn-submit { height: 50px; font-size: 17px; }
+    .reg-foot { font-size: 13.5px; }
+    @media (min-width: 1024px) and (min-height: 680px) {
+      /* The blue strip takes the top of the screen; the page below it fills the rest. */
+      .register-page .gov-strip ~ .login-split { height: calc(100vh - 42px); height: calc(100dvh - 42px); }
+      .form-group > .field-error:not([hidden]), .form-group > .field-success:not([hidden]), .form-group > .field-hint:not([hidden]) { font-size: 12.5px; line-height: 15px; }
+    }
   </style>
     @include('partials.global-loader')
 </head>
 <body class="register-page">
+  @include('partials.gov-strip')
   <div class="login-split">
     <aside class="login-visual">
       <a href="{{ url('/') }}" class="back-link-top">

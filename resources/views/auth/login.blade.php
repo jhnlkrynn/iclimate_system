@@ -148,20 +148,14 @@
       *, *::before, *::after { transition-duration: .01ms !important; }
       .btn-spinner { animation-duration: 2s; }
     }
-    /* Panel revision 4.5 / 4.3: government strip, and inputs of at least 16px on phones (no auto-zoom). */
-    .gov-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; padding: 5px 12px; background: #0038A8; color: #fff; font-size: 13px; font-family: var(--reg-sans); }
-    .gov-strip strong { color: #FCD116; }
-    .gov-strip-seal { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; transform: scale(1.12); background: #fff; }
-    .gov-strip { align-items: center; }
-    body:has(.gov-strip) { flex-wrap: wrap; align-content: flex-start; }
-    .gov-strip { flex: 0 0 100%; }
+    /* Panel revision 4.3: inputs of at least 16px on phones (no auto-zoom). */
     @media (max-width: 767.98px) { .form-input, input, select { font-size: 16px !important; min-height: 44px; } }
   </style>
     @include('partials.global-loader')
 </head>
 <body class="login-page">
   {{-- Panel revision 4.5: the government strip, as on every signed-in page. --}}
-  <div class="gov-strip" role="note"><img class="gov-strip-seal" src="{{ asset('images/lian-seal.jpg') }}" alt="Seal of the Municipality of Lian" width="22" height="22"><span>Republic of the Philippines</span><span aria-hidden="true">·</span><span>Province of Batangas</span><span aria-hidden="true">·</span><strong>Municipality of Lian · Municipal Agriculture Office</strong></div>
+  @include('partials.gov-strip')
   {{-- Sign-in errors are shown inline in the card, so the toast is kept for session flashes only. --}}
   @if (session('success') || session('error'))
     <x-flash-toast />

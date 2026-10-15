@@ -547,3 +547,40 @@ html body .gov-brand .gov-seal { width: 44px; height: 44px; border-radius: 50%; 
 html body .ic-tabs .ic-tab { background: var(--gov-surface); color: var(--gov-text-2) !important; border: 1px solid var(--gov-border-strong); }
 html body .ic-tabs .ic-tab:hover { background: var(--gov-primary-soft); color: var(--gov-primary-dark) !important; }
 html body .ic-tabs .ic-tab.is-active, html body .ic-tabs .ic-tab[aria-current="page"] { background: var(--gov-primary) !important; border-color: var(--gov-primary); color: #fff !important; }
+
+/* Header size (all roles): a regular-sized government strip and top bar — larger seal, office name, greeting,
+   icons and account button. Alignment is unchanged; phones keep their compact sizes below. */
+html body .gov-strip { min-height: 42px; padding: 8px 16px; gap: 2px 12px; font-size: 1rem; }
+html[data-theme] body .topbar.ic-topbar { min-height: 76px; padding: 10px 24px !important; gap: 16px; }
+html body .ic-topbar-left { gap: 10px; }
+html body .ic-topbar-right { gap: 8px; }
+html body .gov-brand { gap: 12px; }
+html body .gov-brand .gov-seal { width: 52px; height: 52px; }
+html body .gov-brand-text { line-height: 1.2; }
+html body .gov-brand-office { font-size: 1.125rem; }
+html body .gov-brand-place { font-size: .875rem; }
+html body .ic-topbar-greeting { font-size: 1.0625rem; padding-left: 16px; }
+html body .mao-identity-name { font-size: 1.0625rem; }
+html body .mao-identity-position { font-size: .875rem; }
+html body .topbar .ic-icon-btn { width: 44px; height: 44px; }
+html body .topbar .ic-icon-btn > svg { width: 22px; height: 22px; }
+html body .ic-topbar-group { height: 48px; }
+html body .ic-topbar-group .ic-icon-btn { width: 42px; height: 42px; min-width: 42px; min-height: 42px; }
+html body .ic-lang button { height: 42px; font-size: .875rem; }
+html body .ic-avatar-btn { width: 44px; height: 44px; font-size: .875rem; }
+html body .topbar .topbar-farm label { font-size: .8125rem; }
+html body .topbar .topbar-farm select { font-size: .9375rem; min-height: 40px; }
+@media (max-width: 767.98px) {
+    html body .gov-strip { min-height: 32px; padding: 5px 10px; font-size: .8125rem; }
+    html[data-theme] body .topbar.ic-topbar { min-height: 64px; padding: 8px 12px !important; gap: 8px; }
+    html body .gov-brand .gov-seal { width: 40px; height: 40px; }
+    html body .gov-brand-office { font-size: .95rem; }
+}
+@media (max-width: 575.98px) {
+    html[data-theme] body .topbar.ic-topbar { padding-inline: 8px !important; gap: 6px; }
+    html body .ic-topbar-left, html body .ic-topbar-right { gap: 4px; }
+    html body .topbar .ic-icon-btn, html body .ic-avatar-btn { width: 42px; height: 42px; }
+    html body .ic-topbar-group { height: 46px; }
+    html body .ic-topbar-group .ic-icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+    html body .ic-lang button { height: 40px; }
+}

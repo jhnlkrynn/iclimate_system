@@ -84,6 +84,7 @@
     @include('partials.global-loader')
 </head>
 <body class="login-page">
+@include('partials.gov-strip')
 
 <div class="login-layout">
 
