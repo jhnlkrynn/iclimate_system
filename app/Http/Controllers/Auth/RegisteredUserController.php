@@ -44,15 +44,19 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'farmer_organization_id' => ['nullable', 'integer', 'exists:farmer_organizations,id'],
-            // Panel revision 1.1: any other organizations the farmer belongs to.
-            'additional_organization_ids' => ['nullable', 'array', 'max:20'],
-            'additional_organization_ids.*' => ['integer', 'exists:farmer_organizations,id'],
+            // Panel revision 1.1: any other organizations the farmer belongs to (the primary one is stripped below).
+            'other_organizations' => ['nullable', 'array', 'max:20'],
+            'other_organizations.*' => ['integer', 'distinct', 'exists:farmer_organizations,id'],
             'barangay' => ['required_without:farmer_organization_id', 'nullable', 'string', Rule::in($this->manualBarangays())],
             'captcha_answer' => ['required', 'string', 'max:20'],
         ], [
             'barangay.required_without' => 'Please choose your farm location when no farmer organization is selected.',
             'captcha_answer.required' => 'Please answer the security check before creating an account.',
             'captcha_answer.max' => 'The security check answer is too long.',
+            'other_organizations.max' => 'Please choose 20 other organizations or fewer.',
+            'other_organizations.*.integer' => 'Please choose your other organizations from the list.',
+            'other_organizations.*.distinct' => 'An organization was chosen twice. Please choose each one only once.',
+            'other_organizations.*.exists' => 'One of the chosen organizations could not be found. Please choose again.',
         ]);
 
         if (! $captcha->validate($request, 'register', $validated['captcha_answer'] ?? null)) {
@@ -86,8 +90,8 @@ class RegisteredUserController extends Controller
                 'barangay' => $barangay,
                 'farm_type' => $farmType,
             ]);
-            // Panel revision 1.1: the main organization plus every other one ticked.
-            $others = array_map('intval', (array) ($validated['additional_organization_ids'] ?? []));
+            // Panel revision 1.1: the main organization plus every other one chosen. The main one is never an "other".
+            $others = array_values(array_diff(array_map('intval', (array) ($validated['other_organizations'] ?? [])), [(int) $organization?->id]));
             if ($others !== []) {
                 $profile->syncOrganizations(array_merge($organization ? [$organization->id] : [], $others), $organization?->id);
             }

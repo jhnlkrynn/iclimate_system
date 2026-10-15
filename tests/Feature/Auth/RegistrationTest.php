@@ -278,6 +278,85 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('farmer_profiles', ['full_name' => 'New Farmer', 'farmer_organization_id' => null]);
     }
 
+    /** Other organizations are saved as memberships next to the main one (none, one or several). */
+    public function test_other_organizations_are_saved_as_memberships(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        [$main, $first, $second, $third] = FarmerOrganization::query()->orderBy('id')->take(4)->get()->all();
+
+        $cases = [
+            'none' => [[], [$main->id]],
+            'one' => [[$first->id], [$main->id, $first->id]],
+            'several' => [[$first->id, $second->id, $third->id], [$main->id, $first->id, $second->id, $third->id]],
+        ];
+
+        foreach ($cases as $label => [$others, $expected]) {
+            $this->withSession($this->captchaSession('register', '7'))
+                ->post('/register', $this->validSignUp([
+                    'email' => "{$label}@example.com",
+                    'farmer_organization_id' => $main->id,
+                    'other_organizations' => $others,
+                ]))
+                ->assertRedirect('/')
+                ->assertSessionHasNoErrors();
+
+            $profile = User::query()->where('email', "{$label}@example.com")->sole()->farmerProfile;
+            $this->assertSame($main->id, (int) $profile->farmer_organization_id, $label);
+            $this->assertEqualsCanonicalizing($expected, $profile->organizations()->pluck('farmer_organizations.id')->map(fn ($id) => (int) $id)->all(), $label);
+        }
+    }
+
+    /** Without JavaScript the main organization can also be picked as an "other" one: it is saved once, as the main one. */
+    public function test_the_main_organization_is_stripped_from_other_organizations(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        [$main, $other] = FarmerOrganization::query()->orderBy('id')->take(2)->get()->all();
+
+        $this->withSession($this->captchaSession('register', '7'))
+            ->post('/register', $this->validSignUp(['farmer_organization_id' => $main->id, 'other_organizations' => [$main->id, $other->id]]))
+            ->assertRedirect('/')
+            ->assertSessionHasNoErrors();
+
+        $profile = User::query()->where('email', 'new-farmer@example.com')->sole()->farmerProfile;
+        $this->assertSame($main->id, (int) $profile->farmer_organization_id);
+        $this->assertDatabaseCount('farmer_organization_members', 2);
+    }
+
+    public function test_bad_other_organizations_are_rejected_and_save_nothing(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        $id = FarmerOrganization::query()->value('id');
+
+        foreach ([[999999], [$id, $id], ['abc'], 'not-a-list'] as $others) {
+            $this->from('/register')->withSession($this->captchaSession('register', '7'))
+                ->post('/register', $this->validSignUp(['other_organizations' => $others]))
+                ->assertRedirect('/register')
+                ->assertSessionHasErrors();
+        }
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('farmer_organization_members', 0);
+    }
+
+    /** A wrong security answer sends the form back with the chosen organizations still chosen. */
+    public function test_chosen_other_organizations_survive_a_failed_submission(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        [$first, $second, $notChosen] = FarmerOrganization::query()->orderBy('id')->take(3)->get()->all();
+
+        $this->from('/register')->withSession($this->captchaSession('register', '7'))
+            ->post('/register', $this->validSignUp(['captcha_answer' => '8', 'other_organizations' => [$first->id, $second->id]]))
+            ->assertRedirect('/register')
+            ->assertSessionHasErrors('captcha_answer');
+
+        $page = $this->get('/register')->assertOk();
+        $page->assertSee('name="other_organizations[]"', false);
+        $page->assertSee('<option value="'.$first->id.'" data-name="'.e($first->name).'" data-barangay="'.e($first->barangay).'" selected', false);
+        $page->assertSee('<option value="'.$second->id.'" data-name="'.e($second->name).'" data-barangay="'.e($second->barangay).'" selected', false);
+        $page->assertDontSee('<option value="'.$notChosen->id.'" data-name="'.e($notChosen->name).'" data-barangay="'.e($notChosen->barangay).'" selected', false);
+        $this->assertDatabaseCount('users', 0);
+    }
+
     /**
      * @param  array<string, mixed>  $change
      * @return array<string, mixed>

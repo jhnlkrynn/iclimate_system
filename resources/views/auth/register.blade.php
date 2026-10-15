@@ -41,47 +41,50 @@
     .perk-item svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--reg-mint); }
     .reg-notes-staff { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.22); font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.82); }
 
-    /* -- FORM SIDE ----------------------------------------- */
-    .form-card { width: 100%; max-width: 440px; }
-    .login-form-header { text-align: center; margin-bottom: 8px; }
-    .card-logo { display: flex; justify-content: center; margin-bottom: 18px; }
-    .card-logo img { height: 48px; width: auto; display: block; }
-    .login-form-header h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 6px; }
-    .login-form-header p { font-size: 15px; color: var(--reg-text-2); }
+    /* -- FORM SIDE: the whole form fits one laptop screen -- */
+    /* The green side is narrower on this page so the form can use two columns. */
+    .register-page .login-split { grid-template-columns: minmax(0, 39fr) minmax(0, 61fr); }
+    .register-page .login-visual { gap: 22px; }
+    .register-page .login-panel { justify-content: center; padding: 12px 32px 8px; }
+    .register-page .auth-toggle { max-width: 320px; margin-bottom: 10px; padding: 3px; }
+    .register-page .auth-toggle a { height: 32px; font-size: 13px; }
 
-    #formMessage { margin-top: 16px; padding: 10px 14px; font-size: 14px; color: var(--reg-error); background: #FEF3F2; border: 1px solid #F4C7C3; border-radius: 12px; }
+    .form-card { width: 100%; max-width: 680px; }
+    .reg-head { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 30px; margin-bottom: 12px; }
+    .reg-head img { height: 30px; width: auto; display: block; flex-shrink: 0; }
+    .reg-sub { font-size: 14px; color: var(--reg-text-2); }
+    /* After a failed submit the summary takes the subtitle's place, so nothing below it moves. */
+    #formMessage { padding: 3px 12px; font-size: 13px; color: var(--reg-error); background: #FEF3F2; border: 1px solid #F4C7C3; border-radius: 980px; }
+    #formMessage[hidden] { display: none; }
+    .reg-head:has(#formMessage:not([hidden])) .reg-sub { display: none; }
 
-    .form-section { margin-top: 24px; }
-    .form-section-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--reg-text); margin-bottom: 12px; }
+    .register-form, .form-section { display: flex; flex-direction: column; gap: 14px; }
     .form-row-2col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .form-group { min-width: 0; }
-    .form-group + .form-group, .form-row-2col + .form-group { margin-top: 14px; }
-    .form-row-2col + .pwd-helper { margin-top: 12px; }
-    .form-row-2col > .form-group + .form-group { margin-top: 0; }
-    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--reg-text-2); margin-bottom: 6px; }
+    .form-group { position: relative; min-width: 0; }
+    .form-group label { display: block; font-size: 12.5px; line-height: 16px; font-weight: 500; color: var(--reg-text-2); margin-bottom: 4px; }
 
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; min-width: 0; height: 48px; background: var(--reg-green-bg); border: 1px solid transparent; border-radius: 12px;
-      padding: 0 14px; font-size: 15px; color: var(--reg-text); outline: none;
+      width: 100%; min-width: 0; height: 40px; background-color: var(--reg-green-bg); border: 1px solid transparent; border-radius: 10px;
+      padding: 0 12px; font-size: 14px; color: var(--reg-text); outline: none;
       transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .form-input.has-icon { padding-left: 42px; }
-    .form-input.has-toggle { padding-right: 46px; }
+    .form-input.has-icon { padding-left: 36px; }
+    .form-input.has-toggle { padding-right: 40px; }
     .form-input::placeholder { color: #98A39D; }
-    .form-input:hover:not(:focus):not(:disabled):not(.is-invalid) { background: #F1F4F2; }
-    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .form-input:hover:not(:focus):not(:focus-within):not(:disabled):not(.is-invalid) { background-color: #F1F4F2; }
+    .form-input:focus { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
     .form-input:disabled { color: var(--reg-text-2); }
-    .form-input.is-invalid { border-color: var(--reg-error); background: #fff; }
+    .form-input.is-invalid { border-color: var(--reg-error); background-color: #fff; }
     .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     select.form-input {
-      appearance: none; -webkit-appearance: none; padding-right: 38px; cursor: pointer;
+      appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
+      background-repeat: no-repeat; background-position: right 10px center;
     }
-    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
+    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
     .pwd-toggle {
-      position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; padding: 0;
+      position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; padding: 0;
       display: flex; align-items: center; justify-content: center;
       color: var(--reg-text-2); background: none; border: none; border-radius: 8px; cursor: pointer;
     }
@@ -89,61 +92,97 @@
     .pwd-toggle-slash[hidden] { display: none; }
     .pwd-toggle:focus-visible, .form-card a:focus-visible, .terms-row input:focus-visible { outline: 2px solid var(--reg-green); outline-offset: 2px; }
 
-    .field-hint { font-size: 13px; color: var(--reg-text-2); margin-top: 6px; }
-    .field-error, .field-success { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; line-height: 1.4; margin-top: 6px; }
-    .field-error[hidden], .field-success[hidden] { display: none; }
+    .field-hint { font-size: 12px; color: var(--reg-text-2); margin-top: 4px; }
+    .field-error, .field-success { display: flex; align-items: flex-start; gap: 5px; font-size: 12px; line-height: 1.35; margin-top: 4px; }
+    .field-error[hidden], .field-success[hidden], .field-hint[hidden] { display: none; }
     .field-error { color: var(--reg-error); }
     .field-success { color: var(--reg-success); }
-    .field-error::before, .field-success::before { content: ''; width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; background-repeat: no-repeat; background-position: center; }
+    .field-error::before, .field-success::before { content: ''; width: 12px; height: 12px; flex-shrink: 0; margin-top: 1px; background-repeat: no-repeat; background-position: center; background-size: 12px; }
     .field-error::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='7' cy='7' r='6' stroke='%23B42318' stroke-width='1.4'/%3E%3Cpath d='M7 4v3.5' stroke='%23B42318' stroke-width='1.4' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='9.8' r='.8' fill='%23B42318'/%3E%3C/svg%3E"); }
     .field-success::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Ccircle cx='7' cy='7' r='6' stroke='%2316794A' stroke-width='1.4'/%3E%3Cpath d='M4.4 7.2l1.8 1.8 3.4-3.8' stroke='%2316794A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 
-    /* -- PASSWORD HELPER ----------------------------------- */
-    .pwd-helper { background: var(--reg-green-bg); border-radius: 12px; padding: 14px 16px; }
-    .pwd-strength-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .pwd-strength-label { font-size: 13px; color: var(--reg-text-2); white-space: nowrap; }
+    /* -- OTHER ORGANIZATIONS (searchable multi-select) ----- */
+    .field-optional { font-weight: 400; color: #98A39D; }
+    select.form-input.org-native { height: auto; padding: 4px 6px; background-image: none; }
+    /* One line: the chosen organizations as chips (then "+N more"), and the search box. */
+    .org-ms {
+      position: relative; display: flex; align-items: center; gap: 6px; padding-right: 34px; cursor: text;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .org-ms.is-open { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 10l4-4 4 4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    .org-ms:focus-within { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .org-ms.is-invalid:focus-within { border-color: var(--reg-error); box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
+    .org-ms-search { flex: 1 1 80px; min-width: 80px; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; font-size: 14px; color: var(--reg-text); }
+    .org-ms-search::placeholder { color: #98A39D; }
+    .org-ms-chips { display: flex; gap: 4px; flex: 0 1 auto; min-width: 0; overflow: hidden; margin: 0; padding: 0; list-style: none; }
+    .org-ms-chips:empty { display: none; }
+    .org-ms-chip { flex: none; display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 2px 0 9px; font-size: 12.5px; color: var(--reg-green-dark); background: #E2F1EA; border-radius: 980px; }
+    .org-ms-chip[hidden] { display: none; }
+    .org-ms-chip span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .org-ms-chip button { width: 20px; height: 20px; padding: 0; flex-shrink: 0; display: grid; place-items: center; color: inherit; background: none; border: none; border-radius: 50%; cursor: pointer; }
+    .org-ms-chip button:hover { background: rgba(18,63,50,.1); }
+    .org-ms-chip button:focus-visible, .org-ms-more:focus-visible { outline: 2px solid var(--reg-green); outline-offset: 1px; }
+    .org-ms-more { flex: none; height: 26px; padding: 0 9px; font: inherit; font-size: 12.5px; font-weight: 500; color: var(--reg-green-dark); background: #fff; border: 1px solid #CFE3D9; border-radius: 980px; cursor: pointer; white-space: nowrap; }
+    .org-ms-more[hidden] { display: none; }
+    /* The list floats over the form (it never pushes it down), and opens upward when there is no room below. */
+    .org-ms-list {
+      position: absolute; z-index: 20; left: -1px; right: -1px; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none; cursor: default;
+      max-height: 240px; overflow-y: auto; background: #fff; border: 1px solid var(--reg-border); border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(18,63,50,.14);
+    }
+    .org-ms.is-up .org-ms-list { top: auto; bottom: calc(100% + 6px); }
+    .org-ms-list[hidden] { display: none; }
+    .org-ms-option { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; line-height: 1.35; cursor: pointer; }
+    .org-ms-option.is-active { background: var(--reg-green-bg); }
+    .org-ms-check { width: 16px; height: 16px; flex-shrink: 0; display: grid; place-items: center; border: 1.5px solid #A9B8B0; border-radius: 4px; color: transparent; background: #fff; }
+    .org-ms-option[aria-selected="true"] .org-ms-check { background: var(--reg-green); border-color: var(--reg-green); color: #fff; }
+    .org-ms-text { min-width: 0; }
+    .org-ms-barangay { color: var(--reg-text-2); font-size: 12.5px; }
+    .org-ms-empty { padding: 10px; font-size: 13.5px; color: var(--reg-text-2); }
+
+    /* -- PASSWORD STRENGTH: one line ---------------------- */
+    .pwd-helper { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+    .pwd-strength-meta { display: flex; align-items: center; gap: 8px; }
+    /* Fixed width, so the pills never move when the word changes. */
+    .pwd-strength-label { min-width: 98px; font-size: 12.5px; color: var(--reg-text-2); white-space: nowrap; }
     .pwd-strength-label strong { font-weight: 600; color: var(--reg-text); }
     .pwd-strength-label.is-weak strong { color: var(--reg-error); }
     .pwd-strength-label.is-fair strong { color: #8A5A00; }
     .pwd-strength-label.is-good strong { color: var(--reg-green); }
     .pwd-strength-label.is-strong strong { color: var(--reg-success); }
-    .pwd-strength-track { flex: 1; height: 4px; border-radius: 2px; background: var(--reg-border); overflow: hidden; }
+    .pwd-strength-track { width: 56px; height: 4px; border-radius: 2px; background: var(--reg-border); overflow: hidden; }
     .pwd-strength-fill { height: 100%; width: 0; border-radius: 2px; background: var(--reg-border); transition: width .2s ease, background-color .2s ease; }
     .pwd-strength-fill.is-weak { background: var(--reg-error); }
     .pwd-strength-fill.is-fair { background: #C98A1B; }
     .pwd-strength-fill.is-good { background: var(--reg-green); }
     .pwd-strength-fill.is-strong { background: var(--reg-success); }
-    .pwd-guide { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 16px; }
-    .pwd-guide-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--reg-text-2); }
-    .pwd-guide-dot { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; border: 1.5px solid #A9B8B0; background: #fff; color: transparent; }
-    .pwd-guide-item.is-met { color: var(--reg-success); font-weight: 500; }
-    .pwd-guide-item.is-met .pwd-guide-dot { background: var(--reg-success); border-color: var(--reg-success); color: #fff; }
+    .pwd-guide { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .pwd-guide-item { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 8px 0 6px; border-radius: 980px; font-size: 12px; color: var(--reg-text-2); background: var(--reg-green-bg); white-space: nowrap; }
+    .pwd-guide-item svg { flex-shrink: 0; color: transparent; }
+    .pwd-guide-item.is-met { color: var(--reg-success); background: #E3F3EA; font-weight: 500; }
+    .pwd-guide-item.is-met svg { color: currentColor; }
 
-    /* -- SECURITY CHECK ------------------------------------ */
-    .captcha-card {
-      margin-top: 12px; background: var(--reg-green-bg); border-radius: 12px; padding: 16px;
-      display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px 12px;
-    }
-    .captcha-card label { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--reg-text-2); }
-    .captcha-card label svg { color: var(--reg-green); }
-    .captcha-image { display: block; height: 48px; width: auto; max-width: 100%; border: 1px solid var(--reg-input-border); border-radius: 10px; background: #fff; }
-    .captcha-field { min-width: 0; }
-    .captcha-field .form-input { background: #fff; text-align: center; letter-spacing: .12em; }
+    /* -- SECURITY CHECK: label, picture and answer on one line -- */
+    .captcha-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 12px; }
+    .captcha-row > label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: var(--reg-text-2); white-space: nowrap; }
+    .captcha-row > label svg { color: var(--reg-green); }
+    .captcha-image { display: block; width: 110px; height: 38px; object-fit: contain; border: 1px solid var(--reg-input-border); border-radius: 8px; background: #fff; }
+    .captcha-field .form-input { letter-spacing: .12em; }
     .captcha-field .form-input::placeholder { letter-spacing: normal; }
 
     /* -- AGREEMENT + SUBMIT -------------------------------- */
-    .terms-row { display: flex; align-items: flex-start; gap: 10px; }
-    .terms-row input { width: 18px; height: 18px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
-    .terms-row label { font-size: 14px; line-height: 1.45; color: var(--reg-text); cursor: pointer; }
-    .terms-row a, .login-register a { color: var(--reg-green); font-weight: 500; text-decoration: none; border-radius: 3px; }
-    .terms-row a:hover, .login-register a:hover { text-decoration: underline; text-underline-offset: 3px; }
-    .terms-note { font-size: 13px; color: var(--reg-text-2); margin: 6px 0 0 28px; }
-    #agreeTerms-error { margin-left: 28px; }
+    .terms-row { display: flex; align-items: center; gap: 8px; }
+    .terms-row input { width: 16px; height: 16px; margin: 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
+    .terms-row label { font-size: 13.5px; line-height: 1.4; color: var(--reg-text); cursor: pointer; }
+    .terms-row a, .reg-foot a { color: var(--reg-green); font-weight: 500; text-decoration: none; border-radius: 3px; }
+    .terms-row a:hover, .reg-foot a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    #agreeTerms-error { padding-left: 24px; }
 
     .btn-submit {
-      width: 100%; height: 50px; margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; gap: 10px;
       background: var(--reg-green-dark); color: #fff; border: none; border-radius: 980px;
-      font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
+      font-size: 15px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
     }
     .btn-submit:hover { background: var(--reg-green); }
     .btn-submit:active { transform: scale(.98); }
@@ -152,13 +191,36 @@
     .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
-    .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 20px; }
+    .reg-foot { margin-top: 10px; text-align: center; font-size: 12px; line-height: 1.5; color: var(--reg-text-2); }
+    .reg-foot-credit { color: #8A968F; }
 
+    /* Laptop and desktop: the page is exactly one screen. Messages under a field sit in the gap below it (cut to
+       one line, full text on hover and for screen readers), so they never push the rows apart. */
+    @media (min-width: 1024px) and (min-height: 680px) {
+      body.register-page { height: 100vh; height: 100dvh; overflow: hidden; }
+      .register-page .login-split { height: 100vh; height: 100dvh; min-height: 0; }
+      .register-page .login-visual { height: 100%; }
+      /* Safety net only: anything that ever overflows scrolls inside the form side, never off the page. */
+      .register-page .login-panel { height: 100%; overflow-y: auto; }
+      .form-group > .field-error:not([hidden]), .form-group > .field-success:not([hidden]), .form-group > .field-hint:not([hidden]) {
+        display: block; position: absolute; left: 0; right: 0; top: 100%; margin-top: 1px;
+        font-size: 11.5px; line-height: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .form-group > .field-error::before, .form-group > .field-success::before { display: inline-block; vertical-align: -2px; margin: 0 4px 0 0; width: 11px; height: 11px; background-size: 11px; }
+    }
+
+    /* Tablets and phones: the green side shrinks to the back button and the page scrolls normally. */
+    @media (max-width: 900px) {
+      .register-page .login-split { grid-template-columns: minmax(0, 1fr); }
+      .register-page .login-visual-copy, .register-page .glass-card { display: none; }
+      .register-page .login-visual { padding: 12px 16px; }
+      .register-page .login-panel { justify-content: flex-start; padding: 20px 16px 16px; }
+    }
     @media (max-width: 560px) {
       .form-row-2col { grid-template-columns: minmax(0, 1fr); }
-      .captcha-card { grid-template-columns: minmax(0, 1fr); }
-      .pwd-strength-meta { flex-direction: column; align-items: stretch; gap: 6px; }
-      .pwd-strength-track { flex: none; }
+      .reg-head { flex-direction: column; gap: 6px; text-align: center; }
+      .captcha-row { grid-template-columns: auto minmax(0, 1fr); }
+      .captcha-row > label { grid-column: 1 / -1; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
@@ -191,20 +253,20 @@
     <main class="login-panel">
       @include('auth.partials.toggle')
       <div class="form-card">
-        <div class="login-form-header">
-          <div class="card-logo"><img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate"></div>
-          <h1>Create account</h1>
-          <p>Register as a rice farmer in Lian, Batangas.</p>
+        {{-- The active tab already says "Create account"; the heading stays for screen readers only. --}}
+        <h1 class="sr-only">Create account</h1>
+        <div class="reg-head">
+          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
+          <p class="reg-sub">Register as a rice farmer in Lian, Batangas.</p>
+          <div id="formMessage" role="alert" @unless($errors->any()) hidden @endunless>Please check the highlighted fields below and try again.</div>
         </div>
-
-        <div id="formMessage" role="alert" @unless($errors->any()) hidden @endunless>Please check the highlighted fields below and try again.</div>
 
         <form method="POST" action="{{ route('register') }}" class="register-form" data-loader-text="Creating account...">
           @csrf
           <input type="hidden" id="name" name="name" value="{{ old('name') }}">
 
           <section class="form-section" aria-labelledby="sectionPersonal">
-            <h3 class="form-section-title" id="sectionPersonal">Personal information</h3>
+            <h2 class="sr-only" id="sectionPersonal">Personal information</h2>
 
             <div class="form-row-2col">
               <div class="form-group">
@@ -236,7 +298,7 @@
           </section>
 
           <section class="form-section" aria-labelledby="sectionFarm">
-            <h3 class="form-section-title" id="sectionFarm">Farm information</h3>
+            <h2 class="sr-only" id="sectionFarm">Farm information</h2>
 
             <div class="form-row-2col">
               <div class="form-group">
@@ -284,26 +346,26 @@
             </div>
 
             {{-- Panel revision 1.1: a farmer can belong to more than one organization. The one chosen above is the main
-                 one (it sets the farm location); tick any others here. --}}
+                 one (it sets the farm location); pick any others here. The plain multi-select is the no-JavaScript
+                 fallback; the script below turns it into a searchable dropdown with chips. --}}
             @if ($farmerOrganizations->count() > 1)
-              <fieldset class="form-group" data-additional-organizations>
-                <legend class="form-legend">Other organizations you belong to <span class="field-optional">(optional)</span></legend>
-                <p class="field-hint">Tick every other farmer organization you are a member of.</p>
-                <div class="check-grid">
+              @php($otherOrganizations = array_map('strval', (array) old('other_organizations', [])))
+              @php($otherOrganizationsError = $errors->first('other_organizations') ?: $errors->first('other_organizations.*'))
+              <div class="form-group" data-org-multiselect>
+                <label for="other_organizations">Other organizations you belong to <span class="field-optional">(optional)</span></label>
+                <select id="other_organizations" name="other_organizations[]" multiple size="5" class="form-input org-native @if($otherOrganizationsError) is-invalid @endif" aria-describedby="other_organizations-hint other_organizations-error">
                   @foreach($farmerOrganizations as $organization)
-                    <label class="check-tile" data-org-tile="{{ $organization->id }}">
-                      <input type="checkbox" name="additional_organization_ids[]" value="{{ $organization->id }}" @checked(in_array((string) $organization->id, array_map('strval', (array) old('additional_organization_ids', [])), true))>
-                      <span>{{ $organization->name }}<small>{{ $organization->barangay }}</small></span>
-                    </label>
+                    <option value="{{ $organization->id }}" data-name="{{ $organization->name }}" data-barangay="{{ $organization->barangay }}" @selected(in_array((string) $organization->id, $otherOrganizations, true))>{{ $organization->name }} · {{ $organization->barangay }}</option>
                   @endforeach
-                </div>
-                <p class="field-error" @unless($errors->has('additional_organization_ids') || $errors->has('additional_organization_ids.*')) hidden @endunless>{{ $errors->first('additional_organization_ids') ?: $errors->first('additional_organization_ids.*') }}</p>
-              </fieldset>
+                </select>
+                <p class="field-hint org-native-hint" id="other_organizations-hint">Hold Ctrl (or Cmd on a Mac) to choose more than one.</p>
+                <p class="field-error" id="other_organizations-error" @unless($otherOrganizationsError) hidden @endunless>{{ $otherOrganizationsError }}</p>
+              </div>
             @endif
           </section>
 
           <section class="form-section" aria-labelledby="sectionSecurity">
-            <h3 class="form-section-title" id="sectionSecurity">Account security</h3>
+            <h2 class="sr-only" id="sectionSecurity">Account security</h2>
 
             <div class="form-row-2col">
               <div class="form-group">
@@ -332,51 +394,53 @@
               </div>
             </div>
 
+            {{-- One line: strength bar, then each requirement as a small pill that turns green when met. --}}
             <div class="pwd-helper" id="passwordHelper">
               <div class="pwd-strength-meta">
-                <span class="pwd-strength-label" id="passwordStrengthLabel" aria-live="polite">Password strength: <strong>&mdash;</strong></span>
+                <span class="pwd-strength-label" id="passwordStrengthLabel" aria-live="polite">Strength: <strong>&mdash;</strong></span>
                 <div class="pwd-strength-track" aria-hidden="true"><div class="pwd-strength-fill" id="passwordStrengthFill"></div></div>
               </div>
               <ul class="pwd-guide" id="passwordGuide" aria-label="Password requirements">
-                @foreach(['length' => 'At least 8 characters', 'lowercase' => 'Lowercase letter', 'uppercase' => 'Uppercase letter', 'number' => 'Number', 'symbol' => 'Symbol'] as $rule => $ruleLabel)
+                @foreach(['length' => ['8+ characters', 'At least 8 characters'], 'lowercase' => ['Small letter', 'Lowercase letter'], 'uppercase' => ['Capital letter', 'Uppercase letter'], 'number' => ['Number', 'Number'], 'symbol' => ['Symbol', 'Symbol']] as $rule => [$ruleShort, $ruleLabel])
                   <li class="pwd-guide-item" data-password-rule="{{ $rule }}">
-                    <span class="pwd-guide-dot" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.2l2 2 4-4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                    <span>{{ $ruleLabel }}<span class="sr-only" data-rule-state> (not yet met)</span></span>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5.2l2 2 4-4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span aria-hidden="true">{{ $ruleShort }}</span><span class="sr-only">{{ $ruleLabel }}<span data-rule-state> (not yet met)</span></span>
                   </li>
                 @endforeach
               </ul>
             </div>
 
-            <div class="captcha-card">
+            <div class="captcha-row">
               <label for="captcha_answer">
                 <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2l5 2v4.2c0 3.1-1.9 5.8-5 7.1-3.1-1.3-5-4-5-7.1V4l5-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6.8 9l1.4 1.4 3.2-3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Security check
               </label>
-              <img class="captcha-image" width="190" height="64" src="{{ route('captcha.image', ['context' => 'register', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
-              <div class="captcha-field">
-                <input type="text" id="captcha_answer" name="captcha_answer" class="form-input @error('captcha_answer') is-invalid @enderror" placeholder="Enter the code shown above" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="captcha_answer-error" @error('captcha_answer') aria-invalid="true" @enderror required/>
+              <img class="captcha-image" width="110" height="38" src="{{ route('captcha.image', ['context' => 'register', 'v' => $captcha['token'] ?? now()->timestamp]) }}" alt="Security code image">
+              <div class="form-group captcha-field">
+                <input type="text" id="captcha_answer" name="captcha_answer" class="form-input @error('captcha_answer') is-invalid @enderror" placeholder="Enter the code shown" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-describedby="captcha_answer-error" @error('captcha_answer') aria-invalid="true" @enderror required/>
                 <p class="field-error" id="captcha_answer-error" @unless($errors->has('captcha_answer')) hidden @endunless>{{ $errors->first('captcha_answer') }}</p>
               </div>
             </div>
           </section>
 
           <section class="form-section" aria-labelledby="sectionAgreement">
-            <h3 class="form-section-title" id="sectionAgreement">Agreement</h3>
+            <h2 class="sr-only" id="sectionAgreement">Agreement</h2>
 
-            <div class="terms-row">
-              <input type="checkbox" id="agreeTerms" aria-describedby="agreeTerms-error" required/>
-              <label for="agreeTerms">I agree to the <a href="#">Terms of use</a> and <a href="#">Privacy policy</a>.</label>
+            <div class="form-group">
+              <div class="terms-row">
+                <input type="checkbox" id="agreeTerms" aria-describedby="agreeTerms-note agreeTerms-error" required/>
+                <label for="agreeTerms" title="Your information is used to provide climate and agricultural services through iClimate.">I agree to the <a href="#">Terms of use</a> and <a href="#">Privacy policy</a>.</label>
+              </div>
+              <p class="sr-only" id="agreeTerms-note">Your information is used to provide climate and agricultural services through iClimate.</p>
+              <p class="field-error" id="agreeTerms-error" hidden></p>
             </div>
-            <p class="terms-note">Your information is used to provide climate and agricultural services through iClimate.</p>
-            <p class="field-error" id="agreeTerms-error" hidden></p>
           </section>
 
           <button class="btn-submit" id="createAccountBtn" type="submit">Create account</button>
         </form>
 
-        <p class="login-register">Already have an account? <a href="{{ route('login') }}">Sign in</a></p>
+        <p class="reg-foot">Already have an account? <a href="{{ route('login') }}">Sign in</a><span class="reg-foot-credit"> &middot; &copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</span></p>
       </div>
-      <p class="login-panel-foot">&copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</p>
     </main>
   </div>
 
@@ -404,6 +468,8 @@
 
     // Inline messages replace the browser's validation bubbles; the server still validates everything.
     form.noValidate = true;
+    // On a laptop a message is cut to one line; its full text shows on hover.
+    document.querySelectorAll('.field-error').forEach((slot) => { slot.title = slot.textContent.trim(); });
 
     const syncName = () => {
       name.value = `${firstName.value.trim()} ${lastName.value.trim()}`.trim();
@@ -443,6 +509,7 @@
       if (message) field.setAttribute('aria-invalid', 'true'); else field.removeAttribute('aria-invalid');
       if (slot) {
         slot.textContent = message || '';
+        slot.title = message || '';
         slot.hidden = ! message;
       }
     };
@@ -519,6 +586,218 @@
       if (hasOrganization) setError(manualBarangay, '');
     };
 
+    // Other organizations: the hidden native multi-select stays the source of truth (it is what gets submitted); this
+    // builds a searchable dropdown with chips on top of it. The main organization is never offered as an "other" one.
+    const setupOtherOrganizations = () => {
+      const native = document.getElementById('other_organizations');
+      if (! native) return () => {};
+      const group = native.closest('[data-org-multiselect]');
+      const errorSlot = document.getElementById('other_organizations-error');
+      const options = [...native.options];
+      const placeholder = 'Select other organizations (optional)';
+      const svg = (path) => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+      // The field looks like the other inputs: icon, the chosen organizations as chips on one line ("+N more" for
+      // the ones that do not fit), then the search box. The list floats below it, or above when there is no room.
+      const wrap = document.createElement('div');
+      wrap.className = 'form-input has-icon org-ms';
+      const chips = document.createElement('ul');
+      chips.className = 'org-ms-chips';
+      chips.setAttribute('aria-label', 'Chosen organizations');
+      const more = document.createElement('button');
+      Object.assign(more, { type: 'button', className: 'org-ms-more', hidden: true });
+      const input = document.createElement('input');
+      Object.assign(input, { type: 'text', id: 'other_organizations_search', className: 'org-ms-search', placeholder, autocomplete: 'off', spellcheck: false });
+      Object.entries({ role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'other_organizations_list', 'aria-autocomplete': 'list', 'aria-describedby': 'other_organizations-error' })
+        .forEach(([key, value]) => input.setAttribute(key, value));
+      if (native.classList.contains('is-invalid')) {
+        wrap.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+      }
+      const list = document.createElement('ul');
+      Object.assign(list, { id: 'other_organizations_list', className: 'org-ms-list', hidden: true });
+      list.setAttribute('role', 'listbox');
+      list.setAttribute('aria-multiselectable', 'true');
+      list.setAttribute('aria-label', 'Other organizations');
+
+      wrap.append(organization.parentElement.querySelector('.input-icon').cloneNode(true), chips, more, input, list);
+      native.hidden = true;
+      group.querySelector('.org-native-hint').hidden = true;
+      group.querySelector('label').htmlFor = input.id;
+      native.after(wrap);
+
+      let visible = [];
+      let active = -1;
+      const isOpen = () => ! list.hidden;
+
+      const renderList = () => {
+        const query = input.value.trim().toLowerCase();
+        visible = options.filter((option) => ! option.disabled
+          && (! query || `${option.dataset.name} ${option.dataset.barangay}`.toLowerCase().includes(query)));
+        active = Math.min(active, visible.length - 1);
+
+        list.replaceChildren(...visible.map((option, index) => {
+          const item = document.createElement('li');
+          item.id = `other_organizations_option_${option.value}`;
+          item.className = 'org-ms-option' + (index === active ? ' is-active' : '');
+          item.dataset.index = index;
+          item.setAttribute('role', 'option');
+          item.setAttribute('aria-selected', String(option.selected));
+          const check = document.createElement('span');
+          check.className = 'org-ms-check';
+          check.innerHTML = svg('M2.5 6.2l2.2 2.2 4.8-5');
+          const text = document.createElement('span');
+          text.className = 'org-ms-text';
+          const barangay = document.createElement('span');
+          barangay.className = 'org-ms-barangay';
+          barangay.textContent = `· ${option.dataset.barangay}`;
+          text.append(`${option.dataset.name} `, barangay);
+          item.append(check, text);
+          return item;
+        }));
+        if (! visible.length) {
+          const empty = document.createElement('li');
+          empty.className = 'org-ms-empty';
+          empty.textContent = 'No organization matches your search.';
+          list.append(empty);
+        }
+
+        // Scroll only the list (never the page) to keep the highlighted option in view.
+        const current = list.querySelector('.is-active');
+        if (current) {
+          input.setAttribute('aria-activedescendant', current.id);
+          if (current.offsetTop < list.scrollTop) list.scrollTop = current.offsetTop;
+          else if (current.offsetTop + current.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = current.offsetTop + current.offsetHeight - list.clientHeight;
+        } else {
+          input.removeAttribute('aria-activedescendant');
+        }
+      };
+
+      // Chips stay on one line: the ones that do not fit are hidden and counted in "+N more".
+      const fitChips = () => {
+        const items = [...chips.children];
+        let shown = items.length;
+        const showMore = () => {
+          more.hidden = shown === items.length;
+          more.textContent = shown ? `+${items.length - shown} more` : `${items.length} chosen`;
+          more.setAttribute('aria-label', `${items.length} organizations chosen. Show the list.`);
+        };
+        items.forEach((item) => { item.hidden = false; });
+        showMore();
+        while (shown > 0 && chips.scrollWidth > chips.clientWidth + 1) {
+          items[--shown].hidden = true;
+          showMore();
+        }
+        input.placeholder = items.length ? '' : placeholder;
+      };
+
+      const renderChips = () => {
+        chips.replaceChildren(...options.filter((option) => option.selected).map((option) => {
+          const chip = document.createElement('li');
+          chip.className = 'org-ms-chip';
+          const name = document.createElement('span');
+          name.textContent = option.dataset.name;
+          name.title = `${option.dataset.name} · ${option.dataset.barangay}`;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.setAttribute('aria-label', `Remove ${option.dataset.name}`);
+          remove.innerHTML = svg('M3 3l6 6M9 3l-6 6');
+          remove.addEventListener('click', () => {
+            toggle(option, false);
+            input.focus();
+          });
+          chip.append(name, remove);
+          return chip;
+        }));
+        fitChips();
+      };
+
+      const toggle = (option, on = ! option.selected) => {
+        option.selected = on;
+        wrap.classList.remove('is-invalid');
+        input.removeAttribute('aria-invalid');
+        if (errorSlot) errorSlot.hidden = true;
+        renderChips();
+        if (isOpen()) renderList();
+      };
+
+      const open = () => {
+        if (! isOpen()) {
+          const box = wrap.getBoundingClientRect();
+          const below = window.innerHeight - box.bottom;
+          wrap.classList.toggle('is-up', below < 260 && box.top > below);
+          list.hidden = false;
+          wrap.classList.add('is-open');
+          input.setAttribute('aria-expanded', 'true');
+        }
+        renderList();
+      };
+
+      const close = () => {
+        list.hidden = true;
+        active = -1;
+        wrap.classList.remove('is-open');
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
+      };
+
+      const move = (step) => {
+        if (! isOpen()) return open();
+        if (! visible.length) return;
+        active = active < 0 ? (step > 0 ? 0 : visible.length - 1) : (active + step + visible.length) % visible.length;
+        renderList();
+      };
+
+      // Pressing anywhere in the field keeps the focus in the search box, so the list stays open for picking several.
+      wrap.addEventListener('mousedown', (event) => {
+        if (event.target !== input) event.preventDefault();
+      });
+      wrap.addEventListener('click', (event) => {
+        const item = event.target.closest('.org-ms-option');
+        if (item) {
+          active = Number(item.dataset.index);
+          toggle(visible[active]);
+          return;
+        }
+        if (list.contains(event.target) || event.target.closest('.org-ms-chip button')) return;
+        input.focus();
+        open();
+      });
+      input.addEventListener('input', () => {
+        active = 0;
+        open();
+      });
+      input.addEventListener('blur', close);
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          move(event.key === 'ArrowDown' ? 1 : -1);
+        } else if (event.key === 'Enter') {
+          // Enter picks an organization; it never submits the form from this field.
+          event.preventDefault();
+          if (isOpen() && visible[active]) toggle(visible[active]); else open();
+        } else if (event.key === 'Escape' && isOpen()) {
+          event.preventDefault();
+          close();
+        } else if (event.key === 'Backspace' && ! input.value) {
+          const last = options.filter((option) => option.selected).pop();
+          if (last) toggle(last, false);
+        }
+      });
+      if ('ResizeObserver' in window) new ResizeObserver(fitChips).observe(wrap);
+
+      // Called whenever the main organization changes: it leaves the options and the chips.
+      return () => {
+        options.forEach((option) => {
+          option.disabled = option.value === organization.value;
+          if (option.disabled) option.selected = false;
+        });
+        renderChips();
+        if (isOpen()) renderList();
+      };
+    };
+    const syncOtherOrganizations = setupOtherOrganizations();
+
     firstName.addEventListener('input', syncName);
     lastName.addEventListener('input', syncName);
     email.addEventListener('blur', () => { email.value = email.value.trim().toLowerCase(); });
@@ -527,7 +806,10 @@
       syncConfirmFeedback();
     });
     confirmPassword.addEventListener('input', syncConfirmFeedback);
-    organization.addEventListener('change', syncFarmLocation);
+    organization.addEventListener('change', () => {
+      syncFarmLocation();
+      syncOtherOrganizations();
+    });
 
     // After a failed submission only the combined name comes back if the split fields were not posted.
     if (! firstName.value && ! lastName.value && name.value) {
@@ -538,6 +820,7 @@
     syncName();
     checkStrength(password.value || '');
     syncFarmLocation();
+    syncOtherOrganizations();
     bindToggle('pwdToggle', password);
     bindToggle('confirmPwdToggle', confirmPassword);
 
