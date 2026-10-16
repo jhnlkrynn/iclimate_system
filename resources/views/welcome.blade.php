@@ -37,7 +37,7 @@
       <li><a href="#home" class="nav-link active">Home</a></li>
       <li><a href="#about" class="nav-link">About</a></li>
       <li><a href="#features" class="nav-link">Features</a></li>
-      <li><a href="#roles" class="nav-link">User roles</a></li>
+      <li><a href="#roles" class="nav-link">User Roles</a></li>
       <li><a href="#contact" class="nav-link">Contact</a></li>
     </ul>
     <div class="nav-actions">
@@ -67,6 +67,7 @@
     </div>
 
     <div class="hero-visual blur-fade" style="--blur-delay:1200ms">
+      <p class="hero-map-heading">Current conditions in Lian</p>
       <div class="hero-map-panel">
         <div class="hero-map" id="heroMap" data-lat="14.0381" data-lng="120.6522" data-boundary="{{ asset('geojson/lian-boundary.geojson') }}" aria-label="Map of Lian, Batangas showing the Municipal Agriculture Office"></div>
         <a class="hero-map-link" href="https://www.google.com/maps/search/?api=1&amp;query=14.0381%2C120.6522" target="_blank" rel="noopener noreferrer" aria-label="Open the Municipal Agriculture Office of Lian, Batangas in Google Maps (opens in a new tab)">
@@ -173,8 +174,8 @@
 <section class="features-section" id="features">
   <div class="container">
     <div class="section-header">
-      <h2>Six tools, one growing cycle</h2>
-      <p>Each module helps you plan, monitor, and decide with confidence, from planting to harvest.</p>
+      <h2>Tools for the rice season</h2>
+      <p>Practical information to help you plan, monitor, and decide from planting through harvest.</p>
     </div>
 
     <div class="features-grid">
@@ -304,7 +305,7 @@
   <div class="container">
     <div class="section-header">
       <h2>Who uses iClimate?</h2>
-      <p>Three workspaces, one set of records: rice farmers, MAO personnel, and IT experts each see what they need.</p>
+      <p>Information for rice farmers, MAO personnel, and IT support staff, with each role seeing the work it needs.</p>
     </div>
     <div class="roles-grid">
 
@@ -314,7 +315,7 @@
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 1</div>
-        <h3>Rice farmer</h3>
+        <h3>Rice Farmer</h3>
         <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key features</div>
@@ -352,7 +353,7 @@
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 2</div>
-        <h3>MAO personnel</h3>
+        <h3>MAO Personnel</h3>
         <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key features</div>
@@ -384,36 +385,36 @@
         </a>
       </div>
 
-      <!-- IT Expert -->
+      <!-- MAO IT Personnel -->
       <div class="role-card ic-card-enter" style="--ic-card-delay:200ms">
         <div class="role-icon-wrap--img" aria-hidden="true">
           <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
         </div>
         <div class="role-workspace-label">Workspace 3</div>
-        <h3>IT expert</h3>
-        <p>Manage user accounts, monitor system activity, review logs, maintain records, and help ensure that iClimate remains secure, organized, and reliable.</p>
+        <h3>IT Personnel</h3>
+        <p>Support user access, keep records organized, monitor system activity, and help the MAO team keep iClimate secure and dependable.</p>
         <div class="role-divider"></div>
         <div class="role-features-label">Key features</div>
         <ul class="role-features">
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            User management
+            User access support
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            System logs
+            Activity checks
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Record maintenance
+            Record upkeep
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Access control
+            Account support
           </li>
           <li class="role-feature-item">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Security monitoring
+            System reliability
           </li>
         </ul>
         <a href="{{ route('login') }}" class="role-cta">
