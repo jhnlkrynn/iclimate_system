@@ -387,23 +387,15 @@ html { scroll-behavior: smooth; }
 /* -- ABOUT ---------------------------------------------------------------- */
 .lp-about-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 56px;
   align-items: center;
 }
-.lp-about-photo {
-  border-radius: var(--lp-radius);
-  overflow: hidden;
-  aspect-ratio: 4 / 3;
-  background: var(--lp-green-100);
-}
-.lp-about-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 48% center; }
 .lp-about-text .lp-h2 { margin-bottom: 16px; }
 .lp-about-text > p { color: var(--lp-ink-2); }
 
 .lp-mission {
-  margin-top: 24px;
-  padding: 18px 20px;
+  padding: 24px 26px;
   background: var(--lp-green-50);
   border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);

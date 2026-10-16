@@ -1,6 +1,5 @@
 @php
     $heroClimate = \App\Support\ClimateSnapshot::latest();
-    $aboutPhoto = asset('images/rice-about-farmer.jpg');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
@@ -133,17 +132,14 @@
 <section class="lp-section lp-about" id="about">
   <div class="lp-wrap">
     <div class="lp-about-grid">
-      <figure class="lp-about-photo">
-        <img src="{{ $aboutPhoto }}" alt="A farmer transplanting rice seedlings in a flooded paddy" loading="lazy" width="1400" height="787">
-      </figure>
       <div class="lp-about-text">
         <h2 class="lp-h2">Understand today. Prepare tomorrow.</h2>
         <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed decisions for better agricultural outcomes in Lian, Batangas.</p>
-        <blockquote class="lp-mission">
-          <p class="lp-mission-label">Our mission</p>
-          <p>To empower the farming community of Lian, Batangas through accurate climate information, clear analysis, and practical recommendations.</p>
-        </blockquote>
       </div>
+      <blockquote class="lp-mission">
+        <p class="lp-mission-label">Our mission</p>
+        <p>To empower the farming community of Lian, Batangas through accurate climate information, clear analysis, and practical recommendations.</p>
+      </blockquote>
     </div>
 
     <ul class="lp-pillars">
