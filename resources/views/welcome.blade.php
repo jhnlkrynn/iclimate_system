@@ -1,11 +1,6 @@
 @php
     $heroClimate = \App\Support\ClimateSnapshot::latest();
-    $rice = [
-        'hero'     => asset('images/rice-contact-golden.jpg'),
-        'about'    => asset('images/rice-about-farmer.jpg'),
-        'steps'    => asset('images/rice-features-paddy.jpg'),
-        'contact'  => asset('images/rice-roles-terrace.jpg'),
-    ];
+    $aboutPhoto = asset('images/rice-about-farmer.jpg');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_' , '-', app()->getLocale()) }}">
@@ -15,9 +10,7 @@
   <title>{{ config('app.name', 'iClimate') }} | Weather Impact Analysis for Lian, Batangas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet"/>
-  {{-- The page's photos, as custom properties for resources/css/pages/welcome.css. --}}
-  <style>:root { @foreach ($rice as $key => $url)--rice-{{ $key }}: url('{{ $url }}'); @endforeach }</style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   @vite(['resources/css/pages/welcome.css', 'resources/css/accessibility.css', 'resources/js/landing.js'])
   @include('partials.global-loader')
 </head>
@@ -31,7 +24,7 @@
 <header class="lp-nav" id="navbar">
   <div class="lp-wrap lp-nav-inner">
     <a href="{{ url('/') }}" class="lp-nav-logo">
-      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate home" width="120" height="44">
+      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate home" width="120" height="44">
     </a>
     <nav aria-label="Main">
       <ul class="lp-nav-links" id="navLinks">
@@ -46,7 +39,7 @@
     </nav>
     <div class="lp-nav-actions">
       <a href="{{ route('login') }}" class="lp-nav-login">Log in</a>
-      <a href="{{ route('register') }}" class="lp-btn lp-btn--gold lp-btn--sm">Create account</a>
+      <a href="{{ route('register') }}" class="lp-btn lp-btn--primary lp-btn--sm">Create account</a>
       <button type="button" class="lp-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
@@ -60,21 +53,15 @@
 <section class="lp-hero" id="home">
   <div class="lp-wrap lp-hero-inner">
     <div class="lp-hero-text">
-      <p class="lp-eyebrow lp-eyebrow--light">Municipal Agriculture Office &middot; Lian, Batangas</p>
       <h1 class="lp-hero-title">Climate-smart rice farming for Lian.</h1>
       <p class="lp-hero-desc">Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas. All in one place.</p>
       <div class="lp-hero-actions">
-        <a href="{{ route('login') }}" class="lp-btn lp-btn--gold">
+        <a href="{{ route('login') }}" class="lp-btn lp-btn--primary">
           Get started
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
-        <a href="#about" class="lp-btn lp-btn--ghost-light">Learn more</a>
+        <a href="#about" class="lp-btn lp-btn--outline">Learn more</a>
       </div>
-      <ul class="lp-hero-facts" aria-label="What iClimate covers">
-        <li>Live local weather</li>
-        <li>PAGASA advisories</li>
-        <li>Barangay risk maps</li>
-      </ul>
     </div>
 
     <div class="lp-conditions">
@@ -136,10 +123,9 @@
   <div class="lp-wrap">
     <div class="lp-about-grid">
       <figure class="lp-about-photo">
-        <img src="{{ $rice['about'] }}" alt="A farmer transplanting rice seedlings in a flooded paddy" loading="lazy" width="1400" height="787">
+        <img src="{{ $aboutPhoto }}" alt="A farmer transplanting rice seedlings in a flooded paddy" loading="lazy" width="1400" height="787">
       </figure>
       <div class="lp-about-text">
-        <p class="lp-eyebrow">About iClimate</p>
         <h2 class="lp-h2">Understand today. Prepare tomorrow.</h2>
         <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed decisions for better agricultural outcomes in Lian, Batangas.</p>
         <blockquote class="lp-mission">
@@ -183,7 +169,6 @@
 <section class="lp-section lp-features" id="features">
   <div class="lp-wrap">
     <div class="lp-section-head">
-      <p class="lp-eyebrow">Features</p>
       <h2 class="lp-h2">Tools for the rice season</h2>
       <p class="lp-lede">Practical information to help you plan, monitor, and decide from planting through harvest.</p>
     </div>
@@ -232,8 +217,7 @@
 <!-- HOW IT WORKS -->
 <section class="lp-steps" aria-labelledby="stepsTitle">
   <div class="lp-wrap">
-    <div class="lp-section-head lp-section-head--light">
-      <p class="lp-eyebrow lp-eyebrow--light">How it works</p>
+    <div class="lp-section-head">
       <h2 class="lp-h2" id="stepsTitle">From records to harvest in four steps</h2>
     </div>
     <ol class="lp-step-list">
@@ -265,7 +249,6 @@
 <section class="lp-section lp-roles" id="roles">
   <div class="lp-wrap">
     <div class="lp-section-head">
-      <p class="lp-eyebrow">User roles</p>
       <h2 class="lp-h2">Who uses iClimate?</h2>
       <p class="lp-lede">Information for rice farmers, MAO personnel, and IT support staff, with each role seeing the work it needs.</p>
     </div>
@@ -328,7 +311,6 @@
   <div class="lp-wrap">
     <div class="lp-contact-grid">
       <div class="lp-contact-info">
-        <p class="lp-eyebrow lp-eyebrow--light">Contact</p>
         <h2 class="lp-h2">Have questions about iClimate?</h2>
         <p class="lp-contact-lede">Reach the team at the Municipal Agriculture Office of Lian, Batangas. We support farmers, MAO personnel, and IT staff using the platform.</p>
 
@@ -421,7 +403,7 @@
     <div class="lp-ft-top">
       <div class="lp-ft-brand">
         <a href="{{ url('/') }}" class="lp-ft-logo" aria-label="iClimate home">
-          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" width="130" height="48">
+          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="130" height="48">
         </a>
         <p>Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas.</p>
         <div class="lp-ft-social">
