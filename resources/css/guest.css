@@ -1,0 +1,3 @@
+/* Authentication pages use their own compact inline design system. Keep the public entrypoint free of dashboard,
+   map, chart, and authenticated-page styles. */
+@import './ui-tokens.css';

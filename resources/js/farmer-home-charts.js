@@ -2,7 +2,7 @@
 // the barangay average as a line) and "Next 14 Days" (highest temperature and chance of rain). The numbers come with
 // the page (a JSON block per chart, from saved data); nothing is fetched. Chart.js is the one app.js already loads.
 
-const FONT = 14;
+const FONT = 18;
 
 function read(root, name) {
     const el = root.querySelector('[data-fh-chart-data="' + name + '"]');
@@ -68,7 +68,7 @@ export async function initFarmerHomeCharts(root) {
             options: {
                 ...common,
                 scales: {
-                    x: { ticks: { font: { size: narrow ? 12 : FONT }, maxRotation: 0, autoSkip: true, maxTicksLimit: narrow ? 5 : 14 }, grid: { display: false } },
+                    x: { ticks: { font: { size: narrow ? 17 : FONT }, maxRotation: 0, autoSkip: true, maxTicksLimit: narrow ? 5 : 14 }, grid: { display: false } },
                     y: { position: 'left', title: { display: !narrow, text: weather.text.temp, font: { size: FONT } }, ticks: { font: { size: FONT }, callback: (v) => v + '°' } },
                     y1: { display: weather.has_rain, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: !narrow, text: weather.text.rain, font: { size: FONT } }, ticks: { font: { size: FONT }, callback: (v) => v + '%' } },
                 },

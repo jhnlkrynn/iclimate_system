@@ -8,8 +8,7 @@
     $rainfall = $loginWeather['rainfall'] ?? null;
     $conditionLabel = $loginWeather['condition_label'] ?? 'Weather data unavailable';
     $conditionEmoji = $loginWeather['condition_emoji'] ?? '🌦️';
-    $updatedLabel = $loginWeather['updated_label'] ?? 'No live or stored weather available';
-    $weatherUnavailable = 'Weather information is temporarily unavailable.';
+    $weatherUnavailable = 'Weather data unavailable';
     // Sign-in failures arrive on the email key; wrong credentials get plain wording, other messages (lockout, inactive account) are shown as sent.
     $signInError = $errors->first('email');
     if ($signInError === trans('auth.failed')) {
@@ -140,9 +139,6 @@
     .weather-row svg { flex-shrink: 0; color: #fff; opacity: .85; }
     .weather-row dt { flex: 1; font-size: 14px; color: rgba(255,255,255,.82); }
     .weather-row dd { font-size: 15px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
-    .weather-updated { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,.8); margin-top: 16px; }
-    .weather-updated-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--reg-mint); flex-shrink: 0; }
-    .weather-card.is-unavailable .weather-updated-dot { background: rgba(255,255,255,.5); }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
@@ -151,6 +147,7 @@
     /* Panel revision 4.3: inputs of at least 16px on phones (no auto-zoom). */
     @media (max-width: 767.98px) { .form-input, input, select { font-size: 16px !important; min-height: 44px; } }
   </style>
+  @vite('resources/css/accessibility.css')
     @include('partials.global-loader')
 </head>
 <body class="login-page">
@@ -168,7 +165,7 @@
       Back to home
     </a>
     <p class="login-visual-copy">Climate-smart rice farming for Lian, Batangas.</p>
-      <section class="weather-card glass-card {{ $hasRealWeather ? '' : 'is-unavailable' }}" id="weatherCard" aria-labelledby="weatherTitle" data-weather-endpoint="{{ route('login.weather') }}">
+      <section class="weather-card glass-card {{ $hasRealWeather ? '' : 'is-unavailable' }}" id="weatherCard" aria-labelledby="weatherTitle" data-weather-endpoint="{{ route('api.weather.current') }}">
         <h2 class="weather-title" id="weatherTitle">Today's weather</h2>
         <div class="weather-loc">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
@@ -179,7 +176,7 @@
           {{-- Starts as the provider's emoji and is swapped for a matching line icon by the page script. --}}
           <div class="weather-icon" id="weatherEmoji" aria-hidden="true">{{ $hasRealWeather ? $conditionEmoji : '🌦️' }}</div>
           <div>
-            <div class="weather-temp" id="weatherTemp">{{ $temperature !== null ? $temperature.'°C' : '--' }}</div>
+            <div class="weather-temp" id="weatherTemp">{{ $temperature !== null ? $temperature.'°C' : '—' }}</div>
             <div class="weather-cond" id="weatherCond">{{ $hasRealWeather ? $conditionLabel : $weatherUnavailable }}</div>
           </div>
         </div>
@@ -188,24 +185,20 @@
           <div class="weather-row">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5c2 2.6 3.6 4.8 3.6 7a3.6 3.6 0 1 1-7.2 0c0-2.2 1.6-4.4 3.6-7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
             <dt>Humidity</dt>
-            <dd id="weatherHumidity">{{ $humidity !== null ? $humidity.'%' : '--' }}</dd>
+            <dd id="weatherHumidity">{{ $humidity !== null ? $humidity.'%' : '—' }}</dd>
           </div>
           <div class="weather-row">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 6.5h8a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 10.5h11a2.2 2.2 0 1 1-2.2 2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
             <dt>Wind speed</dt>
-            <dd id="weatherWind">{{ $windSpeed !== null ? $windSpeed.' km/h' : '--' }}</dd>
+            <dd id="weatherWind">{{ $windSpeed !== null ? $windSpeed.' km/h' : '—' }}</dd>
           </div>
           <div class="weather-row">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 10.5h8a3 3 0 0 0 .4-5.97A4.2 4.2 0 0 0 5.3 5.6 2.5 2.5 0 0 0 5 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 13v2M9 13v2M11.5 13v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
             <dt>Rainfall today</dt>
-            <dd id="weatherRainfall">{{ $rainfall !== null ? number_format((float) $rainfall, 1).' mm' : '--' }}</dd>
+            <dd id="weatherRainfall">{{ $rainfall !== null ? number_format((float) $rainfall, 1).' mm' : '—' }}</dd>
           </div>
         </dl>
 
-        <div class="weather-updated">
-          <span class="weather-updated-dot" aria-hidden="true"></span>
-          <span id="weatherUpdatedLabel">{{ $updatedLabel }}</span>
-        </div>
       </section>
     </aside>
 
@@ -390,12 +383,11 @@
     const showWeather = (data) => {
       weatherCard.classList.toggle('is-unavailable', ! data.has_real_weather);
       setWeatherIcon(data.has_real_weather ? data.condition_emoji : null);
-      document.getElementById('weatherTemp').textContent = data.temperature !== null ? `${data.temperature}°C` : '--';
+      document.getElementById('weatherTemp').textContent = data.temperature !== null ? `${data.temperature}°C` : '—';
       document.getElementById('weatherCond').textContent = data.has_real_weather ? data.condition_label : weatherUnavailable;
-      document.getElementById('weatherHumidity').textContent = data.humidity !== null ? `${data.humidity}%` : '--';
-      document.getElementById('weatherWind').textContent = data.wind_speed !== null ? `${data.wind_speed} km/h` : '--';
-      document.getElementById('weatherRainfall').textContent = data.rainfall !== null ? `${data.rainfall.toFixed(1)} mm` : '--';
-      document.getElementById('weatherUpdatedLabel').textContent = data.updated_label ?? 'No live or stored weather available';
+      document.getElementById('weatherHumidity').textContent = data.humidity !== null ? `${data.humidity}%` : '—';
+      document.getElementById('weatherWind').textContent = data.wind_speed !== null ? `${data.wind_speed} km/h` : '—';
+      document.getElementById('weatherRainfall').textContent = data.rainfall !== null ? `${data.rainfall.toFixed(1)} mm` : '—';
     };
 
     setWeatherIcon(weatherCard.classList.contains('is-unavailable') ? null : weatherIconEl.textContent.trim());
@@ -420,7 +412,8 @@
       };
 
       refreshWeather();
-      setInterval(refreshWeather, 60000);
+      const refreshIntervalMs = @json((int) config('services.weather.poll_seconds', 300) * 1000);
+      setInterval(refreshWeather, refreshIntervalMs);
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') refreshWeather();
       });

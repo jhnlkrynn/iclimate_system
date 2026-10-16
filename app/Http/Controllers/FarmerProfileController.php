@@ -230,8 +230,15 @@ class FarmerProfileController extends CrudController
     protected function baseQuery(Request $request): Builder
     {
         return FarmerProfile::query()
-            // farmerOrganization is shown per row; loading it here is one query for the page, not one per row.
-            ->with(['user', 'farmBoundary', 'farmerOrganization', 'organizations', 'farms'])
+            // Only relationships used by the list columns are loaded. Farm boundaries are used by the detail view,
+            // not this list; farm totals are calculated by one correlated aggregate below.
+            ->with(['farmerOrganization', 'organizations'])
+            ->withAggregate('user as account_status_value', 'status')
+            ->withSum([
+                'farms as active_known_farm_area' => fn (Builder $farms) => $farms
+                    ->whereNull('archived_at')
+                    ->whereIn('farm_size_method', [\App\Models\Farm::SIZE_EXACT, \App\Models\Farm::SIZE_MAPPED]),
+            ], 'farm_size_hectares')
             ->when(
                 $request->user()->role === User::ROLE_FARMER,
                 fn (Builder $query) => $query->where('user_id', $request->user()->id),

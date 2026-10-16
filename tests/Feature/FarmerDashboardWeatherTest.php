@@ -50,6 +50,33 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_login_weather_endpoint_reads_the_scheduled_shared_weather_and_reuses_it_on_polling(): void
+    {
+        Http::fake([
+            'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
+        ]);
+
+        // Provider access belongs to the scheduled refresh. The API endpoint itself is a stored/cache-only read.
+        $this->artisan('iclimate:refresh-weather-cache')->assertSuccessful();
+        $providerRequests = count(Http::recorded());
+
+        $first = $this->getJson(route('api.weather.current'))
+            ->assertOk()
+            ->assertJsonPath('has_real_weather', true)
+            ->assertJsonPath('temperature', 25.5)
+            ->assertJsonPath('humidity', 95)
+            ->assertJsonPath('wind_speed', 8.4)
+            ->assertJsonPath('rainfall', 0.6)
+            ->assertJsonPath('condition_label', 'Light Rain');
+
+        $this->getJson(route('api.weather.current'))
+            ->assertOk()
+            ->assertJsonPath('temperature', $first->json('temperature'))
+            ->assertJsonPath('updated_at', $first->json('updated_at'));
+
+        $this->assertSame($providerRequests, count(Http::recorded()));
+    }
+
     public function test_service_returns_latest_successful_weather_when_provider_fails(): void
     {
         Http::fake([
@@ -231,6 +258,28 @@ class FarmerDashboardWeatherTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_a_concurrent_current_refresh_uses_the_last_verified_snapshot(): void
+    {
+        Http::fake([
+            'api.open-meteo.com/*' => Http::response($this->openMeteoPayload(), 200),
+        ]);
+
+        $service = app(FarmerDashboardWeatherService::class);
+        $first = $service->current(force: true);
+        $lock = Cache::lock(FarmerDashboardWeatherService::CURRENT_CACHE_KEY.':refresh-lock', 60);
+        $this->assertTrue($lock->get());
+
+        try {
+            $second = $service->current(force: true);
+        } finally {
+            $lock->release();
+        }
+
+        $this->assertSame($first['current']['temperature'], $second['current']['temperature']);
+        $this->assertTrue($second['cached']);
+        Http::assertSentCount(1);
+    }
+
     public function test_live_weather_endpoint_wraps_payload_for_frontend_clients(): void
     {
         config([
@@ -378,12 +427,12 @@ class FarmerDashboardWeatherTest extends TestCase
                 'wind_gusts_10m_max' => [20.0, 18.0],
             ],
             'hourly' => [
-                'time' => ['2026-08-09T23:00'],
+                'time' => ['2026-08-09T00:00', '2026-08-09T12:00', '2026-08-09T23:00', '2026-08-10T00:00'],
                 'temperature_2m' => [25.5],
                 'relative_humidity_2m' => [95],
                 'precipitation_probability' => [80],
-                'precipitation' => [0.1],
-                'rain' => [0.1],
+                'precipitation' => [0.2, 0.3, 0.1, 9.9],
+                'rain' => [0.2, 0.3, 0.1, 9.9],
                 'weather_code' => [61],
             ],
         ];

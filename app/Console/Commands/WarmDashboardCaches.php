@@ -23,7 +23,9 @@ class WarmDashboardCaches extends Command
             if ($age === null || $age >= 10) {
                 $started = microtime(true);
                 $riskMap->refreshCache();
-                $this->line('Refreshed heat map in '.round(microtime(true) - $started, 1).'s');
+                $this->line('Heat map: refreshed in '.number_format(microtime(true) - $started, 3).'s');
+            } else {
+                $this->line('Heat map: current');
             }
 
             // MAO dashboard, IT overview and MAO Operations: rebuilt only when the data they read changed or they are

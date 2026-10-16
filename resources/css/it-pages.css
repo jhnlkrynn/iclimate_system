@@ -74,10 +74,121 @@ body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .modal-b
 .mfd.itd.itp .mfd-header p { color: rgba(255, 255, 255, .86); }
 .itp-header-meta { display: flex; flex-direction: column; gap: 2px; }
 
+/* System Status header: keep the timestamp and refresh control readable against the light government header. */
+.itp-simple-health .mfd-header .mfd-age,
+.itp-simple-health .mfd-header .itp-header-meta .mfd-age {
+    color: var(--gov-label, #4b5563) !important;
+    font-size: 1rem !important;
+    line-height: 1.4;
+    opacity: 1 !important;
+}
+.itp-simple-health .mfd-header .mfd-btn.is-quiet {
+    min-height: 48px;
+    padding: 10px 18px;
+    border: 2px solid var(--gov-primary, #0f5132) !important;
+    background: #fff !important;
+    color: var(--gov-primary-dark, #0f5132) !important;
+    box-shadow: 0 1px 2px rgba(15, 81, 50, .12);
+    opacity: 1 !important;
+}
+.itp-simple-health .mfd-header .mfd-btn.is-quiet .mtd-svg { color: currentColor !important; }
+.itp-simple-health .mfd-header .mfd-btn.is-quiet:hover {
+    background: var(--gov-primary-soft, #e6f4ec) !important;
+    border-color: var(--gov-primary-dark, #0b3d26) !important;
+    color: var(--gov-primary-dark, #0b3d26) !important;
+}
+.itp-simple-health .mfd-header .mfd-btn.is-quiet:focus-visible {
+    outline: 3px solid var(--gov-blue, #1f6fb2);
+    outline-offset: 3px;
+}
+html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-age,
+html[data-theme="dark"] body .itp-simple-health .mfd-header .itp-header-meta .mfd-age {
+    color: #d7f2e2 !important;
+}
+html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet {
+    border-color: #8fd3ae !important;
+    background: #e6f4ec !important;
+    color: #0b3d26 !important;
+}
+html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:hover {
+    background: #c9e8d5 !important;
+    border-color: #b1e1c3 !important;
+    color: #06301d !important;
+}
+
 /* section heading: Georgia 24px over a brand rule, with an optional description */
 .itp-section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .itp-section-head { padding-bottom: 12px; border-bottom: 2px solid var(--brand); }
 .itp-section-head p { margin-top: 4px; font-size: .9375rem; color: var(--muted); }
+
+/* Calm, plain-language System Status page. Technical checks stay behind Advanced Details. */
+.itp-simple-health .itp-simple-status {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+.itp-simple-status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    min-height: 112px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card);
+}
+.itp-simple-label { color: var(--muted); font-size: 1.05rem; line-height: 1.4; }
+.itp-simple-status-item strong { font-size: 1.35rem; line-height: 1.25; overflow-wrap: break-word; word-break: normal; }
+.itp-simple-status-item strong.is-good { color: var(--good-ink, var(--good)); }
+.itp-simple-status-item strong.is-watch { color: var(--watch-ink, var(--watch)); }
+.itp-simple-status-item strong.is-unk { color: var(--muted); }
+.itp-attention-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-height: 72px;
+    padding: 18px 20px;
+    border: 1px solid var(--watch);
+    border-left-width: 5px;
+    border-radius: var(--radius);
+    background: var(--watch-bg);
+    color: var(--watch-ink, var(--ink));
+}
+.itp-attention-box.is-clear { border-color: var(--good); background: var(--good-bg); color: var(--good-ink, var(--ink)); }
+.itp-attention-box .mtd-svg { flex: none; width: 24px; height: 24px; margin-top: 2px; }
+.itp-attention-box p { margin: 0; }
+.itp-attention-box ul { display: grid; gap: 8px; margin: 0; padding-left: 22px; list-style: disc; }
+.itp-activity-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+.itp-activity-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--subtle);
+}
+.itp-activity-grid span, .itp-activity-grid small { color: var(--muted); font-size: 1rem; line-height: 1.4; }
+.itp-activity-grid strong { color: var(--ink); font-size: 2rem; line-height: 1.1; }
+.itp-quick-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.itp-quick-actions .mfd-btn { flex: 1 1 180px; min-height: 52px; font-size: 1.05rem; }
+.itp-advanced { border-top: 1px solid var(--line); }
+.itp-advanced summary { cursor: pointer; padding: 16px 0; color: var(--brand-ink, var(--brand)); font-size: 1.05rem; font-weight: 700; }
+.itp-advanced-note { margin: 0 0 20px; color: var(--muted); }
+.itp-advanced[open] { display: grid; gap: 24px; }
+@media (max-width: 1000px) {
+    .itp-simple-health .itp-simple-status, .itp-activity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .itp-simple-health .itp-simple-status, .itp-activity-grid { grid-template-columns: minmax(0, 1fr); }
+    .itp-quick-actions .mfd-btn { flex-basis: 100%; }
+}
 
 /* layout grids */
 .itp-grid { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); align-items: stretch; }

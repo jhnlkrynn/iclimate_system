@@ -78,7 +78,13 @@ class HeatMapPageTest extends TestCase
     /** The visible words of one panel view (data-heat-map-view="<range>:<summary|barangay>"). */
     private function panelView(string $html, string $key): string
     {
-        $this->assertSame(1, preg_match('#<section class="hmx-view" data-heat-map-view="'.preg_quote($key, '#').'"[^>]*>(.*?)</section>#s', $html, $m), "panel view {$key}");
+        $found = preg_match('#<section class="hmx-view" data-heat-map-view="'.preg_quote($key, '#').'"[^>]*>(.*?)</section>#s', $html, $m);
+        if (! $found && $key !== 'week:summary' && $key !== '2weeks:summary') {
+            [$range, $barangay] = explode(':', $key, 2);
+            $detail = $this->getJson(route('heat-map.detail', ['range' => $range, 'barangay' => $barangay]))->assertOk()->json('html');
+            $found = preg_match('#<section class="hmx-view" data-heat-map-detail="'.preg_quote($key, '#').'"[^>]*>(.*?)</section>#s', (string) $detail, $m);
+        }
+        $this->assertSame(1, $found, "panel view {$key}");
 
         // Tags become spaces first, so a label and its value never run together.
         return trim((string) preg_replace('/\s+/', ' ', html_entity_decode((string) preg_replace('/<[^>]+>/', ' ', $m[1]))));
@@ -222,7 +228,7 @@ class HeatMapPageTest extends TestCase
         $this->assertStringContainsString('Gawin ngayon Linisin na ngayon ang mga kanal na daluyan ng tubig.', $prenza);
 
         // The farmer still sees all 19 barangays, never only their own.
-        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', $html));
+        $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', $html));
 
         // English farmers get English; staff never get a "your barangay" line.
         $english = $this->panelView($this->actingAs($this->farmer('Prenza', 'en'))->get(route('heat-map.index'))->getContent(), 'week:summary');
@@ -246,22 +252,21 @@ class HeatMapPageTest extends TestCase
 
     // ------------------------------------------------------------ saved data only
 
-    public function test_with_nothing_saved_the_page_says_no_data_in_one_language_and_asks_for_the_weather_once(): void
+    public function test_with_nothing_saved_the_page_says_no_data_without_calling_the_provider(): void
     {
         // Staff read English only (the screenshot mixed "Walang datos pa" with an English note).
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
         $this->assertSame('Lian this week No data yet It appears here after the next update.', $this->panelView($html, 'week:summary'));
         $this->assertStringNotContainsString('Walang datos pa', $html);
         $this->assertStringNotContainsString('low risk', $this->panelView($html, 'week:summary'));
-        // The shared weather is due, so ONE batched request for all 19 ran after the response (here it failed, and
-        // each barangay was tried once on its own); the page tells heat-map.js to read it again shortly.
+        // Refreshes are scheduler/background work; ordinary navigation never asks the provider.
         $this->assertStringContainsString('data-heat-map-updating', $html);
-        $this->assertCount(1 + 19, Http::recorded());
+        $this->assertCount(0, Http::recorded());
 
         // A Filipino farmer reads it all in Filipino; a second view in the same minute asks the provider nothing.
         $farmer = $this->actingAs($this->farmer('Prenza', 'fil'))->get(route('heat-map.index'))->assertOk()->getContent();
         $this->assertSame('Lian ngayong linggo Walang datos pa Lalabas ito pagkatapos ng susunod na update.', $this->panelView($farmer, 'week:summary'));
-        $this->assertCount(1 + 19, Http::recorded());
+        $this->assertCount(0, Http::recorded());
 
         // With current saved forecasts the page shows them with their time and makes no provider call at all.
         $this->storeForecasts();
@@ -269,7 +274,7 @@ class HeatMapPageTest extends TestCase
         $this->assertStringContainsString('Updated: ', $this->panelView($ready, 'week:summary'));
         $this->assertStringNotContainsString('data-heat-map-updating', $ready);
         $this->assertStringNotContainsString('could not be updated', $ready);
-        $this->assertCount(1 + 19, Http::recorded());
+        $this->assertCount(0, Http::recorded());
     }
 
     public function test_an_old_saved_forecast_still_rates_its_remaining_days_and_says_it_is_delayed(): void

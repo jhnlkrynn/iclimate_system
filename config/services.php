@@ -53,9 +53,9 @@ return [
         'longitude' => env('ICLIMATE_WEATHER_LON', env('WEATHER_LONGITUDE', env('ICLIMATE_LONGITUDE', \App\Support\LianLocation::LONGITUDE))),
         'timezone' => env('WEATHER_TIMEZONE', env('ICLIMATE_TIMEZONE', \App\Support\LianLocation::TIMEZONE)),
         'location_name' => env('WEATHER_LOCATION_NAME', env('ICLIMATE_LOCATION_NAME', 'Lian, Batangas')),
-        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 1),
+        'cache_minutes' => env('WEATHER_CACHE_MINUTES', 5),
         'forecast_days' => env('WEATHER_FORECAST_DAYS', 7),
-        'poll_seconds' => env('WEATHER_POLL_SECONDS', 60),
+        'poll_seconds' => env('WEATHER_POLL_SECONDS', 300),
     ],
 
     'weatherapi' => [

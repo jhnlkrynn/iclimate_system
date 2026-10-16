@@ -9,8 +9,9 @@ namespace App\Support;
  *  - A page request (HTML): short provider limits, no retries, and it may use
  *    a recent stored result instead of calling out. A scheduled job keeps the
  *    stored result fresh, so a page never has to wait for a provider.
- *  - A JSON request (live widgets polling in the background): short provider
- *    limits and no retries, but it always wants fresh data.
+ *  - A JSON request (live widgets polling in the background): reads the same
+ *    stored/cache-only snapshot as HTML pages. Fresh provider data is prepared
+ *    by the scheduler or an explicit refresh operation.
  *  - No web request (commands, queue workers): unchanged, patient behaviour.
  */
 class InteractiveRequest

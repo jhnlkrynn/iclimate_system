@@ -45,6 +45,8 @@ class AdvisoryWeatherService
 
     private const FRESH_MINUTES = 20;
 
+    private const REFRESH_LOCK_SECONDS = 60;
+
     public const ROWS = [
         'rainfall' => 'Expected rainfall',
         'probability' => 'Chance of rain',
@@ -186,6 +188,11 @@ class AdvisoryWeatherService
             return $cached;
         }
 
+        $lock = Cache::lock($key.':refresh-lock', self::REFRESH_LOCK_SECONDS);
+        if (! $lock->get()) {
+            return Cache::get($key.':last') ?: ($cached ? ['stale' => true] + $cached : null);
+        }
+
         try {
             $response = Http::timeout((int) config('services.open_meteo.timeout', 10))
                 ->retry(2, 300)
@@ -211,6 +218,8 @@ class AdvisoryWeatherService
             }
         } catch (Throwable) {
             // fall through to the last good copy
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
         }
 
         $last = Cache::get($key.':last');

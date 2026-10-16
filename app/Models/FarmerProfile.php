@@ -127,7 +127,9 @@ class FarmerProfile extends Model
      */
     public function getTotalFarmAreaAttribute(): ?string
     {
-        $known = $this->farms->whereNull('archived_at')->sum(fn (Farm $farm): float => (float) ($farm->knownHectares() ?? 0));
+        $known = array_key_exists('active_known_farm_area', $this->attributes)
+            ? (float) ($this->attributes['active_known_farm_area'] ?? 0)
+            : $this->farms->whereNull('archived_at')->sum(fn (Farm $farm): float => (float) ($farm->knownHectares() ?? 0));
         $hectares = $known > 0 ? $known : (float) $this->farm_area;
 
         return $hectares > 0 ? rtrim(rtrim(number_format($hectares, 2), '0'), '.').' ha' : null;
@@ -136,6 +138,12 @@ class FarmerProfile extends Model
     /** Active / Inactive: the status of the farmer's login account. */
     public function getAccountStatusAttribute(): ?string
     {
+        if (array_key_exists('account_status_value', $this->attributes)) {
+            return $this->attributes['account_status_value'] !== null
+                ? (string) $this->attributes['account_status_value']
+                : null;
+        }
+
         return $this->user?->status;
     }
 }

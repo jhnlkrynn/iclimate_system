@@ -779,6 +779,7 @@
             let pollTimer = null;
             let pollInFlight = false;
             let pollGeneration = 0;
+            let pollAbortController = null;
             const POLL_INTERVAL_MS = 8000;
 
             const poll = async () => {
@@ -787,12 +788,15 @@
                 const requestGeneration = pollGeneration;
                 const requestConversationId = activeConversationId;
                 const requestPollUrl = pollUrl;
+                const controller = new AbortController();
+                pollAbortController = controller;
 
                 try {
                     const response = await fetch(`${requestPollUrl}?after_id=${lastMessageId}`, {
                         headers: { 'Accept': 'application/json' },
                         credentials: 'same-origin',
                         loader: false, // background polling
+                        signal: controller.signal,
                     });
                     if (!response.ok) return;
                     const data = await response.json();
@@ -811,20 +815,23 @@
                         statusText.textContent = `${roleText} · ${data.other_online ? 'Online' : 'Offline'}`;
                     }
                 } catch (error) {
-                    /* silent: one failed poll should not stop the loop */
+                    /* Silent: one failed poll should not stop the loop. Aborted polls are expected on navigation. */
                 } finally {
+                    if (pollAbortController === controller) pollAbortController = null;
                     if (requestGeneration === pollGeneration) pollInFlight = false;
                 }
             };
 
             const startPolling = () => {
-                if (!pollUrl || pollTimer) return;
+                if (!pollUrl || pollTimer || document.hidden) return;
                 pollTimer = setInterval(poll, POLL_INTERVAL_MS);
             };
 
             const stopPolling = () => {
                 if (pollTimer) clearInterval(pollTimer);
                 pollTimer = null;
+                pollAbortController?.abort();
+                pollAbortController = null;
                 pollGeneration += 1;
                 pollInFlight = false;
             };
@@ -946,10 +953,12 @@
                 if (document.hidden) {
                     stopPolling();
                 } else {
-                    poll();
+                    void poll();
                     startPolling();
                 }
             });
+
+            window.addEventListener('pagehide', stopPolling, { once: true });
 
             startPolling();
 

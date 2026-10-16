@@ -162,6 +162,6 @@ final class PreparedDashboards
             return 'failed: '.$exception->getMessage();
         }
 
-        return $built ? round(microtime(true) - $started, 1).' s' : 'busy';
+        return $built ? number_format(microtime(true) - $started, 3).' s' : 'busy';
     }
 }

@@ -600,8 +600,10 @@ class BarangayRiskMapTest extends TestCase
         $response->assertSee('id="heatMapCanvas"', false);
         $response->assertSee('class="hmx-legend"', false);
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
-        // All 19 barangays are in the farmer's page (one panel view each, per range), never only their own.
-        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
+        // All 19 barangays remain in the compact map dataset; detail panels are loaded on demand.
+        preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', (string) $response->getContent(), $levels);
+        $this->assertCount(19, json_decode($levels[1], true)['levels']['week']);
+        $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
         // The page reads saved data: it has no refresh control and no pop-up.
         $response->assertDontSee('data-risk-map-refresh', false);
         $response->assertDontSee('data-insight-url', false);
@@ -691,10 +693,11 @@ class BarangayRiskMapTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('data-own-barangay="Cumba"', false);
-        // Highlighting one barangay must not hide/remove any of the others —
-        // the map element and all 19 panel views are still there.
+        // Highlighting one barangay must not hide/remove any of the others; detail panels are lazy-loaded.
         $response->assertSee('id="heatMapCanvas"', false);
-        $this->assertSame(19, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
+        preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', (string) $response->getContent(), $levels);
+        $this->assertCount(19, json_decode($levels[1], true)['levels']['week']);
+        $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
     }
 
     public function test_farmers_barangay_highlight_normalizes_non_canonical_spelling(): void

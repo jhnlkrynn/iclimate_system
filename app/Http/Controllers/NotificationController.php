@@ -40,10 +40,13 @@ class NotificationController extends CrudController
     protected function farmerIndexData(Request $request, Builder $filtered): array
     {
         $all = $this->baseQuery($request);
+        $counts = (clone $all)
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN is_read = ? THEN 1 ELSE 0 END) as unread', [false])
+            ->first();
 
         return [
-            'unreadCount' => (clone $all)->where('is_read', false)->count(),
-            'totalCount' => (clone $all)->count(),
+            'unreadCount' => (int) ($counts?->unread ?? 0),
+            'totalCount' => (int) ($counts?->total ?? 0),
         ];
     }
 
@@ -211,10 +214,14 @@ class NotificationController extends CrudController
             : [];
         // end Farmer – Naicel
 
+        $counts = (clone $all)
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN is_read = ? THEN 1 ELSE 0 END) as unread', [false])
+            ->first();
+
         return response()->json([
             'ok' => true,
-            'unread' => (clone $all)->where('is_read', false)->count(),
-            'total' => (clone $all)->count(),
+            'unread' => (int) ($counts?->unread ?? 0),
+            'total' => (int) ($counts?->total ?? 0),
             'filtered' => $page->total(),
             'page' => $page->currentPage(),
             'last_page' => $page->lastPage(),

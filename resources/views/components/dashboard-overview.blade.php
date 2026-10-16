@@ -191,7 +191,7 @@
                             options: {
                                 responsive: true, maintainAspectRatio: false, cutout: '62%',
                                 plugins: {
-                                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } },
+                                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 18 } } },
                                 },
                             },
                         });
@@ -215,7 +215,7 @@
                     const scales = {
                         [horizontal ? 'x' : 'y']: { beginAtZero: true, grid: { color: '#EEF2EF' }, ticks: { maxTicksLimit: 6 },
                             title: { display: !!(cfg.axis_titles && cfg.axis_titles[0]) || !!cfg.unit, text: (cfg.axis_titles && cfg.axis_titles[0]) || cfg.unit } },
-                        [horizontal ? 'y' : 'x']: { grid: { display: false }, ticks: { autoSkip: true, maxRotation: 0, font: { size: 11 } } },
+                        [horizontal ? 'y' : 'x']: { grid: { display: false }, ticks: { autoSkip: true, maxRotation: 0, font: { size: 18 } } },
                     };
                     if (dual) {
                         scales.y2 = { position: 'right', grid: { drawOnChartArea: false }, ticks: { maxTicksLimit: 6 },
@@ -229,7 +229,7 @@
                             interaction: { mode: 'index', intersect: false },
                             scales,
                             plugins: {
-                                legend: { display: multi, position: 'bottom', labels: { boxWidth: 12, font: { size: 12 },
+                                legend: { display: multi, position: 'bottom', labels: { boxWidth: 12, font: { size: 18 },
                                     filter: (item, data) => data.datasets[item.datasetIndex].data.some((v) => v !== null) } },
                                 tooltip: { callbacks: {
                                     // Dual-axis charts use the shared tooltip label, which picks each series' own axis unit.

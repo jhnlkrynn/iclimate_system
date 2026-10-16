@@ -1,0 +1,285 @@
+/*
+ * iClimate readability layer
+ *
+ * This file is loaded last by both the signed-in and guest shells. It raises
+ * the actual type sizes and hit areas used by the shared components while
+ * leaving the existing colour, spacing language, and responsive breakpoints
+ * intact. Keep page-specific exceptions below this layer intentional.
+ */
+:root {
+    --ic-a11y-body: 1.25rem;         /* 20px */
+    --ic-a11y-helper: 1.125rem;      /* 18px */
+    --ic-a11y-label: 1.1875rem;      /* 19px */
+    --ic-a11y-control: 1.1875rem;    /* 19px */
+    --ic-a11y-table: 1.125rem;       /* 18px */
+    --ic-a11y-badge: 1rem;           /* 16px */
+    --ic-a11y-line: 1.62;
+
+    /* Existing theme tokens are intentionally redirected here so legacy and
+     * newer components inherit the same larger baseline. */
+    --text-xs: 1rem;
+    --text-sm: 1.125rem;
+    --text-base: 1.1875rem;
+    --text-md: 1.25rem;
+    --text-lg: 1.375rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 2rem;
+    --text-3xl: 2.5rem;
+    --text-4xl: 2.75rem;
+    --ic-readable-body: var(--ic-a11y-body);
+    --ic-readable-small: var(--ic-a11y-helper);
+    --ic-readable-label: var(--ic-a11y-label);
+}
+
+html { font-size: 16px; }
+
+body,
+body.login-page {
+    font-size: var(--ic-a11y-body);
+    line-height: var(--ic-a11y-line);
+}
+
+/* Page hierarchy: titles stay prominent without forcing oversized cards. */
+body :is(h1, .page-title, .page-header h1, .page-hero h1, .lpl-headline) {
+    font-size: clamp(2.5rem, 3.2vw, 2.75rem) !important;
+    line-height: 1.18 !important;
+}
+
+body :is(h2, .section-title, .page-section-title, .card-header h2) {
+    font-size: clamp(1.875rem, 2.5vw, 2.125rem) !important;
+    line-height: 1.25 !important;
+}
+
+body :is(h3, h4, .card-title, .panel-title, .module-title, .kpi-title, .stat-label) {
+    font-size: 1.3125rem !important;
+    line-height: 1.35 !important;
+}
+
+body :is(p, li, dt, dd, .card-body, .modal-body, .offcanvas-body, .alert,
+    .module-tile, .climate-chip, .risk-card, .soft-section, .filter-panel,
+    .details-list, .empty-state, .form-text, .help-text) {
+    font-size: var(--ic-a11y-body);
+    line-height: var(--ic-a11y-line) !important;
+}
+
+body :is(small, .small, .text-muted, .card-text, .form-text, .help-text,
+    .eyebrow, .iclimate-section-eyebrow, .sidebar-section, .sidebar-foot) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.55 !important;
+}
+
+/* KPI values and dashboard figures. */
+body :is(.stat-value, .kpi-value, .frec-kpi-value, .mhd-kpi-value,
+    [class*="kpi"] .value, [class*="Kpi"] .value) {
+    font-size: clamp(2.25rem, 4vw, 2.625rem) !important;
+    line-height: 1.18 !important;
+}
+
+/* Forms, buttons, tabs, filters, and navigation. */
+body :is(.btn, button, .dropdown-item, .nav-link, .tab, [role="tab"],
+    .sidebar-link, .quick-action, .priority-card, .ai-chip, .ic-ai-chip) {
+    min-height: 52px;
+    font-size: var(--ic-a11y-control) !important;
+    line-height: 1.4 !important;
+    padding-top: .7rem;
+    padding-bottom: .7rem;
+}
+
+body :is(.form-label, label, legend, .field-box-label) {
+    font-size: var(--ic-a11y-label) !important;
+    line-height: 1.5 !important;
+}
+
+body :is(.form-control, .form-select, input:not([type="checkbox"]):not([type="radio"]),
+    select, textarea) {
+    min-height: 56px;
+    font-size: var(--ic-a11y-control) !important;
+    line-height: 1.5 !important;
+}
+
+body textarea { min-height: 136px; }
+body :is(.form-check-input, input[type="checkbox"], input[type="radio"]) {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+/* Tables remain readable and can scroll instead of compressing their type. */
+body :is(.table, table, .frec-table, .mtd-table) {
+    font-size: var(--ic-a11y-table) !important;
+    line-height: 1.55 !important;
+}
+
+body :is(.table th, .table td, table th, table td, .frec-table th, .frec-table td,
+    .mtd-table th, .mtd-table td) {
+    font-size: var(--ic-a11y-table) !important;
+    line-height: 1.5 !important;
+}
+
+body :is(.table thead th, table thead th, .frec-table thead th, .mtd-table thead th) {
+    font-size: 1.1875rem !important;
+    line-height: 1.45 !important;
+}
+
+body :is(.badge, .sidebar-badge, .status-badge, .status-label, .chip, .tag) {
+    min-height: 34px;
+    font-size: var(--ic-a11y-badge) !important;
+    line-height: 1.35;
+}
+
+/* DOM chart legends and map/chart explanations. Canvas labels are configured
+ * in app.js and the chart-specific dashboard scripts. */
+body :is(.chart-legend, .ic-gauge-legend, .risk-map-legend,
+    .risk-map-legend-item, .hmx-legend, .hmx-legend-item, .fh-pill-legend,
+    .farmer-org-legend, .farmer-org-legend-item, .itd-legend) {
+    font-size: 1.125rem !important;
+    line-height: 1.55 !important;
+}
+
+body :is(.tooltip, .popover, .modal, .toast, .flash-toast, .notification,
+    .dropdown-menu) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.55 !important;
+}
+
+body :is(.modal-title, .offcanvas-title) {
+    font-size: 1.875rem !important;
+    line-height: 1.3 !important;
+}
+
+/* Give icon-only controls the same comfortable target as text controls. */
+body :is(.ic-icon-btn, .icon-btn, .btn-close, [aria-label]:not(a):not(input):not(select)) {
+    touch-action: manipulation;
+}
+
+/* Standalone sign-in and registration screens use inline page styling, so
+ * keep their field labels, guidance, and primary actions in the same range. */
+body:is(.login-page, .register-page) :is(.login-visual-copy, .login-register, .login-panel-foot,
+    .login-form-header p, .auth-status, .auth-alert, .checkbox-label,
+    .forgot-link, .weather-loc, .weather-row dt, .weather-updated,
+    .reg-notes-sub, .perk-item, .reg-notes-staff, .reg-sub, .field-hint,
+    .field-error, .field-success, .reg-foot, .org-ms-search, .org-ms-barangay) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.55;
+}
+
+body:is(.login-page, .register-page) :is(.form-group label, .captcha-card label, .register-form label) {
+    font-size: var(--ic-a11y-label) !important;
+    line-height: 1.4;
+}
+
+body:is(.login-page, .register-page) :is(input, select, textarea, .login-form input, .register-form input,
+    .register-form select, .register-form textarea) {
+    min-height: 48px;
+    font-size: var(--ic-a11y-control) !important;
+}
+
+body:is(.login-page, .register-page) :is(.btn-login, .btn-submit, .auth-toggle a, .org-ms-more) {
+    min-height: 54px;
+    font-size: var(--ic-a11y-control) !important;
+}
+
+/* Shared shell and dashboard microcopy. These selectors deliberately include
+ * spans because most KPI labels, timestamps, sidebar labels, and status text
+ * are rendered as spans rather than paragraphs. */
+body :is(.sidebar-link, .sidebar-label, .sidebar-section, .sidebar-foot,
+    .topbar, .topbar a, .topbar button, .ic-topbar, .ic-topbar a,
+    .ic-topbar button, .dropdown-item, .nav-tabs .nav-link, .nav-pills .nav-link) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.45 !important;
+}
+
+body :is(.sidebar-link, .quick-action, .priority-card) {
+    min-height: 56px !important;
+    padding-top: .8rem !important;
+    padding-bottom: .8rem !important;
+}
+
+body :is(.topbar, .ic-topbar) { min-height: 76px; }
+body :is(.topbar .btn, .ic-topbar .btn, .ic-icon-btn, .ic-avatar-btn) {
+    min-height: 52px;
+}
+
+/* KPI strips, dashboard overview, system-health cards, and farmer dashboard
+ * cards contain the highest density of small explanatory text. */
+body :is(.kpi-label, .kpi-unit, .kpi-trend, .kpi-note, .kpi-tile-secondary .kpi-label,
+    .kpi-tile-secondary .kpi-note, .stat-label, .dash-overview .kpi-label,
+    .dash-overview .kpi-unit, .dash-overview .kpi-note, .dash-overview .dash-filter label,
+    .dash-overview .dash-filter small, .dash-overview .dash-chart-sub,
+    .dash-overview .dash-updated, .dash-overview .dash-source,
+    .dash-overview .dash-status-item, .dash-overview .dash-basis,
+    .dash-overview .dash-kind, .dash-overview .dash-sources > summary small,
+    .fh-kpi-label, .fh-kpi-note, .fh-muted, .fh-words, .fh-when, .ic-updated,
+    .mhd-legend, .itd-legend, .itd-card small, .itd-card .text-muted) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.55 !important;
+}
+
+body :is(.kpi-label, .dash-overview .kpi-label, .fh-kicker,
+    .dash-overview .dash-chart h3) {
+    font-size: 1.3125rem !important;
+    line-height: 1.35 !important;
+}
+
+body :is(.kpi-value, .dash-overview .kpi-value, .stat-value, .fh-kpi-value,
+    .frec-kpi-value, .mhd-kpi-value) {
+    font-size: clamp(2.25rem, 4vw, 2.625rem) !important;
+    line-height: 1.2 !important;
+}
+
+body :is(.flash-toast-title, .flash-toast-message, .notification-title,
+    .notification-message, .toast-title, .toast-body, .modal-body,
+    .modal-footer, .offcanvas-body, .ic-ai-message, .ai-message,
+    .ai-feature-row, .ai-feature-status) {
+    font-size: var(--ic-a11y-body) !important;
+    line-height: 1.58 !important;
+}
+
+body :is(.flash-toast-close, .modal .btn-close, .offcanvas .btn-close) {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* The dynamically loaded AI assistant is part of the user-facing system. */
+body :is(.ic-ai-language, .ic-ai-language-notice, .ic-ai-panel,
+    .ic-ai-panel *, .ai-feature-row, .ai-feature-status, .ai-suggested-question,
+    .ai-composer textarea, .ai-composer input) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.5 !important;
+}
+
+body :is(.ic-ai-panel h2, .ic-ai-panel h3, .ic-ai-title) {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+}
+
+body :is(.login-panel-foot, .login-form-header p, .reg-notes-sub, .perk-item,
+    .reg-notes-staff, .reg-sub, .field-hint, .field-error, .field-success,
+    .reg-foot, .org-ms-search, .org-ms-barangay, .terms-row label,
+    .pwd-guide-item, .captcha-row > label, .org-ms-option, .org-ms-empty) {
+    font-size: var(--ic-a11y-helper) !important;
+    line-height: 1.55 !important;
+}
+
+body:is(.login-page, .register-page) :is(.login-form-header h1, .reg-title, .login-visual-title) {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+}
+
+@media (max-width: 767.98px) {
+    body :is(.table-responsive, .mtd-table-wrap, .table-wrap) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body :is(h1, .page-title, .page-header h1, .page-hero h1, .lpl-headline) {
+        font-size: 2.5rem !important;
+    }
+
+    body :is(.btn, button, .nav-link, .tab, [role="tab"], .sidebar-link) {
+        min-height: 52px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; }
+}

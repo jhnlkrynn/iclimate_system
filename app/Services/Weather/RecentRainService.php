@@ -18,6 +18,8 @@ class RecentRainService
 {
     public const SOURCE = 'Open-Meteo';
 
+    private const REFRESH_LOCK_SECONDS = 60;
+
     /**
      * @return array{daily: array<string, float>, fetched_at: ?\Carbon\CarbonImmutable}
      */
@@ -33,15 +35,26 @@ class RecentRainService
             return ['daily' => $cached['daily'], 'fetched_at' => $cached['fetched_at'] ?? null];
         }
 
-        $fetched = $this->fetch();
-        if ($fetched === null) {
-            return ['daily' => [], 'fetched_at' => null];
+        $lock = Cache::lock($key.':refresh-lock', self::REFRESH_LOCK_SECONDS);
+        if (! $lock->get()) {
+            return is_array($cached) && isset($cached['daily'])
+                ? ['daily' => $cached['daily'], 'fetched_at' => $cached['fetched_at'] ?? null]
+                : ['daily' => [], 'fetched_at' => null];
         }
 
-        $result = ['daily' => $fetched, 'fetched_at' => now()->toImmutable()];
-        Cache::put($key, $result, now()->addMinutes((int) config('farmer_dashboard.rain_history.cache_minutes', 180)));
+        try {
+            $fetched = $this->fetch();
+            if ($fetched === null) {
+                return ['daily' => [], 'fetched_at' => null];
+            }
 
-        return $result;
+            $result = ['daily' => $fetched, 'fetched_at' => now()->toImmutable()];
+            Cache::put($key, $result, now()->addMinutes((int) config('farmer_dashboard.rain_history.cache_minutes', 180)));
+
+            return $result;
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
+        }
     }
 
     /** @return array<string, float>|null */

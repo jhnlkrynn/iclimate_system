@@ -5,15 +5,7 @@ import Alpine from 'alpinejs';
 // Shared by the Farmer, MAO, and IT Expert/Admin dashboards so risk-map
 // rendering logic exists in exactly one place. initBarangayRiskMap() itself
 // no-ops on any page without a #barangayRiskMap element.
-import { initBarangayRiskMap } from './barangay-risk-map';
-import { initHeatMap, initHeatMapPreview } from './heat-map';
 import { initUiEnhancements } from './ui-enhancements';
-import { registerChartExplainer } from './chart-explainer';
-import '../css/chart-explainer.css';
-import { initFarmerDashboard } from './farmer-dashboard';
-import { initAdvisoryModal } from './farmer-advisories';
-import { initInfoModal } from './info-modal';
-import { initNotificationsPopup } from './notifications-popup';
 import { initTheme, registerChartTheme } from './theme';
 import './app-magic';
 import { watchPanelRevisions } from './panel-revisions';   // thesis panel revisions (docs/panel-revisions.md)
@@ -58,13 +50,13 @@ const horizontalCategoryTicks = (overrides = {}) => ({
     autoSkip: false,
     padding: 10,
     font: {
-        size: 14,
+        size: 18,
         weight: 600,
         lineHeight: 1.25,
     },
     ...overrides,
     font: {
-        size: 14,
+        size: 18,
         weight: 600,
         lineHeight: 1.25,
         ...(overrides.font ?? {}),
@@ -93,7 +85,7 @@ const chartSelector = [
     '#farmerWeatherTrendChart',
 ].join(',');
 
-const leafletSelector = '#boundaryMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap, #mfdFarmMap, #heatMapCanvas, #heatMapPreviewCanvas';
+const leafletSelector = '#boundaryMap, #farmMap, #staffBoundaryMap, #barangayRiskMap, #farmerRiskMap, #mfdFarmMap, #heatMapCanvas, #heatMapPreviewCanvas';
 
 // Inline dashboard scripts are parsed before this deferred module executes. Give
 // every consumer one stable promise instead of making it race dynamic imports.
@@ -132,10 +124,13 @@ window.iClimateVisualsReady = (async () => {
             );
             Chart.defaults.color = '#1F2937';
             Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
-            Chart.defaults.font.size = 14;
-            Chart.defaults.plugins.tooltip.titleFont = { size: 15, weight: '700' };
-            Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
+            Chart.defaults.font.size = 18;
+            Chart.defaults.plugins.legend.labels.font = { size: 18 };
+            Chart.defaults.plugins.tooltip.titleFont = { size: 19, weight: '700' };
+            Chart.defaults.plugins.tooltip.bodyFont = { size: 18 };
             // "ⓘ Learn More" + click-for-explanation on every chart, present and future.
+            await import('../css/chart-explainer.css');
+            const { registerChartExplainer } = await import('./chart-explainer');
             registerChartExplainer(Chart);
             // Readable axes, grid and legends in dark mode.
             registerChartTheme(Chart);
@@ -156,12 +151,17 @@ window.iClimateVisualsReady = (async () => {
         }
     }
 
-    if (document.getElementById('barangayRiskMap') && window.L) {
-        initBarangayRiskMap();
-    }
-    // The Heat Map page's panel works without Leaflet too (its barangay list); the map needs it.
-    initHeatMap();
-    initHeatMapPreview();
+    const pageModules = [];
+    if (document.getElementById('barangayRiskMap')) pageModules.push(import('./barangay-risk-map'));
+    if (document.querySelector('[data-heat-map], [data-heat-map-preview]')) pageModules.push(import('./heat-map'));
+    const loaded = await Promise.all(pageModules);
+    loaded.forEach((module) => {
+        if (module.initBarangayRiskMap && document.getElementById('barangayRiskMap') && window.L) module.initBarangayRiskMap();
+        if (module.initHeatMap) {
+            module.initHeatMap();
+            module.initHeatMapPreview();
+        }
+    });
 })();
 
 window.Alpine = Alpine;
@@ -189,10 +189,18 @@ function initApp() {
     bindChartTabs();
     bindStatDrawers();
     initUiEnhancements(document);
-    initFarmerDashboard();
-    initAdvisoryModal();
-    initInfoModal();
-    initNotificationsPopup();
+    if (document.querySelector('[data-farmer-dashboard], [data-fmf-activity], [data-forecast-survey]')) {
+        import('./farmer-dashboard').then(({ initFarmerDashboard }) => initFarmerDashboard());
+    }
+    if (document.querySelector('[data-fad-modal], [data-fad-view], [data-fad-refresh]')) {
+        import('./farmer-advisories').then(({ initAdvisoryModal }) => initAdvisoryModal());
+    }
+    if (document.querySelector('[data-ic-view], [data-ic-template], [data-ic-confirm], [data-ic-notifications]')) {
+        import('./info-modal').then(({ initInfoModal }) => initInfoModal());
+    }
+    if (document.querySelector('[data-ic-notifications]')) {
+        import('./notifications-popup').then(({ initNotificationsPopup }) => initNotificationsPopup());
+    }
     watchPanelRevisions();
     bindSidebarDrawer();
     bindResponsiveTables();

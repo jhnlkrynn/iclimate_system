@@ -267,6 +267,7 @@
       .form-group > .field-error:not([hidden]), .form-group > .field-success:not([hidden]), .form-group > .field-hint:not([hidden]) { font-size: 12.5px; line-height: 15px; }
     }
   </style>
+  @vite('resources/css/accessibility.css')
     @include('partials.global-loader')
 </head>
 <body class="register-page">

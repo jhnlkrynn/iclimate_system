@@ -243,4 +243,44 @@ class WeatherApiServiceTest extends TestCase
         $this->assertSame('Open-Meteo Forecast API (latest cached)', $fallback['source_name']);
         Http::assertSentCount(2);
     }
+
+    public function test_a_refresh_lock_prevents_a_second_forecast_provider_call(): void
+    {
+        config([
+            'services.weather_api.enabled' => true,
+            'services.weather_api.forecast_days' => 1,
+        ]);
+        Http::fake([
+            'api.open-meteo.com/v1/forecast*' => Http::response([
+                'current' => ['temperature_2m' => 29, 'relative_humidity_2m' => 80, 'weather_code' => 2, 'wind_speed_10m' => 8],
+                'daily' => [
+                    'time' => ['2026-09-13'],
+                    'weather_code' => [2],
+                    'temperature_2m_max' => [30],
+                    'temperature_2m_min' => [28],
+                    'precipitation_sum' => [0],
+                    'precipitation_probability_max' => [0],
+                    'wind_speed_10m_max' => [8],
+                ],
+            ], 200),
+        ]);
+
+        $location = 'Lian, Batangas lock test';
+        $latitude = 14.033;
+        $longitude = 120.650;
+        $cacheKey = 'weather-api:forecast:'.Str::slug($location).':'.sha1(CoordinateNormalizer::pair($latitude, $longitude));
+        $service = app(WeatherApiService::class);
+        $first = $service->forecast(refresh: true, latitude: $latitude, longitude: $longitude, location: $location);
+        $lock = Cache::lock($cacheKey.':refresh-lock', 60);
+        $this->assertTrue($lock->get());
+
+        try {
+            $second = $service->forecast(refresh: true, latitude: $latitude, longitude: $longitude, location: $location);
+        } finally {
+            $lock->release();
+        }
+
+        $this->assertSame($first['daily_series'], $second['daily_series']);
+        Http::assertSentCount(1);
+    }
 }

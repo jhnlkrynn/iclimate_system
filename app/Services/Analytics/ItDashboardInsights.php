@@ -312,8 +312,7 @@ final class ItDashboardInsights
             $rows = match ($conn->getDriverName()) {
                 'pgsql' => collect($conn->select('select relname as t, n_live_tup as n from pg_stat_user_tables order by n_live_tup desc limit 5')),
                 'mysql', 'mariadb' => collect($conn->select('select table_name as t, table_rows as n from information_schema.tables where table_schema = database() order by table_rows desc limit 5')),
-                'sqlite' => collect($conn->select("select name as t from sqlite_master where type = 'table' and name not like 'sqlite_%'"))
-                    ->map(fn ($r) => (object) ['t' => $r->t, 'n' => $conn->table($r->t)->count()])->sortByDesc('n')->take(5),
+                'sqlite' => $this->sqliteLargestTables($conn),
                 default => collect(),
             };
 
@@ -321,6 +320,28 @@ final class ItDashboardInsights
         } catch (Throwable) {
             return [];
         }
+    }
+
+    /** Exact SQLite row counts in one count round trip instead of one query per table. */
+    private function sqliteLargestTables(\Illuminate\Database\Connection $conn): \Illuminate\Support\Collection
+    {
+        $tables = collect($conn->select("select name as t from sqlite_master where type = 'table' and name not like 'sqlite_%'"))
+            ->pluck('t')
+            ->filter(fn ($table): bool => is_string($table) && $table !== '')
+            ->values();
+
+        if ($tables->isEmpty()) {
+            return collect();
+        }
+
+        $grammar = $conn->getQueryGrammar();
+        $parts = $tables->map(fn (string $table): string => 'select ? as t, count(*) as n from '.$grammar->wrap($table));
+        $rows = $conn->select(
+            'select t, n from ('.$parts->implode(' union all ').') as table_counts order by n desc limit 5',
+            $tables->all(),
+        );
+
+        return collect($rows);
     }
 
     /**

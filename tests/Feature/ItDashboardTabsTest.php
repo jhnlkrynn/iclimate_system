@@ -59,7 +59,7 @@ class ItDashboardTabsTest extends TestCase
         $this->assertSame(['Healthy', 0], [$it['overall']['label'], $it['overall']['issues']]);
         $this->assertArrayNotHasKey('attention', $it);
         $this->assertArrayNotHasKey('alerts', $it);
-        $response->assertSee('System Health')->assertDontSee('Needs your attention')->assertDontSee('Attention Required');
+        $response->assertDontSee('System Availability')->assertDontSee('System Available')->assertDontSee('Needs your attention')->assertDontSee('Attention Required');
     }
 
     public function test_services_that_need_a_look_say_so_in_plain_words_on_their_own_rows(): void
@@ -80,7 +80,7 @@ class ItDashboardTabsTest extends TestCase
         $this->assertStringContainsString('Unreadable', $rows['backup']['detail']);
         $this->assertSame(['Operational', 3], [$data['overall']['label'], $data['overall']['issues']]);      // the application and database are up
         $this->assertStringEndsWith('3 to review', $data['overall']['text']);
-        $response->assertSee('data-service="jobs" data-level="warn"', false)->assertSee('Needs attention')->assertSee('Full diagnostics');
+        $response->assertDontSee('System Availability')->assertDontSee('Needs Attention')->assertDontSee('iClimate is available, but one or more items may need review.')->assertDontSee('Full diagnostics');
         foreach (['Critical', 'Warning'] as $harsh) {
             $this->assertStringNotContainsString($harsh, view('dashboards.it.health', ['it' => $data])->render(), $harsh);
         }
@@ -178,9 +178,8 @@ class ItDashboardTabsTest extends TestCase
         DB::table('failed_jobs')->insert(['uuid' => (string) Str::uuid(), 'connection' => 'database', 'queue' => 'default', 'payload' => json_encode(['displayName' => 'App\\Jobs\\SyncThing']), 'exception' => 'x', 'failed_at' => now()]);
 
         $html = $this->actingAs($it)->get(route('admin.dashboard'))->getContent();
-        // Asked in the shared confirmation pop-up (resources/js/info-modal.js).
-        $this->assertStringContainsString('data-ic-confirm="Retry 1 failed job of class App\\Jobs\\SyncThing?', $html);
-        $this->assertStringContainsString('name="_token"', $html);
+        // Technical retry controls are kept off the normal staff dashboard; the protected endpoint remains available.
+        $this->assertStringNotContainsString('data-ic-confirm="Retry 1 failed job', $html);
 
         $this->actingAs($it)->post(route('admin.dashboard.retry-failed'), ['class' => 'App\\Jobs\\SyncThing'])->assertRedirect(route('admin.dashboard'));
 

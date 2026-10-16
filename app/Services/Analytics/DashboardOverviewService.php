@@ -186,9 +186,13 @@ class DashboardOverviewService
         $historicalMonths = $year ? $this->yields->rows()->where('year', '<=', $year)->count() : 0;
         $yieldInfo = $this->yields->describe();
 
-        $unread = SampleData::without(UserNotification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false);
-        $unreadCount = (clone $unread)->count();
-        $unreadWarnings = (clone $unread)->where('type', 'Warning')->count();
+        $notificationCounts = SampleData::without(UserNotification::query(), 'notifications')
+            ->where('user_id', $user->id)
+            ->where('is_read', false)
+            ->selectRaw('COUNT(*) as unread, SUM(CASE WHEN type = ? THEN 1 ELSE 0 END) as warnings', ['Warning'])
+            ->first();
+        $unreadCount = (int) ($notificationCounts?->unread ?? 0);
+        $unreadWarnings = (int) ($notificationCounts?->warnings ?? 0);
         $activeAdvisories = PlantingAdvisory::query()->active()->forBarangay($barangay);
         $activeCount = (clone $activeAdvisories)->count();
 

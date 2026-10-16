@@ -492,9 +492,9 @@
             if (language) language.addEventListener('change', () => language.form.submit());
 
             // Large, plain labels: this page is read by older staff.
-            const FONT = { size: 14 };
+            const FONT = { size: 18 };
             const T = JSON.parse(document.getElementById('mhdChartText')?.textContent || '{}');
-            const axis = (text, extra = {}) => ({ title: { display: true, text, font: { size: 14, weight: '600' } }, ticks: { font: FONT }, grid: { color: '#eef2ef' }, ...extra });
+            const axis = (text, extra = {}) => ({ title: { display: true, text, font: { size: 18, weight: '600' } }, ticks: { font: FONT }, grid: { color: '#eef2ef' }, ...extra });
             const read = (id, attr = 'chart') => { const el = document.getElementById(id); return el ? [el, JSON.parse(el.dataset[attr] || '{}')] : [null, {}]; };
             const base = (legend) => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: legend, position: 'bottom', labels: { font: FONT, usePointStyle: true } } } });
 

@@ -15,6 +15,7 @@ export function initHeatMap() {
 
     const canvas = root.querySelector('#heatMapCanvas');
     let views = [...root.querySelectorAll('[data-heat-map-view]')];
+    const detailContainer = root.querySelector('[data-heat-map-detail-container]');
     const readLevels = (scope) => JSON.parse(scope.querySelector('[data-heat-map-levels]')?.textContent || '{}');
     let data = { levels: {}, colors: {}, labels: {}, yours: '' };
     try {
@@ -28,6 +29,9 @@ export function initHeatMap() {
     const validRange = (key) => (key === '2weeks' || (data.layers || []).includes(key) ? key : 'week');
     let range = validRange(root.dataset.range);
     let selected = null;
+    const detailCache = new Map();
+    let detailController = null;
+    let detailSequence = 0;
 
     const levelOf = (name) => data.levels?.[range]?.[name] || 'nodata';
     const labelOf = (level) => data.labelsByRange?.[range]?.[level] || data.labels?.[level] || '';
@@ -58,6 +62,7 @@ export function initHeatMap() {
     const show = () => {
         const key = `${range}:${selected || 'summary'}`;
         views.forEach((view) => { view.hidden = view.dataset.heatMapView !== key; });
+        if (detailContainer) detailContainer.hidden = !selected;
         // Farmers: the own-barangay card above the map follows [This Week] / [2 Weeks] (a map layer keeps this week's).
         root.querySelectorAll('[data-heat-map-mine-range]').forEach((card) => { card.hidden = card.dataset.heatMapMineRange !== (range === '2weeks' ? '2weeks' : 'week'); });
         root.dataset.range = range;
@@ -74,9 +79,57 @@ export function initHeatMap() {
         layers.forEach((layer, name) => layer.setStyle(styleFor(name)));
         if (selected) layers.get(selected)?.bringToFront();
     };
+    const detailUrl = (key, name) => (canvas?.dataset.detailUrlTemplate || '')
+        .replace('__RANGE__', encodeURIComponent(key))
+        .replace('__BARANGAY__', encodeURIComponent(name));
+    const detailLoading = () => {
+        if (!detailContainer) return;
+        detailContainer.innerHTML = '<section class="hmx-view"><p class="hmx-text" role="status">Loading details…</p></section>';
+        detailContainer.hidden = false;
+    };
+    const loadDetail = async (name) => {
+        if (!detailContainer || !name) return;
+        const version = data.versions?.[range] || '';
+        const cacheKey = `${range}:${name}:${version}`;
+        const cached = detailCache.get(cacheKey);
+        if (cached) {
+            detailContainer.innerHTML = cached;
+            detailContainer.hidden = false;
+            return;
+        }
+
+        detailController?.abort();
+        const controller = new AbortController();
+        detailController = controller;
+        const sequence = ++detailSequence;
+        detailLoading();
+        try {
+            const response = await fetch(detailUrl(range, name), {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+                signal: controller.signal,
+            });
+            if (!response.ok) throw new Error(`Heat Map detail answered ${response.status}`);
+            const payload = await response.json();
+            if (controller.signal.aborted || sequence !== detailSequence || selected !== name) return;
+            if (payload.range !== range || payload.barangay !== name || typeof payload.html !== 'string') throw new Error('Incomplete Heat Map detail');
+            detailCache.set(cacheKey, payload.html);
+            detailContainer.innerHTML = payload.html;
+            detailContainer.hidden = false;
+        } catch (error) {
+            if (!controller.signal.aborted && sequence === detailSequence && selected === name) {
+                detailContainer.innerHTML = '<section class="hmx-view"><p class="hmx-text" role="status">Unable to load this barangay’s details.</p></section>';
+            }
+        } finally {
+            if (detailController === controller) detailController = null;
+        }
+    };
     const pick = (name, fromPanel = false) => {
         selected = name && data.levels?.[range]?.[name] !== undefined ? name : null;
+        detailController?.abort();
+        detailSequence += 1;
         show();
+        if (selected) void loadDetail(selected);
         // On a phone the panel sits under the map: bring the answer into view after a map click.
         if (selected && !fromPanel && window.matchMedia('(max-width: 991.98px)').matches) {
             root.querySelector('[data-heat-map-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -86,10 +139,13 @@ export function initHeatMap() {
     const setRange = (key) => {
         range = validRange(key);
         if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
+        detailController?.abort();
+        detailSequence += 1;
         const url = new URL(window.location.href);
         if (range === 'week') url.searchParams.delete('range'); else url.searchParams.set('range', range);
         window.history.replaceState(null, '', url);
         show();
+        if (selected) void loadDetail(selected);
     };
     // Manuscript – Naicel: choosing a map layer shows it; the empty choice goes back to this week's risk.
     root.addEventListener('change', (event) => {
@@ -108,19 +164,41 @@ export function initHeatMap() {
     });
 
     // New weather is on its way: read this page again after 5, 15 and 30 seconds (the shared refresh runs once on the
-    // server however often it is read), and stop as soon as no barangay is missing its forecast.
+    // server however often it is read), and stop as soon as no barangay is missing its forecast. Keep the request and
+    // timer cancellable so leaving the page or hiding the tab does not leave work running in the background.
     const hasRating = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).some((level) => level !== 'nodata'));
     const missing = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).includes('nodata'));
+    let refreshTimer = null;
+    let refreshController = null;
+    let refreshGeneration = 0;
+    let pendingRefreshDelays = [];
+    const cancelRefresh = () => {
+        if (refreshTimer) window.clearTimeout(refreshTimer);
+        refreshTimer = null;
+        refreshController?.abort();
+        refreshController = null;
+        refreshGeneration += 1;
+    };
     const update = (delays) => {
-        if (!delays.length) return;
-        window.setTimeout(() => {
-            fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })
+        pendingRefreshDelays = delays;
+        if (!delays.length || document.hidden || refreshTimer) return;
+        const [delay, ...remaining] = delays;
+        pendingRefreshDelays = remaining;
+        const generation = refreshGeneration;
+        refreshTimer = window.setTimeout(() => {
+            refreshTimer = null;
+            if (document.hidden || generation !== refreshGeneration) return;
+            const controller = new AbortController();
+            refreshController = controller;
+            fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin', signal: controller.signal })
                 .then((response) => (response.ok ? response.text() : Promise.reject(new Error(`Heat Map page answered ${response.status}`))))
                 .then((html) => {
+                    if (controller.signal.aborted || generation !== refreshGeneration) return;
                     const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-heat-map]');
                     const next = fresh ? readLevels(fresh) : null;
-                    if (!next || !hasRating(next.levels)) return update(delays.slice(1));
+                    if (!next || !hasRating(next.levels)) return update(remaining);
                     data = next;
+                    detailCache.clear();
                     ['[data-heat-map-panel]', '[data-heat-map-legend="risk"]', '[data-heat-map-mine]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
                         const target = root.querySelector(selector);
                         const source = fresh.querySelector(selector);
@@ -129,12 +207,25 @@ export function initHeatMap() {
                     views = [...root.querySelectorAll('[data-heat-map-view]')];
                     if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
                     show();
-                    if (missing(next.levels) && fresh.hasAttribute('data-heat-map-updating')) update(delays.slice(1));
+                    if (missing(next.levels) && fresh.hasAttribute('data-heat-map-updating')) update(remaining);
                     return undefined;
                 })
-                .catch(() => update(delays.slice(1)));
-        }, delays[0]);
+                .catch((error) => {
+                    if (!controller.signal.aborted && generation === refreshGeneration) update(remaining);
+                })
+                .finally(() => {
+                    if (refreshController === controller) refreshController = null;
+                });
+        }, delay);
     };
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            cancelRefresh();
+            return;
+        }
+        if (pendingRefreshDelays.length) update([0, ...pendingRefreshDelays]);
+    });
+    window.addEventListener('pagehide', cancelRefresh, { once: true });
     if (root.hasAttribute('data-heat-map-updating')) update([5000, 10000, 15000]);
 
     if (!canvas || !window.L) return;
@@ -152,7 +243,9 @@ export function initHeatMap() {
     // A click on the map outside every barangay returns to the municipal summary.
     map.on('click', () => pick(null));
 
-    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' } })
+    const boundaryController = new AbortController();
+    window.addEventListener('pagehide', () => boundaryController.abort(), { once: true });
+    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' }, signal: boundaryController.signal })
         .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Boundary request failed'))))
         .then((boundary) => {
             const seen = new Set();
@@ -169,7 +262,13 @@ export function initHeatMap() {
                 onEachFeature: (feature, layer) => {
                     const name = canonicalName(feature?.properties?.brgy_name);
                     layers.set(name, layer);
-                    layer.bindTooltip(() => tooltipFor(name), { sticky: true, direction: 'top', className: name === own ? 'your-barangay-tooltip' : '' });
+                    layer.bindTooltip(() => tooltipFor(name), {
+                        sticky: true,
+                        // Let Leaflet flip the card when the hovered polygon is close to a map edge.
+                        direction: 'auto',
+                        offset: [0, -8],
+                        className: `hmx-map-tooltip${name === own ? ' your-barangay-tooltip' : ''}`,
+                    });
                     layer.on({
                         mouseover: () => layer.setStyle(styleFor(name, true)),
                         mouseout: () => layer.setStyle(styleFor(name)),
@@ -194,6 +293,7 @@ export function initHeatMap() {
             show();
         })
         .catch((error) => {
+            if (boundaryController.signal.aborted) return;
             console.error('iClimate could not load the Lian barangay boundaries.', error);
             canvas.dataset.loaded = 'failed';
         });
@@ -217,7 +317,9 @@ export function initHeatMapPreview() {
     const map = L.map(canvas, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, zoomSnap: 0.25 });
     map.setView([14.02, 120.65], 11);
 
-    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' } })
+    const boundaryController = new AbortController();
+    window.addEventListener('pagehide', () => boundaryController.abort(), { once: true });
+    fetch(canvas.dataset.boundaryUrl, { headers: { Accept: 'application/json' }, signal: boundaryController.signal })
         .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Boundary request failed'))))
         .then((boundary) => {
             const seen = new Set();
@@ -243,6 +345,7 @@ export function initHeatMapPreview() {
             canvas.dataset.loaded = 'true';
         })
         .catch((error) => {
+            if (boundaryController.signal.aborted) return;
             console.error('iClimate could not load the Lian barangay boundaries.', error);
             canvas.dataset.loaded = 'failed';
         });

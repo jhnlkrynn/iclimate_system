@@ -12,6 +12,10 @@ use Throwable;
 
 class FarmerDashboardWeatherService
 {
+    public const CURRENT_CACHE_KEY = 'weather.current.lian.shared:v2';
+
+    private const REFRESH_LOCK_SECONDS = 60;
+
     private const OPEN_METEO_CURRENT = [
         'temperature_2m',
         'relative_humidity_2m',
@@ -71,7 +75,7 @@ class FarmerDashboardWeatherService
     {
         // A page or API request never calls the provider unless it asked for a refresh (a Refresh button): it shows the
         // stored reading, whatever its age, marked as delayed when older than the dashboard's stale limit.
-        // iclimate:refresh-weather-cache keeps it current every 3 minutes. The chatbot passes a budget and keeps its own rule.
+        // iclimate:refresh-weather-cache keeps it current on its schedule. The chatbot passes a budget and keeps its own rule.
         if (! $force && $budgetSeconds === null && \App\Support\InteractiveRequest::isPageRequest()) {
             return $this->storedReading();
         }
@@ -98,7 +102,7 @@ class FarmerDashboardWeatherService
         }
 
         // An interactive caller (the chatbot) is happy with a snapshot a few minutes old: the
-        // dashboard's 1-minute cache would otherwise send most chat questions out to the provider.
+        // dashboard cache would otherwise send most chat questions out to the provider.
         if (! $force && $mode['stale_ok']) {
             $recent = Cache::get($lastSuccessfulKey);
 
@@ -107,6 +111,15 @@ class FarmerDashboardWeatherService
 
                 return $recent;
             }
+        }
+
+        // Scheduled refreshes, chatbot requests, and an explicit refresh can
+        // arrive together. Only one caller may use the provider; everyone else
+        // receives the last verified snapshot rather than starting a duplicate
+        // request.
+        $refreshLock = Cache::lock($cacheKey.':refresh-lock', self::REFRESH_LOCK_SECONDS);
+        if (! $refreshLock->get()) {
+            return $this->storedReading();
         }
 
         try {
@@ -135,6 +148,8 @@ class FarmerDashboardWeatherService
             }
 
             return $this->unavailable();
+        } finally {
+            rescue(fn () => $refreshLock->release(), report: false);
         }
     }
 
@@ -519,11 +534,13 @@ class FarmerDashboardWeatherService
     {
         $current = $payload['current'] ?? [];
         $daily = $payload['daily'] ?? [];
+        $hourly = $payload['hourly'] ?? [];
         $weatherCode = $this->number($current['weather_code'] ?? $daily['weather_code'][0] ?? null);
         $isDay = isset($current['is_day']) ? (bool) $current['is_day'] : null;
         $mapped = $this->icons->map($weatherCode !== null ? (int) $weatherCode : null, $isDay);
         $providerUpdatedAt = $this->parseProviderTime(null, $current['time'] ?? null);
         $serverFetchedAt = now($this->timezone());
+        $rainfallToDate = $this->hourlyRainfallToDate($hourly, $providerUpdatedAt);
 
         $weather = [
             'success' => true,
@@ -570,6 +587,7 @@ class FarmerDashboardWeatherService
                 'feels_like_min' => $this->number($daily['apparent_temperature_min'][0] ?? null),
                 'rainfall' => $this->number($daily['precipitation_sum'][0] ?? $daily['rain_sum'][0] ?? null),
                 'rainfall_mm' => $this->number($daily['precipitation_sum'][0] ?? $daily['rain_sum'][0] ?? null),
+                'rainfall_to_date_mm' => $rainfallToDate,
                 'rain_sum' => $this->number($daily['rain_sum'][0] ?? null),
                 'precipitation_sum' => $this->number($daily['precipitation_sum'][0] ?? null),
                 'showers_sum' => $this->number($daily['showers_sum'][0] ?? null),
@@ -599,6 +617,39 @@ class FarmerDashboardWeatherService
         $this->validateNormalized($weather, 'Open-Meteo');
 
         return $weather;
+    }
+
+    /** Sum Open-Meteo hourly precipitation from midnight through the provider's current observation. */
+    private function hourlyRainfallToDate(array $hourly, ?Carbon $observedAt): ?float
+    {
+        if ($observedAt === null || ! is_array($hourly['time'] ?? null) || ! is_array($hourly['precipitation'] ?? null)) {
+            return null;
+        }
+
+        $date = $observedAt->copy()->timezone($this->timezone())->toDateString();
+        $total = 0.0;
+        $found = false;
+
+        foreach ($hourly['time'] as $index => $time) {
+            if (! is_string($time) || ! is_numeric($hourly['precipitation'][$index] ?? null)) {
+                continue;
+            }
+
+            try {
+                $hour = Carbon::parse($time, $this->timezone())->timezone($this->timezone());
+            } catch (Throwable) {
+                continue;
+            }
+
+            if ($hour->toDateString() !== $date || $hour->gt($observedAt)) {
+                continue;
+            }
+
+            $total += (float) $hourly['precipitation'][$index];
+            $found = true;
+        }
+
+        return $found ? round($total, 1) : null;
     }
 
     private function weatherApiForecast(array $forecastDays): array
@@ -705,7 +756,11 @@ class FarmerDashboardWeatherService
         }
 
         $mapped = $this->icons->map($record->weather_code, null);
-        $fetchedAt = $record->fetched_at?->timezone($this->timezone()) ?? now($this->timezone());
+        $fetchedAt = $record->fetched_at?->timezone($this->timezone());
+        $raw = is_array($record->raw_response) ? $record->raw_response : [];
+        $rawCurrent = is_array($raw['current'] ?? null) ? $raw['current'] : [];
+        $providerObservedAt = $this->parseProviderTime(null, $rawCurrent['time'] ?? null);
+        $rainfallToDate = $this->hourlyRainfallToDate($raw['hourly'] ?? [], $providerObservedAt);
 
         return [
             'success' => true,
@@ -723,8 +778,8 @@ class FarmerDashboardWeatherService
                 'feels_like_c' => null,
                 'humidity' => $this->number($record->humidity),
                 'humidity_percent' => $this->number($record->humidity),
-                'precipitation' => null,
-                'precipitation_mm' => null,
+                'precipitation' => $this->number($rawCurrent['precipitation'] ?? null),
+                'precipitation_mm' => $this->number($rawCurrent['precipitation'] ?? null),
                 'rain' => null,
                 'weather_code' => $record->weather_code,
                 'condition' => $mapped['condition'],
@@ -741,17 +796,18 @@ class FarmerDashboardWeatherService
                 'min_temperature_c' => $this->number($record->temperature_min),
                 'rainfall' => $this->number($record->rainfall_mm),
                 'rainfall_mm' => $this->number($record->rainfall_mm),
+                'rainfall_to_date_mm' => $rainfallToDate,
                 'precipitation_probability' => $this->number($record->precipitation_probability),
                 'chance_of_rain_percent' => $this->number($record->precipitation_probability),
             ],
             'forecast' => [],
             'icon' => $mapped['icon'],
             'fetched_at' => $fetchedAt,
-            'fetched_at_label' => $this->displayTime($fetchedAt),
+            'fetched_at_label' => $fetchedAt ? $this->displayTime($fetchedAt) : 'Update time unavailable',
             'server_fetched_at' => null,
             'server_fetched_at_label' => null,
             'timestamps' => [
-                'provider_updated_at' => $fetchedAt->toIso8601String(),
+                'provider_updated_at' => $fetchedAt?->toIso8601String(),
                 'server_fetched_at' => null,
             ],
         ];
@@ -868,7 +924,7 @@ class FarmerDashboardWeatherService
 
     private function cacheKey(): string
     {
-        return 'weather.current.lian.shared';
+        return self::CURRENT_CACHE_KEY;
     }
 
     private function coordinates(): string

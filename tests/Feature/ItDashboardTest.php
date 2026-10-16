@@ -126,9 +126,8 @@ class ItDashboardTest extends TestCase
     public function test_page_follows_the_layout_in_order_and_has_no_removed_sections(): void
     {
         $html = $this->page()->getContent();
-        // IT Dashboard (2026-10): System Status, Users by Role, Errors and Failed Jobs (with retry), Security.
-        $order = ['IT Personnel Dashboard', 'data-it-section="status"', 'data-it-kpis', 'data-it-health', 'data-it-section="users"', 'data-it-roles',
-            'data-it-section="errors"', 'data-it-failed-jobs', 'data-it-ops', 'data-it-section="security"', 'data-it-security'];
+        // IT Dashboard: plain-language work area for accounts, messages, reports, activity, and settings.
+        $order = ['IT Personnel Dashboard', 'data-it-section="work"', 'itdAccountOverviewTitle', 'itdMessagesTitle', 'itdActivityTitle', 'itdQuickActionsTitle'];
 
         $last = -1;
         foreach ($order as $marker) {
@@ -137,23 +136,16 @@ class ItDashboardTest extends TestCase
             $this->assertGreaterThan($last, $pos, "Section out of order: $marker");
             $last = $pos;
         }
-        $this->assertSame(4, substr_count($html, 'data-it-section='));
-        foreach (['System status, users, errors and security at a glance', 'Updated at', 'System Status', 'Errors and Failed Jobs'] as $text) {
+        $this->assertSame(1, substr_count($html, 'data-it-section='));
+        foreach (['Manage users, messages, reports, and account settings', 'Account Overview', 'Recent Messages', 'Reports Summary', 'Quick Actions'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
-        // One chart since 2026-10-09, System Activity Trend, filled from admin.dashboard.activity after the page opens.
-        $this->assertSame(1, substr_count($html, '<canvas'));
-        $this->assertStringContainsString('<canvas id="itActivityTrendChart"', $html);
-        $this->assertStringContainsString('data-trend-url="'.route('admin.dashboard.activity').'"', $html);
-        $this->assertSame(3, substr_count($html, 'data-trend-range='));
-        // No tabs, no heat map, and nothing that moved to System Health or System Logs.
-        foreach (['role="tablist"', 'data-panel=', 'itSystemActivityTrendChart', 'id="barangayRiskMap"', 'data-it-activity', 'data-it-brief', 'data-it-ai', 'data-it-usage',
-            'data-it-resources', 'data-it-integrity', 'data-it-pipeline', 'data-it-recent', 'Recent System Activity'] as $gone) {
+        foreach (['Common tasks for MAO IT staff', 'System Availability', 'A simple status for everyday use', 'Needs Attention', 'iClimate is available, but one or more items may need review.'] as $gone) {
             $this->assertStringNotContainsString($gone, $html, $gone);
         }
-        // The simpler dashboard has no attention banner, no alert list and no second row of cards.
-        foreach (['Quick Actions', 'Farmer Database', 'User Distribution', 'Average Farm Size', 'itUsersByRoleChart', 'data-it-summary', 'data-it-alerts', 'Attention Required', 'Needs your attention', 'Data Sources Overdue'] as $gone) {
-            $this->assertStringNotContainsString($gone, $html);
+        // Technical content belongs on the dedicated pages, not in the normal work area.
+        foreach (['Prediction API', 'Background Jobs to Retry', 'Database Backup', 'Storage', 'System Activity Trend', 'Detailed Diagnostics'] as $gone) {
+            $this->assertStringNotContainsString($gone, $html, $gone);
         }
     }
 
@@ -226,18 +218,13 @@ class ItDashboardTest extends TestCase
         $this->assertSame(2, $roles['active']);
     }
 
-    public function test_users_by_role_is_a_six_column_table_that_fits_its_card(): void
+    public function test_account_overview_shows_role_counts_and_recent_accounts(): void
     {
         User::factory()->create(['role' => User::ROLE_MAO]);
 
         $html = $this->page()->getContent();
 
-        $this->assertStringContainsString('data-it-roles', $html);
-        // No fixed minimum width (it used to force sideways scrolling), and a stacked layout for phones.
-        $css = file_get_contents(resource_path('css/it-dashboard.css'));
-        $this->assertStringContainsString('.itd-table.is-roles { min-width: 0; }', $css);
-        $this->assertStringContainsString('.itd-table.is-roles td::before { content: attr(data-label);', $css);
-        foreach (['Farmer', 'MAO Personnel', 'IT Expert', 'Total accounts', 'Share', 'Enabled', 'Disabled', 'Active users', 'data-label="Active users"'] as $text) {
+        foreach (['Total users', 'Active users', 'Farmers', 'MAO staff', 'IT staff', 'Recently created accounts', 'Accounts needing review'] as $text) {
             $this->assertStringContainsString($text, $html);
         }
     }
@@ -262,7 +249,7 @@ class ItDashboardTest extends TestCase
 
         $this->assertStringContainsString('class="is-it-dashboard"', $html);                     // same sidebar colour and Georgia + Inter as the farmer page
         $this->assertStringContainsString('class="mfd itd"', $html);
-        foreach (['mfd-header', 'mfd-kicker', 'mfd-kpi ', 'mfd-kpi-value', 'mfd-card-head', 'mfd-pill is-', 'mfd-btn is-quiet'] as $shared) {
+        foreach (['mfd-header', 'mfd-kicker', 'mfd-card-head', 'mfd-pill is-', 'mfd-btn'] as $shared) {
             $this->assertStringContainsString($shared, $html, $shared);
         }
         $this->assertStringNotContainsString('--itd-ink', $html);                                // no page-only palette any more
@@ -294,8 +281,8 @@ class ItDashboardTest extends TestCase
         $this->assertSame(3, $data['integrity']['farmer_accounts']);
         $this->assertSame(1, $data['integrity']['farmer_profiles']);
         $this->assertSame(2, $data['integrity']['without_profile']);
-        // The data integrity card is on System Health since 2026-10 (it reads the overview prepared by the dashboard).
-        $this->actingAs($this->it())->get(route('system-health.index'))->assertSee('data-integrity-gap', false)->assertSee('3 farmer accounts but 1 farmer profile records');
+        // The normal page gives the MAO IT user only the actionable plain-language item.
+        $this->actingAs($this->it())->get(route('system-health.index'))->assertSee('2 farmer accounts need profile completion.');
     }
 
     public function test_no_gap_warning_when_accounts_and_profiles_match(): void
@@ -324,7 +311,7 @@ class ItDashboardTest extends TestCase
             $this->assertNotEmpty($s['detail'], $s['key']);
         }
         $this->predictionApiOnline();
-        $this->page()->assertSee('data-service="application" data-level="ok"', false)->assertSee('Healthy');
+        $this->page()->assertDontSee('System Availability')->assertDontSee('System Available')->assertDontSee('iClimate is online and ready to use.');
     }
 
     public function test_database_backup_row_reports_a_failed_verification(): void
@@ -449,7 +436,7 @@ class ItDashboardTest extends TestCase
 
         $this->assertNull($r['version']);
         $this->assertNull($r['deployed_at']);
-        $this->page()->assertSee('Not available');
+        $this->page()->assertDontSee('Not available');
     }
 
     public function test_ai_usage_counts_todays_queries(): void
@@ -523,7 +510,7 @@ class ItDashboardTest extends TestCase
         $this->predictionApiOnline();
         $json = $this->actingAs($this->it())->getJson(route('admin.dashboard.live'))->assertOk()->json();
 
-        foreach (['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'resources', 'integrity', 'recent', 'ai'] as $slot) {
+        foreach (['staff'] as $slot) {
             $this->assertNotSame('', trim($json['slots'][$slot]), $slot);
         }
         $this->assertSame('Healthy', $json['status']);
@@ -554,7 +541,7 @@ class ItDashboardTest extends TestCase
         foreach ([route('users.index'), route('system-health.index'), route('system-logs.index'), route('messages.index')] as $url) {
             $this->assertSame(1, substr_count($sidebar, 'href="'.$url.'"'), $url);
         }
-        foreach (['heat-map.index', 'reports.index', 'farmer-profiles.index', 'planting-advisories.index', 'community-feed.index', 'climate-records.index', 'rice-productions.index', 'weather-predictions.index'] as $gone) {
+        foreach (['heat-map.index', 'farmer-profiles.index', 'planting-advisories.index', 'community-feed.index', 'climate-records.index', 'rice-productions.index', 'weather-predictions.index'] as $gone) {
             $this->assertStringNotContainsString('href="'.route($gone).'"', $sidebar, $gone);
         }
         // Chatbot Knowledge is hidden from the interface (CHATBOT_KNOWLEDGE_UI=false).

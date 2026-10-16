@@ -313,6 +313,8 @@ html body .mfd[data-farmer-dashboard] .fh-message {
 html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-good { background: #111111; color: #fff; }   /* no green tint */
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-message.fh-mood-good { background: #f5f5f5; color: #111111; }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-text { color: rgba(17, 17, 17, .8); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-reason { color: rgba(17, 17, 17, .92); }
+html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-source { color: rgba(17, 17, 17, .68); }
 html[data-theme="dark"] .fh-mood-good .fh-message-art { background: rgba(0, 0, 0, .06); color: #111111; }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child { background: #f5f5f5; color: #111111 !important; }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child :is(.fh-kpi-label, .fh-kpi-value, .fh-kpi-note, .fh-kpi-value small, .fh-kpi-label svg) { color: #111111; }
@@ -342,6 +344,8 @@ html body .mfd[data-farmer-dashboard] .fh-message-head {
 }
 html body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-text,
 html body .mfd[data-farmer-dashboard] .fh-mood-bad .fh-message-text { color: rgba(255, 255, 255, .92); }
+html body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-reason { color: rgba(255, 255, 255, .94); }
+html body .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-source { color: rgba(255, 255, 255, .78); }
 html body .mfd[data-farmer-dashboard] .fh-message-text { margin: 0; font-size: 1.25rem; font-weight: 500; line-height: 1.4; }
 
 /* Watering: the can tips, drops fall onto the sprout, the sprout sways. */

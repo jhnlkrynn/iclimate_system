@@ -31,7 +31,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/js/app.js'])
+  @vite(['resources/css/guest.css', 'resources/css/ui-refresh.css', 'resources/css/accessibility.css', 'resources/js/app.js'])
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }

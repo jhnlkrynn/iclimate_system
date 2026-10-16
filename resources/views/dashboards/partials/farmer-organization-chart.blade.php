@@ -177,14 +177,14 @@
                         x: {
                             beginAtZero: true,
                             suggestedMax: maxOrganizationCount + 1,
-                            ticks: { precision: 0, color: '#64748B', font: { size: 10 } },
+                            ticks: { precision: 0, color: '#64748B', font: { size: 18 } },
                             grid: { color: 'rgba(95,143,120,.18)', drawBorder: false },
                         },
                         y: {
                             ticks: {
                                 color: '#1F2937',
                                 autoSkip: false,
-                                font: { size: 10.5, weight: 600 },
+                                font: { size: 18, weight: 600 },
                                 callback: function(value, index) {
                                     const label = organizationDisplayLabels[index] || '';
                                     return organizationAbbrMap[label] || (label.length > 25 ? label.substring(0, 23) + '…' : label);
@@ -195,14 +195,14 @@
                     } : {
                         x: {
                             ticks: chartLabels.horizontalCategoryTicks
-                                ? chartLabels.horizontalCategoryTicks({ display: false, color: '#1F2937', autoSkip: false, padding: 0, font: { size: 14, weight: 600 } })
-                                : { display: false, color: '#1F2937', maxRotation: 0, minRotation: 0, autoSkip: false, padding: 0, font: { size: 14, weight: 600 } },
+                                ? chartLabels.horizontalCategoryTicks({ display: false, color: '#1F2937', autoSkip: false, padding: 0, font: { size: 18, weight: 600 } })
+                                : { display: false, color: '#1F2937', maxRotation: 0, minRotation: 0, autoSkip: false, padding: 0, font: { size: 18, weight: 600 } },
                             grid: { display: false, drawBorder: false },
                         },
                         y: {
                             beginAtZero: true,
                             suggestedMax: maxOrganizationCount + 1,
-                            ticks: { precision: 0, color: '#1F2937', font: { size: 14, weight: 700 }, padding: 8 },
+                            ticks: { precision: 0, color: '#1F2937', font: { size: 18, weight: 700 }, padding: 8 },
                             grid: { color: 'rgba(95,143,120,.16)', drawBorder: false },
                         },
                     },

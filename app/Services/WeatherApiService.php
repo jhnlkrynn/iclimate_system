@@ -13,6 +13,8 @@ use Throwable;
 
 class WeatherApiService
 {
+    private const REFRESH_LOCK_SECONDS = 60;
+
     private const CURRENT_FIELDS = [
         'temperature_2m',
         'relative_humidity_2m',
@@ -56,23 +58,7 @@ class WeatherApiService
         $ttl = now()->addMinutes($ttlMinutes);
 
         if ($refresh) {
-            $fresh = $this->fetchForecast($latitude, $longitude, $location);
-
-            if ($fresh !== null) {
-                Cache::put($cacheKey, $fresh, $ttl);
-                Cache::forever($latestCacheKey, $fresh);
-
-                return $fresh;
-            }
-
-            $cached = Cache::get($cacheKey);
-
-            if (is_array($cached)) {
-                return $cached;
-            }
-
-            return $this->cachedFallback(Cache::get($latestCacheKey))
-                ?? $this->storedFallback($latitude, $longitude);
+            return $this->refreshForecast($cacheKey, $latestCacheKey, $latitude, $longitude, $location, $ttl);
         }
 
         $cached = Cache::get($cacheKey);
@@ -93,18 +79,66 @@ class WeatherApiService
         }
 
         $mode = \App\Support\InteractiveRequest::weatherMode();
-
-        $fresh = $this->fetchForecast($latitude, $longitude, $location, $mode['budget']);
-
-        if ($fresh !== null) {
-            Cache::put($cacheKey, $fresh, $ttl);
-            Cache::forever($latestCacheKey, $fresh);
-
-            return $fresh;
+        $lock = Cache::lock($cacheKey.':refresh-lock', self::REFRESH_LOCK_SECONDS);
+        if (! $lock->get()) {
+            return $this->cachedFallback(Cache::get($latestCacheKey))
+                ?? $this->storedFallback($latitude, $longitude);
         }
 
-        return $this->cachedFallback(Cache::get($latestCacheKey))
-            ?? $this->storedFallback($latitude, $longitude);
+        try {
+            // A refresh may have completed between the initial cache read and
+            // lock acquisition. Reuse it instead of calling the provider again.
+            if (is_array($cached = Cache::get($cacheKey))) {
+                return $cached;
+            }
+
+            $fresh = $this->fetchForecast($latitude, $longitude, $location, $mode['budget']);
+
+            if ($fresh !== null) {
+                Cache::put($cacheKey, $fresh, $ttl);
+                Cache::forever($latestCacheKey, $fresh);
+
+                return $fresh;
+            }
+
+            $cached = Cache::get($cacheKey);
+
+            if (is_array($cached)) {
+                return $cached;
+            }
+
+            return $this->cachedFallback(Cache::get($latestCacheKey))
+                ?? $this->storedFallback($latitude, $longitude);
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
+        }
+    }
+
+    private function refreshForecast(string $cacheKey, string $latestCacheKey, float $latitude, float $longitude, string $location, \DateTimeInterface $ttl): ?array
+    {
+        $lock = Cache::lock($cacheKey.':refresh-lock', self::REFRESH_LOCK_SECONDS);
+        if (! $lock->get()) {
+            return Cache::get($cacheKey)
+                ?? $this->cachedFallback(Cache::get($latestCacheKey))
+                ?? $this->storedFallback($latitude, $longitude);
+        }
+
+        try {
+            $fresh = $this->fetchForecast($latitude, $longitude, $location);
+
+            if ($fresh !== null) {
+                Cache::put($cacheKey, $fresh, $ttl);
+                Cache::forever($latestCacheKey, $fresh);
+
+                return $fresh;
+            }
+
+            return Cache::get($cacheKey)
+                ?? $this->cachedFallback(Cache::get($latestCacheKey))
+                ?? $this->storedFallback($latitude, $longitude);
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
+        }
     }
 
     /**

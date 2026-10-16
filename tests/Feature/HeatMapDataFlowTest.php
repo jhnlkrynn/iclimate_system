@@ -112,18 +112,21 @@ class HeatMapDataFlowTest extends TestCase
         return trim((string) preg_replace('/\s+/', ' ', html_entity_decode((string) preg_replace('/<[^>]+>/', ' ', $m[1]))));
     }
 
-    // ------------------------------------------------------------ the root cause
+    // ------------------------------------------------------------ prepared-data request contract
 
     public function test_an_empty_weather_store_is_filled_by_one_shared_refresh_and_the_next_view_is_coloured(): void
     {
         $user = $this->mao();
 
-        // First view: nothing saved yet. The page answers at once, honestly, and says new weather is on its way.
-        $first = $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('No data yet It appears here after the next update.', $this->summary($first));
-        $this->assertStringContainsString('data-heat-map-updating', $first);
+        // The scheduled refresh prepares the shared weather and risk data before navigation.
+        $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
 
-        // After that response: ONE batched request for all 19 barangays (the shared service), nothing per barangay.
+        // The page reads the prepared data and does not call the provider.
+        $first = $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('No data yet It appears here after the next update.', $this->summary($first));
+        $this->assertStringNotContainsString('data-heat-map-updating', $first);
+
+        // The scheduled refresh made ONE batched request for all 19 barangays.
         $this->assertCount(1, Http::recorded());
         $this->assertCount(19, $this->requestedPoints(Http::recorded()[0][0]));
 
@@ -134,7 +137,7 @@ class HeatMapDataFlowTest extends TestCase
         $this->assertSame([now()->toIso8601String()], $areas->map(fn (HeatmapArea $a) => $a->risk_computed_at->toIso8601String())->unique()->values()->all());
         $this->assertEmpty($areas->reject(fn (HeatmapArea $a) => in_array($a->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)));
 
-        // Next view: every polygon has its colour from the saved forecast, and no further provider request is made.
+        // Next view: every polygon still has its colour from the saved forecast, and no provider request is made.
         $second = $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->getContent();
         $levels = $this->levels($second);
         $this->assertCount(19, $levels['week']);
@@ -153,11 +156,12 @@ class HeatMapDataFlowTest extends TestCase
     public function test_many_views_while_the_weather_is_due_make_one_provider_request(): void
     {
         $this->providerUp = false;
+        $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertFailed();
         foreach (range(1, 4) as $_) {
             $this->actingAs($this->mao())->get(route('heat-map.index'))->assertOk();
         }
 
-        // The batched request failed, so each barangay was tried once on its own — and the next three views made none.
+        // The scheduled refresh attempted the batch and its concurrent fallback once; page views made no provider calls.
         $this->assertCount(1 + 19, Http::recorded());
         // Nothing to rate from: still No data, never Low, and no HeatmapArea row invented.
         $this->assertSame(['nodata'], array_values(array_unique($this->levels($this->actingAs($this->mao())->get(route('heat-map.index'))->getContent())['week'])));

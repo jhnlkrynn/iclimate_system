@@ -48,6 +48,7 @@
     </div>
 
     @if ($routeName === 'farmer-profiles' && $record->farmBoundary)
+        @vite('resources/css/leaflet.css')
         <div class="card no-lift mt-4">
             <div class="card-header border-0">
                 <div class="fw-semibold">Mapped Farm Boundary</div>

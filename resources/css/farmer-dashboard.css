@@ -671,6 +671,8 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd[data-farmer-dashboard] .fh-message.is-danger .fh-message-icon { color: var(--danger-ink); }
 .mfd[data-farmer-dashboard] .fh-message-icon svg { width: 30px; height: 30px; }
 .mfd[data-farmer-dashboard] .fh-message-text { margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.mfd[data-farmer-dashboard] .fh-message-reason { margin: 8px 0 0; font-size: 1.125rem; font-weight: 500; line-height: 1.5; color: var(--ink); }
+.mfd[data-farmer-dashboard] .fh-message-source { margin: 6px 0 0; font-size: 1rem; font-weight: 500; line-height: 1.45; color: var(--muted); }
 
 /* 2. Weather today */
 .mfd[data-farmer-dashboard] .fh-weather-now { display: flex; align-items: center; gap: 16px; }

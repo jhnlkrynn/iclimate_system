@@ -71,6 +71,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('farmer.language')
         ->name('heat-map.index');
 
+    Route::get('/heat-map/{range}/{barangay}/detail', [DashboardController::class, 'heatMapDetail'])
+        ->middleware('farmer.language')
+        ->where('range', '[A-Za-z0-9_-]+')
+        ->name('heat-map.detail');
+
     /*
     |--------------------------------------------------------------------------
     | Farmer Dashboard

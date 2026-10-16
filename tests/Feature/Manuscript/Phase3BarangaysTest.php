@@ -4,7 +4,9 @@ namespace Tests\Feature\Manuscript;
 
 use App\Models\BarangayProfile;
 use App\Models\User;
+use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\LianBarangays;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,9 +56,27 @@ class Phase3BarangaysTest extends TestCase
         $this->actingAs($mao)->get(route('climate-records.index'))->assertOk()->assertSee('href="'.route('mao.barangays.index').'"', false);
     }
 
-    public function test_heat_map_has_flood_drought_and_yield_layers_from_the_barangay_records(): void
+    public function test_heat_map_has_dynamic_flood_and_drought_layers_for_all_lian_barangays(): void
     {
-        BarangayProfile::query()->where('barangay', 'Lumaniag')->update(['flood_prone' => true]);
+        $today = now('Asia/Manila')->startOfDay();
+        $records = [];
+        foreach (LianBarangays::all() as $barangay) {
+            $rainfall = $barangay === 'Lumaniag' ? 60.0 : 4.0;
+            $records[$barangay] = [
+                'barangay' => $barangay,
+                'temperature_c' => 28.0,
+                'fetched_at' => now()->toIso8601String(),
+                'daily' => array_map(fn (int $i) => [
+                    'date' => $today->copy()->addDays($i)->toDateString(),
+                    'rainfall' => $rainfall,
+                    'humidity_percent' => 80.0,
+                    'soil_moisture' => .25,
+                    'evapotranspiration_mm' => 3.0,
+                    'runoff_mm' => $barangay === 'Lumaniag' ? 2.0 : 0.0,
+                ], range(0, 15)),
+            ];
+        }
+        Cache::forever(LianBarangayWeatherService::STORE_KEY, ['records' => $records, 'status' => []]);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $response = $this->actingAs($mao)->get(route('heat-map.index', ['range' => 'flood']))->assertOk();
@@ -64,14 +84,17 @@ class Phase3BarangaysTest extends TestCase
 
         $ranges = $response->viewData('ranges');
         $this->assertSame('flood', $response->viewData('range'));
+        $this->assertCount(19, $ranges['flood']['barangays']);
+        $this->assertSame(19, array_sum($ranges['flood']['counts']));
         $this->assertSame('high', $ranges['flood']['barangays']['Lumaniag']['level']);
         $this->assertSame('low', $ranges['flood']['barangays']['Balibago']['level']);
-        // Once the MAO has marked any barangay, an unmarked one reads "not drought-prone", not "not checked".
+        $this->assertCount(19, $ranges['drought']['barangays']);
+        $this->assertSame(19, array_sum($ranges['drought']['counts']));
         $this->assertSame('low', $ranges['drought']['barangays']['Lumaniag']['level']);
         $this->assertSame('nodata', $ranges['yield']['barangays']['Balibago']['level']);
     }
 
-    public function test_before_any_barangay_is_marked_the_flood_layer_says_not_checked(): void
+    public function test_without_saved_forecasts_the_flood_layer_reports_unavailable_for_all_barangays(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 

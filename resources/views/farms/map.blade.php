@@ -1,4 +1,5 @@
 <x-app-layout>
+    @vite('resources/css/leaflet.css')
     {{-- One farm's map (FarmController::map): the farmer marks the farm's outline; the server checks it is inside Lian,
          finds its barangay and measures its size (the same drawing as the earlier My Farm Map page). --}}
     <div class="fad frec ffm" data-farm-map-page>

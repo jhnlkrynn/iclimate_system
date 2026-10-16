@@ -1,4 +1,5 @@
 <x-app-layout>
+    @vite('resources/css/leaflet.css')
     <style>
         .boundary-map { min-height: 520px; border-radius: 12px; overflow: hidden; border: 1px solid var(--ic-border); }
         .boundary-help { color: var(--ic-ink-mid); }

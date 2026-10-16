@@ -41,5 +41,19 @@
         @unless ($m['key'] === 'plant_good')
             <p class="fh-message-text">{{ $m['text'] }}</p>
         @endunless
+        @if ($mood === 'good' && ($f['weather']['state'] ?? null) === 'ok' && ($f['risk']['state'] ?? null) === 'ok' && ! in_array($f['risk']['key'] ?? null, ['high', 'severe'], true))
+            @php
+                $goodWeather = $f['weather'];
+                $goodRisk = $f['risk'];
+                $goodCondition = trim((string) ($goodWeather['rain'] ?? '')) ?: trim((string) ($goodWeather['condition'] ?? ''));
+                $goodProvider = trim((string) ($goodWeather['provider'] ?? '')) ?: 'iClimate weather data';
+            @endphp
+            <p class="fh-message-reason">{{ __('farmer.home.message.good_reason', [
+                'condition' => $goodCondition ?: __('farmer.weather.unknown'),
+                'temperature' => number_format((float) ($goodWeather['temperature'] ?? 0), 1),
+                'risk' => $goodRisk['label'],
+            ]) }}</p>
+            <p class="fh-message-source"><strong>{{ __('farmer.home.message.source_label') }}:</strong> {{ __('farmer.home.message.source_value', ['source' => $goodProvider]) }}</p>
+        @endif
     </div>
 </section>

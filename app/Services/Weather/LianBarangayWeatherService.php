@@ -83,6 +83,9 @@ class LianBarangayWeatherService
         'temperature_2m',
         'relative_humidity_2m',
         'wind_speed_10m',
+        'soil_moisture_0_to_1cm',
+        'soil_moisture_1_to_3cm',
+        'et0_fao_evapotranspiration',
     ];
 
     private const DAILY = [
@@ -93,6 +96,7 @@ class LianBarangayWeatherService
         'temperature_2m_min',
         'precipitation_probability_max',
         'wind_speed_10m_max',
+        'et0_fao_evapotranspiration',
     ];
 
     /** Days of forecast kept on each record (the Predictions page's "Next 2 Weeks"); risk still uses the first 7. */
@@ -544,7 +548,7 @@ class LianBarangayWeatherService
             'weather_condition' => $condition,
             'condition' => $condition,
             'next_hours' => $this->nextHours($hourly, $current['time'] ?? null),
-            'daily' => $this->dailyList($daily),
+            'daily' => $this->dailyList($daily, $hourly),
             'forecast_period' => 'next_24_hours',
             'observed_at' => $observedAt->toIso8601String(),
             'fetched_at' => $fetchedAt->toIso8601String(),
@@ -645,24 +649,46 @@ class LianBarangayWeatherService
      *
      * @return array<int, array<string, mixed>>
      */
-    private function dailyList(array $daily): array
+    private function dailyList(array $daily, array $hourly = []): array
     {
         $days = [];
         foreach ((array) ($daily['time'] ?? []) as $i => $date) {
             $code = $this->number(($daily['weather_code'] ?? [])[$i] ?? null);
+            $hourIndexes = collect((array) ($hourly['time'] ?? []))->filter(
+                fn ($time): bool => is_string($time) && str_starts_with($time, (string) $date)
+            )->keys()->all();
+            $hourlyValues = fn (string $key): ?float => $this->average(array_map(
+                fn (int $index): mixed => ($hourly[$key] ?? [])[$index] ?? null,
+                $hourIndexes,
+            ));
             $days[] = [
                 'date' => (string) $date,
                 'weather_code' => $code !== null ? (int) $code : null,
                 'condition' => $code !== null ? app(WeatherIconMapper::class)->map((int) $code, true)['condition'] : null,
                 'rainfall' => $this->number(($daily['precipitation_sum'] ?? $daily['rain_sum'] ?? [])[$i] ?? null),
+                'precipitation_mm' => $this->number(($daily['precipitation_sum'] ?? [])[$i] ?? null),
                 'precipitation_probability' => $this->number(($daily['precipitation_probability_max'] ?? [])[$i] ?? null),
                 'temperature_max' => $this->number(($daily['temperature_2m_max'] ?? [])[$i] ?? null),
                 'temperature_min' => $this->number(($daily['temperature_2m_min'] ?? [])[$i] ?? null),
                 'wind_speed_max' => $this->number(($daily['wind_speed_10m_max'] ?? [])[$i] ?? null),
+                'humidity_percent' => $hourlyValues('relative_humidity_2m'),
+                'soil_moisture' => $this->average(array_merge(
+                    array_map(fn (int $index): mixed => ($hourly['soil_moisture_0_to_1cm'] ?? [])[$index] ?? null, $hourIndexes),
+                    array_map(fn (int $index): mixed => ($hourly['soil_moisture_1_to_3cm'] ?? [])[$index] ?? null, $hourIndexes),
+                )),
+                'evapotranspiration_mm' => $this->number(($daily['et0_fao_evapotranspiration'] ?? [])[$i] ?? $hourlyValues('et0_fao_evapotranspiration')),
+                'runoff_mm' => $this->number(($daily['runoff_sum'] ?? [])[$i] ?? $hourlyValues('runoff')),
             ];
         }
 
         return $days;
+    }
+
+    private function average(array $values): ?float
+    {
+        $numbers = array_values(array_filter($values, fn ($value): bool => is_numeric($value)));
+
+        return $numbers === [] ? null : round(array_sum(array_map('floatval', $numbers)) / count($numbers), 3);
     }
 
     private function isRecordDue(?array $record): bool

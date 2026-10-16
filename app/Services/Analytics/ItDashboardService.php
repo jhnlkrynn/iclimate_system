@@ -5,11 +5,13 @@ namespace App\Services\Analytics;
 use App\Models\AIChat;
 use App\Models\AnalyticsRun;
 use App\Models\ClimateRecord;
+use App\Models\ConversationMessage;
 use App\Models\ExternalWeatherData;
 use App\Models\FarmBoundary;
 use App\Models\FarmerProfile;
 use App\Models\MonthlyWeatherPrediction;
 use App\Models\PlantingAdvisory;
+use App\Models\Report;
 use App\Models\RiceProduction;
 use App\Models\SystemLog;
 use App\Models\User;
@@ -23,6 +25,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -107,6 +110,7 @@ final class ItDashboardService
             'kpis' => $this->kpiCards($overall, $services, $roles, $extra, $resources),
             'extra' => $extra,
             'recent' => $this->recentActivity(),
+            'staff' => $this->staffSummary($roles, $overall),
             'filters' => $this->filterOptions(),
             // When each cached block was built, shown as "Last updated" on its section. Live blocks use the page time.
             'stamps' => $this->stamps + ['now' => $now],
@@ -115,6 +119,91 @@ final class ItDashboardService
 
     /** @var array<string, CarbonImmutable> */
     private array $stamps = [];
+
+    /** Plain-language dashboard data for MAO IT staff; technical monitoring remains on System Health and Logs. */
+    private function staffSummary(array $roles, array $overall): array
+    {
+        return $this->remember('staff-summary', function () use ($roles, $overall): array {
+            try {
+                $recentAccounts = User::query()->latest('created_at')->take(5)->get(['id', 'name', 'role', 'status', 'created_at'])
+                    ->map(fn (User $user): array => [
+                        'name' => $user->name,
+                        'role' => match ($user->role) {
+                            User::ROLE_FARMER => 'Farmer',
+                            User::ROLE_MAO => 'MAO',
+                            User::ROLE_IT_EXPERT => 'IT',
+                            default => 'User',
+                        },
+                        'status' => $user->status === User::STATUS_ACTIVE ? 'Active' : 'Needs review',
+                        'created_at' => $user->created_at?->timezone(self::TIMEZONE),
+                    ])->all();
+
+                $reviewAccounts = User::query()->where('status', '!=', User::STATUS_ACTIVE)->count();
+                $reportsThisMonth = Report::query()->realGenerated()->where('created_at', '>=', now(self::TIMEZONE)->startOfMonth())->count();
+                $reportsTotal = Report::query()->realGenerated()->count();
+                // These two figures scan the same table and are read together on
+                // every cold IT dashboard build. Keep one result row so a remote
+                // PostgreSQL connection makes one round trip, not two.
+                $messageCounts = ConversationMessage::query()
+                    ->selectRaw('COUNT(*) as total, SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread')
+                    ->first();
+                $messagesTotal = (int) ($messageCounts?->total ?? 0);
+                $unreadMessages = (int) ($messageCounts?->unread ?? 0);
+                $recentMessages = ConversationMessage::query()->with('sender:id,name,role')->latest('id')->take(5)->get()
+                    ->map(fn (ConversationMessage $message): array => [
+                        'sender' => $message->sender?->name ?? 'iClimate user',
+                        'body' => Str::limit(trim((string) $message->body), 90),
+                        'at' => $message->created_at?->timezone(self::TIMEZONE),
+                    ])->all();
+                $recentUserActivity = SystemLog::query()->with('user:id,name')->latest('id')->where(function ($query): void {
+                    $query->whereRaw('LOWER(action) LIKE ?', ['%user%'])
+                        ->orWhereRaw('LOWER(action) LIKE ?', ['%account%'])
+                        ->orWhereRaw('LOWER(action) LIKE ?', ['%role%']);
+                })->take(6)->get()->map(fn (SystemLog $log): array => [
+                    'action' => SystemLogPresenter::present($log)['action'],
+                    'user' => $log->user?->name ?? 'System',
+                    'at' => $log->created_at?->timezone(self::TIMEZONE),
+                ])->all();
+            } catch (Throwable) {
+                return [
+                    'accounts' => $roles,
+                    'recent_accounts' => [],
+                    'accounts_needing_review' => null,
+                    'reports_this_month' => null,
+                    'reports_total' => null,
+                    'messages_total' => null,
+                    'unread_messages' => null,
+                    'recent_messages' => [],
+                    'recent_user_activity' => [],
+                    'availability' => $this->availabilityLabel($overall),
+                ];
+            }
+
+            return [
+                'accounts' => $roles,
+                'recent_accounts' => $recentAccounts,
+                'accounts_needing_review' => $reviewAccounts,
+                'reports_this_month' => $reportsThisMonth,
+                'reports_total' => $reportsTotal,
+                'messages_total' => $messagesTotal,
+                'unread_messages' => $unreadMessages,
+                'recent_messages' => $recentMessages,
+                'recent_user_activity' => $recentUserActivity,
+                'availability' => $this->availabilityLabel($overall),
+            ];
+        });
+    }
+
+    /** @return array{label:string, level:string, detail:string} */
+    private function availabilityLabel(array $overall): array
+    {
+        return match ($overall['level'] ?? 'unk') {
+            'ok' => ['label' => 'System Available', 'level' => 'ok', 'detail' => 'iClimate is online and ready to use.'],
+            'warn' => ['label' => 'Needs Attention', 'level' => 'warn', 'detail' => 'iClimate is available, but one or more items may need review.'],
+            'crit' => ['label' => 'System Unavailable', 'level' => 'crit', 'detail' => 'Some important parts of iClimate may not be available right now.'],
+            default => ['label' => 'Status Not Available', 'level' => 'unk', 'detail' => 'The current availability status could not be confirmed.'],
+        };
+    }
 
     /** Caches a block for 5 minutes together with the time it was built (the section's "Last updated"). */
     private function remember(string $key, callable $build): mixed
@@ -519,7 +608,6 @@ final class ItDashboardService
                     return null;
                 }
             };
-            $logs = fn (string $action, int $days) => $count(fn () => SystemLog::query()->where('action', $action)->where('created_at', '>=', now()->subDays($days))->count());
             $cutoff = now()->subDays(90);
             $private = fn () => SystemLog::query()->where('created_at', '>=', now()->subDays(7))->where(function ($q) {
                 foreach (['delete', 'archive', 'export', 'role'] as $word) {
@@ -527,10 +615,21 @@ final class ItDashboardService
                 }
             });
 
+            try {
+                $logCounts = SystemLog::query()->selectRaw(
+                    'SUM(CASE WHEN action = ? AND created_at >= ? THEN 1 ELSE 0 END) as failed_24h,
+                     SUM(CASE WHEN action = ? AND created_at >= ? THEN 1 ELSE 0 END) as failed_7d,
+                     SUM(CASE WHEN action = ? AND created_at >= ? THEN 1 ELSE 0 END) as lockouts_24h',
+                    ['Failed Login', now()->subDay(), 'Failed Login', now()->subDays(7), 'Login Lockout', now()->subDay()],
+                )->first();
+            } catch (Throwable) {
+                $logCounts = null;
+            }
+
             return [
-                'failed_24h' => $logs('Failed Login', 1),
-                'failed_7d' => $logs('Failed Login', 7),
-                'lockouts_24h' => $logs('Login Lockout', 1),
+                'failed_24h' => $logCounts ? (int) $logCounts->failed_24h : null,
+                'failed_7d' => $logCounts ? (int) $logCounts->failed_7d : null,
+                'lockouts_24h' => $logCounts ? (int) $logCounts->lockouts_24h : null,
                 'resets_7d' => SchemaCache::hasTable('password_reset_tokens')
                     ? $count(fn () => DB::table('password_reset_tokens')->where('created_at', '>=', now()->subDays(7))->count()) : null,
                 'privileged_7d' => $count(fn () => $private()->count()),

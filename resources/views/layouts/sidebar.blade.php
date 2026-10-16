@@ -114,21 +114,20 @@
         $moreGroup = [];
         $publishingGroup = [];
     } else {
-        // IT Personnel (2026-10): the system controller, not agricultural staff. One short list: the system pages and
-        // Messages. Model Evaluation opens from System Health; Profile is in the top bar. The agricultural pages send IT
-        // back to this dashboard (App\Http\Middleware\RedirectItFromFieldPages); their routes and controllers are unchanged.
+        // IT Personnel: keep the main list focused on users, reports, messages, and settings.
+        // Technical pages remain available under More tools.
         $primaryGroup = [
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('User management', 'user-management', 'user-management'),
-            $navLink('System health', 'system-health', 'system-health'),
-            $navLink('System logs', 'system-logs', 'system-logs'),
+            $navLink('Reports', 'reports', 'reports'),
             // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
             $navLink('Settings', 'it-settings', 'system-health'),
             $navLink('Messages', 'messages', 'messages'),
-            // Chatbot Knowledge is hidden from the interface unless CHATBOT_KNOWLEDGE_UI=true (config/iclimate.php).
-            ...(\App\Http\Middleware\ChatbotKnowledgeUi::enabled() ? [$navLink('Chatbot knowledge', 'ai-admin', 'ai')] : []),
         ];
-        $moreGroup = [];
+        $moreGroup = [
+            $navLink('System health details', 'system-health', 'system-health'),
+            $navLink('Activity logs', 'system-logs', 'system-logs'),
+        ];
         $publishingGroup = [];
     }
 

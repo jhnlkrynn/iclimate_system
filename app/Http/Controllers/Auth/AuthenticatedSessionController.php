@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
 use App\Services\Weather\FarmerDashboardWeatherService;
-use App\Support\ClimateSnapshot;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -64,19 +63,18 @@ class AuthenticatedSessionController extends Controller
         }
 
         $hasShared = ($shared['success'] ?? false) === true;
-        $latestClimate = ClimateSnapshot::latest();
 
         $weatherCode = $hasShared ? data_get($shared, 'current.weather_code') : null;
-        $hasRealWeather = $hasShared || $latestClimate !== null;
+        $hasRealWeather = $hasShared;
 
-        $temperature = ($hasShared ? data_get($shared, 'current.temperature') : null) ?? $latestClimate?->temperature;
-        $humidity = ($hasShared ? data_get($shared, 'current.humidity') : null) ?? $latestClimate?->humidity;
-        $windSpeed = ($hasShared ? data_get($shared, 'current.wind_speed') : null) ?? $latestClimate?->wind_speed;
-        $rainfall = ($hasShared ? data_get($shared, 'today.rainfall') : null) ?? $latestClimate?->rainfall;
+        $temperature = $hasShared ? data_get($shared, 'current.temperature') : null;
+        $humidity = $hasShared ? data_get($shared, 'current.humidity') : null;
+        $windSpeed = $hasShared ? data_get($shared, 'current.wind_speed') : null;
+        $rainfall = $hasShared ? data_get($shared, 'today.rainfall_to_date_mm') : null;
         $fetchedAt = $hasShared ? ($shared['fetched_at'] ?? null) : null;
         $updatedAt = $fetchedAt
             ? Carbon::parse($fetchedAt)->timezone($weatherTimezone)
-            : $latestClimate?->updated_at;
+            : null;
 
         $sharedCondition = $hasShared ? strtolower((string) data_get($shared, 'current.condition', '')) : '';
 
@@ -102,10 +100,7 @@ class AuthenticatedSessionController extends Controller
             in_array((int) $weatherCode, [45, 48], true) => ['Foggy', '🌫️'],
             in_array((int) $weatherCode, [1, 2, 3], true) => ['Cloudy', '⛅️'],
             $weatherCode !== null && (int) $weatherCode === 0 => ['Clear', '☀️'],
-            (float) ($rainfall ?? 0) >= 120 => ['Rain', '🌧️'],
-            (float) ($rainfall ?? 0) >= 70 => ['Cloudy', '⛅️'],
-            (float) ($rainfall ?? 0) >= 30 => ['Partly Cloudy', '🌤️'],
-            default => ['Sunny', '☀️'],
+            default => ['Weather data unavailable', '🌦️'],
         };
 
         $hasUsableReading = $hasRealWeather && $temperature !== null;
@@ -120,8 +115,8 @@ class AuthenticatedSessionController extends Controller
             'condition_emoji' => $condition[1],
             'updated_at' => $updatedAt?->toIso8601String(),
             'updated_label' => $updatedAt
-                ? 'Updated '.$updatedAt->shortTime()
-                : ($hasUsableReading ? 'Stored climate record' : 'No live or stored weather available'),
+                ? (($shared['stale'] ?? false) ? 'Last updated '.$updatedAt->shortTime() : 'Updated '.$updatedAt->shortTime())
+                : 'No live or stored weather available',
         ];
     }
 

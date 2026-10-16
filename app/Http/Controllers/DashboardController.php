@@ -68,8 +68,8 @@ class DashboardController extends Controller
     /** Sections the MAO refresh button re-renders (partials under dashboards/mao). */
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
 
-    /** Sections the IT refresh button re-renders (partials under dashboards/it). */
-    private const IT_LIVE_SLOTS = ['kpis', 'health', 'brief', 'pipeline', 'jobs', 'security', 'roles', 'usage', 'ai', 'resources', 'integrity', 'ops', 'recent'];
+    /** The IT refresh button re-renders the plain-language staff dashboard card. */
+    private const IT_LIVE_SLOTS = ['staff'];
 
     /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
     public const FARMER_SLOTS = ['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'];   // Farmer – Naicel (2026-10-08): + kpis
@@ -223,10 +223,8 @@ class DashboardController extends Controller
         $locale = $farmer ? FarmerLanguage::resolve($request) : 'en';
         $ownBarangay = $farmer ? LianBarangays::canonicalName($user->registeredBarangay()) : null;
 
-        // The page shows the saved forecast at once. When the shared barangay weather is due (the scheduler is behind
-        // or has not run yet), the one shared refresh — and the risk rating from it — runs after this response; it is
-        // locked and at most once a minute, however many people open the page.
-        rescue(fn () => $weather->refreshIfDue($ownBarangay), report: false);
+        // The page is read-only: scheduled weather/risk refreshes prepare the data that this page displays.
+        // Do not register provider or risk-map work from an ordinary navigation request.
         $ranges = $panel->ranges($locale);
         // Manuscript – Naicel (2026-10-08): Flood-prone / Drought-prone / Expected yield layers, shown like a range.
         $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale), [], false);
@@ -245,6 +243,33 @@ class DashboardController extends Controller
             // A barangay without a forecast while new weather is on its way: heat-map.js reads the page again shortly.
             'updating' => collect($ranges)->contains(fn (array $r): bool => $r['counts']['nodata'] > 0)
                 && rescue(fn (): bool => $weather->isDue(), false, false),
+        ]);
+    }
+
+    /** Return one Heat Map detail panel; the page loads this only after a barangay is selected. */
+    public function heatMapDetail(Request $request, string $range, string $barangay, HeatMapPanel $panel): JsonResponse
+    {
+        $user = $request->user();
+        $locale = $user?->role === User::ROLE_FARMER ? FarmerLanguage::resolve($request) : 'en';
+        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale), [], false);
+        $ranges = $panel->ranges($locale) + $layers;
+        $canonical = LianBarangays::canonicalName($barangay) ?? $barangay;
+        $selected = $ranges[$range]['barangays'][$canonical] ?? null;
+
+        abort_unless(is_array($selected) && isset($ranges[$range]), 404);
+
+        return response()->json([
+            'range' => $range,
+            'barangay' => $canonical,
+            'updated_at' => $ranges[$range]['updated_at'] ?? null,
+            'html' => view('heat-map.detail', [
+                'key' => $range,
+                'r' => $ranges[$range],
+                'b' => $selected,
+                'locale' => $locale,
+                'showNumbers' => $user?->role !== User::ROLE_FARMER,
+                't' => fn (string $key, array $replace = []) => trans('farmer.heat_map.'.$key, $replace, $locale),
+            ])->render(),
         ]);
     }
 

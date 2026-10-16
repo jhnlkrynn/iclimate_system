@@ -1,15 +1,59 @@
-/* Heat Map page (resources/views/heat-map/index.blade.php): the map on the left, one panel on the right.
-   The map fills the screen under the top bar; on a phone the panel sits under the map. */
-.hmx { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1rem; align-items: stretch; height: calc(100vh - 74px - 2.5rem); height: calc(100dvh - 74px - 2.5rem); min-height: 460px; }
+/* Heat Map page (resources/views/heat-map/index.blade.php): the map and weekly panel share the page.
+   Farmers see the complete weekly overview above a full-width map; staff retain the map-left/panel-right view. */
+.hmx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 480px); gap: 1rem; align-items: start; height: auto; min-height: 760px; }
 
-.hmx-map { position: relative; min-width: 0; border-radius: 16px; overflow: hidden; border: 1px solid #d8e2dc; background: #f4f7f5; }
+.hmx-map { position: relative; align-self: start; min-width: 0; border-radius: 16px; overflow: hidden; border: 1px solid #d8e2dc; background: #f4f7f5; }
 .hmx-canvas { position: absolute; inset: 0; z-index: 0; }
 .hmx-canvas.leaflet-container { background: #f4f7f5; font: inherit; }
 /* The layout caps images and SVGs at their parent's width; Leaflet's own panes are zero-sized, so lift the cap inside the map. */
 .hmx-canvas .leaflet-pane svg, .hmx-canvas .leaflet-pane img { max-width: none !important; max-height: none !important; }
 
-.hmx-toggle { position: absolute; top: .75rem; right: .75rem; z-index: 500; display: inline-flex; padding: .2rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); }
-.hmx-toggle-btn { padding: .45rem 1rem; border: 0; background: transparent; cursor: pointer; border-radius: 999px; font-size: .9rem; font-weight: 700; color: #2c3d35; text-decoration: none; white-space: nowrap; }
+/* Hover details belong to the map, not the side panel. Keep the card readable when a long
+   barangay name or layer explanation is shown, and keep its maximum size inside the map. */
+html body .hmx-map .leaflet-tooltip,
+html body .hmx-map .leaflet-tooltip.hmx-map-tooltip {
+    box-sizing: border-box;
+    display: block;
+    width: min(360px, calc(100vw - 32px)) !important;
+    min-width: 220px;
+    max-width: min(360px, calc(100vw - 32px)) !important;
+    padding: .8rem .95rem;
+    border: 1px solid #c8d8cf;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 10px 26px rgba(15, 40, 30, .22);
+    color: #1f2d27;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word;
+    hyphens: none;
+}
+
+html body .hmx-map .leaflet-tooltip::before,
+html body .hmx-map .leaflet-tooltip.hmx-map-tooltip::before { display: none; }
+html body .hmx-map .hmx-map-tooltip strong,
+html body .hmx-map .hmx-map-tooltip b,
+html body .hmx-map .hmx-map-tooltip .hmx-tip-line {
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+html body .hmx-map .hmx-map-tooltip strong { display: inline-block; max-width: 100%; font-size: 1.1rem; line-height: 1.35; }
+html body .hmx-map .hmx-map-tooltip .hmx-tip-line { display: block; max-width: 100%; }
+html body .hmx-map .hmx-map-tooltip .hmx-tip-dot { width: .75rem; height: .75rem; margin-right: .35rem; }
+
+html[data-theme="dark"] body .hmx-map .leaflet-tooltip.hmx-map-tooltip {
+    border-color: #3a5145;
+    background: #17231d;
+    color: #e2ebe6;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .38);
+}
+html[data-theme="dark"] body .hmx-map .hmx-map-tooltip .hmx-tip-line { color: #b8c9bf; }
+
+.hmx-toggle { position: absolute; top: .75rem; right: .75rem; z-index: 500; display: inline-flex; padding: .25rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); }
+.hmx-toggle-btn { min-height: 44px; padding: .55rem 1.05rem; border: 0; background: transparent; cursor: pointer; border-radius: 999px; font-size: 1rem; font-weight: 700; color: #2c3d35; text-decoration: none; white-space: nowrap; }
 .hmx-toggle-btn:hover { color: #14532d; background: #eef4f0; }
 .hmx-toggle-btn.is-active { background: #14532d; color: #fff; }
 .hmx-toggle-btn:focus-visible, .hmx-row:focus-visible, .hmx-own:focus-visible, .hmx-back:focus-visible { outline: 3px solid #1d6fd8; outline-offset: 2px; }
@@ -19,36 +63,37 @@
 .hmx-legend-item { display: inline-flex; align-items: center; gap: .4rem; }
 .hmx-dot { display: inline-block; flex: 0 0 auto; width: .8rem; height: .8rem; border-radius: 50%; background: var(--hmx-color, #8a939b); border: 1px solid rgba(0, 0, 0, .25); }
 
-.hmx-panel { min-width: 0; overflow-y: auto; padding: 1.1rem 1.15rem; border-radius: 16px; background: #fff; border: 1px solid #d8e2dc; color: #1f2d27; }
+.hmx-panel { min-width: 0; overflow: visible; padding: 1.35rem 1.4rem; border-radius: 16px; background: #fff; border: 1px solid #d8e2dc; color: #1f2d27; }
 .hmx-view[hidden] { display: none; }
-.hmx-title { margin: 0 0 .6rem; font-size: 1.3rem; font-weight: 800; line-height: 1.25; color: #14261e; }
-.hmx-sub { margin: 1.1rem 0 .3rem; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5f7569; }
-.hmx-text { margin: 0 0 .45rem; font-size: 1rem; line-height: 1.5; }
+.hmx-summary { margin-bottom: .75rem; }
+.hmx-title { margin: 0 0 .75rem; font-size: 1.75rem; font-weight: 800; line-height: 1.25; color: #14261e; }
+.hmx-sub { margin: 1.2rem 0 .5rem; font-size: 1.25rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #5f7569; }
+.hmx-text { margin: 0 0 .55rem; font-size: 1.125rem; line-height: 1.55; }
 .hmx-action { padding: .7rem .85rem; border-radius: 12px; background: #eef6f1; border-left: 4px solid #14532d; font-weight: 600; }
-.hmx-when { margin: .35rem 0 0; font-size: .85rem; font-weight: 600; color: #5f7569; }
-.hmx-hint { margin: .9rem 0 0; font-size: .9rem; color: #4b5f55; }
-.hmx-source { margin: .6rem 0 0; font-size: .78rem; color: #5f7569; }
+.hmx-when { margin: .45rem 0 0; font-size: 1rem; font-weight: 600; color: #5f7569; }
+.hmx-hint { margin: 1rem 0 0; font-size: 1.05rem; line-height: 1.55; color: #4b5f55; }
+.hmx-source { margin: .7rem 0 0; font-size: .95rem; color: #5f7569; }
 .hmx-panel .ic-updated { margin-top: .9rem; }
 
-.hmx-counts { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
-.hmx-counts li { display: flex; align-items: center; gap: .55rem; font-size: 1rem; font-weight: 600; }
-.hmx-counts li.is-high { font-size: 1.1rem; font-weight: 800; }
+.hmx-counts { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
+.hmx-counts li { display: flex; align-items: center; gap: .65rem; font-size: 1.2rem; font-weight: 600; line-height: 1.45; }
+.hmx-counts li.is-high { font-size: 1.25rem; font-weight: 800; }
 
-.hmx-badge { display: inline-block; margin: 0; padding: .35rem .85rem; border-radius: 999px; font-size: .95rem; font-weight: 800; }
+.hmx-badge { display: inline-block; margin: 0; padding: .4rem .9rem; border-radius: 999px; font-size: 1rem; font-weight: 800; }
 .hmx-badge.is-low { background: #dff1e3; color: #14532d; }
 .hmx-badge.is-moderate { background: #fdefc8; color: #6b4a00; }
 .hmx-badge.is-high { background: #fbdcdc; color: #8a1616; }
 .hmx-badge.is-nodata { background: #e6eaed; color: #3f4a52; }
 
-.hmx-own { display: grid; grid-template-columns: 1fr auto; gap: .1rem .6rem; align-items: center; width: 100%; margin-top: .9rem; padding: .7rem .85rem; border-radius: 12px; border: 2px solid #0d47a1; background: #f2f7ff; text-align: left; color: #14261e; cursor: pointer; }
-.hmx-own-label { grid-column: 1 / -1; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #0d47a1; }
-.hmx-own strong { font-size: 1.02rem; }
+.hmx-own { display: grid; grid-template-columns: 1fr auto; gap: .2rem .75rem; align-items: center; width: 100%; margin-top: 1.1rem; padding: .9rem 1rem; border-radius: 12px; border: 2px solid #0d47a1; background: #f2f7ff; text-align: left; color: #14261e; cursor: pointer; }
+.hmx-own-label { grid-column: 1 / -1; font-size: 1.05rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #0d47a1; }
+.hmx-own strong { font-size: 1.2rem; }
 
 .hmx-list { list-style: none; margin: 0; padding: 0; }
-.hmx-row { display: flex; align-items: center; gap: .55rem; width: 100%; padding: .5rem .35rem; border: 0; border-bottom: 1px solid #e6ece8; background: transparent; text-align: left; font-size: .95rem; color: #1f2d27; cursor: pointer; }
+.hmx-row { display: flex; align-items: flex-start; gap: .7rem; width: 100%; min-height: 56px; padding: .7rem .35rem; border: 0; border-bottom: 1px solid #e6ece8; background: transparent; text-align: left; font-size: 1.125rem; color: #1f2d27; cursor: pointer; }
 .hmx-row:hover { background: #f3f7f4; }
-.hmx-row-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
-.hmx-row-level { flex: 0 0 auto; font-size: .85rem; color: #4b5f55; }
+.hmx-row-name { flex: 1 1 auto; min-width: 0; font-weight: 600; white-space: normal; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+.hmx-row-level { flex: 0 0 auto; min-width: max-content; margin-left: auto; font-size: 1.05rem; color: #4b5f55; text-align: right; white-space: nowrap; }
 
 .hmx-back { margin: 0 0 .7rem; padding: .3rem .1rem; border: 0; background: transparent; font-size: .88rem; font-weight: 700; color: #14532d; cursor: pointer; }
 .hmx-back:hover { text-decoration: underline; }
@@ -58,17 +103,31 @@
 .hmx-numbers dt { font-weight: 500; color: #4b5f55; }
 .hmx-numbers dd { margin: 0; font-weight: 700; }
 
-@media (min-width: 1400px) { .hmx { height: calc(100dvh - 74px - 3.5rem); grid-template-columns: minmax(0, 1fr) 400px; } }
+@media (min-width: 1200px) {
+    .hmx { min-height: 760px; grid-template-columns: minmax(0, 1fr) 500px; }
+    .hmx-map { height: 760px; min-height: 760px; max-height: 760px; }
+}
+@media (min-width: 1400px) {
+    .hmx { min-height: 820px; }
+    .hmx-map { height: 820px; min-height: 820px; max-height: 820px; }
+}
 
 /* Tablet and phone: the map first (most of the screen), the panel under it. */
 @media (max-width: 991.98px) {
     .hmx { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; }
-    .hmx-map { height: 62vh; height: 62dvh; min-height: 340px; }
+    .hmx-map { height: 62vh; height: 62dvh; min-height: 340px; max-height: none; }
     .hmx-panel { overflow: visible; scroll-margin-top: 76px; }
 }
+@media (max-width: 1199.98px) and (min-width: 992px) {
+    .hmx { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+    .hmx-map { height: 62vh; height: 62dvh; min-height: 480px; max-height: none; }
+    .hmx-panel { grid-row: 2; }
+}
 @media (max-width: 575.98px) {
-    .hmx-toggle-btn { padding: .45rem .8rem; font-size: .85rem; }
-    .hmx-legend { font-size: .78rem; gap: .25rem .65rem; padding: .4rem .6rem; }
+    .hmx-toggle-btn { padding: .65rem .9rem; font-size: 1.05rem; }
+    .hmx-legend { font-size: 1rem; gap: .45rem .75rem; padding: .6rem .75rem; }
+    .hmx-panel { padding: 1.15rem 1rem; }
+    .hmx-row { min-height: 52px; padding: .65rem .25rem; }
 }
 
 html[data-theme="dark"] .hmx-map { border-color: #2b3b34; background: #16211c; }
@@ -88,19 +147,44 @@ html[data-theme="dark"] .hmx-badge.is-nodata { background: #2c363c; color: #d5dd
 
 /* Manuscript – Naicel (2026-10-08): the map layer choice (Flood-prone / Drought-prone / Expected yield), under the
    This Week / 2 Weeks switch. */
-.hmx-layer { position: absolute; top: 3.75rem; right: .75rem; z-index: 500; display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .4rem .3rem .8rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); font-size: .82rem; font-weight: 700; color: #2c3d35; }
-.hmx-layer select { border: 0; background: #eef4f0; border-radius: 999px; padding: .3rem .6rem; font-weight: 700; color: #14532d; }
+.hmx-layer { position: absolute; top: 5.25rem; right: .75rem; z-index: 500; display: inline-flex; align-items: center; gap: .55rem; padding: .45rem .55rem .45rem .9rem; border-radius: 999px; background: #fff; border: 1px solid #cfdad4; box-shadow: 0 4px 14px rgba(15, 40, 30, .16); font-size: 1rem; font-weight: 700; color: #2c3d35; white-space: nowrap; }
+.hmx-layer select { min-height: 42px; max-width: 100%; border: 0; background: #eef4f0; border-radius: 999px; padding: .5rem .8rem; font: inherit; font-weight: 700; color: #14532d; }
+.hmx-layer:focus-within { outline: 3px solid #1d6fd8; outline-offset: 2px; }
+@media (max-width: 575.98px) {
+    .hmx-layer { top: 5.85rem; left: .75rem; right: .75rem; justify-content: space-between; }
+    .hmx-layer select { min-width: 0; max-width: 65%; }
+}
 .hmx-legend[hidden] { display: none; }
 html[data-theme="dark"] .hmx-layer { background: #17231d; border-color: #2b3b34; color: #e2ebe6; }
 html[data-theme="dark"] .hmx-layer select { background: #22322a; color: #e2ebe6; }
 /* End Manuscript – Naicel */
 
-/* Farmers (2026-10): their own barangay in a big card above the map (green low, amber moderate, red high), the map
-   second. Sentence case, rounder cards. MAO keeps the full-screen map above. No hover movement. */
-.hmx.is-farmer { height: auto; min-height: 0; grid-template-columns: minmax(0, 1fr) 360px; }
-.hmx.is-farmer .hmx-map { height: 560px; border-radius: 24px; }
-.hmx.is-farmer .hmx-panel { max-height: 560px; border-radius: 24px; }
-.hmx.is-farmer .hmx-legend-title, .hmx.is-farmer .hmx-sub, .hmx.is-farmer .hmx-own-label { text-transform: none; letter-spacing: 0; font-size: .875rem; }
+/* Farmers use the same map-left / summary-panel-right structure as MAO. The farmer-specific card remains above both. */
+.hmx.is-farmer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 500px); gap: 1.25rem; height: auto; min-height: 0; align-items: start; }
+.hmx.is-farmer .hmx-mine-wrap { grid-column: 1 / -1; grid-row: 1; }
+.hmx.is-farmer .hmx-panel { grid-column: 2; grid-row: 2; width: 100%; max-height: none; overflow: visible; border-radius: 24px; }
+.hmx.is-farmer .hmx-map { grid-column: 1; grid-row: 2; width: 100%; height: 760px; border-radius: 24px; }
+.hmx.is-farmer .hmx-summary { margin-bottom: 1.15rem; }
+.hmx.is-farmer .hmx-list { display: block; }
+.hmx.is-farmer .hmx-list > li, .hmx.is-farmer .hmx-row { min-width: 0; }
+.hmx.is-farmer .hmx-row { min-height: 56px; padding: .7rem .55rem; align-items: flex-start; gap: 1rem; }
+.hmx.is-farmer .hmx-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+}
+.hmx.is-farmer .hmx-row-level {
+  flex: 0 0 auto;
+  min-width: max-content;
+  margin-left: auto;
+  white-space: nowrap;
+  text-align: right;
+  align-self: flex-start;
+}
+.hmx.is-farmer .hmx-legend-title, .hmx.is-farmer .hmx-sub, .hmx.is-farmer .hmx-own-label { text-transform: none; letter-spacing: 0; font-size: 1.05rem; }
 .hmx-mine-wrap { grid-column: 1 / -1; }
 .hmx-mine {
     --tone: #6b7a72; --tone-bg: #f2f4f3; --tone-line: #e0e5e2; --tone-ink: #1b1f1d;
@@ -123,10 +207,21 @@ html[data-theme="dark"] .hmx-layer select { background: #22322a; color: #e2ebe6;
 
 @media (max-width: 991.98px) {
     .hmx.is-farmer { grid-template-columns: minmax(0, 1fr); }
-    .hmx.is-farmer .hmx-map { height: 52vh; height: 52dvh; min-height: 320px; }
+    .hmx.is-farmer .hmx-mine-wrap { grid-column: 1; grid-row: 1; }
+    .hmx.is-farmer .hmx-map { grid-column: 1; grid-row: 2; height: 52vh; height: 52dvh; min-height: 320px; }
+    .hmx.is-farmer .hmx-panel { grid-column: 1; grid-row: 3; }
+    .hmx.is-farmer .hmx-list { grid-template-columns: minmax(0, 1fr); }
     .hmx.is-farmer .hmx-panel { max-height: none; }
 }
+@media (max-width: 1199.98px) and (min-width: 992px) {
+    .hmx.is-farmer { grid-template-columns: minmax(0, 1fr); }
+    .hmx.is-farmer .hmx-mine-wrap { grid-column: 1; grid-row: 1; }
+    .hmx.is-farmer .hmx-map { grid-column: 1; grid-row: 2; height: 62vh; height: 62dvh; min-height: 480px; max-height: none; }
+    .hmx.is-farmer .hmx-panel { grid-column: 1; grid-row: 3; }
+}
 @media (max-width: 575.98px) {
+    .hmx.is-farmer { gap: 1rem; }
+    .hmx.is-farmer .hmx-list { grid-template-columns: minmax(0, 1fr); }
     .hmx-mine { flex-direction: column; gap: 14px; padding: 22px 20px; }
     .hmx-mine-icon { width: 68px; height: 68px; }
     .hmx-mine .hmx-mine-icon svg { width: 38px; height: 38px; }

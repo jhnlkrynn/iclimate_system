@@ -19,10 +19,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   {{-- The page's photos, as custom properties for resources/css/pages/welcome.css. --}}
   <style>:root { @foreach ($rice as $key => $url)--rice-{{ $key }}: url('{{ $url }}'); @endforeach }</style>
-  @vite('resources/css/pages/welcome.css')
+  @vite(['resources/css/pages/welcome.css', 'resources/css/landing.css', 'resources/css/accessibility.css', 'resources/js/landing.js'])
   {{-- Shared iClimate design language (tokens, motion, card interactions),
        loaded after the page's own styles so it refines them. --}}
-  @vite(['resources/css/landing.css', 'resources/js/landing.js'])
     @include('partials.global-loader')
 </head>
 <body>
