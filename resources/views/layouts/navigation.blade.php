@@ -49,8 +49,8 @@
         {{-- Panel revision 4.5: the office's name and the official seal of the Municipality of Lian (public/images/lian-seal.jpg). --}}
         <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="iClimate – Municipal Agriculture Office of Lian, dashboard">
             <img class="gov-seal" src="{{ asset('images/lian-seal.jpg') }}" alt="Seal of the Municipality of Lian" width="44" height="44">
-            {{-- Farmer accounts: the iClimate logo beside the seal, as on the landing page (resources/css/pages/farmer-account.css). --}}
-            @if ($isFarmerNav)
+            {{-- Farmer and MAO accounts: the iClimate logo beside the seal, as on the landing page (resources/css/pages/account-light.css). --}}
+            @if ($isFarmerNav || $user->role === \App\Models\User::ROLE_MAO)
                 <img class="gov-app-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="58" height="47">
             @endif
             <span class="gov-brand-text">

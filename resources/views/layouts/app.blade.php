@@ -312,9 +312,9 @@
         </style>
         {{-- Panel revision 4.5 / 4.3: the government theme and the phone rules, after every other style so they win. --}}
         @vite(['resources/css/gov-theme.css', 'resources/css/accessibility.css'])
-        {{-- Farmer accounts: the plain light green look of the landing page, loaded last. --}}
-        @if (auth()->user()?->role === \App\Models\User::ROLE_FARMER)
-            @vite('resources/css/pages/farmer-account.css')
+        {{-- Farmer and MAO accounts: the plain light green look of the landing page, loaded last. --}}
+        @if (in_array(auth()->user()?->role, [\App\Models\User::ROLE_FARMER, \App\Models\User::ROLE_MAO], true))
+            @vite('resources/css/pages/account-light.css')
         @endif
         @include('partials.global-loader')
     </head>
