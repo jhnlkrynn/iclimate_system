@@ -1,11 +1,10 @@
 @php
     $heroClimate = \App\Support\ClimateSnapshot::latest();
     $rice = [
-        'hero'     => asset('images/rice-hero-aerial.jpg'),
+        'hero'     => asset('images/rice-contact-golden.jpg'),
         'about'    => asset('images/rice-about-farmer.jpg'),
-        'features' => asset('images/rice-features-paddy.jpg'),
-        'roles'    => asset('images/rice-roles-terrace.jpg'),
-        'contact'  => asset('images/rice-contact-golden.jpg'),
+        'steps'    => asset('images/rice-features-paddy.jpg'),
+        'contact'  => asset('images/rice-roles-terrace.jpg'),
     ];
 @endphp
 <!DOCTYPE html>
@@ -16,495 +15,380 @@
   <title>{{ config('app.name', 'iClimate') }} | Weather Impact Analysis for Lian, Batangas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet"/>
   {{-- The page's photos, as custom properties for resources/css/pages/welcome.css. --}}
   <style>:root { @foreach ($rice as $key => $url)--rice-{{ $key }}: url('{{ $url }}'); @endforeach }</style>
-  @vite(['resources/css/pages/welcome.css', 'resources/css/landing.css', 'resources/css/accessibility.css', 'resources/js/landing.js'])
-  {{-- Shared iClimate design language (tokens, motion, card interactions),
-       loaded after the page's own styles so it refines them. --}}
-    @include('partials.global-loader')
+  @vite(['resources/css/pages/welcome.css', 'resources/css/accessibility.css', 'resources/js/landing.js'])
+  @include('partials.global-loader')
 </head>
-<body>
+<body class="lp">
 <x-flash-toast />
+<a class="lp-skip" href="#main">Skip to main content</a>
+
+@include('partials.gov-strip')
 
 <!-- NAVBAR -->
-<nav class="navbar" id="navbar">
-  <div class="nav-container">
-    <a href="{{ url('/') }}" class="nav-logo">
-      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" class="brand-logo-img">
+<header class="lp-nav" id="navbar">
+  <div class="lp-wrap lp-nav-inner">
+    <a href="{{ url('/') }}" class="lp-nav-logo">
+      <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate home" width="120" height="44">
     </a>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="#home" class="nav-link active">Home</a></li>
-      <li><a href="#about" class="nav-link">About</a></li>
-      <li><a href="#features" class="nav-link">Features</a></li>
-      <li><a href="#roles" class="nav-link">User Roles</a></li>
-      <li><a href="#contact" class="nav-link">Contact</a></li>
-    </ul>
-    <div class="nav-actions">
-      <a href="{{ route('login') }}" class="nav-login">Log in</a>
-      <a href="{{ route('register') }}" class="nav-cta ihb"><span class="ihb-dot" aria-hidden="true"></span><span class="ihb-label">Create account</span><span class="ihb-hover" aria-hidden="true">Create account <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
-      <button class="hamburger" id="hamburger" aria-label="Menu">
+    <nav aria-label="Main">
+      <ul class="lp-nav-links" id="navLinks">
+        <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#roles" class="nav-link">User Roles</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+        <li class="lp-nav-links-account"><a href="{{ route('login') }}">Log in</a></li>
+        <li class="lp-nav-links-account"><a href="{{ route('register') }}">Create account</a></li>
+      </ul>
+    </nav>
+    <div class="lp-nav-actions">
+      <a href="{{ route('login') }}" class="lp-nav-login">Log in</a>
+      <a href="{{ route('register') }}" class="lp-btn lp-btn--gold lp-btn--sm">Create account</a>
+      <button type="button" class="lp-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
     </div>
   </div>
-</nav>
+</header>
+
+<main id="main">
 
 <!-- HERO -->
-<section class="hero" id="home">
-  <div class="hero-inner">
-    <div class="hero-text">
-      <p class="hero-place"><span data-dia>Lian, Batangas, Philippines</span></p>
-      <h1 class="hero-title blur-fade" style="--blur-delay:600ms">Climate-smart rice farming.</h1>
-      <p class="hero-desc blur-fade" style="--blur-delay:750ms">Weather, planting advice and rice yield forecasts for Lian, Batangas. All in one place.</p>
-      <div class="hero-actions">
-        <a href="{{ route('login') }}" class="btn btn-primary btn-lg ihb blur-fade" style="--blur-delay:900ms"><span class="ihb-dot" aria-hidden="true"></span><span class="ihb-label">Get started</span><span class="ihb-hover" aria-hidden="true">Get started <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
-        <a href="#about" class="btn-link blur-fade" style="--blur-delay:1050ms">
-          Learn more
-          <svg width="8" height="12" viewBox="0 0 8 12" fill="none" aria-hidden="true"><path d="M1.5 1.5 6 6l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<section class="lp-hero" id="home">
+  <div class="lp-wrap lp-hero-inner">
+    <div class="lp-hero-text">
+      <p class="lp-eyebrow lp-eyebrow--light">Municipal Agriculture Office &middot; Lian, Batangas</p>
+      <h1 class="lp-hero-title">Climate-smart rice farming for Lian.</h1>
+      <p class="lp-hero-desc">Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas. All in one place.</p>
+      <div class="lp-hero-actions">
+        <a href="{{ route('login') }}" class="lp-btn lp-btn--gold">
+          Get started
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
+        <a href="#about" class="lp-btn lp-btn--ghost-light">Learn more</a>
       </div>
+      <ul class="lp-hero-facts" aria-label="What iClimate covers">
+        <li>Live local weather</li>
+        <li>PAGASA advisories</li>
+        <li>Barangay risk maps</li>
+      </ul>
     </div>
 
-    <div class="hero-visual blur-fade" style="--blur-delay:1200ms">
-      <p class="hero-map-heading">Current conditions in Lian</p>
-      <div class="hero-map-panel">
-        <div class="hero-map" id="heroMap" data-lat="14.0381" data-lng="120.6522" data-boundary="{{ asset('geojson/lian-boundary.geojson') }}" aria-label="Map of Lian, Batangas showing the Municipal Agriculture Office"></div>
-        <a class="hero-map-link" href="https://www.google.com/maps/search/?api=1&amp;query=14.0381%2C120.6522" target="_blank" rel="noopener noreferrer" aria-label="Open the Municipal Agriculture Office of Lian, Batangas in Google Maps (opens in a new tab)">
-          <span class="hero-map-open">Open in Google Maps <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2H2v8h8V7.5M7 2h3v3M10 2 5.5 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div class="lp-conditions">
+      <div class="lp-conditions-head">
+        <h2 class="lp-conditions-title">Current conditions in Lian</h2>
+        <p class="lp-conditions-status" data-hero-live>{{ $heroClimate ? 'Latest saved climate record' : 'Checking live weather…' }}</p>
+      </div>
+      <div class="lp-map-panel">
+        <div class="lp-map" id="heroMap" data-lat="14.0381" data-lng="120.6522" data-boundary="{{ asset('geojson/lian-boundary.geojson') }}" aria-label="Map of Lian, Batangas showing the Municipal Agriculture Office"></div>
+        <a class="lp-map-link" href="https://www.google.com/maps/search/?api=1&amp;query=14.0381%2C120.6522" target="_blank" rel="noopener noreferrer" aria-label="Open the Municipal Agriculture Office of Lian, Batangas in Google Maps (opens in a new tab)">
+          <span class="lp-map-open">Open in Google Maps <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2H2v8h8V7.5M7 2h3v3M10 2 5.5 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </a>
-        <div class="hero-map-card" id="heroMapCard">
-          <div class="hmc-office">Municipal Agriculture Office</div>
-          <div class="hmc-location">Poblacion, Lian, Batangas</div>
-          <div class="hmc-live" data-hero-live>{{ $heroClimate ? 'Latest saved climate record' : 'Checking live weather…' }}</div>
-        </div>
-        <div class="hero-weather-strip">
-          <div class="hws-item">
-            <div class="hws-val" data-hero-temp data-tick>{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</div>
-            <div class="hws-label">Temperature</div>
-          </div>
-          <div class="hws-item">
-            <div class="hws-val" data-hero-humidity data-tick>{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</div>
-            <div class="hws-label">Humidity</div>
-          </div>
-          <div class="hws-item">
-            {{-- This wind figure is from a stored historical ClimateRecord, whose wind
-                 unit is not established by any repository evidence, so no unit is
-                 asserted here (unlike genuinely-km/h live Open-Meteo readings). --}}
-            <div class="hws-val" data-hero-wind data-tick>{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</div>
-            <div class="hws-label">Wind speed</div>
-          </div>
-          <div class="hws-item">
-            <div class="hws-val" data-hero-rain data-tick>{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</div>
-            <div class="hws-label" data-hero-rain-label>{{ $heroClimate ? 'Rainfall (record)' : 'Rainfall today' }}</div>
-          </div>
+        <div class="lp-map-card" id="heroMapCard">
+          <div class="lp-map-card-office">Municipal Agriculture Office</div>
+          <div class="lp-map-card-place">Poblacion, Lian, Batangas</div>
         </div>
       </div>
-      <p class="hero-map-credit">Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &middot; Sources: Esri, HERE, Garmin, USGS, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors and the GIS User Community</p>
+      <dl class="lp-weather">
+        <div class="lp-weather-item">
+          <dt>Temperature</dt>
+          <dd data-hero-temp>{{ $heroClimate ? round((float) $heroClimate->temperature).'°C' : '--' }}</dd>
+        </div>
+        <div class="lp-weather-item">
+          <dt>Humidity</dt>
+          <dd data-hero-humidity>{{ $heroClimate ? round((float) $heroClimate->humidity).'%' : '--' }}</dd>
+        </div>
+        <div class="lp-weather-item">
+          {{-- This wind figure is from a stored historical ClimateRecord, whose wind
+               unit is not established by any repository evidence, so no unit is
+               asserted here (unlike genuinely-km/h live Open-Meteo readings). --}}
+          <dt>Wind speed</dt>
+          <dd data-hero-wind>{{ $heroClimate ? round((float) $heroClimate->wind_speed) : '--' }}</dd>
+        </div>
+        <div class="lp-weather-item">
+          <dt data-hero-rain-label>{{ $heroClimate ? 'Rainfall (record)' : 'Rainfall today' }}</dt>
+          <dd data-hero-rain>{{ $heroClimate ? number_format((float) $heroClimate->rainfall, 1).' mm' : '--' }}</dd>
+        </div>
+      </dl>
+      <p class="lp-map-credit">Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &middot; Sources: Esri, HERE, Garmin, USGS, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors and the GIS User Community</p>
     </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section class="lp-sources" aria-label="Where the information comes from">
+  <div class="lp-wrap lp-sources-inner">
+    <p class="lp-sources-label">Information drawn from</p>
+    <ul class="lp-sources-list">
+      <li>PAGASA advisories</li>
+      <li>Open-Meteo forecasts</li>
+      <li>Stored climate records</li>
+      <li>MAO rice production records</li>
+    </ul>
   </div>
 </section>
 
 <!-- ABOUT -->
-<section class="about-section" id="about">
-  <div class="container">
-    <div class="about-grid">
-      <div class="about-text">
-        <div>
-          <div class="hero-location fade-up fade-up-1">Lian, Batangas, Philippines
-          </div>
-          <h2 class="section-title">About iClimate</h2>
-          <p class="about-tagline"><span class="tagline-flourish"></span>Understand today. Prepare tomorrow.<span class="tagline-flourish"></span></p>
-        </div>
-        <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed, data-driven decisions for better agricultural outcomes in Lian, Batangas.</p>
-      </div>
-
-      <div class="about-visual">
-        <div class="about-photo">
-          <div class="mission-card">
-            <div class="mission-icon">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c3 4 6 7.5 6 10.5A6 6 0 1 1 4 12.5C4 9.5 7 6 10 2z" stroke="#6F8978" stroke-width="1.6"/></svg>
-            </div>
-            <div>
-              <strong>Our mission</strong>
-              <p>To empower the farming community of Lian, Batangas through accurate climate information, smart analytics, and practical recommendations.</p>
-            </div>
-          </div>
-        </div>
+<section class="lp-section lp-about" id="about">
+  <div class="lp-wrap">
+    <div class="lp-about-grid">
+      <figure class="lp-about-photo">
+        <img src="{{ $rice['about'] }}" alt="A farmer transplanting rice seedlings in a flooded paddy" loading="lazy" width="1400" height="787">
+      </figure>
+      <div class="lp-about-text">
+        <p class="lp-eyebrow">About iClimate</p>
+        <h2 class="lp-h2">Understand today. Prepare tomorrow.</h2>
+        <p>iClimate is a web-based decision support system that combines climate data and local rice production records to help rice farmers, MAO staff with technicians, and IT personnel make informed decisions for better agricultural outcomes in Lian, Batangas.</p>
+        <blockquote class="lp-mission">
+          <p class="lp-mission-label">Our mission</p>
+          <p>To empower the farming community of Lian, Batangas through accurate climate information, clear analysis, and practical recommendations.</p>
+        </blockquote>
       </div>
     </div>
 
-    <div class="pillars-row">
-      <div class="pillar-card pillar-card--wide ic-card-enter" style="--ic-card-delay:0ms">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="#6F8978"/></svg></div>
-        <strong>Climate-informed</strong>
+    <ul class="lp-pillars">
+      <li class="lp-pillar">
+        <span class="lp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M2 12c1.5-3.5 4-5 8-5s6.5 1.5 8 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="5.5" r="1.6" fill="currentColor"/></svg></span>
+        <h3>Climate-informed</h3>
         <p>Live weather forecasts, stored climate records and official PAGASA advisories, combined into guidance for Lian's rice fields.</p>
-        <ul class="pillar-sources" aria-label="Data sources">
-          <li>PAGASA advisories</li>
-          <li>Open-Meteo forecasts</li>
-          <li>Climate records</li>
-        </ul>
-      </div>
-      <div class="pillar-card ic-card-enter" style="--ic-card-delay:100ms">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="#6F8978" stroke-width="1.5"/></svg></div>
-        <strong>Rice-focused</strong>
+      </li>
+      <li class="lp-pillar">
+        <span class="lp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 2c2.2 3 4 5.3 4 7.5A4 4 0 1 1 6 9.5C6 7.3 7.8 5 10 2z" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        <h3>Rice-focused</h3>
         <p>Specialized in rice production analysis, yield prediction, and planting recommendations.</p>
-      </div>
-      <div class="pillar-card ic-card-enter" style="--ic-card-delay:200ms">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="#6F8978"/><rect x="8.5" y="6" width="3" height="11" fill="#6F8978" opacity="0.85"/><rect x="14" y="3" width="3" height="14" fill="#6F8978" opacity="0.6"/></svg></div>
-        <strong>Data-driven</strong>
-        <p>Using historical records and analytics to generate accurate insights and reports.</p>
-      </div>
-      <div class="pillar-card ic-card-enter" style="--ic-card-delay:300ms">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#6F8978" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-        <strong>Community-centered</strong>
-        <p>Built for farmers, supported by MAO staff and technicians, and optimized by IT personnel.</p>
-      </div>
-      <div class="pillar-card ic-card-enter" style="--ic-card-delay:400ms">
-        <div class="pillar-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="#6F8978" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
-        <strong>Secure and reliable</strong>
-        <p>Ensuring data security, system reliability, and continuous improvement.</p>
-      </div>
-    </div>
-
+      </li>
+      <li class="lp-pillar">
+        <span class="lp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="3" y="10" width="3" height="7" fill="currentColor"/><rect x="8.5" y="6" width="3" height="11" fill="currentColor" opacity="0.8"/><rect x="14" y="3" width="3" height="14" fill="currentColor" opacity="0.6"/></svg></span>
+        <h3>Based on records</h3>
+        <p>Uses historical records and analysis to produce accurate insights and reports.</p>
+      </li>
+      <li class="lp-pillar">
+        <span class="lp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="currentColor" stroke-width="1.4"/><circle cx="14" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 16c0.5-3 2-4.5 4.5-4.5s4 1.5 4.5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11.5 16c0.4-2.4 1.7-3.7 3.5-3.7s3 1.1 3.5 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+        <h3>Community-centered</h3>
+        <p>Built for farmers, supported by MAO staff and technicians, and maintained by IT personnel.</p>
+      </li>
+      <li class="lp-pillar">
+        <span class="lp-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 2l7 2.5v5c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5v-5L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+        <h3>Secure and reliable</h3>
+        <p>Keeps records safe, the system dependable, and improvements ongoing.</p>
+      </li>
+    </ul>
   </div>
 </section>
 
 <!-- FEATURES -->
-<section class="features-section" id="features">
-  <div class="container">
-    <div class="section-header">
-      <h2>Tools for the rice season</h2>
-      <p>Practical information to help you plan, monitor, and decide from planting through harvest.</p>
+<section class="lp-section lp-features" id="features">
+  <div class="lp-wrap">
+    <div class="lp-section-head">
+      <p class="lp-eyebrow">Features</p>
+      <h2 class="lp-h2">Tools for the rice season</h2>
+      <p class="lp-lede">Practical information to help you plan, monitor, and decide from planting through harvest.</p>
     </div>
 
-    <div class="features-grid">
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:0ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="#8FAF9A" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M5 17c1-2.5 3-4 6-4s5 1.5 6 4" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
-            <circle cx="11" cy="4.5" r="2" fill="#5F8F78"/>
-          </svg>
-        </div>
+    <ul class="lp-feature-grid">
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M2 13C3.5 9 6.5 7 11 7s7.5 2 9 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 17c1-2.5 3-4 6-4s5 1.5 6 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="4.5" r="2" fill="currentColor"/></svg></span>
         <h3>Weather analysis</h3>
         <p>Access real-time and historical climate data including rainfall, temperature, humidity, wind, and more from PAGASA.</p>
-        <span class="fc-badge">Climate records</span>
-      </div>
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:100ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <rect x="2" y="14" width="4" height="6" rx="1" fill="#5F8F78"/>
-            <rect x="9" y="9" width="4" height="11" rx="1" fill="#5F8F78" opacity="0.7"/>
-            <rect x="16" y="5" width="4" height="15" rx="1" fill="#5F8F78" opacity="0.45"/>
-            <path d="M4 10l7-5 7-3" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-        </div>
+        <span class="lp-tag">Climate records</span>
+      </li>
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="14" width="4" height="6" rx="1" fill="currentColor"/><rect x="9" y="9" width="4" height="11" rx="1" fill="currentColor" opacity="0.8"/><rect x="16" y="5" width="4" height="15" rx="1" fill="currentColor" opacity="0.6"/></svg></span>
         <h3>Rice production</h3>
         <p>View and analyze local rice production records and forecasts to support planning and food security.</p>
-        <span class="fc-badge">Records</span>
-      </div>
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:200ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="#8FAF9A" stroke-width="1.8"/>
-            <path d="M11 6v5l3.5 2" stroke="#6F8978" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-        </div>
+        <span class="lp-tag">Records</span>
+      </li>
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="4.5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h16M7.5 2.5v4M14.5 2.5v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8 13.5l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <h3>Planting advisory</h3>
-        <p>Get data-driven planting recommendations based on season, rainfall outlook, and soil conditions.</p>
-        <span class="fc-badge">Advisory</span>
-      </div>
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:300ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M2 11C5 5,8 3,11 3C14 3,17 5,20 11C17 17,14 19,11 19C8 19,5 17,2 11Z" stroke="#8FAF9A" stroke-width="1.8"/>
-            <circle cx="11" cy="11" r="3" fill="#5F8F78"/>
-          </svg>
-        </div>
+        <p>Get planting recommendations based on season, rainfall outlook, and soil conditions.</p>
+        <span class="lp-tag">Advisory</span>
+      </li>
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M2 16l5-6 4 3.5L15 7l5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 20h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
         <h3>Climate monitoring</h3>
-        <p>Monitor long-term climate trends and detect anomalies that affect farming and productivity.</p>
-        <span class="fc-badge">Monitoring</span>
-      </div>
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:400ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M11 2c-4 5-7 8.5-7 12.5A7 7 0 1 0 18 14.5C18 10.5 15 7 11 2z" stroke="#8FAF9A" stroke-width="1.8"/>
-          </svg>
-        </div>
+        <p>Monitor long-term climate trends and detect unusual patterns that affect farming and productivity.</p>
+        <span class="lp-tag">Monitoring</span>
+      </li>
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 5.5l5-2 6 2 5-2v13l-5 2-6-2-5 2v-13z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 3.5v13M14 5.5v13" stroke="currentColor" stroke-width="1.5"/></svg></span>
         <h3>Heat map</h3>
-        <p>Visualize risk levels of flood, drought, typhoon, and heat across barangays using interactive maps.</p>
-        <span class="fc-badge">Risk records</span>
-      </div>
-      <div class="feature-card ic-card-enter" style="--ic-card-delay:500ms">
-        <div class="fc-icon-wrap">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <path d="M4 3h10l4 4v12H4V3z" stroke="#8FAF9A" stroke-width="1.8"/>
-            <path d="M14 3v4h4" stroke="#8FAF9A" stroke-width="1.8"/>
-            <path d="M7 10h8M7 13h6M7 16h7" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-        </div>
+        <p>See flood, drought, typhoon, and heat risk levels across barangays on interactive maps.</p>
+        <span class="lp-tag">Risk records</span>
+      </li>
+      <li class="lp-feature">
+        <span class="lp-icon lp-icon--solid" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 3h10l4 4v12H4V3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 11h8M7 14h6M7 17h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
         <h3>Reports and analytics</h3>
-        <p>Generate and download seasonal reports, yield forecasts, and analytics for smarter decision-making.</p>
-        <span class="fc-badge">Analytics</span>
-      </div>
-    </div>
+        <p>Generate and download seasonal reports, yield forecasts, and summaries for planning.</p>
+        <span class="lp-tag">Analytics</span>
+      </li>
+    </ul>
+  </div>
+</section>
 
-    <div class="how-block">
-      <div class="section-header">
-        <h2>From records to harvest in four steps</h2>
-      </div>
-      <div class="how-steps">
-        <div class="how-step">
-          <div class="how-step-top">
-            <div class="how-step-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 13.5A3 3 0 0 1 4 7.6a4 4 0 0 1 7.7-1.2A2.7 2.7 0 0 1 13.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 15V8.5M6.5 11l2.5-2.5L11.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <span class="how-step-num">01</span>
-          </div>
-          <h3>Log climate data</h3>
-          <p>We collect real-time and historical climate data from trusted sources like PAGASA.</p>
-        </div>
-        <div class="how-step">
-          <div class="how-step-top">
-            <div class="how-step-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2c2.7 2.7 3.6 4.8 3.6 6.75A3.6 3.6 0 1 1 5.4 8.75C5.4 6.8 6.3 4.7 9 2z" stroke="currentColor" stroke-width="1.5"/></svg>
-            </div>
-            <span class="how-step-num">02</span>
-          </div>
-          <h3>Get advisories</h3>
-          <p>Our system analyzes the data to provide planting and fertilizer recommendations.</p>
-        </div>
-        <div class="how-step">
-          <div class="how-step-top">
-            <div class="how-step-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11.3 11.3 15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            </div>
-            <span class="how-step-num">03</span>
-          </div>
-          <h3>Monitor risk</h3>
-          <p>We track weather risks and climate patterns that may impact your crops.</p>
-        </div>
-        <div class="how-step">
-          <div class="how-step-top">
-            <div class="how-step-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h8l3 3v10h-11v-13z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 9h6M6 12h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            </div>
-            <span class="how-step-num">04</span>
-          </div>
-          <h3>Report outcomes</h3>
-          <p>Generate reports and yield forecasts to guide better farming decisions.</p>
-        </div>
-      </div>
+<!-- HOW IT WORKS -->
+<section class="lp-steps" aria-labelledby="stepsTitle">
+  <div class="lp-wrap">
+    <div class="lp-section-head lp-section-head--light">
+      <p class="lp-eyebrow lp-eyebrow--light">How it works</p>
+      <h2 class="lp-h2" id="stepsTitle">From records to harvest in four steps</h2>
     </div>
+    <ol class="lp-step-list">
+      <li class="lp-step">
+        <span class="lp-step-num" aria-hidden="true">1</span>
+        <h3>Log climate data</h3>
+        <p>We collect real-time and historical climate data from trusted sources like PAGASA.</p>
+      </li>
+      <li class="lp-step">
+        <span class="lp-step-num" aria-hidden="true">2</span>
+        <h3>Get advisories</h3>
+        <p>The system reviews the data to provide planting and fertilizer recommendations.</p>
+      </li>
+      <li class="lp-step">
+        <span class="lp-step-num" aria-hidden="true">3</span>
+        <h3>Monitor risk</h3>
+        <p>We track weather risks and climate patterns that may affect your crops.</p>
+      </li>
+      <li class="lp-step">
+        <span class="lp-step-num" aria-hidden="true">4</span>
+        <h3>Report outcomes</h3>
+        <p>Generate reports and yield forecasts to guide better farming decisions.</p>
+      </li>
+    </ol>
   </div>
 </section>
 
 <!-- USER ROLES -->
-<section class="roles-section" id="roles">
-  <div class="container">
-    <div class="section-header">
-      <h2>Who uses iClimate?</h2>
-      <p>Information for rice farmers, MAO personnel, and IT support staff, with each role seeing the work it needs.</p>
-    </div>
-    <div class="roles-grid">
-
-      <!-- Rice Farmer -->
-      <div class="role-card ic-card-enter" style="--ic-card-delay:0ms">
-        <div class="role-icon-wrap--img" aria-hidden="true">
-          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <div class="role-workspace-label">Workspace 1</div>
-        <h3>Rice Farmer</h3>
-        <p>View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.</p>
-        <div class="role-divider"></div>
-        <div class="role-features-label">Key features</div>
-        <ul class="role-features">
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Climate monitoring
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Planting guidance
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Weather risk alerts
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Notifications
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Seasonal reports
-          </li>
-        </ul>
-        <a href="{{ route('login') }}" class="role-cta">
-          View dashboard
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
-        </a>
-      </div>
-
-      <!-- MAO Personnel -->
-      <div class="role-card role-card--highlight ic-card-enter" style="--ic-card-delay:100ms">
-        <div class="role-icon-wrap--img" aria-hidden="true">
-          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="role-workspace-label">Workspace 2</div>
-        <h3>MAO Personnel</h3>
-        <p>Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.</p>
-        <div class="role-divider"></div>
-        <div class="role-features-label">Key features</div>
-        <ul class="role-features">
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Production monitoring
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Climate analytics
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Report generation
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Record validation
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Heat map monitoring
-          </li>
-        </ul>
-        <a href="{{ route('login') }}" class="role-cta">
-          View dashboard
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
-        </a>
-      </div>
-
-      <!-- MAO IT Personnel -->
-      <div class="role-card ic-card-enter" style="--ic-card-delay:200ms">
-        <div class="role-icon-wrap--img" aria-hidden="true">
-          <svg width="34" height="34" viewBox="0 0 20 20" fill="none"><rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
-        </div>
-        <div class="role-workspace-label">Workspace 3</div>
-        <h3>IT Personnel</h3>
-        <p>Support user access, keep records organized, monitor system activity, and help the MAO team keep iClimate secure and dependable.</p>
-        <div class="role-divider"></div>
-        <div class="role-features-label">Key features</div>
-        <ul class="role-features">
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            User access support
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Activity checks
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Record upkeep
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Account support
-          </li>
-          <li class="role-feature-item">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            System reliability
-          </li>
-        </ul>
-        <a href="{{ route('login') }}" class="role-cta">
-          View dashboard
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor" opacity="0.5"/></svg>
-        </a>
-      </div>
-
+<section class="lp-section lp-roles" id="roles">
+  <div class="lp-wrap">
+    <div class="lp-section-head">
+      <p class="lp-eyebrow">User roles</p>
+      <h2 class="lp-h2">Who uses iClimate?</h2>
+      <p class="lp-lede">Information for rice farmers, MAO personnel, and IT support staff, with each role seeing the work it needs.</p>
     </div>
 
+    @php
+        $roles = [
+            [
+                'label' => 'Workspace 1',
+                'title' => 'Rice Farmer',
+                'text' => 'View climate conditions, receive planting advisories, check weather risk alerts, and access seasonal information through a simple farmer-friendly dashboard.',
+                'features' => ['Climate monitoring', 'Planting guidance', 'Weather risk alerts', 'Notifications', 'Seasonal reports'],
+                'icon' => '<circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 18c.6-4.8 3-7.5 6.5-7.5s5.9 2.7 6.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+            ],
+            [
+                'label' => 'Workspace 2',
+                'title' => 'MAO Personnel',
+                'text' => 'Manage agricultural records, monitor rice production trends, analyze climate-yield relationships, and generate reports to support farmers and municipal planning.',
+                'features' => ['Production monitoring', 'Climate analytics', 'Report generation', 'Record validation', 'Heat map monitoring'],
+                'icon' => '<path d="M3 8l7-5 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 8v9h12V8" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 17v-5h3v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+            ],
+            [
+                'label' => 'Workspace 3',
+                'title' => 'IT Personnel',
+                'text' => 'Support user access, keep records organized, monitor system activity, and help the MAO team keep iClimate secure and dependable.',
+                'features' => ['User access support', 'Activity checks', 'Record upkeep', 'Account support', 'System reliability'],
+                'icon' => '<rect x="5" y="9" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/>',
+            ],
+        ];
+    @endphp
+    <ul class="lp-role-grid">
+      @foreach ($roles as $role)
+        <li class="lp-role">
+          <div class="lp-role-top">
+            <span class="lp-icon lp-icon--lg" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 20 20" fill="none">{!! $role['icon'] !!}</svg></span>
+            <span class="lp-role-label">{{ $role['label'] }}</span>
+          </div>
+          <h3>{{ $role['title'] }}</h3>
+          <p>{{ $role['text'] }}</p>
+          <p class="lp-role-features-label">Key features</p>
+          <ul class="lp-role-features">
+            @foreach ($role['features'] as $feature)
+              <li>
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {{ $feature }}
+              </li>
+            @endforeach
+          </ul>
+          <a href="{{ route('login') }}" class="lp-btn lp-btn--outline lp-btn--block">
+            View dashboard
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </li>
+      @endforeach
+    </ul>
   </div>
 </section>
 
 <!-- CONTACT -->
-<section class="contact-section" id="contact">
-  <div class="container">
-    <div class="section-header">
-      <h2>Have questions about iClimate?</h2>
-      <p>Reach the team at the Municipal Agriculture Office of Lian, Batangas. We support farmers, MAO personnel, and IT experts using the platform.</p>
-    </div>
-    <div class="contact-grid">
-      <div class="contact-info">
-        <div class="contact-details">
-          <div class="cd-item">
-            <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="#6F8978" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="#6F8978" stroke-width="1.4"/></svg>
-            </div>
-            <div class="cd-text">
-              <strong>Address</strong>
-              <span>Municipal Agriculture Office, Lian, Batangas, Philippines</span>
-              <a class="cd-link" href="https://www.google.com/maps/dir/?api=1&amp;destination=14.0381,120.6522" target="_blank" rel="noopener noreferrer">Get directions</a>
-            </div>
+<section class="lp-section lp-contact" id="contact">
+  <div class="lp-wrap">
+    <div class="lp-contact-grid">
+      <div class="lp-contact-info">
+        <p class="lp-eyebrow lp-eyebrow--light">Contact</p>
+        <h2 class="lp-h2">Have questions about iClimate?</h2>
+        <p class="lp-contact-lede">Reach the team at the Municipal Agriculture Office of Lian, Batangas. We support farmers, MAO personnel, and IT staff using the platform.</p>
+
+        <dl class="lp-contact-list">
+          <div class="lp-contact-item">
+            <dt>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 16s5.5-5.1 5.5-9A5.5 5.5 0 0 0 3.5 7c0 3.9 5.5 9 5.5 9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="9" cy="7" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+              Address
+            </dt>
+            <dd>
+              Municipal Agriculture Office, Lian, Batangas, Philippines<br>
+              <a href="https://www.google.com/maps/dir/?api=1&amp;destination=14.0381,120.6522" target="_blank" rel="noopener noreferrer">Get directions</a>
+            </dd>
           </div>
-          <div class="cd-item">
-            <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="cd-text">
-              <strong>Email</strong>
-              <a class="cd-value" href="mailto:mao@lianbatangas.gov.ph">mao@lianbatangas.gov.ph</a>
-            </div>
+          <div class="lp-contact-item">
+            <dt>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Email
+            </dt>
+            <dd><a href="mailto:mao@lianbatangas.gov.ph">mao@lianbatangas.gov.ph</a></dd>
           </div>
-          <div class="cd-item">
-            <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="cd-text">
-              <strong>Phone</strong>
-              <a class="cd-value" href="tel:+639171234567">+63 917 123 4567</a>
-            </div>
+          <div class="lp-contact-item">
+            <dt>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3.5 2.5h3l1.5 4-2 1.3a9 9 0 0 0 4.2 4.2l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A13.5 13.5 0 0 1 2 4.1 1.5 1.5 0 0 1 3.5 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Phone
+            </dt>
+            <dd><a href="tel:+639171234567">+63 917 123 4567</a></dd>
           </div>
-          <div class="cd-item">
-            <div class="cd-icon-wrap">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="#6F8978" stroke-width="1.4"/><path d="M9 5.5V9l3 1.5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="cd-text">
-              <strong>Office hours</strong>
-              <div class="cd-hours">
-                <div class="cd-hours-row"><span>Monday to Friday</span><span>8:00 AM to 5:00 PM</span></div>
-                <div class="cd-hours-row"><span>Saturday</span><span>By appointment</span></div>
-                <div class="cd-hours-row"><span>Sunday</span><span>Closed</span></div>
-              </div>
-            </div>
+          <div class="lp-contact-item">
+            <dt>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 5.5V9l3 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Office hours
+            </dt>
+            <dd>
+              <table class="lp-hours">
+                <tr><th scope="row">Monday to Friday</th><td>8:00 AM to 5:00 PM</td></tr>
+                <tr><th scope="row">Saturday</th><td>By appointment</td></tr>
+                <tr><th scope="row">Sunday</th><td>Closed</td></tr>
+              </table>
+            </dd>
           </div>
-        </div>
+        </dl>
       </div>
 
-      <form class="contact-form-card" id="contactForm" method="POST" action="{{ route('contact.send') }}" novalidate>
+      <form class="lp-form" id="contactForm" method="POST" action="{{ route('contact.send') }}" novalidate>
         @csrf
-        <div class="cfc-header">
-          <div class="cfc-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="#6F8978" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="#6F8978" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div>
-            <h3>Send us a message</h3>
-            <p class="contact-form-sub">We typically respond within one business day.</p>
-          </div>
-        </div>
-        <div class="form-group">
+        <h3 class="lp-form-title">Send us a message</h3>
+        <p class="lp-form-sub">We typically respond within one business day.</p>
+        <div class="lp-field">
           <label for="contactName">Full name</label>
-          <input type="text" class="form-input" id="contactName" name="name" maxlength="120" autocomplete="name" required placeholder="Juan Dela Cruz"/>
+          <input type="text" id="contactName" name="name" maxlength="120" autocomplete="name" required placeholder="Juan Dela Cruz"/>
         </div>
-        <div class="form-row">
-          <div class="form-group">
+        <div class="lp-field-row">
+          <div class="lp-field">
             <label for="contactEmail">Email address</label>
-            <input type="email" class="form-input" id="contactEmail" name="email" maxlength="255" autocomplete="email" required placeholder="juan@gmail.com"/>
+            <input type="email" id="contactEmail" name="email" maxlength="255" autocomplete="email" required placeholder="juan@gmail.com"/>
           </div>
-          <div class="form-group">
+          <div class="lp-field">
             <label for="contactRole">Role</label>
-            <select class="form-input" id="contactRole" name="role">
+            <select id="contactRole" name="role">
               <option value="" selected disabled>Select your role</option>
               <option>Rice farmer</option>
               <option>MAO personnel</option>
@@ -513,40 +397,41 @@
             </select>
           </div>
         </div>
-        <div class="form-group">
+        <div class="lp-field">
           <label for="contactMessage">Message</label>
-          <textarea class="form-input" id="contactMessage" name="message" rows="4" maxlength="2000" required placeholder="How can we help you?"></textarea>
+          <textarea id="contactMessage" name="message" rows="4" maxlength="2000" required placeholder="How can we help you?"></textarea>
         </div>
         {{-- Left empty by people; automated form fillers complete it and are refused. --}}
-        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
-        <p id="contactStatus" role="status" aria-live="polite" hidden style="margin:0 0 12px;font-size:.9rem;font-weight:600;"></p>
-        <button type="submit" class="btn btn-dark btn-full" id="contactSubmit">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="lp-honeypot">
+        <p id="contactStatus" class="lp-form-status" role="status" aria-live="polite" hidden></p>
+        <button type="submit" class="lp-btn lp-btn--primary lp-btn--block" id="contactSubmit">
           Send message
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </form>
-
     </div>
   </div>
 </section>
 
+</main>
+
 <!-- FOOTER -->
-<footer class="footer">
-  <div class="container">
-    <div class="ft-top">
-      <div class="ft-brand">
-        <a href="{{ url('/') }}" class="ft-logo" aria-label="iClimate home">
-          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate">
+<footer class="lp-footer">
+  <div class="lp-wrap">
+    <div class="lp-ft-top">
+      <div class="lp-ft-brand">
+        <a href="{{ url('/') }}" class="lp-ft-logo" aria-label="iClimate home">
+          <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="iClimate" width="130" height="48">
         </a>
-        <p class="ft-line">Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas.</p>
-        <div class="ft-social">
-          <a href="https://www.facebook.com/profile.php?id=61551743430540" class="footer-social-icon" target="_blank" rel="noopener noreferrer" aria-label="iClimate on Facebook (opens in a new tab)" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg></a>
-          <div class="footer-email" data-email-menu data-email="mao_lian@yahoo.com">
-            <a href="mailto:mao_lian@yahoo.com" class="footer-social-icon" aria-label="Email iClimate at mao_lian@yahoo.com" title="Email us: mao_lian@yahoo.com" aria-haspopup="true" aria-expanded="false" data-email-trigger>
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p>Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas.</p>
+        <div class="lp-ft-social">
+          <a href="https://www.facebook.com/profile.php?id=61551743430540" class="lp-ft-icon" target="_blank" rel="noopener noreferrer" aria-label="iClimate on Facebook (opens in a new tab)" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.9.2-1.5 1.5-1.5h1.6V4.3C16.3 4.2 15.3 4 14.1 4c-2.4 0-4.1 1.5-4.1 4.2V10.5H7.5v3H10V21h3.5z"/></svg></a>
+          <div class="lp-ft-email" data-email-menu data-email="mao_lian@yahoo.com">
+            <a href="mailto:mao_lian@yahoo.com" class="lp-ft-icon" aria-label="Email iClimate at mao_lian@yahoo.com" title="Email us: mao_lian@yahoo.com" aria-haspopup="true" aria-expanded="false" data-email-trigger>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2" y="4" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 5l6.5 5 6.5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
-            <div class="footer-email-menu" role="menu" hidden data-email-panel>
-              <div class="footer-email-addr">mao_lian@yahoo.com</div>
+            <div class="lp-email-menu" role="menu" hidden data-email-panel>
+              <div class="lp-email-addr">mao_lian@yahoo.com</div>
               <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=mao_lian@yahoo.com">Write in Gmail</a>
               <a role="menuitem" target="_blank" rel="noopener noreferrer" href="https://compose.mail.yahoo.com/?to=mao_lian@yahoo.com">Write in Yahoo Mail</a>
               <a role="menuitem" href="mailto:mao_lian@yahoo.com">Use my email app</a>
@@ -556,9 +441,9 @@
         </div>
       </div>
 
-      <nav class="ft-cols" aria-label="Footer">
-        <div class="ft-col">
-          <h2 class="ft-head">Explore</h2>
+      <nav class="lp-ft-cols" aria-label="Footer">
+        <div class="lp-ft-col">
+          <h2 class="lp-ft-head">Explore</h2>
           <ul>
             <li><a href="#about">About</a></li>
             <li><a href="#features">Features</a></li>
@@ -566,17 +451,17 @@
             <li><a href="#contact">Contact</a></li>
           </ul>
         </div>
-        <div class="ft-col">
-          <h2 class="ft-head">Account</h2>
+        <div class="lp-ft-col">
+          <h2 class="lp-ft-head">Account</h2>
           <ul>
             <li><a href="{{ route('login') }}">Log in</a></li>
             <li><a href="{{ route('register') }}">Create account</a></li>
             <li><a href="{{ route('password.request') }}">Forgot password</a></li>
           </ul>
         </div>
-        <div class="ft-col">
-          <h2 class="ft-head">Visit us</h2>
-          <ul class="ft-plain">
+        <div class="lp-ft-col">
+          <h2 class="lp-ft-head">Visit us</h2>
+          <ul>
             <li>Municipal Agriculture Office</li>
             <li>Lian, Batangas, Philippines</li>
             <li>Mon to Fri, 8 AM to 5 PM</li>
@@ -586,9 +471,9 @@
       </nav>
     </div>
 
-    <div class="ft-bottom">
+    <div class="lp-ft-bottom">
       <p>&copy; 2026 iClimate Research Group &middot; Batangas State University ARASOF-Nasugbu</p>
-      <a href="#home" class="ft-top-link">
+      <a href="#home" class="lp-ft-top-link">
         Back to top
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 10V2M2.5 5.5 6 2l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
@@ -617,8 +502,6 @@
         const up = window.innerHeight - r.bottom < h + gap + 8 && r.top > h + gap + 8;
         panel.style.left = `${left}px`;
         panel.style.top = `${up ? r.top - h - gap : r.bottom + gap}px`;
-        panel.style.setProperty('--arrow-x', `${r.left + r.width / 2 - left}px`);
-        panel.classList.toggle('opens-up', up);
       };
       const setOpen = (open) => {
         panel.hidden = !open;
@@ -641,8 +524,7 @@
           document.execCommand('copy'); tmp.remove();
         }
         copyBtn.textContent = 'Copied!';
-        copyBtn.classList.add('is-copied');
-        setTimeout(() => { copyBtn.textContent = 'Copy address'; copyBtn.classList.remove('is-copied'); setOpen(false); }, 1200);
+        setTimeout(() => { copyBtn.textContent = 'Copy address'; setOpen(false); }, 1200);
       });
       document.addEventListener('click', (event) => {
         if (!wrap.contains(event.target) && !panel.contains(event.target)) setOpen(false);
@@ -659,9 +541,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     const set = (selector, value) => {
       const el = document.querySelector(selector);
-      if (!el || value === null || value === undefined) return;
-      el.textContent = value;
-      if (el.hasAttribute('data-tick') && window.icTick) window.icTick(el);
+      if (el && value !== null && value !== undefined) el.textContent = value;
     };
     try {
       const res = await fetch('{{ route('login.weather') }}', { headers: { Accept: 'application/json' } });
@@ -674,7 +554,11 @@
       if (n(w.wind_speed) !== null) set('[data-hero-wind]', `${n(w.wind_speed)} km/h`);
       if (n(w.rainfall, 1) !== null) set('[data-hero-rain]', `${n(w.rainfall, 1)} mm`);
       set('[data-hero-rain-label]', 'Rainfall today');
-      set('[data-hero-live]', `Live now · ${w.condition_label || 'Current weather'}${w.updated_label ? ' · ' + w.updated_label : ''}`);
+      const live = document.querySelector('[data-hero-live]');
+      if (live) {
+        live.textContent = `Live now · ${w.condition_label || 'Current weather'}${w.updated_label ? ' · ' + w.updated_label : ''}`;
+        live.classList.add('is-live');
+      }
     } catch (e) { /* keep the saved record */ }
   });
 
@@ -682,8 +566,13 @@
     const navLinks = document.getElementById('navLinks');
     const hamburger = document.getElementById('hamburger');
     const links = document.querySelectorAll('.nav-link');
+    const setMenu = (open) => {
+      navLinks?.classList.toggle('open', open);
+      hamburger?.setAttribute('aria-expanded', String(open));
+      hamburger?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
 
-    hamburger?.addEventListener('click', () => navLinks?.classList.toggle('open'));
+    hamburger?.addEventListener('click', () => setMenu(!navLinks.classList.contains('open')));
     // Highlight the clicked link straight away. While the page scrolls to it, the scroll spy below
     // stays quiet so the sections passed on the way are not highlighted one after another.
     let spyPaused = false;
@@ -691,7 +580,7 @@
     const resumeSpy = () => { spyPaused = false; clearTimeout(resumeTimer); };
     window.addEventListener('scrollend', resumeSpy);
     links.forEach(link => link.addEventListener('click', () => {
-      navLinks?.classList.remove('open');
+      setMenu(false);
       links.forEach(other => other.classList.toggle('active', other === link));
       spyPaused = true;
       clearTimeout(resumeTimer);
@@ -710,27 +599,12 @@
     }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
     sections.forEach(section => spyObserver.observe(section));
 
-    // Staggered card entrance (pillar/feature/role cards): reveal each
-    // .ic-card-enter once it scrolls into view, then stop watching it —
-    // no looping. Reduced-motion users (or browsers without
-    // IntersectionObserver) get the cards shown immediately, unanimated.
-    // Section headings and text blocks reveal the same way as the cards;
-    // grouped siblings get a small stagger.
-    [['.section-header', 0], ['.about-text', 0], ['.about-visual', 120], ['.contact-info', 0], ['.contact-form-card, .contact-form', 120]]
-      .forEach(([selector, delay]) => {
-        document.querySelectorAll(selector).forEach((block) => {
-          if (block.classList.contains('ic-card-enter')) return;
-          block.classList.add('ic-card-enter');
-          block.style.setProperty('--ic-card-delay', delay + 'ms');
-        });
-      });
-
     // "Send us a message": delivered to the MAO staff as a notification, without leaving the page.
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
       const status = document.getElementById('contactStatus');
       const submit = document.getElementById('contactSubmit');
-      const say = (text, ok) => { status.textContent = text; status.style.color = ok ? '#1F6B45' : '#B42318'; status.hidden = false; };
+      const say = (text, ok) => { status.textContent = text; status.classList.toggle('is-error', !ok); status.hidden = false; };
       contactForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!contactForm.reportValidity()) return;
@@ -750,27 +624,7 @@
         }
       });
     }
-
-    const enterCards = document.querySelectorAll('.ic-card-enter');
-    if (enterCards.length) {
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (reduceMotion || !('IntersectionObserver' in window)) {
-        enterCards.forEach(card => card.classList.add('ic-card-enter-visible'));
-      } else {
-        const cardObserver = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('ic-card-enter-visible');
-            cardObserver.unobserve(entry.target);
-            // Once revealed, drop the delay so later hover transitions are instant.
-            setTimeout(() => entry.target.style.setProperty('--ic-card-delay', '0ms'), 1200);
-          });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-        enterCards.forEach(card => cardObserver.observe(card));
-      }
-    }
   });
-
 </script>
 </body>
 </html>
