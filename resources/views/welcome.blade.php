@@ -20,12 +20,30 @@
 
 @include('partials.gov-strip')
 
-<!-- NAVBAR -->
-<header class="lp-nav" id="navbar">
-  <div class="lp-wrap lp-nav-inner">
-    <a href="{{ url('/') }}" class="lp-nav-logo">
-      <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate home" width="120" height="44">
+<!-- MASTHEAD: the municipal seal, the iClimate logo and the office name, as on government sites -->
+<header class="lp-masthead">
+  <div class="lp-wrap lp-masthead-inner">
+    <a href="{{ url('/') }}" class="lp-brand" aria-label="iClimate, Municipal Agriculture Office of Lian, home">
+      <img class="lp-brand-seal" src="{{ asset('images/lian-seal.jpg') }}" alt="" width="64" height="64">
+      <img class="lp-brand-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="" width="86" height="69">
+      <span class="lp-brand-text">
+        <span class="lp-brand-office">Municipal Agriculture Office</span>
+        <span class="lp-brand-place">Municipality of Lian, Batangas</span>
+      </span>
     </a>
+    <div class="lp-nav-actions">
+      <a href="{{ route('login') }}" class="lp-nav-login">Log in</a>
+      <a href="{{ route('register') }}" class="lp-btn lp-btn--primary lp-btn--sm">Create account</a>
+      <button type="button" class="lp-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- NAVBAR -->
+<div class="lp-nav" id="navbar">
+  <div class="lp-wrap lp-nav-inner">
     <nav aria-label="Main">
       <ul class="lp-nav-links" id="navLinks">
         <li><a href="#home" class="nav-link active">Home</a></li>
@@ -37,15 +55,8 @@
         <li class="lp-nav-links-account"><a href="{{ route('register') }}">Create account</a></li>
       </ul>
     </nav>
-    <div class="lp-nav-actions">
-      <a href="{{ route('login') }}" class="lp-nav-login">Log in</a>
-      <a href="{{ route('register') }}" class="lp-btn lp-btn--primary lp-btn--sm">Create account</a>
-      <button type="button" class="lp-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
   </div>
-</header>
+</div>
 
 <main id="main">
 
@@ -403,7 +414,8 @@
     <div class="lp-ft-top">
       <div class="lp-ft-brand">
         <a href="{{ url('/') }}" class="lp-ft-logo" aria-label="iClimate home">
-          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="130" height="48">
+          <img src="{{ asset('images/lian-seal.jpg') }}" alt="" width="64" height="64">
+          <img src="{{ asset('images/iclimate-logo.png') }}" alt="" width="86" height="69">
         </a>
         <p>Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas.</p>
         <div class="lp-ft-social">
