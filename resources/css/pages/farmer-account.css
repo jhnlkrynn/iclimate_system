@@ -1,0 +1,136 @@
+/*
+ * Farmer accounts: the plain light green look of the landing page (resources/css/pages/welcome.css) on every
+ * signed-in farmer page. Loaded by layouts/app.blade.php after gov-theme.css and accessibility.css, and only for
+ * farmers, so the MAO and IT pages keep the government theme as it is.
+ *
+ * Mostly a change of the gov-theme tokens; the few components that hard-code a colour are restyled below with
+ * the same selectors gov-theme.css uses, prefixed with the farmer role so they win.
+ * Chart and risk colours are left alone: they carry meaning (likely/possible/unlikely rain, risk levels).
+ */
+
+/* -- TOKENS --------------------------------------------------------------- */
+html:has(> body[data-user-role="Farmer"]) { background: #F3FAF0 !important; }
+
+html body[data-user-role="Farmer"] {
+    --gov-bg: #F3FAF0;
+    --gov-surface-2: #F3FAF0;
+    --gov-border: #DCE8D6;
+    --gov-border-strong: #B5C9AE;
+    --gov-shadow: none;
+    --gov-shadow-lg: 0 6px 18px rgba(31, 61, 34, .10);
+    --gov-primary: #2F6B34;
+    --gov-primary-dark: #1F3D22;
+    --gov-primary-soft: #E4F3DE;
+    --gov-success-soft: #E4F3DE;
+    --fa-btn: #A6D79B;
+    --fa-btn-hover: #8BC97E;
+    --fa-btn-ink: #173B1F;
+    background: #F3FAF0 !important;
+}
+
+/* -- TOP BAR: seal and iClimate logo, as on the landing page --------------- */
+html body[data-user-role="Farmer"] .topbar.ic-topbar { border-bottom: 1px solid #DCE8D6 !important; box-shadow: none !important; }
+html body[data-user-role="Farmer"] .gov-brand .gov-app-logo { height: 46px; width: auto; flex: none; }
+@media (max-width: 767.98px) {
+    html body[data-user-role="Farmer"] .gov-brand .gov-app-logo { height: 36px; }
+}
+
+html body[data-user-role="Farmer"] .ic-lang button { border: 1px solid transparent; }
+html body[data-user-role="Farmer"] .ic-lang button[aria-pressed="true"] {
+    background: var(--fa-btn) !important;
+    border-color: var(--fa-btn-hover);
+    color: var(--fa-btn-ink) !important;
+}
+
+/* -- BUTTONS: light green with dark text ----------------------------------- */
+html body[data-user-role="Farmer"] :is(.mfd-btn, .mtd-btn, .fad-btn.is-primary, .btn-primary, .btn-success) {
+    background: var(--fa-btn) !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+    font-weight: 700;
+}
+html body[data-user-role="Farmer"] :is(.mfd-btn, .mtd-btn, .fad-btn.is-primary, .btn-primary, .btn-success):hover {
+    background: var(--fa-btn-hover) !important;
+}
+html body[data-user-role="Farmer"] :is(.mfd-btn, .mtd-btn).is-quiet,
+html body[data-user-role="Farmer"] :is(.mfd-btn, .mtd-btn).is-ghost,
+html body[data-user-role="Farmer"] .fad-btn.is-quiet,
+html body[data-user-role="Farmer"] :is(.mtd-header, .mfd-header) .mfd-btn.is-quiet {
+    background: #fff !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+}
+html body[data-user-role="Farmer"] :is(.mfd-btn, .mtd-btn).is-quiet:hover,
+html body[data-user-role="Farmer"] .fad-btn.is-quiet:hover { background: #E4F3DE !important; }
+
+/* Chart "Learn More" buttons. */
+html body[data-user-role="Farmer"] .ic-info-btn {
+    background: #E4F3DE;
+    border: 1px solid #C8E6BF;
+    border-radius: 8px;
+    color: #1F3D22;
+}
+html body[data-user-role="Farmer"] .ic-info-btn:hover { background: #C8E6BF; transform: none; }
+
+/* -- CARDS: white, simple border, no shadow -------------------------------- */
+html body[data-user-role="Farmer"] :is(.mfd-card, .mtd-card, .fh-card, .frec-panel, .card) {
+    border-radius: 10px;
+    box-shadow: none !important;
+}
+
+/* -- DASHBOARD: today's message ------------------------------------------- */
+/* "Good weather" was a dark card; now light green with dark text. "Bad weather" stays red: it is a warning. */
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] .fh-message { border-radius: 10px; }
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] .fh-message.fh-mood-good {
+    background: #E4F3DE !important;
+    border: 1px solid #C8E6BF;
+    color: #1F3D22;
+}
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] .fh-mood-good :is(.fh-message-head, .fh-message-text, .fh-message-reason, .fh-message-source, h2, p) {
+    color: #1F3D22 !important;
+}
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-art {
+    background: #fff;
+    color: #2F6B34;
+    border-radius: 10px;
+}
+
+/* -- DASHBOARD: "Chance of rain this week" bars, a lighter green scale ----- */
+/* Three clearly different steps; the legend dots use the same colours. */
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] :is(.fh-pill .fh-pill-fill, .fh-pill-legend i) { background: #6DB863; }
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] :is(.fh-pill.is-high .fh-pill-fill, .fh-pill-legend i.is-high) { background: #2F7A36; }
+html body[data-user-role="Farmer"] .mfd[data-farmer-dashboard] :is(.fh-pill.is-low .fh-pill-fill, .fh-pill-legend i.is-low) { background: #B9DFAF; }
+
+/* -- FARMER PAGES: the page banner and the default button ------------------ */
+/* My Farm, Advisories, Calendar, Reports and Survey open with a .fad-hero banner, which was dark green.
+   Now light green with dark text, like the landing page hero. */
+html body[data-user-role="Farmer"] .fad-hero {
+    background: #E4F3DE !important;
+    border: 1px solid #C8E6BF !important;
+    border-radius: 10px;
+    color: #1F3D22;
+}
+html body[data-user-role="Farmer"] .fad-hero .fad-kicker,
+html body[data-user-role="Farmer"] .fad-hero .fad-hero-note { color: #2F6B34 !important; }
+html body[data-user-role="Farmer"] .fad-hero h1 { color: #1F3D22 !important; font-family: inherit !important; }
+html body[data-user-role="Farmer"] .fad-hero p { color: #4D5C50 !important; }
+html body[data-user-role="Farmer"] .fad-hero .fad-btn:focus-visible { outline-color: #2F6B34; }
+
+/* The plain .fad-btn (e.g. "+ Add Another Farm") was dark green. */
+html body[data-user-role="Farmer"] .fad-btn:not(.is-quiet):not(.is-danger):not(.is-vote):not(.is-light):not(.is-on-dark) {
+    background: var(--fa-btn) !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+}
+html body[data-user-role="Farmer"] .fad-btn:not(.is-quiet):not(.is-danger):not(.is-vote):not(.is-light):not(.is-on-dark):hover { background: var(--fa-btn-hover) !important; }
+
+/* Secondary buttons that were white or see-through on the dark banner (Print, My Reports, Back to Dashboard). */
+html body[data-user-role="Farmer"] .fad-btn:is(.is-light, .is-on-dark) {
+    background: #fff !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+}
+html body[data-user-role="Farmer"] .fad-btn:is(.is-light, .is-on-dark):hover { background: #E4F3DE !important; }
