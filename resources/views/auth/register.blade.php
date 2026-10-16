@@ -11,14 +11,14 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
-      --reg-green-dark: #123F32;
-      --reg-green: #1F684F;
+      --reg-green-dark: #1F3D22;
+      --reg-green: #2F6B34;
       --reg-mint: #7FD6B5;
-      --reg-green-bg: #F6F8F7;
-      --reg-border: #E3EAE6;
-      --reg-input-border: #D5DFD9;
-      --reg-text: #1E2B25;
-      --reg-text-2: #65736C;
+      --reg-green-bg: #F3FAF0;
+      --reg-border: #DCE8D6;
+      --reg-input-border: #B5C9AE;
+      --reg-text: #1E2B21;
+      --reg-text-2: #4D5C50;
       --reg-error: #B42318;
       --reg-success: #16794A;
       --reg-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -33,13 +33,13 @@
     body.register-page { min-height: 100vh; background: #fff; }
 @include('auth.partials.split-styles')
 
-    /* -- PHOTO SIDE: what a farmer account gives you ------ */
-    .reg-notes-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-    .reg-notes-sub { font-size: 14px; color: rgba(255,255,255,.8); margin-top: 2px; }
-    .perk-list { list-style: none; margin: 18px 0 0; padding: 18px 0 0; border-top: 1px solid rgba(255,255,255,.22); display: flex; flex-direction: column; gap: 10px; }
-    .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: #fff; }
-    .perk-item svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--reg-mint); }
-    .reg-notes-staff { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.22); font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.82); }
+    /* -- GREEN SIDE: what a farmer account gives you ------ */
+    .reg-notes-title { font-size: 17px; font-weight: 700; color: var(--reg-green-dark); }
+    .reg-notes-sub { font-size: 14px; color: var(--reg-text-2); margin-top: 2px; }
+    .perk-list { list-style: none; margin: 18px 0 0; padding: 18px 0 0; border-top: 1px solid var(--reg-border); display: flex; flex-direction: column; gap: 10px; }
+    .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: var(--reg-text); }
+    .perk-item svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--reg-green); }
+    .reg-notes-staff { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--reg-border); font-size: 13px; line-height: 1.5; color: var(--reg-text-2); }
 
     /* -- FORM SIDE: the whole form fits one laptop screen -- */
     /* The green side is narrower on this page so the form can use two columns. */
@@ -65,16 +65,16 @@
 
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; min-width: 0; height: 40px; background-color: var(--reg-green-bg); border: 1px solid transparent; border-radius: 10px;
+      width: 100%; min-width: 0; height: 40px; background-color: #fff; border: 1.5px solid var(--reg-input-border); border-radius: 10px;
       padding: 0 12px; font-size: 14px; color: var(--reg-text); outline: none;
       transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
     .form-input.has-icon { padding-left: 36px; }
     .form-input.has-toggle { padding-right: 40px; }
     .form-input::placeholder { color: #98A39D; }
-    .form-input:hover:not(:focus):not(:focus-within):not(:disabled):not(.is-invalid) { background-color: #F1F4F2; }
-    .form-input:focus { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
-    .form-input:disabled { color: var(--reg-text-2); }
+    .form-input:hover:not(:focus):not(:focus-within):not(:disabled):not(.is-invalid) { border-color: #8BC97E; }
+    .form-input:focus { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
+    .form-input:disabled { color: var(--reg-text-2); background-color: var(--reg-green-bg); }
     .form-input.is-invalid { border-color: var(--reg-error); background-color: #fff; }
     .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     select.form-input {
@@ -111,7 +111,7 @@
       background-repeat: no-repeat; background-position: right 10px center;
     }
     .org-ms.is-open { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 10l4-4 4 4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-    .org-ms:focus-within { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .org-ms:focus-within { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
     .org-ms.is-invalid:focus-within { border-color: var(--reg-error); box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     .org-ms-search { flex: 1 1 80px; min-width: 80px; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; font-size: 14px; color: var(--reg-text); }
     .org-ms-search::placeholder { color: #98A39D; }
@@ -181,27 +181,21 @@
 
     .btn-submit {
       width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: var(--reg-green-dark); color: #fff; border: none; border-radius: 980px;
-      font-size: 15px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
+      background: #A6D79B; color: #173B1F; border: 2px solid #8BC97E; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color .15s ease;
     }
-    .btn-submit:hover { background: var(--reg-green); }
-    .btn-submit:active { transform: scale(.98); }
+    .btn-submit:hover { background: #8BC97E; }
     .btn-submit:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
     .btn-submit:disabled { opacity: .8; cursor: wait; }
-    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: regSpin .8s linear infinite; }
+    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(23,59,31,.25); border-top-color: #173B1F; animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
     .reg-foot { margin-top: 10px; text-align: center; font-size: 12px; line-height: 1.5; color: var(--reg-text-2); }
-    .reg-foot-credit { color: #8A968F; }
+    .reg-foot-credit { color: var(--reg-text-2); }
 
-    /* Laptop and desktop: the page is exactly one screen. Messages under a field sit in the gap below it (cut to
-       one line, full text on hover and for screen readers), so they never push the rows apart. */
+    /* Laptop and desktop: messages under a field sit in the gap below it (cut to one line, full text on hover
+       and for screen readers), so they never push the rows apart. The page scrolls normally below the header. */
     @media (min-width: 1024px) and (min-height: 680px) {
-      body.register-page { height: 100vh; height: 100dvh; overflow: hidden; }
-      .register-page .login-split { height: 100vh; height: 100dvh; min-height: 0; }
-      .register-page .login-visual { height: 100%; }
-      /* Safety net only: anything that ever overflows scrolls inside the form side, never off the page. */
-      .register-page .login-panel { height: 100%; overflow-y: auto; }
       .form-group > .field-error:not([hidden]), .form-group > .field-success:not([hidden]), .form-group > .field-hint:not([hidden]) {
         display: block; position: absolute; left: 0; right: 0; top: 100%; margin-top: 1px;
         font-size: 11.5px; line-height: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -209,11 +203,10 @@
       .form-group > .field-error::before, .form-group > .field-success::before { display: inline-block; vertical-align: -2px; margin: 0 4px 0 0; width: 11px; height: 11px; background-size: 11px; }
     }
 
-    /* Tablets and phones: the green side shrinks to the back button and the page scrolls normally. */
+    /* Tablets and phones: the green side is hidden and the page scrolls normally. */
     @media (max-width: 900px) {
       .register-page .login-split { grid-template-columns: minmax(0, 1fr); }
-      .register-page .login-visual-copy, .register-page .glass-card { display: none; }
-      .register-page .login-visual { padding: 12px 16px; }
+      .register-page .login-visual { display: none; }
       .register-page .login-panel { justify-content: flex-start; padding: 20px 16px 16px; }
     }
     @media (max-width: 560px) {
@@ -262,8 +255,6 @@
     .btn-submit { height: 50px; font-size: 17px; }
     .reg-foot { font-size: 13.5px; }
     @media (min-width: 1024px) and (min-height: 680px) {
-      /* The blue strip takes the top of the screen; the page below it fills the rest. */
-      .register-page .gov-strip ~ .login-split { height: calc(100vh - 42px); height: calc(100dvh - 42px); }
       .form-group > .field-error:not([hidden]), .form-group > .field-success:not([hidden]), .form-group > .field-hint:not([hidden]) { font-size: 12.5px; line-height: 15px; }
     }
   </style>
@@ -272,12 +263,9 @@
 </head>
 <body class="register-page">
   @include('partials.gov-strip')
+  @include('auth.partials.masthead')
   <div class="login-split">
     <aside class="login-visual">
-      <a href="{{ url('/') }}" class="back-link-top">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Back to home
-      </a>
       <p class="login-visual-copy">Join the iClimate community.</p>
       <section class="glass-card" aria-labelledby="regNotesTitle">
         <h2 class="reg-notes-title" id="regNotesTitle">Rice farmer account</h2>
@@ -298,7 +286,6 @@
         {{-- The active tab already says "Create account"; the heading stays for screen readers only. --}}
         <h1 class="sr-only">Create account</h1>
         <div class="reg-head">
-          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
           <p class="reg-sub">Register as a rice farmer in Lian, Batangas.</p>
           <div id="formMessage" role="alert" @unless($errors->any()) hidden @endunless>Please check the highlighted fields below and try again.</div>
         </div>
