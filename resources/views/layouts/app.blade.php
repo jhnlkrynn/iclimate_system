@@ -312,6 +312,10 @@
         </style>
         {{-- Panel revision 4.5 / 4.3: the government theme and the phone rules, after every other style so they win. --}}
         @vite(['resources/css/gov-theme.css', 'resources/css/accessibility.css'])
+        {{-- Farmer, MAO and IT accounts: the plain light green look of the landing page, loaded last. --}}
+        @if (in_array(auth()->user()?->role, [\App\Models\User::ROLE_FARMER, \App\Models\User::ROLE_MAO, \App\Models\User::ROLE_IT_EXPERT], true))
+            @vite('resources/css/pages/account-light.css')
+        @endif
         @include('partials.global-loader')
     </head>
     <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>

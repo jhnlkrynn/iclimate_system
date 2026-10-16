@@ -28,14 +28,14 @@
     *, *::before, *::after { box-sizing: border-box; }
     :root {
       /* Panel revision 4.5: the government palette (resources/css/gov-theme.css). */
-      --reg-green-dark: #1B5E20;
-      --reg-green: #2E7D32;
+      --reg-green-dark: #1F3D22;
+      --reg-green: #2F6B34;
       --reg-mint: #7FD6B5;
-      --reg-green-bg: #F2F7F4;
-      --reg-border: #E3EAE6;
-      --reg-input-border: #D5DFD9;
-      --reg-text: #1F2937;
-      --reg-text-2: #4B5563;
+      --reg-green-bg: #F3FAF0;
+      --reg-border: #DCE8D6;
+      --reg-input-border: #B5C9AE;
+      --reg-text: #1E2B21;
+      --reg-text-2: #4D5C50;
       --reg-error: #B42318;
       --reg-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     }
@@ -54,7 +54,7 @@
     .card-logo img { height: 48px; width: auto; display: block; }
 
     .login-form-header { text-align: center; margin-bottom: 32px; }
-    .login-form-header h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; color: var(--reg-text); line-height: 1.15; margin-bottom: 6px; }
+    .login-form-header h1 { font-size: 30px; font-weight: 700; color: var(--reg-text); line-height: 1.15; margin-bottom: 6px; }
     .login-form-header p { font-size: 15px; color: var(--reg-text-2); }
 
     .auth-status, .auth-alert { display: flex; align-items: flex-start; gap: 10px; border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
@@ -67,15 +67,15 @@
     .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--reg-text-2); margin-bottom: 6px; }
     .input-wrap { position: relative; }
     .form-input {
-      width: 100%; height: 48px; background: #F6F8F7; border: 1px solid transparent; border-radius: 12px;
+      width: 100%; height: 48px; background: #fff; border: 1.5px solid var(--reg-input-border); border-radius: 10px;
       padding: 0 14px; font-size: 15px; color: var(--reg-text); outline: none;
       transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
     .form-input.has-icon { padding-left: 42px; }
     .form-input.has-toggle { padding-right: 46px; }
     .form-input::placeholder { color: #98A39D; }
-    .form-input:hover { background: #F1F4F2; }
-    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 4px rgba(31,104,79,.12); }
+    .form-input:hover { border-color: #8BC97E; }
+    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
     .form-input.is-invalid { border-color: var(--reg-error); background: #fff; }
     .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
@@ -113,32 +113,31 @@
 
     .btn-login {
       width: 100%; height: 50px; margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: var(--reg-green-dark); color: #fff; border: none; border-radius: 980px;
-      font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color .2s ease, transform .2s ease;
+      background: #A6D79B; color: #173B1F; border: 2px solid #8BC97E; border-radius: 10px;
+      font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color .15s ease;
     }
-    .btn-login:hover { background: var(--reg-green); }
-    .btn-login:active { transform: scale(.98); }
+    .btn-login:hover { background: #8BC97E; }
     .btn-login:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
     .btn-login:disabled { opacity: .8; cursor: wait; }
-    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: regSpin .8s linear infinite; }
+    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(23,59,31,.25); border-top-color: #173B1F; animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
     .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 22px; }
 
-    /* -- WEATHER CARD: plain dark tile on the green panel --- */
-    .weather-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; color: #fff; }
-    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: 14px; color: rgba(255,255,255,.8); margin-top: 2px; }
+    /* -- WEATHER CARD: plain white box on the light green panel --- */
+    .weather-title { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--reg-green-dark); }
+    .weather-loc { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--reg-text-2); margin-top: 2px; }
     .weather-main { display: flex; align-items: center; gap: 16px; margin: 22px 0; }
-    .weather-icon { flex-shrink: 0; width: 56px; height: 56px; display: grid; place-items: center; color: #fff; font-size: 34px; line-height: 1; }
-    .weather-temp { font-size: 48px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
-    .weather-cond { font-size: 15px; font-weight: 500; color: rgba(255,255,255,.85); margin-top: 6px; }
+    .weather-icon { flex-shrink: 0; width: 56px; height: 56px; display: grid; place-items: center; color: var(--reg-green); font-size: 34px; line-height: 1; }
+    .weather-temp { font-size: 48px; font-weight: 700; line-height: 1; color: var(--reg-green-dark); font-variant-numeric: tabular-nums; }
+    .weather-cond { font-size: 15px; font-weight: 500; color: var(--reg-text-2); margin-top: 6px; }
     .weather-card.is-unavailable .weather-cond { font-weight: 400; margin-top: 0; }
     .weather-card.is-unavailable .weather-temp { display: none; }
-    .weather-rows { border-top: 1px solid rgba(255,255,255,.22); }
-    .weather-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.22); }
-    .weather-row svg { flex-shrink: 0; color: #fff; opacity: .85; }
-    .weather-row dt { flex: 1; font-size: 14px; color: rgba(255,255,255,.82); }
-    .weather-row dd { font-size: 15px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+    .weather-rows { border-top: 1px solid var(--reg-border); }
+    .weather-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--reg-border); }
+    .weather-row svg { flex-shrink: 0; color: var(--reg-green); }
+    .weather-row dt { flex: 1; font-size: 14px; color: var(--reg-text-2); }
+    .weather-row dd { font-size: 15px; font-weight: 700; color: var(--reg-text); font-variant-numeric: tabular-nums; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; }
@@ -153,6 +152,7 @@
 <body class="login-page">
   {{-- Panel revision 4.5: the government strip, as on every signed-in page. --}}
   @include('partials.gov-strip')
+  @include('auth.partials.masthead')
   {{-- Sign-in errors are shown inline in the card, so the toast is kept for session flashes only. --}}
   @if (session('success') || session('error'))
     <x-flash-toast />
@@ -160,10 +160,6 @@
 
   <div class="login-split">
     <aside class="login-visual">
-    <a href="{{ url('/') }}" class="back-link-top">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3M7 12L3 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Back to home
-    </a>
     <p class="login-visual-copy">Climate-smart rice farming for Lian, Batangas.</p>
       <section class="weather-card glass-card {{ $hasRealWeather ? '' : 'is-unavailable' }}" id="weatherCard" aria-labelledby="weatherTitle" data-weather-endpoint="{{ route('api.weather.current') }}">
         <h2 class="weather-title" id="weatherTitle">Today's weather</h2>
@@ -205,10 +201,6 @@
     <main class="login-panel">
       @include('auth.partials.toggle')
       <div class="login-card">
-        <div class="card-logo">
-          <img src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate">
-        </div>
-
         <div class="login-form-header">
           <h1>Sign in</h1>
           <p>Welcome back to iClimate.</p>

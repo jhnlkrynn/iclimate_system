@@ -1,0 +1,180 @@
+/*
+ * Farmer, MAO and IT accounts: the plain light green look of the landing page (resources/css/pages/welcome.css)
+ * on every signed-in page. Loaded by layouts/app.blade.php after gov-theme.css and accessibility.css.
+ *
+ * Mostly a change of the gov-theme tokens; the few components that hard-code a colour are restyled below with
+ * the same selectors gov-theme.css uses, prefixed with the farmer role so they win.
+ * Chart and risk colours are left alone: they carry meaning (likely/possible/unlikely rain, risk levels).
+ */
+
+/* -- TOKENS --------------------------------------------------------------- */
+html:has(> body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"])) { background: #F3FAF0 !important; }
+
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) {
+    --gov-bg: #F3FAF0;
+    --gov-surface-2: #F3FAF0;
+    --gov-border: #DCE8D6;
+    --gov-border-strong: #B5C9AE;
+    --gov-shadow: none;
+    --gov-shadow-lg: 0 6px 18px rgba(31, 61, 34, .10);
+    --gov-primary: #2F6B34;
+    --gov-primary-dark: #1F3D22;
+    --gov-primary-soft: #E4F3DE;
+    --gov-success-soft: #E4F3DE;
+    --fa-btn: #A6D79B;
+    --fa-btn-hover: #8BC97E;
+    --fa-btn-ink: #173B1F;
+    background: #F3FAF0 !important;
+}
+
+/* -- TOP BAR: seal and iClimate logo, as on the landing page --------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .topbar.ic-topbar { border-bottom: 1px solid #DCE8D6 !important; box-shadow: none !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 46px; width: auto; flex: none; }
+@media (max-width: 767.98px) {
+    html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 36px; }
+}
+
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-lang button { border: 1px solid transparent; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-lang button[aria-pressed="true"] {
+    background: var(--fa-btn) !important;
+    border-color: var(--fa-btn-hover);
+    color: var(--fa-btn-ink) !important;
+}
+
+/* -- BUTTONS: light green with dark text ----------------------------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-btn, .mtd-btn, .fad-btn.is-primary, .btn-primary, .btn-success) {
+    background: var(--fa-btn) !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+    font-weight: 700;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-btn, .mtd-btn, .fad-btn.is-primary, .btn-primary, .btn-success):hover {
+    background: var(--fa-btn-hover) !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-btn, .mtd-btn).is-quiet,
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-btn, .mtd-btn).is-ghost,
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn.is-quiet,
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mtd-header, .mfd-header) .mfd-btn.is-quiet {
+    background: #fff !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-btn, .mtd-btn).is-quiet:hover,
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn.is-quiet:hover { background: #E4F3DE !important; }
+
+/* Chart "Learn More" buttons. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-info-btn {
+    background: #E4F3DE;
+    border: 1px solid #C8E6BF;
+    border-radius: 8px;
+    color: #1F3D22;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-info-btn:hover { background: #C8E6BF; transform: none; }
+
+/* -- CARDS: white, simple border, no shadow -------------------------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.mfd-card, .mtd-card, .fh-card, .frec-panel, .card) {
+    border-radius: 10px;
+    box-shadow: none !important;
+}
+
+/* -- DASHBOARD: today's message ------------------------------------------- */
+/* "Good weather" was a dark card; now light green with dark text. "Bad weather" stays red: it is a warning. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] .fh-message { border-radius: 10px; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] .fh-message.fh-mood-good {
+    background: #E4F3DE !important;
+    border: 1px solid #C8E6BF;
+    color: #1F3D22;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] .fh-mood-good :is(.fh-message-head, .fh-message-text, .fh-message-reason, .fh-message-source, h2, p) {
+    color: #1F3D22 !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] .fh-mood-good .fh-message-art {
+    background: #fff;
+    color: #2F6B34;
+    border-radius: 10px;
+}
+
+/* -- DASHBOARD: "Chance of rain this week" bars, a lighter green scale ----- */
+/* Three clearly different steps; the legend dots use the same colours. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] :is(.fh-pill .fh-pill-fill, .fh-pill-legend i) { background: #6DB863; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] :is(.fh-pill.is-high .fh-pill-fill, .fh-pill-legend i.is-high) { background: #2F7A36; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd[data-farmer-dashboard] :is(.fh-pill.is-low .fh-pill-fill, .fh-pill-legend i.is-low) { background: #B9DFAF; }
+
+/* -- FARMER PAGES: the page banner and the default button ------------------ */
+/* My Farm, Advisories, Calendar, Reports and Survey open with a .fad-hero banner, which was dark green.
+   Now light green with dark text, like the landing page hero. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero {
+    background: #E4F3DE !important;
+    border: 1px solid #C8E6BF !important;
+    border-radius: 10px;
+    color: #1F3D22;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero .fad-kicker,
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero .fad-hero-note { color: #2F6B34 !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero h1 { color: #1F3D22 !important; font-family: inherit !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero p { color: #4D5C50 !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-hero .fad-btn:focus-visible { outline-color: #2F6B34; }
+
+/* The plain .fad-btn (e.g. "+ Add Another Farm") was dark green. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn:not(.is-quiet):not(.is-danger):not(.is-vote):not(.is-light):not(.is-on-dark) {
+    background: var(--fa-btn) !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn:not(.is-quiet):not(.is-danger):not(.is-vote):not(.is-light):not(.is-on-dark):hover { background: var(--fa-btn-hover) !important; }
+
+/* Secondary buttons that were white or see-through on the dark banner (Print, My Reports, Back to Dashboard). */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn:is(.is-light, .is-on-dark) {
+    background: #fff !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+    border-radius: 10px;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .fad-btn:is(.is-light, .is-on-dark):hover { background: #E4F3DE !important; }
+/* -- MAO: the "Total farmers" tile was a dark green gradient --------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mhd .mhd-tile:first-child {
+    background: #E4F3DE !important;
+    background-image: none !important;
+    border: 1px solid #C8E6BF !important;
+    box-shadow: none !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mhd .mhd-tile:first-child :is(.mhd-tile-label, .mhd-tile-value, .mhd-tile-note, .mhd-tile-label .mtd-svg, small, span) { color: #1F3D22 !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mhd .mhd-tile:first-child .ic-go { background: #fff; color: #2F6B34 !important; filter: none; }
+
+/* -- Selected tabs, chips, toggles and page numbers: light green ------------ */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.ic-tab.is-active, .adv-chip.is-active, .hmx-toggle-btn.is-active, .page-item.active .page-link, .pagination .active > .page-link) {
+    background: var(--fa-btn) !important;
+    background-image: none !important;
+    border-color: var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+}
+
+/* -- Gradients on buttons and badges become flat colours -------------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.btn-primary, .btn-success) { background-image: none !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .badge.text-bg-success {
+    background: #E4F3DE !important;
+    background-image: none !important;
+    border: 1px solid #C8E6BF;
+    color: #1F3D22 !important;
+}
+/* -- IT: the IT pages' own button rule (it-pages.css .mfd.itd.itp) was dark green -- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd.itd.itp .btn:is(.btn-primary, .btn-success) {
+    background: var(--fa-btn) !important;
+    background-image: none !important;
+    border: 2px solid var(--fa-btn-hover) !important;
+    color: var(--fa-btn-ink) !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mfd.itd.itp .btn:is(.btn-primary, .btn-success):hover { background: var(--fa-btn-hover) !important; border-color: var(--fa-btn-hover) !important; }
+
+/* -- IT: the "Total users" tile was a gradient ------------------------------ */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .itd .itd-kpi-grid .mhd-tile:first-child {
+    background: #E4F3DE !important;
+    background-image: none !important;
+    border: 1px solid #C8E6BF !important;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .itd .itd-kpi-grid .mhd-tile:hover { transform: none; box-shadow: none; }
+
+/* -- IT: the "System status" icon was a dark green disc; amber and grey still show a warning or unknown state -- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .itd-status-banner:not(.is-watch):not(.is-unk) .itd-status-icon { background: #A6D79B; color: #173B1F; }
