@@ -1,0 +1,35 @@
+flowchart LR
+    Browser[Client browser\nDesktop or mobile responsive web UI]
+    Laravel[Laravel 12 application\nPHP 8.2+ / Blade / routes / controllers / services / Eloquent]
+    DB[(Configured relational database\nPostgreSQL in current development config; MySQL/MariaDB supported by backup path)]
+    Queue[(Database queue tables)]
+    Scheduler[Laravel scheduler / cron\nartisan scheduled commands]
+    Worker[Queue worker\nqueued jobs and analytics]
+    ML[FastAPI ML service\npython_scripts/main.py\nuvicorn :8010]
+    Models[(Model files and metadata\nstorage/models; Docker ml-models volume)]
+    OpenMeteo[Open-Meteo API]
+    PAGASA[PAGASA web advisories\nand historical Ambulong data]
+    GeoRisk[GeoRisk Philippines\nbarangay boundaries]
+    Tiles[OpenStreetMap / Esri\nmap tiles]
+    GeoJSON[Local GeoJSON\npublic/geojson]
+    Groq[Groq API\nClimora fallback]
+    Mail[Configured mail server\npassword reset only]
+    Storage[Local storage\nreports, backups, uploads]
+
+    Browser -->|HTTP/HTTPS web routes and JSON endpoints| Laravel
+    Browser -->|Leaflet map tile requests| Tiles
+    Browser -->|reads local boundary assets| GeoJSON
+    Laravel -->|Eloquent queries / transactions| DB
+    Laravel -->|dispatch jobs| Queue
+    Worker -->|claims and records jobs| Queue
+    Scheduler -->|runs artisan commands| Worker
+    Scheduler -->|records scheduled runs| DB
+    Worker -->|queued prediction / analytics HTTP calls| ML
+    Laravel -->|prediction / health HTTP calls| ML
+    ML -->|loads and writes model artifacts| Models
+    Laravel -->|weather HTTP requests| OpenMeteo
+    Laravel -->|advisory fetch / parsing| PAGASA
+    Laravel -->|boundary acquisition / sync| GeoRisk
+    Laravel -->|AI fallback HTTP request| Groq
+    Laravel -->|password-reset mail| Mail
+    Laravel -->|reports, backups, attachments| Storage

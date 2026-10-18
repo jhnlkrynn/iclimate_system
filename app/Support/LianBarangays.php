@@ -136,8 +136,47 @@ class LianBarangays
         return match ($needle) {
             '1 bonbon', 'bonbon', '1 bonbon poblacion' => 'Barangay 1 (Pob.)',
             '5 tabok city', 'tabok city', '5 tabok city poblacion' => 'Barangay 5 (Pob.)',
-            default => null,
+            // Boundary files and local government exports use these shorter
+            // spellings; keep the stored/application name canonical.
+            'puting kahoy' => 'Puting-Kahoy',
+            '1 poblacion', 'poblacion 1' => 'Barangay 1 (Pob.)',
+            '2 poblacion', 'poblacion 2' => 'Barangay 2 (Pob.)',
+            '3 poblacion', 'poblacion 3' => 'Barangay 3 (Pob.)',
+            '4 poblacion', 'poblacion 4' => 'Barangay 4 (Pob.)',
+            '5 poblacion', 'poblacion 5' => 'Barangay 5 (Pob.)',
+            default => self::closestName($needle),
         };
+    }
+
+    /**
+     * A misspelt name typed into a farm or profile ("LUYAHN", "BALIBGO"): the one official barangay within one letter
+     * (two for names of nine letters or more). Numbers never match this way (Barangay 1 must not become Barangay 2), and
+     * a tie between two barangays matches neither.
+     */
+    private static function closestName(string $needle): ?string
+    {
+        if (strlen($needle) < 5 || preg_match('/\d/', $needle)) {
+            return null;
+        }
+
+        $best = null;
+        $bestDistance = PHP_INT_MAX;
+        $tied = false;
+        foreach (array_keys(self::COORDINATES) as $name) {
+            $candidate = self::normalize($name);
+            if (preg_match('/\d/', $candidate)) {
+                continue;
+            }
+            $distance = levenshtein($needle, $candidate);
+            if ($distance < $bestDistance) {
+                [$best, $bestDistance, $tied] = [$name, $distance, false];
+            } elseif ($distance === $bestDistance) {
+                $tied = true;
+            }
+        }
+        $allowed = strlen($needle) >= 9 ? 2 : 1;
+
+        return $best !== null && ! $tied && $bestDistance <= $allowed ? $best : null;
     }
 
     private static function normalize(string $barangay): string
@@ -145,6 +184,8 @@ class LianBarangays
         $value = strtolower($barangay);
         $value = str_replace(['barangay', 'brgy', '(pob.)', 'pob.', 'poblacion', '-', '.'], ' ', $value);
         $value = preg_replace('/[^a-z0-9]+/', ' ', $value) ?: '';
+        // "BARANGAY 1 POB" (no dot) is Barangay 1 (Pob.) too.
+        $value = preg_replace('/\bpob\b/', ' ', $value) ?: '';
 
         return trim(preg_replace('/\s+/', ' ', $value) ?: '');
     }

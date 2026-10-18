@@ -663,6 +663,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'messages.search'
         );
 
+        Route::get(
+            'messages/people',
+            [MessagingController::class, 'people']
+        )->middleware('throttle:60,1,get-messages-people')->name('messages.people');
+
 
         Route::post(
             'messages/open',

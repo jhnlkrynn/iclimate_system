@@ -918,8 +918,7 @@ textarea {
     .dropdown .btn,
     .topbar .btn,
     .pagination .page-link,
-    .btn-close,
-    .ic-ai-close {
+    .btn-close {
         width: auto;
     }
 
@@ -927,17 +926,7 @@ textarea {
         width: min(92vw, 360px);
     }
 
-    .ic-ai-widget {
-        inset: auto .6rem .6rem auto !important;
-    }
-
-    .ic-ai-panel {
-        position: fixed !important;
-        inset: auto .6rem 4.6rem .6rem !important;
-        width: auto !important;
-        height: min(620px, calc(100dvh - 5.5rem)) !important;
-    }
-
+    /* The Climora panel sizes itself (components/ai-chat-widget). */
     .ic-ai-results,
     .ai-result-grid,
     .ds-grid {

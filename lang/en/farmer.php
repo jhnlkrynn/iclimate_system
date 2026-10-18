@@ -735,6 +735,7 @@ return [
         'advisories' => 'Advisories',
         'my_farm' => 'My Farm',
         'messages' => 'Messages',
+        'logout' => 'Log out',
     ],
 
     'home' => [

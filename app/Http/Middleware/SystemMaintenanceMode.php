@@ -20,7 +20,8 @@ class SystemMaintenanceMode
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! SystemSettings::maintenanceOn() || $request->user()?->role === User::ROLE_IT_EXPERT || $request->routeIs(...self::OPEN)) {
+        // The landing page holds the sign-in card (GET /login only sends there), and POST /login has no route name.
+        if (! SystemSettings::maintenanceOn() || $request->user()?->role === User::ROLE_IT_EXPERT || $request->routeIs(...self::OPEN) || $request->is('/', 'login')) {
             return $next($request);
         }
 

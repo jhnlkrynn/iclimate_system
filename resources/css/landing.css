@@ -1,0 +1,187 @@
+/* Public landing page (welcome.blade.php). Tailwind only; colours come from the theme tokens in tailwind.config.js. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+    }
+
+    body {
+        @apply bg-white font-inter text-ink antialiased;
+    }
+
+    /* Height of the sticky nav (components/public-nav.blade.php): 44px logos and buttons + 2 x 0.875rem padding + 1px
+       border = 73px. */
+    :root {
+        --nav-h: calc(1.75rem + 45px);
+    }
+
+    /* Anchored sections stop just below the sticky nav. */
+    [data-section] {
+        scroll-margin-top: var(--nav-h);
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand ring-offset-2;
+    }
+}
+
+@layer components {
+    /* One landing section per screen below the nav. min-height (never a fixed height) so taller content grows;
+       svh keeps mobile browser bars from cutting it off (vh is the fallback for older browsers). */
+    .lp-screen {
+        @apply flex flex-col justify-center;
+        min-height: calc(100vh - var(--nav-h));
+        min-height: calc(100svh - var(--nav-h));
+    }
+
+    .lp-wrap {
+        @apply mx-auto w-full max-w-[1440px] px-4 sm:px-8 xl:px-[100px];
+    }
+
+    .lp-btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2 text-base leading-none transition-colors;
+    }
+
+    /* Hero and login card: 52px tall. */
+    .lp-btn-lg {
+        @apply min-h-[52px] px-6 text-lg;
+    }
+
+    .lp-btn-primary {
+        @apply lp-btn border-brand bg-brand text-white hover:bg-ink;
+    }
+
+    .lp-btn-neutral {
+        @apply lp-btn border-line bg-tint text-ink hover:bg-line;
+    }
+
+    .lp-icon-btn {
+        @apply inline-flex h-[44px] w-[44px] items-center justify-center rounded-full text-ink transition-colors hover:bg-tint;
+    }
+
+    .lp-tag {
+        @apply inline-flex items-center rounded-lg bg-tint px-2 py-1.5 text-sm leading-none text-ink;
+    }
+
+    .lp-h2 {
+        @apply text-[2rem] font-bold leading-[1.08] tracking-[-0.03em] text-ink sm:text-[2.75rem];
+    }
+
+    .lp-label {
+        @apply mb-2 block text-base leading-snug text-ink;
+    }
+
+    .lp-input {
+        @apply block w-full rounded-lg border border-line bg-white px-4 py-3 text-base leading-none text-ink placeholder:text-muted/60 focus:border-brand focus:ring-brand;
+    }
+
+    .lp-input-lg {
+        @apply min-h-[52px] text-lg;
+    }
+
+    .lp-error {
+        @apply mt-1.5 text-sm text-red-700;
+    }
+
+    .lp-link {
+        @apply font-semibold text-brand underline decoration-from-font underline-offset-2 hover:text-ink;
+    }
+
+    .lp-nav-link {
+        @apply rounded-lg px-2 py-2 text-base leading-none text-ink transition-colors hover:bg-surface;
+    }
+
+    .lp-nav-link.is-active {
+        @apply bg-tint;
+    }
+}
+
+/* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
+   take the landing page's brand green so the card matches its Log in button. */
+.lp-reg .btn-submit { height: 52px; color: #fff; background: #17432A; border-color: #17432A; }
+.lp-reg .btn-submit:hover { background: #111A13; border-color: #111A13; }
+.lp-reg .btn-spinner { border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
+.lp-reg .terms-row input[type='checkbox'] { color: #17432A; border-color: #B5C9AE; border-radius: 4px; }
+
+/* Sign-in password eye (<x-password-toggle>): a 44px tap target whose icon sits 16px in from the field's right edge. */
+.lp-pwd-toggle {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    color: theme('colors.muted'); background: none; border: none; border-radius: 8px; cursor: pointer;
+}
+.lp-pwd-toggle:hover, .lp-pwd-toggle:focus-visible { color: theme('colors.brand'); }
+.lp-pwd-toggle:focus-visible { outline: 2px solid theme('colors.brand'); outline-offset: 0; }
+.lp-pwd-toggle .pwd-toggle-slash[hidden] { display: none; }
+
+/* Create account mode: a wider card (40rem) on wide screens so every placeholder and choice shows in full; Log in mode
+   keeps 30rem. Passwords get a row each; organization and barangay sit side by side only while each is at least
+   16rem wide (a container query on the form); below 640px every field takes the full width. */
+[data-auth-card] { transition: width .2s ease; }
+@media (min-width: 1280px) {
+    [data-auth-card][data-auth-mode='register'] { width: 40rem; }
+}
+.lp-reg .register-form { container-type: inline-size; }
+.lp-reg [data-reg-row='password'] { grid-template-columns: minmax(0, 1fr); }
+@container (max-width: 33rem) {
+    .lp-reg [data-reg-row='farm'] { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 639.98px) {
+    .lp-reg .form-row-2col { grid-template-columns: minmax(0, 1fr); }
+    .lp-reg .captcha-row { grid-template-columns: auto minmax(0, 1fr); }
+    .lp-reg .captcha-row > label { grid-column: 1 / -1; }
+}
+
+/* Switching between Log in and Create account: a short fade only. */
+[data-auth-panel] { transition: opacity .15s ease; }
+[data-auth-panel].is-entering { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    [data-auth-panel], [data-auth-card] { transition: none; }
+}
+
+/* Scroll reveal (resources/js/landing.js): content fades in and rises 16px as it enters the screen, once. Content is
+   visible by default; it is only hidden while <html> has .js-reveal (set in welcome.blade.php's head). Opacity and
+   transform only, so nothing shifts the layout. */
+html.js-reveal [data-reveal] {
+    opacity: 0;
+    transform: translateY(16px);
+}
+html.js-reveal [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+    transition: opacity .55s cubic-bezier(.2, .7, .2, 1), transform .55s cubic-bezier(.2, .7, .2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+}
+/* The hero plays once on load and finishes quickly. The card keeps its width change between Log in and Create account. */
+html.js-reveal [data-reveal='hero'].is-visible { transition-duration: .4s; }
+html.js-reveal [data-auth-card].is-visible {
+    transition: opacity .4s cubic-bezier(.2, .7, .2, 1), transform .4s cubic-bezier(.2, .7, .2, 1), width .2s ease;
+    transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms;
+}
+/* Reached through a link (nav, anchors): shown at once, no waiting. */
+html.js-reveal [data-reveal].reveal-now { transition: none; }
+/* How it works: the line beside each step draws from left to right as the step appears. */
+html.js-reveal [data-reveal-line] {
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+html.js-reveal .is-visible [data-reveal-line] {
+    transform: scaleX(1);
+    transition: transform .6s cubic-bezier(.2, .7, .2, 1);
+    transition-delay: calc(var(--reveal-delay, 0ms) + 150ms);
+}
+html.js-reveal .reveal-now [data-reveal-line] { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    html.js-reveal [data-reveal], html.js-reveal [data-reveal-line] { opacity: 1; transform: none; }
+    html.js-reveal [data-reveal].is-visible, html.js-reveal .is-visible [data-reveal-line] { transition: opacity .15s linear; transition-delay: 0ms; }
+}
+@media print {
+    html.js-reveal [data-reveal], html.js-reveal [data-reveal-line] { opacity: 1 !important; transform: none !important; }
+}

@@ -104,7 +104,7 @@
     .captcha-field .form-input::placeholder { letter-spacing: normal; }
     .captcha-field .field-error { justify-content: center; text-align: left; }
 
-    .form-row-split { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; }
+    .form-row-split { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; }
     .checkbox-label { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--reg-text); cursor: pointer; user-select: none; }
     .checkbox-label input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--reg-green); cursor: pointer; }
     .forgot-link, .login-register a { color: var(--reg-green); font-weight: 500; text-decoration: none; border-radius: 3px; }
@@ -150,8 +150,6 @@
     @include('partials.global-loader')
 </head>
 <body class="login-page">
-  {{-- Panel revision 4.5: the government strip, as on every signed-in page. --}}
-  @include('partials.gov-strip')
   @include('auth.partials.masthead')
   {{-- Sign-in errors are shown inline in the card, so the toast is kept for session flashes only. --}}
   @if (session('success') || session('error'))
@@ -254,10 +252,6 @@
           @endif
 
           <div class="form-row-split">
-            <label class="checkbox-label" for="remember_me">
-              <input type="checkbox" id="remember_me" name="remember" checked/>
-              Remember me
-            </label>
             @if (Route::has('password.request'))<a href="{{ route('password.request') }}" class="forgot-link">Forgot password?</a>@endif
           </div>
 

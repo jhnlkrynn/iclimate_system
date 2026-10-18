@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Risk\HeatMapLayerService;
 use Illuminate\Console\Command;
 
 class RefreshBarangayAgriculturalRisk extends Command
@@ -11,13 +12,14 @@ class RefreshBarangayAgriculturalRisk extends Command
 
     protected $description = 'Recompute and persist the 19-barangay Lian agricultural heat map from live weather, real recorded yield, and AgriculturalRiskScorer.';
 
-    public function handle(BarangayRiskMapService $riskMapService): int
+    public function handle(BarangayRiskMapService $riskMapService, HeatMapLayerService $layerCache): int
     {
         // Re-rates from the shared barangay weather. It asks the provider only when that weather is due, so this
         // reconciliation never repeats the request iclimate:refresh-barangay-weather made a few minutes earlier.
         $map = $riskMapService->refreshForCurrentWeather(force: true);
         if ($map === null) {
             $this->warn('Another process is rating the barangays, or rating failed; the last verified ratings are kept.');
+            $this->callSilent('iclimate:refresh-flood-risk');
 
             return self::SUCCESS;
         }
@@ -28,6 +30,8 @@ class RefreshBarangayAgriculturalRisk extends Command
         foreach ($counts as $level => $count) {
             $this->line("  {$level}: {$count}");
         }
+        $layerCache->forgetCache();
+        $this->callSilent('iclimate:refresh-flood-risk');
 
         return self::SUCCESS;
     }

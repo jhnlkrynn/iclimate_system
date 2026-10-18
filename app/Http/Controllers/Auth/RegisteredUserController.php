@@ -16,22 +16,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
-    public function create(Request $request, CaptchaService $captcha): View
-    {
-        return view('auth.register', [
-            'captcha' => $captcha->challenge($request, 'register'),
-            'farmerOrganizations' => FarmerOrganization::query()->orderBy('id')->get(),
-            'manualBarangays' => $this->manualBarangays(),
-        ]);
-    }
-
     /**
      * Handle an incoming registration request.
      *

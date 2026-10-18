@@ -106,13 +106,13 @@ class PagePerformanceTest extends TestCase
 
     // ------------------------------------------------------------------ login
 
-    public function test_the_login_page_and_login_call_no_outside_service(): void
+    public function test_the_landing_page_and_login_call_no_outside_service(): void
     {
         Http::fake();
         $this->mockForestThatMustNotTrain();
         $user = $this->user(User::ROLE_FARMER);
 
-        $this->get('/login')->assertOk();
+        $this->get('/')->assertOk();
         $this->withSession($this->captchaSession())->post('/login', [
             'email' => $user->email, 'password' => 'password', 'captcha_answer' => '7',
         ])->assertRedirect();
@@ -122,7 +122,9 @@ class PagePerformanceTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    public function test_the_login_page_shows_stored_weather_without_calling_a_provider(): void
+    // The landing page's weather chip is filled by its script from /api/weather/current; the page itself never asks a
+    // provider, even with a stored reading on hand.
+    public function test_the_landing_page_never_calls_a_weather_provider(): void
     {
         Http::fake();
         $service = app(FarmerDashboardWeatherService::class);
@@ -132,7 +134,7 @@ class PagePerformanceTest extends TestCase
             'today' => ['rainfall' => 1.2], 'fetched_at' => now()->toIso8601String(),
         ]);
 
-        $this->get('/login')->assertOk()->assertSee('27.4');
+        $this->get('/')->assertOk()->assertSee('data-weather-chip', false);
 
         Http::assertNothingSent();
     }

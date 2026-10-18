@@ -15,6 +15,40 @@ class CommunicationPlatformTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_farmer_people_directory_is_paginated_safe_and_searchable(): void
+    {
+        $farmer = User::factory()->farmer()->create(['name' => 'Current Farmer']);
+        $farmer->farmerProfile()->create([
+            'full_name' => $farmer->name,
+            'barangay' => 'Kapito',
+            'farm_type' => 'Irrigated',
+        ]);
+        User::factory()->maoPersonnel()->create(['name' => 'Municipal Agriculturist']);
+        User::factory()->itExpert()->create(['name' => 'IT Support']);
+        $kapito = User::factory()->farmer()->create(['name' => 'Kapito Farmer', 'barangay' => null]);
+        $kapito->farmerProfile()->create([
+            'full_name' => $kapito->name,
+            'barangay' => 'Kapito',
+            'farm_type' => 'Irrigated',
+        ]);
+        User::factory()->farmer()->count(29)->create();
+        User::factory()->farmer()->create(['name' => 'Inactive Farmer', 'status' => User::STATUS_INACTIVE]);
+
+        $response = $this->actingAs($farmer)->getJson(route('messages.people'));
+
+        $response->assertOk()->assertJsonPath('meta.per_page', 30);
+        $people = $response->json('people');
+        $this->assertCount(30, $people);
+        $this->assertTrue(collect($people)->every(fn (array $person): bool => ! in_array('email', array_keys($person), true)));
+        $this->assertTrue(collect($people)->every(fn (array $person): bool => (int) $person['id'] !== $farmer->id));
+        $this->assertFalse(collect($people)->contains('name', 'Inactive Farmer'));
+
+        $search = $this->actingAs($farmer)->getJson(route('messages.people', ['q' => 'kapito']))
+            ->assertOk();
+        $this->assertSame('Kapito', $search->json('people.0.barangay'));
+        $this->assertArrayNotHasKey('contact_number', $search->json('people.0'));
+    }
+
     public function test_mao_can_publish_feed_post_with_media(): void
     {
         Storage::fake('public');
@@ -280,7 +314,7 @@ class CommunicationPlatformTest extends TestCase
 
         $emptyIds = collect($empty->json('recipients'))->pluck('id');
         $this->assertTrue($emptyIds->contains($otherMao->id));
-        $this->assertFalse($emptyIds->contains($anotherFarmer->id));
+        $this->assertTrue($emptyIds->contains($anotherFarmer->id));
         $this->assertFalse($emptyIds->contains($inactiveMao->id));
         $this->assertSame('MAO Personnel', $empty->json('recipients.0.role'));
 

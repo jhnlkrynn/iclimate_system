@@ -36,7 +36,7 @@ class DataServiceUnavailableTest extends TestCase
     public function test_root_and_login_load_normally(): void
     {
         $this->get('/')->assertOk();
-        $this->get('/login')->assertOk();
+        $this->get('/login')->assertRedirect(url('/').'#login');
     }
 
     public function test_a_dropped_database_connection_shows_the_data_service_page(): void

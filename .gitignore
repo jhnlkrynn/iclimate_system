@@ -28,9 +28,13 @@ python_scripts/.venv/
 /public/storage
 /public/%SystemDrive%/
 /storage/*.key
+/storage/app/demo/
 /storage/pail
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
 /graphify-out/
+# Playwright browser test output
+/test-results
+/playwright-report

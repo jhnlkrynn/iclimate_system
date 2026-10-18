@@ -74,4 +74,15 @@ return [
         'calm' => 'No weather hazard expected; normal field work can continue.',
         'nodata' => 'No forecast saved yet for this barangay.',
     ],
+
+    // Flood layer: no MGB/NOAH/GloFAS dataset is shipped with this project.
+    // The layer therefore uses the MAO's stored flood_prone attribute when
+    // present, plus the saved Open-Meteo forecast; it never invents a hazard
+    // classification from a barangay name alone.
+    'flood_layer' => [
+        'moderate_daily_rain_mm' => 25.0,
+        'flood_prone_daily_rain_mm' => 50.0,
+        'flood_prone_total_rain_mm' => 200.0,
+        'note' => 'MAO flood-prone attributes plus saved Open-Meteo rainfall/runoff forecast; no official MGB/NOAH/GloFAS layer is installed.',
+    ],
 ];

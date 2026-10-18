@@ -219,15 +219,34 @@ class MessagingController extends Controller
     {
         $query = is_string($request->query('q')) ? trim($request->query('q')) : '';
 
-        $recipients = $this->recipients($request->user(), $query !== '' ? $query : null);
+        $recipients = $this->peopleQuery($request->user(), $query !== '' ? $query : null)
+            ->limit(30)
+            ->get(['id', 'name', 'role', 'barangay', 'last_active_at']);
 
         return response()->json([
-            'recipients' => $recipients->map(fn (User $user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->roleLabel(),
-                'online' => $user->isOnline(),
-            ])->values(),
+            'recipients' => $recipients->map(fn (User $user) => $this->serializePerson($user))->values(),
+        ]);
+    }
+
+    /** The paginated people directory used by the persistent left-panel list. */
+    public function people(Request $request): JsonResponse
+    {
+        $query = is_string($request->query('q')) ? trim($request->query('q')) : '';
+        $perPage = min(max((int) $request->integer('per_page', 30), 1), 30);
+
+        $paginator = $this->peopleQuery($request->user(), $query !== '' ? $query : null)
+            ->paginate($perPage, ['id', 'name', 'role', 'barangay', 'last_active_at'], 'page')
+            ->withQueryString();
+
+        return response()->json([
+            'people' => collect($paginator->items())->map(fn (User $user) => $this->serializePerson($user))->values(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
         ]);
     }
 
@@ -401,16 +420,24 @@ class MessagingController extends Controller
 
     private function recipients(User $user, ?string $search = null)
     {
+        return $this->peopleQuery($user, $search)
+            ->limit($search ? 20 : 50)
+            ->get(['id', 'name', 'role', 'last_active_at']);
+    }
+
+    private function peopleQuery(User $user, ?string $search = null)
+    {
         $query = User::query()
+            ->with('farmerProfile:id,user_id,barangay')
             ->where('id', '!=', $user->id)
             ->where('status', User::STATUS_ACTIVE)
-            ->when($user->role === User::ROLE_FARMER, fn ($query) => $query->where('role', User::ROLE_MAO))
-            ->when($user->role === User::ROLE_MAO, fn ($query) => $query->where('role', User::ROLE_FARMER))
+            ->whereIn('role', [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])
             ->when($search, function ($query) use ($search): void {
                 $term = '%'.mb_strtolower($search).'%';
                 $query->where(function ($query) use ($term): void {
                     $query->whereRaw('LOWER(name) LIKE ?', [$term])
-                        ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
+                        ->orWhereRaw('LOWER(COALESCE(barangay, \'\')) LIKE ?', [$term])
+                        ->orWhereHas('farmerProfile', fn ($profile) => $profile->whereRaw('LOWER(COALESCE(barangay, \'\')) LIKE ?', [$term]));
                 });
             });
 
@@ -426,18 +453,33 @@ class MessagingController extends Controller
 
         return $query
             ->orderByRaw($conversationOrder, [$user->id, $user->id])
-            ->orderByDesc('last_active_at')
-            ->orderBy('name')
-            ->limit($search ? 20 : 50)
-            ->get(['id', 'name', 'role', 'last_active_at']);
+            ->when($search, function ($query) use ($search): void {
+                $term = mb_strtolower($search);
+                $query->orderByRaw('CASE WHEN LOWER(name) LIKE ? THEN 0 WHEN LOWER(COALESCE(barangay, \'\')) LIKE ? THEN 1 ELSE 2 END', [$term.'%', $term.'%']);
+            })
+            ->orderBy('role')
+            ->orderBy('name');
+    }
+
+    private function serializePerson(User $user): array
+    {
+        $isFarmer = $user->role === User::ROLE_FARMER;
+
+        return [
+            'id' => (int) $user->id,
+            'name' => (string) $user->name,
+            'role' => $user->role,
+            'role_label' => $user->role === User::ROLE_IT_EXPERT ? 'IT Support' : $user->roleLabel(),
+            'barangay' => $isFarmer ? $user->registeredBarangay() : null,
+            'initial' => mb_strtoupper(mb_substr(trim((string) $user->name), 0, 1) ?: 'U'),
+            'online' => $user->isOnline(),
+        ];
     }
 
     private function canMessage(User $sender, User $recipient): bool
     {
-        if ($sender->role === User::ROLE_IT_EXPERT || $recipient->role === User::ROLE_IT_EXPERT) {
-            return true;
-        }
-
-        return $sender->role !== $recipient->role;
+        return $sender->id !== $recipient->id
+            && $recipient->status === User::STATUS_ACTIVE
+            && in_array($recipient->role, [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT], true);
     }
 }

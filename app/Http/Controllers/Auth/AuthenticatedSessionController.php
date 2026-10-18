@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\User;
-use App\Services\Security\CaptchaService;
 use App\Services\SystemAuditLogger;
 use App\Services\Weather\FarmerDashboardWeatherService;
 use Illuminate\Support\Carbon;
@@ -13,28 +11,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Illuminate\View\View;
 use Throwable;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(Request $request, CaptchaService $captcha, FarmerDashboardWeatherService $weather): View
-    {
-        $requiresCaptcha = $captcha->requiresCaptcha($request, 'login');
-
-        return view('auth.login', [
-            'captcha' => $captcha->challenge($request, 'login'),
-            'requiresCaptcha' => $requiresCaptcha,
-            // The login page itself never calls a weather provider: it shows whatever is already stored, and
-            // the page's own script asks login/weather (below) for the live reading after it has loaded.
-            'loginWeather' => $this->weatherSnapshot($weather, storedOnly: true),
-        ]);
-    }
-
     /**
      * Return the current login-page weather snapshot as JSON, for live polling.
      *
@@ -50,14 +30,14 @@ class AuthenticatedSessionController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function weatherSnapshot(FarmerDashboardWeatherService $weather, bool $storedOnly = false): array
+    private function weatherSnapshot(FarmerDashboardWeatherService $weather): array
     {
         $weatherTimezone = (string) config('services.weather.timezone', 'Asia/Manila');
 
         // Same shared Lian reading the Farmer/MAO dashboards and chatbot use,
         // so the login widget never shows a different temperature.
         try {
-            $shared = $storedOnly ? ($weather->stored() ?? []) : $weather->current();
+            $shared = $weather->current();
         } catch (Throwable) {
             $shared = [];
         }
@@ -132,36 +112,14 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
         $user->forceFill(['last_login_at' => now()])->saveQuietly();   // Manuscript – Naicel: Last Login on the user list
-        $intended = $request->session()->pull('url.intended');
-        $dashboard = route($user->dashboardRoute(), absolute: false);
+
+        // Every sign-in lands on the role's own dashboard (User::dashboardRoute()). A page a guest was sent to login
+        // from (the heat map, an advisory, a bookmark) is forgotten, not followed: it could be one another person
+        // opened on this browser, and it made a landing-page login end on the heat map.
+        $request->session()->forget('url.intended');
 
         // No "login successful" message: landing on the dashboard already says so.
-        return redirect()
-            ->to(is_string($intended) && $this->roleMayOpen($user, $intended) ? $intended : $dashboard);
-    }
-
-    /**
-     * Whether the page a guest was sent to login from is one this user's role is allowed to open.
-     *
-     * The remembered page can belong to another role (a different person used the browser before, or
-     * a bookmarked staff link): following it would land a correct sign-in on a 403 page.
-     */
-    private function roleMayOpen(User $user, string $url): bool
-    {
-        try {
-            $route = Route::getRoutes()->match(Request::create($url));
-        } catch (Throwable) {
-            return false;
-        }
-
-        foreach ($route->gatherMiddleware() as $middleware) {
-            if (is_string($middleware) && str_starts_with($middleware, 'role:')
-                && ! in_array($user->role, explode(',', substr($middleware, 5)), true)) {
-                return false;
-            }
-        }
-
-        return true;
+        return redirect()->route($user->dashboardRoute());
     }
 
     /**
@@ -178,6 +136,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/')->with('success', 'You have logged out successfully.');
+        // Back to the landing page with the sign-in card open, ready for the next person.
+        return redirect(url('/').'#login')->with('success', 'You have logged out successfully.');
     }
 }

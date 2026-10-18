@@ -746,6 +746,7 @@ return [
         'advisories' => 'Payo',
         'my_farm' => 'Aking Bukid',
         'messages' => 'Mensahe',
+        'logout' => 'Mag-log out',
     ],
 
     'home' => [

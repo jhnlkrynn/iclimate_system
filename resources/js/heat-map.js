@@ -24,10 +24,14 @@ export function initHeatMap() {
         console.error('iClimate could not read the heat map ratings.', error);
     }
     const own = canonicalName(canvas?.dataset.ownBarangay);
+    const apiStatus = root.querySelector('[data-heat-map-api-status]');
     const layers = new Map();
     // Manuscript – Naicel (2026-10-08): a range may also be a map layer (flood / drought / yield) listed in data.layers.
     const validRange = (key) => (key === '2weeks' || (data.layers || []).includes(key) ? key : 'week');
     let range = validRange(root.dataset.range);
+    let period = new URL(window.location.href).searchParams.get('range') === '2weeks' ? '2weeks' : 'week';
+    const initialLayer = new URL(window.location.href).searchParams.get('layer');
+    if (initialLayer && (data.layers || []).includes(initialLayer)) range = initialLayer;
     let selected = null;
     const detailCache = new Map();
     let detailController = null;
@@ -67,7 +71,7 @@ export function initHeatMap() {
         root.querySelectorAll('[data-heat-map-mine-range]').forEach((card) => { card.hidden = card.dataset.heatMapMineRange !== (range === '2weeks' ? '2weeks' : 'week'); });
         root.dataset.range = range;
         root.querySelectorAll('[data-heat-map-range]').forEach((button) => {
-            const active = button.dataset.heatMapRange === range;
+            const active = button.dataset.heatMapRange === period;
             button.classList.toggle('is-active', active);
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
@@ -79,9 +83,87 @@ export function initHeatMap() {
         layers.forEach((layer, name) => layer.setStyle(styleFor(name)));
         if (selected) layers.get(selected)?.bringToFront();
     };
+    let apiController = null;
+    let apiSequence = 0;
+    const updatedText = (iso) => {
+        const date = iso ? new Date(iso) : null;
+        return date && !Number.isNaN(date.getTime())
+            ? date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
+            : '';
+    };
+    // Expected yield for [This Week] / [2 Weeks]: every barangay by its t/ha, highest first (no estimate last), its
+    // class beside the number (they are often all Fair), your barangay against the season, and where it comes from.
+    const yieldClass = { good: 'Good', fair: 'Fair', low: 'Low' };
+    const tHa = (value) => `${Number(value).toFixed(2)} t/ha`;
+    const renderYieldPanel = (view, payload) => {
+        const rows = (Array.isArray(payload.barangays) ? payload.barangays.slice() : [])
+            .sort((a, b) => (b.yield?.t_ha ?? -1) - (a.yield?.t_ha ?? -1) || String(a.name).localeCompare(String(b.name)));
+        const title = view.querySelector('.hmx-title')?.textContent || 'Expected rice yield this season (t/ha)';
+        const counts = payload.summary?.levels || {};
+        const countLines = ['low', 'moderate', 'high', 'unavailable'].filter((level) => Number(counts[level]) > 0).map((level) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || '#9CA3AF')}"></span>${escapeHtml(String(counts[level]))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level)}</li>`).join('');
+        const season = rows.find((row) => row.yield?.season)?.yield.season;
+        const valueText = (row) => (row.yield?.t_ha != null ? `${tHa(row.yield.t_ha)} · ${yieldClass[row.yield.class] || row.label}` : (row.label || 'No estimate yet'));
+        const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || '#9CA3AF')}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(valueText(row))}</span></button></li>`).join('');
+        const anyEstimate = rows.some((row) => row.yield?.t_ha != null);
+        const updated = updatedText(payload.updated_at);
+        const mine = own ? rows.find((row) => canonicalName(row.name) === own) : null;
+        const change = mine?.yield?.vs_season;
+        const changeText = change != null ? `, ${change > 0 ? '+' : change < 0 ? '\u2212' : '\u00b1'}${Math.abs(change).toFixed(2)} vs season` : '';
+        const mineCard = mine ? `<button type="button" class="hmx-own" data-heat-map-pick="${escapeHtml(mine.name)}" data-heat-map-yield-mine><span class="hmx-own-label">${escapeHtml(data.yours || 'Your barangay')}</span><strong>${escapeHtml(mine.name)}</strong><span class="hmx-badge is-${escapeHtml(mine.level)}">${escapeHtml(mine.yield?.t_ha != null ? `${tHa(mine.yield.t_ha)}${changeText}` : (mine.label || 'No estimate yet'))}</span></button>` : '';
+        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${season ? `<p class="hmx-hint">${escapeHtml(season)}</p>` : ''}${anyEstimate ? '' : '<p class="hmx-text">No estimate yet</p>'}<div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul>${mineCard}<p class="hmx-hint">${rows.length} barangays</p></div><ul class="hmx-list">${list}</ul><p class="hmx-source" data-heat-map-yield-source>${escapeHtml(payload.source || 'Based on trained model')}${updated ? ` · updated ${escapeHtml(updated)}` : ''}</p>`;
+        views = [...root.querySelectorAll('[data-heat-map-view]')];
+    };
+    const renderApiPanel = (payload) => {
+        const view = root.querySelector(`[data-heat-map-view="${range}:summary"]`);
+        if (!view) return;
+        if (range === 'yield') return renderYieldPanel(view, payload);
+        const rows = Array.isArray(payload.barangays) ? payload.barangays.slice() : [];
+        const order = { flood_prone: 0, severe: 0, high: 0, moderate: 1, low: 2, unavailable: 3 };
+        rows.sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || String(a.name).localeCompare(String(b.name)));
+        const title = view.querySelector('.hmx-title')?.textContent || (range === 'flood' ? 'Flood-prone barangays' : 'Heat Map');
+        const counts = payload.summary?.levels || {};
+        const total = rows.length;
+        const available = rows.filter((row) => row.level !== 'unavailable').length;
+        const countLines = Object.entries(counts).filter(([, count]) => Number(count) > 0).map(([level, count]) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || (level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span>${escapeHtml(String(count))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level.replace('_', ' '))}</li>`).join('');
+        const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || (row.level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(row.label || row.level)}</span></button></li>`).join('');
+        const updated = payload.updated_at ? `<p class="hmx-source">Updated: ${escapeHtml(payload.updated_at)}</p>` : '';
+        const source = payload.source ? `<p class="hmx-source">${escapeHtml(payload.source)}</p>` : '';
+        const noData = available === 0 ? '<p class="hmx-text">Flood-prone barangays — No data yet</p>' : '';
+        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${noData}<div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul><p class="hmx-hint">${total} barangays</p></div><ul class="hmx-list">${list}</ul>${updated}${source}`;
+        views = [...root.querySelectorAll('[data-heat-map-view]')];
+    };
+    const fetchLayer = async (key, selectedPeriod = period) => {
+        if (!canvas?.dataset.layerApiUrl) return;
+        apiController?.abort();
+        apiController = new AbortController();
+        const sequence = ++apiSequence;
+        if (apiStatus) { apiStatus.hidden = false; apiStatus.textContent = 'Loading map data…'; }
+        try {
+            const url = new URL(canvas.dataset.layerApiUrl, window.location.origin);
+            url.searchParams.set('layer', key === 'week' || key === '2weeks' ? 'weather_risk' : key);
+            url.searchParams.set('period', selectedPeriod);
+            const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: apiController.signal });
+            if (!response.ok) throw new Error(`Map data request failed (${response.status})`);
+            const payload = await response.json();
+            if (sequence !== apiSequence) return; // a newer layer or period was chosen meanwhile
+            if (!Array.isArray(payload.barangays)) throw new Error('Incomplete map data response');
+            data.levels[key] = {};
+            data.details[key] = {};
+            data.labelsByRange[key] = data.labelsByRange[key] || {};
+            payload.barangays.forEach((entry) => { const name = canonicalName(entry.name); if (name) { data.levels[key][name] = entry.level === 'unavailable' ? 'nodata' : entry.level; data.labelsByRange[key][entry.level] = entry.label || entry.level; data.details[key][name] = { factor: (entry.drivers || []).join(', '), impact: entry.details?.reason || '' }; } });
+            renderApiPanel(payload);
+            if (apiStatus) { apiStatus.hidden = true; apiStatus.textContent = ''; }
+            show();
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error('iClimate heat-map API request failed.', error);
+            if (apiStatus) { apiStatus.hidden = false; apiStatus.textContent = 'Map data could not be loaded. Please try again.'; }
+        }
+    };
+    // The Expected yield detail follows [This Week] / [2 Weeks] (?period=); the other ranges ignore it.
     const detailUrl = (key, name) => (canvas?.dataset.detailUrlTemplate || '')
         .replace('__RANGE__', encodeURIComponent(key))
-        .replace('__BARANGAY__', encodeURIComponent(name));
+        .replace('__BARANGAY__', encodeURIComponent(name)) + (key === 'yield' ? `?period=${encodeURIComponent(period)}` : '');
     const detailLoading = () => {
         if (!detailContainer) return;
         detailContainer.innerHTML = '<section class="hmx-view"><p class="hmx-text" role="status">Loading details…</p></section>';
@@ -90,7 +172,7 @@ export function initHeatMap() {
     const loadDetail = async (name) => {
         if (!detailContainer || !name) return;
         const version = data.versions?.[range] || '';
-        const cacheKey = `${range}:${name}:${version}`;
+        const cacheKey = `${range}:${name}:${version}:${range === 'yield' ? period : ''}`;
         const cached = detailCache.get(cacheKey);
         if (cached) {
             detailContainer.innerHTML = cached;
@@ -129,6 +211,7 @@ export function initHeatMap() {
         detailController?.abort();
         detailSequence += 1;
         show();
+        void fetchLayer(range, period);
         if (selected) void loadDetail(selected);
         // On a phone the panel sits under the map: bring the answer into view after a map click.
         if (selected && !fromPanel && window.matchMedia('(max-width: 991.98px)').matches) {
@@ -136,27 +219,40 @@ export function initHeatMap() {
         }
     };
 
-    const setRange = (key) => {
-        range = validRange(key);
+    const setPeriod = (key) => {
+        period = key === '2weeks' ? '2weeks' : 'week';
+        if (!(data.layers || []).includes(range)) range = period;
         if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
         detailController?.abort();
         detailSequence += 1;
         const url = new URL(window.location.href);
-        if (range === 'week') url.searchParams.delete('range'); else url.searchParams.set('range', range);
+        url.searchParams.set('range', period);
+        if ((data.layers || []).includes(range)) url.searchParams.set('layer', range); else url.searchParams.delete('layer');
         window.history.replaceState(null, '', url);
         show();
+        void fetchLayer(range, period);
         if (selected) void loadDetail(selected);
+    };
+    const setLayer = (key) => {
+        range = (data.layers || []).includes(key) ? key : period;
+        selected = null;
+        const url = new URL(window.location.href);
+        url.searchParams.set('range', period);
+        if ((data.layers || []).includes(range)) url.searchParams.set('layer', range); else url.searchParams.delete('layer');
+        window.history.replaceState(null, '', url);
+        show();
+        void fetchLayer(range, period);
     };
     // Manuscript – Naicel: choosing a map layer shows it; the empty choice goes back to this week's risk.
     root.addEventListener('change', (event) => {
-        if (event.target.matches('[data-heat-map-layer]')) setRange(event.target.value || 'week');
+        if (event.target.matches('[data-heat-map-layer]')) setLayer(event.target.value || '');
     });
 
     root.addEventListener('click', (event) => {
         const rangeButton = event.target.closest('[data-heat-map-range]');
         if (rangeButton) {
             event.preventDefault();
-            setRange(rangeButton.dataset.heatMapRange);
+            setPeriod(rangeButton.dataset.heatMapRange);
             return;
         }
         const pickButton = event.target.closest('[data-heat-map-pick]');
@@ -229,6 +325,7 @@ export function initHeatMap() {
     if (root.hasAttribute('data-heat-map-updating')) update([5000, 10000, 15000]);
 
     if (!canvas || !window.L) return;
+    void fetchLayer(range, period);
     const L = window.L;
     // Panel revision 2.1 / 4.3: pinch-zoom and tap work on phones (touchZoom, tap tolerance); the page still scrolls.
     const map = L.map(canvas, { zoomControl: true, scrollWheelZoom: true, touchZoom: true, tapTolerance: 20, zoomSnap: 0.25, minZoom: 11, maxZoom: 18 });

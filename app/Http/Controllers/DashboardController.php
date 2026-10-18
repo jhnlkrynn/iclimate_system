@@ -227,7 +227,13 @@ class DashboardController extends Controller
         // Do not register provider or risk-map work from an ordinary navigation request.
         $ranges = $panel->ranges($locale);
         // Manuscript – Naicel (2026-10-08): Flood-prone / Drought-prone / Expected yield layers, shown like a range.
-        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale), [], false);
+        // The Expected yield layer follows This Week / 2 Weeks (?period=, else ?range=2weeks).
+        $yieldPeriod = in_array('2weeks', [$request->query('period'), $request->query('range')], true) ? '2weeks' : 'week';
+        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale, '2weeks', $yieldPeriod), [], false);
+        if (isset($layers['flood'])) {
+            $floodApi = rescue(fn (): array => app(\App\Services\Risk\HeatMapLayerService::class)->get('flood', 'week', $user), [], false);
+            $layers['flood']['api_summary'] = $floodApi['summary'] ?? [];
+        }
         $requested = (string) $request->query('range');
 
         return view('heat-map.index', [
@@ -251,7 +257,8 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $locale = $user?->role === User::ROLE_FARMER ? FarmerLanguage::resolve($request) : 'en';
-        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale), [], false);
+        $yieldPeriod = $request->query('period') === '2weeks' ? '2weeks' : 'week';
+        $layers = rescue(fn (): array => app(\App\Services\Risk\BarangayMapLayers::class)->layers($locale, '2weeks', $yieldPeriod), [], false);
         $ranges = $panel->ranges($locale) + $layers;
         $canonical = LianBarangays::canonicalName($barangay) ?? $barangay;
         $selected = $ranges[$range]['barangays'][$canonical] ?? null;

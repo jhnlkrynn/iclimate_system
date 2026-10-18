@@ -32,16 +32,17 @@ class BarangayMapLayers
     ) {}
 
     /** @return array<string, array<string, mixed>> */
-    public function layers(string $locale): array
+    /** @param  string  $yieldPeriod  week | 2weeks: which saved Expected yield estimates the yield layer shows */
+    public function layers(string $locale, string $period = '2weeks', string $yieldPeriod = 'week'): array
     {
         $forecasts = rescue(fn (): array => $this->weather->savedForecasts(), [], false);
-        $yields = rescue(fn (): array => $this->yieldForecast->all(), [], false);
+        $yields = rescue(fn (): array => $this->yieldForecast->all($yieldPeriod === '2weeks' ? '2weeks' : 'week'), [], false);
 
         $layers = [];
         foreach (['flood', 'drought'] as $key) {
             $assessments = [];
             foreach (LianBarangays::all() as $name) {
-                $assessments[$name] = $this->assess($key, $forecasts[$name] ?? []);
+                $assessments[$name] = $this->assess($key, $forecasts[$name] ?? [], $period === '2weeks' ? 14 : 7);
             }
             $updated = collect($forecasts)->map(fn (array $record): ?CarbonImmutable => rescue(
                 fn () => ! empty($record['fetched_at']) ? CarbonImmutable::parse($record['fetched_at']) : null,
@@ -141,10 +142,10 @@ class BarangayMapLayers
     }
 
     /** @return array{level: string, metrics: array<string, mixed>} */
-    private function assess(string $key, array $record): array
+    private function assess(string $key, array $record, int $forecastDays = self::FORECAST_DAYS): array
     {
         $today = CarbonImmutable::now('Asia/Manila')->startOfDay();
-        $last = $today->addDays(self::FORECAST_DAYS - 1);
+        $last = $today->addDays($forecastDays - 1);
         $days = collect((array) ($record['daily'] ?? []))->filter(fn ($day): bool => is_array($day)
             && is_string($day['date'] ?? null)
             && $day['date'] >= $today->toDateString()
@@ -185,11 +186,14 @@ class BarangayMapLayers
             return ['level' => 'nodata', 'metrics' => $metrics];
         }
 
-        $heavyDays = $rain->filter(fn (float $value): bool => $value >= 25.0)->count();
+        $heavyThreshold = (float) config('weather_risk.flood_layer.moderate_daily_rain_mm', 25.0);
+        $floodThreshold = (float) config('weather_risk.flood_layer.flood_prone_daily_rain_mm', 50.0);
+        $floodTotal = (float) config('weather_risk.flood_layer.flood_prone_total_rain_mm', 200.0);
+        $heavyDays = $rain->filter(fn (float $value): bool => $value >= $heavyThreshold)->count();
         $level = $key === 'flood'
             ? match (true) {
-                ($metrics['wettest_day_mm'] ?? 0) >= 50.0 || ($metrics['rain_total_mm'] ?? 0) >= 200.0 || $heavyDays >= 3 => 'high',
-                ($metrics['wettest_day_mm'] ?? 0) >= 25.0 || ($metrics['runoff_total_mm'] ?? 0) > 0 || $heavyDays > 0 => 'moderate',
+                ($metrics['wettest_day_mm'] ?? 0) >= $floodThreshold || ($metrics['rain_total_mm'] ?? 0) >= $floodTotal || $heavyDays >= 3 => 'high',
+                ($metrics['wettest_day_mm'] ?? 0) >= $heavyThreshold || ($metrics['runoff_total_mm'] ?? 0) > 0 || $heavyDays > 0 => 'moderate',
                 default => 'low',
             }
             : match (true) {

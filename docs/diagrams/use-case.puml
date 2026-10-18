@@ -1,0 +1,139 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Guest/Visitor" as Guest
+actor "Rice Farmer" as Farmer
+actor "MAO Personnel" as MAO
+actor "IT Personnel / Administrator" as IT
+actor "Weather API" as Weather
+actor "PAGASA advisory source" as PAGASA
+actor "Email service" as Email
+actor "ML module" as ML
+
+rectangle "iClimate" {
+  usecase "Register Account" as U1
+  usecase "Sign In" as U2
+  usecase "Reset Password" as U3
+  usecase "View Dashboard" as U4
+  usecase "View Weather Forecast" as U5
+  usecase "View Heat Map" as U6
+  usecase "Manage Farms" as U7
+  usecase "Draw Farm Boundary" as U8
+  usecase "Manage Planting Schedules" as U9
+  usecase "Submit Forecast Survey" as U10
+  usecase "Submit Yield Survey" as U11
+  usecase "Request Yield Prediction" as U12
+  usecase "View My Reports" as U13
+  usecase "View Notifications" as U14
+  usecase "Submit Typhoon Safety Check-In" as U15
+  usecase "Use Climora AI" as U16
+  usecase "View Community Feed" as U17
+  usecase "Post/Comment/React" as U18
+  usecase "Send/Receive Messages" as U19
+  usecase "View Planting Advisories" as U20
+  usecase "Give Advisory Feedback" as U21
+
+  usecase "View MAO Dashboard" as M1
+  usecase "Manage Climate Records" as M2
+  usecase "Manage Rice Production" as M3
+  usecase "Import Records" as M4
+  usecase "Validate Records" as M5
+  usecase "Manage Barangays" as M6
+  usecase "Manage Farmer Approvals" as M7
+  usecase "Manage MAO Personnel" as M8
+  usecase "Use MAO Planner" as M9
+  usecase "Manage Planting Advisories" as M10
+  usecase "Create Scheduled Alert" as M11
+  usecase "View Weather Analysis" as M12
+  usecase "View Impact Analysis" as M13
+  usecase "Run Yield Forecast" as M14
+  usecase "Generate/Export Reports" as M15
+  usecase "Manage Announcements" as M16
+  usecase "Manage Notifications" as M17
+  usecase "View Activity Log" as M18
+
+  usecase "View IT Dashboard" as A1
+  usecase "Manage Users" as A2
+  usecase "Manage Settings" as A3
+  usecase "Manage Roles & Permissions" as A4
+  usecase "View System Health" as A5
+  usecase "Manage Backups" as A6
+  usecase "Manage Maintenance Records" as A7
+  usecase "Manage ML Models" as A8
+  usecase "View Model Evaluation" as A9
+  usecase "View Model Feedback" as A10
+  usecase "View System Logs" as A11
+  usecase "Manage AI Knowledge" as A12
+}
+
+Guest --> U1
+Guest --> U2
+Guest --> U3
+Farmer --> U4
+Farmer --> U5
+Farmer --> U6
+Farmer --> U7
+Farmer --> U8
+Farmer --> U9
+Farmer --> U10
+Farmer --> U11
+Farmer --> U12
+Farmer --> U13
+Farmer --> U14
+Farmer --> U15
+Farmer --> U16
+Farmer --> U17
+Farmer --> U18
+Farmer --> U19
+Farmer --> U20
+Farmer --> U21
+MAO --> M1
+MAO --> M2
+MAO --> M3
+MAO --> M4
+MAO --> M5
+MAO --> M6
+MAO --> M7
+MAO --> M8
+MAO --> M9
+MAO --> M10
+MAO --> M11
+MAO --> M12
+MAO --> M13
+MAO --> M14
+MAO --> M15
+MAO --> M16
+MAO --> M17
+MAO --> M18
+IT --> A1
+IT --> A2
+IT --> A3
+IT --> A4
+IT --> A5
+IT --> A6
+IT --> A7
+IT --> A8
+IT --> A9
+IT --> A10
+IT --> A11
+IT --> A12
+
+U3 ..> U2 : <<extend>>
+U4 ..> U2 : <<include>>
+U5 ..> U4 : <<include>>
+U6 ..> U4 : <<include>>
+U12 ..> U2 : <<include>>
+M10 ..> M5 : <<include>>
+M11 ..> M17 : <<include>>
+M14 ..> M5 : <<include>>
+A8 ..> A9 : <<include>>
+U5 <-- Weather
+U20 <-- PAGASA
+M10 <-- PAGASA
+U3 <-- Email
+U12 <-- ML
+M13 <-- ML
+M14 <-- ML
+A8 <-- ML
+@enduml

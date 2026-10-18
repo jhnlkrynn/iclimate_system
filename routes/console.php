@@ -157,6 +157,11 @@ Schedule::command('iclimate:refresh-barangay-risk')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog('iclimate:refresh-barangay-risk'));
 
+Schedule::command('iclimate:refresh-flood-risk')
+    ->cron('6,36 * * * *')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog('iclimate:refresh-flood-risk'));
+
 // Closes prediction/report requests nothing finished in time and drops repeated refresh jobs, so the queue
 // stays short even after the worker was stopped for a while.
 Schedule::command('iclimate:clean-stale-queue')
