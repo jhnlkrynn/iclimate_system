@@ -271,6 +271,28 @@ html body .ic-sidebar .ic-sb-foot {
     border-top: 1px solid var(--sb-divider);
 }
 
+/* Farmers' Log out (layouts/partials/logout-form): a menu row in the account menu's red, pinned in the footer above
+   the credit line. !important only where gov-theme.css colours every drawer link with it. */
+html body .ic-sidebar .ic-sb-logout-form { margin: 0 0 8px; }
+html body .ic-sidebar .sidebar-link.ic-sb-logout {
+    width: 100%;
+    flex: none;
+    max-height: none;
+    color: #b42318 !important;
+    background: transparent;
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+}
+html body .ic-sidebar .sidebar-link.ic-sb-logout svg { color: #b42318 !important; }
+html body .ic-sidebar .sidebar-link.ic-sb-logout:is(:hover, :focus-visible) { background: #fef3f2 !important; color: #912018 !important; }
+html body .ic-sidebar .sidebar-link.ic-sb-logout:is(:hover, :focus-visible) svg { color: #912018 !important; }
+html body .ic-sidebar .sidebar-link.ic-sb-logout:focus-visible { outline: 2px solid #b42318; outline-offset: 2px; }
+html[data-theme="dark"] body .ic-sidebar .sidebar-link.ic-sb-logout,
+html[data-theme="dark"] body .ic-sidebar .sidebar-link.ic-sb-logout svg { color: #f97066 !important; }
+html[data-theme="dark"] body .ic-sidebar .sidebar-link.ic-sb-logout:is(:hover, :focus-visible) { background: rgba(249, 112, 102, .14) !important; }
+
 html body .ic-sidebar .ic-sb-appearance-label {
     display: block;
     margin: 0 4px 6px;

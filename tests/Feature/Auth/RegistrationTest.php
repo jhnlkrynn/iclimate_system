@@ -18,7 +18,8 @@ class RegistrationTest extends TestCase
     {
         $this->seed(FarmerOrganizationSeeder::class);
 
-        $response = $this->get('/register');
+        $this->get('/register')->assertRedirect(url('/').'#register');
+        $response = $this->get('/');
 
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'register']), false);
@@ -129,6 +130,7 @@ class RegistrationTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $response = $this->from('/register')->withSession($this->captchaSession('register', '7'))->post('/register', [
+            '_auth_form' => 'register',
             'name' => 'Juan Dela Cruz',
             'first_name' => 'Juan',
             'last_name' => 'Dela Cruz',
@@ -195,7 +197,9 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('barangay');
         $this->assertDatabaseMissing('users', ['email' => 'pob@example.com']);
 
-        $offered = $this->get('/register')->viewData('manualBarangays');
+        $select = \Illuminate\Support\Str::betweenFirst($this->get('/')->getContent(), '<select id="barangay"', '</select>');
+        preg_match_all('/<option value="([^"]+)"/', $select, $options);
+        $offered = $options[1];
         $this->assertNotEmpty($offered);
         $this->assertSame([], array_values(array_diff($offered, \App\Support\LianBarangays::all())), 'Every registration choice must be an official Lian barangay name.');
     }
@@ -345,11 +349,12 @@ class RegistrationTest extends TestCase
         [$first, $second, $notChosen] = FarmerOrganization::query()->orderBy('id')->take(3)->get()->all();
 
         $this->from('/register')->withSession($this->captchaSession('register', '7'))
-            ->post('/register', $this->validSignUp(['captcha_answer' => '8', 'other_organizations' => [$first->id, $second->id]]))
+            ->post('/register', $this->validSignUp(['_auth_form' => 'register', 'captcha_answer' => '8', 'other_organizations' => [$first->id, $second->id]]))
             ->assertRedirect('/register')
             ->assertSessionHasErrors('captcha_answer');
 
-        $page = $this->get('/register')->assertOk();
+        $this->get('/register')->assertRedirect(url('/').'#register');
+        $page = $this->get('/')->assertOk()->assertSee('data-auth-mode="register"', false);
         $page->assertSee('name="other_organizations[]"', false);
         $page->assertSee('<option value="'.$first->id.'" data-name="'.e($first->name).'" data-barangay="'.e($first->barangay).'" selected', false);
         $page->assertSee('<option value="'.$second->id.'" data-name="'.e($second->name).'" data-barangay="'.e($second->barangay).'" selected', false);

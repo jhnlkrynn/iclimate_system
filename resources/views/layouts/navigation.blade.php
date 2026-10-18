@@ -29,15 +29,6 @@
     $navMaoCanSwitch = $isMaoNav && \App\Support\MaoScope::canSwitch($user);
 @endphp
 
-{{-- Panel revision 4.5: the government strip above the top bar (Republic of the Philippines · Municipality of Lian). --}}
-<div class="gov-strip" role="note">
-    <span>Republic of the Philippines</span>
-    <span class="gov-strip-sep" aria-hidden="true">·</span>
-    <span>Province of Batangas</span>
-    <span class="gov-strip-sep" aria-hidden="true">·</span>
-    <strong>Municipality of Lian</strong>
-</div>
-
 {{-- Top bar of every signed-in page (styles: resources/css/app-shell.css). Left: the menu button, which opens the
      navigation drawer (layouts/sidebar.blade.php), and the logo. Right: the farmer's farm, notifications, the
      light/dark switch and the account menu (profile photo or initials). --}}
@@ -46,10 +37,10 @@
         <button class="ic-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open menu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
-        {{-- Panel revision 4.5: the office's name and the official seal of the Municipality of Lian (public/images/lian-seal.jpg). --}}
+        {{-- Panel revision 4.5: the office's name and logo (public/images/mao-logo.png, the MAO rice logo). --}}
         <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="iClimate – Municipal Agriculture Office of Lian, dashboard">
-            <img class="gov-seal" src="{{ asset('images/lian-seal.jpg') }}" alt="Seal of the Municipality of Lian" width="44" height="44">
-            {{-- The iClimate logo beside the seal, as on the landing page (resources/css/pages/account-light.css). --}}
+            <img class="gov-mao-logo" src="{{ asset('images/mao-logo.png') }}" alt="Municipal Agriculture Office logo" width="46" height="46">
+            {{-- The iClimate logo beside the MAO logo, as on the landing page (resources/css/pages/account-light.css). --}}
             <img class="gov-app-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="58" height="47">
             <span class="gov-brand-text">
                 <span class="gov-brand-office">Municipal Agriculture Office</span>
@@ -144,14 +135,11 @@
                             Security
                         </a>
                     @endif
-                    <div class="dropdown-divider"></div>
-                    <form method="POST" action="{{ route('logout') }}" data-logout-confirm="Are you sure you want to log out?" data-loading="true">
-                        @csrf
-                        <button class="dropdown-item ic-account-logout" type="submit" data-loading-text="Logging out...">
-                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 2.5H4a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 4 15.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5.5l3.5 3.5-3.5 3.5M14.3 9H6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            Log out
-                        </button>
-                    </form>
+                    {{-- Farmers log out from the bottom of the menu drawer (layouts/sidebar.blade.php). --}}
+                    @unless ($isFarmerNav)
+                        <div class="dropdown-divider"></div>
+                        @include('layouts.partials.logout-form', ['variant' => 'menu', 'label' => 'Log out'])
+                    @endunless
                 </div>
             </div>
     </div>

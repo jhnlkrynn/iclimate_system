@@ -82,7 +82,9 @@ class Phase8SettingsTest extends TestCase
         $this->actingAs($mao)->get(route('mao.dashboard'))->assertStatus(503)->assertSee('Updating the forecast model.');
         $this->actingAs($it)->get(route('admin.dashboard'))->assertOk();
         auth()->logout();
-        $this->get(route('login'))->assertOk();
+        $this->get('/')->assertOk()->assertSee('data-login-form', false);   // the sign-in card stays open during maintenance
+        $this->post('/login', ['email' => $it->email, 'password' => 'password'])->assertRedirect(route('admin.dashboard'));
+        $this->assertAuthenticatedAs($it);
     }
 
     public function test_security_settings_change_the_password_rule_session_and_lockout(): void

@@ -42,6 +42,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ReadPreparedPredictionsOnly::class,
         ]);
 
+        // A signed-in user who opens a guest-only page (register, the login form post, forgot password) goes to their
+        // own role dashboard, as after logging in (AuthenticatedSessionController::store()).
+        $middleware->redirectUsersTo(fn (\Illuminate\Http\Request $request) => route($request->user()->dashboardRoute()));
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'farmer.language' => SetFarmerLanguage::class,

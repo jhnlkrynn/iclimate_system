@@ -165,10 +165,6 @@
         return $html;
     };
 
-    // The light/dark switch is in the top bar now (layouts/navigation.blade.php); the drawer keeps the credit line.
-    $renderSidebarFoot = function (): string {
-        return '<div class="ic-sb-foot"><div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div></div>';
-    };
 @endphp
 
 {{-- The navigation of the application shell (layouts/app.blade.php) for Farmer, MAO and IT: a drawer opened from the
@@ -185,5 +181,12 @@
     <nav class="ic-sb-nav sidebar-nav-scroll overflow-auto" aria-label="Main menu">
         {!! $renderSidebarNav('dr') !!}
     </nav>
-    {!! $renderSidebarFoot() !!}
+    {{-- Pinned under the menu, which scrolls on its own. Farmers log out here (MAO and IT from the account menu in
+         the top bar); the light/dark switch is in the top bar now, and the credit line stays. --}}
+    <div class="ic-sb-foot">
+        @if ($isFarmer)
+            @include('layouts.partials.logout-form', ['variant' => 'sidebar', 'label' => __('farmer.nav.logout', [], $farmerLocale)])
+        @endif
+        <div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div>
+    </div>
 </div>

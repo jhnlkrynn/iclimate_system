@@ -128,8 +128,10 @@ class User extends Authenticatable
     /** "Kapito, Malaruhatan, Bungahan, San Diego", or "All barangays of Lian" for the head. */
     public function coverageLabel(): string
     {
-        if ($this->isMaoHead()) {
-            return 'All barangays of Lian (municipal-wide)';
+        // Municipal MAO/IT views are intentionally unassigned: an empty
+        // assignment list means municipality-wide coverage, not no coverage.
+        if ($this->isMaoHead() || ($this->isMao() && $this->coveredBarangays() === []) || $this->role === self::ROLE_IT_EXPERT) {
+            return 'All barangays (Lian)';
         }
         $labels = array_map(fn (array $a): string => $a['sitio'] ? $a['sitio'].' ('.$a['barangay'].')' : $a['barangay'], $this->maoAssignments());
 
@@ -177,6 +179,9 @@ class User extends Authenticatable
 
     public static function forgetMaoPersonnel(): void
     {
+        // This process's copies go too: after a cache flush the version starts again at 1, so an old copy could
+        // otherwise be read back under a new key (an assigned MAO user then saw all of Lian).
+        self::$maoAssignmentsMemo = [];
         \Illuminate\Support\Facades\Cache::forever('mao-personnel-version', self::maoPersonnelVersion() + 1);
     }
 

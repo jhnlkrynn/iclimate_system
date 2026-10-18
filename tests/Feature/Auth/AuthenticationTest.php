@@ -14,32 +14,40 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    public function test_the_login_address_opens_the_sign_in_card_on_the_landing_page(): void
     {
-        $response = $this->get('/login');
+        $this->get('/login')->assertRedirect(url('/').'#login');
 
-        $response->assertStatus(200);
-        $response->assertDontSee(route('captcha.image', ['context' => 'login']), false);
+        $this->get('/')->assertOk()
+            ->assertSee('data-login-form', false)
+            ->assertDontSee(route('captcha.image', ['context' => 'login']), false);
+    }
+
+    public function test_a_message_sent_to_the_login_address_reaches_the_landing_card(): void
+    {
+        // e.g. EnsureAccountIsActive: redirect()->route('login')->withErrors(...), then /login sends it on to /#login.
+        $this->withSession(['errors' => (new \Illuminate\Support\ViewErrorBag)->put('default', new \Illuminate\Support\MessageBag(['email' => 'This account is inactive.']))])
+            ->get('/login')->assertRedirect(url('/').'#login');
+
+        $this->get('/')->assertOk()->assertSee('id="login-email-error"', false)->assertSee('This account is inactive.');
     }
 
     public function test_login_screen_shows_captcha_after_three_failed_attempts(): void
     {
         $response = $this->withSession([
             CaptchaService::attemptsSessionKey('login') => 3,
-        ])->get('/login');
+        ])->get('/');
 
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'login']), false);
     }
 
-    public function test_authenticated_users_can_still_open_login_screen_from_landing_page(): void
+    public function test_signed_in_users_who_open_the_login_address_reach_the_landing_card(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/login');
-
-        $response->assertStatus(200);
-        $response->assertViewIs('auth.login');
+        $this->actingAs($user)->get('/login')->assertRedirect(url('/').'#login');
+        $this->actingAs($user)->get('/')->assertOk()->assertSee('data-go-dashboard', false)->assertSee('data-landing-logout', false);
     }
 
     public function test_login_captcha_image_can_be_rendered(): void
@@ -144,7 +152,7 @@ class AuthenticationTest extends TestCase
             ]);
         }
 
-        $response = $this->get('/login');
+        $response = $this->get('/');
         $response->assertSee(route('captcha.image', ['context' => 'login']), false);
 
         $failedLoginResponse = $this->post('/login', [
@@ -176,7 +184,7 @@ class AuthenticationTest extends TestCase
         $this->assertAuthenticated();
         Auth::logout();
 
-        $response = $this->get('/login');
+        $response = $this->get('/');
         $response->assertDontSee(route('captcha.image', ['context' => 'login']), false);
     }
 
@@ -242,7 +250,7 @@ class AuthenticationTest extends TestCase
             $response = $this->from('/login')->post('/login', ['email' => $email, 'password' => 'WrongPassword']);
 
             $this->assertGuest();
-            $this->followRedirects($response)->assertSee('Unable to sign in. Please check your email and password.');
+            $this->followRedirects($response)->assertSee(trans('auth.failed'));
         }
     }
 
@@ -274,14 +282,16 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('mao.dashboard', absolute: false));
     }
 
-    public function test_login_returns_to_a_remembered_page_the_role_can_open(): void
+    public function test_login_goes_to_the_dashboard_even_when_a_page_the_role_can_open_was_remembered(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->get(route('profile.edit'))->assertRedirect(route('login'));
 
+        // Every sign-in lands on the role's dashboard; the remembered page is forgotten, not followed.
         $this->post('/login', ['email' => $mao->email, 'password' => 'password'])
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('mao.dashboard'))
+            ->assertSessionMissing('url.intended');
     }
 
     public function test_farmers_can_not_open_the_staff_dashboards(): void
@@ -315,8 +325,11 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertGuest();
+        // Back on the landing card: one message that does not say whether the email or the password was wrong.
         $this->followRedirects($response)
-            ->assertSee('Unable to sign in. Please check your email and password.')
+            ->assertSee(trans('auth.failed'))
+            ->assertSee('id="login-email-error"', false)
+            ->assertDontSee('id="login-password-error"', false)
             ->assertSee('value="'.$user->email.'"', false);
     }
 
@@ -334,17 +347,19 @@ class AuthenticationTest extends TestCase
             ->assertSee('This account is inactive. Please contact the administrator.');
     }
 
-    public function test_remember_me_sets_the_remember_cookie_only_when_checked(): void
+    public function test_login_never_sets_a_remember_cookie_even_when_remember_is_sent(): void
     {
         $user = User::factory()->create();
         $recaller = Auth::guard('web')->getRecallerName();
 
         $this->post('/login', ['email' => $user->email, 'password' => 'password', 'remember' => 'on'])
-            ->assertCookie($recaller);
-        Auth::logout();
-
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertCookieMissing($recaller);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_the_session_ends_when_the_browser_closes(): void
+    {
+        $this->assertTrue((bool) config('session.expire_on_close'));
     }
 
     public function test_users_can_logout(): void
@@ -354,7 +369,39 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $response->assertRedirect(url('/').'#login');
+    }
+
+    public function test_a_guest_sees_the_sign_in_form_on_the_landing_page(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('data-login-form', false)
+            ->assertSee('Log in to iClimate')
+            ->assertDontSee('data-go-dashboard', false);
+    }
+
+    public function test_after_logout_the_landing_page_shows_the_sign_in_form(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect();
+        $this->get('/')->assertSee('data-go-dashboard', false)->assertSee('data-landing-logout', false);
+
+        $this->post('/logout')->assertRedirect(url('/').'#login');
+
+        $this->assertGuest();
+        $this->get('/')->assertOk()
+            ->assertSee('data-login-form', false)
+            ->assertDontSee('Welcome back')
+            ->assertDontSee('data-go-dashboard', false);
+    }
+
+    public function test_a_signed_in_user_on_the_landing_page_can_sign_out(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/')->assertOk()
+            ->assertSee('Go to dashboard')
+            ->assertSee('<form method="POST" action="'.route('logout').'" class="mt-3 text-center" data-landing-logout>', false)
+            ->assertSee('Sign out');
     }
 
     /**

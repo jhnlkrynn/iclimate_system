@@ -85,7 +85,9 @@ class LoginRequest extends FormRequest
         }
 
         try {
-            $authenticated = Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
+            // Never "remember me": the sign-in lasts only while the browser is open, so the next visit starts at the
+            // landing sign-in card. A stale "remember" field from an old form is ignored.
+            $authenticated = Auth::attempt($this->only('email', 'password'), false);
         } catch (RuntimeException) {
             $authenticated = false;
         }

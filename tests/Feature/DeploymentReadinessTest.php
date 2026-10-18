@@ -234,7 +234,7 @@ class DeploymentReadinessTest extends TestCase
 
     public function test_pages_send_the_security_headers(): void
     {
-        $response = $this->get('/login')->assertOk();
+        $response = $this->get('/')->assertOk();
 
         $policy = (string) $response->headers->get('Content-Security-Policy');
         foreach (["frame-ancestors 'self'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"] as $rule) {

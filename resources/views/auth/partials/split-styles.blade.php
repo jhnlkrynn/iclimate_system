@@ -4,9 +4,9 @@
     .login-visual { view-transition-name: auth-visual; }
     .auth-toggle { view-transition-name: auth-toggle; }
 
-    /* The blue strip and the header sit on top; the split fills the rest of the screen. */
+    /* The header sits on top; the split fills the rest of the screen. */
     html body:is(.login-page, .register-page) { display: flex; flex-direction: column; flex-wrap: nowrap; }
-    body:is(.login-page, .register-page) > :is(.gov-strip, .auth-masthead) { flex: 0 0 auto; }
+    body:is(.login-page, .register-page) > .auth-masthead { flex: 0 0 auto; }
     body:is(.login-page, .register-page) .auth-masthead ~ .login-split { flex: 1 1 auto; min-height: 0; }
 
     .login-split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }

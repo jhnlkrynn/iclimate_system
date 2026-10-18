@@ -16,7 +16,7 @@
         $riskLevels = ['low', 'moderate', 'high', 'severe'];   // panel revision 2.1
         $labels = collect([...$riskLevels, 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
         $hasNoData = collect($ranges)->except($layerKeys ?? [])->contains(fn (array $r) => $r['counts']['nodata'] > 0);   // Manuscript – Naicel: weekly ranges only
-        $mapData = ['levels' => $levels, 'colors' => $colors, 'labels' => $labels, 'yours' => $t('your_barangay')];
+        $mapData = ['levels' => $levels, 'colors' => $colors + ['flood_prone' => '#C62828', 'unavailable' => '#9CA3AF'], 'labels' => $labels, 'yours' => $t('your_barangay')];
         $mapData['versions'] = collect($ranges)->mapWithKeys(fn (array $r, string $key) => [$key => $r['updated_at'] ?? null])->all();
         // Panel revision 2.1: what the map tooltip / tap shows besides the name and level.
         $mapData['details'] = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => ['factor' => $b['factor'] ?? null, 'impact' => $b['impact'] ?? null])->all())->all();
@@ -58,9 +58,11 @@
         <div class="hmx-map">
             <div id="heatMapCanvas" class="hmx-canvas" role="application" aria-label="{{ $t('map_label') }}"
                 data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"
+                data-layer-api-url="{{ url('/api/heat-map') }}"
                 data-detail-url-template="{{ route('heat-map.detail', ['range' => '__RANGE__', 'barangay' => '__BARANGAY__']) }}"
                 @if ($ownBarangay) data-own-barangay="{{ $ownBarangay }}" @endif></div>
             <script type="application/json" data-heat-map-levels>@json($mapData)</script>
+            <p class="hmx-api-status" data-heat-map-api-status role="status" hidden></p>
 
             <div class="hmx-toggle" role="group" aria-label="{{ $t('range_label') }}">
                 @foreach (['week' => 'this_week', '2weeks' => 'two_weeks'] as $key => $label)
@@ -147,6 +149,8 @@
                             <p class="hmx-source" data-heat-map-delayed>{{ $t('delayed') }}</p>
                         @endif
                         <p class="hmx-source">{{ $r['source'] ?? $t('source') }}</p>{{-- Manuscript – Naicel: a layer names its own source --}}
+                        @if ($key === 'flood' && isset($r['api_summary']['standing_crop_hectares']))<p class="hmx-source">Standing crops in flood-prone barangays: {{ number_format((float) $r['api_summary']['standing_crop_hectares'], 2) }} ha</p>@endif
+                        @if ($key === 'flood')<p class="hmx-source">How this is rated: {{ config('weather_risk.flood_layer.note') }}</p>@endif
                     @endif
                 </section>
 

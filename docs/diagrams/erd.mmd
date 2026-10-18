@@ -1,0 +1,102 @@
+erDiagram
+  users ||--o| farmer_profiles : "has"
+  users ||--o{ farms : "owns"
+  users ||--o{ planting_advisories : "posts/approves"
+  users ||--o{ announcements : "posts"
+  users ||--o{ notifications : "receives"
+  users ||--o{ reports : "generates"
+  users ||--o{ system_logs : "creates"
+  users ||--o{ ai_chats : "has"
+  users ||--o{ feed_posts : "authors"
+  users ||--o{ feed_comments : "writes"
+  users ||--o{ feed_reactions : "reacts"
+  users ||--o{ conversations : "participates"
+  users ||--o{ conversation_messages : "sends"
+  users ||--o{ farmer_planting_schedules : "plans"
+  users ||--o{ yield_prediction_requests : "requests"
+  users ||--o{ farmer_survey_responses : "answers"
+  users ||--o{ mao_activities : "plans"
+  users ||--o{ mao_user_barangays : "assigned"
+  users ||--o{ mao_activity_logs : "logged"
+  users ||--o{ maintenance_records : "performs"
+  users ||--o{ field_reports : "reports/assigned"
+  users ||--o{ model_feedback_decisions : "decides"
+  users ||--o{ weather_forecast_feedback : "submits"
+  users ||--o{ yield_prediction_feedback : "submits"
+  farmer_profiles ||--o| farm_boundaries : "has"
+  farmer_profiles ||--o{ farms : "legacy/has"
+  farmer_profiles }o--o{ farmer_organizations : "joins via farmer_organization_members"
+  farms ||--o{ farmer_planting_schedules : "has"
+  farms ||--o{ yield_prediction_feedback : "supports"
+  farmer_planting_schedules ||--o| yield_prediction_feedback : "has"
+  planting_advisories ||--o{ advisory_feedback : "receives"
+  planting_advisories ||--o{ notifications : "targets"
+  planting_advisories ||--o{ farmer_survey_responses : "referenced"
+  advisory_rules ||--o{ planting_advisories : "generates"
+  external_weather_data ||--o{ planting_advisories : "supports"
+  monthly_weather_predictions ||--o{ weather_forecast_feedback : "evaluated"
+  ai_knowledge_topics ||--o{ ai_terms : "contains"
+  ai_knowledge_topics ||--o{ ai_faqs : "contains"
+  ai_terms ||--o{ ai_synonyms : "has"
+  conversations ||--o{ conversation_messages : "contains"
+  feed_posts ||--o{ feed_media : "has"
+  feed_posts ||--o{ feed_comments : "has"
+  feed_posts ||--o{ feed_reactions : "has"
+  barangay_profiles ||--o{ mao_user_barangays : "covers"
+  yield_prediction_requests ||--o{ farmer_survey_responses : "referenced"
+
+  users { bigint id PK; string name; string email UK; string role; string status; string barangay; string contact_number; text address; timestamp email_verified_at; string password; timestamp last_login_at; timestamp approved_at; bigint approved_by FK_nullable; string rejection_reason; string avatar_path; timestamps }
+  farmer_profiles { bigint id PK; bigint user_id FK_UK; string full_name; string contact_number; text address; string barangay; decimal farm_area; enum farm_type; timestamps }
+  farms { bigint id PK; bigint user_id FK; string farm_name; string barangay; decimal latitude; decimal longitude; decimal farm_size_hectares; string farm_type; boolean is_primary; timestamp archived_at; timestamps }
+  farm_boundaries { bigint id PK; bigint farmer_profile_id FK_UK; bigint farm_id FK_UK_nullable; json boundary_coordinates; decimal calculated_area_hectares; decimal calculated_perimeter_meters; timestamps }
+  climate_records { bigint id PK; date record_date UK; decimal rainfall; decimal temperature; decimal humidity; decimal wind_speed; enum season; string source; timestamp verified_at; bigint verified_by FK_nullable; timestamps }
+  rice_productions { bigint id PK; string barangay; string season; string irrigation_type; decimal yield_per_hectare; decimal area_hectares; decimal total_production; year year; date production_month; timestamp verified_at; bigint verified_by FK_nullable; timestamps }
+  barangay_profiles { bigint id PK; string barangay UK; decimal latitude; decimal longitude; decimal farm_area_hectares; string risk_classification; boolean flood_prone; boolean drought_prone; bigint updated_by FK_nullable; timestamps }
+  heatmap_areas { bigint id PK; string barangay; enum risk_level; enum risk_type; decimal risk_score; text description; timestamps }
+  heatmap_area_forecasts { bigint id PK; string barangay; date forecast_month; enum risk_level; enum risk_type; decimal risk_score; decimal predicted_yield; string rainfall_status; string planting_advisory; string irrigation_recommendation; text description; text main_risk_reason; text suggested_action; timestamp computed_at; timestamps }
+  external_weather_data { bigint id PK; string source; string location_name; bigint barangay_id; decimal latitude; decimal longitude; date forecast_date; time forecast_time; integer weather_code; decimal temperature; decimal temperature_max; decimal temperature_min; decimal humidity; decimal rainfall_mm; decimal precipitation_probability; decimal wind_speed; json raw_response; timestamp fetched_at; timestamps }
+  planting_advisories { bigint id PK; string title; text content; string advisory_type; string target_barangay; bigint target_barangay_id; bigint posted_by FK; bigint approved_by FK_nullable; bigint weather_data_id FK_nullable; bigint advisory_rule_id FK_nullable; enum status; string severity; text message; text recommended_action; timestamps }
+  advisory_rules { bigint id PK; string name UK; string advisory_type; text description; string severity; json conditions; text recommendation; bigint created_by FK_nullable; boolean is_active; timestamps }
+  advisory_feedback { bigint id PK; bigint planting_advisory_id FK; bigint user_id FK; boolean is_helpful; text mao_response; bigint mao_responded_by FK_nullable; timestamps }
+  notifications { bigint id PK; bigint user_id FK; bigint planting_advisory_id FK_nullable; string title; text message; string type; boolean is_read; timestamp read_at; timestamps }
+  announcements { bigint id PK; string title; text content; string category; bigint posted_by FK; string status; timestamps }
+  reports { bigint id PK; string report_type; string title; bigint generated_by FK; json payload; string status; unsigned_integer version; string series_key; timestamp published_at; timestamps }
+  system_logs { bigint id PK; bigint user_id FK_nullable; string action; text details; timestamps }
+  ai_chats { bigint id PK; bigint user_id FK; text question; longtext answer; string intent; json prediction_result; json weather_prediction; json rice_yield_prediction; json planting_recommendation; json irrigation_recommendation; json warnings; decimal confidence_score; integer response_time_ms; timestamps }
+  feed_posts { bigint id PK; bigint user_id FK; string title; text body; string category; string visibility; timestamp event_date; timestamps }
+  feed_media { bigint id PK; bigint feed_post_id FK; string path; string original_name; string mime_type; string media_type; bigint size; timestamps }
+  feed_comments { bigint id PK; bigint feed_post_id FK; bigint user_id FK; text body; timestamps }
+  feed_reactions { bigint id PK; bigint feed_post_id FK; bigint user_id FK; string type; timestamps }
+  conversations { bigint id PK; bigint participant_one_id FK; bigint participant_two_id FK; timestamp last_message_at; timestamps }
+  conversation_messages { bigint id PK; bigint conversation_id FK; bigint sender_id FK; text body; string attachment_path; string attachment_name; string attachment_mime; timestamp read_at; timestamps }
+  farmer_planting_schedules { bigint id PK; bigint user_id FK; bigint farm_id FK_nullable; date planting_date; date scheduled_harvest_date; enum season; enum farm_type; string barangay; decimal farm_area_hectares; string progress_status; decimal predicted_yield; json prediction_details; date production_month; timestamps }
+  yield_prediction_requests { bigint id PK; bigint user_id FK; string scope; string barangay; string season; string farm_type; decimal area_hectares; date target_month; string status; decimal predicted_yield; decimal total_tons; decimal historical_average; string impact_level; json details; timestamps }
+  municipal_yield_predictions { bigint id PK; smallint year; tinyint month; string season; string barangay; decimal predicted_yield; decimal actual_yield; string split; string model; timestamps }
+  monthly_weather_predictions { bigint id PK; smallint prediction_year; tinyint prediction_month; decimal rainfall; decimal tmax; decimal tmin; decimal temperature_average; decimal humidity; decimal wind_speed; decimal wind_direction; string season; string weather_model; date training_from; date training_to; timestamp generated_at; timestamp expires_at; string status; json metadata; timestamps }
+  weather_forecast_feedback { bigint id PK; bigint user_id FK; string barangay; string forecast_type; date forecast_date; bigint monthly_weather_prediction_id FK; string forecast_condition; decimal forecast_rainfall_mm; decimal forecast_temperature_c; decimal forecast_humidity_percent; string accuracy; string observed_condition; timestamps }
+  weather_impact_analyses { bigint id PK; string title; json filters; json results; integer sample_size; string strongest_variable; string impact_level; bigint created_by FK_nullable; timestamps }
+  ml_models { bigint id PK; string purpose; string name; string model_type; string version; string target_variable; string file_path; json training_years; smallint test_year; json feature_list; json hyperparameters; decimal mae; decimal rmse; decimal r2; timestamp trained_at; string status; boolean is_active; string active_slot UK; timestamps }
+  analytics_runs { bigint id PK; uuid uuid UK; string type; string status; bigint requested_by FK_nullable; string cache_key; json input; json result; text error; timestamps }
+  rice_yield_model_comparisons { bigint id PK; bigint user_id FK; string algorithm; decimal rmse; decimal mae; decimal r2; json metadata; timestamps }
+  farmer_survey_responses { bigint id PK; bigint user_id FK; string subject; string category; bigint planting_advisory_id FK_nullable; bigint yield_prediction_request_id FK_nullable; string barangay; tinyint useful; tinyint accurate; tinyint helpful; string model_version; date answered_on; bigint reviewed_by FK_nullable; timestamps }
+  model_feedback_decisions { bigint id PK; string decision; string recommended; string model_version; integer responses; integer positive; integer negative; string retrain_algorithm; bigint decided_by FK_nullable; timestamps }
+  yield_prediction_feedback { bigint id PK; bigint user_id FK; bigint farm_id FK_nullable; bigint farmer_planting_schedule_id FK_UK; string season; smallint season_year; decimal predicted_yield; decimal actual_yield; date harvested_on; timestamps }
+  typhoon_safety_responses { bigint id PK; bigint user_id FK; string event_key; string event_title; string status; text note; timestamp responded_at; timestamps }
+  mao_activities { bigint id PK; bigint user_id FK; string activity_type; string barangay; date starts_on; date ends_on; string title; text notes; timestamps }
+  mao_user_barangays { bigint id PK; bigint user_id FK; bigint barangay_profile_id FK_nullable; string barangay; string sitio; timestamps }
+  mao_activity_logs { bigint id PK; bigint user_id FK_nullable; string user_name; string user_position; string action; string description; string record_type; bigint record_id; string record_label; string barangay; timestamp created_at }
+  maintenance_records { bigint id PK; string title; string category; text description; string status; timestamp performed_at; bigint performed_by FK_nullable; timestamps }
+  field_reports { bigint id PK; string title; string barangay; string issue_type; text description; string status; bigint reported_by FK_nullable; bigint assigned_to FK_nullable; timestamp resolved_at; timestamps }
+  scheduled_task_runs { bigint id PK; string task_name; timestamp started_at; timestamp finished_at; string status; string output_summary; timestamps }
+  weather_fetch_logs { bigint id PK; string provider; timestamp started_at; integer duration_ms; string status; string error_message; timestamps }
+  backup_verifications { bigint id PK; string backup_filename; bigint backup_size_bytes; string backup_sha256; timestamp verified_at; string status; integer archive_entry_count; string failure_reason; timestamps }
+  farmer_organizations { bigint id PK; string name UK; string barangay; string farm_type; decimal area_hectares; integer farmer_count; timestamps }
+  farmer_organization_members { bigint id PK; bigint farmer_profile_id FK; bigint farmer_organization_id FK; date date_joined; timestamps }
+  knowledge_base { bigint id PK; text question; longtext answer; string category; json keywords; string source_type; string source_name; text source_url; boolean verified; integer times_used; decimal confidence; timestamps }
+  ai_knowledge_topics { bigint id PK; string slug UK; string category; string title_en; string title_fil; boolean prefers_live_data; boolean is_context; boolean is_active; timestamps }
+  ai_terms { bigint id PK; bigint topic_id FK; string category; string term_en; string term_fil; json alt_spellings; text definition_en; text definition_fil; text farming_context; json related_terms; json example_questions; string source; boolean is_active; timestamps }
+  ai_synonyms { bigint id PK; bigint term_id FK; string synonym; string language; string kind; boolean is_active; timestamps }
+  ai_faqs { bigint id PK; bigint topic_id FK_nullable; string category; string question_en; string question_fil; text answer_en; text answer_fil; json keywords; string source; boolean is_active; timestamps }
+  ai_blocked_terms { bigint id PK; string term; string normalized_term UK; string language; string category; json exceptions; boolean is_active; timestamps }
+  ai_blocked_patterns { bigint id PK; string pattern; string description; string language; string category; boolean is_active; timestamps }
+  ai_moderation_events { bigint id PK; bigint user_id FK_nullable; string language; string category; string reason_code; boolean blocked; timestamp created_at }

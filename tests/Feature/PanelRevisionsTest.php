@@ -432,7 +432,7 @@ class PanelRevisionsTest extends TestCase
         $this->assertStringContainsString("setAttribute('data-theme','light')", $html);
         $this->assertStringNotContainsString("setAttribute('data-theme','dark')", $html);
         $this->assertStringNotContainsString('theme-dark-pages', $html);
-        $this->assertStringContainsString('gov-strip', $html);
+        $this->assertStringNotContainsString('gov-strip', $html);
         $this->assertStringContainsString('Municipal Agriculture Office', $html);
         $this->assertStringContainsString('#2E7D32', file_get_contents(resource_path('css/gov-theme.css')));
     }

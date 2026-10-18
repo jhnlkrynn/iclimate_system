@@ -18,7 +18,11 @@ class Phase4RuntimePerformanceTest extends TestCase
 
         $this->assertIsString($source);
         $this->assertStringContainsString("if (!root || root.dataset.ready) return;", $source);
-        $this->assertSame(4, substr_count($source, 'new AbortController()'));
+        // Layer data, barangay detail, live refresh and the two boundary loads each have one.
+        $this->assertSame(5, substr_count($source, 'new AbortController()'));
+        // A new layer or period cancels the request still on its way.
+        $this->assertStringContainsString("apiController?.abort();\n        apiController = new AbortController();", $source);
+        $this->assertStringContainsString('if (sequence !== apiSequence) return;', $source);
         $this->assertStringContainsString("window.addEventListener('pagehide', cancelRefresh, { once: true });", $source);
         $this->assertStringContainsString("if (document.hidden || generation !== refreshGeneration) return;", $source);
         $this->assertStringContainsString("document.addEventListener('visibilitychange'", $source);

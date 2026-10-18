@@ -63,6 +63,19 @@
         .msg-tab.active { background:#52b788; border-color:#52b788; color:#0d1f18; }
 
         .thread-list { flex:1 1 auto; min-height:0; overflow:auto; }
+        .msg-list-section { border-bottom:1px solid var(--msg-line); }
+        .msg-section-heading { padding:.7rem 1rem .45rem; color:var(--msg-muted); font-size:.75rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; background:rgba(243,246,244,.72); position:sticky; top:0; z-index:1; }
+        .msg-section-count { min-width:1.5rem; padding:.12rem .4rem; border-radius:999px; background:rgba(82,183,136,.16); color:var(--msg-green); text-align:center; font-size:.7rem; }
+        .msg-group-heading { padding:.5rem 1rem .3rem; color:var(--msg-muted); font-size:.7rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+        .msg-person-link { display:flex; align-items:center; gap:.65rem; width:100%; padding:.65rem 1rem; border:0; border-bottom:1px solid var(--msg-line); background:transparent; color:inherit; text-align:left; cursor:pointer; }
+        .msg-person-link:hover, .msg-person-link.is-focused, .msg-person-link.is-selected { background:rgba(82,183,136,.11); }
+        .msg-person-link.is-loading { opacity:.55; pointer-events:none; }
+        .msg-person-meta { min-width:0; flex:1 1 auto; }
+        .msg-person-status { color:var(--msg-muted); font-size:.78rem; }
+        .msg-person-status.is-online { color:#2d8a5c; }
+        .msg-load-more { border:1px solid var(--msg-line); border-radius:999px; padding:.38rem .8rem; background:#fff; color:var(--msg-green); font-size:.82rem; font-weight:700; }
+        .msg-load-more:hover { background:rgba(82,183,136,.1); }
+        .msg-highlight { background:#fff0a8; border-radius:2px; padding:0 .05em; }
         .thread-link { display:block; padding:.85rem 1rem; border-bottom:1px solid var(--msg-line); color:inherit; text-decoration:none; border-left:4px solid transparent; transition:background .15s ease, border-color .15s ease; }
         .thread-link.active { background:rgba(143,175,154,.14); border-left-color:#1F5A46; }
         .thread-link:hover { background:rgba(0,0,0,.03); }
@@ -188,6 +201,7 @@
     <div @class(['msg-wrap', 'mfd itd itp' => $isStaffPage])
          data-current-user-id="{{ $currentUser->id }}"
          data-search-url="{{ route('messages.search') }}"
+         data-people-url="{{ route('messages.people') }}"
          data-open-url="{{ route('messages.open') }}"
          @if($activeConversation)
              data-conversation-id="{{ $activeConversation->id }}"
@@ -220,8 +234,6 @@
                         </span>
                         <input type="text" id="threadSearch" class="msg-search-input" placeholder="Search people or conversations..." autocomplete="off">
                     </div>
-                    <div id="searchResults" class="msg-search-results"></div>
-
                     @if($rolesPresent->count() > 1)
                         <div class="msg-tabs" role="tablist">
                             <button type="button" class="msg-tab active" data-role-filter="all">All</button>
@@ -232,42 +244,61 @@
                     @endif
                 </div>
                 <div class="thread-list" id="threadList">
-                    @forelse($conversations as $conversation)
-                        @php
-                            $other = $conversation->otherParticipant($currentUser);
-                            $latest = $conversation->latestMessage;
-                            $unread = $unreadCounts->get($conversation->id, 0);
-                        @endphp
-                        <a class="thread-link {{ $activeConversation?->id === $conversation->id ? 'active' : '' }} {{ $unread > 0 ? 'unread' : '' }}"
-                           href="{{ route('messages.show', $conversation) }}"
-                           data-role="{{ $other?->role }}"
-                           data-name="{{ str($other?->name)->lower() }}"
-                           data-other-id="{{ $other?->id }}">
-                            <div class="d-flex gap-2 align-items-start">
-                                <div class="avatar-wrap">
-                                    <div class="avatar">{{ str($other?->name ?? 'U')->substr(0, 1)->upper() }}</div>
-                                    <span class="avatar-status {{ $other?->isOnline() ? 'online' : '' }}"></span>
-                                </div>
-                                <div class="flex-grow-1" style="min-width:0;">
-                                    <div class="thread-row-top">
-                                        <div class="fw-bold thread-name text-truncate">{{ $other?->name ?? 'User' }}</div>
-                                        <div class="thread-time">{{ $latest?->humanTimestamp() }}</div>
-                                    </div>
-                                    <div class="small text-muted">{{ $other?->role ?? 'User' }}</div>
-                                    <div class="thread-preview-row">
-                                        <div class="small text-muted text-truncate thread-preview">
-                                            {{ $latest?->sender_id === $currentUser->id ? 'You: ' : '' }}{{ $latest?->body ?: ($latest?->attachment_name ? 'Attachment: '.$latest->attachment_name : 'No messages yet') }}
+                    <section class="msg-list-section" data-recent-section>
+                        <div class="msg-section-heading">{{ __('messages.recent_conversations') }}</div>
+                        <div data-recent-list>
+                            @forelse($conversations as $conversation)
+                                @php
+                                    $other = $conversation->otherParticipant($currentUser);
+                                    $latest = $conversation->latestMessage;
+                                    $unread = $unreadCounts->get($conversation->id, 0);
+                                @endphp
+                                <a class="thread-link {{ $activeConversation?->id === $conversation->id ? 'active' : '' }} {{ $unread > 0 ? 'unread' : '' }}"
+                                   href="{{ route('messages.show', $conversation) }}"
+                                   data-role="{{ $other?->role }}"
+                                   data-name="{{ str($other?->name)->lower() }}"
+                           data-search="{{ str(($other?->name ?? '').' '.($other?->role ?? '').' '.($other?->registeredBarangay() ?? ''))->lower() }}"
+                                   data-other-id="{{ $other?->id }}">
+                                    <div class="d-flex gap-2 align-items-start">
+                                        <div class="avatar-wrap">
+                                            <div class="avatar">{{ str($other?->name ?? 'U')->substr(0, 1)->upper() }}</div>
+                                            <span class="avatar-status {{ $other?->isOnline() ? 'online' : '' }}"></span>
                                         </div>
-                                        @if($unread > 0)
-                                            <span class="unread-badge">{{ $unread > 9 ? '9+' : $unread }}</span>
-                                        @endif
+                                        <div class="flex-grow-1" style="min-width:0;">
+                                            <div class="thread-row-top">
+                                                <div class="fw-bold thread-name text-truncate" data-display-name="{{ $other?->name ?? 'User' }}">{{ $other?->name ?? 'User' }}</div>
+                                                <div class="thread-time">{{ $latest?->humanTimestamp() }}</div>
+                                            </div>
+                                            <div class="small text-muted">{{ $other?->role ?? 'User' }}</div>
+                                            <div class="thread-preview-row">
+                                                <div class="small text-muted text-truncate thread-preview">
+                                                    {{ $latest?->sender_id === $currentUser->id ? 'You: ' : '' }}{{ $latest?->body ?: ($latest?->attachment_name ? 'Attachment: '.$latest->attachment_name : 'No messages yet') }}
+                                                </div>
+                                                @if($unread > 0)
+                                                    <span class="unread-badge">{{ $unread > 9 ? '9+' : $unread }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="p-3 text-muted msg-list-empty">@if($isFarmerPage)<strong>No messages yet.</strong> Use the search box above to message the Municipal Agriculture Office or another farmer.@else No conversations yet. Use the search box above to message someone.@endif</div>
-                    @endforelse
+                                </a>
+                            @empty
+                                <div class="p-3 text-muted msg-list-empty">{{ __('messages.no_conversations') }}</div>
+                            @endforelse
+                        </div>
+                        <div class="p-3 text-muted msg-list-empty d-none" data-recent-empty>No matching conversations.</div>
+                    </section>
+                    <section class="msg-list-section" data-people-section>
+                        <div class="msg-section-heading d-flex justify-content-between align-items-center">
+                            <span>{{ __('messages.all_people') }}</span><span class="msg-section-count" data-people-count></span>
+                        </div>
+                        <div data-people-groups>
+                            <div class="msg-search-loading">Loading people...</div>
+                        </div>
+                        <div class="p-3 text-muted msg-list-empty d-none" data-people-empty></div>
+                        <div class="p-2 text-center">
+                            <button type="button" class="msg-load-more d-none" data-people-load-more>{{ __('messages.load_more') }}</button>
+                        </div>
+                    </section>
                 </div>
                 @if(($conversationPaginator ?? null)?->hasPages())
                     <div class="border-top p-2">
@@ -441,7 +472,7 @@
                 const query = (document.getElementById('threadSearch')?.value || '').trim().toLowerCase();
                 threadLinks.forEach((link) => {
                     const matchesTab = activeTabRole === 'all' || link.dataset.role === activeTabRole;
-                    const matchesQuery = query === '' || link.dataset.name.includes(query);
+                    const matchesQuery = query === '' || (link.dataset.search || link.dataset.name).includes(query);
                     link.style.display = (matchesTab && matchesQuery) ? '' : 'none';
                 });
             };
@@ -451,7 +482,7 @@
                     tabs.forEach((t) => t.classList.remove('active'));
                     tab.classList.add('active');
                     activeTabRole = tab.dataset.roleFilter;
-                    applyThreadFilters();
+                    filterRecent((document.getElementById('threadSearch')?.value || '').trim().toLowerCase());
                 });
             });
 
@@ -465,101 +496,87 @@
 
             /* ---------------- Search (existing threads + new recipients) ---------------- */
             const searchInput = document.getElementById('threadSearch');
-            const searchResults = document.getElementById('searchResults');
+            const peopleUrl = wrap.dataset.peopleUrl;
+            const peopleGroups = document.querySelector('[data-people-groups]');
+            const peopleEmpty = document.querySelector('[data-people-empty]');
+            const peopleCount = document.querySelector('[data-people-count]');
+            const peopleLoadMore = document.querySelector('[data-people-load-more]');
+            const recentEmpty = document.querySelector('[data-recent-empty]');
             let searchDebounce = null;
-            let searchAbortController = null;
-            let searchRequestSequence = 0;
-            let focusedSearchResult = -1;
+            let peopleAbortController = null;
+            let peopleRequestSequence = 0;
+            let peoplePage = 0;
+            let peopleHasMore = false;
+            let peopleRows = [];
+            let focusedPerson = -1;
 
-            const setSearchVisibility = (visible) => {
-                searchResults?.classList.toggle('show', visible);
-                searchInput?.setAttribute('aria-expanded', visible ? 'true' : 'false');
+            const highlight = (value, query) => {
+                const safe = escapeHtml(value);
+                if (!query) return safe;
+                const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return safe.replace(new RegExp(`(${escaped})`, 'ig'), '<mark class="msg-highlight">$1</mark>');
             };
 
-            const closeSearchResults = () => {
-                setSearchVisibility(false);
-                clearTimeout(searchDebounce);
-                searchAbortController?.abort();
-                searchRequestSequence += 1;
-            };
+            const personLabel = (person) => person.role_label === 'Farmer' && person.barangay
+                ? `Farmer · ${person.barangay}`
+                : (person.role_label || person.role || 'User');
 
-            const renderSearchResults = (recipients) => {
-                focusedSearchResult = -1;
-                if (!recipients.length) {
-                    searchResults.innerHTML = '<div class="msg-search-empty">No matching accounts found.</div>';
-                    setSearchVisibility(true);
-                    return;
-                }
-
-                searchResults.innerHTML = recipients.map((recipient) => `
-                    <div class="msg-search-result" role="option" tabindex="-1" data-recipient-id="${recipient.id}">
-                        <div class="avatar-wrap">
-                            <div class="avatar" style="width:32px;height:32px;font-size:.875rem;">${escapeHtml((recipient.name || 'U').charAt(0).toUpperCase())}</div>
-                            <span class="avatar-status ${recipient.online ? 'online' : ''}"></span>
-                        </div>
-                        <div class="flex-grow-1" style="min-width:0;">
-                            <div class="fw-bold" style="font-size:.95rem;">${escapeHtml(recipient.name)}</div>
-                            <div class="text-muted" style="font-size:.875rem;">${escapeHtml(recipient.role)} · ${recipient.online ? 'Online' : 'Offline'}</div>
-                        </div>
-                    </div>
-                `).join('');
-                setSearchVisibility(true);
-            };
-
-            const renderSearchLoading = () => {
-                searchResults.innerHTML = '<div class="msg-search-loading">Loading accounts...</div>';
-                setSearchVisibility(true);
-            };
-
-            const fetchSearchResults = async (query, requestId) => {
-                searchAbortController?.abort();
-                const controller = new AbortController();
-                searchAbortController = controller;
-                renderSearchLoading();
-
-                try {
-                    const response = await fetch(`${searchUrl}?q=${encodeURIComponent(query)}`, {
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin',
-                        signal: controller.signal,
-                    });
-                    const contentType = response.headers.get('content-type') || '';
-                    if (!response.ok || !contentType.includes('application/json')) throw new Error(`Search failed (${response.status})`);
-                    const data = await response.json();
-                    if (requestId !== searchRequestSequence || controller.signal.aborted) return;
-                    renderSearchResults(Array.isArray(data.recipients) ? data.recipients : []);
-                } catch (error) {
-                    if (controller.signal.aborted || requestId !== searchRequestSequence) return;
-                    searchResults.innerHTML = '<div class="msg-search-empty">Unable to load accounts. Try again.</div>';
-                    setSearchVisibility(true);
-                } finally {
-                    if (requestId === searchRequestSequence) searchAbortController = null;
-                }
-            };
-
-            const requestSearch = (query, { immediate = false } = {}) => {
-                clearTimeout(searchDebounce);
-                searchRequestSequence += 1;
-                searchAbortController?.abort();
-                const requestId = searchRequestSequence;
-                renderSearchLoading();
-                if (immediate) {
-                    void fetchSearchResults(query, requestId);
-                    return;
-                }
-                searchDebounce = setTimeout(() => void fetchSearchResults(query, requestId), 250);
-            };
-
-            const updateFocusedSearchResult = (direction) => {
-                const rows = Array.from(searchResults?.querySelectorAll('[data-recipient-id]') || []);
-                if (!rows.length) return;
-                focusedSearchResult = (focusedSearchResult + direction + rows.length) % rows.length;
-                rows.forEach((row, index) => {
-                    const focused = index === focusedSearchResult;
-                    row.classList.toggle('is-focused', focused);
-                    row.setAttribute('aria-selected', focused ? 'true' : 'false');
+            const renderPeople = (people, query, append = false, total = null) => {
+                if (!append) peopleRows = [];
+                peopleRows = append ? peopleRows.concat(people) : people;
+                const groups = { 'MAO Personnel': [], 'IT Support': [], Farmers: [] };
+                peopleRows.forEach((person) => {
+                    const group = person.role_label === 'Farmer' ? 'Farmers' : (person.role_label === 'IT Support' ? 'IT Support' : 'MAO Personnel');
+                    groups[group].push(person);
                 });
-                rows[focusedSearchResult].scrollIntoView({ block: 'nearest' });
+                peopleGroups.innerHTML = Object.entries(groups).filter(([, rows]) => rows.length).map(([label, rows]) => `
+                    <div class="msg-people-group" data-people-group="${escapeHtml(label)}">
+                        <div class="msg-group-heading">${escapeHtml(label)} <span>${rows.length}</span></div>
+                        ${rows.map((person) => `
+                            <button type="button" class="msg-person-link" data-recipient-id="${person.id}" data-person-name="${escapeHtml(person.name)}">
+                                <div class="avatar-wrap"><div class="avatar">${escapeHtml(person.initial || 'U')}</div><span class="avatar-status ${person.online ? 'online' : ''}"></span></div>
+                                <div class="msg-person-meta"><div class="fw-bold text-truncate">${highlight(person.name, query)}</div><div class="msg-person-status ${person.online ? 'is-online' : ''}">${escapeHtml(personLabel(person))} · ${person.online ? 'Online' : 'Offline'}</div></div>
+                            </button>`).join('')}
+                    </div>`).join('');
+                peopleCount.textContent = (total ?? peopleRows.length) || '';
+                peopleEmpty.classList.toggle('d-none', peopleRows.length > 0);
+                if (!peopleRows.length) peopleEmpty.textContent = query ? `No people found for "${query}"` : 'No people found.';
+                peopleLoadMore.classList.toggle('d-none', !peopleHasMore);
+                focusedPerson = -1;
+            };
+
+            const filterRecent = (query) => {
+                let visible = 0;
+                threadLinks.forEach((link) => {
+                    const matchesTab = activeTabRole === 'all' || link.dataset.role === activeTabRole;
+                    const matchesQuery = !query || (link.dataset.search || link.dataset.name || '').includes(query);
+                    link.style.display = matchesTab && matchesQuery ? '' : 'none';
+                    const name = link.querySelector('[data-display-name]');
+                    if (name) name.innerHTML = highlight(name.dataset.displayName || name.textContent, query);
+                    if (matchesTab && matchesQuery) visible += 1;
+                });
+                recentEmpty.classList.toggle('d-none', visible !== 0 || threadLinks.length === 0);
+            };
+
+            const fetchPeople = async (query, page = 1, append = false) => {
+                peopleAbortController?.abort();
+                const controller = new AbortController();
+                peopleAbortController = controller;
+                const requestId = ++peopleRequestSequence;
+                if (!append) peopleGroups.innerHTML = '<div class="msg-search-loading">Loading people...</div>';
+                try {
+                    const response = await fetch(`${peopleUrl}?q=${encodeURIComponent(query)}&page=${page}&per_page=30`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', signal: controller.signal });
+                    if (!response.ok) throw new Error(`People request failed (${response.status})`);
+                    const data = await response.json();
+                    if (requestId !== peopleRequestSequence || controller.signal.aborted) return;
+                    peoplePage = data.meta?.current_page || page;
+                    peopleHasMore = Boolean(data.meta?.has_more);
+                    renderPeople(Array.isArray(data.people) ? data.people : [], query, append, data.meta?.total ?? null);
+                } catch (error) {
+                    if (controller.signal.aborted || requestId !== peopleRequestSequence) return;
+                    peopleGroups.innerHTML = '<div class="msg-search-empty">Unable to load people. Try again.</div>';
+                    peopleLoadMore.classList.add('d-none');
+                }
             };
 
             let openingConversation = false;
@@ -567,7 +584,6 @@
             const openConversationWith = async (recipientId, rowEl) => {
                 if (openingConversation) return;
                 openingConversation = true;
-                closeSearchResults();
                 rowEl?.classList.add('is-loading');
                 rowEl?.setAttribute('aria-disabled', 'true');
 
@@ -603,50 +619,49 @@
                 }
             };
 
-            searchResults?.addEventListener('click', (event) => {
+            peopleGroups?.addEventListener('click', (event) => {
                 const row = event.target.closest('[data-recipient-id]');
                 if (row) void openConversationWith(row.dataset.recipientId, row);
             });
 
             searchInput?.setAttribute('role', 'combobox');
-            searchInput?.setAttribute('aria-controls', 'searchResults');
-            searchInput?.setAttribute('aria-expanded', 'false');
-            searchResults?.setAttribute('role', 'listbox');
-
-            searchInput?.addEventListener('focus', () => {
-                if (!searchResults.classList.contains('show')) requestSearch(searchInput.value.trim(), { immediate: true });
-            });
-
-            searchInput?.addEventListener('click', () => {
-                if (!searchResults.classList.contains('show')) requestSearch(searchInput.value.trim(), { immediate: true });
-            });
+            searchInput?.setAttribute('aria-controls', 'threadList');
 
             searchInput?.addEventListener('input', () => {
-                applyThreadFilters();
                 const query = searchInput.value.trim();
-                requestSearch(query, { immediate: query === '' });
-            });
-
-            document.addEventListener('click', (event) => {
-                if (!searchResults?.contains(event.target) && event.target !== searchInput) {
-                    closeSearchResults();
-                }
+                filterRecent(query.toLowerCase());
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(() => void fetchPeople(query), 200);
             });
 
             searchInput?.addEventListener('keydown', (event) => {
                 if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                     event.preventDefault();
-                    updateFocusedSearchResult(event.key === 'ArrowDown' ? 1 : -1);
+                    const rows = Array.from(peopleGroups?.querySelectorAll('[data-recipient-id]') || []);
+                    if (!rows.length) return;
+                    focusedPerson = (focusedPerson + (event.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
+                    rows.forEach((row, index) => row.classList.toggle('is-focused', index === focusedPerson));
+                    rows[focusedPerson].scrollIntoView({ block: 'nearest' });
                 } else if (event.key === 'Enter') {
-                    const row = searchResults?.querySelectorAll('[data-recipient-id]')[focusedSearchResult];
+                    const row = peopleGroups?.querySelectorAll('[data-recipient-id]')[focusedPerson];
                     if (row) {
                         event.preventDefault();
                         void openConversationWith(row.dataset.recipientId, row);
                     }
                 } else if (event.key === 'Escape') {
-                    closeSearchResults();
+                    searchInput.value = '';
+                    filterRecent('');
+                    clearTimeout(searchDebounce);
+                    void fetchPeople('');
                 }
             });
+
+            peopleLoadMore?.addEventListener('click', () => {
+                const query = searchInput.value.trim();
+                if (peopleHasMore) void fetchPeople(query, peoplePage + 1, true);
+            });
+            filterRecent('');
+            void fetchPeople('');
 
             /* ---------------- Unsend (works for both server-rendered and dynamically appended messages) ---------------- */
             const unsendModal = document.getElementById('unsendConfirm');

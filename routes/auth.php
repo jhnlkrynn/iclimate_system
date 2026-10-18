@@ -9,18 +9,27 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('login', [AuthenticatedSessionController::class, 'create'])
-    ->name('login');
+// There is no separate login or sign-up page: both open the card on the landing page. The session's one-time messages
+// (errors, old input, an "account is inactive" notice) are kept for that next page.
+Route::get('login', function (Request $request) {
+    $request->session()->reflash();
+
+    return redirect(url('/').'#login');
+})->name('login');
 
 Route::get('login/weather', [AuthenticatedSessionController::class, 'weather'])
     ->middleware('throttle:20,1,get-login-weather')
     ->name('login.weather');
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    Route::get('register', function (Request $request) {
+        $request->session()->reflash();
+
+        return redirect(url('/').'#register');
+    })->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store'])
         ->middleware('throttle:5,10,post-register');

@@ -47,10 +47,12 @@
         --ai-sage: #eef7f0;
         --ai-panel: #fbfdf9;
         --ai-green: #1f6f4a;
+        --ai-primary: #173b1f;
         position: fixed;
         right: 24px;
         bottom: 24px;
-        z-index: 2050;
+        /* Above the sticky top bar and dashboard cards, below modals and the side drawers. */
+        z-index: 1040;
         font-family: 'Inter', system-ui, sans-serif;
     }
 
@@ -85,14 +87,18 @@
         position: absolute;
         right: 0;
         bottom: 0;
-        width: min(460px, calc(100vw - 32px));
-        height: min(650px, calc(100vh - 100px));
+        width: min(400px, calc(100vw - 32px));
+        height: min(560px, calc(100vh - 48px));
+        height: min(560px, calc(100dvh - 48px));
         border: 1px solid var(--ai-line);
         border-radius: 18px;
         overflow: hidden;
         background: var(--ai-panel);
         box-shadow: 0 24px 58px rgba(13, 31, 24, .26);
         display: none;
+        /* Header / messages (with the typing dots) / suggestions / input. The one column is capped at the panel width
+           so long text wraps or truncates instead of widening the panel; only the message list grows and scrolls. */
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto minmax(0, 1fr) auto auto;
     }
 
@@ -138,14 +144,14 @@
         }
     }
 
+    /* One compact row: logo and title take what is left; the language picker and buttons never shrink. */
     .ic-ai-header {
         position: relative;
-        min-height: 78px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: .8rem;
-        padding: .85rem .95rem;
+        gap: .5rem;
+        min-height: 64px;
+        padding: .5rem .75rem;
         border-bottom: 1px solid var(--ai-line);
         background: linear-gradient(180deg, #ffffff, #f1f8f2);
     }
@@ -153,14 +159,19 @@
     .ic-ai-head-main {
         display: flex;
         align-items: center;
-        gap: .7rem;
+        gap: .55rem;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .ic-ai-head-text {
         min-width: 0;
     }
 
     .ic-ai-logo {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
         object-fit: contain;
         flex-shrink: 0;
         background: #fff;
@@ -170,45 +181,65 @@
     .ic-ai-title {
         margin: 0;
         color: var(--ai-ink);
-        font-size: 1.05rem;
-        font-weight: 900;
-        line-height: 1.15;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .ic-ai-subtitle {
-        margin: .15rem 0 0;
+        margin: 1px 0 0;
         color: var(--ai-muted);
-        font-size: .82rem;
-        font-weight: 700;
-        line-height: 1.25;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.35;
+        overflow-wrap: break-word;
     }
 
-    .ic-ai-language { display:flex; align-items:center; gap:.45rem; margin-left:auto; color:var(--ai-ink); font-size:.72rem; font-weight:800; }
-    .ic-ai-language select { min-height:32px; border:1px solid rgba(255,255,255,.45); border-radius:7px; padding:.2rem 1.7rem .2rem .45rem; background:#fff; color:#173b29; font:inherit; }
+    .ic-ai-sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    /* Language pill: globe, EN/FIL and a chevron drawn over the page's own select, which opens the options. */
+    .ic-ai-language { position:relative; display:flex; align-items:center; flex:0 0 auto; color:var(--ai-ink); }
+    .ic-ai-language-icon { position:absolute; left:9px; width:15px; height:15px; color:var(--ai-green); pointer-events:none; }
+    .ic-ai-language-chevron { position:absolute; right:8px; width:13px; height:13px; color:var(--ai-muted); pointer-events:none; }
+    .ic-ai-language select { appearance:none; -webkit-appearance:none; width:auto; height:32px; min-height:32px; border:1px solid #cfe8d6; border-radius:8px; padding:0 25px 0 29px; background:#fff; color:#173b29; font:inherit; font-weight:600; cursor:pointer; box-shadow:none; }
+    .ic-ai-language select:hover { border-color:var(--ai-green); background:#edf7e7; }
+    .ic-ai-language select:focus-visible { outline:2px solid var(--ai-green); outline-offset:1px; }
     .ic-ai-language-notice { position:absolute; right:4.5rem; top:calc(100% + .35rem); z-index:2; display:none; max-width:220px; padding:.45rem .6rem; border:1px solid #f0c36d; border-radius:7px; background:#fff8e8; color:#795b16; font-size:.72rem; font-weight:800; box-shadow:0 .35rem .9rem rgba(13,31,24,.12); }
     .ic-ai-language-notice.show { display:block; }
 
     .ic-ai-actions {
         display: flex;
         align-items: center;
-        gap: .35rem;
+        gap: .3rem;
         flex-shrink: 0;
     }
 
     .ic-ai-minimize,
     .ic-ai-close {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
+        min-height: 32px;
         border: 1px solid #cfe8d6;
-        border-radius: 10px;
+        border-radius: 8px;
         display: grid;
         place-items: center;
         background: #fff;
         color: var(--ai-ink);
-        font-size: 1.1rem;
-        font-weight: 900;
-        line-height: 1;
         padding: 0;
+    }
+
+    .ic-ai-minimize svg,
+    .ic-ai-close svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .ic-ai-minimize:focus-visible,
+    .ic-ai-close:focus-visible {
+        outline: 2px solid var(--ai-green);
+        outline-offset: 1px;
     }
 
     .ic-ai-minimize:hover,
@@ -229,56 +260,54 @@
 
     .ic-ai-msg {
         display: flex;
-        margin-bottom: .9rem;
+        margin-bottom: 12px;
     }
 
     .ic-ai-msg.user {
         justify-content: flex-end;
     }
 
+    /* Bot on the left, you on the right; each time sits under its own bubble. */
     .ic-ai-msg-col {
-        max-width: 86%;
+        max-width: 80%;
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
         min-width: 0;
     }
 
     .ic-ai-msg.user .ic-ai-msg-col {
         align-items: flex-end;
-        max-width: 82%;
     }
 
+    /* Flat bubbles: white with a thin line for Climora, solid dark green for you. */
     .ic-ai-bubble {
+        max-width: 100%;
         border: 1px solid var(--ai-line);
         border-radius: 14px;
-        padding: .75rem .85rem;
+        padding: 12px 14px;
         background: #fff;
         color: var(--ai-ink);
-        line-height: 1.52;
+        font-size: 15px;
+        line-height: 1.5;
         white-space: pre-line;
         overflow-wrap: anywhere;
-        font-size: .95rem;
-        box-shadow: 0 8px 20px rgba(13, 31, 24, .06);
-    }
-
-    .ic-ai-msg.assistant .ic-ai-bubble {
-        background: #f6faf6;
-        color: var(--ai-ink);
-        border-color: #cfe8d6;
+        box-shadow: none;
     }
 
     .ic-ai-msg.user .ic-ai-bubble {
-        background: var(--ai-ink);
+        background: var(--ai-primary);
         color: #fff;
-        border-color: var(--ai-ink);
+        border-color: var(--ai-primary);
     }
 
     .ic-ai-msg-time {
-        font-size: .75rem;
+        font-size: 12px;
+        line-height: 1.3;
         color: #52665a;
         font-family: 'Inter', system-ui, sans-serif;
-        margin-top: .3rem;
-        padding: 0 .1rem;
+        margin-top: 4px;
+        padding: 0 2px;
     }
 
     .ic-ai-msg.user .ic-ai-msg-time {
@@ -327,17 +356,15 @@
     .ai-feature-value { color: var(--ai-ink); font-weight: 900; margin-left: auto; }
     .ai-feature-status { color: var(--ai-muted); font-size: .68rem; font-weight: 800; text-transform: none; letter-spacing: .03em; }
 
+    /* While Climora answers: three dots in a bot bubble at the end of the messages (the words are for screen readers). */
     .ic-ai-typing {
         display: none;
-        align-items: center;
-        gap: .55rem;
-        color: var(--ai-muted);
-        font-family: 'Inter', system-ui, sans-serif;
-        font-size: .78rem;
-        font-weight: 700;
-        padding: .45rem .95rem .7rem;
-        background: #edf7e7;
-        border-top: 1px solid rgba(212, 230, 218, .7);
+        width: fit-content;
+        margin-bottom: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--ai-line);
+        border-radius: 14px;
+        background: #fff;
     }
 
     .ic-ai-typing.show {
@@ -384,15 +411,42 @@
         }
     }
 
-    .ic-ai-chips {
-        display: flex;
-        gap: .45rem;
-        overflow-x: auto;
-        padding: .75rem .95rem;
+    /* Suggestions: every chip shown in full, wrapping onto more rows as needed (the message list gives up the room).
+       After the first question they fold behind a small "Suggestions" button. */
+    .ic-ai-suggest {
         background: #fff;
         border-top: 1px solid var(--ai-line);
-        scrollbar-width: thin;
     }
+
+    .ic-ai-suggest-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 28px;
+        min-height: 28px;
+        margin: 6px 8px 0;
+        padding: 0 8px;
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        color: var(--ai-green);
+        font-weight: 600;
+    }
+
+    .ic-ai-suggest-toggle[hidden] { display: none; }
+    .ic-ai-suggest-toggle:hover { background: var(--ai-sage); }
+    .ic-ai-suggest-toggle svg { width: 14px; height: 14px; transition: transform 160ms ease; }
+    .ic-ai-suggest-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .ic-ai-suggest.is-folded { padding-bottom: 6px; }
+
+    .ic-ai-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+
+    .ic-ai-chips[hidden] { display: none; }
 
     .ic-ai-chip {
         display: inline-flex;
@@ -402,12 +456,15 @@
         background: #fff;
         color: var(--ai-green);
         border-radius: 999px;
-        padding: .42rem .72rem;
-        font-size: .82rem;
-        font-weight: 800;
+        min-height: 36px;
+        max-width: 100%;
+        padding: 8px 14px;
+        font-size: 14px;
+        font-weight: 600;
         line-height: 1.2;
-        white-space: nowrap;
-        flex: 0 0 auto;
+        white-space: normal; /* a long chip wraps inside itself on a very narrow screen */
+        text-align: left;
+        flex: 0 1 auto;
     }
 
     .ic-ai-chip:hover {
@@ -418,37 +475,59 @@
     .ic-ai-form {
         display: grid;
         grid-template-columns: minmax(0, 1fr) 44px;
-        gap: .6rem;
-        padding: .85rem .95rem;
+        gap: .5rem;
+        padding: 12px 16px;
         border-top: 1px solid var(--ai-line);
         background: #fff;
         align-items: end;
     }
 
+    .ic-ai-suggest + .ic-ai-form {
+        border-top: 0;
+    }
+
+    /* Grows from one line to four (the script sets the height), then scrolls. */
     .ic-ai-form textarea {
-        min-height: 46px;
-        max-height: 112px;
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        min-height: 44px;
         resize: none;
-        font-size: 1rem;
-        line-height: 1.38;
+        overflow-y: auto;
+        font-size: 16px; /* 16px keeps phones from zooming in on the box */
+        line-height: 22px;
         border-radius: 12px;
-        padding: .7rem .85rem;
+        padding: 10px 12px;
         border: 1px solid #cfe8d6;
         background: #fff;
         color: var(--ai-ink);
     }
 
+    /* Solid dark green with a white arrow when there is a question to send; pale and not clickable when the box is
+       empty or Climora is still answering. */
     .ic-ai-send {
         width: 44px;
         height: 44px;
+        min-height: 44px;
+        border: 0;
         border-radius: 12px;
         display: grid;
         place-items: center;
         flex-shrink: 0;
         padding: 0;
-        background: var(--ai-ink);
-        border-color: var(--ai-ink);
+        background: var(--ai-primary);
         color: #fff;
+        cursor: pointer;
+        transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .ic-ai-send:hover:not(:disabled) {
+        background: #102b16;
+    }
+
+    .ic-ai-send:focus-visible {
+        outline: 2px solid var(--ai-green);
+        outline-offset: 2px;
     }
 
     .ic-ai-send svg {
@@ -457,33 +536,36 @@
     }
 
     .ic-ai-send:disabled {
-        opacity: .58;
-        cursor: wait;
+        background: #e3eee6;
+        color: #8fa597;
+        cursor: not-allowed;
     }
 
-    @media (max-width: 575.98px) {
+    /* Phones: a full-width bottom sheet that leaves a strip of the page showing at the top, clear of the notch and
+       the home bar. */
+    @media (max-width: 639.98px) {
         .ic-ai-widget {
-            right: 8px !important;
-            bottom: max(8px, env(safe-area-inset-bottom)) !important;
-            left: auto !important;
+            right: 16px;
+            bottom: max(16px, env(safe-area-inset-bottom));
         }
 
         .ic-ai-panel {
-            position: fixed !important;
-            inset: auto 8px max(8px, env(safe-area-inset-bottom)) 8px !important;
-            width: auto !important;
-            height: calc(100dvh - max(16px, env(safe-area-inset-bottom) + 8px)) !important;
-            border-radius: 16px;
+            position: fixed;
+            inset: auto 0 0 0;
+            width: 100%;
+            height: min(560px, calc(100vh - 16px));
+            height: min(560px, calc(100dvh - max(16px, env(safe-area-inset-top))));
+            border-width: 1px 0 0;
+            border-radius: 18px 18px 0 0;
+            transform-origin: bottom center;
         }
 
         .ic-ai-header {
-            min-height: 72px;
-            padding: .75rem;
+            padding-inline: max(.75rem, env(safe-area-inset-left)) max(.75rem, env(safe-area-inset-right));
         }
 
-        .ic-ai-msg-col,
-        .ic-ai-msg.user .ic-ai-msg-col {
-            max-width: 92%;
+        .ic-ai-form {
+            padding: 12px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
         }
 
         .ic-ai-results {
@@ -491,19 +573,35 @@
         }
     }
 
-    @media (max-width: 380px) {
-        .ic-ai-title {
-            font-size: .98rem;
-        }
 
-        .ic-ai-subtitle {
-            font-size: .76rem;
-        }
-
-        .ic-ai-chips {
-            padding-inline: .7rem;
-        }
+    /* Narrow phones: beside the controls the subtitle would need three or more lines, so it takes its own full-width
+       line under the logo, title, language and buttons instead (the two wrappers step aside for the header's row). */
+    @media (max-width: 419.98px) {
+        .ic-ai-header { flex-wrap: wrap; row-gap: 4px; }
+        .ic-ai-head-main,
+        .ic-ai-head-text { display: contents; }
+        .ic-ai-title { flex: 1 1 0; min-width: 0; }
+        .ic-ai-subtitle { order: 1; flex: 0 0 100%; margin: 0; }
     }
+
+    /* accessibility.css makes every element in the panel 18px, buttons at least 52px and fields 56px tall. The panel
+       keeps its own compact scale instead (15px messages, 13-14px controls, 16px typing); the ID wins over those
+       rules and !important is needed only where they use it. */
+    #icAiWidget .ic-ai-panel { font-size: 15px !important; line-height: 1.5 !important; }
+    #icAiWidget .ic-ai-panel * { font-size: inherit !important; line-height: inherit !important; }
+    #icAiWidget .ic-ai-panel .ic-ai-title { font-size: 18px !important; line-height: 1.25 !important; }
+    #icAiWidget .ic-ai-panel .ic-ai-subtitle { font-size: 13px !important; line-height: 1.35 !important; }
+    #icAiWidget .ic-ai-panel :is(.ic-ai-language select, .ic-ai-suggest-toggle) { font-size: 13px !important; line-height: 1 !important; }
+    #icAiWidget .ic-ai-panel .ic-ai-language-notice { font-size: 12px !important; line-height: 1.35 !important; }
+    #icAiWidget .ic-ai-panel .ic-ai-msg-time { font-size: 12px !important; line-height: 1.3 !important; }
+    #icAiWidget .ic-ai-panel .ic-ai-chip { font-size: 14px !important; line-height: 1.2 !important; padding: 8px 14px; min-height: 36px; }
+    #icAiWidget .ic-ai-panel .ic-ai-form textarea { font-size: 16px !important; line-height: 22px !important; min-height: 44px; }
+    #icAiWidget .ic-ai-panel :is(.ic-ai-card-label, .ai-feature-status) { font-size: 12px !important; line-height: 1.3 !important; }
+    #icAiWidget .ic-ai-panel :is(.ic-ai-card-value, .ai-feature-row) { font-size: 14px !important; line-height: 1.35 !important; }
+    #icAiWidget .ic-ai-panel :is(.ic-ai-minimize, .ic-ai-close) { min-height: 32px; }
+    #icAiWidget .ic-ai-panel .ic-ai-suggest-toggle { min-height: 28px; padding: 0 8px; }
+    #icAiWidget .ic-ai-panel .ic-ai-send { min-height: 44px; padding: 0; }
+    #icAiWidget .ic-ai-panel .ic-ai-language select { min-height: 32px; padding-top: 0; padding-bottom: 0; }
 </style>
 
 <script type="application/json" id="icAiFeatureCatalog">{!! json_encode($icAiFeatureCatalog, JSON_UNESCAPED_SLASHES) !!}</script>
@@ -512,16 +610,19 @@
         <header class="ic-ai-header">
             <div class="ic-ai-head-main">
                 <img src="{{ asset('images/climora-ai-icon.png') }}" alt="" class="ic-ai-logo">
-                <div>
+                <div class="ic-ai-head-text">
                     <h2 id="icAiTitle" class="ic-ai-title">Climora AI</h2>
-                    <p class="ic-ai-subtitle">Weather, rice yield, planting, and system guidance</p>
+                    <p class="ic-ai-subtitle" title="Weather, rice yield, planting, and system guidance">Weather, rice yield, planting, and system guidance</p>
                 </div>
             </div>
             @if($icAiFarmerLanguage)
-                <label class="ic-ai-language" for="icAiLanguage">Conversation Language
+                <label class="ic-ai-language" for="icAiLanguage" title="Conversation Language">
+                    <span class="ic-ai-sr">Conversation Language</span>
+                    <x-icon name="globe" class="ic-ai-language-icon" />
+                    <x-icon name="chevron-down" class="ic-ai-language-chevron" stroke-width="2.25" />
                     <select id="icAiLanguage" data-language-url="{{ route('ai-chat.language') }}" data-language-persisted="{{ auth()->user()->aiLanguageCode() ? '1' : '0' }}" data-language-db-value="{{ auth()->user()->aiLanguageCode() ?? '' }}" aria-label="Conversation Language">
-                        <option value="en" @selected(auth()->user()->aiLanguageCode() === 'en')>English</option>
-                        <option value="tl" @selected(auth()->user()->aiLanguageCode() === 'tl')>Tagalog</option>
+                        <option value="en" @selected(auth()->user()->aiLanguageCode() === 'en')>EN</option>
+                        <option value="tl" @selected(auth()->user()->aiLanguageCode() === 'tl')>FIL</option>
                     </select>
                 </label>
             @endif
@@ -529,8 +630,8 @@
                 <div id="icAiLanguageNotice" class="ic-ai-language-notice" role="status" aria-live="polite"></div>
             @endif
             <div class="ic-ai-actions">
-                <button type="button" class="ic-ai-minimize" data-ai-close aria-label="Minimize assistant">&minus;</button>
-                <button type="button" class="ic-ai-close" data-ai-close aria-label="Close assistant">&times;</button>
+                <button type="button" class="ic-ai-minimize" data-ai-close aria-label="Minimize chat" title="Minimize chat"><x-icon name="minus" /></button>
+                <button type="button" class="ic-ai-close" data-ai-close aria-label="Close chat" title="Close chat"><x-icon name="x" /></button>
             </div>
         </header>
 
@@ -539,7 +640,7 @@
                 <div class="ic-ai-msg user">
                     <div class="ic-ai-msg-col">
                         <div class="ic-ai-bubble">{{ $chat->question }}</div>
-                        <div class="ic-ai-msg-time">{{ $chat->created_at?->shortTime() }}</div>
+                        <div class="ic-ai-msg-time">{{ $chat->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('g:i A') }}</div>
                     </div>
                 </div>
                 <div class="ic-ai-msg assistant">
@@ -589,38 +690,42 @@
                                 </details>
                             @endif
                         </div>
-                        <div class="ic-ai-msg-time">{{ $chat->created_at?->shortTime() }}</div>
+                        <div class="ic-ai-msg-time">{{ $chat->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('g:i A') }}</div>
                     </div>
                 </div>
             @empty
                 <div class="ic-ai-msg assistant">
                     <div class="ic-ai-msg-col">
                         <div class="ic-ai-bubble">{{ $icAiGreeting }}</div>
-                        <div class="ic-ai-msg-time" data-now-time>{{ \App\Support\BusinessClock::now()->shortTime() }}</div>
+                        <div class="ic-ai-msg-time" data-now-time>{{ \App\Support\BusinessClock::now()->format('g:i A') }}</div>
                     </div>
                 </div>
             @endforelse
+
+            {{-- Stays the last thing in the list; new messages go in above it. --}}
+            <div id="icAiTyping" class="ic-ai-typing" role="status" aria-live="polite">
+                <span class="ic-ai-dots" aria-hidden="true">
+                    <span class="ic-ai-dot"></span>
+                    <span class="ic-ai-dot"></span>
+                    <span class="ic-ai-dot"></span>
+                </span>
+                <span class="ic-ai-typing-text ic-ai-sr">Climora AI is checking iClimate...</span>
+            </div>
         </div>
 
-        <div id="icAiTyping" class="ic-ai-typing" role="status" aria-live="polite">
-            <span class="ic-ai-dots" aria-hidden="true">
-                <span class="ic-ai-dot"></span>
-                <span class="ic-ai-dot"></span>
-                <span class="ic-ai-dot"></span>
-            </span>
-            <span class="ic-ai-typing-text">Climora AI is checking iClimate...</span>
-        </div>
-
-        <div class="ic-ai-chips" aria-label="Suggested questions">
-            @foreach($icAiChips as $chip)
-                <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
-            @endforeach
+        <div class="ic-ai-suggest">
+            <button type="button" class="ic-ai-suggest-toggle" aria-expanded="true" aria-controls="icAiChips" hidden>Suggestions <x-icon name="chevron-down" stroke-width="2.25" /></button>
+            <div id="icAiChips" class="ic-ai-chips" role="group" aria-label="Suggested questions">
+                @foreach($icAiChips as $chip)
+                    <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
+                @endforeach
+            </div>
         </div>
 
         <form id="icAiForm" class="ic-ai-form">
             @csrf
             <textarea id="icAiInput" class="form-control" placeholder="Ask about iClimate..." rows="1" required></textarea>
-            <button id="icAiSend" type="submit" class="btn btn-primary ic-ai-send" aria-label="Send message">
+            <button id="icAiSend" type="submit" class="ic-ai-send" aria-label="Send message" disabled>
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <path d="M3 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -659,8 +764,41 @@
         let languageNoticeTimer = null;
 
         const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
-        const scrollMessages = () => { body.scrollTop = body.scrollHeight; };
-        const timeNow = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        // Newest message in view: now, and again after the browser lays out what was just added or shown.
+        const scrollMessages = () => {
+            body.scrollTop = body.scrollHeight;
+            requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
+        };
+        // The box grows with what is typed, up to four lines, then scrolls.
+        const fitInput = () => {
+            if (!input) return;
+            const style = getComputedStyle(input);
+            const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4;
+            const maxHeight = lineHeight * 4 + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+            input.style.height = 'auto';
+            input.style.height = `${Math.min(input.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth), maxHeight)}px`;
+        };
+        const chips = widget.querySelector('.ic-ai-chips');
+        const suggest = widget.querySelector('.ic-ai-suggest');
+        const suggestToggle = widget.querySelector('.ic-ai-suggest-toggle');
+        // After the first question the chips fold behind a small "Suggestions" button, so the talk gets the room.
+        const showChips = (show) => {
+            if (!chips || !suggestToggle) return;
+            chips.hidden = !show;
+            suggestToggle.setAttribute('aria-expanded', String(show));
+            suggest?.classList.toggle('is-folded', !show);
+        };
+        const foldChips = () => {
+            if (!chips) return;
+            suggestToggle?.removeAttribute('hidden');
+            showChips(false);
+        };
+        // Send is clickable only with something typed and no answer still on its way.
+        const updateSend = () => {
+            if (send) send.disabled = requestPending || !input?.value.trim();
+        };
+        // Always hours and minutes in Lian's time, e.g. "1:00 PM" (the page renders the greeting's time the same way).
+        const timeNow = () => new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' });
         const shouldSaveConversation = () => localStorage.getItem(saveStorageKey) !== '0';
         const selectedLanguage = () => languageSelect?.value || null;
         const languageText = (english, tagalog) => selectedLanguage() === 'tl' ? tagalog : english;
@@ -793,8 +931,8 @@
             return `<strong>${escapeHtml(first)}</strong>${rest.length ? '\n' + escapeHtml(rest.join('\n')) : ''}`;
         };
         const addMessage = (role, message, extra = '', html = null) => {
-            body.insertAdjacentHTML(
-                'beforeend',
+            typing.insertAdjacentHTML(
+                'beforebegin',
                 `<div class="ic-ai-msg ${role}"><div class="ic-ai-msg-col"><div class="ic-ai-bubble">${html ?? escapeHtml(message)}${extra}</div><div class="ic-ai-msg-time">${timeNow()}</div></div></div>`
             );
             scrollMessages();
@@ -817,10 +955,12 @@
 
             requestPending = true;
             addMessage('user', trimmedQuestion);
+            foldChips();
             input.value = '';
             input.style.height = '';
             typing.classList.add('show');
-            send.disabled = true;
+            scrollMessages();
+            updateSend();
 
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 20000);
@@ -847,7 +987,7 @@
                 clearTimeout(timeout);
                 requestPending = false;
                 typing.classList.remove('show');
-                send.disabled = false;
+                updateSend();
                 input.focus();
                 scrollMessages();
             }
@@ -904,8 +1044,8 @@
                 openAssistant();
                 if (input) {
                     input.value = String(question ?? '');
-                    input.style.height = '';
-                    input.style.height = input.scrollHeight + 'px';
+                    fitInput();
+                    updateSend();
                     input.focus();
                 }
             },
@@ -941,8 +1081,13 @@
         });
 
         input.addEventListener('input', () => {
-            input.style.height = 'auto';
-            input.style.height = `${Math.min(input.scrollHeight, 112)}px`;
+            fitInput();
+            updateSend();
+        });
+        // Opening the suggestions keeps the newest message in view above them.
+        suggestToggle?.addEventListener('click', () => {
+            showChips(chips.hidden);
+            scrollMessages();
         });
 
         input.addEventListener('keydown', (event) => {
@@ -957,6 +1102,7 @@
         });
 
         panel?.setAttribute('hidden', 'hidden');
+        updateSend();
         scrollMessages();
     }; document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', icAiInit) : icAiInit(); })();
 </script>

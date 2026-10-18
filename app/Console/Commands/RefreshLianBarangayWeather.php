@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Risk\BarangayRiskMapService;
+use App\Services\Risk\HeatMapLayerService;
 use App\Services\Weather\LianBarangayWeatherService;
 use Illuminate\Console\Command;
 
@@ -21,11 +22,12 @@ class RefreshLianBarangayWeather extends Command
 
     protected $description = 'Refresh the shared Open-Meteo current weather for all 19 Lian barangays.';
 
-    public function handle(LianBarangayWeatherService $weather, BarangayRiskMapService $risk): int
+    public function handle(LianBarangayWeatherService $weather, BarangayRiskMapService $risk, HeatMapLayerService $layerCache): int
     {
         if (! $this->option('force') && ! $weather->isDue()) {
             $this->info('Barangay weather is already current; nothing to refresh.');
             $this->rateRisk($risk);
+            $layerCache->forgetCache();
 
             return self::SUCCESS;
         }
@@ -55,6 +57,8 @@ class RefreshLianBarangayWeather extends Command
 
         if ($summary['current'] > 0) {
             $this->rateRisk($risk, (bool) $this->option('force'));
+            $layerCache->forgetCache();
+            $this->callSilent('iclimate:refresh-flood-risk');
         }
 
         return $summary['current'] > 0 ? self::SUCCESS : self::FAILURE;

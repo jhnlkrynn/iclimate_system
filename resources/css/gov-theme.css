@@ -124,14 +124,7 @@ html body :is(.mfd, .mtd) {
     background: transparent;
 }
 
-/* ----------------------------------------------------------------- government strip + top bar (header) */
-html body .gov-strip {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 8px;
-    min-height: 28px; padding: 4px 16px; background: var(--gov-blue); color: #fff;
-    font-size: .8125rem; line-height: 1.3; letter-spacing: .01em; text-align: center;
-}
-html body .gov-strip strong { color: var(--gov-gold); font-weight: 700; }
-html body .gov-strip-sep { opacity: .7; }
+/* ----------------------------------------------------------------- top bar (header) */
 
 html[data-theme] body .topbar.ic-topbar {
     background: var(--gov-surface) !important;
@@ -146,7 +139,6 @@ html body .topbar .ic-icon-btn:hover { background: #F3F4F6; color: var(--gov-tex
 html body .topbar .ic-topbar-greeting { color: var(--gov-text-2); }
 html body .topbar .text-muted { color: var(--gov-label) !important; }
 html body .gov-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; }
-html body .gov-brand .gov-seal { width: 40px; height: 40px; flex: none; }
 html body .gov-brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
 html body .gov-brand-office { font-weight: 700; font-size: .95rem; color: var(--gov-primary-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html body .gov-brand-place { font-size: .75rem; font-weight: 500; color: var(--gov-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -429,9 +421,6 @@ html, body { max-width: 100%; overflow-x: clip; }
     /* Inputs: at least 16px so iOS does not zoom in; every tap target at least 44px tall. */
     html body :is(input, select, textarea, .form-control, .form-select, .fad-input) { font-size: 16px !important; }
     html body :is(.btn, button, .mfd-btn, .mtd-btn, .fad-btn, .dropdown-item, .sidebar-link, .nav-link, summary) { min-height: var(--gov-tap); }
-    html body .gov-strip { font-size: .72rem; min-height: 24px; padding: 3px 10px; }
-    html body .gov-strip span:not(.gov-strip-sep):first-child, html body .gov-strip .gov-strip-sep:first-of-type { display: none; }
-    html body .gov-brand .gov-seal { width: 34px; height: 34px; }
     html body .gov-brand-office { font-size: .85rem; }
     html body .gov-brand-place { display: none; }
     html body .mao-identity { display: none; }
@@ -475,7 +464,7 @@ html, body { max-width: 100%; overflow-x: clip; }
     html body :is(.mtd-header, .mfd-header) h1 { font-size: 1.45rem !important; }
 }
 @media print {
-    html body .gov-strip, html body .mao-coverage-bar { display: none !important; }
+    html body .mao-coverage-bar { display: none !important; }
 }
 
 /* ----------------------------------------------------------------- 4.5: remove the old dark backdrop and black tiles */
@@ -498,7 +487,7 @@ html body .ic-lang button { color: var(--gov-text-2); min-height: 36px; }
 html body .ic-lang button[aria-pressed="true"] { background: var(--gov-primary) !important; color: #fff !important; }
 
 @media (max-width: 575.98px) {
-    /* The phone top bar: menu, seal, farm, bell, language, account. Text of the office name drops to keep it on one line. */
+    /* The phone top bar: menu, logo, farm, bell, language, account. Text of the office name drops to keep it on one line. */
     html body .topbar.ic-topbar { padding-inline: 8px !important; gap: 6px; }
     html body .gov-brand-text { display: none; }
     html body .topbar .topbar-farm { min-width: 0; flex: 1 1 auto; }
@@ -539,23 +528,22 @@ html[data-theme] body .topbar.ic-topbar {
 html body.ic-page-leaving .page-shell { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
 html body .icl-overlay .icl-skeleton { display: none !important; }
 
-/* The official seal of the Municipality of Lian (public/images/lian-seal.jpg): its white margin is trimmed by the circle. */
-html body .gov-brand .gov-seal { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: center; background: #fff; box-shadow: 0 0 0 1px var(--gov-border); }
-@media (max-width: 767.98px) { html body .gov-brand .gov-seal { width: 38px; height: 38px; } }
+/* The MAO logo (public/images/mao-logo.png): square and transparent, as tall as the iClimate logo beside it
+   (resources/css/pages/account-light.css), never stretched, with no circle or background, so it sits on light and dark bars. */
+html body .gov-brand .gov-mao-logo { width: 46px; height: 46px; flex: none; object-fit: contain; }
+@media (max-width: 767.98px) { html body .gov-brand .gov-mao-logo { width: 36px; height: 36px; } }
 
 /* Tabs (Records, Farmers, MAO Office, Predictions …): the active tab is solid green with white text, the others white. */
 html body .ic-tabs .ic-tab { background: var(--gov-surface); color: var(--gov-text-2) !important; border: 1px solid var(--gov-border-strong); }
 html body .ic-tabs .ic-tab:hover { background: var(--gov-primary-soft); color: var(--gov-primary-dark) !important; }
 html body .ic-tabs .ic-tab.is-active, html body .ic-tabs .ic-tab[aria-current="page"] { background: var(--gov-primary) !important; border-color: var(--gov-primary); color: #fff !important; }
 
-/* Header size (all roles): a regular-sized government strip and top bar — larger seal, office name, greeting,
-   icons and account button. Alignment is unchanged; phones keep their compact sizes below. */
-html body .gov-strip { min-height: 42px; padding: 8px 16px; gap: 2px 12px; font-size: 1rem; }
+/* Header size (all roles): a regular-sized top bar — larger office name, greeting, icons and account button.
+   Alignment is unchanged; phones keep their compact sizes below. */
 html[data-theme] body .topbar.ic-topbar { min-height: 76px; padding: 10px 24px !important; gap: 16px; }
 html body .ic-topbar-left { gap: 10px; }
 html body .ic-topbar-right { gap: 8px; }
 html body .gov-brand { gap: 12px; }
-html body .gov-brand .gov-seal { width: 52px; height: 52px; }
 html body .gov-brand-text { line-height: 1.2; }
 html body .gov-brand-office { font-size: 1.125rem; }
 html body .gov-brand-place { font-size: .875rem; }
@@ -571,9 +559,7 @@ html body .ic-avatar-btn { width: 44px; height: 44px; font-size: .875rem; }
 html body .topbar .topbar-farm label { font-size: .8125rem; }
 html body .topbar .topbar-farm select { font-size: .9375rem; min-height: 40px; }
 @media (max-width: 767.98px) {
-    html body .gov-strip { min-height: 32px; padding: 5px 10px; font-size: .8125rem; }
     html[data-theme] body .topbar.ic-topbar { min-height: 64px; padding: 8px 12px !important; gap: 8px; }
-    html body .gov-brand .gov-seal { width: 40px; height: 40px; }
     html body .gov-brand-office { font-size: .95rem; }
 }
 @media (max-width: 575.98px) {

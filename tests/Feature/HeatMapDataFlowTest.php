@@ -222,6 +222,18 @@ class HeatMapDataFlowTest extends TestCase
         $this->assertSame('Open-Meteo', $response->json('weather_summary.provider'));
     }
 
+    public function test_unassigned_mao_user_gets_all_barangays_and_municipal_coverage_label(): void
+    {
+        $mao = $this->mao();
+        $this->assertSame([], $mao->coveredBarangays());
+        $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
+
+        $this->actingAs($mao)->getJson('/api/lian/risk-map')
+            ->assertOk()
+            ->assertJsonCount(19, 'barangays');
+        $this->assertSame('All barangays (Lian)', $mao->coverageLabel());
+    }
+
     // ------------------------------------------------------------ scheduler, queue and caches
 
     public function test_the_risk_reconciliation_and_the_queued_job_rerate_without_another_provider_request(): void

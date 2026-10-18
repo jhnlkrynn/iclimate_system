@@ -22,7 +22,10 @@ final class HeatMapPanel
 
     private const DISPLAY_NAMES = ['Barangay 1 (Pob.)' => 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)' => 'Barangay 5 / Tabok City (Poblacion)'];
 
-    public function __construct(private readonly BarangayWeekRiskService $risk) {}
+    public function __construct(
+        private readonly BarangayWeekRiskService $risk,
+        private readonly BarangayRiskMapService $map,
+    ) {}
 
     /**
      * @return array<string, array<string, mixed>> keyed by range (week, 2weeks)
@@ -31,6 +34,11 @@ final class HeatMapPanel
     {
         $ranges = [];
         foreach ($this->risk->ranges() as $range => $rated) {
+            // The scheduled risk refresh persists the current agricultural
+            // heat map in heatmap_areas. A cleared/expired daily-forecast
+            // cache must not turn that verified map gray; use the persisted
+            // rating only for forecast entries that are actually missing.
+            $rated = $this->fillFromStoredRiskMap($rated);
             $barangays = [];
             foreach ($rated['barangays'] as $name => $b) {
                 $barangays[$name] = $this->barangay($b, $rated['days'], $locale);
@@ -50,6 +58,58 @@ final class HeatMapPanel
         }
 
         return $ranges;
+    }
+
+    /** @param array<string, mixed> $rated @return array<string, mixed> */
+    private function fillFromStoredRiskMap(array $rated): array
+    {
+        if (($rated['counts']['nodata'] ?? 0) === 0) {
+            return $rated;
+        }
+
+        $stored = rescue(fn (): array => $this->map->snapshot(), [], false);
+        $entries = collect($stored['barangays'] ?? [])->keyBy(fn (array $entry): string => (string) ($entry['barangay'] ?? ''));
+        $changed = false;
+        foreach ($rated['barangays'] as $name => &$barangay) {
+            if (($barangay['level'] ?? 'nodata') !== 'nodata' || ! $entries->has($name)) {
+                continue;
+            }
+            $entry = $entries->get($name);
+            $level = strtolower((string) ($entry['risk_level'] ?? ''));
+            if (! in_array($level, ['low', 'moderate', 'high', 'severe'], true)) {
+                continue;
+            }
+            $barangay = [
+                'barangay' => $name,
+                'level' => $level,
+                'reason' => 'calm',
+                'reasons' => [],
+                'factor' => ['key' => 'calm', 'value' => (string) ($entry['risk_type'] ?? 'Agricultural conditions')],
+                'days_covered' => (int) ($rated['days'] ?? 7),
+                'rain_total_mm' => null, 'wettest_day_mm' => null, 'wind_max_kmh' => null, 'temp_max_c' => null,
+                'farm_type' => null,
+            ];
+            $changed = true;
+            $timestamp = $entry['risk_calculated_at'] ?? $entry['updated_at'] ?? null;
+            $timestampValue = $timestamp ? CarbonImmutable::parse($timestamp)->timezone(BarangayWeekRiskService::TIMEZONE) : null;
+            if ($timestampValue && ($rated['updated_at'] === null || $timestampValue->lessThan(CarbonImmutable::parse($rated['updated_at'])))) {
+                $rated['updated_at'] = $timestampValue;
+            }
+        }
+        unset($barangay);
+
+        if (! $changed) {
+            return $rated;
+        }
+        $counts = ['severe' => 0, 'high' => 0, 'moderate' => 0, 'low' => 0, 'nodata' => 0];
+        foreach ($rated['barangays'] as $barangay) {
+            $counts[$barangay['level']]++;
+        }
+        $rated['counts'] = $counts;
+        $rated['state'] = $counts['nodata'] === count($rated['barangays']) ? 'nodata' : 'ok';
+        $rated['delayed'] = true;
+
+        return $rated;
     }
 
     public static function displayName(string $barangay): string

@@ -1,5 +1,5 @@
 /*
- * Farmer, MAO and IT accounts: the plain light green look of the landing page (resources/css/pages/welcome.css)
+ * Farmer, MAO and IT accounts: the plain light green look of the landing page
  * on every signed-in page. Loaded by layouts/app.blade.php after gov-theme.css and accessibility.css.
  *
  * Mostly a change of the gov-theme tokens; the few components that hard-code a colour are restyled below with
@@ -27,7 +27,7 @@ html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-
     background: #F3FAF0 !important;
 }
 
-/* -- TOP BAR: seal and iClimate logo, as on the landing page --------------- */
+/* -- TOP BAR: MAO logo and iClimate logo, as on the landing page ------------ */
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .topbar.ic-topbar { border-bottom: 1px solid #DCE8D6 !important; box-shadow: none !important; }
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 46px; width: auto; flex: none; }
 @media (max-width: 767.98px) {

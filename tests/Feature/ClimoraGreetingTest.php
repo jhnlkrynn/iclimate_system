@@ -71,6 +71,7 @@ class ClimoraGreetingTest extends TestCase
     {
         $this->get(route('profile.edit'))->assertRedirect(route('login'));
         $this->get(route('ai-chat.widget'))->assertRedirect(route('login'));
-        $this->get(route('login'))->assertOk()->assertDontSee('ic-ai-bubble', false);
+        $this->get(route('login'))->assertRedirect(url('/').'#login');
+        $this->get('/')->assertOk()->assertDontSee('ic-ai-bubble', false);
     }
 }

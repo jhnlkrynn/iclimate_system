@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\BarangayRiskForecastController;
 use App\Http\Controllers\Api\BarangayRiskMapController;
 use App\Http\Controllers\Api\LianBoundaryController;
 use App\Http\Controllers\Api\LianWeatherController;
+use App\Http\Controllers\Api\HeatMapController;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,8 @@ Route::get('lian/risk-map', [BarangayRiskMapController::class, 'index'])
 
 Route::get('lian/risk-map/{barangay}', [BarangayRiskMapController::class, 'show'])
     ->middleware('throttle:30,1,get-lian-risk-map-barangay');
+
+Route::get('heat-map', HeatMapController::class)->middleware(['auth', 'verified', 'throttle:60,1,get-heat-map']);
 
 Route::get('lian/risk-forecast', BarangayRiskForecastController::class)
     ->middleware('throttle:30,1,get-lian-risk-forecast');
