@@ -211,11 +211,7 @@
              Works without scripts (a GET form); with scripts the charts and their totals change at once. --}}
         @if ($charts['yield'] || $charts['impact'] || $charts['accuracy'])
         <form class="mtd-card chart-filter" method="GET" action="{{ route('mao.dashboard') }}" data-chart-filter
-              data-years="{{ json_encode($filterYears) }}" aria-labelledby="chartFilterTitle">
-            <div class="chart-filter-head">
-                <h2 id="chartFilterTitle">{{ $t('filter.title') }}</h2>
-                <p class="mtd-sub">{{ $t('filter.applies') }}</p>
-            </div>
+              data-years="{{ json_encode($filterYears) }}" aria-label="{{ $t('filter.title') }}">
             <div class="chart-filter-fields">
                 <label>
                     <span>{{ $t('filter.from') }}</span>
@@ -237,11 +233,6 @@
                         <option value="Dry" @selected($filterSeason === 'Dry')>{{ $t('filter.dry') }}</option>
                     </select>
                 </label>
-                <div class="chart-filter-presets" role="group" aria-label="{{ $t('filter.title') }}">
-                    <button type="button" data-filter-preset="3">{{ $t('filter.last3') }}</button>
-                    <button type="button" data-filter-preset="5">{{ $t('filter.last5') }}</button>
-                    <button type="button" data-filter-preset="all">{{ $t('filter.all') }}</button>
-                </div>
                 <noscript><button type="submit" class="mtd-btn">{{ $t('filter.apply') }}</button></noscript>
             </div>
             <p class="chart-filter-error" role="alert" data-filter-error @if (empty($chartFilter['error'])) hidden @endif>{{ $chartFilter['error'] ?? '' }}</p>
@@ -674,15 +665,6 @@
                 if (filterForm) {
                     [fromSel, toSel, seasonSel].forEach((el) => el && el.addEventListener('change', apply));
                     filterForm.addEventListener('submit', (e) => { e.preventDefault(); apply(); });
-                    filterForm.querySelectorAll('[data-filter-preset]').forEach((btn) => btn.addEventListener('click', () => {
-                        const n = btn.dataset.filterPreset;
-                        const last = allYears[allYears.length - 1];
-                        const firstYear = n === 'all' ? allYears[0] : Math.max(allYears[0], last - Number(n) + 1);
-                        if (fromSel) fromSel.value = String(firstYear);
-                        if (toSel) toSel.value = String(last);
-                        filterForm.querySelectorAll('[data-filter-preset]').forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
-                        apply();
-                    }));
                 }
                 document.querySelectorAll('[data-accuracy-by]').forEach((btn) => btn.addEventListener('click', () => {
                     accBy = btn.dataset.accuracyBy;
