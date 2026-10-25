@@ -273,6 +273,20 @@ class PanelRevisionsTest extends TestCase
         $this->assertSame(92.5, $result['test']['accuracy']);
     }
 
+    public function test_expected_vs_actual_reads_the_backtest_file_until_it_is_imported(): void
+    {
+        $this->assertSame(0, MunicipalYieldPrediction::query()->count());
+
+        $result = app(MaoYieldAnalytics::class)->predictedActual();
+        $this->assertSame('ok', $result['state']);
+        $this->assertNotEmpty($result['months']);
+        $this->assertNotNull($result['test']);
+
+        Cache::flush();
+        $this->actingAs($this->ofelia())->get(route('mao.dashboard'))->assertOk()
+            ->assertSee('Expected vs Actual Yield – Municipality of Lian');
+    }
+
     // ------------------------------------------------------------ 4.4 MAO personnel, coverage, stamps, log
 
     public function test_the_mao_personnel_of_lian_are_seeded_with_their_positions_and_barangays(): void
