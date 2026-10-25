@@ -91,8 +91,12 @@ class MaoYieldAnalytics
             ? MunicipalYieldPrediction::query()->whereNull('barangay')->whereNotNull('actual_yield')->orderBy('year')->orderBy('month')
                 ->get(['year', 'month', 'season', 'predicted_yield', 'actual_yield', 'split', 'model'])
             : collect();
+        // Expected vs Actual Yield: until iclimate:import-yield-backtest has been run, read the backtest file it loads.
+        if ($months->isEmpty()) {
+            $months = $this->backtestFile();
+        }
 
-        $rows = $months->map(fn (MunicipalYieldPrediction $m): array => [
+        $rows = $months->map(fn (object $m): array => [
             'year' => $m->year,
             'month' => $m->month,
             // The rice season the month belongs to (a Dry season keeps the year it started in).
@@ -112,6 +116,39 @@ class MaoYieldAnalytics
             'train' => self::accuracy($rows->where('split', 'TRAIN')),
             'barangays' => $this->barangayDrilldown($barangays),
         ];
+    }
+
+    /**
+     * The months of the generated backtest CSV (ImportYieldBacktest::DEFAULT_FILE) that have a recorded yield, shaped
+     * like MunicipalYieldPrediction rows; empty when the file is missing.
+     *
+     * @return Collection<int, object{year: int, month: int, predicted_yield: float, actual_yield: float, split: ?string, model: string}>
+     */
+    private function backtestFile(): Collection
+    {
+        $path = base_path(\App\Console\Commands\ImportYieldBacktest::DEFAULT_FILE);
+        if (! is_file($path) || ($handle = fopen($path, 'r')) === false) {
+            return collect();
+        }
+        $header = array_map(fn ($h) => strtoupper(trim((string) $h)), (array) fgetcsv($handle));
+        $months = collect();
+        while (($line = fgetcsv($handle)) !== false) {
+            $row = count($line) === count($header) ? array_combine($header, $line) : [];
+            if (! is_numeric($row['YEAR'] ?? null) || ! is_numeric($row['MONTH'] ?? null) || ! is_numeric($row['PREDICTED_YIELD'] ?? null) || ! is_numeric($row['ACTUAL_YIELD'] ?? null)) {
+                continue;
+            }
+            $months->push((object) [
+                'year' => (int) $row['YEAR'],
+                'month' => (int) $row['MONTH'],
+                'predicted_yield' => (float) $row['PREDICTED_YIELD'],
+                'actual_yield' => (float) $row['ACTUAL_YIELD'],
+                'split' => strtoupper((string) ($row['SPLIT'] ?? '')) ?: null,
+                'model' => (string) ($row['MODEL'] ?? 'Rice yield model'),
+            ]);
+        }
+        fclose($handle);
+
+        return $months->sortBy(fn (object $m): int => $m->year * 100 + $m->month)->values();
     }
 
     /**

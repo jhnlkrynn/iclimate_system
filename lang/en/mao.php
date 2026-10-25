@@ -135,10 +135,10 @@ return [
             ],
             // Panel revision 4.2
             'accuracy' => [
-                'title' => 'Predicted vs Actual Yield – Municipality of Lian',
-                'sub' => 'What the rice-yield model predicted against the yield recorded for all of Lian, in tons per hectare.',
-                'aria' => 'Predicted and actual rice yield for Lian, in tons per hectare',
-                'predicted' => 'Predicted (t/ha)',
+                'title' => 'Expected vs Actual Yield – Municipality of Lian',
+                'sub' => 'The yield the rice-yield model expected against the yield recorded for all of Lian, in tons per hectare.',
+                'aria' => 'Expected and actual rice yield for Lian, in tons per hectare',
+                'predicted' => 'Expected (t/ha)',
                 'actual' => 'Actual (t/ha)',
                 'by' => 'Show by',
                 'by_year' => 'Year',
