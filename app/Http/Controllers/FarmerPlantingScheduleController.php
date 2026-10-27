@@ -33,17 +33,20 @@ class FarmerPlantingScheduleController extends Controller
         // The plan is for the farm the farmer asked for (?farm=, only their own), else the farm they are viewing.
         $farm = ActiveFarm::owned($user, $request->query('farm')) ?? ActiveFarm::current($user);
 
+        $schedule = new FarmerPlantingSchedule($farm !== null ? [
+            'farm_id' => $farm->getKey(),
+            'barangay' => $farm->barangay,
+            'farm_type' => $farm->farm_type,
+            'farm_area_hectares' => $farm->knownHectares(),
+        ] : [
+            'barangay' => $profile?->barangay ?: $user->barangay,
+            'farm_type' => $profile?->farm_type,
+            'farm_area_hectares' => $profile?->farm_area,
+        ]);
+        $this->prefillVariety($request, $schedule);
+
         return view('planting-schedules.form', [
-            'schedule' => new FarmerPlantingSchedule($farm !== null ? [
-                'farm_id' => $farm->getKey(),
-                'barangay' => $farm->barangay,
-                'farm_type' => $farm->farm_type,
-                'farm_area_hectares' => $farm->knownHectares(),
-            ] : [
-                'barangay' => $profile?->barangay ?: $user->barangay,
-                'farm_type' => $profile?->farm_type,
-                'farm_area_hectares' => $profile?->farm_area,
-            ]),
+            'schedule' => $schedule,
             'farms' => ActiveFarm::farms($user),
             'barangays' => LianBarangays::all(),
             'action' => route('farmer.planting-schedules.store'),
@@ -58,7 +61,7 @@ class FarmerPlantingScheduleController extends Controller
         }
 
         $data = $this->validated($request);
-        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data, $request));
+        $schedule = $request->user()->plantingSchedules()->create($this->normalized($data, $request, null));
         $predictions->refresh($schedule);
         $this->afterSave($request, $schedule);
 
@@ -74,6 +77,7 @@ class FarmerPlantingScheduleController extends Controller
 
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
+        $this->prefillVariety($request, $schedule);
 
         return view('planting-schedules.form', [
             'schedule' => $schedule,
@@ -92,7 +96,7 @@ class FarmerPlantingScheduleController extends Controller
 
         $schedule = FarmerPlantingSchedule::query()->findOrFail($plantingSchedule);
         $this->authorizeOwner($request, $schedule);
-        $schedule->update($this->normalized($this->validated($request), $request));
+        $schedule->update($this->normalized($this->validated($request, $schedule), $request, $schedule));
         $predictions->refresh($schedule);
         $this->afterSave($request, $schedule);
 
@@ -133,6 +137,7 @@ class FarmerPlantingScheduleController extends Controller
         $data = $request->validate([
             'planting_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYear()->toDateString(), 'before_or_equal:'.$today->copy()->addYear()->toDateString()],
             'farm_area' => ['required', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
+            ...$this->varietyRules(),
         ], [
             'planting_date.required' => __('farmer.planting_info.date_required'),
             'planting_date.*' => __('farmer.planting_info.date_invalid'),
@@ -170,8 +175,10 @@ class FarmerPlantingScheduleController extends Controller
                     ]);
                 }
 
+                // A variety chosen here gives the plan its variety-based harvest date (FarmerPlantingSchedule::applyVarietyHarvestDate).
+                $variety = $this->varietyAttributes($data);
                 if ($schedule) {
-                    $schedule->update(['planting_date' => $data['planting_date'], 'farm_area_hectares' => $data['farm_area']]);
+                    $schedule->update(['planting_date' => $data['planting_date'], 'farm_area_hectares' => $data['farm_area']] + $variety);
 
                     return $schedule;
                 }
@@ -179,7 +186,7 @@ class FarmerPlantingScheduleController extends Controller
                 $planting = Carbon::parse($data['planting_date']);
                 $barangay = $farm?->barangay ?: ($profile?->barangay ?: $user->barangay);
 
-                return $user->plantingSchedules()->create([
+                return $user->plantingSchedules()->create($variety + [
                     ...($farm !== null ? ['farm_id' => $farm->getKey()] : []),
                     'planting_date' => $data['planting_date'],
                     'scheduled_harvest_date' => $planting->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
@@ -225,13 +232,18 @@ class FarmerPlantingScheduleController extends Controller
             ->first(fn (FarmerPlantingSchedule $row) => $row->monitoringStatus() !== 'harvested');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?FarmerPlantingSchedule $existing = null): array
     {
+        // With a variety chosen the harvest date comes from the variety, so neither date field is needed.
+        $varieties = $this->varietiesReady();
+        $harvestNeeded = $varieties ? 'required_without_all:harvest_month,rice_variety_id' : 'required_without:harvest_month';
+        $monthNeeded = $varieties ? 'required_without_all:scheduled_harvest_date,rice_variety_id' : 'required_without:scheduled_harvest_date';
+
         return $request->validate([
             'farm_id' => ['nullable', 'integer'],
             'planting_date' => ['required', 'date'],
-            'scheduled_harvest_date' => ['nullable', 'date', 'required_without:harvest_month', 'after_or_equal:planting_date'],
-            'harvest_month' => ['nullable', 'date_format:Y-m', 'required_without:scheduled_harvest_date'],
+            'scheduled_harvest_date' => ['nullable', 'date', $harvestNeeded, 'after_or_equal:planting_date'],
+            'harvest_month' => ['nullable', 'date_format:Y-m', $monthNeeded],
             'season' => ['required', Rule::in(FarmerPlantingSchedule::SEASONS)],
             'farm_type' => ['required', Rule::in(FarmerPlantingSchedule::FARM_TYPES)],
             'barangay' => ['nullable', Rule::in(LianBarangays::all())],
@@ -240,10 +252,11 @@ class FarmerPlantingScheduleController extends Controller
             'actual_yield' => ['nullable', 'numeric', 'gt:0', 'max:15'],                          // tons per hectare; no rice field yields more
             'harvested_on' => ['nullable', 'date', 'after_or_equal:planting_date', 'before_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            ...$this->varietyRules($existing),
         ] + \App\Support\HarvestTiming::rules());   // panel revision 1.3
     }
 
-    private function normalized(array $data, Request $request): array
+    private function normalized(array $data, Request $request, ?FarmerPlantingSchedule $existing): array
     {
         // Which farm: one of the farmer's own farms in use (a farm id that is not theirs is refused), else the farm
         // they are viewing. Its barangay fills an empty barangay.
@@ -276,6 +289,8 @@ class FarmerPlantingScheduleController extends Controller
             }
         }
 
+        $data = $this->withVarietyHarvest($data, $request, $existing);
+
         // Panel revision 1.3: On time / Early / Late against the expected harvest date; early or late needs a reason.
         if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'harvest_timing')) {
             $expected = $data['scheduled_harvest_date'] ?? ($data['harvest_month'] ? \Illuminate\Support\Carbon::parse($data['harvest_month'])->endOfMonth() : null);
@@ -288,6 +303,105 @@ class FarmerPlantingScheduleController extends Controller
 
         return $data;
     }
+
+    // ------------------------------------------------------------------ Rice varieties
+
+    private function varietiesReady(): bool
+    {
+        return \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id')
+            && \App\Support\SchemaCache::hasTable('rice_varieties');
+    }
+
+    /**
+     * An active variety, or the inactive one this plan already has (an inactive variety stays on the plans using it).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function varietyRules(?FarmerPlantingSchedule $existing = null): array
+    {
+        if (! $this->varietiesReady()) {
+            return [];
+        }
+        $keep = $existing?->rice_variety_id;
+
+        return [
+            'rice_variety_id' => ['nullable', 'integer', Rule::exists('rice_varieties', 'id')->where(fn ($q) => $keep
+                ? $q->where(fn ($w) => $w->where('is_active', true)->orWhere('id', $keep))
+                : $q->where('is_active', true))],
+            'crop_establishment' => ['nullable', Rule::in(\App\Support\VarietyHarvestEstimator::ESTABLISHMENTS)],
+            'date_basis' => ['nullable', Rule::in(\App\Support\VarietyHarvestEstimator::DATE_BASES)],
+            'seedling_age_days' => ['nullable', 'integer', 'min:5', 'max:60'],
+            'harvest_date_mode' => ['nullable', Rule::in(['auto', 'manual'])],
+        ];
+    }
+
+    /** The variety fields of a request, ready to save (none when the columns are not there yet). */
+    private function varietyAttributes(array $data): array
+    {
+        if (! $this->varietiesReady() || ! array_key_exists('rice_variety_id', $data)) {
+            return [];
+        }
+        $basis = $data['date_basis'] ?? 'sowing';
+
+        return [
+            'rice_variety_id' => $data['rice_variety_id'] ?: null,
+            'crop_establishment' => $data['crop_establishment'] ?? null,
+            'date_basis' => $basis,
+            'seedling_age_days' => $basis === 'transplanting'
+                ? (int) ($data['seedling_age_days'] ?? config('rice_varieties.default_seedling_age_days', 21))
+                : (int) config('rice_varieties.default_seedling_age_days', 21),
+        ];
+    }
+
+    /**
+     * The planting form with a variety: the expected harvest date is the variety's estimate, unless the farmer typed
+     * their own (a date that differs from the estimate and from the one already saved, or one the form marks as
+     * typed by hand). A recorded harvest keeps its dates as they are.
+     */
+    private function withVarietyHarvest(array $data, Request $request, ?FarmerPlantingSchedule $existing): array
+    {
+        $mode = $data['harvest_date_mode'] ?? null;
+        unset($data['harvest_date_mode']);
+        if (! $this->varietiesReady()) {
+            return array_diff_key($data, array_flip(['rice_variety_id', 'crop_establishment', 'date_basis', 'seedling_age_days']));
+        }
+
+        $data = array_merge($data, $this->varietyAttributes($data + ['rice_variety_id' => null]));
+        $harvested = ! empty($data['harvested_on']) || ($data['progress_status'] ?? null) === 'Harvested';
+        if ($data['rice_variety_id'] === null || $harvested) {
+            $data['harvest_date_manual'] = $data['rice_variety_id'] !== null && ($existing?->harvest_date_manual ?? false);
+
+            return $data;
+        }
+
+        $estimate = app(\App\Support\VarietyHarvestEstimator::class)->estimate(
+            \App\Models\RiceVariety::query()->find($data['rice_variety_id']),
+            $data['planting_date'], $data['season'] ?? null, $data['crop_establishment'], $data['date_basis'], $data['seedling_age_days'],
+        );
+        $estimated = $estimate['expected_harvest_date']->toDateString();
+        $typed = ! empty($data['scheduled_harvest_date']) ? Carbon::parse($data['scheduled_harvest_date'])->toDateString() : null;
+        $saved = $existing?->scheduled_harvest_date?->toDateString();
+        $manual = $typed !== null && $typed !== $estimated && ($mode === 'manual' || $typed !== $saved);
+
+        $data['scheduled_harvest_date'] = $manual ? $typed : $estimated;
+        $data['harvest_date_manual'] = $manual;
+
+        return $data;
+    }
+
+    /** ?variety= (from a variety's "I planted this variety"): an active variety fills the form's variety. */
+    private function prefillVariety(Request $request, FarmerPlantingSchedule $schedule): void
+    {
+        if ($this->varietiesReady() && $request->filled('variety')) {
+            $variety = \App\Models\RiceVariety::query()->active()->find((int) $request->query('variety'));
+            if ($variety !== null) {
+                $schedule->rice_variety_id = $variety->id;
+                $schedule->setRelation('riceVariety', $variety);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ end rice varieties
 
     private function seasonWarnings(FarmerPlantingSchedule $schedule): array
     {

@@ -75,6 +75,7 @@
                                         <span class="fmf-cal-num">{{ $day['day'] }}</span>
                                         @foreach ($day['events'] as $event)
                                             <span class="fmf-cal-event is-{{ $event['kind'] }}"@if (! empty($event['timing_text'])) title="{{ $event['timing_text'] }}"@endif>{{ $event['label'] }}@if ($event['farm'])<small>{{ $event['farm'] }}</small>@endif
+                                                @if (! empty($event['variety']))<small data-harvest-variety>{{ $event['variety'] }}</small>@endif
                                                 @if (! empty($event['timing']))<small class="timing-badge is-{{ \Illuminate\Support\Str::slug($event['timing']) }}">{{ \App\Support\HarvestTiming::timingLabel($event['timing']) }}</small>@endif
                                             </span>
                                         @endforeach
@@ -93,7 +94,7 @@
                 @foreach ($row['events'] as $event)
                     <a class="fmf-cal-item is-{{ $event['kind'] }}" href="{{ $event['edit'] }}">
                         <strong>{{ $row['date']->locale(app()->getLocale())->translatedFormat('M j') }}</strong>
-                        <span>{{ $event['label'] }}@if ($event['farm']) · {{ $event['farm'] }}@endif
+                        <span>{{ $event['label'] }}@if ($event['farm']) · {{ $event['farm'] }}@endif @if (! empty($event['variety'])) · <span data-harvest-variety>{{ $event['variety'] }}</span>@endif
                             @if (! empty($event['timing_text']))<small class="timing-line is-{{ \Illuminate\Support\Str::slug($event['timing']) }}">{{ $event['timing_text'] }}</small>@endif
                         </span>
                     </a>

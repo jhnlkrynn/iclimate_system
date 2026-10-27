@@ -22,6 +22,8 @@
             'user-management' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6.5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.3 15c.6-3 2.3-4.6 4.7-4.6s4.1 1.6 4.7 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4.5a2.2 2.2 0 0 1 0 4.3M14.2 10.6c1.5.5 2.4 1.9 2.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'system-health' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2 9h3l1.6-4 3 8 1.9-4H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
             'system-logs' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="2.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 2.5v-.2a1.2 1.2 0 0 1 1.2-1h1.6a1.2 1.2 0 0 1 1.2 1v.2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8h5M6.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+            // Rice Varieties: a seedling with a grain head.
+            'seedling' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9 9c0-3 2.2-5.2 5.5-5.2C14.5 7 12.3 9 9 9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 11c0-2.6-1.9-4.6-4.8-4.6C4.2 9.2 6.1 11 9 11Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 16h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             'ai' => '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             default => '',
         };
@@ -61,6 +63,7 @@
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
+        'rice-varieties' => ['rice-varieties.index', ['rice-varieties.*']],
     ];
 
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
@@ -74,7 +77,7 @@
     };
 
     if ($isFarmer) {
-        // Six items in the farmer's own language (English / Filipino). The Calendar opens from My Farm; announcements
+        // Seven items in the farmer's own language (English / Filipino). The Calendar opens from My Farm; announcements
         // are read on the Advisories page; notifications open from the bell in the top bar.
         $farmerLocale = \App\Support\FarmerLanguage::resolve(request());
         $nav = fn (string $key): string => __('farmer.nav.'.$key, [], $farmerLocale);
@@ -84,6 +87,7 @@
             $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($nav('advisories'), 'advisories', 'advisories'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
+            $navLink($nav('varieties'), 'rice-varieties', 'seedling'),
             $navLink($nav('messages'), 'messages', 'messages'),
         ];
         $moreGroup = [];
@@ -103,6 +107,7 @@
             $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
             $navLink($maoNav('records'), 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
             $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
+            $navLink($maoNav('varieties'), 'rice-varieties', 'seedling'),
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
             $navLink($maoNav('predictions'), 'weather', 'weather'),
@@ -120,6 +125,7 @@
             $navLink('Dashboard', 'dashboard', 'dashboard'),
             $navLink('User management', 'user-management', 'user-management'),
             $navLink('Reports', 'reports', 'reports'),
+            $navLink('Rice Varieties', 'rice-varieties', 'seedling'),
             // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
             $navLink('Settings', 'it-settings', 'system-health'),
             $navLink('Messages', 'messages', 'messages'),

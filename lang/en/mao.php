@@ -19,6 +19,7 @@ return [
         'advisories' => 'Advisories',
         'records' => 'Records',
         'farmers' => 'Farmers',
+        'varieties' => 'Rice Varieties',
         'field_reports' => 'Field Reports',
         'predictions' => 'Predictions',
         'reports' => 'Reports',

@@ -11,7 +11,8 @@
         "guzzlehttp/guzzle": "^7.15.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "league/commonmark": "^2.10"
+        "league/commonmark": "^2.10",
+        "phpoffice/phpspreadsheet": "^5.10"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

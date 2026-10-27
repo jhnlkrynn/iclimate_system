@@ -46,22 +46,23 @@ class FarmerPagesSimplificationTest extends TestCase
 
     // ------------------------------------------------------------ menu
 
-    public function test_the_farmer_menu_has_six_items_in_the_farmers_language(): void
+    public function test_the_farmer_menu_has_seven_items_in_the_farmers_language(): void
     {
         $farmer = $this->farmer();
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()->getContent();
-        $menu = substr($html, strpos($html, 'class="ic-sidebar'), 6000);
+        $menu = substr($html, strpos($html, 'class="ic-sidebar'), 8000);
 
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', $menu, $m);
-        $this->assertSame(['Dashboard', 'Forecast', 'Heat Map', 'Advisories', 'My Farm', 'Messages'], array_slice($m[1], 0, 6));
+        // Rice Varieties sits beside My Farm.
+        $this->assertSame(['Dashboard', 'Forecast', 'Heat Map', 'Advisories', 'My Farm', 'Rice Varieties', 'Messages'], array_slice($m[1], 0, 7));
         foreach (['Climate Records', 'Rice Production', 'Community', 'Calendar'] as $gone) {
             $this->assertNotContains($gone, $m[1]);
         }
 
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->getContent();
-        preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', substr($html, strpos($html, 'class="ic-sidebar'), 6000), $m);
-        $this->assertSame(['Dashboard', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mensahe'], array_slice($m[1], 0, 6));
+        preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', substr($html, strpos($html, 'class="ic-sidebar'), 8000), $m);
+        $this->assertSame(['Dashboard', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mga Binhi ng Palay', 'Mensahe'], array_slice($m[1], 0, 7));
     }
 
     // ------------------------------------------------------------ Aking Bukid
