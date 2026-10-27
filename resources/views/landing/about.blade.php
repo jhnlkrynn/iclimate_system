@@ -14,7 +14,7 @@
                 <p id="about-title" class="text-[0.9375rem] font-semibold leading-[1.4] text-brand">About iClimate</p>
                 <h2 class="text-[1.625rem] font-medium leading-[1.25] tracking-[-0.02em] text-ink sm:text-[2.25rem]">
                     iClimate combines climate data with the MAO’s own rice production records, so farmers know what the weather means for their next planting and
-                    <span class="text-muted">staff can see how climate and yield move together across barangays.</span>
+                    staff can see how climate and yield move together across barangays.
                 </h2>
                 <a href="#contact" class="lp-btn-neutral mt-3" data-about-mao>About the MAO</a>
             </div>
