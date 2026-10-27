@@ -28,7 +28,7 @@
 <header class="auth-masthead">
   <div class="auth-masthead-inner">
     <a href="{{ url('/') }}" class="auth-brand" aria-label="iClimate, Municipal Agriculture Office of Lian, home">
-      <img class="auth-brand-mao" src="{{ asset('images/mao-logo.png') }}" alt="Municipal Agriculture Office logo" width="56" height="56">
+      <img class="auth-brand-mao" src="{{ asset('images/mao-lian-seal.png') }}" alt="Municipal Agriculture Office logo" width="56" height="56">
       <img class="auth-brand-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="" width="70" height="56">
       <span class="auth-brand-text">
         <span class="auth-brand-office">Municipal Agriculture Office</span>

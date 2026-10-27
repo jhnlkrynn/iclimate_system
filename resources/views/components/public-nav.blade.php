@@ -17,7 +17,7 @@
 <header class="sticky top-0 z-40 border-b border-line bg-white transition-shadow duration-200 [&.is-scrolled]:shadow-[0_1px_0_rgba(17,26,19,0.06),0_6px_16px_rgba(17,26,19,0.06)]" data-public-nav>
     <div class="lp-wrap grid grid-cols-[1fr_auto] items-center gap-5 py-3.5 lg:grid-cols-[1fr_auto_1fr]" data-nav-row>
         <a href="{{ url('/') }}" class="flex min-w-0 items-center gap-2.5 rounded-lg" aria-label="iClimate, Municipal Agriculture Office, Lian, Batangas: home" data-nav-home>
-            <img src="{{ asset('images/mao-logo.png') }}" alt="Municipal Agriculture Office logo" width="44" height="44" class="h-[44px] w-[44px] shrink-0 object-contain">
+            <img src="{{ asset('images/mao-lian-seal.png') }}" alt="Municipal Agriculture Office logo" width="44" height="44" class="h-[44px] w-[44px] shrink-0 object-contain">
             <img src="{{ asset('images/iclimate-logo.png') }}" alt="" width="50" height="44" class="h-[44px] w-[50px] shrink-0 object-contain">
             <span class="hidden min-w-0 flex-col leading-[1.3] sm:flex">
                 <span class="truncate text-sm font-semibold text-ink">Municipal Agriculture Office</span>

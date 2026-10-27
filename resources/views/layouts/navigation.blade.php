@@ -37,9 +37,9 @@
         <button class="ic-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open menu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
-        {{-- Panel revision 4.5: the office's name and logo (public/images/mao-logo.png, the MAO rice logo). --}}
+        {{-- Panel revision 4.5: the office's name and logo (public/images/mao-lian-seal.png, the Lian municipal seal). --}}
         <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="iClimate – Municipal Agriculture Office of Lian, dashboard">
-            <img class="gov-mao-logo" src="{{ asset('images/mao-logo.png') }}" alt="Municipal Agriculture Office logo" width="46" height="46">
+            <img class="gov-mao-logo" src="{{ asset('images/mao-lian-seal.png') }}" alt="Municipal Agriculture Office logo" width="46" height="46">
             {{-- The iClimate logo beside the MAO logo, as on the landing page (resources/css/pages/account-light.css). --}}
             <img class="gov-app-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="58" height="47">
             <span class="gov-brand-text">
