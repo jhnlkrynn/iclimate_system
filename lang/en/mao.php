@@ -14,7 +14,7 @@ return [
         'open' => 'Review',
     ],
     'nav' => [
-        'dashboard' => 'Dashboard',
+        'dashboard' => 'MAO Staff Dashboard',
         'heat_map' => 'Heat Map',
         'advisories' => 'Advisories',
         'records' => 'Records',
@@ -29,7 +29,7 @@ return [
     ],
     'dashboard' => [
         'office' => 'Municipal Agriculture Office',
-        'title' => 'MAO Dashboard',
+        'title' => 'MAO Staff Dashboard',
         'place' => 'Lian, Batangas',
         'season' => ['wet' => 'Wet season :years', 'dry' => 'Dry season :years'],
         'season_short' => ['wet' => 'Wet', 'dry' => 'Dry'],

@@ -530,7 +530,7 @@ class ItDashboardTest extends TestCase
     public function test_sidebar_lists_only_the_system_pages_once_each(): void
     {
         $html = $this->page()->getContent();
-        $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, 'IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
+        $sidebar = substr($html, strpos($html, 'sidebar-group'), strpos($html, '<h1>IT Personnel Dashboard') - strpos($html, 'sidebar-group'));
 
         // IT is the system controller (2026-10): one list of system pages and Messages, no agricultural pages.
         $this->assertStringContainsString('>Menu<', $html);

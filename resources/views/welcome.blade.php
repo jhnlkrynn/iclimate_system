@@ -52,6 +52,8 @@
     @include('partials.global-loader')
 </head>
 <body id="top">
+{{-- The rice field photo behind every section (landing.css .lp-photo), versioned by file time so a replaced photo shows at once. --}}
+<div class="lp-photo" aria-hidden="true" style="background-image: url('{{ asset('images/rice-field-harvest.jpg') }}?v={{ filemtime(public_path('images/rice-field-harvest.jpg')) }}')"></div>
 <x-flash-toast />
 <a href="#main" class="sr-only z-50 rounded-lg bg-brand px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to main content</a>
 

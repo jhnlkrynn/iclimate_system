@@ -3,18 +3,18 @@
     $facts = [
         ['icon' => 'sun', 'title' => 'Made for rice', 'text' => 'Production analysis, yield prediction and planting advice for one crop, done properly.'],
         ['icon' => 'file-text', 'title' => 'Built on local records', 'text' => 'Forecasts use years of Lian’s own harvest and weather data, plus PAGASA and Open-Meteo.'],
-        ['icon' => 'user-check', 'title' => 'Run by the MAO', 'text' => 'Kept current by MAO staff and technicians and maintained by IT personnel.'],
+        ['icon' => 'user-check', 'title' => 'Run by the MAO', 'text' => 'Kept current by MAO Staff and maintained by IT Personnel.'],
     ];
     $sources = ['PAGASA advisories', 'Open-Meteo forecasts', 'Stored climate records', 'MAO rice production records'];
 @endphp
-<section id="about" data-section aria-labelledby="about-title" class="lp-screen bg-white py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="about" data-section aria-labelledby="about-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <div class="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
             <div data-reveal class="flex min-w-0 flex-1 flex-col items-start gap-5">
                 <p id="about-title" class="text-[0.9375rem] font-semibold leading-[1.4] text-brand">About iClimate</p>
                 <h2 class="text-[1.625rem] font-medium leading-[1.25] tracking-[-0.02em] text-ink sm:text-[2.25rem]">
                     iClimate combines climate data with the MAO’s own rice production records, so farmers know what the weather means for their next planting and
-                    <span class="text-muted">staff can see how climate and yield move together across barangays.</span>
+                    staff can see how climate and yield move together across barangays.
                 </h2>
                 <a href="#contact" class="lp-btn-neutral mt-3" data-about-mao>About the MAO</a>
             </div>
@@ -41,5 +41,5 @@
                 </li>
             @endforeach
         </ul>
-    </div>
+    </div></div>
 </section>

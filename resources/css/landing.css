@@ -45,6 +45,12 @@
         @apply mx-auto w-full max-w-[1440px] px-4 sm:px-8 xl:px-[100px];
     }
 
+    /* Every section's content sits on the hero's text panel: mostly white, simple border, the rice field photo
+       (.lp-photo) blurred behind it so the text stays readable. */
+    .lp-panel {
+        @apply rounded-lg border border-line bg-white/75 p-6 backdrop-blur sm:p-9;
+    }
+
     .lp-btn {
         @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2 text-base leading-none transition-colors;
     }
@@ -101,6 +107,14 @@
     .lp-nav-link.is-active {
         @apply bg-tint;
     }
+}
+
+/* The rice field photo behind the whole page (welcome.blade.php). It stays still while the sections scroll over it;
+   a fixed layer instead of background-attachment: fixed, which phones ignore. Right of centre so a phone screen,
+   which shows a narrow slice of the landscape photo, keeps the harvester in view. */
+.lp-photo {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-color: #EAF4E4; background-position: 70% center; background-size: cover; background-repeat: no-repeat;
 }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox

@@ -1,7 +1,8 @@
 {{-- Hero (Figma: Hero): fills one screen below the nav. The login card posts to the regular login route; a failed
      attempt comes back here with its errors. --}}
-{{-- Background: a rice field in Lian (versioned by file time so a replaced photo shows at once). The photo is blurred
-     behind the text panel so the text stays readable. --}}
+{{-- Background: its own rice field in Lian, covering the page's photo (welcome.blade.php .lp-photo) behind this section
+     (versioned by file time so a replaced photo shows at once). The photo is blurred behind the text panel so the text
+     stays readable. --}}
 <section id="hero" data-section class="lp-screen relative bg-[#EAF4E4] bg-cover bg-center py-10 lg:py-12" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
     <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
         <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-line bg-white/75 p-6 backdrop-blur [container-type:inline-size] sm:p-9">
@@ -42,7 +43,7 @@
                         @csrf
                         <div>
                             <h2 class="text-[1.625rem] font-semibold leading-[1.2] tracking-[-0.02em] text-ink">Log in to iClimate</h2>
-                            <p class="mt-1.5 text-base leading-[1.4] text-muted">For registered farmers, MAO personnel and IT staff.</p>
+                            <p class="mt-1.5 text-base leading-[1.4] text-muted">For registered Farmer, MAO Staff and IT Personnel accounts.</p>
                         </div>
 
                         <div>
@@ -89,7 +90,7 @@
                         'useOld' => $authMode === 'register',
                         'captchaLazy' => $authMode !== 'register',
                     ])
-                    <p class="mt-4 text-sm leading-[1.4] text-muted">MAO staff and IT accounts are set up by the system administrators. Contact the Municipal Agriculture Office if you need staff access.</p>
+                    <p class="mt-4 text-sm leading-[1.4] text-muted">MAO Staff and IT Personnel accounts are set up by the system administrators. Contact the Municipal Agriculture Office if you need staff access.</p>
                 </div>
             @endauth
         </div>

@@ -7,8 +7,8 @@
         ['icon' => 'file-text', 'title' => 'Results are reported', 'text' => 'Reports and yield forecasts guide the next season’s decisions.'],
     ];
 @endphp
-<section id="how" data-section aria-labelledby="how-title" class="lp-screen bg-white py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="how" data-section aria-labelledby="how-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <h2 id="how-title" data-reveal class="text-[2rem] font-bold leading-[1.2] tracking-[-0.03em] text-ink sm:text-[2.5rem]">How it works</h2>
         <ol data-reveal-group class="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
             @foreach ($steps as $step)
@@ -22,5 +22,5 @@
                 </li>
             @endforeach
         </ol>
-    </div>
+    </div></div>
 </section>

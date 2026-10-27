@@ -154,7 +154,7 @@ class MaoDashboardFiguresTest extends TestCase
         $mao = $this->mao();
         $english = $this->html($mao);
 
-        foreach (['MAO Dashboard', 'Needs Action', 'Registered farmers', 'Advisories to approve', 'Rice Yield by Year 2020–2025'] as $words) {
+        foreach (['MAO Staff Dashboard', 'Needs Action', 'Registered farmers', 'Advisories to approve', 'Rice Yield by Year 2020–2025'] as $words) {
             $this->assertStringContainsString($words, $english, $words);
         }
         $this->assertStringNotContainsString('Kailangan ng Aksyon', $english);
@@ -165,7 +165,7 @@ class MaoDashboardFiguresTest extends TestCase
         $this->assertSame('fil', $mao->fresh()->preferred_language);
 
         $filipino = $this->html($mao->fresh());
-        foreach (['Dashboard ng MAO', 'Kailangan ng Aksyon', 'Mga rehistradong magsasaka', 'Mga advisory na aaprubahan', 'Ani ng Palay Bawat Taon 2020–2025', 'Tag-ulan 2026'] as $words) {
+        foreach (['MAO Staff Dashboard', 'Kailangan ng Aksyon', 'Mga rehistradong magsasaka', 'Mga advisory na aaprubahan', 'Ani ng Palay Bawat Taon 2020–2025', 'Tag-ulan 2026'] as $words) {
             $this->assertStringContainsString($words, $filipino, $words);
         }
         $this->assertStringNotContainsString('Needs Action', $filipino);

@@ -2,35 +2,37 @@
 @php
     $roles = [
         'farmers' => [
-            'tab' => 'Rice farmers',
-            'text' => 'Check conditions, get planting advice and risk alerts, and see seasonal information on a simple dashboard.',
+            'tab' => 'Farmer',
+            'text' => 'Check conditions, get planting advice and risk alerts, and see seasonal information on the Farmer Dashboard.',
             'features' => ['Climate monitoring', 'Planting guidance', 'Weather risk alerts', 'Notifications', 'Seasonal reports'],
             'button' => 'Farmer log in',
         ],
         'mao' => [
-            'tab' => 'MAO personnel',
-            'text' => 'Manage agricultural records, follow rice production, compare climate and yield, and prepare reports for farmers and the municipality.',
+            'tab' => 'MAO Staff',
+            'text' => 'Manage agricultural records, follow rice production, compare climate and yield, and prepare reports for farmers and the municipality on the MAO Staff Dashboard.',
             'features' => ['Production monitoring', 'Climate analytics', 'Report generation', 'Record validation', 'Heat map monitoring'],
-            'button' => 'MAO log in',
+            'button' => 'MAO Staff log in',
         ],
         'it' => [
-            'tab' => 'IT personnel',
-            'text' => 'Support user access, keep records organized, watch system activity, and help the MAO keep iClimate secure and dependable.',
+            'tab' => 'IT Personnel',
+            'text' => 'Support user access, keep records organized, watch system activity, and help the MAO keep iClimate secure and dependable from the IT Personnel Dashboard.',
             'features' => ['User access support', 'Activity checks', 'Record upkeep', 'Account support', 'System reliability'],
-            'button' => 'IT log in',
+            'button' => 'IT Personnel log in',
         ],
     ];
 @endphp
-<section id="roles" data-section aria-labelledby="roles-title" class="lp-screen bg-surface py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="roles" data-section aria-labelledby="roles-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <h2 id="roles-title" data-reveal class="lp-h2">Who uses iClimate</h2>
         <p data-reveal style="--reveal-delay: 60ms" class="mt-3 text-[1.0625rem] leading-[1.4] text-muted">Each account sees the tools for its own work.</p>
 
-        <div role="tablist" aria-label="Who uses iClimate" class="mt-10 flex w-fit max-w-full overflow-x-auto border-b border-line" data-tabs>
+        {{-- The grey baseline is an inset shadow so the tabs' underline needs no negative margin, which made the row
+             overflow and show a scrollbar. On a narrow phone the row still scrolls sideways, without a visible bar. --}}
+        <div role="tablist" aria-label="Who uses iClimate" class="mt-10 flex w-fit max-w-full overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_theme(colors.line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-tabs>
             @foreach ($roles as $key => $role)
                 <button type="button" role="tab" id="role-tab-{{ $key }}" aria-controls="role-panel-{{ $key }}"
                         aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}"
-                        class="-mb-px min-h-11 shrink-0 whitespace-nowrap rounded-t border-b-2 border-transparent px-2 py-1.5 text-base leading-[1.4] text-muted transition-colors hover:text-ink aria-selected:border-ink aria-selected:text-ink">
+                        class="min-h-11 shrink-0 whitespace-nowrap rounded-t border-b-2 border-transparent px-2 py-1.5 text-base leading-[1.4] text-muted transition-colors hover:text-ink aria-selected:border-ink aria-selected:text-ink">
                     {{ $role['tab'] }}
                 </button>
             @endforeach
@@ -55,5 +57,5 @@
                 </div>
             </div>
         @endforeach
-    </div>
+    </div></div>
 </section>

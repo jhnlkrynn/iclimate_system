@@ -128,6 +128,8 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-header-top { display: contents; }
 .mfd-header-main { grid-column: 1 / -1; min-width: 0; width: 100%; }
 .mfd-header-main h1 { white-space: nowrap; }
+/* On a phone a long title ("IT Personnel Dashboard") is wider than the card: let it wrap instead of being cut off. */
+@media (max-width: 575.98px) { .mfd-header-main h1 { white-space: normal; } }
 .mfd-header-meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
 .mfd-meta-separator { color: rgba(255, 255, 255, .5); }
 .mfd .mfd-header h1 { color: #fff; }
