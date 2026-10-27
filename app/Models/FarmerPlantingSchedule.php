@@ -27,7 +27,12 @@ class FarmerPlantingSchedule extends Model
         'prediction_generated_at',
         // Panel revision 1.3
         'harvest_timing', 'harvest_timing_reason', 'harvest_timing_reason_other',
+        // Rice varieties: the NSIC variety planted and how, for its expected harvest date (App\Support\VarietyHarvestEstimator)
+        'rice_variety_id', 'crop_establishment', 'date_basis', 'seedling_age_days', 'harvest_date_manual',
     ];
+
+    /** A change to any of these gives a plan with a variety a new expected harvest date. */
+    public const VARIETY_ESTIMATE_INPUTS = ['rice_variety_id', 'planting_date', 'season', 'crop_establishment', 'date_basis', 'seedling_age_days', 'harvest_date_manual'];
 
     protected $casts = [
         'planting_date' => 'date',
@@ -42,6 +47,8 @@ class FarmerPlantingSchedule extends Model
         'historical_same_month_average' => 'decimal:2',
         'yield_difference' => 'decimal:2',
         'prediction_generated_at' => 'datetime',
+        'seedling_age_days' => 'integer',
+        'harvest_date_manual' => 'boolean',
     ];
 
     public function farmer(): BelongsTo
@@ -56,6 +63,7 @@ class FarmerPlantingSchedule extends Model
         // Whatever path records a harvest date (Activity Calendar, the planting form, an import), its timing is kept
         // right. The reason itself is asked for by the forms (App\Support\HarvestTiming::attributes()).
         static::saving(function (self $schedule): void {
+            $schedule->applyVarietyHarvestDate();
             if (! \App\Support\SchemaCache::hasColumn($schedule->getTable(), 'harvest_timing')) {
                 return;
             }
@@ -79,6 +87,68 @@ class FarmerPlantingSchedule extends Model
     }
 
     // ------------------------------------------------------------ end panel revision 1.3
+
+    // ------------------------------------------------------------ Rice varieties
+
+    public function riceVariety(): BelongsTo
+    {
+        return $this->belongsTo(RiceVariety::class);
+    }
+
+    public function isHarvested(): bool
+    {
+        return $this->harvested_on !== null || $this->progress_status === 'Harvested';
+    }
+
+    /**
+     * Whatever path saves a plan with a variety (the planting form, the dashboard, the Activity Calendar), its expected
+     * harvest date follows the variety, unless the farmer typed their own date or the crop is already harvested.
+     */
+    public function applyVarietyHarvestDate(): void
+    {
+        if (! \App\Support\SchemaCache::hasColumn($this->getTable(), 'rice_variety_id') || ! $this->rice_variety_id
+            || $this->harvest_date_manual || $this->isHarvested() || $this->planting_date === null) {
+            return;
+        }
+        if ($this->exists && $this->scheduled_harvest_date !== null && ! $this->isDirty(self::VARIETY_ESTIMATE_INPUTS)) {
+            return;
+        }
+        if ($this->isDirty('rice_variety_id')) {
+            $this->unsetRelation('riceVariety');
+        }
+        $estimate = $this->varietyEstimate();
+        if ($estimate !== null) {
+            $this->scheduled_harvest_date = $estimate['expected_harvest_date']->toDateString();
+        }
+    }
+
+    /** "NSIC Rc 480 (GSR 8)" beside a harvest date, or null when no variety is recorded. */
+    public function varietyLabel(): ?string
+    {
+        if (! $this->rice_variety_id || ! \App\Support\SchemaCache::hasColumn($this->getTable(), 'rice_variety_id')) {
+            return null;
+        }
+
+        return $this->riceVariety?->displayName();
+    }
+
+    /** Eager-loads the varieties of a list of plans, once the column exists. */
+    public static function withVarieties(\Illuminate\Support\Collection $plans): \Illuminate\Support\Collection
+    {
+        if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id') && $plans instanceof \Illuminate\Database\Eloquent\Collection) {
+            $plans->loadMissing('riceVariety');
+        }
+
+        return $plans;
+    }
+
+    /** The variety-based estimate for this plan (window, basis sentence), or null without a planting date. */
+    public function varietyEstimate(): ?array
+    {
+        return app(\App\Support\VarietyHarvestEstimator::class)->estimate($this);
+    }
+
+    // ------------------------------------------------------------ end rice varieties
 
     /** Which of the farmer's farms this plan is for. */
     public function farm(): BelongsTo

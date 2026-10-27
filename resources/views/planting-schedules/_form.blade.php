@@ -6,6 +6,8 @@
         ? ['grid' => 'fcal-plan-grid', 'field' => 'fad-field', 'full' => 'fad-field is-full', 'label' => 'fad-m-field-label', 'input' => 'fad-input', 'select' => 'fad-input', 'help' => 'fad-m-small', 'error' => 'fcal-plan-error']
         : ['grid' => 'row g-3', 'field' => 'col-md-6', 'full' => 'col-12', 'label' => 'form-label', 'input' => 'form-control', 'select' => 'form-select', 'help' => 'schedule-help mt-1', 'error' => 'invalid-feedback d-block'];
     $invalid = fn (string $field) => $errors->has($field) ? ' is-invalid' : '';
+    // Rice Varieties: the variety fields, once the database has them.
+    $varietiesReady = \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id') && \App\Support\SchemaCache::hasTable('rice_varieties');
 @endphp
 @unless($inModal)
     <style>
@@ -52,12 +54,23 @@
             <label class="{{ $c['label'] }}" for="planting_date">Planting date</label>
             <input class="{{ $c['input'] }}{{ $invalid('planting_date') }}" id="planting_date" name="planting_date" type="date" required value="{{ old('planting_date', $schedule->planting_date?->format('Y-m-d')) }}">
             @error('planting_date')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
+            @if ($varietiesReady)
+                {{-- Rice Varieties: "Expected harvest: Feb 16, 2027 (± 4 days)" for the chosen variety. --}}
+                <div class="{{ $c['help'] }} rv-preview" data-rv-preview aria-live="polite" hidden>
+                    <strong data-rv-preview-label></strong>
+                    <span class="rv-preview-basis" data-rv-preview-basis></span>
+                    <button type="button" class="rv-preview-use" data-rv-use hidden>{{ __('rice_varieties.estimate.use') }}</button>
+                </div>
+            @endif
         </div>
+        @if ($varietiesReady)
+            @include('rice-varieties._planting-fields')
+        @endif
         <div class="{{ $c['field'] }}">
             <label class="{{ $c['label'] }}" for="scheduled_harvest_date">Expected harvest date</label>
             <input class="{{ $c['input'] }}{{ $invalid('scheduled_harvest_date') }}" id="scheduled_harvest_date" name="scheduled_harvest_date" type="date" value="{{ old('scheduled_harvest_date', $schedule->scheduled_harvest_date?->format('Y-m-d')) }}">
             @error('scheduled_harvest_date')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
-            <div class="{{ $c['help'] }}">Use an exact date, or choose only a harvest month below.</div>
+            <div class="{{ $c['help'] }}">{{ $varietiesReady ? 'Filled in from your rice variety. Change it only if you know a different date.' : 'Use an exact date, or choose only a harvest month below.' }}</div>
         </div>
         <div class="{{ $c['field'] }}">
             <label class="{{ $c['label'] }}" for="harvest_month">Harvest month</label>

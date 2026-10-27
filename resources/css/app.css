@@ -12,6 +12,7 @@
 @import './info-modal.css';
 @import './risk-overview.css';
 @import './mao-dashboard.css';
+@import './rice-varieties.css';
 
 @tailwind base;
 @tailwind components;

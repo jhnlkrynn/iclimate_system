@@ -745,6 +745,7 @@ return [
         'heat_map' => 'Mapa ng Panganib',
         'advisories' => 'Payo',
         'my_farm' => 'Aking Bukid',
+        'varieties' => 'Mga Binhi ng Palay',
         'messages' => 'Mensahe',
         'logout' => 'Mag-log out',
     ],

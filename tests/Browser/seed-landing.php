@@ -42,3 +42,6 @@ Advisory::query()->create([
     'published_at' => now(),
     'posted_by' => User::query()->where('email', 'mao@browser.test')->value('id'),
 ]);
+
+// Rice Varieties smoke test (tests/Browser/rice-varieties.spec.mjs): five real rows of the NSIC list.
+app(\App\Services\RiceVarieties\RiceVarietyImporter::class)->import(__DIR__.'/../fixtures/nsic-rice-sample.xlsx');

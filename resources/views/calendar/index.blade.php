@@ -169,6 +169,7 @@
                         <div class="fcal-record-main">
                             <h3 class="fcal-record-title">{{ $schedule->planting_date?->format('M j, Y') }} planting <span aria-hidden="true">→</span><span class="visually-hidden">, harvest</span> {{ $harvest?->format($schedule->scheduled_harvest_date ? 'M j, Y' : 'F Y') ?? 'harvest date not set' }}</h3>
                             <dl class="fcal-record-facts">
+                                @if ($schedule->varietyLabel())<div><dt>Variety</dt><dd data-harvest-variety>{{ $schedule->varietyLabel() }}</dd></div>@endif
                                 <div><dt>Season</dt><dd>{{ $schedule->season ?: '—' }}</dd></div>
                                 <div><dt>Farm type</dt><dd>{{ $schedule->farm_type ?: '—' }}</dd></div>
                                 <div><dt>Barangay</dt><dd>{{ $schedule->barangay ?: 'Location not provided' }}</dd></div>

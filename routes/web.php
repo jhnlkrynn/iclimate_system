@@ -1090,6 +1090,25 @@ Route::middleware(['auth', 'verified', 'role:'.User::ROLE_MAO])->prefix('mao/pla
 });
 // End MAO/IT – Kaye
 
+// Rice Varieties: the NSIC catalog for farmers, MAO and IT (the page differs by role), the Variety Details pop-up's
+// data, the planting form's expected-harvest preview (farmers) and adding / editing varieties (IT). Permissions:
+// App\Policies\RiceVarietyPolicy.
+Route::middleware(['auth', 'verified', 'farmer.language'])->prefix('rice-varieties')->name('rice-varieties.')->group(function () {
+    $controller = \App\Http\Controllers\RiceVarietyController::class;
+    $staffAndFarmers = 'role:'.User::ROLE_FARMER.','.User::ROLE_MAO.','.User::ROLE_IT_EXPERT;
+
+    Route::get('/', [$controller, 'index'])->middleware($staffAndFarmers)->name('index');
+    Route::get('/estimate', [$controller, 'estimate'])->middleware(['role:'.User::ROLE_FARMER, 'throttle:60,1,get-rice-variety-estimate'])->name('estimate');
+    Route::middleware('role:'.User::ROLE_IT_EXPERT)->group(function () use ($controller) {
+        Route::get('/create', [$controller, 'create'])->name('create');
+        Route::post('/', [$controller, 'store'])->name('store');
+        Route::get('/{riceVariety}/edit', [$controller, 'edit'])->whereNumber('riceVariety')->name('edit');
+        Route::put('/{riceVariety}', [$controller, 'update'])->whereNumber('riceVariety')->name('update');
+        Route::patch('/{riceVariety}/toggle', [$controller, 'toggle'])->whereNumber('riceVariety')->name('toggle');
+    });
+    Route::get('/{riceVariety}', [$controller, 'show'])->whereNumber('riceVariety')->middleware([$staffAndFarmers, 'throttle:120,1,get-rice-variety'])->name('show');
+});
+
 
 /*
 |--------------------------------------------------------------------------

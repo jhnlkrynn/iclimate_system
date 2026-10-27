@@ -734,6 +734,7 @@ return [
         'heat_map' => 'Heat Map',
         'advisories' => 'Advisories',
         'my_farm' => 'My Farm',
+        'varieties' => 'Rice Varieties',
         'messages' => 'Messages',
         'logout' => 'Log out',
     ],

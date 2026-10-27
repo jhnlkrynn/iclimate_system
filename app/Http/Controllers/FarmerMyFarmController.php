@@ -37,6 +37,7 @@ class FarmerMyFarmController extends Controller
                     ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
                 ->orderByDesc('planting_date')->get()
             : collect();
+        FarmerPlantingSchedule::withVarieties($schedules);
         $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
         $type = $farmType ? strtolower((string) $farmType) : null;
 
@@ -64,6 +65,7 @@ class FarmerMyFarmController extends Controller
                 'id' => $s->id,
                 'planting_date' => $s->planting_date,
                 'harvest_date' => $s->harvestDateForPlanning(),
+                'variety' => $s->varietyLabel(),
                 'season' => $this->seasonLabel($s),
                 'status' => $this->statusLabel($s->monitoringStatus()),
             ])->all(),
@@ -128,7 +130,7 @@ class FarmerMyFarmController extends Controller
             }
             $harvest = $s->harvestDateForPlanning();
             if ($harvest && $harvest->toDateString() >= $today && $s->monitoringStatus() !== 'harvested') {
-                $events[] = ['date' => $harvest, 'label' => __('farmer.my_farm_page.event_harvest')];
+                $events[] = ['date' => $harvest, 'label' => __('farmer.my_farm_page.event_harvest').(($variety = $s->varietyLabel()) ? ' · '.$variety : '')];
             }
         }
         usort($events, fn (array $a, array $b): int => $a['date'] <=> $b['date']);
@@ -151,6 +153,7 @@ class FarmerMyFarmController extends Controller
         $all = SchemaCache::hasTable('farmer_planting_schedules')
             ? FarmerPlantingSchedule::query()->where('user_id', $user->id)->orderByDesc('planting_date')->get()
             : collect();
+        FarmerPlantingSchedule::withVarieties($all);
         // Archived farms keep their records, so their names are still needed beside those records.
         $names = ActiveFarm::available() ? Farm::query()->ownedBy($user)->pluck('farm_name', 'id') : collect();
         $primaryId = $farms->first()?->getKey();
@@ -208,6 +211,7 @@ class FarmerMyFarmController extends Controller
                 // Panel revision 1.3: "Early (12 days) – Heavy rain / flooding" on a recorded harvest.
                 'timing' => $kind === 'harvested' && $s->harvest_timing ? $s->harvest_timing : null,
                 'timing_text' => $kind === 'harvested' ? $s->harvestTimingSummary(app()->getLocale()) : null,
+                'variety' => $kind === 'expected' ? $s->varietyLabel() : null,      // the variety its expected date comes from
             ];
         };
         foreach ($schedules as $s) {

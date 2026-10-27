@@ -19,6 +19,7 @@ return [
         'advisories' => 'Mga Advisory',
         'records' => 'Mga Tala',
         'farmers' => 'Mga Magsasaka',
+        'varieties' => 'Mga Binhi ng Palay',
         'field_reports' => 'Mga Ulat sa Bukid',
         'predictions' => 'Mga Taya',
         'reports' => 'Mga Ulat',

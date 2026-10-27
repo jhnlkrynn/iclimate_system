@@ -195,7 +195,8 @@ class FarmerHomeKpis
         $total = (int) $planted->diffInDays($harvest);
 
         return $tile + ['label' => __('farmer.kpis.crop.to_harvest'), 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
-            'note' => __('farmer.kpis.crop.harvest_on', ['date' => $day($harvest)]),
+            // The variety the date comes from, when the farmer recorded one ("Harvest around Feb 16 · NSIC Rc 480 (GSR 8)").
+            'note' => __('farmer.kpis.crop.harvest_on', ['date' => $day($harvest)]).(($variety = $plan->varietyLabel()) ? ' · '.$variety : ''),
             'progress' => $total > 0 ? max(0, min(100, (int) round(($total - $days) / $total * 100))) : null];
     }
 
