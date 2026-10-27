@@ -7,8 +7,8 @@
     ];
     $sources = ['PAGASA advisories', 'Open-Meteo forecasts', 'Stored climate records', 'MAO rice production records'];
 @endphp
-<section id="about" data-section aria-labelledby="about-title" class="lp-screen bg-white py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="about" data-section aria-labelledby="about-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <div class="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
             <div data-reveal class="flex min-w-0 flex-1 flex-col items-start gap-5">
                 <p id="about-title" class="text-[0.9375rem] font-semibold leading-[1.4] text-brand">About iClimate</p>
@@ -41,5 +41,5 @@
                 </li>
             @endforeach
         </ul>
-    </div>
+    </div></div>
 </section>

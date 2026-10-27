@@ -27,6 +27,50 @@ html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-
     background: #F3FAF0 !important;
 }
 
+/* -- BACKGROUND: the landing page's rice field photo ---------------------- */
+/* The photo (.account-photo, layouts/app.blade.php) stays still behind the page; body and .app-main are see-through so it
+   shows. The content area is the landing page's .lp-panel: mostly white, simple border, the photo blurred behind it. The
+   blur sits on a ::before so .page-shell itself makes no containing block: pop-ups inside it still cover the whole screen. */
+html[data-theme] body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]),
+html[data-theme] body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .app-main { background: transparent !important; }
+.account-photo {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: #F3FAF0;
+    /* Right of centre so a phone screen, which shows a narrow slice of the landscape photo, keeps the harvester in view. */
+    background-position: 70% center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .page-shell {
+    position: relative;
+    margin: 24px;
+}
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .page-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid #DCE8D6;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .75);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+/* Positioned, so the content paints above the panel (no z-index: nothing is trapped under the top bar). */
+:where(.page-shell) > :where(*) { position: relative; }
+/* The pages' own backgrounds would hide the panel. */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .page-shell > :is(.mfd, .mtd, .fad) { background: transparent !important; }
+@media (max-width: 767.98px) {
+    html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .page-shell { margin: 10px; }
+}
+@media print {
+    .account-photo, html body .page-shell::before { display: none; }
+    html body .page-shell { margin: 0; }
+}
+
 /* -- TOP BAR: MAO logo and iClimate logo, as on the landing page ------------ */
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .topbar.ic-topbar { border-bottom: 1px solid #DCE8D6 !important; box-shadow: none !important; }
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 46px; width: auto; flex: none; }

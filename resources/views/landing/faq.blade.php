@@ -6,8 +6,8 @@
         ['q' => 'How do I get an account?', 'a' => 'Use Create account at the top of this page. If you need help, contact the MAO during office hours.'],
     ];
 @endphp
-<section id="faq" data-section aria-labelledby="faq-title" class="lp-screen bg-white py-16 lg:py-20">
-    <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
+<section id="faq" data-section aria-labelledby="faq-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
         <div data-reveal class="flex w-full flex-col gap-4 lg:w-[360px] lg:shrink-0">
             <h2 id="faq-title" class="text-[2rem] font-bold leading-[1.2] tracking-[-0.03em] text-ink sm:text-[2.75rem]">Common questions</h2>
             <p class="text-base leading-[1.4] text-muted">Can’t find what you need? Write to the Municipal Agriculture Office below.</p>
@@ -37,5 +37,5 @@
                 </div>
             @endforeach
         </div>
-    </div>
+    </div></div>
 </section>

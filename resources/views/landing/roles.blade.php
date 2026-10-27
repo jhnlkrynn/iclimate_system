@@ -21,8 +21,8 @@
         ],
     ];
 @endphp
-<section id="roles" data-section aria-labelledby="roles-title" class="lp-screen bg-surface py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="roles" data-section aria-labelledby="roles-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <h2 id="roles-title" data-reveal class="lp-h2">Who uses iClimate</h2>
         <p data-reveal style="--reveal-delay: 60ms" class="mt-3 text-[1.0625rem] leading-[1.4] text-muted">Each account sees the tools for its own work.</p>
 
@@ -57,5 +57,5 @@
                 </div>
             </div>
         @endforeach
-    </div>
+    </div></div>
 </section>

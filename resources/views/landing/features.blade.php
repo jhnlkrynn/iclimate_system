@@ -8,8 +8,8 @@
         ['title' => 'Reports', 'text' => 'Seasonal reports and yield forecasts you can download.', 'tag' => 'Analytics', 'wide' => true],
     ];
 @endphp
-<section id="features" data-section aria-labelledby="features-title" class="lp-screen border-t border-line bg-surface py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="features" data-section aria-labelledby="features-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <div data-reveal class="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-10">
             <h2 id="features-title" class="lp-h2 lg:w-[560px] lg:shrink-0">Everything for the rice season</h2>
             <p class="text-[1.0625rem] leading-[1.4] text-muted">Plan, monitor and decide from planting through harvest with the same data the MAO uses.</p>
@@ -55,5 +55,5 @@
                 @endforeach
             </ul>
         </div>
-    </div>
+    </div></div>
 </section>

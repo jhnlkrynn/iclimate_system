@@ -2,8 +2,8 @@
 @php
     $contactRoles = ['Rice Farmer' => 'Farmer', 'MAO Personnel' => 'MAO Staff', 'IT Personnel' => 'IT Personnel', 'Other' => 'Other'];
 @endphp
-<section id="contact" data-section aria-labelledby="contact-title" class="lp-screen bg-white py-16 lg:py-20">
-    <div class="lp-wrap">
+<section id="contact" data-section aria-labelledby="contact-title" class="lp-screen py-16 lg:py-20">
+    <div class="lp-wrap"><div class="lp-panel">
         <h2 id="contact-title" data-reveal class="lp-h2">Get in touch</h2>
 
         <div class="mt-10 grid gap-6 lg:grid-cols-2">
@@ -81,5 +81,5 @@
                 <button type="submit" id="contactSubmit" class="lp-btn-primary w-full disabled:opacity-60">Send message</button>
             </form>
         </div>
-    </div>
+    </div></div>
 </section>
