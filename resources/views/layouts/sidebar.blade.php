@@ -117,7 +117,7 @@
         // IT Personnel: keep the main list focused on users, reports, messages, and settings.
         // Technical pages remain available under More tools.
         $primaryGroup = [
-            $navLink('Dashboard', 'dashboard', 'dashboard'),
+            $navLink('IT Personnel Dashboard', 'dashboard', 'dashboard'),
             $navLink('User management', 'user-management', 'user-management'),
             $navLink('Reports', 'reports', 'reports'),
             // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.

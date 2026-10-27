@@ -7,7 +7,7 @@
         <button type="button" class="mtd-kpi" data-kpi="{{ $k['key'] }}" aria-haspopup="dialog"
             @if ($riskCategory) data-mao-risk-open="{{ $riskCategory }}"
             @else data-ic-template="mtdKpiInfo-{{ $k['key'] }}" data-ic-title="{{ $k['label'] }}" data-ic-icon="{{ $k['icon'] }}"
-                data-ic-description="{{ $k['context'] }}" data-ic-kicker="MAO Dashboard"
+                data-ic-description="{{ $k['context'] }}" data-ic-kicker="MAO Staff Dashboard"
                 data-ic-href="{{ $k['href'] }}" data-ic-href-label="Open {{ ['farmers' => 'Farmer Profiles', 'weather' => 'Weather Forecast', 'yield' => 'Rice Production', 'advisories' => 'Planting Advisories'][$k['key']] ?? 'page' }}"
                 data-ic-note="Source: {{ ['farmers' => 'iClimate farmer profiles (recorded)', 'weather' => 'online weather service (live reading)', 'yield' => 'iClimate modeling dataset (historical)', 'advisories' => 'iClimate planting advisories (recorded)'][$k['key']] ?? 'iClimate records' }}. Updated {{ $mao['generated_at']->format('M j, Y g:i A') }}."
             @endif>

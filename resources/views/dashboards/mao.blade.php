@@ -1,4 +1,5 @@
 <x-app-layout>
+    <x-slot:title>{{ __('mao.dashboard.title') }}</x-slot:title>
     {{-- MAO Dashboard (2026-10, MaoHomeService): KPI tiles, the "Needs Action" list, a small Heat Map preview and the
          charts. Everything is saved data; the pages behind each number are one click away. The former
          Operations page's parts live on their own pages (Advisories, Calendar, Reports).

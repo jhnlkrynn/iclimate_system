@@ -3,7 +3,7 @@
     $facts = [
         ['icon' => 'sun', 'title' => 'Made for rice', 'text' => 'Production analysis, yield prediction and planting advice for one crop, done properly.'],
         ['icon' => 'file-text', 'title' => 'Built on local records', 'text' => 'Forecasts use years of Lian’s own harvest and weather data, plus PAGASA and Open-Meteo.'],
-        ['icon' => 'user-check', 'title' => 'Run by the MAO', 'text' => 'Kept current by MAO staff and technicians and maintained by IT personnel.'],
+        ['icon' => 'user-check', 'title' => 'Run by the MAO', 'text' => 'Kept current by MAO Staff and maintained by IT Personnel.'],
     ];
     $sources = ['PAGASA advisories', 'Open-Meteo forecasts', 'Stored climate records', 'MAO rice production records'];
 @endphp

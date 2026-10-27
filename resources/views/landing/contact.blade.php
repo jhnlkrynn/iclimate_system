@@ -1,6 +1,6 @@
 {{-- Contact (Figma: Contact). The form posts to contact.send (JSON); resources/js/landing.js shows its errors and reply. --}}
 @php
-    $contactRoles = ['Rice Farmer' => 'Rice farmer', 'MAO Personnel' => 'MAO personnel', 'IT Personnel' => 'IT personnel', 'Other' => 'Other'];
+    $contactRoles = ['Rice Farmer' => 'Farmer', 'MAO Personnel' => 'MAO Staff', 'IT Personnel' => 'IT Personnel', 'Other' => 'Other'];
 @endphp
 <section id="contact" data-section aria-labelledby="contact-title" class="lp-screen bg-white py-16 lg:py-20">
     <div class="lp-wrap">

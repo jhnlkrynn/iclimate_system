@@ -2,22 +2,22 @@
 @php
     $roles = [
         'farmers' => [
-            'tab' => 'Rice farmers',
-            'text' => 'Check conditions, get planting advice and risk alerts, and see seasonal information on a simple dashboard.',
+            'tab' => 'Farmer',
+            'text' => 'Check conditions, get planting advice and risk alerts, and see seasonal information on the Farmer Dashboard.',
             'features' => ['Climate monitoring', 'Planting guidance', 'Weather risk alerts', 'Notifications', 'Seasonal reports'],
             'button' => 'Farmer log in',
         ],
         'mao' => [
-            'tab' => 'MAO personnel',
-            'text' => 'Manage agricultural records, follow rice production, compare climate and yield, and prepare reports for farmers and the municipality.',
+            'tab' => 'MAO Staff',
+            'text' => 'Manage agricultural records, follow rice production, compare climate and yield, and prepare reports for farmers and the municipality on the MAO Staff Dashboard.',
             'features' => ['Production monitoring', 'Climate analytics', 'Report generation', 'Record validation', 'Heat map monitoring'],
-            'button' => 'MAO log in',
+            'button' => 'MAO Staff log in',
         ],
         'it' => [
-            'tab' => 'IT personnel',
-            'text' => 'Support user access, keep records organized, watch system activity, and help the MAO keep iClimate secure and dependable.',
+            'tab' => 'IT Personnel',
+            'text' => 'Support user access, keep records organized, watch system activity, and help the MAO keep iClimate secure and dependable from the IT Personnel Dashboard.',
             'features' => ['User access support', 'Activity checks', 'Record upkeep', 'Account support', 'System reliability'],
-            'button' => 'IT log in',
+            'button' => 'IT Personnel log in',
         ],
     ];
 @endphp

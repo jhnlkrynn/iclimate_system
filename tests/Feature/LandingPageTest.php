@@ -200,7 +200,7 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString('New to iClimate?', $html);
         $this->assertStringNotContainsString('Already have an account?', $html);
         // The sign-up fields are the shared /register ones.
-        foreach (['name="first_name"', 'name="last_name"', 'name="farmer_organization_id"', 'name="barangay"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO staff and IT accounts are set up by the system administrators.'] as $needle) {
+        foreach (['name="first_name"', 'name="last_name"', 'name="farmer_organization_id"', 'name="barangay"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO Staff and IT Personnel accounts are set up by the system administrators.'] as $needle) {
             $this->assertStringContainsString($needle, $html);
         }
         // The sign-up captcha picture waits until that form is shown (one captcha per session).

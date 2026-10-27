@@ -1,7 +1,7 @@
 {{-- Common questions (Figma: Common questions). One answer open at a time; resources/js/landing.js runs the accordion. --}}
 @php
     $questions = [
-        ['q' => 'Who can use iClimate?', 'a' => 'Rice farmers in Lian, MAO personnel and technicians, and IT personnel. Each account sees the tools for its own role.'],
+        ['q' => 'Who can use iClimate?', 'a' => 'Farmers in Lian, MAO Staff, and IT Personnel. Each account opens its own dashboard: the Farmer Dashboard, the MAO Staff Dashboard or the IT Personnel Dashboard.'],
         ['q' => 'Where does the weather data come from?', 'a' => 'PAGASA advisories, Open-Meteo forecasts, stored climate records for Lian, and the MAO’s rice production records.'],
         ['q' => 'How do I get an account?', 'a' => 'Use Create account at the top of this page. If you need help, contact the MAO during office hours.'],
     ];

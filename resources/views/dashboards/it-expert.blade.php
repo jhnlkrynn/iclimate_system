@@ -1,4 +1,5 @@
 <x-app-layout>
+    <x-slot:title>IT Personnel Dashboard</x-slot:title>
     @php
         $overall = $it['overall'];
         // Status level -> the shared status pill (colour, icon). The Refresh script swaps the header pill with the same map.

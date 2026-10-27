@@ -4,6 +4,7 @@
 <header class="mfd-header fh-header">
     <div class="mfd-header-main">
         {{-- Farmer – Naicel: one short greeting line ("Magandang umaga, Naicel!", Manila time), no banner. --}}
+        <span class="mfd-kicker">{{ __('farmer.header.kicker') }}</span>
         <h1 class="fh-greeting" data-fh-greeting>{{ $f['greeting'] }}</h1>
         @if (! empty($f['farm']))
             <p class="fh-farm-line" data-viewing-farm="{{ $f['farm']['id'] }}"><span>{{ __('farms.viewing') }}:</span> <strong>{{ $f['farm']['name'] }}</strong></p>

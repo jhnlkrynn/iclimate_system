@@ -14,7 +14,7 @@ return [
         'open' => 'Suriin',
     ],
     'nav' => [
-        'dashboard' => 'Dashboard',
+        'dashboard' => 'MAO Staff Dashboard',
         'heat_map' => 'Heat Map',
         'advisories' => 'Mga Advisory',
         'records' => 'Mga Tala',
@@ -28,7 +28,7 @@ return [
     ],
     'dashboard' => [
         'office' => 'Tanggapan ng Agrikultura ng Bayan',
-        'title' => 'Dashboard ng MAO',
+        'title' => 'MAO Staff Dashboard',
         'place' => 'Lian, Batangas',
         'season' => ['wet' => 'Tag-ulan :years', 'dry' => 'Tag-araw :years'],
         'season_short' => ['wet' => 'Tag-ulan', 'dry' => 'Tag-araw'],
