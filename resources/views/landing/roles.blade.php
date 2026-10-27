@@ -26,11 +26,13 @@
         <h2 id="roles-title" data-reveal class="lp-h2">Who uses iClimate</h2>
         <p data-reveal style="--reveal-delay: 60ms" class="mt-3 text-[1.0625rem] leading-[1.4] text-muted">Each account sees the tools for its own work.</p>
 
-        <div role="tablist" aria-label="Who uses iClimate" class="mt-10 flex w-fit max-w-full overflow-x-auto border-b border-line" data-tabs>
+        {{-- The grey baseline is an inset shadow so the tabs' underline needs no negative margin, which made the row
+             overflow and show a scrollbar. On a narrow phone the row still scrolls sideways, without a visible bar. --}}
+        <div role="tablist" aria-label="Who uses iClimate" class="mt-10 flex w-fit max-w-full overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_theme(colors.line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-tabs>
             @foreach ($roles as $key => $role)
                 <button type="button" role="tab" id="role-tab-{{ $key }}" aria-controls="role-panel-{{ $key }}"
                         aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}"
-                        class="-mb-px min-h-11 shrink-0 whitespace-nowrap rounded-t border-b-2 border-transparent px-2 py-1.5 text-base leading-[1.4] text-muted transition-colors hover:text-ink aria-selected:border-ink aria-selected:text-ink">
+                        class="min-h-11 shrink-0 whitespace-nowrap rounded-t border-b-2 border-transparent px-2 py-1.5 text-base leading-[1.4] text-muted transition-colors hover:text-ink aria-selected:border-ink aria-selected:text-ink">
                     {{ $role['tab'] }}
                 </button>
             @endforeach
