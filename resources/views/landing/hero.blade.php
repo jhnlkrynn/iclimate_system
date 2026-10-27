@@ -1,12 +1,14 @@
 {{-- Hero (Figma: Hero): fills one screen below the nav. The login card posts to the regular login route; a failed
      attempt comes back here with its errors. --}}
-<section id="hero" data-section class="lp-screen bg-white py-10 lg:py-12">
+{{-- Background: a rice field in Lian (versioned by file time so a replaced photo shows at once). The photo is blurred
+     behind the text panel so the text stays readable. --}}
+<section id="hero" data-section class="lp-screen relative bg-[#EAF4E4] bg-cover bg-center py-10 lg:py-12" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
     <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
-        <div class="flex min-w-0 flex-1 flex-col items-start gap-6 [container-type:inline-size]">
-            <p data-reveal="hero" class="text-base font-semibold leading-[1.4] text-brand sm:text-lg">For the rice farmers of Lian, Batangas</p>
-            <h1 data-reveal="hero" style="--reveal-delay: 60ms" class="text-[clamp(2.75rem,min(6vw,20cqi),5.5rem)] font-bold leading-[0.98] tracking-[-0.035em] text-ink">Plan every planting around the weather.</h1>
-            <p data-reveal="hero" style="--reveal-delay: 120ms" class="max-w-[36rem] text-[clamp(1.125rem,1.6vw,1.375rem)] leading-[1.5] text-muted">Local forecasts, MAO planting advisories and rice yield outlooks in one place, kept up to date by the Municipal Agriculture Office.</p>
-            <div data-reveal="hero" style="--reveal-delay: 180ms" class="flex flex-wrap gap-3 pt-2">
+        <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-line bg-white/75 p-6 backdrop-blur [container-type:inline-size] sm:p-9">
+            <p class="text-base font-semibold leading-[1.4] text-brand sm:text-lg">For the rice farmers of Lian, Batangas</p>
+            <h1 class="text-[clamp(2.75rem,min(6vw,20cqi),5.5rem)] font-bold leading-[0.98] tracking-[-0.035em] text-ink">Plan every planting around the weather.</h1>
+            <p class="max-w-[36rem] text-[clamp(1.125rem,1.6vw,1.375rem)] leading-[1.5] text-muted">Local forecasts, MAO planting advisories and rice yield outlooks in one place, kept up to date by the Municipal Agriculture Office.</p>
+            <div class="flex flex-wrap gap-3 pt-2">
                 <a href="#features" class="lp-btn-primary lp-btn-lg" data-hero-features>Explore features</a>
                 <a href="#how" class="lp-btn-neutral lp-btn-lg" data-hero-how>How it works</a>
             </div>
@@ -14,7 +16,7 @@
 
         {{-- Log in or create an account in place: the Sign in / Create account tabs switch the card without leaving the
              page (resources/js/landing.js); /#register and /#login (the footer and the nav) open it in that mode. --}}
-        <div data-reveal="hero" style="--reveal-delay: 240ms" class="w-full shrink-0 rounded-2xl border border-line bg-white px-6 py-8 shadow-[0_8px_24px_rgba(18,26,18,0.06)] sm:px-9 lg:w-[30rem]" data-login-card @guest data-auth-card data-auth-mode="{{ $authMode }}" @endguest>
+        <div class="w-full shrink-0 rounded-2xl border border-line bg-white px-6 py-8 shadow-[0_8px_24px_rgba(18,26,18,0.06)] sm:px-9 lg:w-[30rem]" data-login-card @guest data-auth-card data-auth-mode="{{ $authMode }}" @endguest>
             @auth
                 <h2 class="text-[1.625rem] font-semibold leading-[1.2] tracking-[-0.02em] text-ink">Welcome back, {{ auth()->user()->name }}</h2>
                 <p class="mt-1.5 text-base leading-[1.4] text-muted">You are logged in to iClimate.</p>

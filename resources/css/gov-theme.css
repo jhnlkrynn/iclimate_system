@@ -528,7 +528,7 @@ html[data-theme] body .topbar.ic-topbar {
 html body.ic-page-leaving .page-shell { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
 html body .icl-overlay .icl-skeleton { display: none !important; }
 
-/* The MAO logo (public/images/mao-logo.png): square and transparent, as tall as the iClimate logo beside it
+/* The MAO logo (public/images/mao-lian-seal.png, the Lian municipal seal): square, as tall as the iClimate logo beside it
    (resources/css/pages/account-light.css), never stretched, with no circle or background, so it sits on light and dark bars. */
 html body .gov-brand .gov-mao-logo { width: 46px; height: 46px; flex: none; object-fit: contain; }
 @media (max-width: 767.98px) { html body .gov-brand .gov-mao-logo { width: 36px; height: 36px; } }

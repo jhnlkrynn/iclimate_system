@@ -4,7 +4,7 @@
         <div class="flex flex-col gap-10 md:flex-row md:flex-wrap md:gap-16">
             <div class="flex min-w-0 flex-1 flex-col items-start gap-3.5 md:basis-full lg:basis-0">
                 <a href="{{ url('/') }}" class="flex gap-2.5 rounded-lg" aria-label="iClimate home" data-footer-home>
-                    <img src="{{ asset('images/mao-logo.png') }}" alt="Municipal Agriculture Office logo" width="40" height="40" class="h-10 w-10 object-contain">
+                    <img src="{{ asset('images/mao-lian-seal.png') }}" alt="Municipal Agriculture Office logo" width="40" height="40" class="h-10 w-10 object-contain">
                     <img src="{{ asset('images/iclimate-logo.png') }}" alt="" width="46" height="40" class="h-10 w-[46px] object-contain">
                 </a>
                 <p class="max-w-[320px] text-base leading-[1.4] text-muted">Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas.</p>
