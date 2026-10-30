@@ -131,7 +131,7 @@
             <div class="card-body">
                 {{-- Panel revision 1.4: results update as you type (resources/js/panel-revisions.js, data-live-filter). --}}
                 <form class="row g-3 align-items-end" method="GET" action="{{ route($routeName.'.index') }}" data-live-filter data-text-none="No results found">
-                    <div class="col-lg-{{ $filterable ? '4' : '8' }}">
+                    <div class="col-lg-{{ $filterable ? (empty($sortOptions) ? '4' : '3') : '8' }}">
                         <label class="form-label fw-semibold" for="crudSearch">Search</label>
                         <input class="form-control form-control-lg" id="crudSearch" type="search" name="search" value="{{ $search }}" autocomplete="off" placeholder="{{ $routeName === 'farmer-profiles' ? 'Name, farmer ID, barangay or organization' : 'Search '.strtolower($title).' records' }}">
                     </div>
@@ -147,6 +147,16 @@
                             </select>
                         </div>
                     @endforeach
+                    @if (! empty($sortOptions))
+                        <div class="col-sm-6 col-lg-3">
+                            <label class="form-label fw-semibold" for="crudSort">Sort</label>
+                            <select class="form-select form-select-lg" id="crudSort" name="sort">
+                                @foreach ($sortOptions as $value => $label)
+                                    <option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                     <div class="col-lg-auto d-flex gap-2">
                         <button class="btn btn-outline-primary btn-lg" type="submit" data-loading-text="Filtering...">Apply</button>
                         <a class="btn btn-outline-secondary btn-lg" href="{{ route($routeName.'.index') }}">Reset</a>
