@@ -71,18 +71,31 @@ class FarmerApprovalController extends Controller
     public function reject(Request $request, User $user): RedirectResponse
     {
         $this->ensureFarmerSignUp($user);
-        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+        // A reason from config/user_rejection.php is required; the MAO's note is optional (required for "Other").
+        $min = (int) config('user_rejection.other_min_length', 10);
+        $data = $request->validate([
+            'reason' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys((array) config('user_rejection.reasons', [])))],
+            'note' => ['nullable', 'required_if:reason,other', 'string', 'max:450', ...(($request->input('reason') === 'other') ? ['min:'.$min] : [])],
+        ], [
+            'reason.required' => 'Choose a reason for not approving this sign-up.',
+            'note.required_if' => 'Please write the reason.',
+            'note.min' => 'Please give at least '.$min.' characters.',
+        ]);
+        $note = trim((string) ($data['note'] ?? '')) ?: null;
+        $label = trans('user_rejection.reasons.'.$data['reason'], [], 'en');
 
         $user->forceFill([
             'status' => User::STATUS_REJECTED,
             'approved_at' => null,
             'approved_by' => $request->user()->getKey(),
-            'rejection_reason' => $data['reason'],
+            // What the Rejected tab shows: the reason, and the note under it.
+            'rejection_reason' => mb_substr($note === null ? $label : $label.': '.$note, 0, 500),
         ])->save();
-        SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'Farmer account', 'record_id' => $user->getKey(), 'record_label' => $user->name, 'barangay' => $user->barangay, 'reason' => $data['reason']]);
-        // "Your iClimate account was not approved", with the reason, to the farmer's own email. (Approving emails the
-        // farmer from User::booted(), which also covers IT activating a waiting account.)
-        \App\Services\Accounts\AccountEmails::rejected($user, $data['reason']);
+        SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'Farmer account', 'record_id' => $user->getKey(), 'record_label' => $user->name, 'barangay' => $user->barangay, 'reason' => $data['reason'], 'note' => $note]);
+        // "Your iClimate account was not approved": the reason in the farmer's language, the note under it, to the
+        // farmer's own email. (Approving emails the farmer from User::booted(), which also covers IT activating a
+        // waiting account.)
+        \App\Services\Accounts\AccountEmails::rejected($user, $data['reason'], $note);
         rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         return back()->with('success', $user->name.'\'s registration was rejected.');

@@ -135,7 +135,15 @@ class UserManagementController extends CrudController
             return redirect()->route('users.index', ['status' => User::STATUS_DELETED])->with('error', $e->validator->errors()->first());
         }
 
-        return redirect()->route('users.index', ['status' => User::STATUS_DELETED])->with('success', __('user_deletion.modal.restored', ['name' => $target->name]));
+        $message = __('user_deletion.modal.restored', ['name' => $target->name]);
+        // Farms stay archived after a restore: IT is told so they can let the farmer know.
+        $archived = $target->role === User::ROLE_FARMER && \App\Support\SchemaCache::hasTable('farms')
+            ? \App\Models\Farm::query()->ownedBy($target)->whereNotNull('archived_at')->count() : 0;
+        if ($archived > 0) {
+            $message .= ' '.trans_choice('user_deletion.modal.archived_hint', $archived, ['count' => $archived]);
+        }
+
+        return redirect()->route('users.index', ['status' => User::STATUS_DELETED])->with('success', $message);
     }
 
     /** IT can open a deleted account's page (Deleted filter); editing it waits for a restore. */

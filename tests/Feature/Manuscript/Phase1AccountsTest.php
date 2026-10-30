@@ -103,12 +103,12 @@ class Phase1AccountsTest extends TestCase
         $farmer = $this->pendingFarmer();
 
         $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $farmer), [])->assertSessionHasErrors('reason');
-        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $farmer), ['reason' => 'Not on the RSBSA list'])->assertRedirect();
+        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $farmer), ['reason' => 'rsbsa_mismatch', 'note' => 'Not on the RSBSA list'])->assertRedirect();
 
         $farmer->refresh();
         $this->assertSame(User::STATUS_REJECTED, $farmer->status);
-        $this->assertSame('Not on the RSBSA list', $farmer->rejection_reason);
-        $this->actingAs($mao)->get(route('mao.farmer-approvals.index', ['show' => 'rejected']))->assertSee('Not on the RSBSA list');
+        $this->assertSame('RSBSA number does not match: Not on the RSBSA list', $farmer->rejection_reason);
+        $this->actingAs($mao)->get(route('mao.farmer-approvals.index', ['show' => 'rejected']))->assertSee('RSBSA number does not match: Not on the RSBSA list');
     }
 
     public function test_only_pending_farmer_sign_ups_can_be_decided_and_only_by_mao(): void

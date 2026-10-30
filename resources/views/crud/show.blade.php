@@ -51,6 +51,25 @@
     @if ($routeName === 'users')
         @include('users._account-details', ['user' => $record])
     @endif
+    @if ($routeName === 'farmer-profiles' && ($archivedFarms = $record->farms->whereNotNull('archived_at')->sortByDesc('archived_at')->values())->isNotEmpty())
+        {{-- Archived farms (removed by the farmer, or archived when the account was closed): MAO / IT can bring one back. --}}
+        <div class="card no-lift mt-4" data-archived-farms>
+            <div class="card-header border-0"><div class="fw-semibold">Archived farms ({{ $archivedFarms->count() }})</div></div>
+            <ul class="list-group list-group-flush">
+                @foreach ($archivedFarms as $farm)
+                    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <span><strong>{{ $farm->farm_name }}</strong> <span class="text-muted">· {{ $farm->barangay ?: 'No barangay' }} · archived {{ $farm->archived_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</span></span>
+                        @if ($canManage)
+                            <form method="POST" action="{{ route('farmer-profiles.farms.restore', ['farmerProfile' => $record->id, 'farm' => $farm->id]) }}" data-loading="true">
+                                @csrf
+                                <button class="btn btn-sm btn-outline-success" type="submit" data-restore-farm="{{ $farm->id }}" data-loading-text="Restoring...">Restore</button>
+                            </form>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     @if ($routeName === 'farmer-profiles' && ($staffFarms = $record->farms->whereNull('archived_at')->values())->isNotEmpty())
         {{-- Each of the farmer's farms with its association (farms.farmer_organization_id). --}}

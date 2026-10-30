@@ -45,7 +45,13 @@ class FarmerMyFarmController extends Controller
             ? \App\Models\FarmerOrganization::query()->whereIn('id', $farms->pluck('farmer_organization_id')->filter()->unique())->pluck('name', 'id')
             : null;
 
+        // Farms the farmer removed (or that were archived when the account was closed): each can be brought back.
+        $archivedFarms = ActiveFarm::available()
+            ? Farm::query()->ownedBy($user)->whereNotNull('archived_at')->orderByDesc('archived_at')->get(['id', 'farm_name', 'barangay', 'archived_at'])
+            : collect();
+
         return view('farmer-records.my-farm', [
+            'archivedFarms' => $archivedFarms,
             'available' => ActiveFarm::available(),
             'farms' => $farms->map(fn (Farm $f): array => [
                 'id' => $f->getKey(),

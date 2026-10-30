@@ -29,6 +29,10 @@ return [
     'remove_only_confirm' => ':name is your only farm. Remove it anyway? You can add a farm again anytime. Its planting plans, map and records are kept.',
     'location_line' => ':barangay, Lian, Batangas',
     'no_barangay' => 'Barangay not added yet',
+    'archived_title' => 'Archived farms',
+    'archived_intro' => 'Farms you removed. Restore one to see it in My Farms again, with its plans and map.',
+    'restore' => 'Restore',
+    'restored' => ':name is back in My Farms.',
 
     'form' => [
         'add_title' => 'Add Farm',

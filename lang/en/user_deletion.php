@@ -43,6 +43,9 @@ return [
     ],
 
     // Someone signs in to an account closed as Deceased (no panel, no reason).
+    // Signing up again with the email of a closed account (no reason given there).
+    'email_closed' => 'This email belongs to an iClimate account that was closed. Please contact the Municipal Agriculture Office of Lian to restore it.',
+
     'no_longer_active' => 'This account is no longer active. Please contact the Municipal Agriculture Office.',
 
     // The panel after a correct email and password for a deleted account.
@@ -86,5 +89,6 @@ return [
         'restore' => 'Restore account',
         'restore_confirm' => 'Restore :name\'s account? They can log in again; their farms stay archived until they or the MAO restore them.',
         'restore_closed' => 'Restore period ended',
+        'archived_hint' => 'This farmer has :count archived farm. They can restore it in My Farms.|This farmer has :count archived farms. They can restore them in My Farms.',
     ],
 ];

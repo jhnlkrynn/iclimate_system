@@ -7,6 +7,10 @@
 {{ __('account_emails.rejected.body', ['date' => $date]) }}
 
 **{{ __('account_emails.rejected.reason') }}** {{ $reason }}
+@if (filled($note ?? null))
+
+**{{ __('account_emails.rejected.note') }}** {{ $note }}
+@endif
 
 **{{ __('account_emails.rejected.next') }}**
 

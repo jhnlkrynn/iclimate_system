@@ -42,6 +42,9 @@ return [
         ],
     ],
 
+    // Signing up again with the email of a closed account (no reason given there).
+    'email_closed' => 'Ang email na ito ay para sa isang iClimate account na isinara na. Pakikontak ang Municipal Agriculture Office ng Lian para maibalik ito.',
+
     'no_longer_active' => 'Hindi na aktibo ang account na ito. Pakikontak ang Municipal Agriculture Office.',
 
     'panel' => [

@@ -23,6 +23,7 @@ return [
         'subject' => 'Hindi naaprubahan ang inyong iClimate account',
         'body' => 'Sinuri ng Municipal Agriculture Office ng Lian ang inyong pagpaparehistro sa iClimate noong :date at hindi ito naaprubahan.',
         'reason' => 'Dahilan:',
+        'note' => 'Paalala mula sa opisina:',
         'next' => 'Ang maaari ninyong gawin:',
         'items' => [
             'Itama ang inyong mga detalye at magparehistro muli.',

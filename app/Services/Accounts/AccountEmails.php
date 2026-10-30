@@ -28,10 +28,17 @@ final class AccountEmails
         return self::send($user, 'approved', ['date' => self::day(now(), $user)]);
     }
 
-    /** $reason: what the MAO wrote when rejecting the sign-up. */
-    public static function rejected(User $user, string $reason): ?AccountEmail
+    /** $reason: a key of config user_rejection.reasons (said in the farmer's language); $note: the MAO's own words, if any. */
+    public static function rejected(User $user, string $reason, ?string $note = null): ?AccountEmail
     {
-        return self::send($user, 'rejected', ['reason' => $reason, 'date' => self::day(now(), $user), 'url' => url('/').'#register']);
+        $label = trans('user_rejection.reasons.'.$reason, [], $user->mailLocale());
+
+        return self::send($user, 'rejected', [
+            'reason' => is_string($label) && $label !== 'user_rejection.reasons.'.$reason ? $label : $reason,
+            'note' => $note,
+            'date' => self::day(now(), $user),
+            'url' => url('/').'#register',
+        ]);
     }
 
     /** The same reason words as the login panel (lang user_deletion.reasons.<key>.message), in the person's language. */

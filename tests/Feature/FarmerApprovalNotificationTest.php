@@ -86,7 +86,7 @@ class FarmerApprovalNotificationTest extends TestCase
         $this->actingAs($mao)->post(route('mao.farmer-approvals.approve', $approved))->assertRedirect();
         $this->assertSame(['farmer-approval:'.$rejected->id], array_map(fn (Notification $n) => $n->category, $this->notes($other)));
 
-        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $rejected), ['reason' => 'Not a resident of Lian.'])->assertRedirect();
+        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $rejected), ['reason' => 'not_resident'])->assertRedirect();
         $this->assertSame([], $this->notes($mao));
         $this->assertSame([], $this->notes($other));
         // The approved farmer still gets their own "Account approved" notification.

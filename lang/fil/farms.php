@@ -29,6 +29,10 @@ return [
     'remove_only_confirm' => 'Ang :name lang ang inyong bukid. Alisin pa rin? Puwede kayong magdagdag ulit anumang oras. Maitatabi pa rin ang mga plano, mapa at tala nito.',
     'location_line' => ':barangay, Lian, Batangas',
     'no_barangay' => 'Wala pang barangay',
+    'archived_title' => 'Mga naka-archive na bukid',
+    'archived_intro' => 'Mga bukid na inalis ninyo. Ibalik ang isa para makita itong muli sa Aking mga Bukid, kasama ang mga plano at mapa nito.',
+    'restore' => 'Ibalik',
+    'restored' => 'Naibalik ang :name sa Aking mga Bukid.',
 
     'form' => [
         'add_title' => 'Magdagdag ng Bukid',

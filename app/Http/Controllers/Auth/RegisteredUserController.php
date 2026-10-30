@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', new \App\Rules\RegistrationEmailAvailable],   // a closed account's email says so
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'farmer_organization_id' => ['nullable', 'integer', 'exists:farmer_organizations,id'],
             // Panel revision 1.1: any other organizations the farmer belongs to (the primary one is stripped below).

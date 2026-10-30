@@ -24,6 +24,7 @@ return [
         'subject' => 'Your iClimate account was not approved',
         'body' => 'The Municipal Agriculture Office of Lian reviewed your iClimate sign-up on :date and could not approve it.',
         'reason' => 'Reason:',
+        'note' => 'Note from the office:',
         'next' => 'What you can do:',
         'items' => [
             'Correct your details and register again.',

@@ -93,6 +93,17 @@ class FarmController extends Controller
         return redirect()->route('farmer.my-farm')->with('success', __('farms.removed', ['name' => $farm->farm_name]));
     }
 
+    /** Brings one of the farmer's archived farms back into My Farms (FarmService::restore), with its plans and map. */
+    public function restore(Request $request, int $farm): RedirectResponse
+    {
+        $this->ensureAvailable();
+        $farm = Farm::query()->ownedBy($request->user())->whereNotNull('archived_at')->findOrFail($farm);
+        $this->farms->restore($farm);
+        $this->audit('Restored Farm', $request, $farm);
+
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.restored', ['name' => $farm->farm_name]));
+    }
+
     public function primary(Request $request, int $farm): RedirectResponse
     {
         $farm = $this->ownFarm($request, $farm);

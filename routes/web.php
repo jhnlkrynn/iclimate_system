@@ -147,6 +147,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{farm}', [\App\Http\Controllers\FarmController::class, 'update'])->whereNumber('farm')->name('update');
             Route::delete('/{farm}', [\App\Http\Controllers\FarmController::class, 'destroy'])->whereNumber('farm')->name('destroy');
             Route::post('/{farm}/primary', [\App\Http\Controllers\FarmController::class, 'primary'])->whereNumber('farm')->name('primary');
+            Route::post('/{farm}/restore', [\App\Http\Controllers\FarmController::class, 'restore'])->whereNumber('farm')->middleware('throttle:20,1,post-farmer-farm-restore')->name('restore');
             Route::get('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'map'])->whereNumber('farm')->name('map');
             Route::put('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'saveMap'])->whereNumber('farm')->middleware('throttle:10,1,put-farmer-farm-map')->name('map.update');
             Route::delete('/{farm}/map', [\App\Http\Controllers\FarmController::class, 'deleteMap'])->whereNumber('farm')->name('map.destroy');
@@ -353,6 +354,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'farmer-profiles',
             FarmerProfileController::class
         );
+        // MAO / IT: bring back one of a farmer's archived farms (the farmer page's Archived farms list).
+        Route::post('farmer-profiles/{farmerProfile}/farms/{farm}/restore', [FarmerProfileController::class, 'restoreFarm'])
+            ->whereNumber(['farmerProfile', 'farm'])->middleware('throttle:30,1,post-farmer-profile-farm-restore')->name('farmer-profiles.farms.restore');
 
 
         // Removed from the farmer pages (2026-10): a farmer who opens one is sent to Home.

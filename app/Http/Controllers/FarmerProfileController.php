@@ -216,6 +216,26 @@ class FarmerProfileController extends CrudController
         return $view;
     }
 
+    /** MAO / IT: brings one of this farmer's archived farms back (FarmService::restore); MAO only within their barangays. */
+    public function restoreFarm(Request $request, int $farmerProfile, int $farm): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorizeManage($request);
+        $profile = $this->findRecord($request, $farmerProfile);
+        $this->authorizeRecordCoverage($request, $profile);
+        $record = \App\Models\Farm::query()->where('user_id', $profile->user_id)->whereNotNull('archived_at')->findOrFail($farm);
+
+        try {
+            app(\App\Services\Farms\FarmService::class)->restore($record);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', $e->validator->errors()->first());
+        }
+        \App\Services\SystemAuditLogger::record('Restored Farm', $request, [
+            'record_type' => 'Farm', 'record_id' => $record->getKey(), 'record_label' => $profile->full_name.' – '.$record->farm_name, 'barangay' => $record->barangay,
+        ]);
+
+        return back()->with('success', $record->farm_name.' is back in '.$profile->full_name.'\'s farms.');
+    }
+
     /** Staff "View" pop-up (?modal=1): the farmer's details and farms, with [Mensahe]; every other case is unchanged. */
     public function show(Request $request, int $id): View
     {

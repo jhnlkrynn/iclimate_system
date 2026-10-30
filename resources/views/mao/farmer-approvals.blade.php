@@ -67,8 +67,16 @@
                                                         <summary class="btn btn-outline-danger btn-sm">Reject</summary>
                                                         <form method="POST" action="{{ route('mao.farmer-approvals.reject', $farmer) }}" class="mt-2 text-start" data-loading="true">
                                                             @csrf
-                                                            <label class="form-label small" for="reason{{ $farmer->id }}">Reason (the farmer is told to contact the office)</label>
-                                                            <textarea class="form-control form-control-sm" id="reason{{ $farmer->id }}" name="reason" rows="2" maxlength="500" required></textarea>
+                                                            {{-- A reason is required (config/user_rejection.php); the note is optional except for "Other". The farmer is emailed the reason in their language, with the note under it. --}}
+                                                            <label class="form-label small" for="reason{{ $farmer->id }}">Reason</label>
+                                                            <select class="form-select form-select-sm" id="reason{{ $farmer->id }}" name="reason" required data-reject-reason>
+                                                                <option value="">Choose a reason</option>
+                                                                @foreach (array_keys((array) config('user_rejection.reasons', [])) as $reasonKey)
+                                                                    <option value="{{ $reasonKey }}">{{ __('user_rejection.reasons.'.$reasonKey) }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <label class="form-label small mt-2" for="note{{ $farmer->id }}">Note for the farmer (optional; required for "Other")</label>
+                                                            <textarea class="form-control form-control-sm" id="note{{ $farmer->id }}" name="note" rows="2" maxlength="450"></textarea>
                                                             <button class="btn btn-danger btn-sm mt-2" type="submit" data-loading-text="Rejecting...">Reject sign-up</button>
                                                         </form>
                                                     </details>

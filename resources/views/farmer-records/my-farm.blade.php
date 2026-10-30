@@ -94,6 +94,27 @@
                     </div>
                 @endif
             </section>
+            {{-- Archived farms (removed, or archived when the account was closed): Restore brings one back, plans and map included. --}}
+            @if (($archivedFarms ?? collect())->isNotEmpty())
+                <section class="frec-panel fmf-no-print" aria-labelledby="ffmArchivedTitle" data-archived-farms>
+                    <div class="frec-panel-head"><h2 id="ffmArchivedTitle">{{ __('farms.archived_title') }}</h2></div>
+                    <p class="fad-m-small mb-0">{{ __('farms.archived_intro') }}</p>
+                    <ul class="ffm-list">
+                        @foreach ($archivedFarms as $archived)
+                            <li class="ffm-card" data-archived-farm="{{ $archived->id }}">
+                                <div class="ffm-card-head"><strong class="ffm-card-name">{{ $archived->farm_name }}</strong></div>
+                                <p class="ffm-card-place">{{ $archived->barangay ? __('farms.location_line', ['barangay' => \App\Services\Risk\HeatMapPanel::displayName($archived->barangay)]) : __('farms.no_barangay') }}</p>
+                                <div class="ffm-card-actions">
+                                    <form method="POST" action="{{ route('farmer.farms.restore', $archived->id) }}">
+                                        @csrf
+                                        <button type="submit" class="fad-btn is-quiet is-compact">{{ __('farms.restore') }}</button>
+                                    </form>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
         @endif
 
         @if (! $available || $current)

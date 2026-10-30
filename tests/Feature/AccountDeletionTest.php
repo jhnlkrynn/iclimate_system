@@ -254,7 +254,7 @@ class AccountDeletionTest extends TestCase
 
         $this->travel(29)->days();
         $this->actingAs($this->it)->get(route('users.index', ['status' => User::STATUS_DELETED]))->assertSee('Restore account');
-        $this->actingAs($this->it)->post(route('users.restore', $farmer->id))->assertSessionHas('success', 'Juan Dela Cruz\'s account was restored.');
+        $this->actingAs($this->it)->post(route('users.restore', $farmer->id))->assertSessionHas('success', 'Juan Dela Cruz\'s account was restored. This farmer has 1 archived farm. They can restore it in My Farms.');
         $back = User::query()->findOrFail($farmer->id);
         $this->assertSame([User::STATUS_INACTIVE, null, null], [$back->status, $back->deleted_reason, $back->deleted_at]);   // its status before
         $this->assertNotNull($farm->fresh()->archived_at);   // farms stay archived
@@ -285,7 +285,7 @@ class AccountDeletionTest extends TestCase
             && $mail->envelope()->subject === 'Your iClimate account is approved');
 
         $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $other), [])->assertSessionHasErrors('reason');
-        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $other), ['reason' => 'Hindi tugma ang RSBSA number.'])->assertRedirect();
+        $this->actingAs($mao)->post(route('mao.farmer-approvals.reject', $other), ['reason' => 'rsbsa_mismatch', 'note' => 'Hindi tugma sa listahan ng 2025.'])->assertRedirect();
         Mail::assertSent(AccountStatusMail::class, function (AccountStatusMail $mail) {
             if ($mail->type !== 'rejected' || ! $mail->hasTo('ana.reyes@yahoo.com')) {
                 return false;
@@ -293,7 +293,8 @@ class AccountDeletionTest extends TestCase
             $html = $mail->render();
 
             return $mail->envelope()->subject === 'Hindi naaprubahan ang inyong iClimate account'
-                && str_contains($html, 'Hindi tugma ang RSBSA number.') && str_contains($html, \App\Support\MaoContact::EMAIL);
+                && str_contains($html, 'Hindi tugma ang RSBSA number') && str_contains($html, 'Hindi tugma sa listahan ng 2025.')
+                && str_contains($html, \App\Support\MaoContact::EMAIL);
         });
         $this->assertSame('sent', AccountEmails::last($other)->status);
 
