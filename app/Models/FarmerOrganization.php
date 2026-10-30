@@ -28,6 +28,12 @@ class FarmerOrganization extends Model
         return $this->hasMany(FarmerProfile::class);
     }
 
+    /** Farms linked to this association (farms.farmer_organization_id): count these where the farm or its area matters. */
+    public function farms(): HasMany
+    {
+        return $this->hasMany(Farm::class);
+    }
+
     /** Panel revision 1.1: every member farmer (a farmer in two organizations is a member of both). */
     public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {

@@ -36,6 +36,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('{user}/reject', [FarmerApprovalController::class, 'reject'])->whereNumber('user')->middleware('throttle:60,1,post-farmer-reject')->name('reject');
     });
 
+    // Association Requests (MAO): farms whose farmer's association "isn't listed" (FarmAssociationReviewController).
+    Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/farm-associations')->name('mao.farm-associations.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\FarmAssociationReviewController::class, 'index'])->name('index');
+        Route::post('{farm}/link', [\App\Http\Controllers\FarmAssociationReviewController::class, 'link'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-link')->name('link');
+        Route::post('{farm}/create', [\App\Http\Controllers\FarmAssociationReviewController::class, 'store'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-create')->name('store');
+        Route::post('{farm}/reject', [\App\Http\Controllers\FarmAssociationReviewController::class, 'reject'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-reject')->name('reject');
+    });
+
     Route::post('users/{user}/reset-password', UserPasswordResetController::class)
         ->whereNumber('user')
         ->middleware(['role:'.User::ROLE_IT_EXPERT, 'throttle:20,1,post-user-reset-password'])

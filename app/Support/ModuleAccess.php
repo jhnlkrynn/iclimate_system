@@ -25,7 +25,7 @@ class ModuleAccess
         'climate_data' => ['Climate Data Management', ['climate-records.*', 'records.*'], [self::M, self::I], []],
         'production_data' => ['Production Data Management', ['rice-productions.*'], [self::M, self::I], []],
         'barangays' => ['Barangay / Location Management', ['mao.barangays.*'], [self::M], []],
-        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farmer-approvals.*'], [self::M, self::I], []],
+        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*'], [self::M, self::I], []],
         'impact_analysis' => ['Weather Impact Analysis', ['analysis.impact*'], [self::M], []],
         'yield_prediction' => ['Yield Prediction', ['analysis.yield*', 'analysis.forecast*'], [self::F, self::M], []],
         'advisories' => ['Planting Advisory', ['planting-advisories.*', 'management.advisories.*', 'calendar.*'], [self::F, self::M, self::I], []],

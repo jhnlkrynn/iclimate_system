@@ -45,3 +45,17 @@ Advisory::query()->create([
 
 // Rice Varieties smoke test (tests/Browser/rice-varieties.spec.mjs): five real rows of the NSIC list.
 app(\App\Services\RiceVarieties\RiceVarietyImporter::class)->import(__DIR__.'/../fixtures/nsic-rice-sample.xlsx');
+
+// Farm association tests (tests/Browser/farm-associations.spec.mjs): their own farmer, and associations in Kapito (one
+// Irrigated, one Rainfed) and Prenza (Irrigated only). Luyahan has none.
+User::query()->create([
+    'name' => 'Farm Tester', 'email' => 'farms@browser.test', 'email_verified_at' => now(), 'password' => Hash::make('password'),
+    'role' => User::ROLE_FARMER, 'contact_number' => '09170000001', 'barangay' => 'Kapito', 'status' => User::STATUS_ACTIVE,
+]);
+foreach ([
+    ['Saluysoy Farmers Association', 'Kapito', 'Irrigated'],
+    ['Kapito Rainfed Growers', 'Kapito', 'Rainfed'],
+    ['Prenza Bagbag Bungahan Farmers Association', 'Prenza', 'Irrigated'],
+] as [$name, $barangay, $type]) {
+    \App\Models\FarmerOrganization::query()->create(['name' => $name, 'barangay' => $barangay, 'farm_type' => $type]);
+}

@@ -53,6 +53,12 @@
                                 </div>
                                 <p class="ffm-card-place">{{ $f['barangay'] ? __('farms.location_line', ['barangay' => $f['barangay']]) : __('farms.no_barangay') }}@if ($f['location']) · {{ $f['location'] }}@endif</p>
                                 <p class="ffm-card-size">{{ $f['size']['text'] }}@if ($f['size']['note'])<small>{{ $f['size']['note'] }}</small>@endif</p>
+                                @if ($f['association'])
+                                    <p class="ffm-card-assoc" data-farm-association="{{ $f['association']['state'] }}">
+                                        {{ __('farms.association.card.'.$f['association']['state'], ['name' => $f['association']['name']]) }}
+                                        @if ($f['association']['note'] && $f['association']['state'] === 'not_member')<small class="d-block fad-m-small">{{ __('farms.association.card.note', ['note' => $f['association']['note']]) }}</small>@endif
+                                    </p>
+                                @endif
                                 <p class="ffm-card-map"><span class="fad-badge {{ $f['mapped'] ? 'is-good' : 'is-muted' }}">{{ $f['mapped'] ? __('farms.mapped') : __('farms.not_mapped') }}</span></p>
                                 <div class="ffm-card-actions">
                                     @unless ($f['current'])

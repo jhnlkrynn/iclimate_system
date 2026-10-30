@@ -35,6 +35,7 @@ class FarmService
         $farm = DB::transaction(function () use ($user, $data): Farm {
             $farm = new Farm(['user_id' => $user->getKey()]);
             $farm->fill($this->attributes($data, null));
+            FarmAssociations::fill($farm, $data);
             $farm->farm_name = trim((string) ($data['farm_name'] ?? '')) ?: $this->defaultName($user);
             // The first farm is the primary farm; a farmer can change that later.
             $farm->is_primary = ! Farm::query()->ownedBy($user)->active()->where('is_primary', true)->exists();
@@ -55,6 +56,7 @@ class FarmService
     public function update(Farm $farm, array $data): Farm
     {
         $farm->fill($this->attributes($data, $farm));
+        FarmAssociations::fill($farm, $data);
         if (array_key_exists('farm_name', $data)) {
             $farm->farm_name = trim((string) $data['farm_name']) ?: $farm->farm_name;
         }
@@ -91,6 +93,30 @@ class FarmService
             if (! Farm::query()->ownedBy($farm->user_id)->active()->where('is_primary', true)->exists()) {
                 Farm::query()->ownedBy($farm->user_id)->active()->orderBy('id')->first()?->forceFill(['is_primary' => true])->save();
             }
+        });
+
+        ActiveFarm::forget($farm->user);
+        $this->mirrorToProfile($farm->user);
+    }
+
+    /**
+     * Brings an archived farm back into the farmer's list, with its plans, map and records. It becomes primary when the
+     * farmer has no primary farm; its association membership comes back with it (Farm::booted()).
+     */
+    public function restore(Farm $farm): void
+    {
+        if ($farm->archived_at === null) {
+            return;
+        }
+        if (Farm::query()->ownedBy($farm->user_id)->active()->count() >= Farm::MAX_PER_FARMER) {
+            throw ValidationException::withMessages(['farm_name' => [__('farms.errors.too_many', ['max' => Farm::MAX_PER_FARMER])]]);
+        }
+
+        DB::transaction(function () use ($farm): void {
+            $farm->forceFill([
+                'archived_at' => null,
+                'is_primary' => ! Farm::query()->ownedBy($farm->user_id)->active()->where('is_primary', true)->exists(),
+            ])->save();
         });
 
         ActiveFarm::forget($farm->user);
@@ -158,12 +184,18 @@ class FarmService
                 if ($barangay === null && $area === null && $type === null) {
                     return;
                 }
-                Farm::query()->create([
+                $farm = new Farm([
                     'user_id' => $profile->user_id, 'farm_name' => 'Farm 1', 'barangay' => $barangay,
                     'location_method' => Farm::LOCATION_BARANGAY, 'farm_type' => $type, 'is_primary' => true,
                     'farm_size_hectares' => $area, 'farm_size_method' => $area !== null ? Farm::SIZE_EXACT : Farm::SIZE_UNKNOWN,
                     'farm_size_unit' => $area !== null ? Farm::UNIT_HECTARES : null,
                 ]);
+                // The association chosen at sign-up is this farm's when it is in the farm's barangay (as for older farms).
+                if ($profile->farmer_organization_id && $barangay !== null && FarmAssociations::available()
+                    && FarmAssociations::inBarangay((int) $profile->farmer_organization_id, $barangay)) {
+                    $farm->forceFill(['farmer_organization_id' => (int) $profile->farmer_organization_id, 'association_status' => Farm::ASSOCIATION_MEMBER]);
+                }
+                $farm->save();
 
                 return;
             }

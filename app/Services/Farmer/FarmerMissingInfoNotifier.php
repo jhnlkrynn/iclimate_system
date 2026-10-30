@@ -142,13 +142,17 @@ class FarmerMissingInfoNotifier
     }
 
     /**
-     * Where a missing-info notification leads; null for any other notification. A missing farm opens the Add Farm form,
+     * Where a missing-info (or farm association) notification leads; null for any other notification. A missing farm opens the Add Farm form,
      * a missing size the primary farm's own form (John Luke's farm pages).
      *
      * @return ?array{url: string, label: string}
      */
     public static function linkFor(?string $category, string $locale, ?User $user = null): ?array
     {
+        // A farm association decision opens that farm (App\Services\Farms\FarmAssociations).
+        if (($association = \App\Services\Farms\FarmAssociations::notificationLink($category, $locale, $user)) !== null) {
+            return $association;
+        }
         if (! is_string($category) || ! str_starts_with($category, self::CATEGORY_PREFIX)) {
             return null;
         }

@@ -55,7 +55,7 @@
         'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
         // Manuscript – Naicel (2026-10-08): pages of the manuscript modules (routes/manuscript.php) open as tabs of an
         // existing item, so the menu stays short.
-        'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*']],
+        'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*']],
         'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
         // Panel revision 4.4: MAO Office = Activity Log and MAO Personnel.
         'mao-office' => ['mao.activity-log.index', ['mao.activity-log.*', 'mao.personnel.*']],
