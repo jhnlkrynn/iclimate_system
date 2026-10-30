@@ -8,6 +8,11 @@
     #icAiLauncher .ic-ai-toggle img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
     #icAiLauncher.is-loading .ic-ai-toggle { opacity: .6; cursor: progress; }
     @media (max-width: 639.98px) { #icAiLauncher { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); } }
+    /* Phones: room under the page for the button (62px, its bottom offset and a 16px gap), so the last fields scroll
+       clear of it. Beats the small-screen .page-shell padding in gov-theme.css; also while the full widget is shown. */
+    @media (max-width: 639.98px) {
+        html body:has(#icAiLauncher, .ic-ai-widget) .page-shell { padding-bottom: calc(62px + max(16px, env(safe-area-inset-bottom)) + 16px) !important; }
+    }
     @media (prefers-reduced-motion: reduce) { #icAiLauncher .ic-ai-toggle, #icAiLauncher .ic-ai-toggle:hover { transition: none; transform: none; } }
 </style>
 <div id="icAiLauncher" data-widget-url="{{ route('ai-chat.widget') }}">
