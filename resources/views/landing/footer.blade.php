@@ -26,16 +26,6 @@
                     <img src="{{ asset('images/iclimate-logo-light.png') }}" alt="" width="50" height="40" class="h-10 w-[50px] object-contain">
                 </a>
                 <p class="text-base leading-relaxed">Weather, planting advice and rice yield forecasts for the farmers of Lian, Batangas. A capstone project of Batangas State University ARASOF-Nasugbu with the Municipal Agriculture Office.</p>
-                <div class="flex gap-2">
-                    <a href="https://www.facebook.com/profile.php?id=61551743430540" target="_blank" rel="noopener noreferrer" aria-label="iClimate on Facebook (opens in a new tab)"
-                       class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white hover:bg-white/10" data-footer-facebook>
-                        <x-icon name="facebook" class="h-5 w-5" />
-                    </a>
-                    <a href="mailto:{{ $officeEmail }}" aria-label="Email the Municipal Agriculture Office at {{ $officeEmail }}"
-                       class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white hover:bg-white/10" data-footer-email>
-                        <x-icon name="mail" class="h-5 w-5" />
-                    </a>
-                </div>
             </div>
 
             @foreach ($footerColumns as $heading => $links)
@@ -52,7 +42,8 @@
             <div class="col-span-2 sm:col-span-1">
                 <h2 class="text-sm font-semibold uppercase tracking-[0.12em] text-white">Contact</h2>
                 <ul class="mt-4 flex flex-col gap-3 text-base">
-                    <li><a href="mailto:{{ $officeEmail }}" class="rounded hover:text-white">{{ $officeEmail }}</a></li>
+                    <li><a href="mailto:{{ $officeEmail }}" class="rounded hover:text-white" data-footer-email>{{ $officeEmail }}</a></li>
+                    <li><a href="https://www.facebook.com/profile.php?id=61551743430540" target="_blank" rel="noopener noreferrer" class="rounded hover:text-white" data-footer-facebook>Facebook<span class="sr-only"> (opens in a new tab)</span></a></li>
                     <li><a href="#contact" class="rounded hover:text-white" data-footer-link="contact">Send a message</a></li>
                     <li>Mon to Fri, 8 AM to 5 PM</li>
                 </ul>
@@ -74,7 +65,7 @@
         {{-- The wording should be confirmed by the MAO's Data Protection Officer before launch. --}}
         <details class="group mt-12 rounded-lg border border-white/15" data-privacy>
             <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-lg px-5 py-3 font-semibold text-white [&::-webkit-details-marker]:hidden">
-                <span class="flex items-center gap-2.5"><x-icon name="shield-check" class="h-5 w-5" />Data Privacy notice</span>
+                <span>Data Privacy notice</span>
                 <x-icon name="chevron-down" class="h-5 w-5 group-open:rotate-180" />
             </summary>
             <div class="flex flex-col gap-3 px-5 pb-5 text-sm leading-relaxed">
@@ -86,8 +77,8 @@
 
         <div class="mt-8 flex flex-col gap-3 border-t border-white/15 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
             <p>&copy; {{ now()->year }} iClimate · Capstone Project</p>
-            <a href="#top" class="inline-flex min-h-11 w-fit items-center gap-1.5 rounded font-semibold text-white hover:underline" data-back-to-top>
-                Back to top <x-icon name="arrow-up" class="h-4 w-4" />
+            <a href="#top" class="inline-flex min-h-11 w-fit items-center rounded font-semibold text-white hover:underline" data-back-to-top>
+                Back to top
             </a>
         </div>
     </div>

@@ -1,4 +1,5 @@
-{{-- How it works (white): four numbered steps (white digits on sage-600, 5.2:1; sage-500 would be 3.7:1) beside a screenshot of the Farmer Dashboard in a plain laptop frame.
+{{-- How it works (white): four steps, numbered 01 to 04 because their order matters, beside a screenshot of the Farmer
+     Dashboard in a plain laptop frame.
      The screenshot (public/images/landing/farmer-dashboard.jpg) shows a made-up test farmer, never a real account. --}}
 @php
     $steps = [
@@ -15,15 +16,12 @@
                 From the forecast<br class="max-sm:hidden"> to your field
             </x-landing-heading>
 
-            <ol data-reveal-group class="mt-10 flex flex-col" data-steps>
+            <ol data-reveal-group class="mt-10 flex flex-col gap-6" data-steps>
                 @foreach ($steps as $step)
-                    <li data-reveal class="relative flex gap-5 pb-8 last:pb-0">
-                        @unless ($loop->last)
-                            <span class="absolute bottom-0 left-5 top-10 w-px -translate-x-1/2 bg-line" aria-hidden="true"></span>
-                        @endunless
-                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-600 text-base font-semibold text-white" aria-hidden="true">{{ $loop->iteration }}</span>
-                        <div class="pt-1.5">
-                            <h3 class="text-lg font-semibold leading-snug text-ink"><span class="sr-only">Step {{ $loop->iteration }}: </span>{{ $step['title'] }}</h3>
+                    <li data-reveal class="flex gap-5 border-t border-line pt-5">
+                        <span class="w-8 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-muted" aria-hidden="true" data-step-number>{{ sprintf('%02d', $loop->iteration) }}</span>
+                        <div>
+                            <h3 class="lp-card-title"><span class="sr-only">Step {{ $loop->iteration }}: </span>{{ $step['title'] }}</h3>
                             <p class="mt-1 text-base leading-relaxed text-muted">{{ $step['text'] }}</p>
                         </div>
                     </li>

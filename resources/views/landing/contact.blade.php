@@ -21,19 +21,19 @@
 
                 <dl data-reveal-group class="flex flex-col gap-6 text-base leading-[1.4]">
                     <div data-reveal class="flex flex-col gap-1 sm:flex-row sm:gap-3">
-                        <dt class="flex w-[140px] shrink-0 items-center gap-3 text-muted"><x-icon name="map-pin" class="h-[18px] w-[18px] text-brand" />Address</dt>
+                        <dt class="w-[140px] shrink-0 text-muted">Address</dt>
                         <dd class="text-ink">
                             {{ \App\Support\MaoContact::ADDRESS }}
                             <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="lp-link mt-1 block w-fit" data-directions>Get directions<span class="sr-only"> (opens in a new tab)</span></a>
                         </dd>
                     </div>
                     <div data-reveal class="flex flex-col gap-1 sm:flex-row sm:gap-3">
-                        <dt class="flex w-[140px] shrink-0 items-center gap-3 text-muted"><x-icon name="mail" class="h-[18px] w-[18px] text-brand" />Email</dt>
+                        <dt class="w-[140px] shrink-0 text-muted">Email</dt>
                         <dd><a href="mailto:{{ $officeEmail }}" class="lp-link" data-contact-email>{{ $officeEmail }}</a></dd>
                     </div>
                     {{-- Phone row (Figma) left out until the office confirms a number; add it back as a tel: link. --}}
                     <div data-reveal class="flex flex-col gap-1 sm:flex-row sm:gap-3">
-                        <dt class="flex w-[140px] shrink-0 items-center gap-3 text-muted"><x-icon name="clock" class="h-[18px] w-[18px] text-brand" />Office hours</dt>
+                        <dt class="w-[140px] shrink-0 text-muted">Office hours</dt>
                         <dd class="text-ink">{{ \App\Support\MaoContact::HOURS }}</dd>
                     </div>
                 </dl>

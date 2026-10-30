@@ -90,13 +90,13 @@
         @apply text-white/80;
     }
 
+    /* Cards: a plain white box with a 3px sage-500 top edge; no icons. */
     .lp-card {
-        @apply rounded-lg border border-line bg-white p-6;
+        @apply rounded-lg border border-line border-t-[3px] border-t-sage-500 bg-white p-6;
     }
 
-    /* A line icon in brand green on a tint circle. */
-    .lp-icon-circle {
-        @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tint text-sage-500;
+    .lp-card-title {
+        @apply text-xl font-semibold leading-snug text-ink;
     }
 
     .lp-btn {

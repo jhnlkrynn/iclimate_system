@@ -13,12 +13,9 @@
                 Common<br class="max-sm:hidden"> questions
             </x-landing-heading>
             {{-- Figma shows "Prefer to talk? Call ..."; there is no confirmed office phone number yet, so this points to email and office hours instead. --}}
-            <div data-reveal class="flex items-start gap-3 rounded-lg bg-surface p-4">
-                <x-icon name="mail" class="mt-0.5 h-[18px] w-[18px] text-brand" />
-                <div class="text-sm leading-[1.4]">
-                    <p class="font-semibold text-ink">Prefer to talk?</p>
-                    <p class="mt-0.5 text-muted">Email <a href="mailto:{{ $officeEmail }}" class="lp-link">{{ $officeEmail }}</a> or visit the office, Mon to Fri, 8 AM to 5 PM.</p>
-                </div>
+            <div data-reveal class="rounded-lg bg-surface p-4 text-sm leading-[1.4]">
+                <p class="font-semibold text-ink">Prefer to talk?</p>
+                <p class="mt-0.5 text-muted">Email <a href="mailto:{{ $officeEmail }}" class="lp-link">{{ $officeEmail }}</a> or visit the office, Mon to Fri, 8 AM to 5 PM.</p>
             </div>
         </div>
 

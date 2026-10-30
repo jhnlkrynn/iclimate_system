@@ -1,9 +1,9 @@
 {{-- About (white). The fact cards are information only, so they have no hover state. --}}
 @php
     $facts = [
-        ['icon' => 'sun', 'title' => 'Made for rice', 'text' => 'Production analysis, yield prediction and planting advice for one crop, done properly.'],
-        ['icon' => 'file-text', 'title' => 'Built on local records', 'text' => 'Forecasts use years of Lian’s own harvest and weather data, plus PAGASA and Open-Meteo.'],
-        ['icon' => 'user-check', 'title' => 'Run by the MAO', 'text' => 'Kept current by MAO Staff and maintained by IT Personnel.'],
+        ['title' => 'Made for rice', 'text' => 'Production analysis, yield prediction and planting advice for one crop, done properly.'],
+        ['title' => 'Built on local records', 'text' => 'Forecasts use years of Lian’s own harvest and weather data, plus PAGASA and Open-Meteo.'],
+        ['title' => 'Run by the MAO', 'text' => 'Kept current by MAO Staff and maintained by IT Personnel.'],
     ];
     $sources = ['PAGASA advisories', 'Open-Meteo forecasts', 'Stored climate records', 'MAO rice production records'];
 @endphp
@@ -37,8 +37,7 @@
         <ul data-reveal-group class="mt-12 grid gap-6 md:grid-cols-3 lg:mt-16">
             @foreach ($facts as $fact)
                 <li data-reveal class="lp-card">
-                    <span class="lp-icon-circle"><x-icon :name="$fact['icon']" class="h-5 w-5" /></span>
-                    <h3 class="mt-5 text-xl font-semibold text-ink">{{ $fact['title'] }}</h3>
+                    <h3 class="lp-card-title">{{ $fact['title'] }}</h3>
                     <p class="mt-2 text-base leading-relaxed text-muted">{{ $fact['text'] }}</p>
                 </li>
             @endforeach

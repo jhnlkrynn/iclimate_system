@@ -889,14 +889,14 @@ test('S3 one 1200px container for the nav and every section', async ({ page }, t
     for (const box of boxes) expect(box).toEqual([120, 1320]);
 });
 
-test('S4 the hero card lists local forecasts, planting advisories and harvest dates under its buttons', async ({ page }) => {
+test('S4 the hero card lists local forecasts, planting advisories and harvest dates under its buttons, as plain text', async ({ page }) => {
     await openLanding(page);
-    const points = page.locator('#hero [data-hero-points] li');
-    await expect(points).toHaveText(['Local forecasts', 'Planting advisories', 'Harvest dates']);
-    for (const point of await points.all()) await expect(point.locator('svg')).toHaveCount(1);
+    const points = page.locator('#hero [data-hero-points]');
+    await expect(points).toHaveText('Local forecasts · Planting advisories · Harvest dates');
+    await expect(points.locator('svg')).toHaveCount(0);
 });
 
-test('S5 features: six equal cards in a 3 by 2 grid, each an icon, a title and one line', async ({ page }, testInfo) => {
+test('S5 features: six equal cards in a 3 by 2 grid, each a sage top edge, a 20px title and one line, no icon or number', async ({ page }, testInfo) => {
     await openLanding(page);
     const cards = page.locator('#features [data-feature]');
     await expect(cards).toHaveCount(6);
@@ -908,9 +908,12 @@ test('S5 features: six equal cards in a 3 by 2 grid, each an icon, a title and o
         expect(new Set(boxes.map((b) => b.height)).size).toBe(1); // equal heights
     }
     for (const card of await cards.all()) {
-        await expect(card.locator('.lp-icon-circle svg')).toHaveCount(1);
+        await expect(card.locator('svg')).toHaveCount(0);
         await expect(card.locator('p')).toHaveCount(1);
+        expect(await card.evaluate((el) => [getComputedStyle(el).borderTopWidth, getComputedStyle(el).borderTopColor])).toEqual(['3px', SAGE[500]]);
+        expect(await card.locator('h3').evaluate((el) => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight])).toEqual(['20px', '600']);
     }
+    await expect(page.locator('#features [data-step-number]')).toHaveCount(0);
 });
 
 test('S6 the numbers band shows real counts from the database', async ({ page }) => {
@@ -930,7 +933,9 @@ test('S7 How it works: four numbered steps beside the Farmer Dashboard screensho
     await openLanding(page);
     const steps = page.locator('#how [data-steps] > li');
     await expect(steps).toHaveCount(4);
-    await expect(steps.locator('span[aria-hidden="true"]:not(.absolute)')).toHaveText(['1', '2', '3', '4']);
+    await expect(steps.locator('[data-step-number]')).toHaveText(['01', '02', '03', '04']);
+    expect(await steps.first().locator('[data-step-number]').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(91, 102, 93)'); // muted
+    await expect(steps.locator('svg')).toHaveCount(0);
     const shot = page.locator('#how [data-dashboard-shot] img');
     await shot.scrollIntoViewIfNeeded();
     await expect.poll(() => shot.evaluate((img) => img.complete && img.naturalWidth)).toBe(2560);
@@ -960,6 +965,21 @@ test('S9 footer: link columns, the MAO card, a closed Data Privacy notice that o
     await privacy.locator('summary').click();
     await expect(privacy.getByText('Data Privacy Act of 2012', { exact: false })).toBeVisible();
     await expect(footer).toContainText(`© ${new Date().getFullYear()} iClimate · Capstone Project`);
+});
+
+test('S10 no decorative icons: only the weather chip, menu, close, password eye, form fields and open/close chevrons draw one', async ({ page }) => {
+    await openLanding(page);
+    await expect(page.locator('.lp-icon-circle')).toHaveCount(0);
+    for (const selector of ['#about', '#features', '#how', '#roles', '#contact dl', 'footer nav', 'footer [data-footer-mao]', '#hero [data-hero-points]']) {
+        await expect(page.locator(`${selector} svg`), selector).toHaveCount(0);
+    }
+    // What is left has a job: weather, the menu and close buttons, the password eye, the sign-up field icons, the FAQ and
+    // privacy chevrons.
+    const left = await page.locator('main svg, footer svg, [data-public-nav] svg').evaluateAll((svgs) => svgs.map((svg) =>
+        svg.closest('[data-weather-chip]') ? 'weather' : svg.closest('[data-nav-toggle]') ? 'menu' : svg.closest('[data-nav-close]') ? 'close'
+            : svg.closest('.lp-pwd-toggle, [data-password-toggle]') ? 'eye' : svg.closest('[data-accordion-trigger], [data-privacy] summary') ? 'chevron'
+                : svg.closest('[data-auth-card] form') ? 'form' : `other: ${svg.parentElement.outerHTML.slice(0, 80)}`));
+    expect(left.filter((kind) => kind.startsWith('other'))).toEqual([]);
 });
 
 // ─── GENERAL ─────────────────────────────────────────────────────────────

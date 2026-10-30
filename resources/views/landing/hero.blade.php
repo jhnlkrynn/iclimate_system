@@ -1,9 +1,6 @@
 {{-- Hero: one full screen, its rice field photo starting under the transparent nav. The login card posts to the regular
      login route; a failed attempt comes back here with its errors. The photo is versioned by file time so a replaced
      photo shows at once; the text card is almost white, so the text stays readable over it. --}}
-@php
-    $heroPoints = [['cloud-sun', 'Local forecasts'], ['sprout', 'Planting advisories'], ['calendar', 'Harvest dates']];
-@endphp
 <section id="hero" data-section class="lp-hero relative bg-sage-50 bg-cover bg-center" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
     <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
         <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-white/80 bg-white/90 p-6 backdrop-blur-sm [container-type:inline-size] sm:p-9">
@@ -14,13 +11,7 @@
                 <a href="#features" class="lp-btn-primary lp-btn-lg" data-hero-features>Explore features</a>
                 <a href="#how" class="lp-btn-neutral lp-btn-lg" data-hero-how>How it works</a>
             </div>
-            <ul class="flex flex-wrap gap-x-6 gap-y-3 self-stretch border-t border-line pt-5" data-hero-points>
-                @foreach ($heroPoints as [$icon, $label])
-                    <li class="flex items-center gap-2.5 text-[0.9375rem] font-medium leading-tight text-ink">
-                        <span class="lp-icon-circle h-9 w-9"><x-icon :name="$icon" class="h-[18px] w-[18px]" /></span>{{ $label }}
-                    </li>
-                @endforeach
-            </ul>
+            <p class="self-stretch border-t border-line pt-5 text-base font-medium leading-normal text-ink" data-hero-points>Local forecasts · Planting advisories · Harvest dates</p>
         </div>
 
         {{-- Log in or create an account in place: the Sign in / Create account tabs switch the card without leaving the

@@ -28,14 +28,11 @@
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($roles as $key => $role)
                 <article data-reveal class="lp-role-card lp-card flex h-full flex-col sm:p-8">
-                    <h3 class="text-xl font-semibold text-ink sm:text-2xl">{{ $role['title'] }}</h3>
+                    <h3 class="lp-card-title">{{ $role['title'] }}</h3>
                     <p class="mt-3 text-base leading-relaxed text-muted">{{ $role['text'] }}</p>
-                    <ul class="mt-6 flex flex-col gap-3 border-t border-line pt-6">
+                    <ul class="mt-6 flex list-disc flex-col gap-2 border-t border-line pl-5 pt-6 marker:text-sage-500">
                         @foreach ($role['features'] as $feature)
-                            <li class="flex items-start gap-2.5 text-base leading-snug text-ink">
-                                <x-icon name="check" class="mt-0.5 h-[18px] w-[18px] shrink-0 text-brand" stroke-width="2.5" />
-                                {{ $feature }}
-                            </li>
+                            <li class="text-base leading-snug text-ink">{{ $feature }}</li>
                         @endforeach
                     </ul>
                 </article>
