@@ -3,7 +3,7 @@
 // Run with `npm run test:browser` (starts the site on a throwaway database, see tests/Browser/serve.sh).
 import { test, expect } from '@playwright/test';
 
-const NAV_HEIGHT = 73;
+const NAV_HEIGHT = 72;
 const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 const ACCOUNTS = {
     farmer: { email: 'farmer@browser.test', dashboard: '/farmer/dashboard' },
@@ -64,11 +64,12 @@ function navLink(page, id, testInfo) {
         : page.locator(`header nav[aria-label="Main"] [data-nav-link="${id}"]`);
 }
 
-/** The section starts right under the sticky nav, and its heading is on screen and not hidden by the nav. */
+/** The section starts right under the nav (the hero at the very top, under it), and its heading is on screen and not
+    hidden by the nav. */
 async function expectScrolledTo(page, id) {
     await expect.poll(async () => page.evaluate(([sectionId, navHeight]) => {
         const top = Math.round(document.getElementById(sectionId).getBoundingClientRect().top);
-        return Math.abs(top - navHeight) <= 2;
+        return Math.abs(top - (sectionId === 'hero' ? 0 : navHeight)) <= 2;
     }, [id, NAV_HEIGHT]), { timeout: 10_000 }).toBe(true); // a long smooth scroll on the tall mobile page
 
     const heading = await page.evaluate((sectionId) => {
@@ -98,7 +99,7 @@ test('N1 logo and office name go to the home page', async ({ page }) => {
 });
 
 for (const [id, label] of [['hero', 'N2 Home'], ['about', 'N3 About'], ['features', 'N4 Features'], ['roles', 'N5 Who it’s for'], ['contact', 'N6 Contact']]) {
-    test(`${label} scrolls smoothly to #${id} below the sticky nav`, async ({ page }, testInfo) => {
+    test(`${label} scrolls smoothly to #${id} below the nav`, async ({ page }, testInfo) => {
         await openLanding(page);
         if (id === 'hero') await page.evaluate(() => window.scrollTo(0, 2500));
         // Smooth unless the visitor asked for reduced motion (this suite runs with reduced motion; M1 checks smooth).
@@ -119,30 +120,52 @@ test('N7 the active nav link follows the section being read', async ({ page }, t
         await expect(navLink(page, id, testInfo)).toHaveClass(/is-active/);
         await expect(navLink(page, id, testInfo)).toHaveAttribute('aria-current', 'true');
         await expect(page.locator('header nav[aria-label="Main"] .is-active')).toHaveCount(1);
+        await expect(page.locator('header nav[aria-label="Main"] [aria-current]')).toHaveCount(1);
+        // A 2px brand underline, not a filled pill.
+        const style = await navLink(page, id, testInfo).evaluate((link) => {
+            const after = getComputedStyle(link, '::after');
+            return { underline: after.backgroundColor, height: after.height, background: getComputedStyle(link).backgroundColor };
+        });
+        expect(style).toEqual({ underline: 'rgb(23, 67, 42)', height: '2px', background: 'rgba(0, 0, 0, 0)' });
     }
 });
 
-test('N12 mobile menu opens, closes on link click and on Esc', async ({ page }, testInfo) => {
+test('N12 mobile drawer opens full height and closes with the close button, Esc, a backdrop tap and a link', async ({ page }, testInfo) => {
     test.skip(!isMobile(testInfo), 'the menu button only shows on small screens');
     await openLanding(page);
     const toggle = page.locator('[data-nav-toggle]');
     const menu = page.locator('[data-nav-menu]');
+    const drawer = page.locator('[data-nav-drawer]');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(menu).toBeHidden();
 
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(toggle).toHaveAttribute('aria-label', 'Close menu');
     await expect(menu).toBeVisible();
+    await expect(drawer).toHaveAttribute('role', 'dialog');
+    await expect(drawer).toHaveAttribute('aria-modal', 'true');
+    const box = await drawer.boundingBox();
+    expect(box.y).toBe(0);
+    expect(Math.round(box.height)).toBe(page.viewportSize().height);
+    expect(Math.round(box.x + box.width)).toBe(page.viewportSize().width);
+    await expect(drawer.locator('[data-nav-menu-login]')).toHaveText('Log in');
+    await expect(page.locator('[data-nav-close]')).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden'); // the page stays put behind it
 
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await page.locator('[data-nav-close]').click();
     await expect(menu).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('');
 
     await toggle.click();
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle).toBeFocused();
+
+    await toggle.click();
+    await page.mouse.click(10, 300); // the backdrop, left of the drawer
+    await expect(menu).toBeHidden();
     await expect(toggle).toBeFocused();
 
     await toggle.click();
@@ -150,6 +173,125 @@ test('N12 mobile menu opens, closes on link click and on Esc', async ({ page }, 
     await expect(menu).toBeHidden();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expectScrolledTo(page, 'features');
+});
+
+test('N13 Tab and Shift+Tab stay inside the open drawer', async ({ page }, testInfo) => {
+    test.skip(!isMobile(testInfo), 'the drawer only shows on small screens');
+    await openLanding(page);
+    await page.locator('[data-nav-toggle]').click();
+    // Close, the five links, Log in: one full round of Tab comes back to Close.
+    const count = await page.locator('[data-nav-drawer]').locator('a[href], button').count();
+    expect(count).toBe(7);
+    for (let i = 0; i < count; i += 1) {
+        await page.keyboard.press('Tab');
+        expect(await page.evaluate(() => document.querySelector('[data-nav-drawer]').contains(document.activeElement))).toBe(true);
+    }
+    await expect(page.locator('[data-nav-close]')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('[data-nav-menu-login]')).toBeFocused();
+});
+
+test('N14 the drawer Log in opens the sign-in card', async ({ page }, testInfo) => {
+    test.skip(!isMobile(testInfo), 'the drawer only shows on small screens');
+    await page.goto('/#register');
+    await page.evaluate(() => window.scrollTo({ top: 1500, behavior: 'instant' }));
+    await page.locator('[data-nav-toggle]').click();
+    await page.locator('[data-nav-menu-login]').click();
+    await expect(page.locator('[data-nav-menu]')).toBeHidden();
+    await expect(page.locator('[data-auth-panel="login"]')).toBeVisible();
+    await expect(page.locator('#login-email')).toBeFocused();
+});
+
+test('N15 the header is 72px, aligned with the hero, transparent over the hero and solid white past it', async ({ page }, testInfo) => {
+    await openLanding(page);
+    const nav = page.locator('[data-public-nav]');
+    const read = () => page.evaluate(() => {
+        const header = document.querySelector('[data-public-nav]');
+        const style = getComputedStyle(header);
+        const row = header.querySelector('[data-nav-row]').getBoundingClientRect();
+        const heroRow = document.querySelector('#hero > .lp-wrap').getBoundingClientRect();
+        const rowStyle = getComputedStyle(header.querySelector('[data-nav-row]'));
+        const heroStyle = getComputedStyle(document.querySelector('#hero > .lp-wrap'));
+        return {
+            height: header.getBoundingClientRect().height,
+            top: header.getBoundingClientRect().top,
+            background: style.backgroundColor,
+            border: style.borderBottomColor,
+            title: getComputedStyle(header.querySelector('.lp-header-title')).color,
+            // The same container as the hero: same box and the same side padding.
+            left: row.left + parseFloat(rowStyle.paddingLeft) - (heroRow.left + parseFloat(heroStyle.paddingLeft)),
+            right: row.right - parseFloat(rowStyle.paddingRight) - (heroRow.right - parseFloat(heroStyle.paddingRight)),
+            heroTop: document.getElementById('hero').getBoundingClientRect().top,
+        };
+    });
+
+    const overHero = await read();
+    expect(overHero.height).toBe(NAV_HEIGHT);
+    expect(overHero.top).toBe(0);
+    expect(overHero.heroTop).toBe(0); // the photo starts at the very top, under the nav
+    expect(overHero.left).toBe(0);
+    expect(overHero.right).toBe(0);
+    await expect(nav).toHaveAttribute('data-nav-state', 'hero');
+    expect(overHero.background).toBe('rgba(17, 26, 19, 0.6)'); // a flat dark scrim, no gradient
+    expect(overHero.border).toBe('rgba(0, 0, 0, 0)');
+    expect(overHero.title).toBe('rgb(255, 255, 255)');
+    await expect(nav.locator('.lp-logo-on-dark')).toBeVisible();
+    await expect(nav.locator('.lp-logo-on-light')).toBeHidden();
+
+    // Still over the hero halfway down it.
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('hero').offsetHeight / 2, behavior: 'instant' }));
+    await expect(nav).toHaveAttribute('data-nav-state', 'hero');
+
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('about').offsetTop - 72, behavior: 'instant' }));
+    await expect(nav).toHaveAttribute('data-nav-state', 'solid');
+    const solid = await read();
+    expect(solid.height).toBe(NAV_HEIGHT);
+    expect(solid.background).toBe('rgb(255, 255, 255)');
+    expect(solid.border).toBe('rgb(228, 232, 227)');
+    expect(solid.title).toBe('rgb(17, 26, 19)');
+    await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
+    await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();
+
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect(nav).toHaveAttribute('data-nav-state', 'hero');
+
+    // A page opened part way down starts solid.
+    await page.goto('/#contact');
+    await expect(nav).toHaveAttribute('data-nav-state', 'solid');
+    if (!isMobile(testInfo)) await expect(page.locator('header nav[aria-label="Main"] [data-nav-link]')).toHaveCount(5);
+});
+
+test('N16 Log in: white outline over the hero, solid brand on white; it opens the sign-in card', async ({ page }, testInfo) => {
+    test.skip(isMobile(testInfo), 'on phones Log in is in the drawer (N14)');
+    await page.goto('/#register');
+    const login = page.locator('[data-nav-login]');
+    await expect(login).toHaveText('Log in');
+    await expect(login).toHaveAttribute('href', '#login');
+    const colors = () => login.evaluate((el) => { const cs = getComputedStyle(el); return [cs.backgroundColor, cs.color, cs.borderTopColor]; });
+    await expect.poll(colors).toEqual(['rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)', 'rgba(255, 255, 255, 0.8)']);
+
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 72, behavior: 'instant' }));
+    await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
+    await expect.poll(colors).toEqual(['rgb(23, 67, 42)', 'rgb(255, 255, 255)', 'rgb(23, 67, 42)']);
+
+    await login.click();
+    await expect(page.locator('[data-auth-panel="login"]')).toBeVisible();
+    await expect(page.locator('#login-email')).toBeFocused();
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+    await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'hero');
+});
+
+test('N17 nav focus rings are visible in both header states', async ({ page }, testInfo) => {
+    test.skip(isMobile(testInfo), 'desktop link row');
+    await openLanding(page);
+    const ring = (selector) => page.locator(selector).evaluate((el) => { el.focus(); return getComputedStyle(el).boxShadow; });
+    await page.keyboard.press('Tab'); // keyboard mode, so :focus-visible applies to the next .focus()
+    const overHero = await ring('header nav[aria-label="Main"] [data-nav-link="about"]');
+    expect(overHero).toContain('rgb(255, 255, 255)');
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('about').offsetTop - 72, behavior: 'instant' }));
+    await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
+    const solid = await ring('header nav[aria-label="Main"] [data-nav-link="features"]');
+    expect(solid).toContain('rgb(23, 67, 42)');
 });
 
 // ─── HERO ────────────────────────────────────────────────────────────────
@@ -705,7 +847,7 @@ for (const [width, height] of [[1280, 800], [1440, 900]]) {
                 buttons: rect(document.querySelector('[data-hero-how]')),
             };
         });
-        expect(boxes.hero.top).toBe(boxes.nav.bottom);
+        expect(boxes.hero.top).toBe(0); // the photo starts under the nav, at the very top
         expect(Math.round(boxes.hero.bottom)).toBe(height); // exactly one screen
         expect(boxes.card.top).toBeGreaterThanOrEqual(boxes.nav.bottom);
         expect(boxes.card.bottom).toBeLessThanOrEqual(height);
@@ -735,7 +877,7 @@ test('G2 at every size: one screen per section, nothing cut off or under the nav
                 section.scrollIntoView({ behavior: 'instant' });
                 const navBottom = document.querySelector('[data-public-nav]').getBoundingClientRect().bottom;
                 const top = section.getBoundingClientRect().top;
-                if (Math.abs(top - navBottom) > 2 && Math.ceil(window.scrollY + vh) < document.documentElement.scrollHeight) problems.push(`#${id} starts at ${top}, nav ends at ${navBottom}`);
+                if (Math.abs(top - (id === 'hero' ? 0 : navBottom)) > 2 && Math.ceil(window.scrollY + vh) < document.documentElement.scrollHeight) problems.push(`#${id} starts at ${top}, nav ends at ${navBottom}`);
                 const heading = section.querySelector('h1, h2').getBoundingClientRect();
                 if (heading.top < navBottom) problems.push(`#${id} heading under the nav`);
             }
@@ -814,8 +956,10 @@ test.describe('scroll reveal with motion allowed', () => {
             .toEqual(['1', '1', '1', '1', '1', '1']);
         await expect.poll(() => cards.last().evaluate((el) => getComputedStyle(el).transform)).toBe('none');
 
-        // The nav gained its hairline shadow once scrolled.
-        await expect(page.locator('[data-public-nav]')).toHaveClass(/is-scrolled/);
+        // Past the hero the nav is solid white, switched with a short colour transition.
+        await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
+        expect(await page.locator('[data-public-nav]').evaluate((nav) => [getComputedStyle(nav).transitionProperty, getComputedStyle(nav).transitionDuration]))
+            .toEqual(['background-color, border-color', '0.2s, 0.2s']);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     });
 
@@ -856,11 +1000,12 @@ test('L1 the MAO logo (the Lian seal) in the nav and footer loads, square and un
         return { src: img.getAttribute('src').split('/').pop(), width: Math.round(box.width), height: Math.round(box.height), fit: getComputedStyle(img).objectFit, radius: getComputedStyle(img).borderRadius };
     }));
     const mao = sizes.find((img) => img.src === 'mao-lian-seal.png');
-    const iclimate = sizes.find((img) => img.src === 'iclimate-logo.png');
+    const iclimate = sizes.find((img) => img.src === 'iclimate-logo-light.png'); // the white-lettered logo over the hero
     expect(mao.width).toBe(mao.height);
     expect(mao.height).toBe(iclimate.height);
+    expect(mao.height).toBe(40);
     expect(mao.fit).toBe('contain');
-    expect(mao.radius).toBe('0px');
+    expect(mao.radius).toBe('9999px'); // a circle crop hides the picture's white square on the dark header
     const footerLogo = page.locator('[data-footer-home] img[src$="images/mao-lian-seal.png"]');
     await footerLogo.scrollIntoViewIfNeeded();
     await expect.poll(() => footerLogo.evaluate((img) => img.complete && img.naturalWidth)).toBeGreaterThan(0);
@@ -996,7 +1141,7 @@ test('X2 the nav at 375 and 1280px: no sideways scroll, nothing cut off or under
                     section.scrollIntoView({ behavior: 'instant' });
                     const navBottom = nav.getBoundingClientRect().bottom;
                     const top = section.getBoundingClientRect().top;
-                    if (Math.abs(top - navBottom) > 2 && Math.ceil(window.scrollY + window.innerHeight) < document.documentElement.scrollHeight) out.push(`#${id} starts at ${top}, nav ends at ${navBottom}`);
+                    if (Math.abs(top - (id === 'hero' ? 0 : navBottom)) > 2 && Math.ceil(window.scrollY + window.innerHeight) < document.documentElement.scrollHeight) out.push(`#${id} starts at ${top}, nav ends at ${navBottom}`);
                 }
                 window.scrollTo({ top: 0, behavior: 'instant' });
                 const small = [...document.querySelectorAll('button, [role="tab"], .lp-btn-primary, .lp-btn-neutral, .lp-icon-btn')]

@@ -16,15 +16,18 @@
         @apply bg-white font-inter text-ink antialiased;
     }
 
-    /* Height of the sticky nav (components/public-nav.blade.php): 44px logos and buttons + 2 x 0.875rem padding + 1px
-       border = 73px. */
+    /* Height of the top nav (components/public-nav.blade.php), its bottom line included. */
     :root {
-        --nav-h: calc(1.75rem + 45px);
+        --nav-h: 72px;
     }
 
-    /* Anchored sections stop just below the sticky nav. */
+    /* Anchored sections stop just below the nav; the hero runs under it, from the very top. */
     [data-section] {
         scroll-margin-top: var(--nav-h);
+    }
+
+    #hero {
+        scroll-margin-top: 0;
     }
 
     :focus-visible {
@@ -100,12 +103,120 @@
         @apply font-semibold text-brand underline decoration-from-font underline-offset-2 hover:text-ink;
     }
 
+    /* Top nav (components/public-nav.blade.php). Solid: white with a thin bottom line, ink text, brand accents.
+       Over the hero (data-nav-state="hero"): a flat dark scrim on the photo with white text, at least 4.5:1 even on the
+       pale sky. Only colours change between the two, in a short transition. */
+    .lp-header {
+        @apply h-[var(--nav-h)] border-b border-line bg-white;
+        transition: background-color .2s ease, border-color .2s ease;
+    }
+
+    .lp-header[data-nav-state='hero'] {
+        @apply border-transparent bg-ink/60;
+    }
+
+    .lp-header-divider {
+        @apply bg-line;
+    }
+
+    .lp-header .lp-logo-on-dark,
+    .lp-header[data-nav-state='hero'] .lp-logo-on-light {
+        @apply hidden;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-logo-on-dark {
+        @apply block;
+    }
+
+    .lp-header-title {
+        @apply text-ink;
+    }
+
+    .lp-header-sub {
+        @apply text-muted;
+    }
+
     .lp-nav-link {
-        @apply rounded-lg px-2 py-2 text-base leading-none text-ink transition-colors hover:bg-surface;
+        @apply relative inline-flex min-h-11 items-center rounded-md px-3 text-[0.9375rem] font-medium leading-none text-ink transition-colors hover:text-brand;
+    }
+
+    /* The active section: a 2px underline (brand on white, white over the hero). */
+    .lp-nav-link::after {
+        @apply absolute inset-x-3 bottom-1.5 h-0.5 bg-transparent content-[''];
     }
 
     .lp-nav-link.is-active {
-        @apply bg-tint;
+        @apply text-brand;
+    }
+
+    .lp-nav-link.is-active::after {
+        @apply bg-brand;
+    }
+
+    .lp-weather-chip {
+        @apply inline-flex h-11 min-w-[88px] items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 text-sm font-semibold text-ink transition-colors hover:bg-tint;
+    }
+
+    .lp-weather-icon {
+        @apply text-brand;
+    }
+
+    .lp-weather-skeleton {
+        @apply bg-line;
+    }
+
+    .lp-header-btn {
+        @apply lp-btn border-brand bg-brand text-[0.9375rem] font-semibold text-white hover:border-ink hover:bg-ink;
+    }
+
+    .lp-header-icon-btn {
+        @apply inline-flex h-11 w-11 items-center justify-center rounded-md text-ink transition-colors hover:bg-tint;
+    }
+
+    .lp-header[data-nav-state='hero'] :is(.lp-header-title, .lp-header-sub, .lp-nav-link, .lp-nav-link.is-active, .lp-weather-icon, .lp-header-icon-btn) {
+        @apply text-white;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-header-divider {
+        @apply bg-white/60;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-nav-link:hover::after {
+        @apply bg-white/50;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-nav-link.is-active::after {
+        @apply bg-white;
+    }
+
+    .lp-header[data-nav-state='hero'] :is(.lp-weather-chip, .lp-header-btn) {
+        @apply border-white/80 bg-transparent text-white hover:bg-white hover:text-ink;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-weather-chip:hover .lp-weather-icon {
+        @apply text-brand;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-weather-skeleton {
+        @apply bg-white/40;
+    }
+
+    .lp-header[data-nav-state='hero'] .lp-header-icon-btn {
+        @apply hover:bg-white/15;
+    }
+
+    /* Focus over the hero: a white ring, since the brand ring would disappear into the scrim. */
+    .lp-header[data-nav-state='hero'] [data-nav-row] :focus-visible {
+        --tw-ring-color: #fff;
+        --tw-ring-offset-color: transparent;
+    }
+
+    .lp-drawer-link {
+        @apply flex min-h-12 items-center border-l-2 border-transparent px-5 text-base font-medium text-ink hover:bg-tint;
+    }
+
+    .lp-drawer-link.is-active {
+        @apply border-brand text-brand;
     }
 
 /* Who uses iClimate: the cards stay equal-height on wide screens and stack without becoming cramped on phones. */
@@ -136,6 +247,19 @@ html[data-theme="dark"] #roles .lp-role-card:hover { border-color: #5a936d; }
 html[data-theme="dark"] #roles :is(.text-ink, .lp-h2) { color: #f0f5f1; }
 html[data-theme="dark"] #roles .text-muted { color: #b7c5ba; }
 html[data-theme="dark"] #roles .text-brand { color: #8bd1a0; }
+}
+
+/* The hero runs under the fixed nav, so its photo starts at the very top: one full screen, its content below the nav. */
+#hero.lp-screen {
+    min-height: 100vh; min-height: 100svh;
+    padding-top: calc(var(--nav-h) + 2.5rem);
+}
+@media (min-width: 1024px) {
+    #hero.lp-screen { padding-top: calc(var(--nav-h) + 3rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lp-header { transition: none; }
 }
 
 /* The rice field photo behind the whole page (welcome.blade.php). It stays still while the sections scroll over it;
