@@ -4,8 +4,9 @@
     $inModal = $inModal ?? false;
     $c = $inModal
         ? ['grid' => 'fcal-plan-grid', 'field' => 'fad-field', 'full' => 'fad-field is-full', 'label' => 'fad-m-field-label', 'input' => 'fad-input', 'select' => 'fad-input', 'help' => 'fad-m-small', 'error' => 'fcal-plan-error']
-        : ['grid' => 'row g-3', 'field' => 'col-md-6', 'full' => 'col-12', 'label' => 'form-label', 'input' => 'form-control', 'select' => 'form-select', 'help' => 'schedule-help mt-1', 'error' => 'invalid-feedback d-block'];
+        : ['grid' => 'schedule-form-grid', 'field' => 'schedule-form-field', 'full' => 'schedule-form-field is-full', 'label' => 'form-label', 'input' => 'form-control', 'select' => 'form-select', 'help' => 'schedule-help', 'error' => 'invalid-feedback d-block'];
     $invalid = fn (string $field) => $errors->has($field) ? ' is-invalid' : '';
+    $farmField = $inModal ? $c['full'] : $c['field'];
     // Rice Varieties: the variety fields, once the database has them.
     $varietiesReady = \App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id') && \App\Support\SchemaCache::hasTable('rice_varieties');
 @endphp
@@ -33,13 +34,13 @@
     <div class="{{ $inModal ? 'fad-m-note is-good' : 'season-guide mb-4' }}">
         <strong>Season guide:</strong> <span>Wet season planting is normally May–July. Dry season planting is normally October–December. Common harvest months are March, April, October, and November.</span>
     </div>
-    <div id="scheduleDateWarning" class="{{ $inModal ? 'fad-m-note is-watch' : 'alert alert-warning' }} d-none" role="status" aria-live="polite"></div>
+    <div id="scheduleDateWarning" class="{{ $inModal ? 'fad-m-note is-watch' : 'alert alert-warning schedule-date-warning' }} d-none" role="status" aria-live="polite"></div>
 
     <div class="{{ $c['grid'] }}">
         @php $planFarms = $farms ?? collect(); @endphp
         @if ($planFarms->isNotEmpty())
             {{-- Which of the farmer's farms the plan is for (their own farms only; defaults to the farm they are viewing). --}}
-            <div class="{{ $c['full'] }}">
+            <div class="{{ $farmField }}">
                 <label class="{{ $c['label'] }}" for="plan_farm_id">{{ __('farms.plan_farm') }}</label>
                 <select class="{{ $c['select'] }}{{ $invalid('farm_id') }}" id="plan_farm_id" name="farm_id">
                     @foreach ($planFarms as $planFarm)
@@ -158,7 +159,7 @@
             <button class="fad-btn is-quiet" type="button" data-plan-close>Cancel</button>
         </footer>
     @else
-        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+        <div class="schedule-form-actions d-flex flex-column flex-sm-row gap-2 mt-4">
             <button class="btn btn-primary btn-lg" type="submit">Save Schedule</button>
             <a class="btn btn-outline-secondary btn-lg" href="{{ route('farmer.my-farm') }}">Cancel</a>
         </div>

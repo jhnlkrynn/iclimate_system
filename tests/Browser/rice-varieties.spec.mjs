@@ -70,6 +70,7 @@ test('V2 a farmer can open Choose variety and see the variety picker on the plan
     await page.locator('[data-rv-prompt] a').click();
     await expect(page).toHaveURL(/\/farmer\/planting-schedules\/\d+\/edit$/);
     await expect(page.locator('form.schedule-form')).toBeVisible();
+    await expect(page.locator('.schedule-form-grid')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
 
     await expect(page.locator('#rice_variety_id option', { hasText: 'GSR 8' })).toHaveCount(1);
