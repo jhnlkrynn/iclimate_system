@@ -158,8 +158,8 @@ if (authCard) {
     });
 }
 
-// Live Lian weather, fetched once from /api/weather/current (the nav chip's data-weather-url) and shared by the nav chip
-// and the Weather analysis card. Gives up after 5s; resolves to null when there is no live reading.
+// Live Lian weather for the nav chip, fetched once from /api/weather/current (the chip's data-weather-url). Gives up
+// after 5s; resolves to null when there is no live reading.
 const weatherUrl = document.querySelector('[data-weather-chip]')?.dataset.weatherUrl;
 const num = (v, digits = 0) => (v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v).toFixed(digits));
 let weatherRequest = null;
@@ -188,24 +188,6 @@ const weatherIcon = (label = '') => {
     if (text.includes('cloud') || text.includes('overcast') || text.includes('fog') || text.includes('mist')) return 'cloud';
     return 'sun';
 };
-
-// The Weather analysis card: the stored record rendered on the server stays when there is no live reading.
-const weather = document.querySelector('[data-weather]');
-if (weather) {
-    const set = (selector, value) => {
-        const el = weather.querySelector(selector);
-        if (el && value !== null) el.textContent = value;
-    };
-    loadWeather().then((w) => {
-        if (! w) return;
-        set('[data-weather-temp]', `${num(w.temperature)}°C`);
-        if (num(w.humidity) !== null) set('[data-weather-humidity]', `${num(w.humidity)}%`);
-        if (num(w.wind_speed) !== null) set('[data-weather-wind]', `${num(w.wind_speed)} km/h`);
-        if (num(w.rainfall, 1) !== null) set('[data-weather-rain]', `${num(w.rainfall, 1)} mm`);
-        set('[data-weather-rain-label]', 'Rainfall today');
-        set('[data-weather-status]', `Live now · ${w.condition_label || 'Current weather'}${w.updated_label ? ` · ${w.updated_label}` : ''}`);
-    });
-}
 
 // Nav weather chip: [icon 27°C · Lian], and a panel with the details. Hidden when there is no live reading.
 const chip = document.querySelector('[data-weather-chip]');

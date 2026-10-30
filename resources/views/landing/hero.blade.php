@@ -1,11 +1,12 @@
-{{-- Hero (Figma: Hero): fills one screen below the nav. The login card posts to the regular login route; a failed
-     attempt comes back here with its errors. --}}
-{{-- Background: its own rice field in Lian, covering the page's photo (welcome.blade.php .lp-photo) behind this section
-     (versioned by file time so a replaced photo shows at once). The photo is blurred behind the text panel so the text
-     stays readable. --}}
-<section id="hero" data-section class="lp-screen relative bg-[#EAF4E4] bg-cover bg-center py-10 lg:py-12" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
+{{-- Hero: one full screen, its rice field photo starting under the transparent nav. The login card posts to the regular
+     login route; a failed attempt comes back here with its errors. The photo is versioned by file time so a replaced
+     photo shows at once; the text card is almost white, so the text stays readable over it. --}}
+@php
+    $heroPoints = [['cloud-sun', 'Local forecasts'], ['sprout', 'Planting advisories'], ['calendar', 'Harvest dates']];
+@endphp
+<section id="hero" data-section class="lp-hero relative bg-[#EAF4E4] bg-cover bg-center" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
     <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
-        <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-line bg-white/75 p-6 backdrop-blur [container-type:inline-size] sm:p-9">
+        <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-white/80 bg-white/90 p-6 backdrop-blur-sm [container-type:inline-size] sm:p-9">
             <p class="text-base font-semibold leading-[1.4] text-brand sm:text-lg">For the rice farmers of Lian, Batangas</p>
             <h1 class="text-[clamp(2.75rem,min(6vw,20cqi),5.5rem)] font-bold leading-[0.98] tracking-[-0.035em] text-ink">Plan every planting around the weather.</h1>
             <p class="max-w-[36rem] text-[clamp(1.125rem,1.6vw,1.375rem)] leading-[1.5] text-muted">Local forecasts, MAO planting advisories and rice yield outlooks in one place, kept up to date by the Municipal Agriculture Office.</p>
@@ -13,6 +14,13 @@
                 <a href="#features" class="lp-btn-primary lp-btn-lg" data-hero-features>Explore features</a>
                 <a href="#how" class="lp-btn-neutral lp-btn-lg" data-hero-how>How it works</a>
             </div>
+            <ul class="flex flex-wrap gap-x-6 gap-y-3 self-stretch border-t border-line pt-5" data-hero-points>
+                @foreach ($heroPoints as [$icon, $label])
+                    <li class="flex items-center gap-2.5 text-[0.9375rem] font-medium leading-tight text-ink">
+                        <span class="lp-icon-circle h-9 w-9"><x-icon :name="$icon" class="h-[18px] w-[18px]" /></span>{{ $label }}
+                    </li>
+                @endforeach
+            </ul>
         </div>
 
         {{-- Log in or create an account in place: the Sign in / Create account tabs switch the card without leaving the

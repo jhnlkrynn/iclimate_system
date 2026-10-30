@@ -819,18 +819,157 @@ test('T3 Back to top scrolls smoothly to the top', async ({ page }) => {
     await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 5000 }).toBe(0);
 });
 
+// ─── SECTIONS ────────────────────────────────────────────────────────────
+
+test('S1 every section below the hero opens with an eyebrow, a heading of two lines at most and a muted sentence', async ({ page }, testInfo) => {
+    await openLanding(page);
+    for (const id of ['about', 'features', 'numbers', 'how', 'roles', 'faq', 'contact']) {
+        const heading = await page.evaluate((sectionId) => {
+            const section = document.getElementById(sectionId);
+            const eyebrow = section.querySelector('.lp-eyebrow');
+            const h2 = section.querySelector('h2');
+            const lead = section.querySelector('.lp-lead');
+            const before = getComputedStyle(eyebrow, '::before');
+            return {
+                eyebrowCase: getComputedStyle(eyebrow).textTransform,
+                rule: [before.width, before.height],
+                lines: Math.round(h2.getBoundingClientRect().height / parseFloat(getComputedStyle(h2).lineHeight)),
+                labelled: section.getAttribute('aria-labelledby') === h2.id,
+                leadSize: parseFloat(getComputedStyle(lead).fontSize),
+                h2Weight: getComputedStyle(h2).fontWeight,
+            };
+        }, id);
+        expect(heading.eyebrowCase, id).toBe('uppercase');
+        expect(heading.rule, id).toEqual(['24px', '2px']);
+        expect(heading.labelled, id).toBe(true);
+        expect(heading.h2Weight, id).toBe('700');
+        expect(heading.leadSize, id).toBeGreaterThanOrEqual(16);
+        expect(heading.leadSize, id).toBeLessThanOrEqual(18);
+        if (!isMobile(testInfo)) expect(heading.lines, id).toBeLessThanOrEqual(2);
+    }
+});
+
+test('S2 backgrounds alternate white, surface and two dark brand bands, and the footer is ink', async ({ page }) => {
+    await openLanding(page);
+    const colors = await page.evaluate(() => [...document.querySelectorAll('main > section:not(#hero), footer')]
+        .map((el) => `${el.id || 'footer'} ${getComputedStyle(el).backgroundColor}`));
+    expect(colors).toEqual([
+        'about rgba(0, 0, 0, 0)', // the white page
+        'features rgb(246, 248, 245)',
+        'numbers rgb(23, 67, 42)',
+        'how rgba(0, 0, 0, 0)',
+        'roles rgb(246, 248, 245)',
+        'faq rgba(0, 0, 0, 0)',
+        'contact rgb(246, 248, 245)',
+        'get-started rgb(23, 67, 42)',
+        'footer rgb(17, 26, 19)',
+    ]);
+    // The dark bands: white heading, the rice field photo very faint behind.
+    for (const id of ['numbers', 'get-started']) {
+        expect(await page.locator(`#${id} h2`).evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+        expect(await page.locator(`#${id} .lp-band-photo`).evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThanOrEqual(0.15);
+    }
+});
+
+test('S3 one 1200px container for the nav and every section', async ({ page }, testInfo) => {
+    test.skip(isMobile(testInfo), 'the container only reaches its width on wide screens');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openLanding(page);
+    const boxes = await page.evaluate(() => [...document.querySelectorAll('[data-public-nav] .lp-wrap, main section > .lp-wrap, footer > .lp-wrap')].map((wrap) => {
+        const r = wrap.getBoundingClientRect();
+        const cs = getComputedStyle(wrap);
+        return [Math.round(r.left + parseFloat(cs.paddingLeft)), Math.round(r.right - parseFloat(cs.paddingRight))];
+    }));
+    expect(boxes.length).toBeGreaterThanOrEqual(10);
+    for (const box of boxes) expect(box).toEqual([120, 1320]);
+});
+
+test('S4 the hero card lists local forecasts, planting advisories and harvest dates under its buttons', async ({ page }) => {
+    await openLanding(page);
+    const points = page.locator('#hero [data-hero-points] li');
+    await expect(points).toHaveText(['Local forecasts', 'Planting advisories', 'Harvest dates']);
+    for (const point of await points.all()) await expect(point.locator('svg')).toHaveCount(1);
+});
+
+test('S5 features: six equal cards in a 3 by 2 grid, each an icon, a title and one line', async ({ page }, testInfo) => {
+    await openLanding(page);
+    const cards = page.locator('#features [data-feature]');
+    await expect(cards).toHaveCount(6);
+    await expect(cards.locator('h3')).toHaveText(['Weather analysis', 'Rice production', 'Planting advisory', 'Climate monitoring', 'Heat map', 'Reports']);
+    const boxes = await cards.evaluateAll((els) => els.map((el) => ({ top: Math.round(el.getBoundingClientRect().top), height: Math.round(el.getBoundingClientRect().height), shadow: getComputedStyle(el).boxShadow })));
+    for (const box of boxes) expect(box.shadow).toBe('none');
+    if (!isMobile(testInfo)) {
+        expect(new Set(boxes.map((b) => b.top)).size).toBe(2); // two rows of three
+        expect(new Set(boxes.map((b) => b.height)).size).toBe(1); // equal heights
+    }
+    for (const card of await cards.all()) {
+        await expect(card.locator('.lp-icon-circle svg')).toHaveCount(1);
+        await expect(card.locator('p')).toHaveCount(1);
+    }
+});
+
+test('S6 the numbers band shows real counts from the database', async ({ page }) => {
+    await openLanding(page);
+    const stats = page.locator('#numbers [data-stat]');
+    await expect(stats.locator('dt')).toHaveText(['Registered farmers', 'Farms on record', 'Barangays with farms', 'Rice varieties listed']);
+    const values = Object.fromEntries(await stats.evaluateAll((els) => els.map((el) => [el.dataset.stat, Number(el.querySelector('dd').textContent.replace(/,/g, ''))])));
+    // tests/Browser/seed-landing.php: five NSIC varieties and approved farmer accounts (account-deletion.spec.mjs may
+    // delete some of them first; farmer@browser.test always stays).
+    expect(values.varieties).toBe(5);
+    expect(values.farmers).toBeGreaterThanOrEqual(1);
+    expect(values.farms).toBeGreaterThanOrEqual(0);
+    expect(values.barangays).toBeLessThanOrEqual(Math.max(values.farms, 0));
+});
+
+test('S7 How it works: four numbered steps beside the Farmer Dashboard screenshot', async ({ page }) => {
+    await openLanding(page);
+    const steps = page.locator('#how [data-steps] > li');
+    await expect(steps).toHaveCount(4);
+    await expect(steps.locator('span[aria-hidden="true"]:not(.absolute)')).toHaveText(['1', '2', '3', '4']);
+    const shot = page.locator('#how [data-dashboard-shot] img');
+    await shot.scrollIntoViewIfNeeded();
+    await expect.poll(() => shot.evaluate((img) => img.complete && img.naturalWidth)).toBe(2560);
+    await expect(shot).toHaveAttribute('alt', /Farmer Dashboard/);
+});
+
+test('S8 the closing call to action opens the sign-in card in either mode', async ({ page }, testInfo) => {
+    await openLanding(page);
+    await expect(page.locator('#get-started h2')).toHaveText('Plan your next planting with iClimate');
+    await page.locator('[data-cta="register"]').click();
+    await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'register');
+    await expectScrolledTo(page, 'hero');
+    await page.locator('#get-started').scrollIntoViewIfNeeded();
+    await page.locator('[data-cta="login"]').click();
+    await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'login');
+    await expect(page.locator('#login-email')).toBeFocused();
+});
+
+test('S9 footer: link columns, the MAO card, a closed Data Privacy notice that opens, and the bottom row', async ({ page }) => {
+    await openLanding(page);
+    const footer = page.locator('footer');
+    await expect(footer.locator('nav h2, div > h2')).toHaveText(['Platform', 'Account', 'Contact']);
+    await expect(footer.locator('[data-footer-mao]')).toContainText('Lian Municipal Hall, Poblacion, Lian, Batangas');
+    const privacy = footer.locator('[data-privacy]');
+    await expect(privacy).not.toHaveAttribute('open', '');
+    await expect(privacy.getByText('Data Privacy Act of 2012')).toBeHidden();
+    await privacy.locator('summary').click();
+    await expect(privacy.getByText('Data Privacy Act of 2012', { exact: false })).toBeVisible();
+    await expect(footer).toContainText(`© ${new Date().getFullYear()} iClimate · Capstone Project`);
+});
+
 // ─── GENERAL ─────────────────────────────────────────────────────────────
 
-test('G1 live weather endpoint answers and the weather card is filled', async ({ page, request }) => {
+test('G1 live weather endpoint answers; the live reading is in the nav chip only', async ({ page, request }) => {
     const response = await request.get('/login/weather');
     expect(response.ok()).toBe(true);
     expect(await response.json()).toHaveProperty('has_real_weather');
     await openLanding(page);
-    await expect(page.locator('[data-weather-status]')).not.toBeEmpty();
+    await expect(page.locator('[data-weather-chip]')).toHaveCount(1);
+    await expect(page.locator('[data-weather]')).toHaveCount(0); // the old Weather analysis card is now a feature card
 });
 
 const VIEWPORTS = [[375, 667], [390, 844], [768, 1024], [1280, 800], [1440, 900], [1920, 1080]];
-const SECTIONS = ['hero', 'about', 'features', 'how', 'roles', 'faq', 'contact'];
+const SECTIONS = ['hero', 'about', 'features', 'numbers', 'how', 'roles', 'faq', 'contact'];
 
 for (const [width, height] of [[1280, 800], [1440, 900]]) {
     test(`G2 at ${width}x${height} the whole hero, login card included, is visible without scrolling`, async ({ page }, testInfo) => {
@@ -857,7 +996,7 @@ for (const [width, height] of [[1280, 800], [1440, 900]]) {
     });
 }
 
-test('G2 at every size: one screen per section, nothing cut off or under the nav, no sideways scroll, 44px buttons', async ({ page }, testInfo) => {
+test('G2 at every size: 96px (desktop) or 56px (phone) section padding, nothing cut off or under the nav, no sideways scroll, 44px buttons', async ({ page }, testInfo) => {
     test.skip(isMobile(testInfo), 'sets its own sizes');
     for (const [width, height] of VIEWPORTS) {
         await page.setViewportSize({ width, height });
@@ -869,8 +1008,10 @@ test('G2 at every size: one screen per section, nothing cut off or under the nav
             for (const id of ids) {
                 const section = document.getElementById(id);
                 const style = getComputedStyle(section);
-                // Who uses iClimate sizes to its three role cards (landing.css: #roles.lp-screen { min-height: auto }).
-                if (id !== 'roles' && section.offsetHeight < vh - navHeight - 1) problems.push(`#${id} shorter than one screen (${section.offsetHeight}px)`);
+                // The hero is one full screen; every other section has the same padding.
+                if (id === 'hero' && Math.round(section.offsetHeight) < vh) problems.push(`#hero shorter than one screen (${section.offsetHeight}px)`);
+                const pad = window.innerWidth >= 1024 ? '96px' : '56px';
+                if (id !== 'hero' && (style.paddingTop !== pad || style.paddingBottom !== pad)) problems.push(`#${id} padding ${style.paddingTop}/${style.paddingBottom}, not ${pad}`);
                 if (style.overflowY !== 'visible' || style.overflowX !== 'visible') problems.push(`#${id} clips its content`);
                 if (section.scrollHeight > section.clientHeight + 1) problems.push(`#${id} content overflows`);
                 // Jump there and check nothing sits under the nav.
@@ -948,7 +1089,7 @@ test.describe('scroll reveal with motion allowed', () => {
         expect(await cards.first().evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
 
         // Scrolling (not a link) brings them in, one after another.
-        await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 73, behavior: 'instant' }));
+        await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 72, behavior: 'instant' }));
         for (let i = 0; i < 6; i += 1) await expect(cards.nth(i)).toHaveClass(/is-visible/);
         const delays = await cards.evaluateAll((els) => els.map((el) => el.style.getPropertyValue('--reveal-delay')));
         expect(delays).toEqual(['0ms', '70ms', '140ms', '210ms', '280ms', '350ms']);
@@ -963,17 +1104,20 @@ test.describe('scroll reveal with motion allowed', () => {
         expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     });
 
-    test('M2 a nav link shows its section straight away; How it works draws its lines', async ({ page }, testInfo) => {
+    test('M2 a nav link shows its section straight away; the only motion is a fade-up', async ({ page }, testInfo) => {
         test.skip(isMobile(testInfo), 'desktop nav');
         await page.goto('/');
         await navLink(page, 'roles', testInfo).click();
         // Shown at once (no transition), not after the scroll.
-        await expect(page.locator('#roles h2')).toHaveClass(/reveal-now/);
-        expect(await page.locator('#roles h2').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+        const heading = page.locator('#roles h2').locator('xpath=ancestor::*[@data-reveal][1]');
+        await expect(heading).toHaveClass(/reveal-now/);
+        expect(await heading.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
 
-        await page.evaluate(() => window.scrollTo({ top: document.getElementById('how').offsetTop - 73, behavior: 'instant' }));
-        const line = page.locator('#how [data-reveal-line]').first();
-        await expect.poll(() => line.evaluate((el) => getComputedStyle(el).transform), { timeout: 3000 }).toBe('matrix(1, 0, 0, 1, 0, 0)');
+        await page.evaluate(() => window.scrollTo({ top: document.getElementById('how').offsetTop - 72, behavior: 'instant' }));
+        const step = page.locator('#how [data-steps] [data-reveal]').first();
+        await expect.poll(() => step.evaluate((el) => [getComputedStyle(el).opacity, getComputedStyle(el).transform]), { timeout: 3000 }).toEqual(['1', 'none']);
+        // Fade and rise only: no drawn lines, nothing that moves sideways or scales.
+        expect(await page.locator('[data-reveal-line]').count()).toBe(0);
         // Nothing inside the hero card or the map is ever marked for animation.
         expect(await page.locator('[data-auth-card] [data-reveal], [data-office-map-box][data-reveal], [data-office-map-box] [data-reveal], #contactForm [data-reveal]').count()).toBe(0);
     });
@@ -982,7 +1126,7 @@ test.describe('scroll reveal with motion allowed', () => {
 test('M3 with reduced motion every [data-reveal] item is visible on load', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('html')).not.toHaveClass(/js-reveal/);
-    const hidden = await page.locator('[data-reveal], [data-reveal-line]').evaluateAll((els) => els
+    const hidden = await page.locator('[data-reveal]').evaluateAll((els) => els
         .filter((el) => el.offsetParent !== null || el.closest('[hidden]') === null)
         .filter((el) => { const cs = getComputedStyle(el); return cs.opacity !== '1' || cs.transform !== 'none'; })
         .map((el) => el.outerHTML.slice(0, 80)));
@@ -1035,8 +1179,6 @@ test('W1 the weather chip shows the live temperature and condition icon', async 
     expect((await chip.innerText()).trim()).toBe(isMobile(testInfo) ? '27°C' : '27°C · Lian'); // what is shown
     const box = await chip.boundingBox();
     expect(box.height).toBeGreaterThanOrEqual(44);
-    // The Weather analysis card used the same answer: one request for both.
-    await expect(page.locator('[data-weather-temp]')).toHaveText('27°C');
     expect(requests).toBe(1);
 });
 

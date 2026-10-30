@@ -35,7 +35,7 @@ class LandingPageTest extends TestCase
             ->assertSee('name="password"', false)
             ->assertDontSee('name="remember"', false)   // no "Remember me": the sign-in ends when the browser closes
             ->assertSee('href="'.route('password.request').'"', false)
-            ->assertSee('href="#register" class="rounded hover:text-ink" data-footer-account="register"', false)
+            ->assertSee('href="#register" class="rounded hover:text-white" data-footer-account="register"', false)
             ->assertSee('action="'.route('contact.send').'"', false)
             ->assertDontSee('Republic of the Philippines');
     }
@@ -174,14 +174,20 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString(route('login.weather'), $html);
     }
 
-    public function test_every_section_is_one_screen_tall(): void
+    public function test_the_hero_is_one_screen_and_every_other_section_shares_the_section_rhythm(): void
     {
         $html = $this->get('/')->assertOk()->getContent();
 
-        foreach (['hero', 'about', 'features', 'how', 'roles', 'faq', 'contact'] as $id) {
-            $this->assertMatchesRegularExpression('/<section id="'.$id.'"[^>]*class="lp-screen /', $html, "#{$id} is not a one-screen section");
+        $this->assertMatchesRegularExpression('/<section id="hero"[^>]*class="lp-hero /', $html);
+        foreach (['about', 'features', 'numbers', 'how', 'roles', 'faq', 'contact', 'get-started'] as $id) {
+            $this->assertMatchesRegularExpression('/<section id="'.$id.'"[^>]*class="lp-section[ "]/', $html, "#{$id} does not use .lp-section");
         }
-        $this->assertDoesNotMatchRegularExpression('/<footer[^>]*lp-screen/', $html);
+        // White, surface and the two dark bands, in this order.
+        preg_match_all('/<section id="([a-z-]+)"[^>]*class="([^"]*)"/', $html, $sections, PREG_SET_ORDER);
+        $backgrounds = collect($sections)->mapWithKeys(fn (array $m): array => [$m[1] => str_contains($m[2], 'lp-band') ? 'dark'
+            : (str_contains($m[2], 'lp-section-surface') ? 'surface' : 'white')])->except('hero')->all();
+        $this->assertSame(['about' => 'white', 'features' => 'surface', 'numbers' => 'dark', 'how' => 'white', 'roles' => 'surface',
+            'faq' => 'white', 'contact' => 'surface', 'get-started' => 'dark'], $backgrounds);
     }
 
     public function test_the_hero_card_holds_both_the_login_and_the_create_account_form(): void

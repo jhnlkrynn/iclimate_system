@@ -1,16 +1,18 @@
-{{-- Contact (Figma: Contact). The form posts to contact.send (JSON); resources/js/landing.js shows its errors and reply. --}}
+{{-- Contact (surface). The form posts to contact.send (JSON); resources/js/landing.js shows its errors and reply. --}}
 @php
     $contactRoles = ['Rice Farmer' => 'Farmer', 'MAO Personnel' => 'MAO Staff', 'IT Personnel' => 'IT Personnel', 'Other' => 'Other'];
 @endphp
-<section id="contact" data-section aria-labelledby="contact-title" class="lp-screen py-16 lg:py-20">
-    <div class="lp-wrap"><div class="lp-panel">
-        <h2 id="contact-title" data-reveal class="lp-h2">Get in touch</h2>
+<section id="contact" data-section aria-labelledby="contact-title" class="lp-section lp-section-surface">
+    <div class="lp-wrap">
+        <x-landing-heading id="contact-title" eyebrow="Contact" lead="Write to the Municipal Agriculture Office, or visit the office in Lian.">
+            Get in<br class="max-sm:hidden"> touch
+        </x-landing-heading>
 
-        <div class="mt-10 grid gap-6 lg:grid-cols-2">
+        <div class="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-12">
             <div class="flex min-w-0 flex-col gap-6">
                 {{-- Google Maps embed (no API key). The pin is on Lian Municipal Hall (q); the view is centred mid-Lian (ll) at zoom 11
                      so the whole municipality, Bucana to Matabungkay, fits the 260px box. The fixed height keeps the layout from shifting. --}}
-                <div class="h-[260px] overflow-hidden rounded-[14px] bg-tint ring-brand ring-offset-2 [&.is-focused]:ring-2" data-office-map-box>
+                <div class="h-[260px] overflow-hidden rounded-lg bg-tint ring-brand ring-offset-2 [&.is-focused]:ring-2" data-office-map-box>
                     <iframe src="https://maps.google.com/maps?q=Lian%20Municipal%20Hall%2C%20Lian%2C%20Batangas&amp;ll=13.992,120.648&amp;z=11&amp;output=embed"
                             title="Map of the Municipal Agriculture Office, Lian Municipal Hall, Lian, Batangas"
                             loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen
@@ -37,7 +39,7 @@
                 </dl>
             </div>
 
-            <form id="contactForm" method="POST" action="{{ route('contact.send') }}" novalidate class="flex min-w-0 flex-col gap-[18px] rounded-[14px] border border-line p-6 sm:p-8">
+            <form id="contactForm" method="POST" action="{{ route('contact.send') }}" novalidate class="flex min-w-0 flex-col gap-[18px] rounded-lg border border-line bg-white p-6 sm:p-8">
                 @csrf
                 <div>
                     <h3 class="text-xl font-semibold leading-[1.2] tracking-[-0.02em] text-ink">Send a message</h3>
@@ -81,5 +83,5 @@
                 <button type="submit" id="contactSubmit" class="lp-btn-primary w-full disabled:opacity-60">Send message</button>
             </form>
         </div>
-    </div></div>
+    </div>
 </section>

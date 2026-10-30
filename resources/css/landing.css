@@ -36,22 +36,60 @@
 }
 
 @layer components {
-    /* One landing section per screen below the nav. min-height (never a fixed height) so taller content grows;
-       svh keeps mobile browser bars from cutting it off (vh is the fallback for older browsers). */
-    .lp-screen {
-        @apply flex flex-col justify-center;
-        min-height: calc(100vh - var(--nav-h));
-        min-height: calc(100svh - var(--nav-h));
-    }
-
+    /* One container for the whole page, the nav included: content at most 1200px wide, the same side padding
+       everywhere. Spacing follows an 8px scale. */
     .lp-wrap {
-        @apply mx-auto w-full max-w-[1440px] px-4 sm:px-8 xl:px-[100px];
+        @apply mx-auto w-full max-w-[calc(1200px+4rem)] px-4 sm:px-8;
     }
 
-    /* Every section's content sits on the hero's text panel: mostly white, simple border, the rice field photo
-       (.lp-photo) blurred behind it so the text stays readable. */
-    .lp-panel {
-        @apply rounded-lg border border-line bg-white/75 p-6 backdrop-blur sm:p-9;
+    /* Every section below the hero: 96px top and bottom on desktop, 56px on phones. Backgrounds alternate
+       white, surface and (twice: the numbers band and the closing call to action) deep brand green. */
+    .lp-section {
+        @apply relative py-14 lg:py-24;
+    }
+
+    .lp-section-surface {
+        @apply bg-surface;
+    }
+
+    /* A dark band: white text over brand green, the rice field photo very faint behind it (.lp-band-photo). */
+    .lp-band {
+        @apply isolate bg-brand text-white;
+    }
+
+    .lp-band-photo {
+        @apply pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-[0.12] grayscale;
+    }
+
+    /* Section heading: an uppercase eyebrow after a short brand rule, a bold heading of two lines at most, one short
+       muted sentence. */
+    .lp-eyebrow {
+        @apply flex items-center gap-3 text-[0.8125rem] font-semibold uppercase leading-none tracking-[0.14em] text-brand;
+    }
+
+    .lp-eyebrow::before {
+        @apply block h-0.5 w-6 shrink-0 bg-current content-[''];
+    }
+
+    .lp-band .lp-eyebrow {
+        @apply text-white/80;
+    }
+
+    .lp-lead {
+        @apply mt-4 max-w-[36rem] text-base leading-relaxed text-muted sm:text-lg;
+    }
+
+    .lp-band .lp-lead {
+        @apply text-white/80;
+    }
+
+    .lp-card {
+        @apply rounded-lg border border-line bg-white p-6;
+    }
+
+    /* A line icon in brand green on a tint circle. */
+    .lp-icon-circle {
+        @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tint text-brand;
     }
 
     .lp-btn {
@@ -80,7 +118,20 @@
     }
 
     .lp-h2 {
-        @apply text-[2rem] font-bold leading-[1.08] tracking-[-0.03em] text-ink sm:text-[2.75rem];
+        @apply mt-4 text-[1.875rem] font-bold leading-[1.15] tracking-[-0.02em] text-ink sm:text-[2.5rem];
+    }
+
+    .lp-band .lp-h2 {
+        @apply text-white;
+    }
+
+    /* Buttons on a dark band: white, and a white outline. */
+    .lp-btn-light {
+        @apply lp-btn border-white bg-white font-semibold text-brand hover:bg-tint;
+    }
+
+    .lp-btn-outline-light {
+        @apply lp-btn border-white/80 bg-transparent font-semibold text-white hover:bg-white hover:text-brand;
     }
 
     .lp-label {
@@ -219,21 +270,6 @@
         @apply border-brand text-brand;
     }
 
-/* Who uses iClimate: the cards stay equal-height on wide screens and stack without becoming cramped on phones. */
-#roles.lp-screen { min-height: auto; }
-.lp-role-card {
-    box-shadow: 0 8px 24px rgba(17, 26, 19, .06);
-    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-}
-.lp-role-card:hover {
-    border-color: rgba(23, 67, 42, .35);
-    box-shadow: 0 12px 28px rgba(17, 26, 19, .1);
-    transform: translateY(-2px);
-}
-@media (prefers-reduced-motion: reduce) {
-    .lp-role-card { transition: none; }
-}
-
 /* The public landing page can be rendered under the shared dark theme. Keep this scoped to this section. */
 html[data-theme="dark"] #roles {
     background: #141a16;
@@ -243,31 +279,24 @@ html[data-theme="dark"] #roles .lp-role-card {
     background: #1c261f;
     box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
 }
-html[data-theme="dark"] #roles .lp-role-card:hover { border-color: #5a936d; }
 html[data-theme="dark"] #roles :is(.text-ink, .lp-h2) { color: #f0f5f1; }
 html[data-theme="dark"] #roles .text-muted { color: #b7c5ba; }
 html[data-theme="dark"] #roles .text-brand { color: #8bd1a0; }
 }
 
-/* The hero runs under the fixed nav, so its photo starts at the very top: one full screen, its content below the nav. */
-#hero.lp-screen {
+/* The hero runs under the fixed nav, so its photo starts at the very top: one full screen (svh, so phone browser bars
+   do not cut it off; vh for older browsers), its content below the nav. min-height, so taller content grows. */
+.lp-hero {
+    display: flex; flex-direction: column; justify-content: center;
     min-height: 100vh; min-height: 100svh;
-    padding-top: calc(var(--nav-h) + 2.5rem);
+    padding-top: calc(var(--nav-h) + 2.5rem); padding-bottom: 2.5rem;
 }
 @media (min-width: 1024px) {
-    #hero.lp-screen { padding-top: calc(var(--nav-h) + 3rem); }
+    .lp-hero { padding-top: calc(var(--nav-h) + 3rem); padding-bottom: 3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .lp-header { transition: none; }
-}
-
-/* The rice field photo behind the whole page (welcome.blade.php). It stays still while the sections scroll over it;
-   a fixed layer instead of background-attachment: fixed, which phones ignore. Right of centre so a phone screen,
-   which shows a narrow slice of the landscape photo, keeps the harvester in view. */
-.lp-photo {
-    position: fixed; inset: 0; z-index: -1; pointer-events: none;
-    background-color: #EAF4E4; background-position: 70% center; background-size: cover; background-repeat: no-repeat;
 }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
@@ -333,22 +362,10 @@ html.js-reveal [data-auth-card].is-visible {
 }
 /* Reached through a link (nav, anchors): shown at once, no waiting. */
 html.js-reveal [data-reveal].reveal-now { transition: none; }
-/* How it works: the line beside each step draws from left to right as the step appears. */
-html.js-reveal [data-reveal-line] {
-    transform: scaleX(0);
-    transform-origin: left center;
-}
-html.js-reveal .is-visible [data-reveal-line] {
-    transform: scaleX(1);
-    transition: transform .6s cubic-bezier(.2, .7, .2, 1);
-    transition-delay: calc(var(--reveal-delay, 0ms) + 150ms);
-}
-html.js-reveal .reveal-now [data-reveal-line] { transition: none; }
-
 @media (prefers-reduced-motion: reduce) {
-    html.js-reveal [data-reveal], html.js-reveal [data-reveal-line] { opacity: 1; transform: none; }
-    html.js-reveal [data-reveal].is-visible, html.js-reveal .is-visible [data-reveal-line] { transition: opacity .15s linear; transition-delay: 0ms; }
+    html.js-reveal [data-reveal] { opacity: 1; transform: none; }
+    html.js-reveal [data-reveal].is-visible { transition: none; }
 }
 @media print {
-    html.js-reveal [data-reveal], html.js-reveal [data-reveal-line] { opacity: 1 !important; transform: none !important; }
+    html.js-reveal [data-reveal] { opacity: 1 !important; transform: none !important; }
 }

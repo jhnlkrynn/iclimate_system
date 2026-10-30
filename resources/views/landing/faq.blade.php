@@ -1,4 +1,4 @@
-{{-- Common questions (Figma: Common questions). One answer open at a time; resources/js/landing.js runs the accordion. --}}
+{{-- Common questions (white). One answer open at a time; resources/js/landing.js runs the accordion. --}}
 @php
     $questions = [
         ['q' => 'Who can use iClimate?', 'a' => 'Farmers in Lian, MAO Staff, and IT Personnel. Each account opens its own dashboard: the Farmer Dashboard, the MAO Staff Dashboard or the IT Personnel Dashboard.'],
@@ -6,13 +6,14 @@
         ['q' => 'How do I get an account?', 'a' => 'Use Create account at the top of this page. If you need help, contact the MAO during office hours.'],
     ];
 @endphp
-<section id="faq" data-section aria-labelledby="faq-title" class="lp-screen py-16 lg:py-20">
-    <div class="lp-wrap"><div class="lp-panel flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
-        <div data-reveal class="flex w-full flex-col gap-4 lg:w-[360px] lg:shrink-0">
-            <h2 id="faq-title" class="text-[2rem] font-bold leading-[1.2] tracking-[-0.03em] text-ink sm:text-[2.75rem]">Common questions</h2>
-            <p class="text-base leading-[1.4] text-muted">Can’t find what you need? Write to the Municipal Agriculture Office below.</p>
+<section id="faq" data-section aria-labelledby="faq-title" class="lp-section">
+    <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
+        <div class="flex w-full flex-col gap-8 lg:w-[400px] lg:shrink-0">
+            <x-landing-heading id="faq-title" eyebrow="Questions" lead="Can’t find what you need? Write to the Municipal Agriculture Office below.">
+                Common<br class="max-sm:hidden"> questions
+            </x-landing-heading>
             {{-- Figma shows "Prefer to talk? Call ..."; there is no confirmed office phone number yet, so this points to email and office hours instead. --}}
-            <div class="flex items-start gap-3 rounded-xl bg-surface px-4 py-3.5">
+            <div data-reveal class="flex items-start gap-3 rounded-lg bg-surface p-4">
                 <x-icon name="mail" class="mt-0.5 h-[18px] w-[18px] text-brand" />
                 <div class="text-sm leading-[1.4]">
                     <p class="font-semibold text-ink">Prefer to talk?</p>
@@ -37,5 +38,5 @@
                 </div>
             @endforeach
         </div>
-    </div></div>
+    </div>
 </section>
