@@ -818,8 +818,10 @@ test.describe('scroll reveal with motion allowed', () => {
         await expect(page.locator('html')).toHaveClass(/js-reveal/);
         await expect(page.locator('html')).toHaveAttribute('data-reveal', 'ready');
         expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe('smooth');
-        // The hero plays on load without any scrolling.
-        await expect(page.locator('#hero h1')).toHaveClass(/is-visible/);
+        // The hero is not animated: its heading is there on load, without any scrolling.
+        await expect(page.locator('#hero h1')).toBeVisible();
+        expect(await page.locator('#hero h1').getAttribute('data-reveal')).toBeNull();
+        expect(await page.locator('#hero h1').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
         await expect.poll(() => page.locator('[data-auth-card]').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
 
         const cards = page.locator('#features [data-reveal-group] [data-reveal]');
@@ -870,25 +872,26 @@ test('M3 with reduced motion every [data-reveal] item is visible on load', async
     expect(await page.locator('[data-reveal]').count()).toBeGreaterThan(20);
 });
 
-test('L1 the MAO logo in the nav and footer loads, square and unstretched, beside the iClimate logo', async ({ page }) => {
+test('L1 the MAO logo (the Lian seal) in the nav and footer loads, square and unstretched, beside the iClimate logo', async ({ page }) => {
     await openLanding(page);
-    const navLogo = page.locator('[data-nav-home] img[src$="images/mao-logo.png"]');
+    const navLogo = page.locator('[data-nav-home] img[src$="images/mao-lian-seal.png"]');
     await expect(navLogo).toHaveAttribute('alt', 'Municipal Agriculture Office logo');
     await expect.poll(() => navLogo.evaluate((img) => img.complete && img.naturalWidth)).toBe(512);
     const sizes = await page.locator('[data-nav-home] img').evaluateAll((imgs) => imgs.map((img) => {
         const box = img.getBoundingClientRect();
         return { src: img.getAttribute('src').split('/').pop(), width: Math.round(box.width), height: Math.round(box.height), fit: getComputedStyle(img).objectFit, radius: getComputedStyle(img).borderRadius };
     }));
-    const mao = sizes.find((img) => img.src === 'mao-logo.png');
+    const mao = sizes.find((img) => img.src === 'mao-lian-seal.png');
     const iclimate = sizes.find((img) => img.src === 'iclimate-logo.png');
     expect(mao.width).toBe(mao.height);
     expect(mao.height).toBe(iclimate.height);
     expect(mao.fit).toBe('contain');
     expect(mao.radius).toBe('0px');
-    const footerLogo = page.locator('[data-footer-home] img[src$="images/mao-logo.png"]');
+    const footerLogo = page.locator('[data-footer-home] img[src$="images/mao-lian-seal.png"]');
     await footerLogo.scrollIntoViewIfNeeded();
     await expect.poll(() => footerLogo.evaluate((img) => img.complete && img.naturalWidth)).toBeGreaterThan(0);
-    expect(await page.locator('img[src*="lian-seal"]').count()).toBe(0);
+    // The seal replaced the old MAO logo everywhere on the page.
+    expect(await page.locator('img[src*="mao-logo.png"]').count()).toBe(0);
 });
 
 // ─── NAV: WEATHER CHIP AND TEXT SIZE ─────────────────────────────────────
