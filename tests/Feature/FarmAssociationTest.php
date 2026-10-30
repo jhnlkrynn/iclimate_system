@@ -57,7 +57,7 @@ class FarmAssociationTest extends TestCase
     private function addFarm(User $farmer, string $barangay, array $more = []): \Illuminate\Testing\TestResponse
     {
         return $this->actingAs($farmer)->post(route('farmer.farms.store'), $more + [
-            'farm_name' => 'Farm in '.$barangay, 'barangay' => $barangay, 'farm_type' => 'Irrigated', 'farm_size_method' => Farm::SIZE_UNKNOWN,
+            'farm_name' => 'Farm in '.$barangay, 'barangay' => $barangay, 'farm_type' => 'Irrigated', 'farm_size_value' => '1.5', 'farm_size_unit' => Farm::UNIT_HECTARES,
         ]);
     }
 
@@ -126,7 +126,11 @@ class FarmAssociationTest extends TestCase
         $farmer = $this->farmer();
         $this->actingAs($farmer)->get(route('farmer.farms.create'))->assertOk()
             ->assertSee('Is this farm part of a farmers&#039; association?', false)
-            ->assertSee('Choose the barangay first to see its associations.');
+            ->assertSee('Choose the barangay first to see its associations.')
+            ->assertSee('name="farm_size_value"', false)
+            ->assertSee('name="farm_size_unit"', false)
+            ->assertDontSee('How would you like to provide this farm&#039;s size?', false)
+            ->assertDontSee('farm_size_method', false);
         $this->actingAs($farmer)->withCookie('farmer_language', 'fil')->get(route('farmer.farms.create', ['lang' => 'fil']))->assertOk();
 
         $this->addFarm($farmer, 'Prenza')->assertSessionHasErrors('association_status');
@@ -139,12 +143,30 @@ class FarmAssociationTest extends TestCase
         $this->assertSame([], $this->memberships($farmer));
     }
 
+    public function test_edit_prefills_exact_map_and_estimate_sizes_but_leaves_unknown_empty(): void
+    {
+        $farmer = $this->farmer();
+        $farms = [
+            Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Exact', 'barangay' => 'Prenza', 'farm_size_hectares' => 2.5, 'farm_size_method' => Farm::SIZE_EXACT, 'farm_size_unit' => Farm::UNIT_HECTARES]),
+            Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Square meters', 'barangay' => 'Prenza', 'farm_size_hectares' => 2, 'farm_size_method' => Farm::SIZE_EXACT, 'farm_size_unit' => Farm::UNIT_SQUARE_METERS]),
+            Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Mapped', 'barangay' => 'Prenza', 'farm_size_hectares' => 2.25, 'farm_size_method' => Farm::SIZE_MAPPED]),
+            Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Estimated', 'barangay' => 'Prenza', 'farm_size_method' => Farm::SIZE_ESTIMATED, 'farm_size_estimate_range' => '1_2']),
+            Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Unknown', 'barangay' => 'Prenza', 'farm_size_method' => Farm::SIZE_UNKNOWN]),
+        ];
+
+        $this->actingAs($farmer)->get(route('farmer.farms.edit', $farms[0]))->assertSee('value="2.5"', false)->assertSee('value="hectares" selected', false);
+        $this->actingAs($farmer)->get(route('farmer.farms.edit', $farms[1]))->assertSee('value="20000"', false)->assertSee('value="square_meters" selected', false);
+        $this->actingAs($farmer)->get(route('farmer.farms.edit', $farms[2]))->assertSee('value="2.25"', false);
+        $this->actingAs($farmer)->get(route('farmer.farms.edit', $farms[3]))->assertSee('value="1.5"', false);
+        $this->actingAs($farmer)->get(route('farmer.farms.edit', $farms[4]))->assertSee('id="farm_size_value"', false)->assertSee('value=""', false);
+    }
+
     public function test_a_new_barangay_asks_again_and_the_edit_page_changes_the_association(): void
     {
         $farmer = $this->farmer();
         $this->addFarm($farmer, 'Prenza', ['association_status' => 'member', 'farmer_organization_id' => $this->prenza->id]);
         $farm = Farm::query()->ownedBy($farmer)->sole();
-        $form = ['farm_name' => $farm->farm_name, 'farm_type' => 'Irrigated', 'farm_size_method' => Farm::SIZE_UNKNOWN];
+        $form = ['farm_name' => $farm->farm_name, 'farm_type' => 'Irrigated', 'farm_size_value' => '1.5', 'farm_size_unit' => Farm::UNIT_HECTARES];
 
         // Same barangay: the answer can stay as it is.
         $this->actingAs($farmer)->put(route('farmer.farms.update', $farm->id), $form + ['barangay' => 'Prenza'])->assertSessionHasNoErrors();
@@ -215,7 +237,7 @@ class FarmAssociationTest extends TestCase
         $this->addFarm($farmer, 'Kapito', ['farm_name' => 'South', 'association_status' => 'member', 'farmer_organization_id' => $this->kapito->id]);
         $north = Farm::query()->ownedBy($farmer)->where('farm_name', 'North')->sole();
         $south = Farm::query()->ownedBy($farmer)->where('farm_name', 'South')->sole();
-        $form = ['farm_type' => 'Irrigated', 'farm_size_method' => Farm::SIZE_UNKNOWN, 'barangay' => 'Kapito'];
+        $form = ['farm_type' => 'Irrigated', 'farm_size_value' => '1.5', 'farm_size_unit' => Farm::UNIT_HECTARES, 'barangay' => 'Kapito'];
 
         $this->actingAs($farmer)->put(route('farmer.farms.update', $north->id), $form + ['farm_name' => 'North', 'association_status' => 'not_member'])->assertSessionHasNoErrors();
         $this->assertSame([$this->kapito->id], $this->memberships($farmer));

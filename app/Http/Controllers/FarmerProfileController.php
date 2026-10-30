@@ -87,7 +87,7 @@ class FarmerProfileController extends CrudController
             'barangay' => ['required', Rule::in(LianBarangays::all())],
             // A new profile needs the farm size (barangay risk, the yield forecast and reports all use it). An older
             // profile without one can still be corrected (e.g. its barangay) before the size is known.
-            'farm_area' => [$id ? 'nullable' : 'required', 'numeric', 'gt:0', 'max:10000'],
+            'farm_area' => [$id ? 'nullable' : 'required', 'numeric', 'gt:0', 'max:'.config('farms.max_hectares', 10000)],
             'farm_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
         ];
     }

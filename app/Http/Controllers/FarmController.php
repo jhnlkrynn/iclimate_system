@@ -54,9 +54,7 @@ class FarmController extends Controller
         ActiveFarm::select($user, (int) $farm->getKey());
         $this->audit('Added Farm', $request, $farm);
 
-        return $farm->farm_size_method === Farm::SIZE_MAPPED
-            ? redirect()->route('farmer.farms.map', $farm)->with('success', __('farms.added', ['name' => $farm->farm_name]))
-            : redirect()->route('farmer.my-farm')->with('success', __('farms.added', ['name' => $farm->farm_name]));
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.added', ['name' => $farm->farm_name]));
     }
 
     public function edit(Request $request, int $farm): View
@@ -78,9 +76,7 @@ class FarmController extends Controller
         $this->farms->update($farm, $this->validated($request, $farm));
         $this->audit('Updated Farm', $request, $farm);
 
-        return $farm->farm_size_method === Farm::SIZE_MAPPED && $farm->boundary === null
-            ? redirect()->route('farmer.farms.map', $farm)->with('success', __('farms.saved', ['name' => $farm->farm_name]))
-            : redirect()->route('farmer.my-farm')->with('success', __('farms.saved', ['name' => $farm->farm_name]));
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.saved', ['name' => $farm->farm_name]));
     }
 
     /** Removes the farm from the list (archived: its plans, map and records stay). */
@@ -259,7 +255,6 @@ class FarmController extends Controller
      */
     private function validated(Request $request, ?Farm $farm = null): array
     {
-        $ranges = array_keys(Farm::ESTIMATE_RANGES);
         $associationRules = [];
         if (FarmAssociations::available()) {
             $asks = $farm === null || LianBarangays::canonicalName($request->input('barangay')) !== LianBarangays::canonicalName($farm->barangay);
@@ -274,27 +269,26 @@ class FarmController extends Controller
             'barangay' => ['required', 'string', Rule::in(LianBarangays::all())],
             'location_description' => ['nullable', 'string', 'max:160'],
             'farm_type' => ['nullable', 'string', Rule::in(['Irrigated', 'Rainfed'])],
-            'farm_size_method' => ['required', Rule::in(Farm::SIZE_METHODS)],
-            'farm_size_value' => ['nullable', 'required_if:farm_size_method,'.Farm::SIZE_EXACT, 'numeric', 'gt:0', 'max:100000000'],
-            'farm_size_unit' => ['nullable', 'required_if:farm_size_method,'.Farm::SIZE_EXACT, Rule::in([Farm::UNIT_HECTARES, Farm::UNIT_SQUARE_METERS])],
-            'farm_size_estimate_range' => ['nullable', 'required_if:farm_size_method,'.Farm::SIZE_ESTIMATED, Rule::in($ranges)],
+            // The size is always an exact number (the old estimate / map / "not yet" choices are gone).
+            'farm_size_value' => ['required', 'numeric', 'gt:0', 'max:100000000'],
+            'farm_size_unit' => ['required', Rule::in([Farm::UNIT_HECTARES, Farm::UNIT_SQUARE_METERS])],
         ], [
             'barangay.*' => __('farms.errors.barangay'),
             'farm_size_value.*' => __('farms.errors.size_value'),
-            'farm_size_estimate_range.*' => __('farms.errors.size_range'),
+            'farm_size_unit.*' => __('farms.errors.size_value'),
             'association_status.*' => __('farms.errors.association'),
             'farmer_organization_id.*' => __('farms.errors.association_pick'),
             'association_other_name.*' => __('farms.errors.association_name'),
         ]);
 
-        // At most 10,000 hectares however it was entered (square meters are turned into hectares).
+        // At most config farms.max_hectares however it was entered (square meters are turned into hectares).
+        $data['farm_size_method'] = Farm::SIZE_EXACT;
+        $max = (float) config('farms.max_hectares', 10000);
         $validator = validator($data, []);
-        $validator->after(function (Validator $v) use ($data): void {
-            if (($data['farm_size_method'] ?? null) === Farm::SIZE_EXACT) {
-                $hectares = ($data['farm_size_unit'] ?? null) === Farm::UNIT_SQUARE_METERS ? (float) $data['farm_size_value'] / 10000 : (float) $data['farm_size_value'];
-                if ($hectares < 0.0001 || $hectares > 10000) {
-                    $v->errors()->add('farm_size_value', __('farms.errors.size_value'));
-                }
+        $validator->after(function (Validator $v) use ($data, $max): void {
+            $hectares = $data['farm_size_unit'] === Farm::UNIT_SQUARE_METERS ? (float) $data['farm_size_value'] / 10000 : (float) $data['farm_size_value'];
+            if ($hectares < 0.0001 || $hectares > $max) {
+                $v->errors()->add('farm_size_value', __('farms.errors.size_value_max', ['max' => rtrim(rtrim(number_format($max, 2, '.', ','), '0'), '.')]));
             }
             // Only an association of the farm's own barangay.
             if (($data['association_status'] ?? null) === Farm::ASSOCIATION_MEMBER

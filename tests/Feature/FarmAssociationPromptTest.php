@@ -180,7 +180,7 @@ class FarmAssociationPromptTest extends TestCase
         $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertDontSee('data-association-prompt', false);   // answered
 
         // Saving the farm without changing the answer keeps it the MAO's; a different answer is the farmer's own.
-        $form = ['farm_name' => 'North', 'barangay' => 'Kapito', 'farm_type' => 'Irrigated', 'farm_size_method' => Farm::SIZE_UNKNOWN];
+        $form = ['farm_name' => 'North', 'barangay' => 'Kapito', 'farm_type' => 'Irrigated', 'farm_size_value' => '1.5', 'farm_size_unit' => Farm::UNIT_HECTARES];
         $this->actingAs($farmer)->put(route('farmer.farms.update', $farm->id), $form + ['association_status' => 'member', 'farmer_organization_id' => $this->kapito->id])->assertSessionHasNoErrors();
         $this->assertSame(FarmAssociations::SET_BY_MAO, $farm->fresh()->association_set_by);
         $this->actingAs($farmer)->put(route('farmer.farms.update', $farm->id), $form + ['association_status' => 'not_member'])->assertSessionHasNoErrors();

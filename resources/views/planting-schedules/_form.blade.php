@@ -108,7 +108,7 @@
         </div>
         <div class="{{ $c['field'] }}">
             <label class="{{ $c['label'] }}" for="farm_area_hectares">Farm size (hectares)</label>
-            <input class="{{ $c['input'] }}{{ $invalid('farm_area_hectares') }}" id="farm_area_hectares" name="farm_area_hectares" type="number" min="0.01" max="10000" step="0.01" value="{{ old('farm_area_hectares', $schedule->farm_area_hectares) }}">
+            <input class="{{ $c['input'] }}{{ $invalid('farm_area_hectares') }}" id="farm_area_hectares" name="farm_area_hectares" type="number" min="0.01" max="{{ config('farms.max_hectares', 10000) }}" step="0.01" value="{{ old('farm_area_hectares', $schedule->farm_area_hectares) }}">
             @error('farm_area_hectares')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
             <div class="{{ $c['help'] }}">Needed to estimate your harvest. Leave blank if unknown.</div>
         </div>

@@ -85,7 +85,7 @@
             {{-- Farm size and type: used for the expected yield on Home and shown on My Farm. --}}
             <div>
                 <x-input-label for="farm_area" :value="__('Farm size (hectares)')" />
-                <x-text-input id="farm_area" name="farm_area" type="number" min="0.01" max="10000" step="0.01" class="mt-1 block w-full" :value="old('farm_area', $user->farmerProfile?->farm_area)" />
+                <x-text-input id="farm_area" name="farm_area" type="number" min="0.01" max="{{ config('farms.max_hectares', 10000) }}" step="0.01" class="mt-1 block w-full" :value="old('farm_area', $user->farmerProfile?->farm_area)" />
                 <x-input-error class="mt-2" :messages="$errors->get('farm_area')" />
             </div>
             <div>

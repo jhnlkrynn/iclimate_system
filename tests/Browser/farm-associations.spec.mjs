@@ -28,6 +28,8 @@ function form(page) {
         pick: page.locator('#farmer_organization_id'),
         listed: page.locator('#farmer_organization_id option:not([value=""])'),
         otherName: page.locator('#association_other_name'),
+        size: page.locator('#farm_size_value'),
+        unit: page.locator('#farm_size_unit'),
         hint: box.locator('[data-association-hint]'),
         again: box.locator('[data-association-again]'),
         save: page.locator('form.ffm-form button[type="submit"]'),
@@ -47,6 +49,7 @@ test('F1 Add Farm narrows the associations, asks again on a new barangay and sen
     const f = form(page);
     const name = unique(testInfo, 'Pending');
     await page.locator('#farm_name').fill(name);
+    await f.size.fill('1.5');
 
     // No barangay yet: a hint, and no "Yes".
     await expect(f.hint).toBeVisible();
@@ -103,6 +106,7 @@ test('F2 Edit Farm keeps the answer, narrows by farm type and asks again when th
     let f = form(page);
     const name = unique(testInfo, 'Member');
     await page.locator('#farm_name').fill(name);
+    await f.size.fill('1.5');
     await f.barangay.selectOption('Kapito');
     await f.type.selectOption('Irrigated');
     await f.answer('member').check();

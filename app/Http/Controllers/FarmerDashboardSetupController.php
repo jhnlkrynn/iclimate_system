@@ -25,7 +25,7 @@ class FarmerDashboardSetupController extends Controller
     public function farmSize(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'farm_area' => ['required', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
+            'farm_area' => ['required', 'numeric', 'gt:0', 'max:'.config('farms.max_hectares', 10000), 'decimal:0,2'],
             'farm_type' => ['nullable', 'string', Rule::in(FarmerPlantingSchedule::FARM_TYPES)],
         ], [
             'farm_area.decimal' => __('farmer.popup.size.decimals'),

@@ -30,7 +30,7 @@ class ProfileUpdateRequest extends FormRequest
             'address' => ['nullable', 'string'],
             'barangay' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::in(\App\Support\LianBarangays::all())],
             // Farmers keep their farm size and type here (the dashboard pop-ups were removed in 2026-10).
-            'farm_area' => ['nullable', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
+            'farm_area' => ['nullable', 'numeric', 'gt:0', 'max:'.config('farms.max_hectares', 10000), 'decimal:0,2'],
             'farm_type' => ['nullable', 'string', Rule::in(\App\Models\FarmerPlantingSchedule::FARM_TYPES)],
             // Panel revision 1.1: every farmer organization the farmer belongs to.
             'farmer_organization_ids' => ['nullable', 'array'],

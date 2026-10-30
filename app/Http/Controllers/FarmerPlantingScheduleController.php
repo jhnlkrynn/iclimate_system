@@ -136,7 +136,7 @@ class FarmerPlantingScheduleController extends Controller
         $today = BusinessClock::today();
         $data = $request->validate([
             'planting_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYear()->toDateString(), 'before_or_equal:'.$today->copy()->addYear()->toDateString()],
-            'farm_area' => ['required', 'numeric', 'gt:0', 'max:10000', 'decimal:0,2'],
+            'farm_area' => ['required', 'numeric', 'gt:0', 'max:'.config('farms.max_hectares', 10000), 'decimal:0,2'],
             ...$this->varietyRules(),
         ], [
             'planting_date.required' => __('farmer.planting_info.date_required'),
@@ -247,7 +247,7 @@ class FarmerPlantingScheduleController extends Controller
             'season' => ['required', Rule::in(FarmerPlantingSchedule::SEASONS)],
             'farm_type' => ['required', Rule::in(FarmerPlantingSchedule::FARM_TYPES)],
             'barangay' => ['nullable', Rule::in(LianBarangays::all())],
-            'farm_area_hectares' => ['nullable', 'numeric', 'gt:0', 'max:10000'],
+            'farm_area_hectares' => ['nullable', 'numeric', 'gt:0', 'max:'.config('farms.max_hectares', 10000)],
             'progress_status' => ['nullable', Rule::in(FarmerPlantingSchedule::MANUAL_STATUSES)],
             'actual_yield' => ['nullable', 'numeric', 'gt:0', 'max:15'],                          // tons per hectare; no rice field yields more
             'harvested_on' => ['nullable', 'date', 'after_or_equal:planting_date', 'before_or_equal:today'],

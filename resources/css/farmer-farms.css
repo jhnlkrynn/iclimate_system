@@ -24,7 +24,18 @@
 .ffm-empty { display: grid; gap: 8px; justify-items: start; padding: 20px; background: var(--subtle); border: 1px dashed var(--rule); border-radius: 6px; }
 
 /* ------------------------------------------------------------ Add / Edit Farm form */
-.ffm-form { max-width: 760px; }
+/* Full width like the green header, up to ~1200px. One column on a phone; two when the content area has room (the
+   layout follows the space beside the sidebar, container "fad"): Farm name | Farm type, Barangay | Sitio, the
+   association question across both, Farm size | Unit, then Save / Cancel on the right. */
+.fad.ffm { width: 100%; max-width: 1200px; }
+.ffm-form { display: grid; gap: 16px 24px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.ffm-form > * { min-width: 0; }
+@container fad (min-width: 600px) {
+    .ffm-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ffm-form > .ffm-wide { grid-column: 1 / -1; }
+}
+.ffm-form .fad-input { width: 100%; }
+@container fad (min-width: 760px) { .ffm-assoc .ffm-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .ffm-group { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .ffm-group > legend { float: none; width: auto; margin: 0 0 4px; padding: 0; }
 .ffm-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
@@ -36,7 +47,8 @@
 .ffm-choice:has(input:checked) { border-color: var(--brand); background: #f1f8f4; }
 .ffm-size { display: grid; gap: 8px; padding: 12px 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 6px; }
 .ffm-size[hidden] { display: none; }
-.ffm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ffm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@container fad (max-width: 459.98px) { .ffm-actions .fad-btn { flex: 1 1 100%; } }
 .ffm-actions .fad-btn { min-height: 44px; }
 
 /* ------------------------------------------------------------ farm map page */
