@@ -39,11 +39,20 @@ class RiceVarietyController extends Controller
         $user = $request->user();
         $filters = $this->filters($request);
         $ready = SchemaCache::hasTable('rice_varieties');
+        // "No variety matches" is only for a search or filter; with none, an empty list means nothing is loaded yet.
+        $filtering = array_diff_key($filters, ['sort' => true]) !== [];
 
         if ($user->role === User::ROLE_IT_EXPERT) {
+            // Newest first: the list is grouped by year ("2026 · 8 varieties", counted over every page).
+            $byYear = $ready && ($filters['sort'] ?? 'newest') === 'newest';
+
             return view('rice-varieties.it-index', [
                 'filters' => $filters,
                 'varieties' => $ready ? RiceVariety::query()->catalog($filters)->paginate(25)->withQueryString() : null,
+                'yearCounts' => $byYear ? RiceVariety::query()->catalog($filters)->reorder()->toBase()
+                    ->selectRaw('year_approved, COUNT(*) AS varieties')->groupBy('year_approved')->pluck('varieties', 'year_approved')->map(fn ($n) => (int) $n)->all() : null,
+                'filtering' => $filtering,
+                'notLoaded' => ! $ready || ! RiceVariety::query()->exists(),
             ]);
         }
 
@@ -59,6 +68,8 @@ class RiceVarietyController extends Controller
             'planted' => ! $isFarmer && $ready ? $overview->for($user, $direction) : null,
             'plantedSort' => $direction,
             'plantUrl' => $isFarmer ? $this->plantUrl($plan) : null,
+            'filtering' => $filtering,
+            'notLoaded' => ! $ready || ! RiceVariety::query()->active()->exists(),
         ]);
     }
 
@@ -161,6 +172,32 @@ class RiceVarietyController extends Controller
         SystemAuditLogger::record($riceVariety->is_active ? 'Activated Rice Variety' : 'Deactivated Rice Variety', $request, $this->logContext($riceVariety), model: $riceVariety);
 
         return back()->with('success', __($riceVariety->is_active ? 'rice_varieties.it.activated' : 'rice_varieties.it.deactivated'));
+    }
+
+    /**
+     * "Run import" (IT, on the empty list): the same import as `php artisan rice-varieties:import`, from the NSIC
+     * spreadsheet on the server (config rice_varieties.import_path). The result is in the System Logs.
+     */
+    public function import(Request $request, RiceVarietyImporter $importer): RedirectResponse
+    {
+        Gate::authorize('import', RiceVariety::class);
+        $path = (string) config('rice_varieties.import_path');
+
+        try {
+            $summary = $importer->import($path);
+        } catch (\Throwable $e) {
+            report($e);
+            SystemAuditLogger::record('Rice Variety Import Failed', $request, ['file' => basename($path), 'error' => mb_substr($e->getMessage(), 0, 250)]);
+
+            return back()->with('error', __('rice_varieties.it.import_failed'));
+        }
+
+        SystemAuditLogger::record('Imported Rice Varieties', $request, ['file' => basename($path)]
+            + array_intersect_key($summary, array_flip(['rows', 'inserted', 'updated', 'unchanged', 'skipped'])));
+
+        return back()->with('success', __('rice_varieties.it.import_done', [
+            'inserted' => number_format($summary['inserted']), 'updated' => number_format($summary['updated']), 'unchanged' => number_format($summary['unchanged']),
+        ]));
     }
 
     // ------------------------------------------------------------------ helpers

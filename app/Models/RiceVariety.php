@@ -117,6 +117,46 @@ class RiceVariety extends Model
         return array_keys(array_filter(self::FARM_TYPE_COLUMNS, fn (string $column): bool => (bool) $this->{$column}));
     }
 
+    /** "Philippine Rice Research Institute - International Rice Research Institute" → "PhilRice - IRRI" (config rice_varieties.breeder_short). */
+    public function breederShort(): ?string
+    {
+        $name = $this->owner_breeder;
+        if ($name === null || trim($name) === '') {
+            return null;
+        }
+        foreach ((array) config('rice_varieties.breeder_short', []) as $pattern => $short) {
+            $name = (string) preg_replace('/\b'.$pattern.'\b/iu', $short, $name);
+        }
+
+        return trim($name);
+    }
+
+    /** early / medium / late by the variety's typical maturity (the catalog's Maturity filter bands), or null. */
+    public function maturityClass(): ?string
+    {
+        if ($this->maturity_typical === null) {
+            return null;
+        }
+        foreach (self::MATURITY_BANDS as $band => [$low, $high]) {
+            if (($low === null || $this->maturity_typical >= $low) && ($high === null || $this->maturity_typical <= $high)) {
+                return $band;
+            }
+        }
+
+        return null;
+    }
+
+    /** The type pill's style: hybrid, inbred (Inbred and Inbred GM/Biotech) or special. */
+    public function typeKey(): ?string
+    {
+        return match ($this->variety_type) {
+            'Hybrid' => 'hybrid',
+            'Inbred', 'Inbred GM/Biotech' => 'inbred',
+            null, '' => null,
+            default => 'special',
+        };
+    }
+
     public function suitsFarmType(?string $farmType): bool
     {
         return isset(self::FARM_TYPE_COLUMNS[$farmType]) && (bool) $this->{self::FARM_TYPE_COLUMNS[$farmType]};
@@ -166,10 +206,21 @@ class RiceVariety extends Model
             return [];
         }
 
+        // The farm-type columns were added after the original rice-variety table. A deployment can briefly have the
+        // variety table and planting-schedule link migrated while that follow-up migration is still pending. Do not
+        // turn the planting form into a 500 during that window; varieties without those columns simply have no farm
+        // type recommendation until the migration is applied.
+        $columns = ['id', 'variety_name', 'nsic_reg_no', 'line_name', 'owner_breeder', 'year_approved'];
+        foreach (['farm_irrigated', 'farm_rainfed'] as $column) {
+            if (\App\Support\SchemaCache::hasColumn('rice_varieties', $column)) {
+                $columns[] = $column;
+            }
+        }
+
         return self::query()
             ->where(fn (Builder $q) => $q->where('is_active', true)->when($keepId, fn (Builder $k) => $k->orWhere('id', $keepId)))
             ->orderByRaw('CASE WHEN year_approved IS NULL THEN 1 ELSE 0 END')->orderByDesc('year_approved')->orderByDesc('source_no')->orderBy('variety_name')
-            ->get(['id', 'variety_name', 'nsic_reg_no', 'line_name', 'owner_breeder', 'year_approved', 'farm_irrigated', 'farm_rainfed'])
+            ->get($columns)
             ->map(fn (self $v): array => [
                 'id' => $v->id,
                 'label' => $v->displayName(),

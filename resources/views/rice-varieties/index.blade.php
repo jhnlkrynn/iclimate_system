@@ -4,27 +4,6 @@
          GET form), so it works without scripts; a card opens the Variety Details pop-up (_details-modal). --}}
     @include('rice-varieties._fonts')
     @php
-        $chipUrl = function (string $key, ?string $value) use ($filters): string {
-            $query = $filters;
-            unset($query['page']);
-            if ($value === null) {
-                unset($query[$key]);
-            } else {
-                $query[$key] = $value;
-            }
-
-            return route('rice-varieties.index', $query);
-        };
-        $chipGroups = [
-            'farm_type' => \App\Models\RiceVariety::FARM_TYPES,
-            'season' => ['ds', 'ws'],
-            'maturity' => array_keys(\App\Models\RiceVariety::MATURITY_BANDS),
-        ];
-        $chipLabel = fn (string $group, string $value): string => match ($group) {
-            'farm_type' => __('rice_varieties.farm_types.'.$value),
-            'season' => __('rice_varieties.seasons.'.$value),
-            'maturity' => __('rice_varieties.maturity_bands.'.$value),
-        };
         $day = fn ($date) => $date ? $date->locale(app()->getLocale())->translatedFormat('M j, Y') : '—';
     @endphp
 
@@ -107,36 +86,10 @@
         <section class="rv-catalog" aria-labelledby="rvCatalogTitle">
             <div class="rv-section-head">
                 <h2 id="rvCatalogTitle">{{ __('rice_varieties.catalog.title') }}</h2>
-                @if ($varieties)<span class="rv-muted" data-rv-count>{{ trans_choice('rice_varieties.catalog.results', $varieties->total(), ['count' => number_format($varieties->total())]) }}</span>@endif
             </div>
 
-            <form method="GET" action="{{ route('rice-varieties.index') }}" class="rv-search" role="search">
-                @foreach (array_diff_key($filters, array_flip(['q', 'sort'])) as $key => $value)
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endforeach
-                <label class="visually-hidden" for="rvSearch">{{ __('rice_varieties.catalog.search_label') }}</label>
-                <input type="search" id="rvSearch" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('rice_varieties.catalog.search_placeholder') }}" class="rv-input" data-rv-search>
-                <label class="visually-hidden" for="rvSort">{{ __('rice_varieties.catalog.sort') }}</label>
-                <select id="rvSort" name="sort" class="rv-input rv-sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
-                    @foreach (__('rice_varieties.catalog.sorts') as $value => $label)
-                        <option value="{{ $value }}" @selected(($filters['sort'] ?? 'newest') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <button type="submit" class="rv-btn is-primary">{{ __('rice_varieties.catalog.search') }}</button>
-            </form>
-
-            <div class="rv-chip-groups">
-                @foreach ($chipGroups as $group => $values)
-                    <div class="rv-chip-row" role="group" aria-label="{{ __('rice_varieties.catalog.'.$group) }}">
-                        <span class="rv-chip-row-label">{{ __('rice_varieties.catalog.'.$group) }}</span>
-                        <a class="rv-filter {{ empty($filters[$group]) ? 'is-on' : '' }}" href="{{ $chipUrl($group, null) }}" @if (empty($filters[$group])) aria-current="true" @endif>{{ __('rice_varieties.catalog.all') }}</a>
-                        @foreach ($values as $value)
-                            @php $on = ($filters[$group] ?? null) === $value; @endphp
-                            <a class="rv-filter {{ $on ? 'is-on' : '' }}" href="{{ $chipUrl($group, $on ? null : $value) }}" @if ($on) aria-current="true" @endif data-rv-filter="{{ $group }}:{{ $value }}">{{ $chipLabel($group, $value) }}</a>
-                        @endforeach
-                    </div>
-                @endforeach
-            </div>
+            {{-- Same toolbar as the IT list: search, sort, Filters (closed until opened), removable filter chips. --}}
+            @include('rice-varieties._toolbar', ['filters' => $filters, 'total' => $varieties?->total() ?? 0])
 
             @if ($varieties && $varieties->isNotEmpty())
                 <ul class="rv-cards">
@@ -145,20 +98,24 @@
                             <button type="button" class="rv-card" data-rv-open="{{ $variety->id }}" data-rv-name="{{ $variety->variety_name }}" aria-label="{{ __('rice_varieties.catalog.open', ['name' => $variety->displayName()]) }}">
                                 <span class="rv-card-top">
                                     <span class="rv-card-name">{{ $variety->variety_name }}</span>
-                                    @if ($variety->variety_type)<span class="rv-type is-{{ \Illuminate\Support\Str::slug($variety->variety_type) }}">{{ __('rice_varieties.types.'.$variety->variety_type) }}</span>@endif
+                                    @if ($variety->typeKey())<span class="rv-type-pill is-{{ $variety->typeKey() }}">{{ __('rice_varieties.types.'.$variety->variety_type) }}</span>@endif
                                 </span>
                                 <span class="rv-card-meta"><span class="rv-mono">{{ $variety->nsic_reg_no ?: '—' }}</span>@if ($variety->year_approved)<span>· {{ $variety->year_approved }}</span>@endif</span>
                                 <span class="rv-card-figures">
                                     <span><small>{{ __('rice_varieties.catalog.avg_yield') }}</small><strong>{{ $variety->yield_typical ? number_format($variety->yield_typical / 1000, 1).' '.__('rice_varieties.units.t_ha') : __('rice_varieties.catalog.no_data') }}</strong></span>
-                                    <span><small>{{ __('rice_varieties.catalog.maturity_days') }}</small><strong>{{ $variety->maturity_typical ? $variety->maturity_typical.' '.__('rice_varieties.units.days') : __('rice_varieties.catalog.no_data') }}</strong></span>
+                                    <span><small>{{ __('rice_varieties.catalog.maturity_days') }}</small><strong class="rv-card-maturity">@if ($variety->maturityClass())<span class="rv-dot is-{{ $variety->maturityClass() }}" title="{{ __('rice_varieties.maturity_bands.'.$variety->maturityClass()) }}"></span>@endif{{ $variety->maturity_typical ? $variety->maturity_typical.' '.__('rice_varieties.units.days') : __('rice_varieties.catalog.no_data') }}</strong></span>
                                 </span>
                             </button>
                         </li>
                     @endforeach
                 </ul>
-                <div class="rv-pages">{{ $varieties->onEachSide(1)->links() }}</div>
+                @include('rice-varieties._pager', ['page' => $varieties])
+            @elseif ($notLoaded && ! $filtering)
+                <div class="rv-empty" data-rv-not-loaded>
+                    <p>{{ __('rice_varieties.catalog.unavailable') }}</p>
+                </div>
             @else
-                <div class="rv-empty">
+                <div class="rv-empty" data-rv-no-match>
                     <p>{{ __('rice_varieties.catalog.empty') }}</p>
                     <a class="rv-btn is-quiet" href="{{ route('rice-varieties.index') }}">{{ __('rice_varieties.catalog.clear') }}</a>
                 </div>

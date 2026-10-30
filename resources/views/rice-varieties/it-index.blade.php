@@ -1,106 +1,95 @@
 <x-app-layout>
-    {{-- Rice Varieties for IT Personnel (RiceVarietyController::index): the seed list only, as a data table. Add / Edit
-         (rice-varieties.form) and an Active switch instead of delete, since planting plans point to these rows. Type
-         roles of the IT dashboard: Sora titles, DM Sans text, JetBrains Mono figures. --}}
+    {{-- Rice Varieties for IT Personnel (RiceVarietyController::index): the seed list as a calm, scannable table. Six
+         columns; only exceptions are marked (Manual, Inactive); a row opens the details pop-up; "⋯" holds Edit and
+         Deactivate / Activate (no deleting: planting plans point to these rows). Sorted by Newest, the list is grouped
+         by year. Below 768px every row is a compact card. --}}
     @include('rice-varieties._fonts')
     @php
-        $chipUrl = function (string $key, ?string $value) use ($filters): string {
-            $query = $filters;
-            $value === null ? \Illuminate\Support\Arr::forget($query, $key) : $query[$key] = $value;
-
-            return route('rice-varieties.index', $query);
-        };
-        $chipGroups = [
-            'farm_type' => \App\Models\RiceVariety::FARM_TYPES,
-            'season' => ['ds', 'ws'],
-            'maturity' => array_keys(\App\Models\RiceVariety::MATURITY_BANDS),
-        ];
-        $chipLabel = fn (string $group, string $value): string => match ($group) {
-            'farm_type' => __('rice_varieties.farm_types.'.$value),
-            'season' => __('rice_varieties.seasons.'.$value),
-            'maturity' => __('rice_varieties.maturity_bands.'.$value),
-        };
+        $days = __('rice_varieties.it.days');
+        $grouped = $yearCounts !== null;
+        $lastYear = false;
     @endphp
 
     <div class="rv-page rv-it" data-rv-page data-rv-it>
         <header class="rv-it-head">
-            <div>
+            <div class="rv-it-title">
                 <h1>{{ __('rice_varieties.title') }}</h1>
-                <p>{{ __('rice_varieties.intro') }}</p>
+                @include('rice-varieties._source', ['showImport' => true])
             </div>
             <a class="rv-btn is-primary" href="{{ route('rice-varieties.create') }}" data-rv-add>{{ __('rice_varieties.it.add') }}</a>
         </header>
-        @include('rice-varieties._source', ['showImport' => true])
 
         @if (session('success'))
             <p class="rv-flash" role="status">{{ session('success') }}</p>
         @endif
+        @if (session('error'))
+            <p class="rv-flash is-error" role="alert">{{ session('error') }}</p>
+        @endif
 
-        <form method="GET" action="{{ route('rice-varieties.index') }}" class="rv-search" role="search">
-            @foreach (array_diff_key($filters, array_flip(['q', 'sort'])) as $key => $value)
-                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-            @endforeach
-            <label class="visually-hidden" for="rvSearch">{{ __('rice_varieties.catalog.search_label') }}</label>
-            <input type="search" id="rvSearch" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('rice_varieties.catalog.search_placeholder') }}" class="rv-input">
-            <label class="visually-hidden" for="rvSort">{{ __('rice_varieties.catalog.sort') }}</label>
-            <select id="rvSort" name="sort" class="rv-input rv-sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
-                @foreach (__('rice_varieties.catalog.sorts') as $value => $label)
-                    <option value="{{ $value }}" @selected(($filters['sort'] ?? 'newest') === $value)>{{ $label }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="rv-btn is-primary">{{ __('rice_varieties.catalog.search') }}</button>
-        </form>
-
-        <div class="rv-chip-groups">
-            @foreach ($chipGroups as $group => $values)
-                <div class="rv-chip-row" role="group" aria-label="{{ __('rice_varieties.catalog.'.$group) }}">
-                    <span class="rv-chip-row-label">{{ __('rice_varieties.catalog.'.$group) }}</span>
-                    <a class="rv-filter {{ empty($filters[$group]) ? 'is-on' : '' }}" href="{{ $chipUrl($group, null) }}">{{ __('rice_varieties.catalog.all') }}</a>
-                    @foreach ($values as $value)
-                        @php $on = ($filters[$group] ?? null) === $value; @endphp
-                        <a class="rv-filter {{ $on ? 'is-on' : '' }}" href="{{ $chipUrl($group, $on ? null : $value) }}" @if ($on) aria-current="true" @endif data-rv-filter="{{ $group }}:{{ $value }}">{{ $chipLabel($group, $value) }}</a>
-                    @endforeach
-                </div>
-            @endforeach
-        </div>
+        @include('rice-varieties._toolbar', ['filters' => $filters, 'total' => $varieties?->total() ?? 0])
 
         @if ($varieties && $varieties->isNotEmpty())
-            <p class="rv-muted" data-rv-count>{{ trans_choice('rice_varieties.catalog.results', $varieties->total(), ['count' => number_format($varieties->total())]) }}</p>
-            <div class="rv-table-wrap">
-                <table class="rv-table is-dense" data-rv-it-table>
+            {{-- "table-wrap" in the name keeps the app's responsive-table script from boxing it in an overflow: the header must stay sticky and the ⋯ menu unclipped. --}}
+            <div class="rv-list-table-wrap">
+                <table class="rv-list" data-rv-it-table>
                     <thead><tr>
-                        @foreach (['nsic', 'name', 'type', 'year', 'breeder', 'maturity', 'yield', 'source', 'active'] as $column)
-                            <th scope="col" @class(['is-num' => in_array($column, ['year', 'maturity', 'yield'], true)])>{{ __('rice_varieties.it.columns.'.$column) }}</th>
-                        @endforeach
-                        <th scope="col"><span class="visually-hidden">{{ __('rice_varieties.it.edit') }}</span></th>
+                        <th scope="col"><span class="rv-th">{{ __('rice_varieties.it.columns.variety') }}</span></th>
+                        <th scope="col"><span class="rv-th">{{ __('rice_varieties.it.columns.type') }}</span></th>
+                        <th scope="col" class="rv-col-breeder"><span class="rv-th">{{ __('rice_varieties.it.columns.breeder') }}</span></th>
+                        <th scope="col"><span class="rv-th">{{ __('rice_varieties.it.columns.maturity') }}</span></th>
+                        <th scope="col" class="is-num"><span class="rv-th">{{ __('rice_varieties.it.columns.yield') }}</span></th>
+                        <th scope="col" class="rv-col-actions"><span class="visually-hidden">{{ __('rice_varieties.it.columns.actions') }}</span></th>
                     </tr></thead>
                     <tbody>
                         @foreach ($varieties as $variety)
-                            <tr data-rv-open="{{ $variety->id }}" data-rv-name="{{ $variety->variety_name }}" tabindex="0" @class(['is-inactive' => ! $variety->is_active])>
-                                <td class="rv-mono">{{ $variety->nsic_reg_no ?: '—' }}</td>
-                                <th scope="row">{{ $variety->variety_name }}</th>
-                                <td>{{ $variety->variety_type ? __('rice_varieties.types.'.$variety->variety_type) : '—' }}</td>
-                                <td class="is-num rv-mono">{{ $variety->year_approved ?? '—' }}</td>
-                                <td>{{ $variety->owner_breeder ?: '—' }}</td>
-                                <td class="is-num rv-mono">{{ $variety->maturity_tpr_ds ?? '—' }} / {{ $variety->maturity_tpr_ws ?? '—' }}</td>
-                                <td class="is-num rv-mono">{{ $variety->yield_typical ? number_format($variety->yield_typical / 1000, 1) : '—' }}</td>
-                                <td><span class="rv-source is-{{ $variety->source }}">{{ __('rice_varieties.it.source.'.$variety->source) }}</span></td>
-                                <td>
-                                    <form method="POST" action="{{ route('rice-varieties.toggle', $variety) }}" class="rv-toggle-form" data-rv-stop>
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="rv-switch" role="switch" aria-checked="{{ $variety->is_active ? 'true' : 'false' }}" aria-label="{{ __('rice_varieties.it.active') }}: {{ $variety->variety_name }}" data-rv-toggle="{{ $variety->id }}"><span></span></button>
-                                    </form>
+                            @if ($grouped && $variety->year_approved !== $lastYear)
+                                @php $lastYear = $variety->year_approved; @endphp
+                                <tr class="rv-year-row" data-rv-year="{{ $lastYear }}">
+                                    <th colspan="6" scope="colgroup">{{ $lastYear
+                                        ? trans_choice('rice_varieties.catalog.year_group', $yearCounts[$lastYear] ?? 0, ['year' => $lastYear, 'count' => $yearCounts[$lastYear] ?? 0])
+                                        : __('rice_varieties.catalog.no_year') }}</th>
+                                </tr>
+                            @endif
+                            <tr class="rv-row @if (! $variety->is_active) is-inactive @endif" data-rv-open="{{ $variety->id }}" data-rv-name="{{ $variety->variety_name }}" tabindex="0"
+                                aria-label="{{ __('rice_varieties.catalog.open', ['name' => $variety->displayName()]) }}">
+                                <td class="rv-cell-variety">
+                                    <span class="rv-name-line">
+                                        <span class="rv-name">{{ $variety->variety_name }}</span>
+                                        @if ($variety->source === \App\Models\RiceVariety::SOURCE_MANUAL)<span class="rv-pill is-manual" data-rv-manual>{{ __('rice_varieties.it.manual') }}</span>@endif
+                                        @if (! $variety->is_active)<span class="rv-pill is-inactive" data-rv-inactive>{{ __('rice_varieties.it.inactive') }}</span>@endif
+                                    </span>
+                                    <span class="rv-nsic">{{ $variety->nsic_reg_no ?: '—' }}</span>
                                 </td>
-                                <td><a class="rv-btn is-quiet is-compact" href="{{ route('rice-varieties.edit', $variety) }}" data-rv-stop aria-label="{{ __('rice_varieties.it.edit') }}: {{ $variety->variety_name }}">{{ __('rice_varieties.it.edit_short') }}</a></td>
+                                <td class="rv-cell-type">
+                                    @if ($variety->typeKey())<span class="rv-type-pill is-{{ $variety->typeKey() }}">{{ __('rice_varieties.types.'.$variety->variety_type) }}</span>@endif
+                                    @if ($variety->year_approved)<span class="rv-sub">{{ $variety->typeKey() ? '· ' : '' }}{{ $variety->year_approved }}</span>@endif
+                                </td>
+                                <td class="rv-col-breeder"><span class="rv-breeder" title="{{ $variety->owner_breeder }}">{{ $variety->breederShort() ?? '—' }}</span></td>
+                                <td class="rv-cell-maturity">
+                                    @if ($variety->maturityClass())<span class="rv-dot is-{{ $variety->maturityClass() }}" title="{{ __('rice_varieties.maturity_bands.'.$variety->maturityClass()) }}"></span>@else<span class="rv-dot is-none" aria-hidden="true"></span>@endif
+                                    <span class="rv-pair"><span class="rv-pair-label">DS</span><b>{{ $variety->maturity_tpr_ds ?? '—' }}</b></span><span class="rv-sep" aria-hidden="true">·</span><span class="rv-pair"><span class="rv-pair-label">WS</span><b>{{ $variety->maturity_tpr_ws ?? '—' }}</b></span>
+                                    <span class="rv-unit">{{ $days }}</span>
+                                </td>
+                                <td class="is-num rv-cell-yield">{{ $variety->yield_typical ? number_format($variety->yield_typical / 1000, 1).' '.__('rice_varieties.units.t_ha') : '—' }}</td>
+                                <td class="rv-col-actions">@include('rice-varieties._row-menu', ['variety' => $variety])</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-            <div class="rv-pages">{{ $varieties->onEachSide(1)->links() }}</div>
+            @include('rice-varieties._pager', ['page' => $varieties])
+        @elseif ($notLoaded && ! $filtering)
+            {{-- Nothing imported yet: IT loads the NSIC list here (the same import as rice-varieties:import). --}}
+            <div class="rv-empty" data-rv-not-loaded>
+                <p><strong>{{ __('rice_varieties.it.not_loaded') }}</strong></p>
+                <p>{{ __('rice_varieties.it.not_loaded_hint') }}</p>
+                <form method="POST" action="{{ route('rice-varieties.import') }}" data-loading="true">
+                    @csrf
+                    <button type="submit" class="rv-btn is-primary" data-rv-run-import data-loading-text="{{ __('rice_varieties.it.importing') }}">{{ __('rice_varieties.it.run_import') }}</button>
+                </form>
+            </div>
         @else
-            <div class="rv-empty">
+            <div class="rv-empty" data-rv-no-match>
                 <p>{{ __('rice_varieties.catalog.empty') }}</p>
                 <a class="rv-btn is-quiet" href="{{ route('rice-varieties.index') }}">{{ __('rice_varieties.catalog.clear') }}</a>
             </div>
