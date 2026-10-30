@@ -46,11 +46,11 @@ html[data-theme] body .topbar.ic-topbar {
     padding: 0 10px;
     border-radius: 22px;
     corner-shape: squircle;
-    background: rgba(15, 45, 35, .95);
+    background: rgb(var(--sage-900-rgb) / .95);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
     border: 1px solid rgba(255, 255, 255, .08);
-    box-shadow: 0 10px 30px rgba(6, 20, 15, .16) !important;
+    box-shadow: 0 10px 30px rgb(var(--sage-950-rgb) / .16) !important;
     color: #fff;
 }
 
@@ -64,7 +64,7 @@ html[data-theme="dark"] body .topbar.ic-topbar {
 
 .ic-topbar-brand { display: flex; align-items: center; padding: 0 6px; border-radius: 10px; }
 .ic-topbar-brand img { height: 44px; width: auto; display: block; }
-.ic-topbar-brand:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+.ic-topbar-brand:focus-visible { outline: 2px solid var(--sage-300); outline-offset: 2px; }
 
 .ic-icon-btn {
     position: relative;
@@ -83,14 +83,14 @@ html[data-theme="dark"] body .topbar.ic-topbar {
 }
 .ic-icon-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
 .ic-icon-btn:focus-visible,
-.ic-avatar-btn:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+.ic-avatar-btn:focus-visible { outline: 2px solid var(--sage-300); outline-offset: 2px; }
 .ic-icon-btn .topbar-bell-badge {
     position: absolute; top: 3px; right: 1px;
     display: grid; place-items: center;
     min-width: 17px; height: 17px; padding: 0 4px;
     border-radius: 999px; background: #f04438; color: #fff;
     font-size: 10px; font-weight: 600; line-height: 1;
-    border: 2px solid #0f2d23;
+    border: 2px solid var(--sage-900);
 }
 .ic-icon-btn .topbar-bell-badge[hidden] { display: none !important; }
 
@@ -107,8 +107,8 @@ html[data-theme="dark"] body .topbar.ic-topbar {
     border: 2px solid rgba(255, 255, 255, .18);
     border-radius: 50%;
     overflow: hidden;
-    background: #7fd6b5;
-    color: #0e2f25;
+    background: var(--sage-200);
+    color: var(--sage-800);
     font-size: .8125rem;
     font-weight: 600;
     cursor: pointer;
@@ -130,27 +130,27 @@ html body .ic-account-menu {
     background: rgba(255, 255, 255, .96);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
-    border: 1px solid rgba(16, 40, 30, .08);
-    box-shadow: 0 24px 60px rgba(6, 20, 15, .22);
+    border: 1px solid rgb(var(--sage-950-rgb) / .08);
+    box-shadow: 0 24px 60px rgb(var(--sage-950-rgb) / .22);
 }
-.ic-account-head { display: flex; align-items: center; gap: 12px; padding: 10px 10px 14px; margin-bottom: 6px; border-bottom: 1px solid rgba(16, 40, 30, .08); }
+.ic-account-head { display: flex; align-items: center; gap: 12px; padding: 10px 10px 14px; margin-bottom: 6px; border-bottom: 1px solid rgb(var(--sage-950-rgb) / .08); }
 .ic-account-avatar {
     display: grid; place-items: center; flex: none;
     width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
-    background: #7fd6b5; color: #0e2f25; font-weight: 600; font-size: .875rem;
+    background: var(--sage-200); color: var(--sage-800); font-weight: 600; font-size: .875rem;
 }
 .ic-account-id { display: flex; flex-direction: column; min-width: 0; }
-.ic-account-id strong { font-size: .9375rem; font-weight: 600; color: #1e2b25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-account-id strong { font-size: .9375rem; font-weight: 600; color: var(--palette-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ic-account-id span { font-size: .8125rem; color: #65736c; }
 html body .ic-account-menu .dropdown-item {
     display: flex; align-items: center; gap: 10px;
     padding: 9px 10px; border-radius: 10px;
-    font-size: .9375rem; font-weight: 500; color: #1e2b25;
+    font-size: .9375rem; font-weight: 500; color: var(--palette-ink);
 }
 html body .ic-account-menu .dropdown-item svg { color: #65736c; flex: none; }
 html body .ic-account-menu .dropdown-item:hover,
-html body .ic-account-menu .dropdown-item.active { background: #f1f4f2; color: #1e2b25; }
-html body .ic-account-menu .dropdown-divider { margin: 6px 4px; border-color: rgba(16, 40, 30, .08); }
+html body .ic-account-menu .dropdown-item.active { background: var(--sage-50); color: var(--palette-ink); }
+html body .ic-account-menu .dropdown-divider { margin: 6px 4px; border-color: rgb(var(--sage-950-rgb) / .08); }
 html body .ic-account-menu .ic-account-logout,
 html body .ic-account-menu .ic-account-logout svg { color: #b42318; }
 
@@ -158,7 +158,7 @@ html[data-theme="dark"] body .ic-account-menu { background: rgba(28, 28, 30, .96
 html[data-theme="dark"] .ic-account-head,
 html[data-theme="dark"] body .ic-account-menu .dropdown-divider { border-color: rgba(255, 255, 255, .08); }
 html[data-theme="dark"] .ic-account-id strong,
-html[data-theme="dark"] body .ic-account-menu .dropdown-item { color: #e4ece7; }
+html[data-theme="dark"] body .ic-account-menu .dropdown-item { color: var(--sage-200); }
 html[data-theme="dark"] .ic-account-id span,
 html[data-theme="dark"] body .ic-account-menu .dropdown-item svg { color: #9fb1a7; }
 html[data-theme="dark"] body .ic-account-menu .dropdown-item:hover,
@@ -178,7 +178,7 @@ html body #mobileSidebar.ic-sidebar.offcanvas {
     border: 1px solid rgba(255, 255, 255, .1);
     border-radius: 24px;
     /* Near-solid, no blur of its own: the backdrop already blurs the page, and two blur layers flash in Chrome. */
-    background: #10302a;
+    background: var(--sage-800);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
@@ -217,7 +217,7 @@ html body #mobileSidebar .sidebar-foot { font-size: .75rem; }
 .ic-photo-current {
     display: grid; place-items: center; flex: none;
     width: 88px; height: 88px; border-radius: 50%; overflow: hidden;
-    background: #7fd6b5; color: #0e2f25; font-size: 1.5rem; font-weight: 600;
+    background: var(--sage-200); color: var(--sage-800); font-size: 1.5rem; font-weight: 600;
 }
 .ic-photo-current img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ic-photo-body { flex: 1 1 260px; min-width: 0; }
@@ -271,13 +271,13 @@ html body .ic-account-menu form { margin: 0; background: transparent; }
     transition: background-color .15s ease, color .15s ease;
 }
 .ic-lang button:hover { color: #fff; background: rgba(255, 255, 255, .08); }
-.ic-lang button[aria-pressed="true"] { background: #fff; color: #0f2d23; }
-.ic-lang button:focus-visible { outline: 2px solid #7fd6b5; outline-offset: 2px; }
+.ic-lang button[aria-pressed="true"] { background: #fff; color: var(--palette-ink); }
+.ic-lang button:focus-visible { outline: 2px solid var(--sage-300); outline-offset: 2px; }
 
 /* No photo: a person silhouette on mint. */
 .ic-avatar-btn svg { width: 24px; height: 24px; margin-top: 6px; }
 .ic-account-avatar svg { width: 26px; height: 26px; margin-top: 8px; }
-.ic-avatar-btn, .ic-account-avatar, .ic-photo-current { color: #0e2f25; }
+.ic-avatar-btn, .ic-account-avatar, .ic-photo-current { color: var(--sage-800); }
 .ic-photo-current svg { width: 52px; height: 52px; margin-top: 18px; }
 .itp-avatar svg { width: 60%; height: 60%; margin-top: 20%; }
 
@@ -319,7 +319,7 @@ html[data-theme="dark"] .fh-mood-good .fh-message-art { background: rgba(0, 0, 0
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child { background: #f5f5f5; color: #111111 !important; }
 html[data-theme="dark"] body .mfd[data-farmer-dashboard] .fh-kpi:first-child :is(.fh-kpi-label, .fh-kpi-value, .fh-kpi-note, .fh-kpi-value small, .fh-kpi-label svg) { color: #111111; }
 html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-bad { background: #c8372d; color: #fff; }
-html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-info { background: var(--card, #fff); border: 1px solid var(--line, #e3eae6); }
+html body .mfd[data-farmer-dashboard] .fh-message.fh-mood-info { background: var(--card, #fff); border: 1px solid var(--line, var(--sage-100)); }
 .fh-message-art {
     flex: none;
     display: grid;

@@ -101,7 +101,7 @@
             const redraw = () => {
                 const points = coords();
                 polygon?.remove();
-                polygon = points.length >= 3 ? L.polygon(points.map((p) => [p.lat, p.lng]), { color: '#1f5a46', fillColor: '#52b788', fillOpacity: .28, weight: 3 }).addTo(map) : null;
+                polygon = points.length >= 3 ? L.polygon(points.map((p) => [p.lat, p.lng]), { color: '{{ config('palette.sage.700') }}', fillColor: '{{ config('palette.sage.500') }}', fillOpacity: .28, weight: 3 }).addTo(map) : null;
                 pointCount.textContent = points.length;
                 save.disabled = points.length < 3;
                 input.value = points.length >= 3 ? JSON.stringify(points) : '';

@@ -24,20 +24,20 @@
     ];
 @endphp
 <style>
-    .ud-dialog { width: min(600px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid #d6e4da; border-radius: 14px; box-shadow: 0 24px 60px rgba(13, 31, 24, .28); }
-    .ud-dialog::backdrop { background: rgba(13, 31, 24, .45); }
-    .ud-head { padding: 16px 20px; background: #17432A; color: #fff; }
+    .ud-dialog { width: min(600px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--sage-100); border-radius: 14px; box-shadow: 0 24px 60px rgb(var(--sage-950-rgb) / .28); }
+    .ud-dialog::backdrop { background: rgb(var(--sage-950-rgb) / .45); }
+    .ud-head { padding: 16px 20px; background: var(--sage-700); color: #fff; }
     .ud-head h2 { margin: 0; font-size: 1.2rem; font-weight: 700; }
     .ud-body { padding: 18px 20px; display: grid; gap: 14px; }
-    .ud-who { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; padding: 12px 14px; border-radius: 10px; background: #f4f8f5; }
+    .ud-who { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--sage-50); }
     .ud-who dt { color: #5f7569; font-weight: 600; }
     .ud-who dd { margin: 0; overflow-wrap: anywhere; }
     .ud-preview { padding: 12px 14px; border-radius: 10px; background: #FBF5E3; border: 1px solid #eadfb9; }
-    .ud-preview-title { margin: 0 0 4px; font-weight: 700; color: #17432A; }
+    .ud-preview-title { margin: 0 0 4px; font-weight: 700; color: var(--sage-700); }
     .ud-preview p { margin: 0; overflow-wrap: anywhere; }
     .ud-mail { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
     .ud-warning { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fdecea; color: #8a1f17; font-weight: 600; }
-    .ud-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid #e3ece6; }
+    .ud-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--sage-100); }
     @media (max-width: 480px) { .ud-foot .btn { flex: 1 1 100%; } .ud-who { grid-template-columns: minmax(0, 1fr); } .ud-who dt { margin-top: 4px; } }
 </style>
 <dialog class="ud-dialog" id="userDeleteDialog" aria-labelledby="userDeleteTitle" data-user-delete-dialog>

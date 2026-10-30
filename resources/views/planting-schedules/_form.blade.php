@@ -12,10 +12,10 @@
 @endphp
 @unless($inModal)
     <style>
-        .schedule-form label { color: var(--ic-ink, #0d1f18); font-size: 1rem; font-weight: 750; }
+        .schedule-form label { color: var(--ic-ink, var(--palette-ink)); font-size: 1rem; font-weight: 750; }
         .schedule-form .form-control, .schedule-form .form-select { min-height: 48px; font-size: 1rem; }
-        .schedule-help { color: var(--ic-ink-mid, #3d5a48); font-size: .92rem; line-height: 1.55; }
-        .season-guide { padding: .9rem 1rem; border-radius: 10px; background: rgba(82,183,136,.1); color: var(--ic-ink, #0d1f18); font-size: .95rem; }
+        .schedule-help { color: var(--ic-ink-mid, var(--sage-700)); font-size: .92rem; line-height: 1.55; }
+        .season-guide { padding: .9rem 1rem; border-radius: 10px; background: rgb(var(--sage-500-rgb) / .1); color: var(--ic-ink, var(--palette-ink)); font-size: .95rem; }
     </style>
 @endunless
 

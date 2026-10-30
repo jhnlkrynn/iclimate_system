@@ -39,7 +39,7 @@
                         <summary><span class="ic-collapse-title">+ New Post</span></summary>
                     <section class="feed-card feed-composer">
                         <div class="feed-card-body">
-                            <div class="feed-eyebrow" style="color:#0d1f18;">New Post</div>
+                            <div class="feed-eyebrow" style="color:var(--palette-ink);">New Post</div>
                             <h2 class="h5 mb-3">Create MAO Post</h2>
                             <div class="composer-head">
                                 <div class="composer-head-main">
@@ -362,7 +362,7 @@
             </main>
 
             <aside class="side-panel">
-                <div class="feed-eyebrow" style="color:#74c69d;">Farmer Toolkit</div>
+                <div class="feed-eyebrow" style="color:var(--sage-300);">Farmer Toolkit</div>
                 <h2 class="h5 mb-2">What Farmers Can Do</h2>
                 <p class="text-muted mb-3">Read MAO updates, react to useful posts, ask questions in comments, and message MAO directly for private concerns.</p>
                 <details class="ic-collapse">

@@ -51,9 +51,9 @@
             const chartLabels = window.iClimateChartLabels || {};
             const organizationDisplayLabels = organizationLabels.map((label) => label === 'None' ? 'No Organization' : label);
             const organizationColors = [
-                '#1F5A46', '#4B7185', '#8FAF9A', '#B84A4A', '#C58B2A', '#2F855A',
-                '#256D85', '#7B8F45', '#8B5E3C', '#6F8978', '#3A7D44', '#596E79',
-                '#9A6B2F', '#4E6E5D', '#8C4A5B', '#5F8F78', '#64748B',
+                '{{ config('palette.sage.700') }}', '#4B7185', '{{ config('palette.sage.300') }}', '#B84A4A', '#C58B2A', '{{ config('palette.sage.500') }}',
+                '#256D85', '{{ config('palette.sage.400') }}', '#8B5E3C', '#6F8978', '{{ config('palette.sage.600') }}', '#596E79',
+                '#9A6B2F', '{{ config('palette.sage.800') }}', '#8C4A5B', '{{ config('palette.sage.900') }}', '#64748B',
             ];
             const colorForOrganization = (index) => organizationColors[index % organizationColors.length];
             const escapeLegendText = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
@@ -178,7 +178,7 @@
                             beginAtZero: true,
                             suggestedMax: maxOrganizationCount + 1,
                             ticks: { precision: 0, color: '#64748B', font: { size: 18 } },
-                            grid: { color: 'rgba(95,143,120,.18)', drawBorder: false },
+                            grid: { color: 'rgba({{ config('palette.rgb.500') }},.18)', drawBorder: false },
                         },
                         y: {
                             ticks: {
@@ -203,7 +203,7 @@
                             beginAtZero: true,
                             suggestedMax: maxOrganizationCount + 1,
                             ticks: { precision: 0, color: '#1F2937', font: { size: 18, weight: 700 }, padding: 8 },
-                            grid: { color: 'rgba(95,143,120,.16)', drawBorder: false },
+                            grid: { color: 'rgba({{ config('palette.rgb.500') }},.16)', drawBorder: false },
                         },
                     },
                 },

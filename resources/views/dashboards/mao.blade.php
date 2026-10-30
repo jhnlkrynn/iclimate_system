@@ -515,7 +515,7 @@
                 const ys = yieldEl ? JSON.parse(yieldEl.dataset.series || '{}') : {};
                 const yieldChart = yieldEl ? new window.Chart(yieldEl, {
                     type: 'bar',
-                    data: { labels: [], datasets: [{ label: T.yield.dataset, data: [], backgroundColor: '#2E7D32', borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }] },
+                    data: { labels: [], datasets: [{ label: T.yield.dataset, data: [], backgroundColor: '{{ config('palette.sage.500') }}', borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }] },
                     options: { ...base(false), scales: { y: axis(T.yield.axis, { beginAtZero: true }), x: { grid: { display: false }, ticks: { font: FONT } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: {
                             title: (items) => T.yield.year + ' ' + items[0]?.label,
@@ -529,7 +529,7 @@
                     type: 'bar',
                     data: { labels: [], datasets: [
                         { type: 'bar', label: T.impact.rainSeries, data: [], yAxisID: 'rain', backgroundColor: 'rgba(0, 56, 168, .55)', borderColor: '#0038A8', borderWidth: 1, borderRadius: 4, maxBarThickness: 34, order: 2 },
-                        { type: 'line', label: T.impact.yieldSeries, data: [], yAxisID: 'yield', borderColor: '#2E7D32', backgroundColor: '#2E7D32', borderWidth: 3, tension: .3, pointRadius: 5, pointHoverRadius: 7, order: 1 },
+                        { type: 'line', label: T.impact.yieldSeries, data: [], yAxisID: 'yield', borderColor: '{{ config('palette.sage.500') }}', backgroundColor: '{{ config('palette.sage.500') }}', borderWidth: 3, tension: .3, pointRadius: 5, pointHoverRadius: 7, order: 1 },
                     ] },
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
                         scales: {
@@ -548,7 +548,7 @@
                 const accChart = accEl ? new window.Chart(accEl, {
                     type: 'bar',
                     data: { labels: [], datasets: [
-                        { type: 'bar', label: T.accuracy.actual, data: [], backgroundColor: 'rgba(46, 125, 50, .75)', borderRadius: 4, maxBarThickness: 32, order: 2 },
+                        { type: 'bar', label: T.accuracy.actual, data: [], backgroundColor: 'rgba({{ config('palette.rgb.500') }}, .75)', borderRadius: 4, maxBarThickness: 32, order: 2 },
                         { type: 'line', label: T.accuracy.predicted, data: [], borderColor: '#0038A8', backgroundColor: '#0038A8', borderWidth: 3, borderDash: [6, 4], pointRadius: 5, pointStyle: 'rectRot', order: 1 },
                     ] },
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
@@ -691,7 +691,7 @@
                 const [plantedEl, p] = read('maoPlantedChart');
                 if (plantedEl) new window.Chart(plantedEl, {
                     type: 'bar',
-                    data: { labels: p.labels || [], datasets: [{ label: T.planted.dataset, data: p.values || [], backgroundColor: '#198754', borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
+                    data: { labels: p.labels || [], datasets: [{ label: T.planted.dataset, data: p.values || [], backgroundColor: '{{ config('palette.sage.500') }}', borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
                     options: { ...base(false), indexAxis: 'y', scales: { x: axis(T.planted.axis, { beginAtZero: true }), y: { grid: { display: false }, ticks: { font: FONT } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (b) => b.parsed.x + ' ' + T.planted.tip } } } },
                 });
@@ -700,7 +700,7 @@
                 const [farmersEl, f] = read('maoFarmersChart');
                 if (farmersEl) new window.Chart(farmersEl, {
                     type: 'bar',
-                    data: { labels: f.labels || [], datasets: [{ label: T.farmers.dataset, data: f.values || [], backgroundColor: '#2f9e6b', borderRadius: 999, borderSkipped: false, maxBarThickness: 22 }] },
+                    data: { labels: f.labels || [], datasets: [{ label: T.farmers.dataset, data: f.values || [], backgroundColor: '{{ config('palette.sage.500') }}', borderRadius: 999, borderSkipped: false, maxBarThickness: 22 }] },
                     options: { ...base(false), indexAxis: 'y', scales: { x: axis(T.farmers.axis, { beginAtZero: true, ticks: { font: FONT, precision: 0 } }), y: { grid: { display: false }, ticks: { font: FONT, autoSkip: false } } },
                         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (b) => b.parsed.x + ' ' + (b.parsed.x === 1 ? T.farmers.one : T.farmers.many) } } } },
                 });

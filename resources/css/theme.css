@@ -16,16 +16,16 @@
 
 /* ================================================================== LIGHT */
 html[data-theme="light"] {
-    --ic-page-bg: #eef2ef;
+    --ic-page-bg: var(--sage-50);
     /* Dark "glass" (top bar, page headers, tab trays) was translucent over the old green backdrop; on a light page it
        has to be solid to keep white text readable. */
-    --glass-dark-bg: #164a39;
-    --glass-dark-bg-strong: #0f3d2e;
+    --glass-dark-bg: var(--sage-800);
+    --glass-dark-bg-strong: var(--sage-800);
     --glass-dark-border: rgba(255, 255, 255, .12);
-    --glass-dark-shadow: 0 6px 18px rgba(15, 61, 46, .18);
-    --gl-shadow: 0 1px 2px rgba(16, 40, 30, .06), 0 4px 14px rgba(16, 40, 30, .06);
-    --gl-border: #dfe6e1;
-    --glass-light-border: #dfe6e1;
+    --glass-dark-shadow: 0 6px 18px rgb(var(--sage-800-rgb) / .18);
+    --gl-shadow: 0 1px 2px rgb(var(--sage-950-rgb) / .06), 0 4px 14px rgb(var(--sage-950-rgb) / .06);
+    --gl-border: var(--sage-100);
+    --glass-light-border: var(--sage-100);
     /* Content surfaces stay close to solid white, so the photo never shows through text, charts or tables. */
     --gl-surface: rgba(255, 255, 255, .96);
     --gl-surface-strong: rgba(255, 255, 255, .98);
@@ -33,49 +33,49 @@ html[data-theme="light"] {
     --glass-light-bg: rgba(255, 255, 255, .96);
     --glass-light-bg-strong: rgba(255, 255, 255, .98);
     /* The landing page hero's overlay, unchanged. */
-    --ic-backdrop-base: #163b2d;
-    --ic-backdrop-overlay: linear-gradient(180deg, rgba(15, 41, 32, .94) 0%, rgba(22, 59, 45, .90) 55%, rgba(31, 77, 58, .94) 100%);
+    --ic-backdrop-base: var(--sage-800);
+    --ic-backdrop-overlay: linear-gradient(180deg, rgb(var(--sage-950-rgb) / .94) 0%, rgb(var(--sage-800-rgb) / .90) 55%, rgb(var(--sage-700-rgb) / .94) 100%);
 }
 
 html[data-theme="light"] body { color: var(--ic-ink); }
 
 /* Top bar: solid brand green, like the sidebar. */
 html[data-theme="light"] body .topbar {
-    background: #0f3d2e;
+    background: var(--sage-700);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgba(15, 61, 46, .14) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 4px 14px rgb(var(--sage-700-rgb) / .14) !important;
 }
 
 /* Text that sits straight on the green backdrop. */
 html[data-theme="light"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: #fff; }
 html[data-theme="light"] body .dashboard-section-label,
 html[data-theme="light"] body .dashboard-section-label .section-note { color: rgba(255, 255, 255, .86); }
-html[data-theme="light"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: #0f3d2e; border-color: transparent; }
+html[data-theme="light"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: var(--sage-700); border-color: transparent; }
 /* The page panel of the .mfd / .mtd pages: a light sheet that lets a trace of the backdrop through. */
 html[data-theme="light"] body :is(.mfd, .mtd) { --bg: rgba(245, 247, 246, .96); }
 
 /* ================================================================== DARK */
 html[data-theme="dark"] {
     color-scheme: dark;
-    --ic-page-bg: #0e1814;
-    --dk-surface: #16231e;
-    --dk-surface-2: #1b2a24;
-    --dk-surface-3: #213229;
-    --dk-field: #111c18;
-    --dk-border: #2a3b33;
-    --dk-border-strong: #36493f;
-    --dk-ink: #e4ece7;
+    --ic-page-bg: var(--sage-950);
+    --dk-surface: var(--sage-950);
+    --dk-surface-2: var(--sage-900);
+    --dk-surface-3: var(--sage-900);
+    --dk-field: var(--sage-950);
+    --dk-border: var(--sage-800);
+    --dk-border-strong: var(--sage-800);
+    --dk-ink: var(--sage-200);
     --dk-ink-mid: #c3cfc8;
     --dk-muted: #9fb1a7;
-    --dk-accent: #7fd6b5;
+    --dk-accent: var(--sage-300);
 
     /* app tokens */
     --iclimate-surface: var(--dk-surface-2);
     --iclimate-border: var(--dk-border);
     --iclimate-text: var(--dk-ink);
     --iclimate-text-muted: var(--dk-muted);
-    --color-primary-soft: #1c3129;
+    --color-primary-soft: var(--sage-900);
     --color-surface: var(--dk-surface);
     --color-surface-muted: var(--dk-surface-2);
     --color-border: var(--dk-border);
@@ -91,8 +91,8 @@ html[data-theme="dark"] {
     --ic-panel: var(--dk-surface);
     --ic-panel-strong: var(--dk-surface-2);
     --ic-field: var(--dk-field);
-    --ic-green-50: #1c3129;
-    --ic-green-100: rgba(127, 214, 181, .12);
+    --ic-green-50: var(--sage-900);
+    --ic-green-100: rgb(var(--sage-300-rgb) / .12);
     --ic-shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
     --ic-shadow-md: 0 6px 16px rgba(0, 0, 0, .3);
     --ic-shadow-lg: 0 10px 26px rgba(0, 0, 0, .35);
@@ -102,8 +102,8 @@ html[data-theme="dark"] {
     --glass-light-bg-strong: var(--dk-surface);
     --glass-light-border: var(--dk-border);
     --glass-light-shadow: 0 8px 24px rgba(0, 0, 0, .3);
-    --glass-dark-bg: #123a2c;
-    --glass-dark-bg-strong: #0c271e;
+    --glass-dark-bg: var(--sage-900);
+    --glass-dark-bg-strong: var(--sage-950);
     --glass-dark-border: rgba(255, 255, 255, .07);
     --glass-dark-shadow: 0 8px 24px rgba(0, 0, 0, .35);
     --gl-surface: var(--dk-surface);
@@ -114,7 +114,7 @@ html[data-theme="dark"] {
     --gl-highlight: inset 0 1px 0 rgba(255, 255, 255, .02);
     --gl-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 18px rgba(0, 0, 0, .22);
     --gl-shadow-strong: 0 12px 30px rgba(0, 0, 0, .4);
-    --gl-hover: rgba(127, 214, 181, .1);
+    --gl-hover: rgb(var(--sage-300-rgb) / .1);
 
     /* Bootstrap (data-bs-theme="dark" supplies the rest) */
     --bs-body-bg: var(--ic-page-bg);
@@ -126,13 +126,13 @@ html[data-theme="dark"] {
     --bs-border-color: var(--dk-border);
     --bs-heading-color: var(--dk-ink);
     --bs-link-color: var(--dk-accent);
-    --bs-link-hover-color: #a8e6cc;
+    --bs-link-hover-color: var(--sage-200);
     --bs-link-color-rgb: 127, 214, 181;
     --bs-link-hover-color-rgb: 168, 230, 204;
 
     /* Same photo, deeper overlay, so dark cards keep their edge and the page stays easy on the eyes. */
     --ic-backdrop-base: var(--ic-page-bg);
-    --ic-backdrop-overlay: linear-gradient(180deg, rgba(8, 20, 15, .95) 0%, rgba(11, 30, 23, .91) 55%, rgba(13, 34, 26, .95) 100%);
+    --ic-backdrop-overlay: linear-gradient(180deg, rgb(var(--sage-950-rgb) / .95) 0%, rgb(var(--sage-950-rgb) / .91) 55%, rgb(var(--sage-950-rgb) / .95) 100%);
 }
 
 html[data-theme="dark"] body { color: var(--dk-ink); }
@@ -168,7 +168,7 @@ html[data-theme="light"] body :is(.sl-card, .mao-highlight, .dash-overview .dash
 html[data-theme="light"] body .ic-collapse > summary { background: rgba(255, 255, 255, .97) !important; }
 
 html[data-theme="dark"] body .topbar {
-    background: #0b231b;
+    background: var(--sage-950);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-bottom-color: rgba(255, 255, 255, .06);
@@ -198,7 +198,7 @@ html[data-theme="dark"] body :is(.mfd, .mtd) {
 html[data-theme="dark"] body .page-shell > :is(h1, h2, h3, h4, h5, h6, p) { color: var(--dk-ink); }
 html[data-theme="dark"] body .dashboard-section-label,
 html[data-theme="dark"] body .dashboard-section-label .section-note { color: var(--dk-ink-mid); }
-html[data-theme="dark"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: #0c271e; border-color: rgba(255, 255, 255, .06); }
+html[data-theme="dark"] body :is(.dashboard-tabs, .ic-pill-tabs) { background: var(--sage-950); border-color: rgba(255, 255, 255, .06); }
 
 /* ------------------------------------------------------------------ dark: surfaces that hard-code white */
 html[data-theme="dark"] body :is(.bg-white, .bg-light, .bg-body, .table-light) { background-color: var(--dk-surface) !important; }
@@ -245,9 +245,9 @@ html[data-theme="dark"] body .btn-light {
     --bs-btn-active-bg: var(--dk-surface-3); --bs-btn-active-border-color: var(--dk-accent); --bs-btn-active-color: #fff;
 }
 html[data-theme="dark"] body .page-shell :is(.btn-outline-primary, .btn-outline-success) {
-    --bs-btn-color: var(--dk-accent); --bs-btn-border-color: rgba(127, 214, 181, .5);
-    --bs-btn-hover-bg: rgba(127, 214, 181, .12); --bs-btn-hover-border-color: var(--dk-accent); --bs-btn-hover-color: #fff;
-    background-color: transparent; color: var(--dk-accent); border-color: rgba(127, 214, 181, .5);
+    --bs-btn-color: var(--dk-accent); --bs-btn-border-color: rgb(var(--sage-300-rgb) / .5);
+    --bs-btn-hover-bg: rgb(var(--sage-200-rgb) / .12); --bs-btn-hover-border-color: var(--dk-accent); --bs-btn-hover-color: #fff;
+    background-color: transparent; color: var(--dk-accent); border-color: rgb(var(--sage-300-rgb) / .5);
 }
 html[data-theme="dark"] body .page-shell :is(.btn-outline-secondary, .btn-outline-dark) {
     --bs-btn-color: var(--dk-ink-mid); --bs-btn-border-color: var(--dk-border-strong);
@@ -261,7 +261,7 @@ html[data-theme="dark"] body .table {
     --bs-table-bg: transparent;
     --bs-table-border-color: var(--dk-border);
     --bs-table-striped-bg: rgba(255, 255, 255, .025);
-    --bs-table-hover-bg: rgba(127, 214, 181, .06);
+    --bs-table-hover-bg: rgb(var(--sage-200-rgb) / .06);
     --bs-table-hover-color: var(--dk-ink);
     color: var(--dk-ink);
     border-color: var(--dk-border);
@@ -269,7 +269,7 @@ html[data-theme="dark"] body .table {
 html[data-theme="dark"] body .table thead th { background: var(--dk-surface-2); color: var(--dk-muted); border-color: var(--dk-border); }
 html[data-theme="dark"] body .table td,
 html[data-theme="dark"] body .table th { border-color: var(--dk-border); }
-html[data-theme="dark"] body .table-hover tbody tr:hover { background: rgba(127, 214, 181, .06) !important; }
+html[data-theme="dark"] body .table-hover tbody tr:hover { background: rgb(var(--sage-200-rgb) / .06) !important; }
 
 /* pop-ups, menus, drawers, toasts */
 html[data-theme="dark"] body :is(.modal-content, .dropdown-menu, .popover, .toast, .ic-logout-card) {
@@ -290,7 +290,7 @@ html[data-theme="dark"] body .btn-close:not(.btn-close-white) { filter: invert(1
 /* lists, alerts, pagination, nav tabs */
 html[data-theme="dark"] body .list-group-item { background-color: var(--dk-surface); border-color: var(--dk-border); color: var(--dk-ink); }
 html[data-theme="dark"] body .page-link { background-color: var(--dk-surface); border-color: var(--dk-border); color: var(--dk-accent); }
-html[data-theme="dark"] body .page-item.active .page-link { background-color: #1f5a46; border-color: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .page-item.active .page-link { background-color: var(--sage-700); border-color: var(--sage-700); color: #fff; }
 html[data-theme="dark"] body .page-item.disabled .page-link { background-color: var(--dk-surface-2); color: var(--dk-muted); }
 html[data-theme="dark"] body .nav-tabs { border-color: var(--dk-border); }
 html[data-theme="dark"] body .nav-tabs .nav-link.active { background-color: var(--dk-surface); border-color: var(--dk-border) var(--dk-border) var(--dk-surface); color: var(--dk-ink); }
@@ -304,10 +304,10 @@ html[data-theme="dark"] body .leaflet-popup-content-wrapper,
 html[data-theme="dark"] body .leaflet-popup-tip { background: var(--dk-surface); color: var(--dk-ink); }
 
 /* Scrollbars */
-html[data-theme="dark"] { scrollbar-color: #3a4d44 var(--ic-page-bg); }
+html[data-theme="dark"] { scrollbar-color: var(--sage-800) var(--ic-page-bg); }
 
 /* ------------------------------------------------------------------ dark: farmer page systems (their own tokens) */
-html[data-theme="dark"] body :is(.fad, .fad-modal, .mfd, .mtd, .fcal) { --brand-ink: #7fd6b5; }
+html[data-theme="dark"] body :is(.fad, .fad-modal, .mfd, .mtd, .fcal) { --brand-ink: var(--sage-200); }
 html[data-theme="dark"] body :is(.fad, .fad-modal) {
     --bg: var(--ic-page-bg); --card: var(--dk-surface); --rule: var(--dk-border-strong); --line: var(--dk-border); --field: var(--dk-border-strong);
     --ink: var(--dk-ink); --muted: var(--dk-muted); --head: var(--dk-ink-mid); --head-bg: var(--dk-surface-2); --subtle: var(--dk-surface-2);
@@ -323,7 +323,7 @@ html[data-theme="dark"] body .fcal {
 }
 html[data-theme="dark"] body .risk-overview {
     --ro-ink: var(--dk-ink); --ro-muted: var(--dk-muted); --ro-rule: var(--dk-border-strong); --ro-line: var(--dk-border); --ro-subtle: var(--dk-surface-2);
-    --ro-brand: #7fd6b5;
+    --ro-brand: var(--sage-300);
 }
 
 /* Quiet buttons, tabs, inputs, chips and rows that are drawn white on purpose in the light theme. */
@@ -350,7 +350,7 @@ html[data-theme="dark"] body :is(.fad, .fad-modal) :is(input:not([type="checkbox
     border-color: var(--dk-border-strong);
 }
 html[data-theme="dark"] body :is(.fcal-day.is-today, .mfd-day.is-today, .fmsg .thread-link.active, .frec-table tbody tr.is-mine > *, .frec-noteitem.is-unread, .ic-notif-item.is-unread, .ic-notif-list.is-full .ic-notif-row:has(.ic-notif-item.is-unread), .itd-table tbody tr:hover td) {
-    background: rgba(127, 214, 181, .09);
+    background: rgb(var(--sage-200-rgb) / .09);
 }
 html[data-theme="dark"] body .frec-table tbody tr:nth-child(even) > * { background: rgba(255, 255, 255, .025); }
 html[data-theme="dark"] body :is(.mfd-alert.is-watch, .mfd-farm-tile.is-watch, .itd-table tbody tr.is-flag-privileged td) { background: rgba(183, 121, 31, .14); }
@@ -370,7 +370,7 @@ html[data-theme="dark"] body .mfd.itd.itp :is(.composer-head-tag, .msg-tab, .bub
     color: var(--dk-ink);
     border-color: var(--dk-border-strong);
 }
-html[data-theme="dark"] body .mfd.itd.itp .thread-link.active { background: rgba(127, 214, 181, .09); }
+html[data-theme="dark"] body .mfd.itd.itp .thread-link.active { background: rgb(var(--sage-200-rgb) / .09); }
 
 /* Hover states that the light theme paints white with !important (ui-refresh.css). */
 html[data-theme="dark"] body :is(.btn-outline-primary, .btn-outline-success, .fc-btn-outline, .btn-light):hover,
@@ -386,8 +386,8 @@ html[data-theme="dark"] body :is(.card, .glass-card, .module-tile, .climate-chip
 }
 
 /* Buttons that stay white on the green page headers keep their dark green text. */
-html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light) { background: #fff; color: #0f5132 !important; border-color: #fff; }
-html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light):hover { background: #e6f4ec; }
+html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light) { background: #fff; color: var(--sage-300) !important; border-color: #fff; }
+html[data-theme="dark"] body :is(.mfd-header .mfd-btn.is-quiet, .mtd-header .mtd-btn:not(.is-ghost), .fad-btn.is-light):hover { background: var(--sage-50); }
 html[data-theme="dark"] body .mfd-tabs { background: var(--dk-surface-2); }
 html[data-theme="dark"] body .mfd-tab { color: var(--dk-ink-mid); }
 html[data-theme="dark"] body :is(.mfd-tab:hover, .mfd-tab.is-active) { background: var(--dk-surface-3); color: #fff; box-shadow: none; }
@@ -397,7 +397,7 @@ html[data-theme="dark"] body :is(.mfd-tab:hover, .mfd-tab.is-active) { backgroun
 html[data-theme="dark"] body .ic-collapse > summary { background: var(--dk-surface-2) !important; background-color: var(--dk-surface-2) !important; color: var(--dk-ink) !important; border-color: var(--dk-border); }
 html[data-theme="dark"] body .ic-collapse > summary:hover { background: var(--dk-surface-3) !important; background-color: var(--dk-surface-3) !important; }
 html[data-theme="dark"] body .table-hover tbody tr:hover,
-html[data-theme="dark"] body :is(table.ic-row-hover tbody tr:hover, .ic-row-hover .ic-table-card-row:hover) { background: rgba(127, 214, 181, .06) !important; }
+html[data-theme="dark"] body :is(table.ic-row-hover tbody tr:hover, .ic-row-hover .ic-table-card-row:hover) { background: rgb(var(--sage-200-rgb) / .06) !important; }
 /* the sticky Actions column of record tables */
 html[data-theme="dark"] body .table-responsive > .table > :is(thead, tbody) > tr > :is(th, td).text-end:last-child { background: var(--dk-surface); }
 html[data-theme="dark"] body .table-responsive > .table > thead > tr > th.text-end:last-child { background: var(--dk-surface-2); }
@@ -409,7 +409,7 @@ html[data-theme="dark"] body .alert-info { background: rgba(31, 111, 178, .16); 
 html[data-theme="dark"] body .alert :is(strong, a, .alert-link) { color: inherit; }
 
 html[data-theme="dark"] body :is(.forecast-day, .forecast-strip-day):hover { background: var(--dk-surface-3) !important; }
-html[data-theme="dark"] body .forecast-day.is-today { background: rgba(25, 135, 84, .16) !important; }
+html[data-theme="dark"] body .forecast-day.is-today { background: rgb(var(--sage-600-rgb) / .16) !important; }
 html[data-theme="dark"] body :is(.forecast-day, .forecast-strip-day).is-wet { background: rgba(31, 111, 178, .16) !important; }
 
 html[data-theme="dark"] body :is(.risk-map-tool, .risk-map-status, .risk-map-legend, .risk-map-legend .legend-swatch, .risk-map-loading, .risk-map-error,
@@ -429,7 +429,7 @@ html[data-theme="dark"] body .risk-level-badge-moderate .risk-level-badge-text {
 html[data-theme="dark"] body .risk-overview { background: var(--dk-surface); }
 html[data-theme="dark"] body .risk-overview-item { background: var(--dk-surface-2); border-color: var(--dk-border-strong); color: var(--dk-ink); }
 html[data-theme="dark"] body .risk-overview-item.is-total { background: var(--dk-surface-3); }
-html[data-theme="dark"] body .risk-overview-icon { background: rgba(25, 135, 84, .2); }
+html[data-theme="dark"] body .risk-overview-icon { background: rgb(var(--sage-600-rgb) / .2); }
 html[data-theme="dark"] body .risk-overview-icon.is-level { background: color-mix(in srgb, var(--risk-color) 22%, var(--dk-surface-2)); }
 html[data-theme="dark"] body .risk-overview-bar { background: var(--dk-surface-3); }
 html[data-theme="dark"] body .risk-donut-center:hover { background: var(--dk-surface-2); }
@@ -497,10 +497,10 @@ html[data-theme="dark"] body .feed-wrap :is(.reaction-trigger, .reaction-count-p
     color: var(--dk-ink) !important;
 }
 html[data-theme="dark"] body .feed-wrap :is(.reaction-trigger.active, .composer-option:has(input:checked), .manage-panel[open] summary) {
-    background: rgba(127, 214, 181, .14) !important;
-    border-color: rgba(127, 214, 181, .45) !important;
+    background: rgb(var(--sage-200-rgb) / .14) !important;
+    border-color: rgb(var(--sage-300-rgb) / .45) !important;
 }
-html[data-theme="dark"] body .feed-wrap :is(.avatar, .reaction-viewer-avatar, .feed-empty-icon) { background: #1c3129; color: var(--dk-accent); border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body .feed-wrap :is(.avatar, .reaction-viewer-avatar, .feed-empty-icon) { background: var(--sage-900); color: var(--dk-accent); border-color: var(--dk-border-strong); }
 html[data-theme="dark"] body .feed-wrap .composer-layout .row::before { background: transparent; }
 html[data-theme="dark"] body .feed-wrap :is(h1, h2, h3, h4, h5, strong, .feed-title) { color: var(--dk-ink); }
 html[data-theme="dark"] body .feed-wrap :is(p, small, .small, .text-muted):not(.fad-hero *, .mfd-header *) { color: var(--dk-muted); }
@@ -512,58 +512,57 @@ html[data-theme="dark"] body .ic-ai-body { background: var(--dk-surface); }
 html[data-theme="dark"] body :is(.ic-ai-title, .ic-ai-card-value, .ai-feature-value) { color: var(--dk-ink); }
 html[data-theme="dark"] body :is(.ic-ai-subtitle, .ic-ai-card-label, .ai-feature-label, .ai-feature-status, .ic-ai-msg-time, .ic-ai-msg.user .ic-ai-msg-time) { color: var(--dk-muted); }
 html[data-theme="dark"] body :is(.ic-ai-minimize, .ic-ai-close) { background: var(--dk-surface-3); color: var(--dk-ink); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body :is(.ic-ai-minimize, .ic-ai-close):hover { background: #2a3d34; }
+html[data-theme="dark"] body :is(.ic-ai-minimize, .ic-ai-close):hover { background: var(--sage-800); }
 html[data-theme="dark"] body :is(.ic-ai-bubble, .ic-ai-msg.assistant .ic-ai-bubble, .ic-ai-card, .ai-feature-row, .ic-ai-typing) { background: var(--dk-surface-2); color: var(--dk-ink); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .ic-ai-msg.user .ic-ai-bubble { background: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .ic-ai-msg.user .ic-ai-bubble { background: var(--sage-700); color: #fff; }
 html[data-theme="dark"] body .ic-ai-chip { background: var(--dk-surface-3); color: var(--dk-accent); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .ic-ai-chip:hover { background: #2a3d34; }
+html[data-theme="dark"] body .ic-ai-chip:hover { background: var(--sage-800); }
 html[data-theme="dark"] body .ic-ai-form textarea { background: var(--dk-field); color: var(--dk-ink); border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body .ic-ai-send { background: #1f5a46; }
+html[data-theme="dark"] body .ic-ai-send { background: var(--sage-700); }
 
 /* ------------------------------------------------------------------ dark: Tailwind colour utilities (profile pages and the
    Breeze components: x-text-input, x-input-label, x-modal, x-dropdown) */
-html[data-theme="dark"] body :is(.text-\[\#1B2B23\], .text-\[\#1A3A2A\], .text-\[\#122B20\]) { color: var(--dk-ink); }
-html[data-theme="dark"] body .text-\[\#44604E\] { color: var(--dk-muted); }
-html[data-theme="dark"] body .text-\[\#2D6A4F\] { color: var(--dk-accent); }
-html[data-theme="dark"] body :is(.bg-\[\#F0F7F4\], .bg-\[\#eaf5e6\]) { background-color: var(--dk-surface-2); }
-html[data-theme="dark"] body .bg-\[\#D8F3DC\] { background-color: rgba(25, 135, 84, .18); }
+html[data-theme="dark"] body :is(.text-ink, .text-sage-800) { color: var(--dk-ink); }
+html[data-theme="dark"] body .text-sage-700 { color: var(--dk-accent); }
+html[data-theme="dark"] body .bg-sage-50 { background-color: var(--dk-surface-2); }
+html[data-theme="dark"] body .bg-sage-100 { background-color: rgb(var(--sage-600-rgb) / .18); }
 html[data-theme="dark"] body .bg-white { background-color: var(--dk-surface-2); }
-html[data-theme="dark"] body :is(.border-\[\#95D5B2\], .border-\[\#D4EDDA\], .border-gray-300) { border-color: var(--dk-border-strong); }
-html[data-theme="dark"] body :is(.border-\[\#52B788\], .border-\[\#2D6A4F\]) { border-color: rgba(127, 214, 181, .55); }
-html[data-theme="dark"] body .placeholder-\[\#9DB3A4\]::placeholder { color: #7f9188; }
+html[data-theme="dark"] body :is(.border-sage-100, .border-gray-300) { border-color: var(--dk-border-strong); }
+html[data-theme="dark"] body :is(.border-sage-500, .border-sage-700) { border-color: rgb(var(--sage-300-rgb) / .55); }
+html[data-theme="dark"] body .placeholder-sage-300::placeholder { color: #7f9188; }
 html[data-theme="dark"] body .text-red-600 { color: #f3a397; }
-html[data-theme="dark"] body .text-green-600 { color: #8fdcb0; }
+html[data-theme="dark"] body .text-green-600 { color: var(--sage-200); }
 
 /* Keyboard focus: a bright mint ring that stands out on every dark surface. */
 html[data-theme="dark"] body :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--dk-accent); outline-offset: 2px; }
-html[data-theme="dark"] body :is(.form-control, .form-select):focus { box-shadow: 0 0 0 .2rem rgba(127, 214, 181, .25); }
+html[data-theme="dark"] body :is(.form-control, .form-select):focus { box-shadow: 0 0 0 .2rem rgb(var(--sage-300-rgb) / .25); }
 
 /* ------------------------------------------------------------------ both themes: small contrast fixes found by the audit */
 /* Count bubbles: white on the light sage green was 3.7:1; this green gives 5:1 or better in both themes. */
-html body .ic-collapse-count { background: #3d7a60; }
+html body .ic-collapse-count { background: var(--sage-700); }
 /* Info badges: white on the light info blue was 4:1. */
 html body :is(.badge.text-bg-info, .badge.bg-info) { background: #2f6f8f !important; color: #fff !important; }   /* replaces a light-blue gradient */
 
 /* ------------------------------------------------------------------ dark: remaining audit findings */
 html[data-theme="dark"] body { --bs-secondary-color: var(--dk-muted); }   /* ui-refresh.css sets a dark grey on <body> */
-html[data-theme="dark"] body .ic-notif-tab-count { background: #1f5a46; color: #fff; }
+html[data-theme="dark"] body .ic-notif-tab-count { background: var(--sage-700); color: #fff; }
 html[data-theme="dark"] body .ic-notif-tab:not([aria-selected="true"]) .ic-notif-tab-count { background: var(--dk-surface-3); color: var(--dk-ink); }
 html[data-theme="dark"] body .fad-hero p { color: rgba(255, 255, 255, .86); }
 /* Warning badges keep dark text on their amber fill. */
 html[data-theme="dark"] body :is(.badge.text-bg-warning, .badge.bg-warning) { color: #2a1f00 !important; }
 /* The map stays light, so its attribution link keeps the light theme's dark green. */
 html[data-theme="dark"] body .leaflet-control-attribution { background: rgba(255, 255, 255, .85); }
-html[data-theme="dark"] body :is(.leaflet-control-attribution a, .page-shell .leaflet-control-attribution a) { color: #0f5132; }
+html[data-theme="dark"] body :is(.leaflet-control-attribution a, .page-shell .leaflet-control-attribution a) { color: var(--sage-300); }
 
 /* MAO operations page: --mao-green stays dark (it fills buttons); where it colours text it becomes mint. */
 html[data-theme="dark"] body :is(.mao-tap-hint, .mao-yoy-down, .dashboard-group-toggle, .mao-console .status-pill:not(.muted)) { color: var(--dk-accent); }
-html[data-theme="dark"] body .mao-console .btn-outline-primary { color: var(--dk-accent) !important; border-color: rgba(127, 214, 181, .55) !important; }
+html[data-theme="dark"] body .mao-console .btn-outline-primary { color: var(--dk-accent) !important; border-color: rgb(var(--sage-300-rgb) / .55) !important; }
 html[data-theme="dark"] body .mao-console .btn-outline-primary:hover { background: var(--dk-surface-3) !important; color: #fff !important; }
 
 /* MAO operations page (dashboards/mao-operations): its header was translucent dark glass; both themes give it a solid
    green. Its section titles sit straight on the backdrop, so they are white in Light and near-white ink in Dark. */
-html[data-theme] body .mao-hero { background: linear-gradient(145deg, #164a39 0%, #1f5a46 100%); -webkit-backdrop-filter: none; backdrop-filter: none; }
-html[data-theme="dark"] body .mao-hero { background: linear-gradient(145deg, #123a2c 0%, #184a39 100%); border-color: rgba(255, 255, 255, .07); }
+html[data-theme] body .mao-hero { background: linear-gradient(145deg, var(--sage-700) 0%, var(--sage-700) 100%); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme="dark"] body .mao-hero { background: linear-gradient(145deg, var(--sage-900) 0%, var(--sage-800) 100%); border-color: rgba(255, 255, 255, .07); }
 html[data-theme="light"] body .mao-console .dashboard-section-label .section-title { color: #fff; }
 html[data-theme="dark"] body .mao-console .dashboard-section-label .section-title { color: var(--ic-ink); }
 
@@ -572,4 +571,4 @@ html[data-theme="dark"] body .mao-console .dashboard-section-label .section-titl
 html[data-theme] body .topbar .btn-outline-primary:focus-visible { color: #fff; background-color: rgba(255, 255, 255, .14); border-color: #fff; }
 /* White outline buttons on green page headers turn white on hover: their text must stay dark green in both themes
    (--ic-ink is light in dark mode). */
-html[data-theme] body .page-hero .btn-outline-light { --bs-btn-hover-color: #0f3d2e; --bs-btn-active-color: #0f3d2e; }
+html[data-theme] body .page-hero .btn-outline-light { --bs-btn-hover-color: var(--sage-800); --bs-btn-active-color: var(--sage-800); }

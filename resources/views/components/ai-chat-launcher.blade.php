@@ -3,8 +3,8 @@
      window.iClimateAi is available at once (open / prefill / ask / toggle) and loads the assistant when first used. --}}
 <style>
     #icAiLauncher { position: fixed; right: 24px; bottom: 24px; z-index: 1040; } /* same spot and layer as the widget */
-    #icAiLauncher .ic-ai-toggle { width: 62px; height: 62px; border-radius: 999px; display: grid; place-items: center; background: #fff; border: 2px solid #2d6a4f; box-shadow: 0 18px 34px rgba(13, 31, 24, .28); padding: 0; overflow: hidden; transition: transform 200ms ease, box-shadow 200ms ease; }
-    #icAiLauncher .ic-ai-toggle:hover { transform: translateY(-2px); box-shadow: 0 22px 38px rgba(13, 31, 24, .32); }
+    #icAiLauncher .ic-ai-toggle { width: 62px; height: 62px; border-radius: 999px; display: grid; place-items: center; background: #fff; border: 2px solid var(--sage-700); box-shadow: 0 18px 34px rgb(var(--sage-950-rgb) / .28); padding: 0; overflow: hidden; transition: transform 200ms ease, box-shadow 200ms ease; }
+    #icAiLauncher .ic-ai-toggle:hover { transform: translateY(-2px); box-shadow: 0 22px 38px rgb(var(--sage-950-rgb) / .32); }
     #icAiLauncher .ic-ai-toggle img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 999px; }
     #icAiLauncher.is-loading .ic-ai-toggle { opacity: .6; cursor: progress; }
     @media (max-width: 639.98px) { #icAiLauncher { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); } }

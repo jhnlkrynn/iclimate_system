@@ -5,11 +5,11 @@
             .farmer-org-chart-inner { min-width: 320px; width: 100%; height: 380px; }
             .farmer-org-chart-inner canvas { width: 100% !important; height: 100% !important; }
             .farmer-org-chart-state { color: #64748B; font-size: .85rem; font-weight: 600; }
-            .farmer-org-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .4rem .5rem; margin-top: .65rem; padding-top: .6rem; border-top: 1px solid rgba(95,143,120,.2); max-height: 180px; overflow-y: auto; }
+            .farmer-org-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .4rem .5rem; margin-top: .65rem; padding-top: .6rem; border-top: 1px solid rgb(var(--sage-700-rgb) / .2); max-height: 180px; overflow-y: auto; }
             .farmer-org-legend-item { appearance: none; width: 100%; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: .45rem; min-width: 0; padding: .35rem .5rem; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; background: #fff; color: #1F2937; font-family: 'Inter', system-ui, sans-serif; font-size: .78rem; line-height: 1.3; text-align: left; cursor: pointer; transition: background .15s, border-color .15s; }
-            .farmer-org-legend-item:hover { border-color: rgba(31,90,70,.4); background: rgba(247,251,248,.9); }
-            .farmer-org-legend-item:focus-visible { outline: 2px solid rgba(31,90,70,.28); outline-offset: 2px; border-color: #1F5A46; }
-            .farmer-org-legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(13,31,24,.2); flex-shrink: 0; }
+            .farmer-org-legend-item:hover { border-color: rgb(var(--sage-800-rgb) / .4); background: rgba(247,251,248,.9); }
+            .farmer-org-legend-item:focus-visible { outline: 2px solid rgb(var(--sage-700-rgb) / .28); outline-offset: 2px; border-color: var(--sage-700); }
+            .farmer-org-legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgb(var(--sage-950-rgb) / .2); flex-shrink: 0; }
             .farmer-org-legend-name { min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
             .farmer-org-legend-count { color: #1F2937; font-size: .8rem; font-weight: 800; white-space: nowrap; }
             .farmer-org-chart-status { margin-top: .5rem; color: #1F2937; font-size: .82rem; font-weight: 600; }

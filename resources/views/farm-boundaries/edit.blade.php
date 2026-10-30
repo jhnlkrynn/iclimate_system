@@ -8,7 +8,7 @@
         .boundary-stat span { color: var(--ic-ink-mid); font-size: .85rem; }
         @media (max-width: 767.98px) { .boundary-map { min-height: 420px; } }
         /* Boundary points: a small green handle, not Leaflet's large pin image. */
-        .boundary-point { border: 3px solid #fff; border-radius: 50%; background: #1f5a46; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+        .boundary-point { border: 3px solid #fff; border-radius: 50%; background: var(--sage-700); box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
         .boundary-point:active { cursor: grabbing; }
     </style>
 
@@ -143,7 +143,7 @@
                 const points = coordinates();
                 polygon?.remove();
                 polygon = points.length >= 3
-                    ? Leaflet.polygon(points.map((point) => [point.lat, point.lng]), { color: '#1f5a46', fillColor: '#52b788', fillOpacity: .28, weight: 3 }).addTo(map)
+                    ? Leaflet.polygon(points.map((point) => [point.lat, point.lng]), { color: '{{ config('palette.sage.700') }}', fillColor: '{{ config('palette.sage.500') }}', fillOpacity: .28, weight: 3 }).addTo(map)
                     : null;
                 pointCount.textContent = points.length;
                 saveButton.disabled = points.length < 3;

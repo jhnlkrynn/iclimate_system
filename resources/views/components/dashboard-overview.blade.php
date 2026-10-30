@@ -39,7 +39,7 @@
         .dash-overview .dash-updated { margin: 0 0 .75rem; font-size: .8rem; color: rgba(255,255,255,.85); }
         .dash-overview .dash-updated a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
         .dash-overview .dash-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
-        .dash-overview .dash-basis { flex: 0 0 auto; font-size: .66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: .15rem .5rem; border-radius: 999px; background: rgba(31,90,70,.1); color: #2b4a3c; white-space: nowrap; }
+        .dash-overview .dash-basis { flex: 0 0 auto; font-size: .66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: .15rem .5rem; border-radius: 999px; background: rgb(var(--sage-700-rgb) / .1); color: var(--sage-700); white-space: nowrap; }
         .dash-overview .dash-sources { margin-top: 1rem; border: 1px solid var(--gl-border, #E2E8F0); border-radius: 14px; background: rgba(255,255,255,.9); color: #1E293B; }
         .dash-overview .dash-sources > summary { cursor: pointer; padding: .8rem 1.1rem; font-weight: 700; font-size: .92rem; display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: baseline; list-style-position: inside; }
         .dash-overview .dash-sources > summary small { font-weight: 500; color: #55665d; font-size: .78rem; }
@@ -48,7 +48,7 @@
         .dash-overview .dash-source h4 { margin: 0 0 .35rem; font-size: .9rem; font-weight: 700; color: #0F172A; display: flex; justify-content: space-between; align-items: center; gap: .5rem; font-family: inherit; letter-spacing: 0; text-transform: none; }
         .dash-overview .dash-kind { font-size: .64rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: .12rem .45rem; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
         .dash-overview .dash-kind.is-observed { color: #1F5F86; }
-        .dash-overview .dash-kind.is-historical { color: #1F5A46; }
+        .dash-overview .dash-kind.is-historical { color: var(--sage-700); }
         .dash-overview .dash-kind.is-predicted { color: #8A5A0B; }
         .dash-overview .dash-kind.is-calculated { color: #5B4A99; }
         .dash-overview .dash-kind.is-count { color: #475569; }
@@ -61,7 +61,7 @@
         .dash-overview .dash-status-head { font-weight: 700; font-size: .92rem; margin-right: .5rem; }
         .dash-overview .dash-status-item { display: inline-flex; align-items: center; gap: .35rem; font-size: .78rem; color: #475569; padding: .15rem .55rem; border-radius: 999px; background: #F1F5F9; }
         .dash-overview .dash-status-item::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #94A3B8; }
-        .dash-overview .dash-status-item.is-healthy::before { background: #1F5A46; }
+        .dash-overview .dash-status-item.is-healthy::before { background: var(--sage-700); }
         .dash-overview .dash-status-item.is-attention::before { background: #C58B2A; }
         .dash-overview .dash-status-item.is-unavailable::before { background: #B84A4A; }
         @media (max-width: 575.98px) { .dash-overview .dash-chart-body, .dash-overview .dash-chart-empty { height: 220px; } .dash-overview .dash-chart { padding: .95rem 1rem; } }
@@ -162,13 +162,13 @@
     @once
         <script>
             (() => {
-                const GREEN = '#1F5A46', BLUE = '#3B7A9E', AMBER = '#C58B2A', SAGE = '#7FB08F';
+                const GREEN = '{{ config('palette.sage.700') }}', BLUE = '#3B7A9E', AMBER = '#C58B2A', SAGE = '{{ config('palette.sage.300') }}';
                 const seriesColors = [GREEN, BLUE, AMBER];
                 const sliceColors = {
                     low: '#1F5A46', moderate: '#C58B2A', high: '#D9772B', severe: '#B84A4A', critical: '#B84A4A',
-                    information: '#7FB08F', info: '#7FB08F',
+                    information: '{{ config('palette.sage.300') }}', info: '{{ config('palette.sage.300') }}',
                 };
-                const fallbackSlices = ['#1F5A46', '#3B7A9E', '#C58B2A', '#7FB08F', '#8A6FA8', '#B84A4A'];
+                const fallbackSlices = ['{{ config('palette.sage.700') }}', '#3B7A9E', '#C58B2A', '{{ config('palette.sage.300') }}', '#8A6FA8', '#B84A4A'];
                 const alpha = (hex, a) => {
                     const n = parseInt(hex.slice(1), 16);
                     return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
@@ -213,7 +213,7 @@
                     });
                     const multi = datasets.length > 1;
                     const scales = {
-                        [horizontal ? 'x' : 'y']: { beginAtZero: true, grid: { color: '#EEF2EF' }, ticks: { maxTicksLimit: 6 },
+                        [horizontal ? 'x' : 'y']: { beginAtZero: true, grid: { color: '{{ config('palette.sage.100') }}' }, ticks: { maxTicksLimit: 6 },
                             title: { display: !!(cfg.axis_titles && cfg.axis_titles[0]) || !!cfg.unit, text: (cfg.axis_titles && cfg.axis_titles[0]) || cfg.unit } },
                         [horizontal ? 'y' : 'x']: { grid: { display: false }, ticks: { autoSkip: true, maxRotation: 0, font: { size: 18 } } },
                     };

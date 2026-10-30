@@ -14,18 +14,18 @@
     @endphp
     <style>
         .mfb-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-        .mfb-insight { padding: 14px 16px; border: 1px solid var(--line, #dfe7e2); border-left: 5px solid #6b7f8c; border-radius: 8px; background: var(--card, #fff); }
+        .mfb-insight { padding: 14px 16px; border: 1px solid var(--line, var(--sage-100)); border-left: 5px solid #6b7f8c; border-radius: 8px; background: var(--card, #fff); }
         .mfb-insight h3 { margin: 0 0 4px; font-size: .95rem; font-weight: 700; }
         .mfb-insight p { margin: 0; font-size: .92rem; }
         .mfb-insight.is-good { border-left-color: #198754; }
         .mfb-insight.is-watch { border-left-color: #d99a1e; }
         .mfb-insight.is-danger { border-left-color: #c0392b; }
         .mfb-live { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted, #5b6b63); }
-        .mfb-dot { width: 9px; height: 9px; border-radius: 50%; background: #198754; }
+        .mfb-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sage-700); }
         .mfb-live.is-stale .mfb-dot { background: #c0392b; }
         .mfb-stat { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
-        .mfb-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--line, #dfe7e2); }
-        .mfb-bar > span:first-child { background: #198754; }
+        .mfb-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--line, var(--sage-100)); }
+        .mfb-bar > span:first-child { background: var(--sage-700); }
         .mfb-bar > span:last-child { background: #c0392b; margin-left: auto; }
         html[data-theme="dark"] body .mfb-insight { background: var(--dk-surface-2); border-color: var(--dk-border-strong); }
     </style>

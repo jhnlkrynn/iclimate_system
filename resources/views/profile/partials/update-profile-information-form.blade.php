@@ -1,10 +1,10 @@
 <section>
     <header>
-        <h2 class="text-lg font-semibold text-[#1B2B23]">
+        <h2 class="text-lg font-semibold text-ink">
             {{ __('Profile Information') }}
         </h2>
 
-        <p class="mt-1 text-sm text-[#44604E]">
+        <p class="mt-1 text-sm text-sage-700">
             {{ __("Update your account's profile information and email address.") }}
         </p>
     </header>
@@ -30,16 +30,16 @@
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                 <div>
-                    <p class="text-sm mt-2 text-[#1B2B23]">
+                    <p class="text-sm mt-2 text-ink">
                         {{ __('Your email address is unverified.') }}
 
-                        <button form="send-verification" class="underline text-sm text-[#2D6A4F] hover:text-[#1A3A2A] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#52B788]/40">
+                        <button form="send-verification" class="underline text-sm text-sage-700 hover:text-sage-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sage-500/40">
                             {{ __('Click here to re-send the verification email.') }}
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-semibold text-sm text-[#2D6A4F]">
+                        <p class="mt-2 font-semibold text-sm text-sage-700">
                             {{ __('A new verification link has been sent to your email address.') }}
                         </p>
                     @endif
@@ -56,7 +56,7 @@
                         <option value="{{ $barangay }}" @selected(old('barangay', $user->registeredBarangay()) === $barangay)>{{ $label }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-sm text-[#44604E]">Choose the exact barangay on your registration. Do not choose a general Poblacion label.</p>
+                <p class="mt-1 text-sm text-sage-700">Choose the exact barangay on your registration. Do not choose a general Poblacion label.</p>
                 <x-input-error class="mt-2" :messages="$errors->get('barangay')" />
             </div>
 
@@ -68,7 +68,7 @@
             @if ($orgChoices->isNotEmpty())
                 <fieldset data-farmer-organizations>
                     <legend class="block font-medium text-sm">{{ __('Farmer organizations') }}</legend>
-                    <p class="mt-1 text-sm text-[#44604E]">{{ __('Tick every organization you are a member of.') }}</p>
+                    <p class="mt-1 text-sm text-sage-700">{{ __('Tick every organization you are a member of.') }}</p>
                     <input type="hidden" name="farmer_organization_ids_present" value="1">
                     <div class="check-grid mt-2">
                         @foreach ($orgChoices as $org)
@@ -109,7 +109,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-[#44604E]"
+                    class="text-sm text-sage-700"
                 >{{ __('Saved.') }}</p>
             @endif
         </div>

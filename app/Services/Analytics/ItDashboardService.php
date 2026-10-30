@@ -844,7 +844,7 @@ final class ItDashboardService
         }
         $blank = fn () => array_fill_keys($keys, 0);
         $series = [
-            'logins' => ['label' => 'Logins', 'color' => '#2f9e6e', 'data' => $blank()],
+            'logins' => ['label' => 'Logins', 'color' => config('palette.sage.500'), 'data' => $blank()],
             'admin' => ['label' => 'Admin actions', 'color' => '#d9a21b', 'data' => $blank()],
             'processing' => ['label' => 'Data processing', 'color' => '#7a6cc9', 'data' => $blank()],
             'jobs' => ['label' => 'System jobs', 'color' => '#2b7a9b', 'data' => $blank()],

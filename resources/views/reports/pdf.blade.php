@@ -6,13 +6,13 @@
     <title>{{ $title }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #1f2937; }
-        h1 { font-size: 16px; margin: 0 0 2px; color: #14532d; }
+        h1 { font-size: 16px; margin: 0 0 2px; color: {{ config('palette.sage.700') }}; }
         .office { font-size: 11px; font-weight: bold; margin: 0; }
         .meta { color: #4b5563; margin: 2px 0 10px; }
         .summary { margin: 0 0 10px; padding: 0; list-style: none; }
         .summary li { margin: 1px 0; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #14532d; color: #fff; text-align: left; padding: 4px; font-size: 9px; }
+        th { background: {{ config('palette.sage.700') }}; color: #fff; text-align: left; padding: 4px; font-size: 9px; }
         td { border-bottom: 1px solid #d1d5db; padding: 3px 4px; font-size: 9px; }
         .foot { margin-top: 10px; color: #6b7280; font-size: 8px; }
     </style>

@@ -20,7 +20,7 @@
     html { overflow-x: hidden; }   /* the soft background blobs sit partly off-screen */
     body {
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 60%, #eef5f1 100%);
+      background: linear-gradient(145deg, #f6f9f7 0%, {{ config('palette.sage.100') }} 60%, {{ config('palette.sage.50') }} 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -30,34 +30,34 @@
       overflow: hidden;
     }
     .err-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
-    .err-blob-1 { width: 420px; height: 420px; background: rgba(82,183,136,0.14); top: -80px; left: -80px; }
-    .err-blob-2 { width: 320px; height: 320px; background: rgba(45,106,79,0.1); bottom: -60px; right: -60px; }
-    .err-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(45,106,79,0.12) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
-    .err-card { position: relative; z-index: 1; width: 100%; max-width: 460px; background: rgba(255,255,255,0.92); border: 1px solid rgba(149,213,178,.35); border-radius: 24px; padding: 44px 40px; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 20px 48px rgba(13,31,24,.14); }
+    .err-blob-1 { width: 420px; height: 420px; background: rgba({{ config('palette.rgb.500') }}, 0.14); top: -80px; left: -80px; }
+    .err-blob-2 { width: 320px; height: 320px; background: rgba({{ config('palette.rgb.700') }}, 0.1); bottom: -60px; right: -60px; }
+    .err-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba({{ config('palette.rgb.700') }}, 0.12) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
+    .err-card { position: relative; z-index: 1; width: 100%; max-width: 460px; background: rgba(255,255,255,0.92); border: 1px solid rgba({{ config('palette.rgb.200') }}, .35); border-radius: 24px; padding: 44px 40px; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 20px 48px rgba({{ config('palette.rgb.950') }}, .14); }
     .err-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: 32px; }
     .err-logo img { height: 40px; width: auto; object-fit: contain; }
-    .err-code { font-family: 'Inter', system-ui, sans-serif; font-size: 0.78rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #2D6A4F; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .err-code { font-family: 'Inter', system-ui, sans-serif; font-size: 0.78rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: {{ config('palette.sage.700') }}; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 8px; }
     .err-code::before { content: none; }
-    .err-title { font-family: 'Inter', system-ui, sans-serif; font-size: 1.9rem; font-weight: 400; color: #1f2a24; margin-bottom: 14px; letter-spacing: -0.02em; }
+    .err-title { font-family: 'Inter', system-ui, sans-serif; font-size: 1.9rem; font-weight: 400; color: {{ config('palette.ink') }}; margin-bottom: 14px; letter-spacing: -0.02em; }
     .err-message { font-size: 0.95rem; color: #4a5c52; line-height: 1.65; margin-bottom: 32px; }
     .err-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
     .err-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 26px; border-radius: 100px; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: all 0.2s; white-space: nowrap; }
-    .err-btn-primary { background: #1F5A46; color: #fff; }
-    .err-btn-primary:hover { background: #123F32; transform: translateY(-1px); }
-    .err-btn-outline { border: 1.5px solid rgba(31,42,36,0.18); color: #1f2a24; }
-    .err-btn-outline:hover { border-color: rgba(31,42,36,0.45); color: #122b20; }
-    .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e3ece6; font-size: 0.78rem; color: #56655c; }
-    html[data-theme="dark"] body { background: #0e1814; }
-    html[data-theme="dark"] .err-grid { background-image: radial-gradient(rgba(127,214,181,0.07) 1px, transparent 1px); }
-    html[data-theme="dark"] .err-card { background: #16231e; border-color: #2a3b33; box-shadow: 0 20px 48px rgba(0,0,0,.4); }
+    .err-btn-primary { background: {{ config('palette.sage.700') }}; color: #fff; }
+    .err-btn-primary:hover { background: {{ config('palette.sage.800') }}; transform: translateY(-1px); }
+    .err-btn-outline { border: 1.5px solid rgba({{ config('palette.rgb.900') }}, 0.18); color: {{ config('palette.ink') }}; }
+    .err-btn-outline:hover { border-color: rgba({{ config('palette.rgb.900') }}, 0.45); color: {{ config('palette.ink') }}; }
+    .err-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid {{ config('palette.sage.100') }}; font-size: 0.78rem; color: #56655c; }
+    html[data-theme="dark"] body { background: {{ config('palette.sage.950') }}; }
+    html[data-theme="dark"] .err-grid { background-image: radial-gradient(rgba({{ config('palette.rgb.200') }}, 0.07) 1px, transparent 1px); }
+    html[data-theme="dark"] .err-card { background: {{ config('palette.sage.950') }}; border-color: {{ config('palette.sage.800') }}; box-shadow: 0 20px 48px rgba(0,0,0,.4); }
     .err-logo-dark-theme, html[data-theme="dark"] .err-logo-light-theme { display: none; }
     html[data-theme="dark"] .err-logo-dark-theme { display: inline; }
-    html[data-theme="dark"] .err-code { color: #7fd6b5; }
-    html[data-theme="dark"] .err-title { color: #e4ece7; }
+    html[data-theme="dark"] .err-code { color: {{ config('palette.sage.200') }}; }
+    html[data-theme="dark"] .err-title { color: {{ config('palette.sage.200') }}; }
     html[data-theme="dark"] .err-message { color: #c3cfc8; }
-    html[data-theme="dark"] .err-btn-outline { border-color: #36493f; color: #e4ece7; }
-    html[data-theme="dark"] .err-btn-outline:hover { border-color: #7fd6b5; color: #fff; }
-    html[data-theme="dark"] .err-foot { border-top-color: #2a3b33; color: #9fb1a7; }
+    html[data-theme="dark"] .err-btn-outline { border-color: {{ config('palette.sage.800') }}; color: {{ config('palette.sage.200') }}; }
+    html[data-theme="dark"] .err-btn-outline:hover { border-color: {{ config('palette.sage.300') }}; color: #fff; }
+    html[data-theme="dark"] .err-foot { border-top-color: {{ config('palette.sage.800') }}; color: #9fb1a7; }
   </style>
     @include('partials.global-loader')
 </head>

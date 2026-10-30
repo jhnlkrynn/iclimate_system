@@ -17,7 +17,7 @@
 
 /* ================================================================ 1. role-wide baseline */
 body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) {
-    --ic-sidebar-bg: #0f5132;
+    --ic-sidebar-bg: var(--sage-700);
     --mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mfd-serif: 'Inter', system-ui, sans-serif;
     --ic-readable-body: 1rem;
@@ -85,17 +85,17 @@ body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .modal-b
 .itp-simple-health .mfd-header .mfd-btn.is-quiet {
     min-height: 48px;
     padding: 10px 18px;
-    border: 2px solid var(--gov-primary, #0f5132) !important;
+    border: 2px solid var(--gov-primary, var(--sage-700)) !important;
     background: #fff !important;
-    color: var(--gov-primary-dark, #0f5132) !important;
-    box-shadow: 0 1px 2px rgba(15, 81, 50, .12);
+    color: var(--gov-primary-dark, var(--sage-700)) !important;
+    box-shadow: 0 1px 2px rgb(var(--sage-700-rgb) / .12);
     opacity: 1 !important;
 }
 .itp-simple-health .mfd-header .mfd-btn.is-quiet .mtd-svg { color: currentColor !important; }
 .itp-simple-health .mfd-header .mfd-btn.is-quiet:hover {
-    background: var(--gov-primary-soft, #e6f4ec) !important;
-    border-color: var(--gov-primary-dark, #0b3d26) !important;
-    color: var(--gov-primary-dark, #0b3d26) !important;
+    background: var(--gov-primary-soft, var(--sage-50)) !important;
+    border-color: var(--gov-primary-dark, var(--sage-800)) !important;
+    color: var(--gov-primary-dark, var(--sage-800)) !important;
 }
 .itp-simple-health .mfd-header .mfd-btn.is-quiet:focus-visible {
     outline: 3px solid var(--gov-blue, #1f6fb2);
@@ -103,17 +103,17 @@ body:is([data-user-role="IT Expert"], [data-user-role="MAO Personnel"]) .modal-b
 }
 html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-age,
 html[data-theme="dark"] body .itp-simple-health .mfd-header .itp-header-meta .mfd-age {
-    color: #d7f2e2 !important;
+    color: var(--sage-200) !important;
 }
 html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet {
-    border-color: #8fd3ae !important;
-    background: #e6f4ec !important;
-    color: #0b3d26 !important;
+    border-color: var(--sage-300) !important;
+    background: var(--sage-50) !important;
+    color: var(--sage-300) !important;
 }
 html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:hover {
-    background: #c9e8d5 !important;
-    border-color: #b1e1c3 !important;
-    color: #06301d !important;
+    background: var(--sage-100) !important;
+    border-color: var(--sage-200) !important;
+    color: var(--sage-300) !important;
 }
 
 /* section heading: Georgia 24px over a brand rule, with an optional description */
@@ -211,7 +211,7 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 }
 .mfd.itd.itp .btn.btn-sm { min-height: 36px; padding: 6px 14px; font-size: .875rem !important; }
 .mfd.itd.itp .btn:is(.btn-primary, .btn-success) { background: var(--brand) !important; border-color: var(--brand) !important; color: #fff !important; }
-.mfd.itd.itp .btn:is(.btn-primary, .btn-success):hover { background: #0b3d26 !important; border-color: #0b3d26 !important; }
+.mfd.itd.itp .btn:is(.btn-primary, .btn-success):hover { background: var(--sage-800) !important; border-color: var(--sage-800) !important; }
 .mfd.itd.itp .btn:is(.btn-light, .btn-outline-primary, .btn-outline-success, .btn-outline-secondary, .btn-outline-dark) { background: #fff !important; border-color: var(--brand) !important; color: var(--brand-ink, var(--brand)) !important; }
 .mfd.itd.itp .btn:is(.btn-light, .btn-outline-primary, .btn-outline-success, .btn-outline-secondary, .btn-outline-dark):hover { background: var(--good-bg) !important; }
 .mfd.itd.itp .btn.btn-danger { background: var(--danger) !important; border-color: var(--danger) !important; color: #fff !important; }
@@ -276,7 +276,7 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 
 /* ================================================================ 3a. Account */
 .itp-account { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 24px; }
-.itp-avatar { display: grid; place-items: center; flex: none; width: 72px; height: 72px; border-radius: var(--radius); border: 1px solid #b9dcc8; background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: 1.5rem; font-weight: 700; }
+.itp-avatar { display: grid; place-items: center; flex: none; width: 72px; height: 72px; border-radius: var(--radius); border: 1px solid var(--sage-200); background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: 1.5rem; font-weight: 700; }
 .itp-account-id { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .itp-account-name { font-size: 1.375rem; font-weight: 700; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
 .itp-account-email { font-size: .9375rem; color: var(--muted); overflow-wrap: anywhere; }
@@ -334,11 +334,11 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 .mfd.itd.itp .wp-advisory.mt-3 > .wp-card-value { font-size: 1rem !important; font-weight: 600 !important; }
 .mfd.itd.itp .wp-status { margin-top: 0; border: 1px solid transparent; }
 .mfd.itd.itp .wp-status::before { display: none; }
-.mfd.itd.itp .tone-green .wp-status, .mfd.itd.itp .wp-status { background: var(--good-bg); color: var(--good-ink); border-color: #b9dcc8; }
+.mfd.itd.itp .tone-green .wp-status, .mfd.itd.itp .wp-status { background: var(--good-bg); color: var(--good-ink); border-color: var(--sage-200); }
 .mfd.itd.itp .tone-amber .wp-status { background: var(--watch-bg); color: var(--watch-ink); border-color: #ecd3a2; }
 .mfd.itd.itp .tone-red .wp-status { background: var(--danger-bg); color: var(--danger-ink); border-color: #f0c2bc; }
 .mfd.itd.itp .wp-state { min-height: 160px; }
-.mfd.itd.itp .wp-state-icon { border-radius: var(--radius); border: 1px solid #b9dcc8; background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: 1.125rem; font-weight: 700; }
+.mfd.itd.itp .wp-state-icon { border-radius: var(--radius); border: 1px solid var(--sage-200); background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: 1.125rem; font-weight: 700; }
 .mfd.itd.itp .wp-state p { font-size: .9375rem; }
 .mfd.itd.itp .wp-calendar-day { border-radius: 4px; font-size: .875rem; transform: none !important; box-shadow: none !important; }
 .mfd.itd.itp .wp-calendar-weekday { font-size: .8125rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
@@ -386,16 +386,16 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 .mfd.itd.itp .composer-submit-row { padding: 16px 0 0; margin-top: 20px !important; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent !important; }
 .mfd.itd.itp .composer-submit-row::before { font-size: .875rem; font-weight: 400; color: var(--muted); }
 .mfd.itd.itp .feed-post-head { margin: 0 0 16px; padding: 0 0 12px; border-radius: 0; border-bottom: 1px solid var(--line); background: transparent !important; }
-.mfd.itd.itp .avatar, .mfd.itd.itp .reaction-viewer-avatar { border-radius: var(--radius); border: 1px solid #b9dcc8; background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: .9375rem; font-weight: 700; }
+.mfd.itd.itp .avatar, .mfd.itd.itp .reaction-viewer-avatar { border-radius: var(--radius); border: 1px solid var(--sage-200); background: var(--good-bg); color: var(--brand-ink, var(--brand)); font-size: .9375rem; font-weight: 700; }
 .mfd.itd.itp .feed-meta { font-size: .8125rem; font-weight: 400; letter-spacing: 0; color: var(--muted) !important; }
-.mfd.itd.itp .feed-badge { background: var(--good-bg); color: var(--good-ink); border: 1px solid #b9dcc8; }
+.mfd.itd.itp .feed-badge { background: var(--good-bg); color: var(--good-ink); border: 1px solid var(--sage-200); }
 .mfd.itd.itp .feed-post-heading { font-size: 1.0625rem; font-weight: 600; color: var(--ink); }
 .mfd.itd.itp .feed-body-text { font-size: 1rem; font-weight: 400; line-height: 1.5; color: var(--ink) !important; }
 .mfd.itd.itp :is(.reaction-trigger, .manage-panel summary, .reaction-count-pill) { min-height: 36px; border: 1px solid var(--brand); border-radius: 4px; background: #fff; color: var(--brand-ink, var(--brand)); font-size: .875rem; font-weight: 600; box-shadow: none !important; transform: none !important; }
 .mfd.itd.itp .reaction-count-pill { min-height: 0; border-color: var(--rule); color: var(--ink); font-weight: 400; }
 .mfd.itd.itp .manage-panel-body { border: 1px solid var(--line); border-radius: 4px; background: var(--subtle); }
 .mfd.itd.itp .comment-bubble { border: 1px solid var(--line); border-radius: 4px; background: var(--subtle); font-size: .9375rem; }
-.mfd.itd.itp .feed-empty-icon { border-radius: var(--radius); border-color: #b9dcc8; background: var(--good-bg); color: var(--brand-ink, var(--brand)); }
+.mfd.itd.itp .feed-empty-icon { border-radius: var(--radius); border-color: var(--sage-200); background: var(--good-bg); color: var(--brand-ink, var(--brand)); }
 .mfd.itd.itp .feed-empty strong { font-size: 1.0625rem; font-weight: 600; color: var(--ink); }
 .mfd.itd.itp .feed-empty p { font-size: .9375rem; color: var(--muted); }
 .mfd.itd.itp .side-panel { padding: var(--gap); position: static !important; max-height: none !important; overflow: visible !important; }
@@ -428,7 +428,7 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 .mfd.itd.itp .msg-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
 .mfd.itd.itp .thread-link { border-bottom-color: var(--line); }
 .mfd.itd.itp .thread-link:hover { background: var(--subtle); }
-.mfd.itd.itp .thread-link.active { background: #f1f8f4; border-left-color: var(--brand); }
+.mfd.itd.itp .thread-link.active { background: var(--sage-50); border-left-color: var(--brand); }
 .mfd.itd.itp .thread-name { font-size: .9375rem; font-weight: 600 !important; color: var(--ink); }
 .mfd.itd.itp .thread-link.unread .thread-name, .mfd.itd.itp .thread-link.unread .thread-preview { font-weight: 700 !important; }
 .mfd.itd.itp .thread-time { font-size: .75rem !important; font-weight: 400; color: var(--muted); }

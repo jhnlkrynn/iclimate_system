@@ -14,12 +14,12 @@
         .fsv-opt { position: relative; }
         .fsv-opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; cursor: pointer; }
         .fsv-opt span { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: .4rem .25rem;
-            border: 2px solid var(--line, #dfe7e2); border-radius: 10px; background: var(--card, #fff); text-align: center; font-size: .9rem; line-height: 1.2; }
+            border: 2px solid var(--line, var(--sage-100)); border-radius: 10px; background: var(--card, #fff); text-align: center; font-size: .9rem; line-height: 1.2; }
         .fsv-opt span strong { font-size: 1.25rem; }
-        .fsv-opt input:checked + span { border-color: var(--brand, #1f7a4d); background: var(--good-bg, #e6f4ec); font-weight: 700; }
-        .fsv-opt input:focus-visible + span { outline: 3px solid var(--brand, #1f7a4d); outline-offset: 2px; }
-        .fsv-about { padding: .75rem 1rem; border-left: 4px solid var(--brand, #1f7a4d); border-radius: 4px; background: var(--subtle, #f5f8f6); font-weight: 600; margin-bottom: 1.25rem; }
-        .fsv-mine li { padding: .6rem 0; border-bottom: 1px solid var(--line, #dfe7e2); }
+        .fsv-opt input:checked + span { border-color: var(--brand, var(--sage-700)); background: var(--good-bg, #e6f4ec); font-weight: 700; }
+        .fsv-opt input:focus-visible + span { outline: 3px solid var(--brand, var(--sage-700)); outline-offset: 2px; }
+        .fsv-about { padding: .75rem 1rem; border-left: 4px solid var(--brand, var(--sage-700)); border-radius: 4px; background: var(--subtle, var(--sage-50)); font-weight: 600; margin-bottom: 1.25rem; }
+        .fsv-mine li { padding: .6rem 0; border-bottom: 1px solid var(--line, var(--sage-100)); }
         .fsv-mine li:last-child { border-bottom: 0; }
         @media (max-width: 575.98px) { .fsv-scale { grid-template-columns: minmax(0, 1fr); } .fsv-opt span { flex-direction: row; gap: 8px; min-height: 48px; justify-content: flex-start; padding-left: 1rem; } }
     </style>

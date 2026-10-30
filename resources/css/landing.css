@@ -1,4 +1,5 @@
 /* Public landing page (welcome.blade.php). Tailwind only; colours come from the theme tokens in tailwind.config.js. */
+@import './palette.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,7 +32,7 @@
     }
 
     :focus-visible {
-        @apply outline-none ring-2 ring-brand ring-offset-2;
+        @apply outline-none ring-2 ring-sage-500 ring-offset-2;
     }
 }
 
@@ -57,8 +58,14 @@
         @apply isolate bg-brand text-white;
     }
 
+    /* The band's photo sits under a sage-800 layer at 85% (on the band, not the photo, whose grayscale filter would grey
+       it too), so white text stays at 7:1 or better over the brightest sky. */
+    .lp-band::before {
+        @apply pointer-events-none absolute inset-0 -z-[5] bg-sage-800/85 content-[''];
+    }
+
     .lp-band-photo {
-        @apply pointer-events-none absolute inset-0 -z-10 bg-cover bg-center opacity-[0.12] grayscale;
+        @apply pointer-events-none absolute inset-0 -z-10 bg-cover bg-center grayscale;
     }
 
     /* Section heading: an uppercase eyebrow after a short brand rule, a bold heading of two lines at most, one short
@@ -68,7 +75,7 @@
     }
 
     .lp-eyebrow::before {
-        @apply block h-0.5 w-6 shrink-0 bg-current content-[''];
+        @apply block h-0.5 w-6 shrink-0 bg-sage-500 content-[''];
     }
 
     .lp-band .lp-eyebrow {
@@ -89,7 +96,7 @@
 
     /* A line icon in brand green on a tint circle. */
     .lp-icon-circle {
-        @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tint text-brand;
+        @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-tint text-sage-500;
     }
 
     .lp-btn {
@@ -102,7 +109,7 @@
     }
 
     .lp-btn-primary {
-        @apply lp-btn border-brand bg-brand text-white hover:bg-ink;
+        @apply lp-btn border-brand bg-brand text-white hover:border-brand-dark hover:bg-brand-dark;
     }
 
     .lp-btn-neutral {
@@ -139,7 +146,7 @@
     }
 
     .lp-input {
-        @apply block w-full rounded-lg border border-line bg-white px-4 py-3 text-base leading-none text-ink placeholder:text-muted/60 focus:border-brand focus:ring-brand;
+        @apply block w-full rounded-lg border border-line bg-white px-4 py-3 text-base leading-none text-ink placeholder:text-muted/60 focus:border-sage-500 focus:ring-sage-500;
     }
 
     .lp-input-lg {
@@ -151,7 +158,7 @@
     }
 
     .lp-link {
-        @apply font-semibold text-brand underline decoration-from-font underline-offset-2 hover:text-ink;
+        @apply font-semibold text-brand underline decoration-from-font underline-offset-2 hover:text-brand-dark;
     }
 
     /* Top nav (components/public-nav.blade.php). Solid: white with a thin bottom line, ink text, brand accents.
@@ -163,11 +170,11 @@
     }
 
     .lp-header[data-nav-state='hero'] {
-        @apply border-transparent bg-ink/60;
+        @apply border-transparent bg-ink/65;
     }
 
     .lp-header-divider {
-        @apply bg-line;
+        @apply bg-sage-500;
     }
 
     .lp-header .lp-logo-on-dark,
@@ -217,7 +224,7 @@
     }
 
     .lp-header-btn {
-        @apply lp-btn border-brand bg-brand text-[0.9375rem] font-semibold text-white hover:border-ink hover:bg-ink;
+        @apply lp-btn border-brand bg-brand text-[0.9375rem] font-semibold text-white hover:border-brand-dark hover:bg-brand-dark;
     }
 
     .lp-header-icon-btn {
@@ -272,16 +279,16 @@
 
 /* The public landing page can be rendered under the shared dark theme. Keep this scoped to this section. */
 html[data-theme="dark"] #roles {
-    background: #141a16;
+    background: var(--sage-950);
 }
 html[data-theme="dark"] #roles .lp-role-card {
     border-color: #36443a;
-    background: #1c261f;
+    background: var(--sage-950);
     box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
 }
-html[data-theme="dark"] #roles :is(.text-ink, .lp-h2) { color: #f0f5f1; }
+html[data-theme="dark"] #roles :is(.text-ink, .lp-h2) { color: var(--sage-200); }
 html[data-theme="dark"] #roles .text-muted { color: #b7c5ba; }
-html[data-theme="dark"] #roles .text-brand { color: #8bd1a0; }
+html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 }
 
 /* The hero runs under the fixed nav, so its photo starts at the very top: one full screen (svh, so phone browser bars
@@ -301,10 +308,10 @@ html[data-theme="dark"] #roles .text-brand { color: #8bd1a0; }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
    take the landing page's brand green so the card matches its Log in button. */
-.lp-reg .btn-submit { height: 52px; color: #fff; background: #17432A; border-color: #17432A; }
-.lp-reg .btn-submit:hover { background: #111A13; border-color: #111A13; }
+.lp-reg .btn-submit { height: 52px; color: #fff; background: var(--sage-700); border-color: var(--sage-700); }
+.lp-reg .btn-submit:hover { background: var(--sage-800); border-color: var(--sage-800); }
 .lp-reg .btn-spinner { border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
-.lp-reg .terms-row input[type='checkbox'] { color: #17432A; border-color: #B5C9AE; border-radius: 4px; }
+.lp-reg .terms-row input[type='checkbox'] { color: var(--sage-700); border-color: var(--sage-300); border-radius: 4px; }
 
 /* Sign-in password eye (<x-password-toggle>): a 44px tap target whose icon sits 16px in from the field's right edge. */
 .lp-pwd-toggle {

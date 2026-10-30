@@ -20,17 +20,17 @@
 
 :root {
     --sidebar-width: 248px;
-    --sb-bg: linear-gradient(180deg, #0f3d2e 0%, #0c3326 100%);
+    --sb-bg: linear-gradient(180deg, var(--sage-700) 0%, var(--sage-800) 100%);
     /* Desktop sidebar: the same green, let through a little of the page backdrop behind it. The drawer stays solid. */
-    --sb-bg-fixed: linear-gradient(180deg, rgba(15, 61, 46, .9) 0%, rgba(12, 51, 38, .94) 100%);
+    --sb-bg-fixed: linear-gradient(180deg, rgb(var(--sage-700-rgb) / .9) 0%, rgb(var(--sage-800-rgb) / .94) 100%);
     --sb-edge: rgba(255, 255, 255, .08);
     --sb-text: rgba(255, 255, 255, .8);
     --sb-text-strong: #ffffff;
     --sb-icon: rgba(255, 255, 255, .7);
     --sb-label: rgba(255, 255, 255, .6);
     --sb-hover: rgba(255, 255, 255, .07);
-    --sb-active-bg: rgba(127, 214, 181, .2);
-    --sb-accent: #8fdcb8;
+    --sb-active-bg: rgb(var(--sage-200-rgb) / .2);
+    --sb-accent: var(--sage-200);
     /* Largest link height and largest space between links; both follow the window height. */
     --sb-tab-max: clamp(56px, 9vh, 88px);
     --sb-gap-max: clamp(6px, 3vh, 32px);
@@ -39,10 +39,10 @@
 }
 
 html[data-theme="dark"] {
-    --sb-bg: linear-gradient(180deg, #0b261c 0%, #091d16 100%);
-    --sb-bg-fixed: linear-gradient(180deg, rgba(11, 38, 28, .9) 0%, rgba(9, 29, 22, .94) 100%);
+    --sb-bg: linear-gradient(180deg, var(--sage-950) 0%, var(--sage-950) 100%);
+    --sb-bg-fixed: linear-gradient(180deg, rgb(var(--sage-950-rgb) / .9) 0%, rgb(var(--sage-950-rgb) / .94) 100%);
     --sb-edge: rgba(255, 255, 255, .06);
-    --sb-active-bg: rgba(127, 214, 181, .17);
+    --sb-active-bg: rgb(var(--sage-200-rgb) / .17);
     --sb-switch-bg: rgba(0, 0, 0, .28);
 }
 
@@ -338,12 +338,12 @@ html body .ic-sidebar .ic-theme-btn:hover { color: var(--sb-text-strong); backgr
 /* The chosen theme is a solid mint pill with dark text, unmistakable in both themes. */
 html body .ic-sidebar .ic-theme-btn[aria-pressed="true"],
 html body .ic-sidebar .ic-theme-btn[aria-pressed="true"]:hover {
-    color: #0b2a1f;
+    color: var(--palette-ink);
     background: var(--sb-accent);
     box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
 }
 
-html body .ic-sidebar .ic-theme-btn[aria-pressed="true"] svg { color: #0b2a1f; }
+html body .ic-sidebar .ic-theme-btn[aria-pressed="true"] svg { color: var(--palette-ink); }
 html body .ic-sidebar .ic-theme-btn[aria-pressed="true"]:focus-visible { outline-color: #fff; outline-offset: 2px; }
 
 html body .ic-sidebar .sidebar-foot {

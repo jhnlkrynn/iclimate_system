@@ -119,7 +119,7 @@
                 const satelliteLayer = Leaflet.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 19 }).addTo(map);
                 const streetLayer = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 });
                 Leaflet.control.layers({ 'Satellite imagery': satelliteLayer, 'Street map': streetLayer }, null, { position: 'topright', collapsed: false }).addTo(map);
-                const polygon = Leaflet.polygon(latLngs, { color: '#1f5a46', fillColor: '#52b788', fillOpacity: .28, weight: 3 }).addTo(map);
+                const polygon = Leaflet.polygon(latLngs, { color: '{{ config('palette.sage.700') }}', fillColor: '{{ config('palette.sage.500') }}', fillOpacity: .28, weight: 3 }).addTo(map);
                 const bounds = polygon.getBounds();
                 if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
                     map.fitBounds(bounds, { padding: [24, 24] });

@@ -59,7 +59,7 @@
     <section class="fh-card" aria-labelledby="fhCropProgressTitle" data-fh-analytic="crop-progress">
         <h2 id="fhCropProgressTitle" class="fh-kicker">{{ __('farmer.kpis.progress.title') }}</h2>
         <p class="fh-muted">{{ $cropTile['note'] }}</p>
-        @include('partials.half-donut', ['segments' => [['value' => $cropTile['progress'], 'color' => 'var(--brand, #1f7a4d)', 'label' => __('farmer.kpis.progress.done')]], 'total' => 100,
+        @include('partials.half-donut', ['segments' => [['value' => $cropTile['progress'], 'color' => 'var(--brand, var(--sage-700))', 'label' => __('farmer.kpis.progress.done')]], 'total' => 100,
             'big' => $cropTile['progress'].'%', 'small' => __('farmer.kpis.progress.center'),
             'label' => __('farmer.kpis.crop.progress', ['percent' => $cropTile['progress']])])
         <p class="fh-words fh-gauge-note">{{ $cropTile['label'] }}: {{ $cropTile['value'] }} {{ $cropTile['unit'] }}</p>

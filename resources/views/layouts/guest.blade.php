@@ -42,32 +42,32 @@
 
     /* -- LEFT PANEL ------------------------------------ */
     .login-panel-left {
-      background: linear-gradient(145deg, #f6f9f7 0%, #e7f0ea 60%, #eef5f1 100%);
-      border-right: 1px solid #e3ece6;
+      background: linear-gradient(145deg, #f6f9f7 0%, var(--sage-100) 60%, var(--sage-50) 100%);
+      border-right: 1px solid var(--sage-100);
       position: relative; overflow: hidden; display: flex; flex-direction: column;
     }
     .lpl-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
-    .lpl-blob-1 { width: 420px; height: 420px; background: rgba(82,183,136,0.13); top: -80px; left: -80px; }
-    .lpl-blob-2 { width: 320px; height: 320px; background: rgba(45,106,79,0.1); bottom: 60px; right: -60px; }
-    .lpl-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(45,106,79,0.14) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
+    .lpl-blob-1 { width: 420px; height: 420px; background: rgb(var(--sage-500-rgb) / 0.13); top: -80px; left: -80px; }
+    .lpl-blob-2 { width: 320px; height: 320px; background: rgb(var(--sage-700-rgb) / 0.1); bottom: 60px; right: -60px; }
+    .lpl-grid { position: absolute; inset: 0; background-image: radial-gradient(rgb(var(--sage-700-rgb) / 0.14) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; }
     .lpl-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding: 44px 52px; }
     .lpl-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: auto; }
     .lpl-body { padding: 48px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .lpl-eyebrow { font-family: 'Inter', system-ui, sans-serif; font-size: 0.84rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: #2D6A4F; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+    .lpl-eyebrow { font-family: 'Inter', system-ui, sans-serif; font-size: 0.84rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--sage-700); margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
     .lpl-eyebrow::before { content: none; }
-    .lpl-headline { font-family: 'Inter', system-ui, sans-serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: #1f2a24; line-height: 1.2; margin-bottom: 16px; }
-    .lpl-headline em { font-style: normal; color: #2D6A4F; }
+    .lpl-headline { font-family: 'Inter', system-ui, sans-serif; font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 400; color: var(--palette-ink); line-height: 1.2; margin-bottom: 16px; }
+    .lpl-headline em { font-style: normal; color: var(--sage-700); }
     .lpl-sub { font-size: 1.04rem; color: #4a5c52; line-height: 1.65; max-width: 380px; }
-    .lpl-foot { padding-top: 32px; border-top: 1px solid #e3ece6; font-size: 0.92rem; color: #55645b; }
+    .lpl-foot { padding-top: 32px; border-top: 1px solid var(--sage-100); font-size: 0.92rem; color: #55645b; }
 
     /* -- RIGHT PANEL ----------------------------------- */
-    .login-panel-right { background: #f5f9f6; display: flex; align-items: center; justify-content: center; padding: 40px 48px; }
+    .login-panel-right { background: var(--sage-50); display: flex; align-items: center; justify-content: center; padding: 40px 48px; }
     .login-form-wrap { width: 100%; max-width: 460px; }
-    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: #44604E; text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
-    .back-link-top:hover { color: #2D6A4F; }
+    .back-link-top { display: inline-flex; align-items: center; gap: 6px; font-size: 0.94rem; font-weight: 500; color: var(--sage-700); text-decoration: none; margin-bottom: 36px; transition: color 0.2s; }
+    .back-link-top:hover { color: var(--sage-800); }
     .login-form-header { margin-bottom: 28px; }
-    .login-form-header h1 { font-family: 'Inter', system-ui, sans-serif; font-size: 1.7rem; font-weight: 400; color: #1B2B23; margin-bottom: 6px; letter-spacing: -0.02em; }
-    .login-form-header p { font-size: 0.92rem; color: #5A7A64; line-height: 1.6; margin: 0; }
+    .login-form-header h1 { font-family: 'Inter', system-ui, sans-serif; font-size: 1.7rem; font-weight: 400; color: var(--palette-ink); margin-bottom: 6px; letter-spacing: -0.02em; }
+    .login-form-header p { font-size: 0.92rem; color: var(--sage-700); line-height: 1.6; margin: 0; }
 
     /* Form field spacing to match login/register pages */
     .login-form-wrap form > div { margin-bottom: 18px; }

@@ -79,7 +79,7 @@ a.it-card:hover,
 .feed-card:hover,
 .farmer-org-card:hover {
     translate: 0 -3px;
-    box-shadow: 0 12px 26px rgba(13, 31, 24, .16);
+    box-shadow: 0 12px 26px rgb(var(--sage-950-rgb) / .16);
 }
 
 [data-reveal-line]::before,

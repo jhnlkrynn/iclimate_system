@@ -44,7 +44,7 @@
 @container fad (min-width: 560px) { .ffm-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ffm-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--field); border-radius: 6px; background: var(--card); cursor: pointer; font-weight: 600; color: var(--ink); }
 .ffm-choice input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--brand); }
-.ffm-choice:has(input:checked) { border-color: var(--brand); background: #f1f8f4; }
+.ffm-choice:has(input:checked) { border-color: var(--brand); background: var(--sage-50); }
 .ffm-size { display: grid; gap: 8px; padding: 12px 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 6px; }
 .ffm-size[hidden] { display: none; }
 .ffm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
@@ -55,7 +55,7 @@
 .ffm-map { min-height: 460px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
 @media (max-width: 767.98px) { .ffm-map { min-height: 380px; } }
 .ffm-map-stats { margin: 0 0 12px; }
-.ffm-point { border: 3px solid #fff; border-radius: 50%; background: #1f5a46; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+.ffm-point { border: 3px solid #fff; border-radius: 50%; background: var(--sage-700); box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
 
 /* ------------------------------------------------------------ the Farmer Home "Viewing" line */
 .fh-farm-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 4px 0 0; font-size: .9375rem; }
@@ -81,9 +81,9 @@
 }
 
 /* ------------------------------------------------------------ dark mode */
-html[data-theme="dark"] .ffm-card { background: var(--dk-surface, #16201b); border-color: var(--dk-border, #2a3b33); }
-html[data-theme="dark"] .ffm-card h3, html[data-theme="dark"] .ffm-card p, html[data-theme="dark"] .ffm-choice { color: var(--dk-ink, #e4ece7); }
-html[data-theme="dark"] .ffm-card-place, html[data-theme="dark"] .ffm-card-size small { color: var(--dk-muted, #9fb5aa) !important; }
-html[data-theme="dark"] .ffm-choice { background: var(--dk-surface, #16201b); border-color: var(--dk-border-strong, #34493f); }
-html[data-theme="dark"] .ffm-choice:has(input:checked) { background: var(--dk-surface-2, #1d2a23); border-color: #52b788; }
-html[data-theme="dark"] .ffm-size, html[data-theme="dark"] .ffm-empty { background: var(--dk-surface-2, #1d2a23); border-color: var(--dk-border, #2a3b33); }
+html[data-theme="dark"] .ffm-card { background: var(--dk-surface, var(--sage-950)); border-color: var(--dk-border, var(--sage-800)); }
+html[data-theme="dark"] .ffm-card h3, html[data-theme="dark"] .ffm-card p, html[data-theme="dark"] .ffm-choice { color: var(--dk-ink, var(--sage-200)); }
+html[data-theme="dark"] .ffm-card-place, html[data-theme="dark"] .ffm-card-size small { color: var(--dk-muted, var(--sage-300)) !important; }
+html[data-theme="dark"] .ffm-choice { background: var(--dk-surface, var(--sage-950)); border-color: var(--dk-border-strong, var(--sage-800)); }
+html[data-theme="dark"] .ffm-choice:has(input:checked) { background: var(--dk-surface-2, var(--sage-900)); border-color: var(--sage-500); }
+html[data-theme="dark"] .ffm-size, html[data-theme="dark"] .ffm-empty { background: var(--dk-surface-2, var(--sage-900)); border-color: var(--dk-border, var(--sage-800)); }

@@ -6,14 +6,14 @@
         <title>{{ $title }}</title>
         @vite(['resources/css/app.css'])
         <style>
-            body { color: #1b2b23; }
-            .print-header { border-bottom: 3px solid #2d6a4f; padding-bottom: 1rem; margin-bottom: 1rem; }
+            body { color: var(--palette-ink); }
+            .print-header { border-bottom: 3px solid var(--sage-700); padding-bottom: 1rem; margin-bottom: 1rem; }
             .print-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
-            .meta-box { border: 1px solid #d4edda; border-radius: 8px; background: #fff; padding: .75rem; }
-            .meta-label { color: #5a7a64; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+            .meta-box { border: 1px solid var(--sage-100); border-radius: 8px; background: #fff; padding: .75rem; }
+            .meta-label { color: var(--sage-700); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
             .meta-value { font-weight: 800; margin-top: .2rem; }
             table { font-size: .9rem; }
-            thead th { background: #f0f7f4 !important; color: #1b2b23; white-space: nowrap; }
+            thead th { background: var(--sage-50) !important; color: var(--palette-ink); white-space: nowrap; }
             td, th { vertical-align: top; }
             @media print {
                 .no-print { display: none !important; }

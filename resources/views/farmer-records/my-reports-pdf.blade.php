@@ -7,12 +7,12 @@
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #1f2937; }
         .office { font-size: 11px; font-weight: bold; margin: 0; }
-        h1 { font-size: 16px; color: #14532d; margin: 2px 0; }
-        h2 { font-size: 13px; color: #14532d; margin: 14px 0 4px; }
+        h1 { font-size: 16px; color: {{ config('palette.sage.700') }}; margin: 2px 0; }
+        h2 { font-size: 13px; color: {{ config('palette.sage.700') }}; margin: 14px 0 4px; }
         h3 { font-size: 11px; margin: 10px 0 3px; }
         .meta { color: #4b5563; margin: 0 0 8px; }
         .mr-table { width: 100%; border-collapse: collapse; }
-        .mr-table th { background: #14532d; color: #fff; text-align: left; padding: 3px 4px; font-size: 9px; }
+        .mr-table th { background: {{ config('palette.sage.700') }}; color: #fff; text-align: left; padding: 3px 4px; font-size: 9px; }
         .mr-table td { border-bottom: 1px solid #d1d5db; padding: 3px 4px; font-size: 9px; vertical-align: top; }
     </style>
 </head>

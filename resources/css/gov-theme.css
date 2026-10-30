@@ -4,7 +4,7 @@
  *
  * Every colour is a token in :root below, so the palette can be changed in one place. This file loads LAST (after the
  * layout's own <style>), and its selectors start with `html body` so they win over the older theme layers.
- * Contrast: body text #1F2937 on #FFFFFF is 14.7:1, labels #4B5563 on white are 7.6:1, white on #2E7D32 is 5.1:1 and
+ * Contrast: body text #1F2937 on #FFFFFF is 14.7:1, labels #4B5563 on white are 7.6:1, white on var(--sage-700) is 5.1:1 and
  * white on #0038A8 is 10.4:1 (WCAG AA needs 4.5:1).
  */
 
@@ -19,9 +19,9 @@
     --gov-shadow-lg: 0 10px 25px rgba(17, 24, 39, .10);
 
     /* Brand: agriculture green, government blue, gold accent */
-    --gov-primary: #2E7D32;
-    --gov-primary-dark: #1B5E20;
-    --gov-primary-soft: #E8F5E9;
+    --gov-primary: var(--sage-700);
+    --gov-primary-dark: var(--sage-800);
+    --gov-primary-soft: var(--sage-50);
     --gov-blue: #0038A8;
     --gov-blue-dark: #002B80;
     --gov-blue-soft: #E8EEFA;
@@ -153,7 +153,7 @@ html body .ic-account-coverage { display: block; margin-top: 2px; font-size: .78
 /* 4.4 B: coverage strip under the header (MAO) */
 html body .mao-coverage-bar {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
-    padding: 8px 20px; background: var(--gov-primary-soft); border-bottom: 1px solid #C8E6C9; color: var(--gov-primary-dark); font-size: .9rem;
+    padding: 8px 20px; background: var(--gov-primary-soft); border-bottom: 1px solid var(--sage-200); color: var(--gov-primary-dark); font-size: .9rem;
 }
 html body .mao-coverage-bar.is-municipal { background: var(--gov-blue-soft); border-color: #C7D4F0; color: var(--gov-blue-dark); }
 html body .mao-coverage-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
@@ -253,7 +253,7 @@ html body :is(.form-control, .form-select, .fad-input, input[type="text"], input
     min-height: var(--gov-tap); font-size: 1rem;
 }
 html body :is(.form-control, .form-select, .fad-input, select, textarea):focus {
-    border-color: var(--gov-primary) !important; box-shadow: 0 0 0 3px rgba(46, 125, 50, .18) !important; transform: none !important;
+    border-color: var(--gov-primary) !important; box-shadow: 0 0 0 3px rgb(var(--sage-700-rgb) / .18) !important; transform: none !important;
 }
 html body :is(.form-label, label, legend, .fad-label, .fad-m-field-label) { color: var(--gov-text-2); }
 html body ::placeholder { color: #8A94A6; opacity: 1; }
@@ -299,7 +299,7 @@ html body .alert-info { background: var(--gov-info-soft); border-color: #C7D4F0;
 html body .record-stamps { list-style: none; margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--gov-border); border-left: 4px solid var(--gov-blue); border-radius: 8px; background: var(--gov-surface-2); display: grid; gap: 4px; font-size: .92rem; }
 html body .record-stamp-label { color: var(--gov-label); font-weight: 600; }
 html body .record-stamp-position, html body .record-stamp-at { color: var(--gov-label); }
-html body .coverage-note { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: var(--gov-primary-soft); color: var(--gov-primary-dark); border: 1px solid #C8E6C9; }
+html body .coverage-note { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: var(--gov-primary-soft); color: var(--gov-primary-dark); border: 1px solid var(--sage-200); }
 html body .scope-pill { display: inline-block; margin-top: 8px !important; padding: 4px 12px; border-radius: 999px; background: var(--gov-blue-soft); color: var(--gov-blue-dark); font-size: .85rem; font-weight: 600; }
 html body .scope-pill.is-filtered { background: var(--gov-primary-soft); color: var(--gov-primary-dark); }
 

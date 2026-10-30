@@ -24,7 +24,7 @@ export async function initFarmerHomeCharts(root) {
     const Chart = window.Chart;
     if (!Chart) return;                                     // the page keeps its text; only the drawing is missing
 
-    const brand = css(root, '--brand', '#1f7a4d');
+    const brand = css(root, '--brand', '#485A42');                  // sage-700 if the page sets no --brand
     const warm = '#c2570c';
     const blue = '#1d6fb8';
     const narrow = window.matchMedia('(max-width: 575.98px)').matches;

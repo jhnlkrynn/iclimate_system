@@ -1,10 +1,10 @@
 <section>
     <header>
-        <h2 class="text-lg font-semibold text-[#1B2B23]">
+        <h2 class="text-lg font-semibold text-ink">
             {{ __('Update Password') }}
         </h2>
 
-        <p class="mt-1 text-sm text-[#44604E]">
+        <p class="mt-1 text-sm text-sage-700">
             {{ __('Ensure your account is using a long, random password to stay secure.') }}
         </p>
     </header>
@@ -40,7 +40,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-[#44604E]"
+                    class="text-sm text-sage-700"
                 >{{ __('Saved.') }}</p>
             @endif
         </div>

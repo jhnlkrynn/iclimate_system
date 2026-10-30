@@ -9,8 +9,8 @@
 
 /* Tokens are shared with the popup, which sits outside .fad (see .fad-modal). */
 .fad, .fad-modal {
-    --brand: #0f5132; --good: #198754; --bg: #f5f7f6; --card: #ffffff; --rule: #d3dbd6; --line: #e3e8e5; --field: #cbd5cf;
-    --ink: #1b1f1d; --muted: #5b6660; --head: #46514b; --head-bg: #eef2f0; --subtle: #f8faf9;
+    --brand: var(--sage-700); --good: #198754; --bg: #f5f7f6; --card: #ffffff; --rule: #d3dbd6; --line: #e3e8e5; --field: #cbd5cf;
+    --ink: #1b1f1d; --muted: #5b6660; --head: #46514b; --head-bg: var(--sage-50); --subtle: #f8faf9;
     --good-bg: #e6f4ec; --good-line: #b9dcc8;
     --watch: #b7791f; --watch-ink: #7a4f0a; --watch-bg: #fbf1dc; --watch-line: #ecd3a2;
     --danger: #c0392b; --danger-ink: #a12f23; --danger-bg: #fbe9e7; --danger-line: #f0c2bc;
@@ -57,7 +57,7 @@
     font-size: .9375rem; font-weight: 600; line-height: 1.2; text-decoration: none; white-space: nowrap; cursor: pointer;
     transition: background-color .15s, color .15s, border-color .15s;
 }
-.fad-btn:hover { background: #0b3d26; color: #fff; }
+.fad-btn:hover { background: var(--sage-800); color: #fff; }
 .fad-btn.is-quiet { background: #fff; color: var(--ink); border-color: var(--field); }
 .fad-btn.is-quiet:hover { background: var(--good-bg); border-color: var(--brand); color: var(--brand-ink, var(--brand)); }
 .fad-btn.is-compact { min-height: 40px; padding: 6px 16px; font-size: .875rem; }
@@ -92,7 +92,7 @@
     padding: 28px; border-radius: 6px; background: var(--brand); color: #fff;
 }
 .fad-hero-text { display: grid; gap: 8px; max-width: 760px; min-width: 0; }
-.fad-hero .fad-kicker { color: #b9e4cb; }
+.fad-hero .fad-kicker { color: var(--sage-200); }
 .fad-hero h1 { font-family: var(--serif) !important; font-size: 2rem; font-weight: 700; line-height: 1.2; color: #fff; letter-spacing: 0; }
 .fad-hero p { font-size: 1rem; color: rgba(255, 255, 255, .86); }
 .fad-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -100,7 +100,7 @@
 /* A page that only borrows the farmer header (e.g. Community): tokens without the page panel. */
 .fad.is-header-only { padding: 0; background: none; border-radius: 0; margin-bottom: var(--gap); }
 .fad.is-header-only .fad-hero { border: 1px solid rgba(255, 255, 255, .18); }   /* sits on the dark page, not on a light panel */
-.fad-hero-note { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; font-size: .875rem; font-weight: 600; color: #b9e4cb; }
+.fad-hero-note { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; font-size: .875rem; font-weight: 600; color: var(--sage-200); }
 .fad-hero-note .mtd-svg { width: 16px; height: 16px; }
 
 /* ------------------------------------------------------------ summary cards */
@@ -200,7 +200,7 @@
 /* Above the page, the top bar and the Climora button (z-index 2050), which is hidden while the popup is open. */
 .fad-modal {
     position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;
-    padding: 32px; background: rgba(16, 32, 24, .55); color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.5;
+    padding: 32px; background: rgb(var(--sage-950-rgb) / .55); color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.5;
 }
 .fad-modal[hidden] { display: none; }
 html.fad-modal-open, html.fad-modal-open body { overflow: hidden; }
@@ -208,7 +208,7 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad-modal-dialog {
     display: flex; flex-direction: column; width: min(820px, calc(100vw - 64px)); max-height: calc(100vh - 64px); max-height: calc(100dvh - 64px);
     background: var(--card); border: 1px solid var(--rule); border-top: 4px solid var(--brand); border-radius: 8px; overflow: hidden;
-    box-shadow: 0 24px 64px rgba(10, 30, 20, .28);
+    box-shadow: 0 24px 64px rgb(var(--sage-950-rgb) / .28);
 }
 .fad-modal-dialog:focus { outline: none; }
 .fad-m-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
@@ -285,7 +285,7 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad-m-saved { font-size: .9375rem; color: var(--muted); }
 .fad-m-saved:empty { display: none; }
 .fad-m-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 16px 24px; background: var(--card); border-top: 1px solid var(--line); }
-.fad-skel { height: 18px; border-radius: 4px; background: linear-gradient(100deg, #eef2ef 30%, #f8faf9 50%, #eef2ef 70%) 0 0 / 200% 100%; animation: fad-shimmer 1.2s linear infinite; }
+.fad-skel { height: 18px; border-radius: 4px; background: linear-gradient(100deg, var(--sage-50) 30%, #f8faf9 50%, var(--sage-50) 70%) 0 0 / 200% 100%; animation: fad-shimmer 1.2s linear infinite; }
 .fad-skel.is-wide { height: 28px; width: 55%; }
 .fad-skel.is-short { width: 40%; }
 .fad-skel.is-block { height: 140px; }
@@ -334,11 +334,11 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad.adv .adv-filter { display: flex; align-items: center; gap: 8px; }
 .fad.adv .adv-filter .fad-input { min-width: 200px; }
 .fad.adv .adv-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.fad.adv .adv-item { display: grid; gap: 8px; padding: 16px 20px; background: var(--card); border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; }
+.fad.adv .adv-item { display: grid; gap: 8px; padding: 16px 20px; background: var(--card); border: 1px solid var(--rule); border-left: 8px solid var(--sage-700); border-radius: 6px; }
 .fad.adv .adv-item.is-moderate { border-left-color: #f2b134; }
 .fad.adv .adv-item.is-high { border-left-color: #c62828; }
 .fad.adv .adv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
-.fad.adv .adv-sev { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .8125rem; font-weight: 800; background: #dff1e3; color: #14532d; }
+.fad.adv .adv-sev { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .8125rem; font-weight: 800; background: var(--sage-100); color: var(--sage-700); }
 .fad.adv .adv-sev.is-moderate { background: #fdefc8; color: #6b4a00; }
 .fad.adv .adv-sev.is-high { background: #fbdcdc; color: #8a1616; }
 .fad.adv .adv-area { font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
@@ -350,7 +350,7 @@ html.fad-modal-open #icAiWidget { visibility: hidden; }
 .fad.adv .adv-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-top: 4px; }
 .fad.adv .adv-source { font-size: .875rem; color: var(--muted); }
 .fad.adv .adv-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
-html[data-theme="dark"] .fad.adv .adv-sev { background: #1e4a2c; color: #c9f1d5; }
+html[data-theme="dark"] .fad.adv .adv-sev { background: var(--sage-800); color: var(--sage-200); }
 html[data-theme="dark"] .fad.adv .adv-sev.is-moderate { background: #57430c; color: #ffe6a3; }
 html[data-theme="dark"] .fad.adv .adv-sev.is-high { background: #5c1c1c; color: #ffd0d0; }
 .fad.adv .adv-filter .fad-label { margin: 0; white-space: nowrap; }
@@ -358,7 +358,7 @@ html[data-theme="dark"] .fad.adv .adv-sev.is-high { background: #5c1c1c; color: 
 
 /* Typhoon Safety Check-Ins on the Advisories page (staff). */
 .fad.adv .adv-checkin-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; }
-.fad.adv .adv-checkin-counts > div { padding: 12px 16px; border: 1px solid var(--rule); border-left: 8px solid #2e7d32; border-radius: 6px; background: var(--card); }
+.fad.adv .adv-checkin-counts > div { padding: 12px 16px; border: 1px solid var(--rule); border-left: 8px solid var(--sage-700); border-radius: 6px; background: var(--card); }
 .fad.adv .adv-checkin-counts > div.is-moderate { border-left-color: #f2b134; }
 .fad.adv .adv-checkin-counts > div.is-high { border-left-color: #c62828; }
 .fad.adv .adv-checkin-counts dt { font-size: .875rem; font-weight: 600; color: var(--muted); }

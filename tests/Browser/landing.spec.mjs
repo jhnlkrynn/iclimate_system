@@ -4,6 +4,9 @@
 import { test, expect } from '@playwright/test';
 
 const NAV_HEIGHT = 72;
+// The sage palette (resources/palette.json) as the browser reports it.
+const SAGE = { 50: 'rgb(243, 246, 242)', 200: 'rgb(204, 216, 200)', 500: 'rgb(114, 140, 105)', 700: 'rgb(72, 90, 66)', 800: 'rgb(54, 68, 50)' };
+const INK = 'rgb(31, 36, 29)';
 const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 const ACCOUNTS = {
     farmer: { email: 'farmer@browser.test', dashboard: '/farmer/dashboard' },
@@ -126,7 +129,7 @@ test('N7 the active nav link follows the section being read', async ({ page }, t
             const after = getComputedStyle(link, '::after');
             return { underline: after.backgroundColor, height: after.height, background: getComputedStyle(link).backgroundColor };
         });
-        expect(style).toEqual({ underline: 'rgb(23, 67, 42)', height: '2px', background: 'rgba(0, 0, 0, 0)' });
+        expect(style).toEqual({ underline: SAGE[700], height: '2px', background: 'rgba(0, 0, 0, 0)' });
     }
 });
 
@@ -232,7 +235,7 @@ test('N15 the header is 72px, aligned with the hero, transparent over the hero a
     expect(overHero.left).toBe(0);
     expect(overHero.right).toBe(0);
     await expect(nav).toHaveAttribute('data-nav-state', 'hero');
-    expect(overHero.background).toBe('rgba(17, 26, 19, 0.6)'); // a flat dark scrim, no gradient
+    expect(overHero.background).toBe('rgba(31, 36, 29, 0.65)'); // a flat dark scrim (ink at 65%), no gradient
     expect(overHero.border).toBe('rgba(0, 0, 0, 0)');
     expect(overHero.title).toBe('rgb(255, 255, 255)');
     await expect(nav.locator('.lp-logo-on-dark')).toBeVisible();
@@ -247,8 +250,8 @@ test('N15 the header is 72px, aligned with the hero, transparent over the hero a
     const solid = await read();
     expect(solid.height).toBe(NAV_HEIGHT);
     expect(solid.background).toBe('rgb(255, 255, 255)');
-    expect(solid.border).toBe('rgb(228, 232, 227)');
-    expect(solid.title).toBe('rgb(17, 26, 19)');
+    expect(solid.border).toBe(SAGE[200]);
+    expect(solid.title).toBe(INK);
     await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
     await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();
 
@@ -272,7 +275,7 @@ test('N16 Log in: white outline over the hero, solid brand on white; it opens th
 
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 72, behavior: 'instant' }));
     await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
-    await expect.poll(colors).toEqual(['rgb(23, 67, 42)', 'rgb(255, 255, 255)', 'rgb(23, 67, 42)']);
+    await expect.poll(colors).toEqual([SAGE[700], 'rgb(255, 255, 255)', SAGE[700]]);
 
     await login.click();
     await expect(page.locator('[data-auth-panel="login"]')).toBeVisible();
@@ -291,7 +294,7 @@ test('N17 nav focus rings are visible in both header states', async ({ page }, t
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('about').offsetTop - 72, behavior: 'instant' }));
     await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
     const solid = await ring('header nav[aria-label="Main"] [data-nav-link="features"]');
-    expect(solid).toContain('rgb(23, 67, 42)');
+    expect(solid).toContain(SAGE[500]); // focus rings are sage-500
 });
 
 // ─── HERO ────────────────────────────────────────────────────────────────
@@ -855,19 +858,21 @@ test('S2 backgrounds alternate white, surface and two dark brand bands, and the 
         .map((el) => `${el.id || 'footer'} ${getComputedStyle(el).backgroundColor}`));
     expect(colors).toEqual([
         'about rgba(0, 0, 0, 0)', // the white page
-        'features rgb(246, 248, 245)',
-        'numbers rgb(23, 67, 42)',
+        `features ${SAGE[50]}`,
+        `numbers ${SAGE[700]}`,
         'how rgba(0, 0, 0, 0)',
-        'roles rgb(246, 248, 245)',
+        `roles ${SAGE[50]}`,
         'faq rgba(0, 0, 0, 0)',
-        'contact rgb(246, 248, 245)',
-        'get-started rgb(23, 67, 42)',
-        'footer rgb(17, 26, 19)',
+        `contact ${SAGE[50]}`,
+        `get-started ${SAGE[700]}`,
+        `footer ${INK}`,
     ]);
-    // The dark bands: white heading, the rice field photo very faint behind.
+    // The dark bands: white heading, the rice field photo faint behind a sage layer.
     for (const id of ['numbers', 'get-started']) {
         expect(await page.locator(`#${id} h2`).evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
-        expect(await page.locator(`#${id} .lp-band-photo`).evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThanOrEqual(0.15);
+        // The photo under a sage-800 layer at 85%.
+        expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgba(54, 68, 50, 0.85)');
+        await expect(page.locator(`#${id} .lp-band-photo`)).toHaveCount(1);
     }
 });
 

@@ -52,16 +52,16 @@
     <form method="POST" action="{{ route('farmer.association-prompt.later') }}" id="fhAssocLater">@csrf</form>
 </section>
 <style>
-    .fh-assoc { display: grid; gap: 10px; border: 2px solid var(--brand, #17432A); }
-    .fh-assoc-title { margin: 0; font-size: 1.25rem; line-height: 1.3; font-weight: 700; color: var(--ink, #1f2b24); }
+    .fh-assoc { display: grid; gap: 10px; border: 2px solid var(--brand, var(--sage-700)); }
+    .fh-assoc-title { margin: 0; font-size: 1.25rem; line-height: 1.3; font-weight: 700; color: var(--ink, var(--palette-ink)); }
     .fh-assoc-form { display: grid; gap: 12px; }
     .fh-assoc-choices { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
-    .fh-assoc-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid #d6e4da; border-radius: 8px; background: #fff; font-weight: 600; cursor: pointer; }
-    .fh-assoc-choice:has(input:checked) { border-color: var(--brand, #17432A); background: #f1f8f4; }
-    .fh-assoc-choice input { width: 18px; height: 18px; accent-color: var(--brand, #17432A); }
+    .fh-assoc-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--sage-100); border-radius: 8px; background: #fff; font-weight: 600; cursor: pointer; }
+    .fh-assoc-choice:has(input:checked) { border-color: var(--brand, var(--sage-700)); background: var(--sage-50); }
+    .fh-assoc-choice input { width: 18px; height: 18px; accent-color: var(--brand, var(--sage-700)); }
     .fh-assoc-field { display: grid; gap: 6px; }
     .fh-assoc-field label { font-weight: 600; }
-    .fh-assoc-field :is(select, input) { min-height: 46px; padding: 8px 12px; border: 1px solid #c9d8ce; border-radius: 8px; font: inherit; width: 100%; }
+    .fh-assoc-field :is(select, input) { min-height: 46px; padding: 8px 12px; border: 1px solid var(--sage-200); border-radius: 8px; font: inherit; width: 100%; }
     .fh-assoc-hint { font-size: .9rem; color: var(--muted, #55675c); }
     .fh-assoc-error { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8a1f17; font-weight: 600; }
     .fh-assoc-actions { display: flex; flex-wrap: wrap; gap: 8px; }

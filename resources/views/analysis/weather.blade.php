@@ -58,7 +58,7 @@
             <div class="fad-card"><p class="mb-0">{{ $L('no_data') }}</p></div>
         @else
             <div class="row g-3">
-                @foreach (['rainfall' => ['waRainfallChart', 'bar', '#2b6cb0'], 'temperature' => ['waTemperatureChart', 'line', '#c05621'], 'humidity' => ['waHumidityChart', 'line', '#2f855a'], 'wind_speed' => ['waWindChart', 'line', '#6b46c1']] as $series => [$canvasId, $type, $color])
+                @foreach (['rainfall' => ['waRainfallChart', 'bar', '#2b6cb0'], 'temperature' => ['waTemperatureChart', 'line', '#c05621'], 'humidity' => ['waHumidityChart', 'line', 'var(--sage-700)'], 'wind_speed' => ['waWindChart', 'line', '#6b46c1']] as $series => [$canvasId, $type, $color])
                     <div class="col-lg-6">
                         <section class="fad-card h-100" aria-labelledby="{{ $canvasId }}Title">
                             <h2 class="h6 fw-bold" id="{{ $canvasId }}Title">{{ $L($series === 'wind_speed' ? 'wind_chart' : $series.'_chart') }}</h2>
@@ -150,7 +150,7 @@
                 const points = JSON.parse(pairs.textContent || '[]');
                 new window.Chart(scatter, {
                     type: 'line',
-                    data: { datasets: [{ label: 'Month', data: points, showLine: false, pointRadius: 4, borderColor: '#14532d', backgroundColor: '#14532d99' }] },
+                    data: { datasets: [{ label: 'Month', data: points, showLine: false, pointRadius: 4, borderColor: '{{ config('palette.sage.700') }}', backgroundColor: 'rgba({{ config('palette.rgb.700') }}, .6)' }] },
                     options: { responsive: true, maintainAspectRatio: false, parsing: { xAxisKey: 'x', yAxisKey: 'y' }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.label}: ${ctx.raw.x} mm, ${ctx.raw.y} t/ha` } } }, scales: { x: { type: 'linear', title: { display: true, text: 'Rainfall (mm)' } }, y: { title: { display: true, text: 'Yield (t/ha)' } } } },
                 });
             }

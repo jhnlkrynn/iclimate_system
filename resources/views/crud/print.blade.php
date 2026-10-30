@@ -10,8 +10,8 @@
             * { box-sizing: border-box; }
             body { margin: 0; padding: 24px; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; color: #000; background: #fff; }
             .print-actions { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 16px; }
-            .print-actions button, .print-actions a { padding: 10px 18px; border: 1px solid #14532d; border-radius: 6px; background: #fff; color: #14532d; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
-            .print-actions button { background: #14532d; color: #fff; }
+            .print-actions button, .print-actions a { padding: 10px 18px; border: 1px solid {{ config('palette.sage.700') }}; border-radius: 6px; background: #fff; color: {{ config('palette.sage.700') }}; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+            .print-actions button { background: {{ config('palette.sage.700') }}; color: #fff; }
             .print-head { padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #000; }
             .print-head .office { font-size: 16pt; font-weight: 700; }
             .print-head h1 { margin: 4px 0 0; font-size: 14pt; }
@@ -20,13 +20,13 @@
             .print-note { margin: 0 0 12px; padding: 8px 10px; border: 1px solid #000; font-size: 11pt; }
             table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
             th, td { padding: 5px 7px; border: 1px solid #555; text-align: left; vertical-align: top; }
-            thead th { background: #e9efe9; }
+            thead th { background: {{ config('palette.sage.100') }}; }
             thead { display: table-header-group; }                 /* the column names repeat on every printed page */
             tr { page-break-inside: avoid; }
             @media print {
                 body { padding: 0; }
                 .no-print { display: none !important; }
-                thead th { background: #e9efe9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                thead th { background: {{ config('palette.sage.100') }} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 @page { margin: 14mm; }
             }
         </style>

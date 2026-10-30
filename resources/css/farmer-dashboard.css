@@ -10,7 +10,7 @@
  * The IT Personnel dashboard (it-dashboard.css) is built on this same system, so it shares these page-level rules. */
 body.is-farmer-dashboard,
 body.is-it-dashboard {
-    --ic-sidebar-bg: #0f5132;
+    --ic-sidebar-bg: var(--sage-700);
     --mfd-sans: "Inter", Arial, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mfd-serif: 'Inter', system-ui, sans-serif;
 }
@@ -28,7 +28,7 @@ body.is-it-dashboard .mfd h1,
 body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-variant-numeric: lining-nums; }
 
 .mfd {
-    --brand: #0f5132; --accent: #198754; --bg: #f5f7f6; --card: #ffffff; --line: #e3e8e5; --rule: #d3dbd6;
+    --brand: var(--sage-700); --accent: var(--sage-700); --bg: #f5f7f6; --card: #ffffff; --line: #e3e8e5; --rule: #d3dbd6;
     --ink: #1b1f1d; --muted: #5b6660; --subtle: #f8faf9;
     --good: #198754; --good-ink: #0f5132; --good-bg: #e6f4ec;
     --watch: #b7791f; --watch-ink: #7a4f0a; --watch-bg: #fbf1dc;
@@ -70,7 +70,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     border-radius: 4px; border: 1px solid var(--brand); background: var(--brand); color: #fff !important;
     font-size: .9375rem; font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer; white-space: nowrap;
 }
-.mfd-btn:hover { background: #0b3d26; }
+.mfd-btn:hover { background: var(--sage-800); }
 .mfd-btn.is-quiet { background: #fff; color: var(--brand-ink, var(--brand)) !important; }
 .mfd-btn.is-quiet:hover { background: var(--good-bg); }
 .mfd-btn[aria-disabled="true"] { opacity: .65; cursor: progress; }
@@ -100,9 +100,9 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-foot { margin-top: 16px; font-size: .875rem; font-weight: 400; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; }
 .mfd-foot .mtd-svg { width: 16px; height: 16px; margin-top: 2px; }
 /* Farmer dashboard tabs and full-page map view. */
-.mfd-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; background: #e8efeb; border-radius: 12px; }
+.mfd-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; background: var(--sage-100); border-radius: 12px; }
 .mfd-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 18px; border-radius: 9px; color: var(--brand-ink, var(--brand)); font-weight: 700; text-decoration: none; }
-.mfd-tab:hover, .mfd-tab.is-active { background: #fff; box-shadow: 0 1px 3px rgba(15, 40, 28, .12); }
+.mfd-tab:hover, .mfd-tab.is-active { background: #fff; box-shadow: 0 1px 3px rgb(var(--sage-950-rgb) / .12); }
 .mfd-map-page { padding: var(--gap); }
 .mfd-map-page > .mfd-card-head { align-items: flex-start; }
 .mfd-map-section-label { margin: 0; color: var(--brand-ink, var(--brand)); font-size: .875rem !important; font-weight: 800 !important; letter-spacing: 0 !important; text-transform: none; }
@@ -134,11 +134,11 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-meta-separator { color: rgba(255, 255, 255, .5); }
 .mfd .mfd-header h1 { color: #fff; }
 .mfd-kicker { display: block; margin-bottom: 8px; color: var(--brand-ink, var(--brand)); }
-.mfd-header .mfd-kicker { color: #b9e4cb; }
+.mfd-header .mfd-kicker { color: var(--sage-200); }
 .mfd-header .mfd-kicker { grid-column: 1; grid-row: 1; align-self: center; }
 .mfd-header .mfd-place, .mfd-header .mfd-date { margin-top: 0 !important; }
 .mfd-place { display: flex; align-items: center; gap: 8px; margin-top: 12px !important; font-size: 1rem; font-weight: 600; color: #fff; }
-.mfd-place .mtd-svg { width: 18px; height: 18px; color: #b9e4cb; }
+.mfd-place .mtd-svg { width: 18px; height: 18px; color: var(--sage-200); }
 .mfd-date { margin-top: 4px !important; font-size: .9375rem; font-weight: 400; color: rgba(255, 255, 255, .86); }
 .mfd-fresh { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .mfd-age { font-size: .875rem; font-weight: 400; color: rgba(255, 255, 255, .86); }
@@ -163,7 +163,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     background: var(--card); border: 1px solid var(--rule); border-top: 3px solid var(--brand); border-radius: var(--radius);
     color: var(--ink); text-decoration: none; transition: border-color .15s, box-shadow .15s;
 }
-.mfd-kpi:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(15, 40, 28, .08); }
+.mfd-kpi:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgb(var(--sage-950-rgb) / .08); }
 .mfd-kpi-value { display: flex; align-items: baseline; gap: 6px; font-size: 1.75rem; font-weight: 700; line-height: 1.2; color: var(--ink); }
 .mfd-kpi-value small { font-size: .9375rem; font-weight: 600; }
 .mfd-kpi.is-missing { border-top-color: var(--rule); }
@@ -206,8 +206,8 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-bar-row { margin-bottom: 16px; }
 .mfd-bar-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: .9375rem; font-weight: 600; }
 .mfd-bar-label span { font-weight: 400; color: var(--muted); }
-.mfd-bar { height: 20px; border-radius: 2px; background: #eef2ef; overflow: hidden; }
-.mfd-bar > i { display: block; height: 100%; background: #7fa892; }
+.mfd-bar { height: 20px; border-radius: 2px; background: var(--sage-50); overflow: hidden; }
+.mfd-bar > i { display: block; height: 100%; background: var(--sage-500); }
 .mfd-bar.is-mine > i { background: var(--brand); }
 .mfd-bar.is-own > i { background: var(--info); }
 
@@ -218,10 +218,10 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 /* ---------------------------------------------------------------- loading: a skeleton in the shape of the card */
 @keyframes mfd-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .mfd-slot.is-loading > * { opacity: .55; transition: opacity .15s; }
-.mfd-slot.is-loading .mfd-card { background: linear-gradient(100deg, #fff 30%, #f3f6f4 50%, #fff 70%) 0 0 / 200% 100%; animation: mfd-shimmer 1.2s linear infinite; }
+.mfd-slot.is-loading .mfd-card { background: linear-gradient(100deg, #fff 30%, var(--sage-50) 50%, #fff 70%) 0 0 / 200% 100%; animation: mfd-shimmer 1.2s linear infinite; }
 .mfd-chart.is-loading::before {
     content: ""; position: absolute; inset: 0; border-radius: 4px;
-    background: linear-gradient(100deg, #eef2ef 30%, #f8faf9 50%, #eef2ef 70%) 0 0 / 200% 100%; animation: mfd-shimmer 1.2s linear infinite;
+    background: linear-gradient(100deg, var(--sage-50) 30%, #f8faf9 50%, var(--sage-50) 70%) 0 0 / 200% 100%; animation: mfd-shimmer 1.2s linear infinite;
 }
 
 /* ---------------------------------------------------------------- wide screens (e.g. 1728 × 842): use the full width, shorten the page
@@ -279,7 +279,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     font-size: .8125rem; line-height: 1.35; text-align: right; color: rgba(255, 255, 255, .86);
 }
 .mfd[data-farmer-dashboard] .mfd-lang { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
-.mfd[data-farmer-dashboard] .mfd-lang label { font-size: .875rem; font-weight: 600; color: #b9e4cb; }
+.mfd[data-farmer-dashboard] .mfd-lang label { font-size: .875rem; font-weight: 600; color: var(--sage-200); }
 .mfd[data-farmer-dashboard] .mfd-lang select {
     min-height: 38px; padding: 5px 30px 5px 10px; border: 1px solid #fff; border-radius: 4px; background-color: #fff; color: var(--brand);
     font-size: .875rem; font-weight: 600; cursor: pointer;
@@ -466,7 +466,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
     border: 1px solid var(--rule); border-radius: 6px; background: var(--card); color: var(--ink); text-align: left; text-decoration: none; font: inherit; cursor: pointer;
     transition: border-color .15s, background-color .15s, box-shadow .15s;
 }
-.mfd[data-farmer-dashboard] .mfd-quick-card:hover { border-color: var(--brand); background: var(--subtle); box-shadow: 0 2px 8px rgba(15, 81, 50, .10); }
+.mfd[data-farmer-dashboard] .mfd-quick-card:hover { border-color: var(--brand); background: var(--subtle); box-shadow: 0 2px 8px rgb(var(--sage-800-rgb) / .10); }
 .mfd[data-farmer-dashboard] .mfd-quick-card:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
 .mfd[data-farmer-dashboard] .mfd-quick-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 6px; background: var(--good-bg); color: var(--brand-ink, var(--brand)); }
 .mfd[data-farmer-dashboard] .mfd-quick-icon .mtd-svg { width: 20px; height: 20px; }
@@ -576,7 +576,7 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd-pm-map { height: min(420px, 48vh); min-height: 260px; border: 1px solid var(--field); border-radius: 6px; overflow: hidden; background: var(--subtle); }
 .mfd-pm-map[aria-invalid="true"] { border-color: var(--danger); }
 .mfd-pm-map.is-unavailable { display: grid; place-items: center; padding: 24px; text-align: center; font-size: .9375rem; color: var(--muted); }
-.mfd-pm-pin { border: 3px solid #fff; border-radius: 50%; background: #0f5132; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
+.mfd-pm-pin { border: 3px solid #fff; border-radius: 50%; background: var(--sage-700); box-shadow: 0 1px 4px rgba(0, 0, 0, .5); cursor: grab; }
 .mfd-pm-pin.is-out { background: #c0392b; }
 .mfd-pm-popup { font-size: .875rem; line-height: 1.45; color: #1b1f1d; }
 /* "Selected Farm Location": green once the farm is inside Lian, red while any of it is outside */
@@ -783,11 +783,11 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
    card with a round "open" chip, the week's chance of rain as pill bars and the crop progress as a half-donut. */
 .mfd[data-farmer-dashboard] .fh-card, .mfd[data-farmer-dashboard] .fh-kpi { border-radius: 18px; }
 .mfd[data-farmer-dashboard] .fh-kpi { position: relative; transition: transform .15s ease, box-shadow .15s ease; }
-.mfd[data-farmer-dashboard] .fh-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 81, 50, .12); }
+.mfd[data-farmer-dashboard] .fh-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(var(--sage-800-rgb) / .12); }
 .mfd[data-farmer-dashboard] .fh-kpi-label { align-items: flex-start; padding-right: 40px; }
 .mfd[data-farmer-dashboard] .fh-kpi:first-child { background: #111111; border-color: transparent; color: #fff !important; }   /* no green tint: the lead tile is black */
 .mfd[data-farmer-dashboard] .fh-kpi:first-child :is(.fh-kpi-label, .fh-kpi-value, .fh-kpi-note, .fh-kpi-value small, .fh-kpi-label svg) { color: #fff; }
-.mfd[data-farmer-dashboard] .fh-kpi:first-child .ic-go { background: #fff; border-color: #fff; color: #14532d; }
+.mfd[data-farmer-dashboard] .fh-kpi:first-child .ic-go { background: #fff; border-color: #fff; color: var(--sage-700); }
 .mfd[data-farmer-dashboard] .fh-kpi:first-child .fh-kpi-bar { background: rgba(255, 255, 255, .3); }
 .mfd[data-farmer-dashboard] .fh-kpi:first-child .fh-kpi-bar > span { background: #fff; }
 
@@ -796,15 +796,15 @@ body.is-it-dashboard .mfd h2 { font-family: var(--mfd-serif) !important; font-va
 .mfd[data-farmer-dashboard] .fh-pill-value { font-size: .85rem; font-weight: 700; color: var(--ink); }
 .mfd[data-farmer-dashboard] .fh-pill-track { position: relative; display: flex; align-items: flex-end; width: 100%; max-width: 46px; height: 150px; border-radius: 999px; overflow: hidden;
     background: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 9px); }
-.mfd[data-farmer-dashboard] .fh-pill-fill { display: block; width: 100%; border-radius: 999px; background: #2f9e6b; }
-.mfd[data-farmer-dashboard] .fh-pill.is-high .fh-pill-fill { background: #14532d; }
+.mfd[data-farmer-dashboard] .fh-pill-fill { display: block; width: 100%; border-radius: 999px; background: var(--sage-500); }
+.mfd[data-farmer-dashboard] .fh-pill.is-high .fh-pill-fill { background: var(--sage-700); }
 .mfd[data-farmer-dashboard] .fh-pill.is-low .fh-pill-fill { background: #a7d9bd; }
 .mfd[data-farmer-dashboard] .fh-pill-label { font-size: .85rem; font-weight: 600; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
 .mfd[data-farmer-dashboard] .fh-pill.is-today .fh-pill-label { color: var(--ink); font-weight: 800; }
 .mfd[data-farmer-dashboard] .fh-pill-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 6px 0 0; font-size: .85rem; color: var(--muted); }
 .mfd[data-farmer-dashboard] .fh-pill-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.mfd[data-farmer-dashboard] .fh-pill-legend i { width: 12px; height: 12px; border-radius: 50%; background: #2f9e6b; }
-.mfd[data-farmer-dashboard] .fh-pill-legend i.is-high { background: #14532d; }
+.mfd[data-farmer-dashboard] .fh-pill-legend i { width: 12px; height: 12px; border-radius: 50%; background: var(--sage-500); }
+.mfd[data-farmer-dashboard] .fh-pill-legend i.is-high { background: var(--sage-700); }
 .mfd[data-farmer-dashboard] .fh-pill-legend i.is-low { background: #a7d9bd; }
 .mfd[data-farmer-dashboard] .fh-gauge-note { text-align: center; font-weight: 600; }
 @media (max-width: 479.98px) { .mfd[data-farmer-dashboard] .fh-pills { gap: 6px; } .mfd[data-farmer-dashboard] .fh-pill-track { height: 120px; } .mfd[data-farmer-dashboard] .fh-pill-label, .mfd[data-farmer-dashboard] .fh-pill-value { font-size: .75rem; } }

@@ -7,7 +7,7 @@
         .mr-section h2 { font-size: 1.15rem; font-weight: 800; }
         .mr-section h3 { font-size: .95rem; font-weight: 700; margin-top: .9rem; }
         .mr-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-        .mr-table th, .mr-table td { padding: .35rem .5rem; border-bottom: 1px solid var(--line, #dfe7e2); text-align: left; vertical-align: top; }
+        .mr-table th, .mr-table td { padding: .35rem .5rem; border-bottom: 1px solid var(--line, var(--sage-100)); text-align: left; vertical-align: top; }
         .mr-print-head { display: none; }
         @media print { .mr-no-print, .sidebar, header.app-topbar { display: none !important; } .mr-print-head { display: block; } }
     </style>

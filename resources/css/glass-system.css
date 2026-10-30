@@ -30,20 +30,20 @@
     --gl-surface-strong: rgba(255, 255, 255, .93);
     --gl-surface-soft: rgba(255, 255, 255, .72);
     --gl-border: rgba(255, 255, 255, .62);
-    --gl-edge: rgba(31, 90, 70, .12);
+    --gl-edge: rgb(var(--sage-700-rgb) / .12);
     --gl-highlight: inset 0 1px 0 rgba(255, 255, 255, .7);
 
     /* dark glass (navigation) */
-    --gl-dark: rgba(11, 38, 29, .66);
+    --gl-dark: rgb(var(--sage-950-rgb) / .66);
     --gl-dark-border: rgba(255, 255, 255, .12);
 
-    --gl-shadow: 0 8px 24px rgba(8, 28, 20, .13), 0 1px 3px rgba(8, 28, 20, .08);
-    --gl-shadow-strong: 0 14px 34px rgba(8, 28, 20, .2), 0 2px 6px rgba(8, 28, 20, .1);
+    --gl-shadow: 0 8px 24px rgb(var(--sage-950-rgb) / .13), 0 1px 3px rgb(var(--sage-950-rgb) / .08);
+    --gl-shadow-strong: 0 14px 34px rgb(var(--sage-950-rgb) / .2), 0 2px 6px rgb(var(--sage-950-rgb) / .1);
     --gl-blur: blur(10px) saturate(135%);
     --gl-blur-nav: blur(14px) saturate(150%);
 
-    --gl-hover: rgba(127, 214, 181, .14);
-    --gl-accent: #2f7d5b;
+    --gl-hover: rgb(var(--sage-300-rgb) / .14);
+    --gl-accent: var(--sage-700);
     --gl-t: 160ms cubic-bezier(.2, .7, .3, 1);
 
     /* Tame every spring/bounce easing the older layers reference. */
@@ -99,7 +99,7 @@ html body .dark-workspace :is(.module-tile, .climate-chip) {
     background: var(--gl-surface-soft);
     border: 1px solid var(--gl-border);
     border-radius: var(--gl-radius);
-    box-shadow: 0 2px 8px rgba(8, 28, 20, .08), var(--gl-highlight);
+    box-shadow: 0 2px 8px rgb(var(--sage-950-rgb) / .08), var(--gl-highlight);
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
@@ -133,7 +133,7 @@ html body .climate-chip:hover { transform: none; }
 html body :is(a.card, button.card, a.it-card, button.it-card, .mao-card[data-drawer-open], a.kpi-tile, .module-tile[href], button.field-card):hover {
     transform: translateY(-1px);
     box-shadow: var(--gl-shadow-strong), var(--gl-highlight);
-    border-color: rgba(47, 125, 91, .32);
+    border-color: rgb(var(--sage-800-rgb) / .32);
 }
 
 html body .table-responsive { background: transparent; }
@@ -157,18 +157,18 @@ html body :is(.btn-outline-primary, .btn-outline-secondary, .btn-light):hover {
 html body :is(.form-control, .form-select, .input-group-text) {
     border-radius: var(--gl-radius-sm);
     background-color: rgba(255, 255, 255, .92);
-    border: 1px solid rgba(31, 90, 70, .22);
-    color: #16261f;
-    box-shadow: inset 0 1px 2px rgba(8, 28, 20, .05);
+    border: 1px solid rgb(var(--sage-700-rgb) / .22);
+    color: var(--palette-ink);
+    box-shadow: inset 0 1px 2px rgb(var(--sage-950-rgb) / .05);
     transition: border-color var(--gl-t), box-shadow var(--gl-t), background-color var(--gl-t) !important;
 }
 
-html body :is(.form-control, .form-select):hover { border-color: rgba(47, 125, 91, .5); }
+html body :is(.form-control, .form-select):hover { border-color: rgb(var(--sage-800-rgb) / .5); }
 
 html body :is(.form-control, .form-select):focus {
     border-color: var(--gl-accent);
     background-color: #fff;
-    box-shadow: 0 0 0 3px rgba(63, 166, 107, .22);
+    box-shadow: 0 0 0 3px rgb(var(--sage-500-rgb) / .22);
 }
 
 html body .form-control::placeholder { color: #5f6f66; opacity: 1; }
@@ -197,15 +197,15 @@ html body .card .table,
 html body .table-responsive .table { --bs-table-bg: transparent; }
 
 html body .table thead th {
-    background: rgba(31, 90, 70, .07);
-    color: #3d4f45;
+    background: rgb(var(--sage-700-rgb) / .07);
+    color: var(--sage-700);
     border-bottom: 1px solid var(--gl-edge);
 }
 
 html body .table > :not(caption) > * > * { border-bottom-color: var(--gl-edge); }
 
 html body .table-hover tbody tr:hover {
-    background: rgba(127, 214, 181, .16) !important;
+    background: rgb(var(--sage-200-rgb) / .16) !important;
     box-shadow: none;
 }
 
@@ -228,7 +228,7 @@ html body .alert {
     border-radius: var(--gl-radius);
     border-width: 1px;
     border-left-width: 4px;
-    box-shadow: 0 2px 8px rgba(8, 28, 20, .08);
+    box-shadow: 0 2px 8px rgb(var(--sage-950-rgb) / .08);
     animation-duration: 180ms;
 }
 
@@ -283,7 +283,7 @@ html body .dash-overview[data-dashboard-overview="farmer"] .kpi-tile:is([data-kp
 html body .dash-overview[data-dashboard-overview="mao"] .kpi-tile:is([data-kpi="production"], [data-kpi="yield"]),
 html body .dash-overview[data-dashboard-overview="it"] .kpi-tile:is([data-kpi="users"], [data-kpi="prediction-records"]) {
     background: linear-gradient(160deg, #fff, var(--gl-surface-strong));
-    border-color: rgba(47, 125, 91, .34);
+    border-color: rgb(var(--sage-700-rgb) / .34);
     box-shadow: var(--gl-shadow-strong), var(--gl-highlight);
 }
 
@@ -291,11 +291,11 @@ html body .dash-overview[data-dashboard-overview="farmer"] .kpi-tile:is([data-kp
 html body .dash-overview[data-dashboard-overview="mao"] .kpi-tile:is([data-kpi="production"], [data-kpi="yield"]) .kpi-value,
 html body .dash-overview[data-dashboard-overview="it"] .kpi-tile:is([data-kpi="users"], [data-kpi="prediction-records"]) .kpi-value { font-size: clamp(1.4rem, 1.8vw, 1.75rem); }
 
-html body .dash-overview .kpi-value { color: #0f2a20; }
+html body .dash-overview .kpi-value { color: var(--palette-ink); }
 html body .dash-overview .kpi-note,
 html body .dash-overview .kpi-label { color: #4a5b52; }        /* AA on the glass surface */
 
-html body .dash-overview .dash-chart h3 { color: #0f2a20; }
+html body .dash-overview .dash-chart h3 { color: var(--palette-ink); }
 html body .dash-overview .dash-chart-sub { color: #55665d; }
 
 /* ------------------------------------------------------------------

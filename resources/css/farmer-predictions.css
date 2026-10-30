@@ -65,7 +65,7 @@
 .fpred .input-group-text { border-color: var(--field); border-radius: 4px; background: var(--subtle); }
 .fpred .btn { min-height: 44px; border-radius: 4px; font-size: .9375rem; font-weight: 600; }
 .fpred .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-.fpred .btn-primary:hover, .fpred .btn-primary:focus { background: #0b3d26; border-color: #0b3d26; color: #fff; }
+.fpred .btn-primary:hover, .fpred .btn-primary:focus { background: var(--sage-800); border-color: var(--sage-800); color: #fff; }
 .fpred .btn-outline-success, .fpred .btn-outline-primary, .fpred .btn-outline-secondary { border-color: var(--field); color: var(--ink); background: #fff; }
 .fpred .btn-check:checked + .btn { background: var(--brand); border-color: var(--brand); color: #fff; }
 .fpred .btn:focus-visible { outline: 3px solid var(--info); outline-offset: 2px; }
@@ -89,16 +89,16 @@
 .wpx .wpx-survey-choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .wpx .wpx-survey-choices > legend { float: none; width: auto; flex-basis: 100%; margin: 0 0 6px; padding: 0; font-size: 1rem; font-weight: 700; }
 .wpx .wpx-survey-choice { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 8px 16px; border: 1px solid #cbd5cf; border-radius: 999px; background: #fff; font-weight: 600; cursor: pointer; }
-.wpx .wpx-survey-choice:has(input:checked) { border-color: #0f5132; background: #e6f4ec; color: #0f5132; }
+.wpx .wpx-survey-choice:has(input:checked) { border-color: var(--sage-700); background: var(--sage-50); color: var(--sage-700); }
 .wpx .wpx-survey-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .wpx .wpx-survey-actions .fad-btn { min-height: 44px; }
-.wpx p.wpx-survey-thanks { font-weight: 600; color: #0f5132; }
+.wpx p.wpx-survey-thanks { font-weight: 600; color: var(--sage-700); }
 @media (max-width: 575.98px) {
     .wpx .wpx-survey-choice { flex: 1 1 auto; justify-content: center; }
     .wpx .wpx-survey-actions .fad-btn { flex: 1 1 100%; }
 }
-html[data-theme="dark"] .wpx .wpx-survey h2 { color: #e4ece7; }
-html[data-theme="dark"] .wpx .wpx-survey-choice { background: #16211c; border-color: #2a3b33; color: #e4ece7; }
-html[data-theme="dark"] .wpx .wpx-survey-choice:has(input:checked) { background: #1d3327; border-color: #6fcf97; color: #9fe0bb; }
-html[data-theme="dark"] .wpx p.wpx-survey-thanks { color: #9fe0bb; }
+html[data-theme="dark"] .wpx .wpx-survey h2 { color: var(--sage-200); }
+html[data-theme="dark"] .wpx .wpx-survey-choice { background: var(--sage-950); border-color: var(--sage-800); color: var(--sage-200); }
+html[data-theme="dark"] .wpx .wpx-survey-choice:has(input:checked) { background: var(--sage-900); border-color: var(--sage-300); color: var(--sage-200); }
+html[data-theme="dark"] .wpx p.wpx-survey-thanks { color: var(--sage-200); }
 /* ------------------------------------------------------------------ end Farmer – Naicel */

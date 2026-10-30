@@ -1,10 +1,10 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-[#44604E]">
+    <div class="mb-4 text-sm text-sage-700">
         {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
     </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-semibold text-sm text-[#2D6A4F]">
+        <div class="mb-4 font-semibold text-sm text-sage-700">
             {{ __('A new verification link has been sent to the email address you provided during registration.') }}
         </div>
     @endif
@@ -23,7 +23,7 @@
         <form method="POST" action="{{ route('logout') }}">
             @csrf
 
-            <button type="submit" class="underline text-sm text-[#2D6A4F] hover:text-[#1A3A2A] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#52B788]/40">
+            <button type="submit" class="underline text-sm text-sage-700 hover:text-sage-800 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sage-500/40">
                 {{ __('Log Out') }}
             </button>
         </form>

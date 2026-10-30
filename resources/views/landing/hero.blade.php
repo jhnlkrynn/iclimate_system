@@ -4,7 +4,7 @@
 @php
     $heroPoints = [['cloud-sun', 'Local forecasts'], ['sprout', 'Planting advisories'], ['calendar', 'Harvest dates']];
 @endphp
-<section id="hero" data-section class="lp-hero relative bg-[#EAF4E4] bg-cover bg-center" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
+<section id="hero" data-section class="lp-hero relative bg-sage-50 bg-cover bg-center" style="background-image: url('{{ asset('images/rice-hero-field.jpg') }}?v={{ filemtime(public_path('images/rice-hero-field.jpg')) }}')">
     <div class="lp-wrap flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16">
         <div class="flex min-w-0 flex-1 flex-col items-start gap-6 rounded-lg border border-white/80 bg-white/90 p-6 backdrop-blur-sm [container-type:inline-size] sm:p-9">
             <p class="text-base font-semibold leading-[1.4] text-brand sm:text-lg">For the rice farmers of Lian, Batangas</p>
@@ -25,7 +25,7 @@
 
         {{-- Log in or create an account in place: the Sign in / Create account tabs switch the card without leaving the
              page (resources/js/landing.js); /#register and /#login (the footer and the nav) open it in that mode. --}}
-        <div class="w-full shrink-0 rounded-2xl border border-line bg-white px-6 py-8 shadow-[0_8px_24px_rgba(18,26,18,0.06)] sm:px-9 lg:w-[30rem]" data-login-card @guest data-auth-card data-auth-mode="{{ $authMode }}" @endguest>
+        <div class="w-full shrink-0 rounded-2xl border border-line bg-white px-6 py-8 shadow-[0_8px_24px_rgb(var(--sage-950-rgb)_/_0.06)] sm:px-9 lg:w-[30rem]" data-login-card @guest data-auth-card data-auth-mode="{{ $authMode }}" @endguest>
             @auth
                 <h2 class="text-[1.625rem] font-semibold leading-[1.2] tracking-[-0.02em] text-ink">Welcome back, {{ auth()->user()->name }}</h2>
                 <p class="mt-1.5 text-base leading-[1.4] text-muted">You are logged in to iClimate.</p>
@@ -33,15 +33,15 @@
                 {{-- So a different person on this browser can sign in: logging out comes back to /#login. --}}
                 <form method="POST" action="{{ route('logout') }}" class="mt-3 text-center" data-landing-logout>
                     @csrf
-                    <button type="submit" class="inline-flex min-h-11 items-center rounded text-base font-semibold text-brand hover:text-ink">Sign out</button>
+                    <button type="submit" class="inline-flex min-h-11 items-center rounded text-base font-semibold text-brand hover:text-brand-dark">Sign out</button>
                 </form>
             @else
                 {{-- The only switch between the two forms: tabs (click, Enter/Space, or Left/Right/Home/End). --}}
-                <div role="tablist" aria-label="Log in or create an account" class="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-[#DCE8D6] bg-[#F3FAF0] p-1" data-auth-toggle>
+                <div role="tablist" aria-label="Log in or create an account" class="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-sage-100 bg-sage-50 p-1" data-auth-toggle>
                     @foreach (['login' => 'Sign in', 'register' => 'Create account'] as $mode => $label)
                         <button type="button" role="tab" id="auth-tab-{{ $mode }}" aria-controls="auth-panel-{{ $mode }}" data-auth-switch="{{ $mode }}"
                                 aria-selected="{{ $authMode === $mode ? 'true' : 'false' }}" tabindex="{{ $authMode === $mode ? '0' : '-1' }}"
-                                class="flex min-h-11 items-center justify-center rounded-lg text-base font-semibold text-[#4D5C50] hover:bg-[#E4F3DE] hover:text-[#1F3D22] aria-selected:bg-[#A6D79B] aria-selected:text-[#173B1F]">{{ $label }}</button>
+                                class="flex min-h-11 items-center justify-center rounded-lg text-base font-semibold text-muted hover:bg-sage-100 hover:text-sage-700 aria-selected:bg-sage-200 aria-selected:text-sage-800">{{ $label }}</button>
                     @endforeach
                 </div>
                 <p class="sr-only" aria-live="polite" data-auth-status></p>
@@ -84,7 +84,7 @@
                         @endif
 
                         <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-                            <a href="{{ route('password.request') }}" class="inline-flex min-h-11 items-center rounded text-base font-semibold text-brand hover:text-ink" data-forgot>Forgot password?</a>
+                            <a href="{{ route('password.request') }}" class="inline-flex min-h-11 items-center rounded text-base font-semibold text-brand hover:text-brand-dark" data-forgot>Forgot password?</a>
                         </div>
 
                         <button type="submit" class="lp-btn-primary lp-btn-lg w-full">Log in</button>

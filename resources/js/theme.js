@@ -7,7 +7,9 @@
  * readable on the dark background. Colours themselves live in resources/css/theme.css.
  */
 const STORAGE_KEY = 'iclimate-theme';
-const DARK_CHART = { text: '#c9d6ce', grid: 'rgba(255, 255, 255, .08)' };
+// Palette colours (resources/css/palette.css), read when a chart draws: <canvas> cannot use var().
+const sage = (step) => getComputedStyle(document.documentElement).getPropertyValue(`--sage-${step}`).trim();
+const DARK_CHART = { get text() { return sage('200'); }, grid: 'rgba(255, 255, 255, .08)' };
 
 export function currentTheme() {
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
@@ -39,7 +41,11 @@ function syncSwitches(theme) {
 // legend colours just before a chart draws, gives tooltips a dark surface, and lightens dataset colours that are too dark
 // to see on a dark card (a dark green line, for example). The page's own colours come back when Light is chosen again.
 // Only colours change; the data and every calculation stay as they are.
-const DARK_TOOLTIP = { bg: 'rgba(16, 28, 23, .96)', border: '#36493f', text: '#e4ece7' };
+const DARK_TOOLTIP = {
+    get bg() { return `rgb(${sage('950-rgb')} / .96)`; },
+    get border() { return sage('800'); },
+    get text() { return sage('100'); },
+};
 
 function parseColour(value) {
     if (typeof value !== 'string') return null;

@@ -28,13 +28,13 @@
     *, *::before, *::after { box-sizing: border-box; }
     :root {
       /* Panel revision 4.5: the government palette (resources/css/gov-theme.css). */
-      --reg-green-dark: #1F3D22;
-      --reg-green: #2F6B34;
-      --reg-mint: #7FD6B5;
-      --reg-green-bg: #F3FAF0;
-      --reg-border: #DCE8D6;
-      --reg-input-border: #B5C9AE;
-      --reg-text: #1E2B21;
+      --reg-green-dark: var(--sage-800);
+      --reg-green: var(--sage-700);
+      --reg-mint: var(--sage-300);
+      --reg-green-bg: var(--sage-50);
+      --reg-border: var(--sage-100);
+      --reg-input-border: var(--sage-300);
+      --reg-text: var(--palette-ink);
       --reg-text-2: #4D5C50;
       --reg-error: #B42318;
       --reg-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -74,8 +74,8 @@
     .form-input.has-icon { padding-left: 42px; }
     .form-input.has-toggle { padding-right: 46px; }
     .form-input::placeholder { color: #98A39D; }
-    .form-input:hover { border-color: #8BC97E; }
-    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
+    .form-input:hover { border-color: var(--sage-300); }
+    .form-input:focus { background: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px var(--sage-200); }
     .form-input.is-invalid { border-color: var(--reg-error); background: #fff; }
     .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #7C8B83; }
@@ -113,13 +113,13 @@
 
     .btn-login {
       width: 100%; height: 50px; margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: #A6D79B; color: #173B1F; border: 2px solid #8BC97E; border-radius: 10px;
+      background: var(--sage-200); color: var(--sage-800); border: 2px solid var(--sage-300); border-radius: 10px;
       font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color .15s ease;
     }
-    .btn-login:hover { background: #8BC97E; }
-    .btn-login:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
+    .btn-login:hover { background: var(--sage-500); }
+    .btn-login:focus-visible { outline: 3px solid rgb(var(--sage-700-rgb) / .45); outline-offset: 2px; }
     .btn-login:disabled { opacity: .8; cursor: wait; }
-    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(23,59,31,.25); border-top-color: #173B1F; animation: regSpin .8s linear infinite; }
+    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgb(var(--sage-800-rgb) / .25); border-top-color: var(--sage-800); animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
     .login-register { text-align: center; font-size: 14px; color: var(--reg-text-2); margin-top: 22px; }

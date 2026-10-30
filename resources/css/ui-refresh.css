@@ -18,10 +18,10 @@
     position: relative;
     isolation: isolate;
     background:
-        radial-gradient(1100px 520px at 88% -8%, rgba(127, 214, 181, .16), transparent 60%),
+        radial-gradient(1100px 520px at 88% -8%, rgb(var(--sage-300-rgb) / .16), transparent 60%),
         radial-gradient(900px 600px at -10% 40%, rgba(79, 159, 196, .10), transparent 60%),
         radial-gradient(800px 500px at 60% 110%, rgba(233, 162, 59, .07), transparent 60%),
-        linear-gradient(180deg, #245a43 0%, #1d4a37 100%) !important;
+        linear-gradient(180deg, var(--sage-700) 0%, var(--sage-700) 100%) !important;
 }
 
 .app-main::before {
@@ -33,7 +33,7 @@
     z-index: -1;
     pointer-events: none;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(127, 214, 181, .12), transparent 62%);
+    background: radial-gradient(circle, rgb(var(--sage-200-rgb) / .12), transparent 62%);
     filter: blur(20px);
     animation: ic-aurora 26s ease-in-out infinite alternate;
 }
@@ -88,7 +88,7 @@ p, li {
 /* ------------------------------------------------------------------- hero */
 body .page-hero {
     background:
-        radial-gradient(600px 220px at 100% 0%, rgba(127, 214, 181, .18), transparent 70%),
+        radial-gradient(600px 220px at 100% 0%, rgb(var(--sage-300-rgb) / .18), transparent 70%),
         radial-gradient(420px 200px at 0% 100%, rgba(79, 159, 196, .14), transparent 70%),
         var(--glass-dark-bg);
 }
@@ -123,7 +123,7 @@ body .glass-card:hover,
 body .module-tile:hover,
 body .climate-chip:hover,
 body .soft-section:hover {
-    border-color: rgba(127, 214, 181, .55);
+    border-color: rgb(var(--sage-300-rgb) / .55);
 }
 
 a.card:hover,
@@ -177,13 +177,13 @@ button.card:focus-visible,
     --bs-btn-active-bg: transparent;
     background-image: var(--ic-grad-brand);
     border-color: transparent !important;
-    box-shadow: 0 6px 16px rgba(31, 90, 70, .28);
+    box-shadow: 0 6px 16px rgb(var(--sage-700-rgb) / .28);
 }
 
 .btn-primary:hover,
 .btn-primary:focus-visible {
     background-image: var(--ic-grad-brand-hover);
-    box-shadow: 0 10px 22px rgba(31, 90, 70, .34);
+    box-shadow: 0 10px 22px rgb(var(--sage-700-rgb) / .34);
 }
 
 .btn-primary:disabled,
@@ -215,7 +215,7 @@ button.card:focus-visible,
 
 .btn-outline-primary:hover,
 .btn-outline-secondary:hover {
-    box-shadow: 0 6px 16px rgba(8, 25, 19, .16);
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .16);
 }
 
 .btn:focus-visible {
@@ -230,13 +230,13 @@ button.card:focus-visible,
 .field-pulse {
     position: relative;
     background: var(--ic-leaf) !important;
-    box-shadow: 0 0 0 0 rgba(63, 166, 107, .55);
+    box-shadow: 0 0 0 0 rgb(var(--sage-500-rgb) / .55);
     animation: ic-live-pulse 2.2s ease-out infinite;
 }
 
 
 .topbar {
-    box-shadow: 0 8px 28px rgba(5, 16, 12, .22), inset 0 -1px 0 rgba(127, 214, 181, .12) !important;
+    box-shadow: 0 8px 28px rgb(var(--sage-950-rgb) / .22), inset 0 -1px 0 rgb(var(--sage-300-rgb) / .12) !important;
 }
 
 .topbar-avatar {
@@ -245,7 +245,7 @@ button.card:focus-visible,
 
 .topbar-user:hover .topbar-avatar {
     transform: rotate(-4deg) scale(1.06);
-    box-shadow: 0 0 0 3px rgba(127, 214, 181, .28);
+    box-shadow: 0 0 0 3px rgb(var(--sage-300-rgb) / .28);
 }
 
 /* ---------------------------------------------------------- forms & tables */
@@ -261,8 +261,8 @@ button.card:focus-visible,
 }
 
 .table-hover tbody tr:hover {
-    background: rgba(240, 247, 244, .95) !important;
-    box-shadow: inset 3px 0 0 rgba(63, 166, 107, .45) !important;
+    background: rgb(var(--sage-50-rgb) / .95) !important;
+    box-shadow: inset 3px 0 0 rgb(var(--sage-500-rgb) / .45) !important;
 }
 
 .pagination .page-link {
@@ -301,12 +301,12 @@ button.card:focus-visible,
 /* ------------------------------------------------------------ scrollbars */
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(127, 214, 181, .45) transparent;
+    scrollbar-color: rgb(var(--sage-300-rgb) / .45) transparent;
 }
 
 *::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb { background: rgba(127, 214, 181, .38); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-*::-webkit-scrollbar-thumb:hover { background-color: rgba(127, 214, 181, .6); }
+*::-webkit-scrollbar-thumb { background: rgb(var(--sage-200-rgb) / .38); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--sage-200-rgb) / .6); }
 
 /* =================================================================== WEATHER */
 
@@ -319,7 +319,7 @@ button.card:focus-visible,
 .ic-metric-card[data-metric="temperature"] { --metric: var(--ic-heat); }
 .ic-metric-card[data-metric="rain"] { --metric: var(--ic-rain); }
 .ic-metric-card[data-metric="humidity"] { --metric: var(--ic-sky); }
-.ic-metric-card[data-metric="wind"] { --metric: #5aa38a; }
+.ic-metric-card[data-metric="wind"] { --metric: var(--sage-500); }
 .ic-metric-card[data-metric="condition"] { --metric: var(--ic-sun); }
 
 .ic-metric-label {
@@ -369,7 +369,7 @@ button.card:focus-visible,
 /* Live weather card moods. data-weather-mood is set by ui-enhancements.js
    from the condition text and follows every live refresh. */
 [data-weather-mood] {
-    --mood-a: rgba(127, 214, 181, .22);
+    --mood-a: rgb(var(--sage-300-rgb) / .22);
     --mood-b: rgba(255, 255, 255, 0);
     position: relative;
     overflow: hidden;
@@ -444,7 +444,7 @@ button.card:focus-visible,
 
 .weather-live-icon,
 [data-weather-mood] img[data-weather-icon] {
-    filter: drop-shadow(0 6px 12px rgba(8, 25, 19, .18));
+    filter: drop-shadow(0 6px 12px rgb(var(--sage-950-rgb) / .18));
     animation: ic-weather-float 5s ease-in-out infinite;
 }
 
@@ -459,7 +459,7 @@ button.card:focus-visible,
 
 .weather-refresh-btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(8, 25, 19, .14);
+    box-shadow: 0 6px 14px rgb(var(--sage-950-rgb) / .14);
 }
 
 .weather-refresh-btn::before,
@@ -489,7 +489,7 @@ button.card:focus-visible,
 .weather-mini:hover {
     transform: translateY(-2px);
     background: #fff;
-    box-shadow: 0 8px 18px rgba(8, 25, 19, .1);
+    box-shadow: 0 8px 18px rgb(var(--sage-950-rgb) / .1);
 }
 
 /* Forecast strips (Farmer + MAO dashboards). */
@@ -508,8 +508,8 @@ button.card:focus-visible,
 .forecast-strip-day:hover {
     transform: translateY(-4px);
     background: rgba(255, 255, 255, .88) !important;
-    border-color: rgba(127, 214, 181, .7) !important;
-    box-shadow: 0 14px 26px rgba(8, 25, 19, .16);
+    border-color: rgb(var(--sage-300-rgb) / .7) !important;
+    box-shadow: 0 14px 26px rgb(var(--sage-950-rgb) / .16);
 }
 
 .forecast-day img,
@@ -523,8 +523,8 @@ button.card:focus-visible,
 }
 
 .forecast-day.is-today {
-    border-color: rgba(63, 166, 107, .6) !important;
-    background: linear-gradient(180deg, rgba(232, 246, 238, .95), rgba(255, 255, 255, .75)) !important;
+    border-color: rgb(var(--sage-500-rgb) / .6) !important;
+    background: linear-gradient(180deg, rgb(var(--sage-50-rgb) / .95), rgba(255, 255, 255, .75)) !important;
 }
 
 .forecast-day.is-today::before {
@@ -559,7 +559,7 @@ button.card:focus-visible,
     height: 6px;
     margin-top: .45rem;
     border-radius: 999px;
-    background: rgba(18, 63, 50, .08);
+    background: rgb(var(--sage-700-rgb) / .08);
     position: relative;
     overflow: hidden;
 }
@@ -597,7 +597,7 @@ button.card:focus-visible,
 }
 
 .wp-tab-button.active {
-    box-shadow: 0 8px 20px rgba(8, 25, 19, .22);
+    box-shadow: 0 8px 20px rgb(var(--sage-950-rgb) / .22);
 }
 
 .wp-result-card,
@@ -612,7 +612,7 @@ button.card:focus-visible,
 .live-weather-card:hover,
 .risk-level-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 14px 28px rgba(8, 25, 19, .14);
+    box-shadow: 0 14px 28px rgb(var(--sage-950-rgb) / .14);
 }
 
 /* ======================================================================= MAP */
@@ -636,7 +636,7 @@ button.card:focus-visible,
     background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.1 6.06 9.9 3.94a2 2 0 0 0-1.79 0L3.72 6.14A1.3 1.3 0 0 0 3 7.31v12.45a1 1 0 0 0 1.45.9l3.66-1.84a2 2 0 0 1 1.79 0l4.21 2.12a2 2 0 0 0 1.79 0l4.38-2.2a1.3 1.3 0 0 0 .72-1.17V5.12a1 1 0 0 0-1.45-.9l-3.66 1.84a2 2 0 0 1-1.79 0Z'/%3E%3Cpath d='M9 3.7v15'/%3E%3Cpath d='M15 5.3v15'/%3E%3C/svg%3E") center / 17px no-repeat,
         var(--ic-grad-brand);
-    box-shadow: 0 6px 14px rgba(31, 90, 70, .3);
+    box-shadow: 0 6px 14px rgb(var(--sage-700-rgb) / .3);
 }
 
 .risk-map-header-actions {
@@ -680,7 +680,7 @@ button.card:focus-visible,
 .risk-map-stage {
     position: relative;
     border-radius: 14px;
-    box-shadow: 0 14px 34px rgba(8, 25, 19, .16);
+    box-shadow: 0 14px 34px rgb(var(--sage-950-rgb) / .16);
 }
 
 .risk-map-canvas {
@@ -689,7 +689,7 @@ button.card:focus-visible,
 
 .risk-map-shell:fullscreen {
     border-radius: 0;
-    background: #0e2f25;
+    background: var(--sage-800);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -740,7 +740,7 @@ button.card:focus-visible,
     background: rgba(255, 255, 255, .88);
     backdrop-filter: blur(10px);
     color: var(--iclimate-primary);
-    box-shadow: 0 6px 16px rgba(8, 25, 19, .18);
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .18);
     cursor: pointer;
     transition: transform .2s var(--ic-ease-spring), background .2s ease, color .2s ease;
 }
@@ -782,7 +782,7 @@ button.card:focus-visible,
     color: var(--iclimate-text);
     font-size: .8rem;
     font-weight: 700;
-    box-shadow: 0 6px 16px rgba(8, 25, 19, .16);
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .16);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -822,7 +822,7 @@ button.card:focus-visible,
     place-items: center;
     border-radius: 14px;
     background:
-        linear-gradient(110deg, rgba(219, 232, 224, .9) 30%, rgba(240, 247, 244, .95) 50%, rgba(219, 232, 224, .9) 70%) 0 0 / 200% 100%;
+        linear-gradient(110deg, rgb(var(--sage-100-rgb) / .9) 30%, rgb(var(--sage-50-rgb) / .95) 50%, rgb(var(--sage-100-rgb) / .9) 70%) 0 0 / 200% 100%;
     animation: ic-shimmer 1.4s linear infinite;
     transition: opacity .4s ease, visibility .4s ease;
 }
@@ -864,7 +864,7 @@ button.card:focus-visible,
     transform: translate(-50%, 8px);
     padding: .45rem .9rem;
     border-radius: 999px;
-    background: rgba(13, 38, 30, .86);
+    background: rgb(var(--sage-950-rgb) / .86);
     color: #fff;
     font-size: .82rem;
     font-weight: 600;
@@ -901,13 +901,13 @@ button.legend-swatch {
 button.legend-swatch:hover {
     transform: translateY(-1px);
     background: #fff;
-    border-color: rgba(18, 63, 50, .18);
+    border-color: rgb(var(--sage-800-rgb) / .18);
 }
 
 button.legend-swatch[aria-pressed="true"] {
     background: #fff;
     border-color: var(--iclimate-primary);
-    box-shadow: 0 4px 12px rgba(8, 25, 19, .14);
+    box-shadow: 0 4px 12px rgb(var(--sage-950-rgb) / .14);
 }
 
 .risk-map-legend.is-filtering button.legend-swatch[aria-pressed="false"] {
@@ -921,7 +921,7 @@ button.legend-swatch[aria-pressed="true"] {
     height: 1.25rem;
     padding: 0 .35rem;
     border-radius: 999px;
-    background: rgba(18, 63, 50, .1);
+    background: rgb(var(--sage-700-rgb) / .1);
     font-size: .72rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
@@ -934,7 +934,7 @@ button.legend-swatch[aria-pressed="true"] {
     border-radius: 12px;
     background: rgba(255, 255, 255, .96);
     backdrop-filter: blur(8px);
-    box-shadow: 0 12px 28px rgba(8, 25, 19, .22);
+    box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / .22);
     color: var(--iclimate-text);
     font-family: 'Inter', system-ui, sans-serif;
     min-width: 180px;
@@ -1033,7 +1033,7 @@ button.legend-swatch[aria-pressed="true"] {
     border-radius: 10px !important;
     margin-bottom: 4px;
     border: 1px solid rgba(255, 255, 255, .7) !important;
-    box-shadow: 0 6px 16px rgba(8, 25, 19, .18);
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .18);
 }
 
 .leaflet-bar {
@@ -1072,7 +1072,7 @@ button.legend-swatch[aria-pressed="true"] {
 .risk-card-head {
     padding-right: 3rem;
     background:
-        radial-gradient(260px 120px at 100% 0%, var(--risk-tint, rgba(127, 214, 181, .2)), transparent 70%),
+        radial-gradient(260px 120px at 100% 0%, var(--risk-tint, rgb(var(--sage-300-rgb) / .2)), transparent 70%),
         #fff;
 }
 
@@ -1164,8 +1164,8 @@ body .btn-outline-danger {
     background-color: rgba(255, 255, 255, .72);
     backdrop-filter: blur(6px);
 }
-body .btn-outline-primary { --bs-btn-color: #1f5a46; --bs-btn-border-color: rgba(31, 90, 70, .55); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1f5a46; }
-body .btn-outline-secondary { --bs-btn-color: #2f3d35; --bs-btn-border-color: rgba(47, 61, 53, .35); --bs-btn-hover-bg: #fff; --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1f5a46; }
+body .btn-outline-primary { --bs-btn-color: var(--sage-700); --bs-btn-border-color: rgb(var(--sage-700-rgb) / .55); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: var(--sage-800); --bs-btn-hover-border-color: var(--sage-800); }
+body .btn-outline-secondary { --bs-btn-color: var(--sage-700); --bs-btn-border-color: rgb(var(--sage-700-rgb) / .35); --bs-btn-hover-bg: #fff; --bs-btn-hover-color: var(--sage-800); --bs-btn-hover-border-color: var(--sage-800); }
 body .btn-outline-success { --bs-btn-color: #1b5e3b; --bs-btn-border-color: rgba(27, 94, 59, .5); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #123f32; --bs-btn-hover-border-color: #1b5e3b; }
 body .btn-outline-danger { --bs-btn-color: #a3283a; --bs-btn-border-color: rgba(163, 40, 58, .45); --bs-btn-hover-bg: rgba(255, 255, 255, .95); --bs-btn-hover-color: #a3283a; --bs-btn-hover-border-color: #a3283a; }
 body .topbar .btn-outline-primary,
@@ -1186,23 +1186,23 @@ body .page-hero .action-cluster {
    light style everywhere. */
 body .ic-collapse > summary {
     background: rgba(255, 255, 255, .92) !important;
-    border-color: rgba(18, 63, 50, .14) !important;
+    border-color: rgb(var(--sage-700-rgb) / .14) !important;
     color: var(--iclimate-text) !important;
     transition: background .2s ease, box-shadow .2s ease;
 }
 body .ic-collapse > summary:hover {
     background: #fff;
-    box-shadow: 0 6px 16px rgba(8, 25, 19, .12);
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .12);
 }
 body .ic-collapse > summary::after {
-    color: #1f5a46;
+    color: var(--sage-700);
 }
 
 /* Mint eyebrows were used on light hero cards (1.8:1). */
 body .feed-eyebrow,
 body .msg-eyebrow,
 body .me-eyebrow {
-    color: #2d7a4f !important;
+    color: var(--sage-700) !important;
 }
 
 /* Muted labels on glass panels: nudge darker so they clear 4.5:1. */
@@ -1326,8 +1326,8 @@ body .ic-pill-tabs .nav-link:hover {
 }
 body .ic-pill-tabs .nav-link.active {
     background: #fff;
-    color: #123f32;
-    box-shadow: 0 6px 14px rgba(8, 25, 19, .2);
+    color: var(--sage-700);
+    box-shadow: 0 6px 14px rgb(var(--sage-950-rgb) / .2);
 }
 
 /* ============================================================ spacing pass
@@ -1342,7 +1342,7 @@ body .page-shell > .container-fluid.py-3 {
 /* Tab strips on dark dashboards (MAO / IT): a darker tray lifts label
    contrast above 7:1 and gives the strip clear edges. */
 body .dashboard-tabs {
-    background: rgba(8, 25, 19, .32);
+    background: rgb(var(--sage-950-rgb) / .32);
     border: 1px solid rgba(255, 255, 255, .08);
     border-radius: 12px;
     padding-inline: 1rem;
@@ -1394,10 +1394,10 @@ body .table-responsive > .table > tbody > tr > td.text-end:last-child {
     right: 0;
     z-index: 2;
     background: rgba(246, 250, 247, .97);
-    box-shadow: -10px 0 14px -10px rgba(8, 25, 19, .28);
+    box-shadow: -10px 0 14px -10px rgb(var(--sage-950-rgb) / .28);
 }
 body .table-responsive > .table > thead > tr > th.text-end:last-child {
-    background: rgba(236, 244, 239, .98);
+    background: rgb(var(--sage-50-rgb) / .98);
 }
 
 /* ========================================================== HOVER NORMALIZATION
@@ -1420,9 +1420,9 @@ body .it-console .btn-outline-primary:hover,
 body .mao-console .btn-outline-primary:hover,
 body .dark-workspace .btn-outline-primary:hover {
     background-color: #ffffff !important;
-    color: var(--iclimate-primary, #123F32) !important;
-    border-color: var(--iclimate-primary-medium, #1F5A46) !important;
-    box-shadow: 0 4px 14px rgba(8, 25, 19, .12) !important;
+    color: var(--iclimate-primary, var(--sage-300)) !important;
+    border-color: var(--iclimate-primary-medium, var(--sage-800)) !important;
+    box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .12) !important;
     transform: translateY(-1px);
 }
 
@@ -1430,9 +1430,9 @@ body .btn-light:hover,
 body .it-console .btn-light:hover,
 body .mao-console .btn-light:hover {
     background-color: #ffffff !important;
-    color: var(--iclimate-primary, #123F32) !important;
-    border-color: rgba(31, 90, 70, .35) !important;
-    box-shadow: 0 4px 12px rgba(8, 25, 19, .08) !important;
+    color: var(--iclimate-primary, var(--sage-800)) !important;
+    border-color: rgb(var(--sage-800-rgb) / .35) !important;
+    box-shadow: 0 4px 12px rgb(var(--sage-950-rgb) / .08) !important;
     transform: translateY(-1px);
 }
 
@@ -1440,14 +1440,14 @@ body .mao-console .btn-light:hover {
 body .calendar-page .calendar-day:hover,
 body .wp-calendar-day:hover {
     background-color: #ffffff !important;
-    border-color: rgba(82, 183, 136, .5) !important;
-    box-shadow: 0 6px 16px rgba(13, 31, 24, .08) !important;
+    border-color: rgb(var(--sage-500-rgb) / .5) !important;
+    box-shadow: 0 6px 16px rgb(var(--sage-950-rgb) / .08) !important;
     transform: translateY(-1px);
 }
 
 body .calendar-page .upcoming-item:hover {
     background-color: rgba(255, 255, 255, .8) !important;
-    box-shadow: 0 4px 12px rgba(13, 31, 24, .06) !important;
+    box-shadow: 0 4px 12px rgb(var(--sage-950-rgb) / .06) !important;
 }
 
 /* Cards & panels: keep existing background fill intact, apply subtle border highlight & soft shadow */
@@ -1463,8 +1463,8 @@ body .mao-card:hover,
 body .it-card:hover,
 body .feed-post-card:hover,
 body .variable-info-card:hover {
-    border-color: rgba(127, 214, 181, .55) !important;
-    box-shadow: 0 10px 24px rgba(8, 25, 19, .12) !important;
+    border-color: rgb(var(--sage-300-rgb) / .55) !important;
+    box-shadow: 0 10px 24px rgb(var(--sage-950-rgb) / .12) !important;
 }
 
 body .quick-action:hover {

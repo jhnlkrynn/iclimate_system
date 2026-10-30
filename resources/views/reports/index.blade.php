@@ -2,28 +2,28 @@
     <style>
         .report-shell { display: grid; gap: 1rem; }
         .report-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-        .report-stat { border: 1px solid #d4edda; border-radius: 18px; background: #fff; padding: 1rem; }
-        .report-stat-label { color: #476651; font-size: .95rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-        .report-stat-value { color: #0d1f18; font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
+        .report-stat { border: 1px solid var(--sage-100); border-radius: 18px; background: #fff; padding: 1rem; }
+        .report-stat-label { color: var(--sage-700); font-size: .95rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+        .report-stat-value { color: var(--palette-ink); font-size: 2rem; font-weight: 900; line-height: 1; margin-top: .35rem; }
         .report-action-bar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
         .report-live-strip { display: grid; grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr)); gap: .75rem; }
         .report-live-item { border: 1px solid var(--ic-border); border-radius: 14px; background: var(--ic-panel); padding: .85rem; min-width: 0; }
         .report-live-item strong { display: block; color: var(--ic-ink); font-size: 1.4rem; line-height: 1.15; }
         .report-live-item span { display: block; color: var(--ic-muted); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-top: .3rem; }
-        .report-empty-state { border: 1px dashed rgba(116,198,157,.34); border-radius: 18px; background: var(--ic-panel); color: var(--ic-ink); }
+        .report-empty-state { border: 1px dashed rgb(var(--sage-300-rgb) / .34); border-radius: 18px; background: var(--ic-panel); color: var(--ic-ink); }
         .report-empty-state .h5 { color: var(--ic-ink); }
         .report-empty-state .text-muted { color: var(--ic-muted) !important; }
         .report-page .report-white-action {
             color: var(--ic-ink) !important;
             border-color: var(--ic-border) !important;
-            background: rgba(31,42,36,.04) !important;
+            background: rgb(var(--sage-900-rgb) / .04) !important;
         }
         .report-page .report-white-action:hover,
         .report-page .report-white-action:focus {
             color: var(--ic-ink) !important;
             border-color: var(--ic-green-500) !important;
             background: var(--ic-green-50) !important;
-            box-shadow: 0 .65rem 1.2rem rgba(13,31,24,.08);
+            box-shadow: 0 .65rem 1.2rem rgb(var(--sage-950-rgb) / .08);
         }
         .report-page { font-size: 1.05rem; }
         .report-page .form-label,
@@ -38,11 +38,11 @@
         .report-table th { white-space: nowrap; font-size: 1rem; }
         .report-table th, .report-table td { padding: .9rem .85rem; vertical-align: middle; }
         .report-mobile-list { display: none; gap: .75rem; }
-        .report-mobile-card { border: 1px solid #d4edda; border-radius: 12px; background: #fff; padding: 1rem; }
+        .report-mobile-card { border: 1px solid var(--sage-100); border-radius: 12px; background: #fff; padding: 1rem; }
         .report-mobile-row { display: grid; grid-template-columns: minmax(110px, .42fr) minmax(0, 1fr); gap: .75rem; padding: .45rem 0; }
-        .report-mobile-row + .report-mobile-row { border-top: 1px solid #eef7ec; }
-        .report-mobile-label { color: #476651; font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
-        .report-mobile-value { color: #0d1f18; font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+        .report-mobile-row + .report-mobile-row { border-top: 1px solid var(--sage-50); }
+        .report-mobile-label { color: var(--sage-700); font-size: .9rem; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
+        .report-mobile-value { color: var(--palette-ink); font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
         @media (max-width: 991.98px) {
             .report-summary-grid { grid-template-columns: 1fr; }
             .report-live-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }

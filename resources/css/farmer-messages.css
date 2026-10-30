@@ -5,7 +5,7 @@
  */
 
 .fmsg .msg-wrap { --msg-ink: var(--ink); --msg-muted: var(--muted); --msg-line: var(--line); color: var(--ink); }
-.fmsg-private { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; font-size: .875rem; font-weight: 600; color: #b9e4cb; }
+.fmsg-private { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; font-size: .875rem; font-weight: 600; color: var(--sage-200); }
 .fmsg-private .mtd-svg { width: 16px; height: 16px; }
 
 /* two panels: conversations | conversation */
@@ -26,7 +26,7 @@
 /* conversation list */
 .fmsg .thread-link { padding: 14px 20px; border-bottom: 1px solid var(--line); border-left: 4px solid transparent; }
 .fmsg .thread-link:hover { background: var(--subtle); }
-.fmsg .thread-link.active { background: #f1f8f4; border-left-color: var(--brand); }
+.fmsg .thread-link.active { background: var(--sage-50); border-left-color: var(--brand); }
 .fmsg .thread-link:focus-visible { outline: 3px solid var(--info); outline-offset: -3px; }
 .fmsg .thread-name { font-size: 1rem; font-weight: 600 !important; color: var(--ink); }
 .fmsg .thread-link.unread .thread-name, .fmsg .thread-link.unread .thread-preview { font-weight: 700 !important; color: var(--ink); }
@@ -44,7 +44,7 @@
 .fmsg .bubble { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 1rem; line-height: 1.5; }
 .fmsg .mine .bubble { background: var(--brand); border-color: var(--brand); }
 .fmsg .msg-meta { font-family: var(--sans); font-size: .8125rem; letter-spacing: 0; }
-.fmsg .msg-check.seen { color: #b9e4cb; }
+.fmsg .msg-check.seen { color: var(--sage-200); }
 .fmsg .msg-unsend { min-height: 32px; border-radius: 4px; font-family: var(--sans); font-size: .8125rem; font-weight: 600; }
 .fmsg .msg-typing { font-family: var(--sans); font-size: .875rem; }
 .fmsg .msg-compose-wrap { padding: 16px 20px; background: var(--card); border-top: 1px solid var(--line); }
@@ -52,7 +52,7 @@
 .fmsg .msg-compose:focus-within { border-color: var(--brand); outline: 3px solid rgba(31, 111, 178, .25); outline-offset: 1px; }
 .fmsg .compose-icon-btn { width: 40px; height: 40px; border-radius: 4px; }
 .fmsg .compose-send { width: 44px; height: 44px; border-radius: 4px; background: var(--brand); }
-.fmsg .compose-send:hover { background: #0b3d26; }
+.fmsg .compose-send:hover { background: var(--sage-800); }
 .fmsg .compose-file-chip { border-radius: 4px; }
 .fmsg .emoji-popover { border-color: var(--rule); border-radius: 6px; }
 .fmsg .msg-empty { padding: 32px; }

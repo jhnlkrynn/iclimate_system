@@ -3,11 +3,13 @@
  * Imported by ui-refresh.css (app, auth, error pages) and landing.css
  * (public landing page) so both speak the same visual language.
  */
+@import './palette.css';
+
 :root {
     /* Supporting accents: kept in the same muted, natural family as the
        iClimate greens so pages feel livelier without looking loud. */
-    --ic-leaf: #3fa66b;
-    --ic-mint: #7fd6b5;
+    --ic-leaf: var(--sage-500);
+    --ic-mint: var(--sage-300);
     --ic-sky: #4f9fc4;
     --ic-sun: #e9a23b;
     --ic-rain: #5b86c9;
@@ -15,12 +17,12 @@
     --ic-heat: #e0714f;
     --ic-fog: #8e9ba3;
 
-    --ic-grad-brand: linear-gradient(135deg, #1f5a46 0%, #2f7d5b 55%, #3fa66b 100%);
-    --ic-grad-brand-hover: linear-gradient(135deg, #184a3a 0%, #276d4f 55%, #36945e 100%);
+    --ic-grad-brand: linear-gradient(135deg, var(--sage-700) 0%, var(--sage-700) 55%, var(--sage-600) 100%);
+    --ic-grad-brand-hover: linear-gradient(135deg, var(--sage-800) 0%, var(--sage-800) 55%, var(--sage-800) 100%);
     --ic-grad-sheen: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, .28) 45%, transparent 70%);
 
-    --ic-ring: 0 0 0 3px rgba(63, 166, 107, .28);
-    --ic-lift-shadow: 0 16px 34px rgba(8, 25, 19, .2), 0 2px 6px rgba(8, 25, 19, .08);
+    --ic-ring: 0 0 0 3px rgb(var(--sage-500-rgb) / .28);
+    --ic-lift-shadow: 0 16px 34px rgb(var(--sage-950-rgb) / .2), 0 2px 6px rgb(var(--sage-950-rgb) / .08);
     --ic-ease-spring: cubic-bezier(.34, 1.4, .64, 1);
 }
 
@@ -35,9 +37,9 @@
 }
 
 @keyframes ic-live-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(63, 166, 107, .55); }
-    70% { box-shadow: 0 0 0 8px rgba(63, 166, 107, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(63, 166, 107, 0); }
+    0% { box-shadow: 0 0 0 0 rgb(var(--sage-500-rgb) / .55); }
+    70% { box-shadow: 0 0 0 8px rgb(var(--sage-500-rgb) / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(var(--sage-500-rgb) / 0); }
 }
 
 @keyframes ic-spin {

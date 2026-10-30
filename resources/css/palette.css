@@ -1,0 +1,31 @@
+/* The brand palette: sage, built on #728C69. Generated from resources/palette.json (tests/Feature/PaletteTest checks they
+   match); imported first by every CSS entry. Use var(--sage-700), or rgb(var(--sage-700-rgb) / .2) for transparency.
+   700 is the brand (buttons, links, dark bands), 800 its hover, 500 large accents only (white text on it is 3.7:1),
+   50 and 100 light backgrounds, 200 lines. 950 is for dark-theme page backgrounds. */
+:root {
+    --sage-50: #F3F6F2;
+    --sage-50-rgb: 243 246 242;
+    --sage-100: #E6ECE4;
+    --sage-100-rgb: 230 236 228;
+    --sage-200: #CCD8C8;
+    --sage-200-rgb: 204 216 200;
+    --sage-300: #A9BBA3;
+    --sage-300-rgb: 169 187 163;
+    --sage-400: #8DA285;
+    --sage-400-rgb: 141 162 133;
+    --sage-500: #728C69;
+    --sage-500-rgb: 114 140 105;
+    --sage-600: #5C7354;
+    --sage-600-rgb: 92 115 84;
+    --sage-700: #485A42;
+    --sage-700-rgb: 72 90 66;
+    --sage-800: #364432;
+    --sage-800-rgb: 54 68 50;
+    --sage-900: #252E22;
+    --sage-900-rgb: 37 46 34;
+    --sage-950: #181D16;
+    --sage-950-rgb: 24 29 22;
+    /* Neutral ink for text (not --ink, which pages already define for themselves). */
+    --palette-ink: #1F241D;
+    --palette-ink-rgb: 31 36 29;
+}

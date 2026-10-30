@@ -1,10 +1,10 @@
 <section class="space-y-6">
     <header>
-        <h2 class="text-lg font-semibold text-[#1B2B23]">
+        <h2 class="text-lg font-semibold text-ink">
             {{ __('Delete Account') }}
         </h2>
 
-        <p class="mt-1 text-sm text-[#44604E]">
+        <p class="mt-1 text-sm text-sage-700">
             {{ __('Deleting your account removes all your information for good. Save anything you want to keep first.') }}
         </p>
     </header>
@@ -19,11 +19,11 @@
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-semibold text-[#1B2B23]">
+            <h2 class="text-lg font-semibold text-ink">
                 {{ __('Are you sure you want to delete your account?') }}
             </h2>
 
-            <p class="mt-1 text-sm text-[#44604E]">
+            <p class="mt-1 text-sm text-sage-700">
                 {{ __('Deleting your account removes all your information for good. Enter your password to confirm.') }}
             </p>
 

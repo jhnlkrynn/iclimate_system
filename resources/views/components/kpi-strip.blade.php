@@ -40,10 +40,10 @@
             transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
         }
         a.kpi-tile:hover, a.kpi-tile:focus-visible {
-            border-color: #1F4D3A;
+            border-color: var(--sage-800);
             color: #1E293B;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(31,77,58,.08);
+            box-shadow: 0 6px 16px rgb(var(--sage-800-rgb) / .08);
         }
         .kpi-tile::before {
             content: "";

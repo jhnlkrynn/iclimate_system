@@ -30,17 +30,17 @@
     </div>
     <style>
         .flash-toast-stack { position: fixed; top: 1rem; right: 1rem; z-index: 2400; display: flex; flex-direction: column; gap: .6rem; max-width: min(360px, calc(100vw - 2rem)); }
-        .flash-toast { border: 1px solid var(--ic-border, #d4edda); border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1rem 2.4rem rgba(13,31,24,.22); animation: flashToastIn .22s ease-out; }
+        .flash-toast { border: 1px solid var(--ic-border, var(--sage-100)); border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1rem 2.4rem rgb(var(--sage-950-rgb) / .22); animation: flashToastIn .22s ease-out; }
         .flash-toast.success { --toast-accent: var(--ic-green-500, #52b788); }
         .flash-toast.error { --toast-accent: var(--ic-coral, #d85b45); }
         .flash-toast.info { --toast-accent: var(--iclimate-info, #4B7185); }
         .flash-toast-accent { height: 4px; background: var(--toast-accent); }
         .flash-toast-body { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: .65rem; align-items: flex-start; padding: .8rem .85rem; }
         .flash-toast-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: var(--toast-accent); font-weight: 900; flex-shrink: 0; }
-        .flash-toast-title { margin: 0 0 .2rem; color: var(--ic-ink, #0d1f18); font-weight: 900; font-size: .92rem; }
-        .flash-toast-message { margin: 0; color: var(--ic-ink-mid, #3d5a48); line-height: 1.4; font-size: .86rem; }
-        .flash-toast-close { border: 0; background: transparent; color: var(--ic-ink-mid, #3d5a48); font-size: 1.1rem; line-height: 1; padding: .1rem .3rem; flex-shrink: 0; cursor: pointer; }
-        .flash-toast-close:hover { color: var(--ic-ink, #0d1f18); }
+        .flash-toast-title { margin: 0 0 .2rem; color: var(--ic-ink, var(--palette-ink)); font-weight: 900; font-size: .92rem; }
+        .flash-toast-message { margin: 0; color: var(--ic-ink-mid, var(--sage-700)); line-height: 1.4; font-size: .86rem; }
+        .flash-toast-close { border: 0; background: transparent; color: var(--ic-ink-mid, var(--sage-700)); font-size: 1.1rem; line-height: 1; padding: .1rem .3rem; flex-shrink: 0; cursor: pointer; }
+        .flash-toast-close:hover { color: var(--ic-ink, var(--palette-ink)); }
         .flash-toast-timer { height: 3px; background: color-mix(in srgb, var(--toast-accent) 24%, #fff); }
         .flash-toast-timer span { display: block; height: 100%; width: 100%; background: var(--toast-accent); animation: flashToastTimer 5s linear forwards; }
         @keyframes flashToastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }

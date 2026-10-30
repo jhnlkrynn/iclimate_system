@@ -1,22 +1,22 @@
 {{-- Header of the sign in and create account pages: the MAO logo, the iClimate logo and the office name,
      as on the landing page's top nav (components/public-nav.blade.php), with a way back to the home page. --}}
 <style>
-  .auth-masthead { background: #fff; border-bottom: 1px solid #DCE8D6; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .auth-masthead { background: #fff; border-bottom: 1px solid var(--sage-100); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
   .auth-masthead-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 10px 24px; }
   .auth-brand { display: flex; align-items: center; gap: 12px; min-width: 0; text-decoration: none; }
   /* The MAO logo is square and transparent: as tall as the iClimate logo beside it, never stretched. */
   .auth-brand-mao { width: 56px; height: 56px; object-fit: contain; flex-shrink: 0; }
   .auth-brand-logo { width: auto; height: 56px; flex-shrink: 0; }
-  .auth-brand-text { display: flex; flex-direction: column; min-width: 0; padding-left: 14px; border-left: 1px solid #DCE8D6; }
-  .auth-brand-office { font-size: 1.125rem; font-weight: 700; line-height: 1.25; color: #1F3D22; }
+  .auth-brand-text { display: flex; flex-direction: column; min-width: 0; padding-left: 14px; border-left: 1px solid var(--sage-100); }
+  .auth-brand-office { font-size: 1.125rem; font-weight: 700; line-height: 1.25; color: var(--sage-700); }
   .auth-brand-place { font-size: 1rem; line-height: 1.35; color: #4D5C50; }
   .auth-home-link {
     display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; min-height: 46px; padding: 0 16px;
-    border: 2px solid #8BC97E; border-radius: 10px; background: #fff;
-    font-size: 1rem; font-weight: 700; color: #173B1F; text-decoration: none;
+    border: 2px solid var(--sage-300); border-radius: 10px; background: #fff;
+    font-size: 1rem; font-weight: 700; color: var(--sage-800); text-decoration: none;
   }
-  .auth-home-link:hover { background: #E4F3DE; }
-  .auth-masthead a:focus-visible { outline: 3px solid #2F6B34; outline-offset: 3px; border-radius: 6px; }
+  .auth-home-link:hover { background: var(--sage-100); }
+  .auth-masthead a:focus-visible { outline: 3px solid var(--sage-700); outline-offset: 3px; border-radius: 6px; }
   @media (max-width: 767.98px) {
     .auth-masthead-inner { padding: 8px 16px; }
     .auth-brand-text { display: none; }

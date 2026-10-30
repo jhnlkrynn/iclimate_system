@@ -1,13 +1,13 @@
 {{-- Styles of the farmer sign-up form (auth/partials/register-form.blade.php), shared by /register and the landing
      page card. Output inside a <style> element. Page layout (split screen, card width) stays with each page. --}}
     :root {
-      --reg-green-dark: #1F3D22;
-      --reg-green: #2F6B34;
-      --reg-mint: #7FD6B5;
-      --reg-green-bg: #F3FAF0;
-      --reg-border: #DCE8D6;
-      --reg-input-border: #B5C9AE;
-      --reg-text: #1E2B21;
+      --reg-green-dark: var(--sage-800);
+      --reg-green: var(--sage-700);
+      --reg-mint: var(--sage-300);
+      --reg-green-bg: var(--sage-50);
+      --reg-border: var(--sage-100);
+      --reg-input-border: var(--sage-300);
+      --reg-text: var(--palette-ink);
       --reg-text-2: #4D5C50;
       --reg-error: #B42318;
       --reg-success: #16794A;
@@ -36,8 +36,8 @@
     .form-input.has-icon { padding-left: 36px; }
     .form-input.has-toggle { padding-right: 40px; }
     .form-input::placeholder { color: #98A39D; }
-    .form-input:hover:not(:focus):not(:focus-within):not(:disabled):not(.is-invalid) { border-color: #8BC97E; }
-    .form-input:focus { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
+    .form-input:hover:not(:focus):not(:focus-within):not(:disabled):not(.is-invalid) { border-color: var(--sage-300); }
+    .form-input:focus { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px var(--sage-200); }
     .form-input:disabled { color: var(--reg-text-2); background-color: var(--reg-green-bg); }
     .form-input.is-invalid { border-color: var(--reg-error); background-color: #fff; }
     .form-input.is-invalid:focus { box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
@@ -76,25 +76,25 @@
       background-repeat: no-repeat; background-position: right 10px center;
     }
     .org-ms.is-open { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 10l4-4 4 4' stroke='%2365736C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-    .org-ms:focus-within { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px #C8E6BF; }
+    .org-ms:focus-within { background-color: #fff; border-color: var(--reg-green); box-shadow: 0 0 0 3px var(--sage-200); }
     .org-ms.is-invalid:focus-within { border-color: var(--reg-error); box-shadow: 0 0 0 4px rgba(180,35,24,.1); }
     .org-ms-search { flex: 1 1 80px; min-width: 80px; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; font-size: 0.875rem; color: var(--reg-text); }
     .org-ms-search::placeholder { color: #98A39D; }
     .org-ms-chips { display: flex; gap: 4px; flex: 0 1 auto; min-width: 0; overflow: hidden; margin: 0; padding: 0; list-style: none; }
     .org-ms-chips:empty { display: none; }
-    .org-ms-chip { flex: none; display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 2px 0 9px; font-size: 0.7812rem; color: var(--reg-green-dark); background: #E2F1EA; border-radius: 980px; }
+    .org-ms-chip { flex: none; display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 2px 0 9px; font-size: 0.7812rem; color: var(--reg-green-dark); background: var(--sage-100); border-radius: 980px; }
     .org-ms-chip[hidden] { display: none; }
     .org-ms-chip span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .org-ms-chip button { width: 20px; height: 20px; padding: 0; flex-shrink: 0; display: grid; place-items: center; color: inherit; background: none; border: none; border-radius: 50%; cursor: pointer; }
-    .org-ms-chip button:hover { background: rgba(18,63,50,.1); }
+    .org-ms-chip button:hover { background: rgb(var(--sage-800-rgb) / .1); }
     .org-ms-chip button:focus-visible, .org-ms-more:focus-visible { outline: 2px solid var(--reg-green); outline-offset: 1px; }
-    .org-ms-more { flex: none; height: 26px; padding: 0 9px; font: inherit; font-size: 0.7812rem; font-weight: 500; color: var(--reg-green-dark); background: #fff; border: 1px solid #CFE3D9; border-radius: 980px; cursor: pointer; white-space: nowrap; }
+    .org-ms-more { flex: none; height: 26px; padding: 0 9px; font: inherit; font-size: 0.7812rem; font-weight: 500; color: var(--reg-green-dark); background: #fff; border: 1px solid var(--sage-200); border-radius: 980px; cursor: pointer; white-space: nowrap; }
     .org-ms-more[hidden] { display: none; }
     /* The list floats over the form (it never pushes it down), and opens upward when there is no room below. */
     .org-ms-list {
       position: absolute; z-index: 20; left: -1px; right: -1px; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none; cursor: default;
       max-height: 240px; overflow-y: auto; background: #fff; border: 1px solid var(--reg-border); border-radius: 12px;
-      box-shadow: 0 12px 28px rgba(18,63,50,.14);
+      box-shadow: 0 12px 28px rgb(var(--sage-700-rgb) / .14);
     }
     .org-ms.is-up .org-ms-list { top: auto; bottom: calc(100% + 6px); }
     .org-ms-list[hidden] { display: none; }
@@ -125,7 +125,7 @@
     .pwd-guide { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
     .pwd-guide-item { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 8px 0 6px; border-radius: 980px; font-size: 0.75rem; color: var(--reg-text-2); background: var(--reg-green-bg); white-space: nowrap; }
     .pwd-guide-item svg { flex-shrink: 0; color: transparent; }
-    .pwd-guide-item.is-met { color: var(--reg-success); background: #E3F3EA; font-weight: 500; }
+    .pwd-guide-item.is-met { color: var(--reg-success); background: var(--sage-100); font-weight: 500; }
     .pwd-guide-item.is-met svg { color: currentColor; }
 
     /* -- SECURITY CHECK: label, picture and answer on one line -- */
@@ -146,13 +146,13 @@
 
     .btn-submit {
       width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; gap: 10px;
-      background: #A6D79B; color: #173B1F; border: 2px solid #8BC97E; border-radius: 10px;
+      background: var(--sage-200); color: var(--sage-800); border: 2px solid var(--sage-300); border-radius: 10px;
       font-size: 0.9375rem; font-weight: 700; cursor: pointer; transition: background-color .15s ease;
     }
-    .btn-submit:hover { background: #8BC97E; }
-    .btn-submit:focus-visible { outline: 3px solid rgba(31,104,79,.45); outline-offset: 2px; }
+    .btn-submit:hover { background: var(--sage-500); }
+    .btn-submit:focus-visible { outline: 3px solid rgb(var(--sage-700-rgb) / .45); outline-offset: 2px; }
     .btn-submit:disabled { opacity: .8; cursor: wait; }
-    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(23,59,31,.25); border-top-color: #173B1F; animation: regSpin .8s linear infinite; }
+    .btn-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgb(var(--sage-800-rgb) / .25); border-top-color: var(--sage-800); animation: regSpin .8s linear infinite; }
     @keyframes regSpin { to { transform: rotate(360deg); } }
 
     @media (max-width: 560px) {

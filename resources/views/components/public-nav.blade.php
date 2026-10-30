@@ -56,7 +56,7 @@
                         <span class="hidden" data-weather-chip-text><span data-weather-chip-temp></span><span class="hidden lg:inline"> · Lian</span></span>
                     </button>
                     <div id="weatherPanel" role="dialog" aria-label="Weather in Lian" tabindex="-1" hidden data-weather-panel
-                         class="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] max-lg:fixed max-lg:inset-x-4 max-lg:top-[var(--nav-h)] max-lg:w-auto max-lg:max-w-none rounded-lg border border-line bg-white p-4 text-sm text-ink shadow-[0_8px_20px_rgba(17,26,19,0.12)] focus:outline-none">
+                         class="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] max-lg:fixed max-lg:inset-x-4 max-lg:top-[var(--nav-h)] max-lg:w-auto max-lg:max-w-none rounded-lg border border-line bg-white p-4 text-sm text-ink shadow-[0_8px_20px_rgb(var(--palette-ink-rgb)_/_0.12)] focus:outline-none">
                         <p class="text-base font-semibold" data-weather-panel-condition></p>
                         <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
                             <dt class="text-muted">Temperature</dt><dd class="text-right font-semibold" data-weather-panel-temp>--</dd>

@@ -17,55 +17,55 @@
             border-radius: 8px;
             padding: 1.35rem;
             margin-bottom: 1rem;
-            color: #1f2a24;
-            background: linear-gradient(135deg, #f6f9f7 0%, #eef4f0 60%, #e7f0ea 100%);
-            border: 1px solid #e3ece6;
-            box-shadow: 0 1rem 2.2rem rgba(31,42,36,.08);
+            color: var(--palette-ink);
+            background: linear-gradient(135deg, #f6f9f7 0%, var(--sage-50) 60%, var(--sage-100) 100%);
+            border: 1px solid var(--sage-100);
+            box-shadow: 0 1rem 2.2rem rgb(var(--sage-900-rgb) / .08);
         }
         .me-hero .text-white-50 { color: #4a5c52 !important; }
         .me-panel {
-            border: 1px solid #d4edda;
+            border: 1px solid var(--sage-100);
             border-radius: 8px;
             background: rgba(255,255,255,.96);
-            box-shadow: 0 .8rem 1.8rem rgba(13,31,24,.07);
+            box-shadow: 0 .8rem 1.8rem rgb(var(--sage-950-rgb) / .07);
             overflow: hidden;
         }
         .me-panel-header {
             padding: 1rem;
-            border-bottom: 1px solid #d4edda;
+            border-bottom: 1px solid var(--sage-100);
             background: #f7fbf8;
         }
         .me-panel-body { padding: 1rem; }
         .me-eyebrow {
-            color: #74c69d;
+            color: var(--sage-300);
             font-size: .72rem;
             font-weight: 900;
             letter-spacing: .12em;
             text-transform: uppercase;
         }
         .me-stat {
-            border: 1px solid #d4edda;
+            border: 1px solid var(--sage-100);
             border-radius: 8px;
             padding: .9rem;
             background: #fff;
             min-height: 110px;
         }
         .me-label {
-            color: #5a7a64;
+            color: var(--sage-700);
             font-size: .72rem;
             font-weight: 900;
             letter-spacing: .06em;
             text-transform: uppercase;
         }
         .me-value {
-            color: #0d1f18;
+            color: var(--palette-ink);
             font-size: 1.65rem;
             font-weight: 900;
             line-height: 1.1;
             margin-top: .35rem;
         }
         .me-table th {
-            color: #446553;
+            color: var(--sage-700);
             font-size: .72rem;
             letter-spacing: .07em;
             text-transform: uppercase;
@@ -75,8 +75,8 @@
         .me-detail-row { display: none; }
         .me-detail-row.open { display: table-row; }
         .me-detail-card {
-            border: 1px solid #d4edda;
-            border-left: 5px solid #52b788;
+            border: 1px solid var(--sage-100);
+            border-left: 5px solid var(--sage-500);
             border-radius: 8px;
             padding: 1rem;
             background: #f7fbf8;
@@ -93,16 +93,16 @@
             margin-top: .85rem;
         }
         .me-detail-block {
-            border: 1px solid #d4edda;
+            border: 1px solid var(--sage-100);
             border-radius: 8px;
             background: #fff;
             padding: .85rem;
         }
         .me-details-btn {
-            border: 1px solid #95d5b2;
+            border: 1px solid var(--sage-200);
             border-radius: 999px;
             background: #fff;
-            color: #1f6f4a;
+            color: var(--sage-700);
             padding: .28rem .62rem;
             font-size: .76rem;
             font-weight: 900;
@@ -117,7 +117,7 @@
         }
         .me-compare-count { width: min(220px, 100%); }
         .me-compare-card {
-            border: 1px solid #d4edda;
+            border: 1px solid var(--sage-100);
             border-radius: 8px;
             background: #fff;
             padding: 1rem;
@@ -134,10 +134,10 @@
             border-radius: 8px;
             display: grid;
             place-items: center;
-            color: #1a3a2a;
+            color: var(--sage-800);
             background: #f7fbf8;
-            border: 1px solid #d4edda;
-            box-shadow: 0 .45rem .9rem rgba(13,31,24,.1);
+            border: 1px solid var(--sage-100);
+            box-shadow: 0 .45rem .9rem rgb(var(--sage-950-rgb) / .1);
             flex: 0 0 auto;
         }
         .me-model-logo svg {
@@ -145,10 +145,10 @@
             height: 48px;
         }
         .me-model-logo.linear { background: linear-gradient(180deg, #f8fcff, #e8f4fa); }
-        .me-model-logo.forest { background: linear-gradient(180deg, #f4fff7, #e2f3e8); }
+        .me-model-logo.forest { background: linear-gradient(180deg, #f4fff7, var(--sage-100)); }
         .me-model-logo.boosting { background: linear-gradient(180deg, #fffaf0, #fbebcf); }
         .me-compare-select {
-            border: 1px solid #cfe5d6;
+            border: 1px solid var(--sage-200);
             border-radius: 8px;
             padding: 1rem;
             background: #fff;
@@ -166,20 +166,20 @@
             padding: .65rem;
         }
         .me-plain-note {
-            border: 1px solid #d4edda;
+            border: 1px solid var(--sage-100);
             border-radius: 8px;
             background: #fff;
             padding: .85rem;
             margin-top: .85rem;
-            color: #315543;
+            color: var(--sage-700);
         }
         .me-selected {
             display: inline-flex;
             align-items: center;
             border-radius: 999px;
             padding: .32rem .62rem;
-            color: #1f6f4a;
-            background: #d8f3dc;
+            color: var(--sage-700);
+            background: var(--sage-100);
             font-size: .76rem;
             font-weight: 900;
         }
@@ -198,8 +198,8 @@
             border-radius: 999px;
             padding: .36rem .65rem;
             margin: .16rem;
-            background: #edf7f1;
-            color: #2d6a4f;
+            background: var(--sage-50);
+            color: var(--sage-700);
             font-size: .78rem;
             font-weight: 800;
         }
@@ -579,22 +579,22 @@
                 }
                 if (name.includes('Random Forest')) {
                     return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                        <path d="M8 51h48" stroke="#8bb79a" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M8 51h48" stroke="{{ config('palette.sage.300') }}" stroke-width="3" stroke-linecap="round"/>
                         <path d="M20 50V31M32 50V24M45 50V34" stroke="#8a5a2b" stroke-width="4" stroke-linecap="round"/>
-                        <circle cx="20" cy="27" r="11" fill="#52b788"/>
-                        <circle cx="32" cy="20" r="13" fill="#2d6a4f"/>
-                        <circle cx="45" cy="30" r="10" fill="#74c69d"/>
-                        <path d="M15 28c3-4 7-5 11-3M27 20c5-5 11-5 16 0M40 31c3-3 7-3 10 0" stroke="#d8f3dc" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+                        <circle cx="20" cy="27" r="11" fill="{{ config('palette.sage.500') }}"/>
+                        <circle cx="32" cy="20" r="13" fill="{{ config('palette.sage.700') }}"/>
+                        <circle cx="45" cy="30" r="10" fill="{{ config('palette.sage.400') }}"/>
+                        <path d="M15 28c3-4 7-5 11-3M27 20c5-5 11-5 16 0M40 31c3-3 7-3 10 0" stroke="{{ config('palette.sage.100') }}" stroke-width="2" stroke-linecap="round" opacity=".75"/>
                     </svg>`;
                 }
                 return `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
                     <rect x="11" y="11" width="42" height="42" rx="4" fill="#fffdf7" stroke="#e3c078" stroke-width="2"/>
                     <path d="M18 47h29M18 20v27" stroke="#b68a36" stroke-width="2" stroke-linecap="round"/>
-                    <rect x="22" y="39" width="6" height="8" rx="1.5" fill="#8FAF9A"/>
+                    <rect x="22" y="39" width="6" height="8" rx="1.5" fill="{{ config('palette.sage.300') }}"/>
                     <rect x="31" y="32" width="6" height="15" rx="1.5" fill="#4B7185"/>
-                    <rect x="40" y="23" width="6" height="24" rx="1.5" fill="#1F5A46"/>
-                    <path d="M21 36c7-1 13-5 21-14" stroke="#123F32" stroke-width="3" stroke-linecap="round"/>
-                    <path d="M39 21h7v7" stroke="#123F32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="40" y="23" width="6" height="24" rx="1.5" fill="{{ config('palette.sage.700') }}"/>
+                    <path d="M21 36c7-1 13-5 21-14" stroke="{{ config('palette.sage.800') }}" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M39 21h7v7" stroke="{{ config('palette.sage.800') }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>`;
             };
 

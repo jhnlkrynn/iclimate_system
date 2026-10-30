@@ -104,13 +104,14 @@ class CaptchaService
             $rotation = random_int(-13, 13);
             $size = random_int(26, 31);
             $letterSvg .= sprintf(
-                '<text x="%d" y="%d" transform="rotate(%d %d %d)" font-family="Inter, Arial, sans-serif" font-size="%d" font-weight="800" fill="#0f3d2e">%s</text>',
+                '<text x="%d" y="%d" transform="rotate(%d %d %d)" font-family="Inter, Arial, sans-serif" font-size="%d" font-weight="800" fill="%s">%s</text>',
                 $x,
                 $y,
                 $rotation,
                 $x,
                 $y,
                 $size,
+                config('palette.sage.800'),
                 e($letter)
             );
         }
@@ -123,24 +124,28 @@ class CaptchaService
                 random_int(0, 64),
                 random_int(0, 190),
                 random_int(0, 64),
-                random_int(0, 1) === 1 ? '#52B788' : '#E8A73D',
+                random_int(0, 1) === 1 ? config('palette.sage.500') : '#E8A73D',
                 random_int(1, 2)
             );
         }
 
         for ($i = 0; $i < 34; $i++) {
             $noise .= sprintf(
-                '<circle cx="%d" cy="%d" r="%d" fill="#1b5e45" opacity=".22"/>',
+                '<circle cx="%d" cy="%d" r="%d" fill="%s" opacity=".22"/>',
                 random_int(0, 190),
                 random_int(0, 64),
-                random_int(1, 2)
+                random_int(1, 2),
+                config('palette.sage.700')
             );
         }
 
+        $background = config('palette.sage.50');
+        $wave = config('palette.sage.300');
+
         return <<<SVG
 <svg xmlns="http://www.w3.org/2000/svg" width="190" height="64" viewBox="0 0 190 64" role="img" aria-label="CAPTCHA code">
-  <rect width="190" height="64" rx="13" fill="#eef8f2"/>
-  <path d="M0 44 C34 20 62 70 104 37 S160 14 190 35" fill="none" stroke="#95D5B2" stroke-width="13" opacity=".28"/>
+  <rect width="190" height="64" rx="13" fill="{$background}"/>
+  <path d="M0 44 C34 20 62 70 104 37 S160 14 190 35" fill="none" stroke="{$wave}" stroke-width="13" opacity=".28"/>
   {$noise}
   {$letterSvg}
 </svg>

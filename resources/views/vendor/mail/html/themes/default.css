@@ -1,4 +1,6 @@
-/* iClimate account emails: brand green header band (#17432A), green buttons, plain readable body. */
+/* iClimate account emails: sage header band, sage buttons, plain readable body. Email clients do not read CSS variables, so the
+   palette is written out here: #485A42 is sage-700 and #CCD8C8 sage-200 (resources/palette.json; tests/Feature/PaletteTest checks
+   they match). The success button keeps its own green. */
 
 /* Base */
 
@@ -30,7 +32,7 @@ blockquote {
 }
 
 a {
-    color: #17432A;
+    color: #485A42;
 }
 
 a img {
@@ -100,7 +102,7 @@ img {
 /* Header */
 
 .header {
-    background-color: #17432A;
+    background-color: #485A42;
     padding: 22px 0;
     text-align: center;
 }
@@ -121,7 +123,7 @@ img {
 }
 
 .header .brand-sub {
-    color: #d8eadf;
+    color: #CCD8C8;
     display: block;
     font-size: 13px;
     font-weight: normal;
@@ -257,11 +259,11 @@ img {
 
 .button-blue,
 .button-primary {
-    background-color: #17432A;
-    border-bottom: 10px solid #17432A;
-    border-left: 22px solid #17432A;
-    border-right: 22px solid #17432A;
-    border-top: 10px solid #17432A;
+    background-color: #485A42;
+    border-bottom: 10px solid #485A42;
+    border-left: 22px solid #485A42;
+    border-right: 22px solid #485A42;
+    border-top: 10px solid #485A42;
 }
 
 .button-green,
