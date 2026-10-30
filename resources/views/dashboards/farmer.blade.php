@@ -11,6 +11,11 @@
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden><span data-mfd-refresh-error-text>{{ __('farmer.state.refresh_failed') }}</span></div>
 
+        {{-- A farm without an association answer: asked here, one farm at a time (not part of the timed refresh). --}}
+        @if (! empty($associationPrompt))
+            @include('dashboards.farmer.association-prompt', ['prompt' => $associationPrompt])
+        @endif
+
         @foreach (\App\Http\Controllers\DashboardController::FARMER_SLOTS as $name)
             @php $html = view('dashboards.farmer.'.$name, ['f' => $f])->render(); @endphp
             <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>

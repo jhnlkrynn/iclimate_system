@@ -123,6 +123,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->middleware('farmer.redirect:farmer.my-farm')->name('farmer.dashboard.farm-map');
         });
 
+        // The dashboard's association card: answer for one farm, or "Later" (FarmAssociationPromptController).
+        Route::middleware(['farmer.language', 'throttle:30,1,post-farmer-association-prompt'])->group(function () {
+            Route::post('/farmer/farm-association', [\App\Http\Controllers\FarmAssociationPromptController::class, 'store'])->name('farmer.association-prompt.store');
+            Route::post('/farmer/farm-association/later', [\App\Http\Controllers\FarmAssociationPromptController::class, 'later'])->name('farmer.association-prompt.later');
+        });
+
         // "Aking Bukid": the farmer's farms (My Farms), and the current farm's planting schedule, harvest records and dates.
         Route::get('/farmer/my-farm', \App\Http\Controllers\FarmerMyFarmController::class)
             ->middleware('farmer.language')

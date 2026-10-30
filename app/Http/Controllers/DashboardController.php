@@ -195,7 +195,10 @@ class DashboardController extends Controller
         // After the page data is read: a new notification clears the farmer's stored page, so it must not run first.
         app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($request->user());
 
-        return view('dashboards.farmer', ['f' => $payload]);
+        return view('dashboards.farmer', [
+            'f' => $payload,
+            'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($request->user()),
+        ]);
     }
 
     /** The farmer's prepared Home (built from saved data when there is none for the current data yet). */

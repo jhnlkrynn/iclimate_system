@@ -150,12 +150,22 @@ return [
         'pick_choose' => 'Pumili ng samahan',
         'other_name' => 'Pangalan ng inyong samahan',
         'other_hint' => 'Titingnan at idadagdag ito ng MAO.',
+        // The farmer dashboard's card for a farm without an answer.
+        'prompt' => [
+            'title' => 'Kasapi ba ang :name sa isang samahan ng magsasaka?',
+            'intro' => 'Ang mga samahan lang sa :barangay ang nakalista. Puwede itong baguhin mamaya sa pahina ng bukid.',
+            'save' => 'I-save',
+            'later' => 'Mamaya na',
+            'saved' => 'Salamat. Na-save ang :name.',
+            'later_done' => 'Itatanong namin ulit pagkalipas ng :days araw.',
+        ],
         'card' => [
             'member' => 'Samahan: :name',
             'not_member' => 'Hindi kasapi',
             'pending_other' => 'Hinihintay ang pagsusuri ng MAO',
             'not_declared' => 'Samahan: wala pang sagot',
             'note' => 'Paalala ng MAO: :note',
+            'set_by_mao' => 'Itinakda ng MAO',
         ],
         'notify' => [
             'linked' => [

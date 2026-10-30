@@ -10,7 +10,8 @@
         'farmers' => [
             ['farmer-profiles.index', 'Farmers', ['farmer-profiles.*'], [$mao, \App\Models\User::ROLE_IT_EXPERT]],
             ['mao.farmer-approvals.index', 'Farmer Approvals', ['mao.farmer-approvals.*'], [$mao]],
-            ['mao.farm-associations.index', 'Association Requests', ['mao.farm-associations.*'], [$mao]],
+            ['mao.farm-associations.index', 'Association Requests', ['mao.farm-associations.index'], [$mao]],
+            ['mao.farm-associations.undeclared', 'Undeclared Farms', ['mao.farm-associations.undeclared*'], [$mao]],
         ],
         // Records: the two record lists keep their own tab row (crud.index); this one is for the Barangays page.
         'records' => [

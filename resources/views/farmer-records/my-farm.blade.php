@@ -57,6 +57,7 @@
                                     <p class="ffm-card-assoc" data-farm-association="{{ $f['association']['state'] }}">
                                         {{ __('farms.association.card.'.$f['association']['state'], ['name' => $f['association']['name']]) }}
                                         @if ($f['association']['note'] && $f['association']['state'] === 'not_member')<small class="d-block fad-m-small">{{ __('farms.association.card.note', ['note' => $f['association']['note']]) }}</small>@endif
+                                        @if ($f['association']['set_by_mao'] ?? false)<small class="d-block fad-m-small" data-association-set-by-mao>{{ __('farms.association.card.set_by_mao') }}</small>@endif
                                     </p>
                                 @endif
                                 <p class="ffm-card-map"><span class="fad-badge {{ $f['mapped'] ? 'is-good' : 'is-muted' }}">{{ $f['mapped'] ? __('farms.mapped') : __('farms.not_mapped') }}</span></p>

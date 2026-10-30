@@ -105,6 +105,9 @@ final class CacheScope
         // Farmer Home (FarmerDashboardService, five parts from saved data): current and barangay weather, the week's risk
         // and risk detail, advisories (also the typhoon event). The farmer's own rows come through the per-user version.
         'farmer-dashboard' => ['advisories', 'risk', 'weather'],
+        // The farmer dashboard's association card (FarmAssociations::promptFor): the farmer's farms come through the
+        // per-user version; the associations of the farm's barangay are farmer organizations.
+        'association-prompt' => ['farmers'],
         // DashboardOverviewService::farmer() / DashboardKpiService::farmer(): the older farmer overview parts.
         'farmer-overview' => ['users', 'advisories', 'rice', 'risk', 'community-posts', 'weather', 'predictions'],
         // MAO dashboard payload + its overview / KPI parts.

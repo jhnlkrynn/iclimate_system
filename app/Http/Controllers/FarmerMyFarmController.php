@@ -67,6 +67,8 @@ class FarmerMyFarmController extends Controller
                     'state' => $f->associationState(),
                     'name' => $associationNames->get($f->farmer_organization_id),
                     'note' => $f->association_note,
+                    // Answered by the MAO for the farmer (Undeclared farms); the farmer can still change it.
+                    'set_by_mao' => $f->getAttribute('association_set_by') === \App\Services\Farms\FarmAssociations::SET_BY_MAO,
                 ],
             ])->all(),
             'current' => $current,

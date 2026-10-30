@@ -5,6 +5,7 @@ namespace App\Services\Farms;
 use App\Models\Farm;
 use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
+use App\Models\User;
 use App\Support\LianBarangays;
 use App\Support\SchemaCache;
 use Illuminate\Support\Collection;
@@ -117,15 +118,105 @@ final class FarmAssociations
             && (int) $farm->farmer_organization_id === (int) $answer['farmer_organization_id']
             && (string) $farm->association_other_name === (string) $answer['association_other_name'];
 
-        $farm->forceFill($answer + ($same ? [] : ['association_note' => null]));
+        // A new answer is the farmer's own (it replaces one the MAO set); the same answer keeps who set it.
+        $farm->forceFill($answer + ($same ? [] : ['association_note' => null] + self::setBy(self::SET_BY_FARMER)));
         $farm->associationAnswered = true;
+    }
+
+    public const SET_BY_FARMER = 'farmer';
+
+    /** Set by the MAO in bulk (Undeclared farms); the farm card says "Set by MAO" and the farmer can still change it. */
+    public const SET_BY_MAO = 'mao';
+
+    /** Days the dashboard's association card stays away after "Later". */
+    public const PROMPT_SNOOZE_DAYS = 7;
+
+    /** @return array<string, mixed> who set the answer, and when (nothing before the columns exist) */
+    private static function setBy(?string $who, ?User $user = null): array
+    {
+        return SchemaCache::hasColumn('farms', 'association_set_by')
+            ? ['association_set_by' => $who, 'association_set_by_user_id' => $user?->getKey(), 'association_set_at' => $who === null ? null : now()]
+            : [];
+    }
+
+    /**
+     * The farmer's next farm in use without an answer, for the dashboard card ("Is <farm> part of a farmers'
+     * association?"), one farm at a time: the primary farm first. Null when every farm is answered, or while "Later"
+     * still holds.
+     */
+    public static function promptFarm(User $user): ?Farm
+    {
+        if (! self::available() || $user->role !== User::ROLE_FARMER) {
+            return null;
+        }
+        $snoozed = SchemaCache::hasColumn('users', 'association_prompt_snoozed_until') ? $user->getAttribute('association_prompt_snoozed_until') : null;
+        if ($snoozed !== null && \Illuminate\Support\Carbon::parse($snoozed)->isFuture()) {
+            return null;
+        }
+
+        return Farm::query()->ownedBy($user)->active()->whereNull('association_status')
+            ->orderByDesc('is_primary')->orderBy('id')->first();
+    }
+
+    /**
+     * The dashboard card's data, or null: the farm (id, farm_name, barangay) and its barangay's associations. Kept in
+     * the farmer's page cache so a repeat visit to the dashboard reads no farms: saving a farm or the farmer (an answer,
+     * "Later") retires it at once (CacheScope::OWNED_BY_USER), and it lapses after 10 minutes so "Later" ends on time.
+     *
+     * @return array{farm: object, options: Collection<int, array{id: int, name: string, barangay: ?string, farm_type: ?string}>}|null
+     */
+    public static function promptFor(User $user): ?array
+    {
+        $data = \App\Support\PageCache::forUser((int) $user->getKey(), 'association-prompt', 600, function () use ($user): ?array {
+            $farm = self::promptFarm($user);
+
+            return $farm === null ? null : [
+                'farm' => ['id' => (int) $farm->id, 'farm_name' => (string) $farm->farm_name, 'barangay' => $farm->barangay],
+                'options' => self::optionsFor($farm->barangay, $farm->farm_type)->all(),
+            ];
+        });
+
+        return $data === null ? null : ['farm' => (object) $data['farm'], 'options' => collect($data['options'])];
+    }
+
+    /** "Later" on the dashboard card: it stays away for PROMPT_SNOOZE_DAYS days. */
+    public static function snoozePrompt(User $user): void
+    {
+        if (SchemaCache::hasColumn('users', 'association_prompt_snoozed_until')) {
+            $user->forceFill(['association_prompt_snoozed_until' => now()->addDays(self::PROMPT_SNOOZE_DAYS)])->save();
+        }
+    }
+
+    /**
+     * The MAO answers for farms that have no answer yet (Undeclared farms): a listed association of their barangay, or
+     * "not a member". Marked as set by the MAO; memberships follow (Farm::booted()). No notification is sent.
+     *
+     * @param  iterable<int, Farm>  $farms
+     */
+    public static function setByMao(iterable $farms, User $mao, string $status, ?int $organizationId): int
+    {
+        $count = 0;
+        foreach ($farms as $farm) {
+            $farm->forceFill([
+                'association_status' => $status,
+                'farmer_organization_id' => $status === Farm::ASSOCIATION_MEMBER ? $organizationId : null,
+                'association_other_name' => null,
+                'association_note' => null,
+            ] + self::setBy(self::SET_BY_MAO, $mao));
+            $farm->associationAnswered = true;
+            $farm->save();
+            $count++;
+        }
+
+        return $count;
     }
 
     /** Back to "not declared" (the farm moved to another barangay: the question is asked again). */
     public static function clear(Farm $farm): void
     {
         $farm->forceFill(['farmer_organization_id' => null, 'association_status' => null, 'association_other_name' => null, 'association_note' => null]
-            + (SchemaCache::hasColumn('farms', 'association_joined_on') ? ['association_joined_on' => null] : []));
+            + (SchemaCache::hasColumn('farms', 'association_joined_on') ? ['association_joined_on' => null] : [])
+            + self::setBy(null));
     }
 
     /**

@@ -150,12 +150,22 @@ return [
         'pick_choose' => 'Choose association',
         'other_name' => 'Name of your association',
         'other_hint' => 'The MAO will check it and add it.',
+        // The farmer dashboard's card for a farm without an answer.
+        'prompt' => [
+            'title' => 'Is :name part of a farmers\' association?',
+            'intro' => 'Only the associations of :barangay are listed. You can change this later on the farm\'s page.',
+            'save' => 'Save',
+            'later' => 'Later',
+            'saved' => 'Thank you. :name is saved.',
+            'later_done' => 'We will ask again in :days days.',
+        ],
         'card' => [
             'member' => 'Samahan: :name',
             'not_member' => 'Not a member',
             'pending_other' => 'Waiting for MAO review',
             'not_declared' => 'Samahan: not answered yet',
             'note' => 'MAO note: :note',
+            'set_by_mao' => 'Set by MAO',
         ],
         'notify' => [
             'linked' => [

@@ -39,6 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Association Requests (MAO): farms whose farmer's association "isn't listed" (FarmAssociationReviewController).
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/farm-associations')->name('mao.farm-associations.')->group(function () {
         Route::get('/', [\App\Http\Controllers\FarmAssociationReviewController::class, 'index'])->name('index');
+        // Undeclared Farms: farms without an answer, counted per barangay; the MAO can answer for many at once.
+        Route::get('undeclared', [\App\Http\Controllers\FarmAssociationUndeclaredController::class, 'index'])->name('undeclared');
+        Route::post('undeclared', [\App\Http\Controllers\FarmAssociationUndeclaredController::class, 'update'])->middleware('throttle:30,1,post-farm-associations-undeclared')->name('undeclared.update');
         Route::post('{farm}/link', [\App\Http\Controllers\FarmAssociationReviewController::class, 'link'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-link')->name('link');
         Route::post('{farm}/create', [\App\Http\Controllers\FarmAssociationReviewController::class, 'store'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-create')->name('store');
         Route::post('{farm}/reject', [\App\Http\Controllers\FarmAssociationReviewController::class, 'reject'])->whereNumber('farm')->middleware('throttle:60,1,post-farm-association-reject')->name('reject');
