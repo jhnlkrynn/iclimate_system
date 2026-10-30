@@ -21,7 +21,7 @@
                     <div data-reveal class="flex flex-col gap-1 sm:flex-row sm:gap-3">
                         <dt class="flex w-[140px] shrink-0 items-center gap-3 text-muted"><x-icon name="map-pin" class="h-[18px] w-[18px] text-brand" />Address</dt>
                         <dd class="text-ink">
-                            Municipal Agriculture Office, Lian Municipal Hall, Poblacion, Lian, Batangas
+                            {{ \App\Support\MaoContact::ADDRESS }}
                             <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="lp-link mt-1 block w-fit" data-directions>Get directions<span class="sr-only"> (opens in a new tab)</span></a>
                         </dd>
                     </div>
@@ -32,7 +32,7 @@
                     {{-- Phone row (Figma) left out until the office confirms a number; add it back as a tel: link. --}}
                     <div data-reveal class="flex flex-col gap-1 sm:flex-row sm:gap-3">
                         <dt class="flex w-[140px] shrink-0 items-center gap-3 text-muted"><x-icon name="clock" class="h-[18px] w-[18px] text-brand" />Office hours</dt>
-                        <dd class="text-ink">Mon to Fri, 8:00 AM to 5:00 PM · Saturday by appointment</dd>
+                        <dd class="text-ink">{{ \App\Support\MaoContact::HOURS }}</dd>
                     </div>
                 </dl>
             </div>

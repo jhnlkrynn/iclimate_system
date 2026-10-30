@@ -39,6 +39,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // A queued account email that has now really gone out: its Last email line says Sent (AccountEmails).
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSent::class, static function (\Illuminate\Mail\Events\MessageSent $event): void {
+            $id = $event->data['accountEmailId'] ?? null;
+            if (is_int($id) && \App\Support\SchemaCache::hasTable('account_emails')) {
+                \App\Models\AccountEmail::query()->whereKey($id)->where('status', \App\Models\AccountEmail::STATUS_QUEUED)
+                    ->update(['status' => \App\Models\AccountEmail::STATUS_SENT, 'sent_at' => now(), 'error' => null]);
+            }
+        });
+
         // Farmer – Naicel (2026-10): after a farm or profile is saved anywhere (e.g. the farm form), the farmer's
         // missing-info notifications are checked again on their next page (FarmerMissingInfoNotifier::syncOnPageLoad).
         // The listener returns nothing on purpose: a listener that returns false stops the ones after it.

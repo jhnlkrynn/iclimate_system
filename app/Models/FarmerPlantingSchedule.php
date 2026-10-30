@@ -53,13 +53,20 @@ class FarmerPlantingSchedule extends Model
 
     public function farmer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     // ------------------------------------------------------------ Panel revision 1.3: harvest timing
 
     protected static function booted(): void
     {
+        // A plan closed because its farmer's account was deleted (App\Services\Accounts\AccountDeletion::PLAN_STATUS)
+        // leaves every list, calendar, map and count of running plans. Harvested plans stay (history for reports).
+        static::addGlobalScope('hide_closed_by_account_deletion', function (\Illuminate\Database\Eloquent\Builder $query): void {
+            $status = $query->getModel()->qualifyColumn('progress_status');
+            $query->where(fn ($q) => $q->whereNull($status)->orWhere($status, '!=', \App\Services\Accounts\AccountDeletion::PLAN_STATUS));
+        });
+
         // Whatever path records a harvest date (Activity Calendar, the planting form, an import), its timing is kept
         // right. The reason itself is asked for by the forms (App\Support\HarvestTiming::attributes()).
         static::saving(function (self $schedule): void {

@@ -80,6 +80,9 @@ class FarmerApprovalController extends Controller
             'rejection_reason' => $data['reason'],
         ])->save();
         SystemAuditLogger::record('Rejected Farmer Account', $request, ['record_type' => 'Farmer account', 'record_id' => $user->getKey(), 'record_label' => $user->name, 'barangay' => $user->barangay, 'reason' => $data['reason']]);
+        // "Your iClimate account was not approved", with the reason, to the farmer's own email. (Approving emails the
+        // farmer from User::booted(), which also covers IT activating a waiting account.)
+        \App\Services\Accounts\AccountEmails::rejected($user, $data['reason']);
         rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
 
         return back()->with('success', $user->name.'\'s registration was rejected.');

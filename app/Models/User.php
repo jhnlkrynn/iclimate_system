@@ -24,6 +24,18 @@ class User extends Authenticatable
 
         static::saved($forget);
         static::deleted($forget);
+
+        // A deleted account is hidden from every user query unless asked for (User::withDeleted()).
+        static::addGlobalScope(new \App\Models\Scopes\HideDeletedUsers);
+
+        // "Your iClimate account is approved": whenever a waiting or rejected account becomes Active (Farmer Approvals,
+        // or IT setting the status on the Users page). Restoring a deleted account sends its own email instead.
+        static::saved(function (self $user): void {
+            if ($user->wasChanged('status') && $user->status === self::STATUS_ACTIVE
+                && in_array($user->getOriginal('status'), [self::STATUS_PENDING, self::STATUS_REJECTED], true)) {
+                \App\Services\Accounts\AccountEmails::approved($user);
+            }
+        });
         // Panel revision 4.4: a changed MAO account refreshes the cached coverage and "Your MAO personnel" cards.
         static::saved(function (self $user): void {
             if ($user->role === self::ROLE_MAO || $user->getOriginal('role') === self::ROLE_MAO) {
@@ -52,6 +64,48 @@ class User extends Authenticatable
     public const STATUS_REJECTED = 'Rejected';
 
     public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_PENDING, self::STATUS_REJECTED];
+
+    /**
+     * A closed account (App\Services\Accounts\AccountDeletion). Not one of STATUSES: it is never picked on the edit
+     * form, only set by deleting and undone by restoring. Hidden from every user query (Scopes\HideDeletedUsers).
+     */
+    public const STATUS_DELETED = 'Deleted';
+
+    /** Every user, deleted accounts included (the query starts without Scopes\HideDeletedUsers). */
+    public static function withDeleted(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::query()->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->status === self::STATUS_DELETED;
+    }
+
+    /** IT can still restore it (deleted within config user_deletion.restore_days). */
+    public function canBeRestored(): bool
+    {
+        return $this->isDeleted() && $this->deleted_at !== null
+            && $this->deleted_at->greaterThanOrEqualTo(now()->subDays((int) config('user_deletion.restore_days', 30)));
+    }
+
+    /** "Deleted", or "Deceased" for an account closed for that reason (the Users list's Status column). */
+    public function getStatusDisplayAttribute(): ?string
+    {
+        if ($this->isDeleted()) {
+            return $this->deleted_reason === 'deceased' ? 'Deceased' : self::STATUS_DELETED;
+        }
+
+        return $this->status;
+    }
+
+    /** The account's saved language for its emails and the deleted-account panel: en or fil. */
+    public function mailLocale(): string
+    {
+        $saved = $this->getAttribute('preferred_language');
+
+        return \App\Support\FarmerLanguage::isSupported($saved) ? $saved : \App\Support\FarmerLanguage::DEFAULT;
+    }
 
     /** What a person who cannot sign in is told, by account status. */
     public static function signInRefusal(?string $status): string
@@ -429,6 +483,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'deleted_note_internal',   // IT only, never in JSON
     ];
 
     /**
@@ -449,6 +504,7 @@ class User extends Authenticatable
             'area_covered_ha' => 'decimal:2',
             'is_mao_head' => 'boolean',
             'must_change_password' => 'boolean',
+            'deleted_at' => 'datetime',
         ];
     }
 }

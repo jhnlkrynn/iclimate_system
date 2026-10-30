@@ -30,7 +30,7 @@ class ConversationMessage extends Model
 
     public function sender(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'sender_id');
+        return $this->belongsTo(User::class, 'sender_id')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     /** Messages the user has received and not opened yet: the one rule the Messages page and the Farmer dashboard count with. */

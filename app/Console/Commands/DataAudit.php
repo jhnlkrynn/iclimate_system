@@ -61,7 +61,7 @@ class DataAudit extends Command
         // A KPI that has no data is swapped for another one with data, so a missing key means "no figure shown".
         $kpi = fn (array $o, string $key): array => collect($o['kpis'])->firstWhere('key', $key) ?? ['value' => 'Insufficient verified data', 'note' => ''];
 
-        $this->compare('IT · Total users', (int) DB::table('users')->count(), (int) str_replace(',', '', $kpi($it, 'users')['value']));
+        $this->compare('IT · Total users', (int) DB::table('users')->where(fn ($q) => $q->whereNull('status')->orWhere('status', '!=', \App\Models\User::STATUS_DELETED))->count(), (int) str_replace(',', '', $kpi($it, 'users')['value']));
 
         $riceVerified = $samples->summary('rice_productions')['verified'];
         $itRice = $kpi($it, 'rice-records')['value'];

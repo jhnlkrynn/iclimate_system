@@ -51,8 +51,10 @@ class DeploymentReadinessTest extends TestCase
         $it = $this->user(User::ROLE_IT_EXPERT);
         $second = $this->user(User::ROLE_IT_EXPERT);
 
-        $this->actingAs($it)->delete(route('users.destroy', $second))->assertSessionHasNoErrors();
-        $this->assertDatabaseMissing('users', ['id' => $second->id]);
+        // IT deletes with a reason; the account is closed, not erased (App\Services\Accounts\AccountDeletion).
+        $this->actingAs($it)->delete(route('users.destroy', $second), ['reason' => 'moved_out', 'confirm_name' => $second->name])->assertSessionHasNoErrors();
+        $this->assertSame(User::STATUS_DELETED, User::withDeleted()->findOrFail($second->id)->status);
+        $this->assertNull(User::query()->find($second->id));
 
         // Now the only administrator: deleting the account from the profile page is refused too.
         $this->actingAs($it)->delete('/profile', ['password' => 'password'])->assertSessionHasErrorsIn('userDeletion', 'password');

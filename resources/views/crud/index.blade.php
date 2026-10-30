@@ -223,7 +223,10 @@
                                             <button class="btn btn-sm btn-outline-success" type="submit" data-loading-text="Updating...">Mark Read</button>
                                         </form>
                                     @endif
-                                    @if ($canManage)
+                                    @if ($canManage && $routeName === 'users')
+                                        {{-- Users: Delete opens the Delete account dialog (a reason is required); a deleted row offers Restore. --}}
+                                        @include('users._row-actions', ['user' => $record])
+                                    @elseif ($canManage)
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $recordKey) }}">Edit</a>
                                         <form class="d-inline" method="POST" action="{{ route($routeName.'.destroy', $recordKey) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                             @csrf
@@ -270,7 +273,9 @@
                                     <button class="btn btn-sm btn-outline-success" type="submit" data-loading-text="Updating...">Mark Read</button>
                                 </form>
                             @endif
-                            @if ($canManage)
+                            @if ($canManage && $routeName === 'users')
+                                @include('users._row-actions', ['user' => $record])
+                            @elseif ($canManage)
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route($routeName.'.edit', $recordKey) }}">Edit</a>
                                 <form method="POST" action="{{ route($routeName.'.destroy', $recordKey) }}" data-loading="true" data-ic-confirm="Delete this record? This action cannot be undone.">
                                     @csrf
@@ -334,5 +339,8 @@
             .fp-mensahe-frame { display: block; width: 100%; height: 100%; min-height: 60vh; border: 0; }
             .ic-modal .fad-m-scroll:has(> .fp-mensahe-frame) { padding: 0; display: block; }
         </style>
+    @endif
+    @if ($routeName === 'users' && $canManage)
+        @include('users._delete-modal')
     @endif
 </x-app-layout>

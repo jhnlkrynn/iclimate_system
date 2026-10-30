@@ -8,11 +8,12 @@
             </div>
             <div class="d-flex gap-2 align-self-start align-self-lg-end action-cluster">
                 <a class="btn btn-outline-secondary" href="{{ route($routeName.'.index') }}">Back</a>
-                @if ($canManage)
+                @php $deletedAccount = $routeName === 'users' && $record->isDeleted(); @endphp
+                @if ($canManage && ! $deletedAccount)
                     <a class="btn btn-light" href="{{ route($routeName.'.edit', $record) }}">Edit</a>
                 @endif
                 {{-- Manuscript – Naicel: IT resets a user's password to a one-time temporary password. --}}
-                @if ($routeName === 'users' && $canManage && ! $record->is(auth()->user()))
+                @if ($routeName === 'users' && $canManage && ! $deletedAccount && ! $record->is(auth()->user()))
                     <form method="POST" action="{{ route('users.reset-password', $record) }}" data-loading="true" data-ic-confirm="Give {{ $record->name }} a new temporary password? Their current password stops working.">
                         @csrf
                         <button class="btn btn-outline-primary" type="submit" data-loading-text="Resetting...">Reset Password</button>
@@ -46,6 +47,10 @@
             @include('partials.record-stamps', ['record' => $record])
         </div>
     </div>
+
+    @if ($routeName === 'users')
+        @include('users._account-details', ['user' => $record])
+    @endif
 
     @if ($routeName === 'farmer-profiles' && ($staffFarms = $record->farms->whereNull('archived_at')->values())->isNotEmpty())
         {{-- Each of the farmer's farms with its association (farms.farmer_organization_id). --}}

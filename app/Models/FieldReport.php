@@ -37,11 +37,11 @@ class FieldReport extends Model
 
     public function reportedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reported_by');
+        return $this->belongsTo(User::class, 'reported_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     public function assignedTo(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(User::class, 'assigned_to')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 }

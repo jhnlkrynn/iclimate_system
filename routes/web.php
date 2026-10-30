@@ -1059,6 +1059,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->middleware(
         'role:'.User::ROLE_IT_EXPERT
     );
+    // Restore a deleted account (Users list, Deleted filter) within config user_deletion.restore_days.
+    Route::post('users/{user}/restore', [UserManagementController::class, 'restore'])
+        ->whereNumber('user')
+        ->middleware(['role:'.User::ROLE_IT_EXPERT, 'throttle:30,1,post-user-restore'])
+        ->name('users.restore');
 
 
     /*

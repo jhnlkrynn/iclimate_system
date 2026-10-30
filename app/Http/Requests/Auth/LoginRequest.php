@@ -93,6 +93,18 @@ class LoginRequest extends FormRequest
         }
 
         if (! $authenticated) {
+            // A deleted account with its correct password: it is not signed in, but the person is told why (or, for
+            // Deceased, only that the account is no longer active). A wrong password says nothing about the account.
+            if (($deleted = $this->deletedAccount()) !== null) {
+                $this->auditFailure('deleted account');
+                if (! \App\Services\Accounts\AccountDeletion::showsPanel($deleted->deleted_reason)) {
+                    throw ValidationException::withMessages(['email' => trans('user_deletion.no_longer_active', [], $deleted->mailLocale())]);
+                }
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    redirect()->route('account.deleted')->with('deleted_account_id', $deleted->getKey())
+                );
+            }
+
             RateLimiter::hit($this->throttleKey(), self::lockoutSeconds());
             $captcha->recordFailedAttempt($this, 'login');
             $this->auditFailure('credentials');
@@ -115,6 +127,18 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
         $captcha->resetAttempts($this, 'login');
+    }
+
+    /** The deleted account with this email, when the password given is its own (deleted accounts never sign in). */
+    private function deletedAccount(): ?User
+    {
+        $user = User::withDeleted()->where('email', $this->string('email')->toString())->where('status', User::STATUS_DELETED)->first();
+
+        try {
+            return $user !== null && \Illuminate\Support\Facades\Hash::check((string) $this->input('password'), (string) $user->password) ? $user : null;
+        } catch (RuntimeException) {
+            return null;
+        }
     }
 
     /** Recorded for the IT dashboard's security panel. The attempted email is never stored, only the IP (via the logger). */

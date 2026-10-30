@@ -25,6 +25,9 @@ Route::get('login/weather', [AuthenticatedSessionController::class, 'weather'])
     ->name('login.weather');
 
 Route::middleware('guest')->group(function () {
+    // Signed in with the correct password of a deleted account: why it was deleted (DeletedAccountController).
+    Route::get('account-deleted', \App\Http\Controllers\Auth\DeletedAccountController::class)->name('account.deleted');
+
     Route::get('register', function (Request $request) {
         $request->session()->reflash();
 

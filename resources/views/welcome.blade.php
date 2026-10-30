@@ -20,8 +20,8 @@
         $manualBarangays = \App\Support\LianFarmTypes::records()->pluck('barangay')->unique()->sort()->values()->all();
     }
 
-    $officeEmail = 'mao_lian@yahoo.com';
-    $directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=Lian%20Municipal%20Hall%2C%20Lian%2C%20Batangas';
+    $officeEmail = \App\Support\MaoContact::EMAIL;
+    $directionsUrl = \App\Support\MaoContact::DIRECTIONS_URL;
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">

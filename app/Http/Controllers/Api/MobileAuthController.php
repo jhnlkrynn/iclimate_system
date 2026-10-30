@@ -27,6 +27,13 @@ class MobileAuthController extends Controller
             ->where('email', $credentials['email'])
             ->first();
 
+        // A deleted account (hidden from User::query()) with its own password: no sign-in, no reason, only that the
+        // account is no longer active. The web login page shows the reason; the app does not.
+        if ($user === null && ($deleted = User::withDeleted()->where('email', $credentials['email'])->where('status', User::STATUS_DELETED)->first())
+            && rescue(fn () => Hash::check($credentials['password'], $deleted->password), false, false)) {
+            throw ValidationException::withMessages(['email' => [trans('user_deletion.no_longer_active', [], $deleted->mailLocale())]]);
+        }
+
         try {
             $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
         } catch (RuntimeException) {

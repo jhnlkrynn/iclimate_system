@@ -46,6 +46,13 @@ class FarmerProfile extends Model
 
     protected static function booted(): void
     {
+        // A deleted farmer's profile leaves the Farmers lists, counts, search and reports with their account
+        // (Scopes\HideDeletedUsers); it comes back if the account is restored.
+        static::addGlobalScope('hide_deleted_users', function (\Illuminate\Database\Eloquent\Builder $query): void {
+            $userId = $query->getModel()->qualifyColumn('user_id');
+            $query->where(fn ($q) => $q->whereNull($userId)->orWhereNotIn($userId, fn ($users) => $users->select('id')->from('users')->where('status', User::STATUS_DELETED)));
+        });
+
         // Code that sets only the primary organization (older forms, imports, seeders) keeps the membership list right.
         static::saved(function (self $profile): void {
             $primaryChanged = $profile->wasRecentlyCreated || $profile->wasChanged('farmer_organization_id');

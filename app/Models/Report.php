@@ -119,7 +119,7 @@ class Report extends Model
 
     public function generatedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'generated_by');
+        return $this->belongsTo(User::class, 'generated_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     /**

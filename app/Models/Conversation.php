@@ -21,12 +21,12 @@ class Conversation extends Model
 
     public function participantOne(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'participant_one_id');
+        return $this->belongsTo(User::class, 'participant_one_id')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     public function participantTwo(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'participant_two_id');
+        return $this->belongsTo(User::class, 'participant_two_id')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     public function messages(): HasMany

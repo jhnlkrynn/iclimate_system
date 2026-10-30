@@ -20,6 +20,6 @@ class Announcement extends Model
 
     public function postedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(User::class, 'posted_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 }

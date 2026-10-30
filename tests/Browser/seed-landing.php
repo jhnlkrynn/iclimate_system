@@ -70,3 +70,12 @@ foreach ([
 ] as [$name, $barangay, $type]) {
     \App\Models\FarmerOrganization::query()->create(['name' => $name, 'barangay' => $barangay, 'farm_type' => $type]);
 }
+
+// Account deletion tests (tests/Browser/account-deletion.spec.mjs): one farmer to delete per screen size. A real-looking
+// domain, so the dialog says an email will be sent (the test server only logs mail: MAIL_MAILER=log).
+foreach (['desktop-1280' => 'Delia Desktop', 'mobile-375' => 'Mona Mobile'] as $project => $name) {
+    User::query()->create([
+        'name' => $name, 'email' => 'delete.'.$project.'@lian-farmers.ph', 'email_verified_at' => now(), 'password' => Hash::make('password'),
+        'role' => User::ROLE_FARMER, 'contact_number' => '09170000002', 'barangay' => 'Prenza', 'status' => User::STATUS_ACTIVE,
+    ]);
+}

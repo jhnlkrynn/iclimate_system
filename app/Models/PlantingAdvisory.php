@@ -95,12 +95,12 @@ class PlantingAdvisory extends Model
 
     public function postedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return $this->belongsTo(User::class, 'posted_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);   // history keeps a deleted user's name
     }
 
     public function weatherData(): BelongsTo

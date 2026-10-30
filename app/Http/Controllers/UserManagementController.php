@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Accounts\AccountDeletion;
 use App\Support\LianBarangays;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,11 +17,12 @@ class UserManagementController extends CrudController
     protected string $title = 'User';
 
     // Manuscript – Naicel: Last Login (users.last_login_at, set at each sign-in).
-    protected array $columns = ['name' => 'Name', 'email' => 'Email', 'role' => 'Role', 'barangay' => 'Barangay', 'status' => 'Status', 'last_login_at' => 'Last Login'];
+    // status_display: the status, or "Deceased" for an account deleted for that reason (User::getStatusDisplayAttribute).
+    protected array $columns = ['name' => 'Name', 'email' => 'Email', 'role' => 'Role', 'barangay' => 'Barangay', 'status_display' => 'Status', 'last_login_at' => 'Last Login'];
 
     protected array $searchable = ['name', 'email', 'role', 'contact_number', 'address', 'barangay', 'status'];
 
-    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => User::STATUSES];   // Manuscript – Naicel
+    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => [...User::STATUSES, User::STATUS_DELETED]];   // Manuscript – Naicel; Deleted: closed accounts (hidden otherwise)
 
     protected array $manageableRoles = [User::ROLE_IT_EXPERT];
 
@@ -72,6 +74,9 @@ class UserManagementController extends CrudController
     {
         $this->authorizeManage($request);
         $target = $this->findRecord($request, $id);
+        if ($target->isDeleted()) {
+            return redirect()->route('users.show', $id)->with('error', 'This account is deleted. Restore it before editing.');
+        }
         $losesAccess = $request->input('role', $target->role) !== User::ROLE_IT_EXPERT
             || $request->input('status', $target->status) !== User::STATUS_ACTIVE;
 
@@ -82,16 +87,72 @@ class UserManagementController extends CrudController
         return parent::update($request, $id);
     }
 
+    /**
+     * Deletes (closes) the account with a stated reason: the Delete account dialog (crud.index, _user-delete-modal).
+     * Never a hard delete: see App\Services\Accounts\AccountDeletion.
+     */
     public function destroy(Request $request, int $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $this->authorizeManage($request);
         $target = $this->findRecord($request, $id);
 
-        if ($message = $this->protectedAccountMessage($request, $target, 'delete')) {
+        if ($message = AccountDeletion::refusal($target, $request->user())) {
             return redirect()->route('users.index')->with('error', $message);
         }
 
-        return parent::destroy($request, $id);
+        $min = (int) config('user_deletion.other_min_length', 10);
+        $data = $request->validate([
+            'reason' => ['required', 'string', Rule::in(array_keys(AccountDeletion::reasons()))],
+            // Only for "Other": text left in the hidden field after picking another reason is ignored.
+            'reason_other' => ['exclude_unless:reason,other', 'required', 'string', 'min:'.$min, 'max:1000'],
+            'note_internal' => ['nullable', 'string', 'max:2000'],
+            'confirm_name' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail) use ($target): void {
+                if (trim((string) $value) !== trim((string) $target->name)) {
+                    $fail('Type the name exactly as shown to confirm.');
+                }
+            }],
+        ], [
+            'reason.required' => 'Choose a reason for deleting this account.',
+            'reason_other.required' => 'Please specify the reason.',
+            'reason_other.min' => 'Please give at least '.$min.' characters.',
+        ]);
+
+        app(AccountDeletion::class)->delete($target, $request->user(), $data, $request);
+
+        return redirect()->route('users.index', array_filter(['status' => $request->query('status')]))
+            ->with('success', __('user_deletion.modal.done', ['name' => $target->name]));
+    }
+
+    /** Restore account (Deleted filter): within config user_deletion.restore_days of the deletion. */
+    public function restore(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorizeManage($request);
+        $target = User::withDeleted()->where('status', User::STATUS_DELETED)->findOrFail($id);
+
+        try {
+            app(AccountDeletion::class)->restore($target, $request->user(), $request);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('users.index', ['status' => User::STATUS_DELETED])->with('error', $e->validator->errors()->first());
+        }
+
+        return redirect()->route('users.index', ['status' => User::STATUS_DELETED])->with('success', __('user_deletion.modal.restored', ['name' => $target->name]));
+    }
+
+    /** IT can open a deleted account's page (Deleted filter); editing it waits for a restore. */
+    protected function findRecord(Request $request, int $id)
+    {
+        return User::withDeleted()->findOrFail($id);
+    }
+
+    public function edit(Request $request, int $id): \Illuminate\View\View
+    {
+        if ($this->findRecord($request, $id)->isDeleted()) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                redirect()->route('users.show', $id)->with('error', 'This account is deleted. Restore it before editing.')
+            );
+        }
+
+        return parent::edit($request, $id);
     }
 
     private function protectedAccountMessage(Request $request, User $target, string $verb): ?string
@@ -125,6 +186,10 @@ class UserManagementController extends CrudController
     protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
         $query = parent::baseQuery($request);
+        // The Deleted filter is the one place deleted accounts are listed (they are hidden everywhere else).
+        if ($request->query('status') === User::STATUS_DELETED) {
+            $query->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);
+        }
 
         // Links from the IT dashboard (Data Integrity and Usage Patterns).
         if ($request->query('integrity') === 'never_logged_in') {
