@@ -24,6 +24,8 @@ class UserManagementController extends CrudController
 
     protected array $manageableRoles = [User::ROLE_IT_EXPERT];
 
+    protected array $sortOptions = ['name_asc' => 'Name A–Z', 'name_desc' => 'Name Z–A', 'newest' => 'Newest', 'oldest' => 'Oldest'];
+
     public function __construct()
     {
         $this->fields = [
@@ -107,6 +109,17 @@ class UserManagementController extends CrudController
     {
         return $user->role === User::ROLE_IT_EXPERT && $user->status === User::STATUS_ACTIVE
             && ! User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->whereKeyNot($user->getKey())->exists();
+    }
+
+    /** Name A–Z by default, ignoring case; id breaks ties so paging never repeats or skips a user. */
+    protected function applyListOrder(\Illuminate\Database\Eloquent\Builder $query, Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        return match ($this->currentSort($request)) {
+            'name_desc' => $query->orderByRaw('LOWER(name) DESC')->orderByDesc('id'),
+            'newest' => $query->latest('id'),
+            'oldest' => $query->oldest('id'),
+            default => $query->orderByRaw('LOWER(name)')->orderBy('id'),
+        };
     }
 
     protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder

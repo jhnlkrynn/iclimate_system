@@ -64,6 +64,52 @@
                 </select>
             </div>
 
+            @if ($associations !== null)
+                {{-- The farm's farmers' association: required on Add Farm and asked again when the barangay changes. Only the
+                     associations of the farm's barangay are listed (of its farm type first); FarmAssociations. --}}
+                @php
+                    $assocBarangay = old('barangay', $farm->barangay);
+                    $assocOptions = \App\Services\Farms\FarmAssociations::optionsFor($assocBarangay, old('farm_type', $farm->farm_type), $associations);
+                    $assocStatus = old('association_status', $farm->associationState() === 'not_declared' ? null : $farm->association_status);
+                    $assocPick = (string) old('farmer_organization_id', $farm->farmer_organization_id);
+                @endphp
+                <fieldset class="ffm-group" data-association data-original-barangay="{{ $editing ? $farm->barangay : '' }}" @error('association_status') aria-invalid="true" @enderror>
+                    <legend class="fad-label">{{ __('farms.association.question') }}</legend>
+                    <p class="fad-m-small" data-association-hint @if ($assocBarangay) hidden @endif>{{ __('farms.association.choose_barangay') }}</p>
+                    <p class="fad-m-small" data-association-again hidden>{{ __('farms.association.ask_again') }}</p>
+                    <div class="ffm-choices">
+                        <label class="ffm-choice" data-association-member @if ($assocOptions->isEmpty()) hidden @endif>
+                            <input type="radio" name="association_status" value="member" @checked($assocStatus === 'member') data-association-answer>
+                            <span>{{ __('farms.association.answers.member') }}</span>
+                        </label>
+                        <label class="ffm-choice">
+                            <input type="radio" name="association_status" value="pending_other" @checked($assocStatus === 'pending_other') data-association-answer>
+                            <span>{{ __('farms.association.answers.pending_other') }}</span>
+                        </label>
+                        <label class="ffm-choice">
+                            <input type="radio" name="association_status" value="not_member" @checked($assocStatus === 'not_member') data-association-answer>
+                            <span>{{ __('farms.association.answers.not_member') }}</span>
+                        </label>
+                    </div>
+
+                    <div class="fad-field ffm-size" data-association-panel="member">
+                        <label class="fad-m-field-label" for="farmer_organization_id">{{ __('farms.association.pick') }}</label>
+                        <select class="fad-input" id="farmer_organization_id" name="farmer_organization_id" data-association-pick @error('farmer_organization_id') aria-invalid="true" @enderror>
+                            <option value="">{{ __('farms.association.pick_choose') }}</option>
+                            @foreach ($assocOptions as $option)
+                                <option value="{{ $option['id'] }}" @selected($assocPick === (string) $option['id'])>{{ $option['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="fad-field ffm-size" data-association-panel="pending_other">
+                        <label class="fad-m-field-label" for="association_other_name">{{ __('farms.association.other_name') }}</label>
+                        <input class="fad-input" id="association_other_name" name="association_other_name" type="text" maxlength="120" value="{{ old('association_other_name', $farm->association_other_name) }}" @error('association_other_name') aria-invalid="true" @enderror>
+                        <span class="fad-m-small">{{ __('farms.association.other_hint') }}</span>
+                    </div>
+                    <script type="application/json" data-association-list>@json($associations->values())</script>
+                </fieldset>
+            @endif
+
             <fieldset class="ffm-group" data-size-methods>
                 <legend class="fad-label">{{ __('farms.form.size_question') }}</legend>
                 <div class="ffm-choices">
@@ -125,6 +171,48 @@
             };
             group.addEventListener('change', show);
             show();
+        });
+
+        // The association question: only the associations of the chosen barangay (of the farm type first, as on the
+        // server), the field for the chosen answer, and the question asked again when the barangay changes.
+        document.addEventListener('DOMContentLoaded', () => {
+            const box = document.querySelector('[data-association]');
+            if (!box) return;
+            const form = box.closest('form');
+            const barangay = form.querySelector('#barangay');
+            const type = form.querySelector('#farm_type');
+            const pick = box.querySelector('[data-association-pick]');
+            const memberChoice = box.querySelector('[data-association-member]');
+            let list = [];
+            try { list = JSON.parse(box.querySelector('[data-association-list]').textContent) || []; } catch (e) { list = []; }
+            const placeholder = pick.options[0].cloneNode(true);
+
+            const panels = () => {
+                const chosen = box.querySelector('[data-association-answer]:checked')?.value || '';
+                box.querySelectorAll('[data-association-panel]').forEach((panel) => { panel.hidden = panel.dataset.associationPanel !== chosen; });
+            };
+            const options = () => {
+                const here = list.filter((o) => o.barangay === barangay.value);
+                const typed = here.filter((o) => !o.farm_type || o.farm_type === type.value);
+                const shown = type.value && typed.length ? typed : here;
+                const keep = pick.value;
+                pick.replaceChildren(placeholder.cloneNode(true), ...shown.map((o) => new Option(o.name, String(o.id), false, String(o.id) === keep)));
+                memberChoice.hidden = shown.length === 0;
+                box.querySelector('[data-association-hint]').hidden = barangay.value !== '';
+                if (memberChoice.hidden) memberChoice.querySelector('input').checked = false;
+                panels();
+            };
+
+            barangay.addEventListener('change', () => {
+                const moved = box.dataset.originalBarangay !== '' && barangay.value !== box.dataset.originalBarangay;
+                box.querySelector('[data-association-again]').hidden = !moved;
+                if (moved || box.dataset.originalBarangay === '') box.querySelectorAll('[data-association-answer]').forEach((r) => { r.checked = false; });
+                pick.value = '';
+                options();
+            });
+            type.addEventListener('change', options);
+            box.addEventListener('change', panels);
+            panels();
         });
     </script>
 </x-app-layout>

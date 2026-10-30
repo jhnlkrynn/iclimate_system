@@ -1105,6 +1105,7 @@ Route::middleware(['auth', 'verified', 'farmer.language'])->prefix('rice-varieti
         Route::get('/{riceVariety}/edit', [$controller, 'edit'])->whereNumber('riceVariety')->name('edit');
         Route::put('/{riceVariety}', [$controller, 'update'])->whereNumber('riceVariety')->name('update');
         Route::patch('/{riceVariety}/toggle', [$controller, 'toggle'])->whereNumber('riceVariety')->name('toggle');
+        Route::post('/import', [$controller, 'import'])->middleware('throttle:5,1,post-rice-varieties-import')->name('import');
     });
     Route::get('/{riceVariety}', [$controller, 'show'])->whereNumber('riceVariety')->middleware([$staffAndFarmers, 'throttle:120,1,get-rice-variety'])->name('show');
 });

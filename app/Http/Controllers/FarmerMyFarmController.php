@@ -41,6 +41,10 @@ class FarmerMyFarmController extends Controller
         $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
         $type = $farmType ? strtolower((string) $farmType) : null;
 
+        $associationNames = \App\Services\Farms\FarmAssociations::available()
+            ? \App\Models\FarmerOrganization::query()->whereIn('id', $farms->pluck('farmer_organization_id')->filter()->unique())->pluck('name', 'id')
+            : null;
+
         return view('farmer-records.my-farm', [
             'available' => ActiveFarm::available(),
             'farms' => $farms->map(fn (Farm $f): array => [
@@ -52,6 +56,12 @@ class FarmerMyFarmController extends Controller
                 'mapped' => $f->boundary !== null,
                 'primary' => (bool) $f->is_primary,
                 'current' => $current !== null && $f->getKey() === $current->getKey(),
+                // "Samahan: …", "Not a member", "Waiting for MAO review" or not answered yet (null: before the migration).
+                'association' => $associationNames === null ? null : [
+                    'state' => $f->associationState(),
+                    'name' => $associationNames->get($f->farmer_organization_id),
+                    'note' => $f->association_note,
+                ],
             ])->all(),
             'current' => $current,
             'farm' => [

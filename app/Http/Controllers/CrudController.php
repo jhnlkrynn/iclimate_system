@@ -77,6 +77,23 @@ abstract class CrudController extends Controller
 
     protected function applyCustomFilter(Builder $query, string $field, string $value): void {}
 
+    /** Choices for a "Sort" select in the filter bar, as ?sort value => label. Empty: no select, newest first. */
+    protected array $sortOptions = [];
+
+    /** The staff list's order, shared by the list and its print page. Newest first unless a module overrides it. */
+    protected function applyListOrder(Builder $query, Request $request): Builder
+    {
+        return $query->latest('id');
+    }
+
+    /** The ?sort value in use: the request's when it is one of $sortOptions, otherwise the first option. */
+    protected function currentSort(Request $request): ?string
+    {
+        $sort = $request->query('sort');
+
+        return is_string($sort) && array_key_exists($sort, $this->sortOptions) ? $sort : array_key_first($this->sortOptions);
+    }
+
     public function index(Request $request): View
     {
         $this->authorizeView($request);
@@ -106,7 +123,7 @@ abstract class CrudController extends Controller
         }
 
         if ($this->wantsPrint($request)) {
-            return $this->printView($request, (clone $query)->latest('id')->limit(self::PRINT_ROW_LIMIT)->get(), (clone $query)->count(), $search, $this->selectFilterOptions());
+            return $this->printView($request, $this->applyListOrder(clone $query, $request)->limit(self::PRINT_ROW_LIMIT)->get(), (clone $query)->count(), $search, $this->selectFilterOptions());
         }
 
         $data = [
@@ -118,6 +135,8 @@ abstract class CrudController extends Controller
             'canManage' => $this->canManage($request),
             'viewOnly' => $this->viewOnly,
             'printable' => $this->printable && ! $this->usesFarmerPages($request),
+            'sortOptions' => $this->sortOptions,
+            'sort' => $this->currentSort($request),
             // Panel revision 4.4 B: "Showing your barangays: …" above a list limited to the MAO user's coverage.
             'coverageBarangays' => $this->barangayColumn !== null ? \App\Support\MaoScope::barangays($request->user()) : null,
         ];
@@ -129,7 +148,7 @@ abstract class CrudController extends Controller
         }
 
         return view('crud.index', $data + [
-            'records' => $query->latest('id')->paginate(self::PER_PAGE)->withQueryString(),
+            'records' => $this->applyListOrder($query, $request)->paginate(self::PER_PAGE)->withQueryString(),
         ]);
     }
 

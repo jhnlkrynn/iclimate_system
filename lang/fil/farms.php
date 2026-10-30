@@ -132,11 +132,52 @@ return [
     'plan_farm' => 'Bukid',
     'plan_farm_hint' => 'Para sa aling bukid ang planong ito?',
 
+    // Samahan ng magsasaka ng bukid (Magdagdag / Baguhin ang Bukid at ang mga card ng bukid).
+    'association' => [
+        'question' => 'Kasapi ba ang bukid na ito sa isang samahan ng magsasaka?',
+        'choose_barangay' => 'Pumili muna ng barangay para makita ang mga samahan dito.',
+        'ask_again' => 'Nasa ibang barangay na ang bukid na ito. Pakisagot ulit.',
+        'answers' => [
+            'member' => 'Oo',
+            'pending_other' => 'Wala sa listahan ang samahan ko',
+            'not_member' => 'Hindi, hindi kasapi',
+        ],
+        'pick' => 'Aling samahan?',
+        'pick_choose' => 'Pumili ng samahan',
+        'other_name' => 'Pangalan ng inyong samahan',
+        'other_hint' => 'Titingnan at idadagdag ito ng MAO.',
+        'card' => [
+            'member' => 'Samahan: :name',
+            'not_member' => 'Hindi kasapi',
+            'pending_other' => 'Hinihintay ang pagsusuri ng MAO',
+            'not_declared' => 'Samahan: wala pang sagot',
+            'note' => 'Paalala ng MAO: :note',
+        ],
+        'notify' => [
+            'linked' => [
+                'title' => 'Naidagdag ang samahan sa inyong bukid',
+                'message' => 'Kasapi na ng :association ang :farm. Sinuri ng Municipal Agriculture Office ang inyong hiling.',
+            ],
+            'created' => [
+                'title' => 'Naidagdag ang samahan sa inyong bukid',
+                'message' => 'Idinagdag ng Municipal Agriculture Office ang :association sa listahan. Kasapi na rito ang :farm.',
+            ],
+            'rejected' => [
+                'title' => 'Hindi tinanggap ang hiling na samahan',
+                'message' => 'Hindi maidagdag ng Municipal Agriculture Office ang ":name" para sa :farm. Paalala: :note Puwede ninyong baguhin ang sagot sa pahina ng bukid.',
+            ],
+            'open' => 'Buksan ang bukid',
+        ],
+    ],
+
     'errors' => [
         'too_many' => 'Hanggang :max bukid lang ang puwedeng ilista.',
         'not_found' => 'Wala sa inyong listahan ang bukid na iyon.',
         'barangay' => 'Pumili ng isa sa 19 na barangay ng Lian.',
         'size_value' => 'Ilagay ang laki ng bukid bilang numerong higit sa 0.',
         'size_range' => 'Piliin kung mga gaano kalaki ang bukid.',
+        'association' => 'Sagutin kung kasapi ang bukid na ito sa samahan ng magsasaka.',
+        'association_pick' => 'Pumili ng samahan sa barangay ng bukid na ito.',
+        'association_name' => 'Isulat ang pangalan ng inyong samahan.',
     ],
 ];

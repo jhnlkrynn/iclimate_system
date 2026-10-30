@@ -139,7 +139,7 @@
       const group = native.closest('[data-org-multiselect]');
       const errorSlot = document.getElementById('other_organizations-error');
       const options = [...native.options];
-      const placeholder = 'Select organizations (optional)';
+      const placeholder = 'Add more (optional)';
       const svg = (path) => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
       // The field looks like the other inputs: icon, the chosen organizations as chips on one line ("+N more" for

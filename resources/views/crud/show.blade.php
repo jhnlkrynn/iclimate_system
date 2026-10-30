@@ -47,6 +47,23 @@
         </div>
     </div>
 
+    @if ($routeName === 'farmer-profiles' && ($staffFarms = $record->farms->whereNull('archived_at')->values())->isNotEmpty())
+        {{-- Each of the farmer's farms with its association (farms.farmer_organization_id). --}}
+        @php $associationNames = \App\Services\Farms\FarmAssociations::available() ? \App\Services\Farms\FarmAssociations::namesFor($staffFarms) : null; @endphp
+        <div class="card no-lift mt-4" data-farmer-farms>
+            <div class="card-header border-0"><div class="fw-semibold">{{ $staffFarms->count() === 1 ? 'Farm' : 'Farms ('.$staffFarms->count().')' }}</div></div>
+            <ul class="list-group list-group-flush">
+                @foreach ($staffFarms as $farm)
+                    <li class="list-group-item">
+                        <strong>{{ $farm->farm_name }}</strong>
+                        <span class="text-muted"> · {{ implode(' · ', array_filter([$farm->barangay, $farm->farm_type])) }}</span>
+                        @if ($associationNames !== null)<div class="small" data-farm-association="{{ $farm->associationState() }}">{{ \App\Services\Farms\FarmAssociations::staffLabel($farm, $associationNames) }}</div>@endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     @if ($routeName === 'farmer-profiles' && $record->farmBoundary)
         @vite('resources/css/leaflet.css')
         <div class="card no-lift mt-4">

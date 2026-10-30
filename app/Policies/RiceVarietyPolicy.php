@@ -41,6 +41,12 @@ class RiceVarietyPolicy
         return $user->role === User::ROLE_IT_EXPERT;
     }
 
+    /** "Run import": loading the NSIC list from the server's spreadsheet. */
+    public function import(User $user): bool
+    {
+        return $user->role === User::ROLE_IT_EXPERT;
+    }
+
     /** An inactive variety stays readable to the farmers whose plans use it. */
     private function plantedBy(User $user, RiceVariety $variety): bool
     {

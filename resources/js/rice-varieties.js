@@ -50,7 +50,11 @@ export function initVarietyDetails() {
         state.controller?.abort();
         if (dialog.open) { if (dialog.close) dialog.close(); else dialog.removeAttribute('open'); }
     };
-    dialog.addEventListener('close', () => { state.opener?.focus?.(); });
+    // Back to whatever opened it, unless focus has already moved on (the close event comes a moment after Esc).
+    dialog.addEventListener('close', () => {
+        const at = document.activeElement;
+        if (!at || at === document.body || dialog.contains(at)) state.opener?.focus?.();
+    });
 
     const setField = (name, text) => { const el = q(`[data-rv-f="${name}"]`); el.textContent = text || ''; el.hidden = !text; };
 
@@ -228,6 +232,69 @@ export function initVarietyDetails() {
         const row = event.target.closest('tr[data-rv-open]');
         if (row && event.target === row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); state.lastId = row.dataset.rvOpen; open(row.dataset.rvOpen, row); }
     });
+}
+
+// ─── Catalog toolbar: the Filters popover ─────────────────────────────────
+// A <details>: it opens and closes by itself; Esc and a click outside it close it too.
+export function initFilterPopover() {
+    const filters = document.querySelector('[data-rv-filters]');
+    if (!filters || filters.dataset.ready) return;
+    filters.dataset.ready = 'true';
+    const close = (focus) => { if (!filters.open) return; filters.open = false; if (focus) filters.querySelector('summary').focus(); };
+    document.addEventListener('click', (event) => { if (!filters.contains(event.target)) close(false); });
+    filters.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.stopPropagation(); close(true); } });
+}
+
+// ─── IT list: the "⋯" row menu (Edit, Deactivate / Activate) ────────────────
+// Enter / Space / ArrowDown open it on the first item; arrows, Home and End move; Esc closes it back on its button;
+// Tab or a click elsewhere closes it.
+export function initRowMenus() {
+    const table = document.querySelector('[data-rv-it-table]');
+    if (!table || table.dataset.menus) return;
+    table.dataset.menus = 'true';
+    let openMenu = null;
+
+    const items = (menu) => [...menu.querySelectorAll('[role="menuitem"]')];
+    const close = (focusButton = false) => {
+        if (!openMenu) return;
+        const button = openMenu.querySelector('[data-rv-menu-btn]');
+        openMenu.querySelector('[role="menu"]').hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+        if (focusButton) button.focus();
+        openMenu = null;
+    };
+    const open = (menu, index = 0) => {
+        if (openMenu && openMenu !== menu) close();
+        openMenu = menu;
+        menu.querySelector('[role="menu"]').hidden = false;
+        menu.querySelector('[data-rv-menu-btn]').setAttribute('aria-expanded', 'true');
+        const list = items(menu);
+        list[(index + list.length) % list.length]?.focus();
+    };
+
+    table.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-rv-menu-btn]');
+        if (!button) return;
+        const menu = button.closest('[data-rv-menu]');
+        menu === openMenu ? close(true) : open(menu);
+    });
+    table.addEventListener('keydown', (event) => {
+        const button = event.target.closest('[data-rv-menu-btn]');
+        if (button && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+            event.preventDefault();
+            open(button.closest('[data-rv-menu]'), event.key === 'ArrowUp' ? -1 : 0);
+            return;
+        }
+        const item = event.target.closest('[role="menuitem"]');
+        if (!item || !openMenu) return;
+        const list = items(openMenu);
+        const at = list.indexOf(item);
+        const move = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: list.length - 1 }[event.key];
+        if (move !== undefined) { event.preventDefault(); list[(move + list.length) % list.length].focus(); }
+        else if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(true); }
+        else if (event.key === 'Tab') close();
+    });
+    document.addEventListener('click', (event) => { if (openMenu && !openMenu.contains(event.target)) close(); });
 }
 
 // ─── Planting form: variety picker and expected-harvest preview ─────────────

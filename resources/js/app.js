@@ -203,7 +203,9 @@ function initApp() {
     }
     // Rice Varieties: the Variety Details pop-up and the planting form's variety picker.
     if (document.querySelector('[data-rv-dialog], [data-rv-planting]')) {
-        import('./rice-varieties').then(({ initVarietyDetails, initVarietyPicker }) => { initVarietyDetails(); initVarietyPicker(); });
+        import('./rice-varieties').then(({ initVarietyDetails, initVarietyPicker, initFilterPopover, initRowMenus }) => {
+            initVarietyDetails(); initVarietyPicker(); initFilterPopover(); initRowMenus();
+        });
     }
     watchPanelRevisions();
     bindSidebarDrawer();

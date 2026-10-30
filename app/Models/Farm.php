@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Farms\FarmAssociations;
+use App\Support\LianBarangays;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +52,19 @@ class Farm extends Model
 
     public const LOCATION_BOUNDARY = 'boundary';
 
+    /** The farm's farmers' association (App\Services\Farms\FarmAssociations); null: not declared yet. */
+    public const ASSOCIATION_MEMBER = 'member';
+
+    public const ASSOCIATION_NOT_MEMBER = 'not_member';
+
+    /** "My association isn't listed": the name waits for the MAO (Association Requests). */
+    public const ASSOCIATION_PENDING = 'pending_other';
+
+    public const ASSOCIATION_ANSWERS = [self::ASSOCIATION_MEMBER, self::ASSOCIATION_PENDING, self::ASSOCIATION_NOT_MEMBER];
+
+    /** Set when this save carries the farmer's (or the MAO's) association answer, so a barangay change keeps it. */
+    public bool $associationAnswered = false;
+
     /** Room for every real farm; only stops a runaway form. */
     public const MAX_PER_FARMER = 50;
 
@@ -58,6 +73,27 @@ class Farm extends Model
         'farm_size_hectares', 'farm_size_method', 'farm_size_estimate_range', 'farm_size_unit', 'farm_type',
         'is_primary', 'archived_at',
     ];
+
+    protected static function booted(): void
+    {
+        // A farm that moved to another barangay (form, farm map, MAO profile edit) answers the association question
+        // again: the old association may not be where the farm is now.
+        static::saving(function (self $farm): void {
+            if ($farm->exists && $farm->isDirty('barangay') && ! $farm->associationAnswered && FarmAssociations::available()
+                && LianBarangays::canonicalName($farm->getOriginal('barangay')) !== LianBarangays::canonicalName($farm->barangay)) {
+                FarmAssociations::clear($farm);
+            }
+        });
+
+        // The farmer's memberships follow the farm's link (original values are still readable in "saved").
+        static::saved(function (self $farm): void {
+            $before = $farm->wasRecentlyCreated ? null : $farm->getOriginal('farmer_organization_id');
+            if (($farm->farmer_organization_id || $before) && ($farm->wasRecentlyCreated || $farm->wasChanged(['farmer_organization_id', 'archived_at']))) {
+                FarmAssociations::reconcile((int) $farm->user_id, [$before, $farm->archived_at !== null ? $farm->farmer_organization_id : null]);
+            }
+            $farm->associationAnswered = false;
+        });
+    }
 
     protected function casts(): array
     {
@@ -73,6 +109,21 @@ class Farm extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(FarmerOrganization::class, 'farmer_organization_id');
+    }
+
+    /** "member" with its association, "not_member", "pending_other", or "not_declared" (no answer, or a removed association). */
+    public function associationState(): string
+    {
+        return match (true) {
+            $this->association_status === self::ASSOCIATION_MEMBER && $this->farmer_organization_id !== null => self::ASSOCIATION_MEMBER,
+            in_array($this->association_status, [self::ASSOCIATION_NOT_MEMBER, self::ASSOCIATION_PENDING], true) => $this->association_status,
+            default => 'not_declared',
+        };
     }
 
     public function boundary(): HasOne

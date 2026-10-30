@@ -132,11 +132,52 @@ return [
     'plan_farm' => 'Farm',
     'plan_farm_hint' => 'Which farm is this plan for?',
 
+    // The farm's farmers' association (Add / Edit Farm and the farm cards).
+    'association' => [
+        'question' => 'Is this farm part of a farmers\' association?',
+        'choose_barangay' => 'Choose the barangay first to see its associations.',
+        'ask_again' => 'This farm is now in another barangay. Please answer again.',
+        'answers' => [
+            'member' => 'Yes',
+            'pending_other' => 'My association isn\'t listed',
+            'not_member' => 'No, not a member',
+        ],
+        'pick' => 'Which association?',
+        'pick_choose' => 'Choose association',
+        'other_name' => 'Name of your association',
+        'other_hint' => 'The MAO will check it and add it.',
+        'card' => [
+            'member' => 'Samahan: :name',
+            'not_member' => 'Not a member',
+            'pending_other' => 'Waiting for MAO review',
+            'not_declared' => 'Samahan: not answered yet',
+            'note' => 'MAO note: :note',
+        ],
+        'notify' => [
+            'linked' => [
+                'title' => 'Association added to your farm',
+                'message' => ':farm is now in :association. The Municipal Agriculture Office checked your request.',
+            ],
+            'created' => [
+                'title' => 'Association added to your farm',
+                'message' => 'The Municipal Agriculture Office added :association to the list. :farm is now in it.',
+            ],
+            'rejected' => [
+                'title' => 'Association request not accepted',
+                'message' => 'The Municipal Agriculture Office could not add ":name" for :farm. Note: :note You can change the answer on the farm page.',
+            ],
+            'open' => 'Open farm',
+        ],
+    ],
+
     'errors' => [
         'too_many' => 'You can list up to :max farms.',
         'not_found' => 'That farm is not in your list.',
         'barangay' => 'Choose one of the 19 barangays of Lian.',
         'size_value' => 'Enter the farm size as a number above 0.',
         'size_range' => 'Choose about how big the farm is.',
+        'association' => 'Answer if this farm is part of a farmers\' association.',
+        'association_pick' => 'Choose an association in this farm\'s barangay.',
+        'association_name' => 'Type the name of your association.',
     ],
 ];

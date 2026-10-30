@@ -3,6 +3,8 @@
      [Mensahe] opens the existing Messages conversation with this farmer inside the pop-up (crud/index.blade.php). --}}
 @php
     $farms = $record->farms->whereNull('archived_at')->values();
+    // Each farm's association (farms.farmer_organization_id); null before the association columns exist.
+    $associationNames = \App\Services\Farms\FarmAssociations::available() ? \App\Services\Farms\FarmAssociations::namesFor($farms) : null;
     $hectares = fn ($value): ?string => (float) $value > 0 ? rtrim(rtrim(number_format((float) $value, 2), '0'), '.').' ha' : null;
     $details = array_filter([
         'Barangay' => $record->barangay,
@@ -42,6 +44,7 @@
                     <li>
                         <strong>{{ $farm->farm_name ?: 'Farm '.$loop->iteration }}</strong>
                         <span>{{ implode(' · ', array_filter([$farm->barangay, $farm->farm_type, $hectares($farm->farm_size_hectares)])) }}</span>
+                        @if ($associationNames !== null)<span data-farm-association="{{ $farm->associationState() }}">{{ \App\Services\Farms\FarmAssociations::staffLabel($farm, $associationNames) }}</span>@endif
                     </li>
                 @endforeach
             </ul>

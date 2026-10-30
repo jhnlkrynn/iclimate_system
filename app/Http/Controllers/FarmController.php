@@ -6,6 +6,7 @@ use App\Models\Farm;
 use App\Models\FarmBoundary;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\FarmBoundaryMeasurementService;
+use App\Services\Farms\FarmAssociations;
 use App\Services\Farms\FarmService;
 use App\Services\SystemAuditLogger;
 use App\Support\ActiveFarm;
@@ -40,6 +41,7 @@ class FarmController extends Controller
             'defaultName' => $this->farms->defaultName($request->user()),
             'action' => route('farmer.farms.store'),
             'method' => 'POST',
+            'associations' => FarmAssociations::available() ? FarmAssociations::all() : null,
         ]);
     }
 
@@ -66,13 +68,14 @@ class FarmController extends Controller
             'defaultName' => $farm->farm_name,
             'action' => route('farmer.farms.update', $farm),
             'method' => 'PUT',
+            'associations' => FarmAssociations::available() ? FarmAssociations::all() : null,
         ]);
     }
 
     public function update(Request $request, int $farm): RedirectResponse
     {
         $farm = $this->ownFarm($request, $farm);
-        $this->farms->update($farm, $this->validated($request));
+        $this->farms->update($farm, $this->validated($request, $farm));
         $this->audit('Updated Farm', $request, $farm);
 
         return $farm->farm_size_method === Farm::SIZE_MAPPED && $farm->boundary === null
@@ -237,11 +240,25 @@ class FarmController extends Controller
         abort_unless(ActiveFarm::available(), 404);
     }
 
-    /** @return array<string, mixed> */
-    private function validated(Request $request): array
+    /**
+     * The farm form's values. The association question is required on Add Farm and again whenever the barangay changes
+     * (the old answer may not apply there); otherwise an edit can leave it as it is.
+     *
+     * @return array<string, mixed>
+     */
+    private function validated(Request $request, ?Farm $farm = null): array
     {
         $ranges = array_keys(Farm::ESTIMATE_RANGES);
-        $data = $request->validate([
+        $associationRules = [];
+        if (FarmAssociations::available()) {
+            $asks = $farm === null || LianBarangays::canonicalName($request->input('barangay')) !== LianBarangays::canonicalName($farm->barangay);
+            $associationRules = [
+                'association_status' => [$asks ? 'required' : 'nullable', Rule::in(Farm::ASSOCIATION_ANSWERS)],
+                'farmer_organization_id' => ['nullable', 'required_if:association_status,'.Farm::ASSOCIATION_MEMBER, 'integer'],
+                'association_other_name' => ['nullable', 'required_if:association_status,'.Farm::ASSOCIATION_PENDING, 'string', 'max:120'],
+            ];
+        }
+        $data = $request->validate($associationRules + [
             'farm_name' => ['nullable', 'string', 'max:80'],
             'barangay' => ['required', 'string', Rule::in(LianBarangays::all())],
             'location_description' => ['nullable', 'string', 'max:160'],
@@ -254,6 +271,9 @@ class FarmController extends Controller
             'barangay.*' => __('farms.errors.barangay'),
             'farm_size_value.*' => __('farms.errors.size_value'),
             'farm_size_estimate_range.*' => __('farms.errors.size_range'),
+            'association_status.*' => __('farms.errors.association'),
+            'farmer_organization_id.*' => __('farms.errors.association_pick'),
+            'association_other_name.*' => __('farms.errors.association_name'),
         ]);
 
         // At most 10,000 hectares however it was entered (square meters are turned into hectares).
@@ -264,6 +284,11 @@ class FarmController extends Controller
                 if ($hectares < 0.0001 || $hectares > 10000) {
                     $v->errors()->add('farm_size_value', __('farms.errors.size_value'));
                 }
+            }
+            // Only an association of the farm's own barangay.
+            if (($data['association_status'] ?? null) === Farm::ASSOCIATION_MEMBER
+                && ! FarmAssociations::inBarangay((int) $data['farmer_organization_id'], $data['barangay'] ?? null)) {
+                $v->errors()->add('farmer_organization_id', __('farms.errors.association_pick'));
             }
         });
         $validator->validate();
@@ -278,6 +303,8 @@ class FarmController extends Controller
             'record_id' => $farm->getKey(),
             'farm_barangay' => $farm->barangay,
             'farm_size_method' => $farm->farm_size_method,
+            'association_status' => $farm->association_status,
+            'farmer_organization_id' => $farm->farmer_organization_id,
         ]);
     }
 
