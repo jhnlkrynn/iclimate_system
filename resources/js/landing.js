@@ -1,4 +1,4 @@
-// Public landing page (welcome.blade.php): live weather, nav scroll spy, role tabs, FAQ and the contact form.
+// Public landing page (welcome.blade.php): live weather, nav scroll spy, FAQ and the contact form.
 // The mobile menu lives with its markup in components/public-nav.blade.php.
 
 // Scroll reveal: [data-reveal] content fades in and rises as it enters the screen, once. Items inside a
@@ -292,34 +292,6 @@ if (navLinks.length && spySections.length) {
     }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
     spySections.forEach((section) => observer.observe(section));
 }
-
-// Role tabs (WAI-ARIA tabs pattern): click or Left/Right/Home/End to switch.
-document.querySelectorAll('[data-tabs]').forEach((tablist) => {
-    const tabs = [...tablist.querySelectorAll('[role="tab"]')];
-    const select = (tab, focus = true) => {
-        tabs.forEach((other) => {
-            const selected = other === tab;
-            other.setAttribute('aria-selected', String(selected));
-            other.tabIndex = selected ? 0 : -1;
-            document.getElementById(other.getAttribute('aria-controls')).hidden = !selected;
-        });
-        if (focus) tab.focus();
-    };
-    tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => select(tab, false));
-        tab.addEventListener('keydown', (event) => {
-            const next = {
-                ArrowRight: tabs[(index + 1) % tabs.length],
-                ArrowLeft: tabs[(index - 1 + tabs.length) % tabs.length],
-                Home: tabs[0],
-                End: tabs[tabs.length - 1],
-            }[event.key];
-            if (!next) return;
-            event.preventDefault();
-            select(next);
-        });
-    });
-});
 
 // FAQ accordion: opening one question closes the others. Buttons give Enter/Space for free.
 document.querySelectorAll('[data-accordion]').forEach((accordion) => {

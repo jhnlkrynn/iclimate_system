@@ -107,6 +107,35 @@
     .lp-nav-link.is-active {
         @apply bg-tint;
     }
+
+/* Who uses iClimate: the cards stay equal-height on wide screens and stack without becoming cramped on phones. */
+#roles.lp-screen { min-height: auto; }
+.lp-role-card {
+    box-shadow: 0 8px 24px rgba(17, 26, 19, .06);
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.lp-role-card:hover {
+    border-color: rgba(23, 67, 42, .35);
+    box-shadow: 0 12px 28px rgba(17, 26, 19, .1);
+    transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+    .lp-role-card { transition: none; }
+}
+
+/* The public landing page can be rendered under the shared dark theme. Keep this scoped to this section. */
+html[data-theme="dark"] #roles {
+    background: #141a16;
+}
+html[data-theme="dark"] #roles .lp-role-card {
+    border-color: #36443a;
+    background: #1c261f;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+html[data-theme="dark"] #roles .lp-role-card:hover { border-color: #5a936d; }
+html[data-theme="dark"] #roles :is(.text-ink, .lp-h2) { color: #f0f5f1; }
+html[data-theme="dark"] #roles .text-muted { color: #b7c5ba; }
+html[data-theme="dark"] #roles .text-brand { color: #8bd1a0; }
 }
 
 /* The rice field photo behind the whole page (welcome.blade.php). It stays still while the sections scroll over it;

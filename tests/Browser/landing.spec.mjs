@@ -524,50 +524,22 @@ test('F1 feature, fact and step cards do not look clickable', async ({ page }) =
 
 // ─── WHO USES ICLIMATE ───────────────────────────────────────────────────
 
-test('R1 clicking a tab shows its panel', async ({ page }) => {
+test('R1 all three role cards are visible together', async ({ page }) => {
     await openLanding(page);
-    for (const key of ['mao', 'it', 'farmers']) {
-        await page.locator(`#role-tab-${key}`).click();
-        await expect(page.locator(`#role-tab-${key}`)).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator(`#role-panel-${key}`)).toBeVisible();
-        await expect(page.locator('#roles [role="tabpanel"]:visible')).toHaveCount(1);
+    await expect(page.locator('#roles [role="tablist"]')).toHaveCount(0);
+    await expect(page.locator('#roles .lp-role-card')).toHaveCount(3);
+    await expect(page.locator('#roles .lp-role-card h3')).toHaveText(['Farmer', 'MAO Staff', 'IT Personnel']);
+});
+
+test('R2 role cards retain their descriptions and features without login actions', async ({ page }) => {
+    await openLanding(page);
+    await expect(page.locator('#roles [data-role-login]')).toHaveCount(0);
+    for (const key of ['farmers', 'mao', 'it']) {
+        const card = page.locator('#roles .lp-role-card').nth(['farmers', 'mao', 'it'].indexOf(key));
+        await expect(card.locator('p')).toBeVisible();
+        await expect(card.locator('li')).toHaveCount(5);
     }
 });
-
-test('R2 arrow keys move between tabs with the right ARIA', async ({ page }) => {
-    await openLanding(page);
-    await expect(page.locator('#roles [role="tablist"]')).toHaveCount(1);
-    const farmers = page.locator('#role-tab-farmers');
-    await expect(farmers).toHaveAttribute('aria-controls', 'role-panel-farmers');
-    await expect(page.locator('#role-panel-farmers')).toHaveAttribute('role', 'tabpanel');
-
-    await farmers.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(page.locator('#role-tab-mao')).toBeFocused();
-    await expect(page.locator('#role-tab-mao')).toHaveAttribute('aria-selected', 'true');
-    await expect(farmers).toHaveAttribute('aria-selected', 'false');
-    await expect(page.locator('#role-panel-mao')).toBeVisible();
-
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
-    await expect(farmers).toBeFocused(); // wraps around
-
-    await page.keyboard.press('ArrowLeft');
-    await expect(page.locator('#role-tab-it')).toBeFocused();
-    await expect(page.locator('#role-panel-it')).toBeVisible();
-    await expect(page.locator('#role-tab-it')).toHaveAttribute('tabindex', '0');
-    await expect(farmers).toHaveAttribute('tabindex', '-1');
-});
-
-for (const key of ['farmers', 'mao', 'it']) {
-    test(`R3 the ${key} panel's log in button opens the sign-in card`, async ({ page }) => {
-        await openLanding(page);
-        await page.locator(`#role-tab-${key}`).click();
-        await page.locator(`#role-panel-${key} [data-role-login]`).click();
-        await expect(page).toHaveURL(/\/#login$/);
-        await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'login');
-    });
-}
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────
 
@@ -755,7 +727,8 @@ test('G2 at every size: one screen per section, nothing cut off or under the nav
             for (const id of ids) {
                 const section = document.getElementById(id);
                 const style = getComputedStyle(section);
-                if (section.offsetHeight < vh - navHeight - 1) problems.push(`#${id} shorter than one screen (${section.offsetHeight}px)`);
+                // Who uses iClimate sizes to its three role cards (landing.css: #roles.lp-screen { min-height: auto }).
+                if (id !== 'roles' && section.offsetHeight < vh - navHeight - 1) problems.push(`#${id} shorter than one screen (${section.offsetHeight}px)`);
                 if (style.overflowY !== 'visible' || style.overflowX !== 'visible') problems.push(`#${id} clips its content`);
                 if (section.scrollHeight > section.clientHeight + 1) problems.push(`#${id} content overflows`);
                 // Jump there and check nothing sits under the nav.
@@ -801,7 +774,8 @@ test('G4 keyboard focus reaches the controls and is always visible', async ({ pa
         expect(focus.visible, `no visible focus style on ${focus.tag} ${focus.key}`).toBe(true);
         seen.add(focus.key);
     }
-    for (const expected of ['/login', 'login-email', 'login-password', 'role-tab-farmers', 'faq-q-0']) {
+    // The role cards hold no controls (no tabs, no log-in buttons), so focus goes from the sign-in card to the FAQ.
+    for (const expected of ['/login', 'login-email', 'login-password', 'faq-q-0']) {
         if (isMobile(testInfo) && expected === '/login') continue;
         expect([...seen].some((key) => key === expected || key.endsWith(expected)), `${expected} is keyboard reachable`).toBe(true);
     }
