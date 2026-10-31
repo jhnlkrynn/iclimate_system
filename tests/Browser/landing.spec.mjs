@@ -763,7 +763,6 @@ test('C2 email links use mailto: (no phone number is published yet)', async ({ p
     await openLanding(page);
     await expect(page.locator('[data-contact-email]')).toHaveAttribute('href', 'mailto:mao_lian@yahoo.com');
     await expect(page.locator('[data-footer-email]')).toHaveAttribute('href', 'mailto:mao_lian@yahoo.com');
-    await expect(page.locator('#faq a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:mao_lian@yahoo.com');
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
 });
 
@@ -788,7 +787,7 @@ test('C4 the Google map of Lian Municipal Hall is embedded in #contact', async (
     await map.scrollIntoViewIfNeeded();
     await expect(map).toBeVisible();
     const box = await map.boundingBox();
-    expect(Math.round(box.height)).toBe(260); // fixed height: no layout shift
+    expect(Math.abs((box.width / box.height) - 16 / 9)).toBeLessThan(0.03);
     // The old Leaflet map and its floating label are gone.
     await expect(page.locator('#officeMap, #officeMapCard, .leaflet-container')).toHaveCount(0);
 });
@@ -1018,6 +1017,43 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#roles article')).toHaveCount(3);
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
+});
+
+test('S13 Questions and contact uses two rows and keeps form fields readable', async ({ page }) => {
+    for (const width of [1440, 1024, 768, 375]) {
+        await page.setViewportSize({ width, height: 800 });
+        await openLanding(page);
+        const layout = await page.locator('#contact').evaluate((section) => {
+            const faq = section.querySelector('.questions-faq');
+            const contact = section.querySelector('.questions-contact');
+            const map = section.querySelector('[data-office-map-box]');
+            const form = section.querySelector('#contactForm');
+            const fields = section.querySelector('.contact-form-row');
+            const select = section.querySelector('#contact-role');
+            return {
+                faqColumns: getComputedStyle(faq).gridTemplateColumns.split(' ').length,
+                contactColumns: getComputedStyle(contact).gridTemplateColumns.split(' ').length,
+                mapRatio: map.getBoundingClientRect().width / map.getBoundingClientRect().height,
+                fieldColumns: getComputedStyle(fields).gridTemplateColumns.split(' ').length,
+                fieldWidths: [...fields.children].map((el) => el.getBoundingClientRect().width),
+                selectPaddingRight: parseFloat(getComputedStyle(select).paddingRight),
+                formWidth: form.getBoundingClientRect().width,
+                pageWidth: document.documentElement.scrollWidth,
+            };
+        });
+        expect(layout.pageWidth).toBeLessThanOrEqual(width);
+        expect(Math.abs(layout.mapRatio - 16 / 9)).toBeLessThan(0.03);
+        expect(layout.selectPaddingRight).toBeGreaterThanOrEqual(40);
+        if (width >= 1024) {
+            expect(layout.faqColumns).toBe(2);
+            expect(layout.contactColumns).toBe(2);
+        } else {
+            expect(layout.faqColumns).toBe(1);
+            expect(layout.contactColumns).toBe(1);
+        }
+        if (layout.fieldColumns === 2) expect(Math.min(...layout.fieldWidths)).toBeGreaterThanOrEqual(240);
+        if (width < 516) expect(layout.fieldColumns).toBe(1);
+    }
 });
 
 test('S12 the four How it works columns fit the requested desktop and mobile widths', async ({ page }) => {

@@ -50,9 +50,11 @@ return [
     ],
     'questions' => [
         'title' => 'Questions and contact',
+        'faq_title' => 'Frequently asked questions',
+        'contact_title' => 'Contact the MAO',
         'lead' => 'Find an answer or send a message to the Municipal Agriculture Office.',
         'items' => [
-            ['q' => 'Which rice varieties and harvest dates are listed?', 'a' => 'The system lists active rice varieties and uses local production records to show the expected harvest period for a farm or season.'],
+            ['q' => 'Which rice varieties and harvest dates are listed?', 'a' => "All NSIC-registered rice varieties. When you choose the variety you planted, iClimate estimates your harvest date from that variety's days to maturity for the season and planting method."],
             ['q' => 'Can a farmers’ association use iClimate?', 'a' => 'Ask the Municipal Agriculture Office about access for an association or a group of farmers.'],
             ['q' => 'What should I do if I forget my password?', 'a' => 'Use the Forgot password link on the sign-in card. If you still need help, contact the MAO during office hours.'],
         ],
