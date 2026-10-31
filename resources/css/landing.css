@@ -136,6 +136,20 @@
         @apply mx-auto w-full max-w-[760px] text-center;
     }
 
+    .lp-section-heading {
+        @apply mx-auto w-full max-w-[720px] text-center;
+    }
+
+    .about-rule {
+        width: 64px;
+        height: 1px;
+        background: var(--sage-300);
+    }
+
+    .about-photo {
+        aspect-ratio: 16 / 7;
+    }
+
     .questions-accordion {
         @apply min-w-0;
     }

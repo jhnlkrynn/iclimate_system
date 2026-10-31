@@ -1,8 +1,8 @@
 @php($how = __('landing.how'))
 <section id="how" data-section aria-labelledby="how-title" class="lp-section">
     <div class="lp-wrap">
-        <h2 id="how-title" class="lp-h2">{{ $how['title'] }}</h2>
-        <p class="lp-lead">{{ $how['lead'] }}</p>
+        <div class="lp-section-heading"><h2 id="how-title" class="lp-h2 mt-0">{{ $how['title'] }}</h2>
+        <p class="lp-lead mx-auto">{{ $how['lead'] }}</p></div>
 
         <div class="how-steps mt-12" data-steps>
             <article class="how-step">

@@ -10,11 +10,20 @@ return [
         'title' => 'About iClimate',
         'description' => 'iClimate combines climate data with the Municipal Agriculture Office’s rice production records so farmers can understand the conditions behind each planting decision.',
         'mission' => 'The Municipal Agriculture Office and iClimate team work to make useful, local climate information easier to understand and act on.',
-        'sources' => 'Data sources',
-        'source_items' => ['PAGASA advisories', 'Open-Meteo forecasts', 'Stored climate records', 'MAO rice production records'],
+        'attribution' => 'Municipal Agriculture Office, Lian, Batangas',
+        'sources' => 'Where the data comes from',
+        'photo_alt' => 'Rice fields in Lian, Batangas',
+        'photo_caption' => 'The agricultural landscape iClimate helps the MAO and farmers understand.',
+        'source_items' => [
+            ['name' => 'PAGASA', 'text' => 'Official advisories and typhoon bulletins'],
+            ['name' => 'Open-Meteo', 'text' => 'Daily forecasts for each barangay'],
+            ['name' => 'Climate records', 'text' => 'Past rainfall and temperature in Lian'],
+            ['name' => 'MAO production records', 'text' => 'Harvests and yields by barangay and season'],
+        ],
     ],
     'features' => [
         'title' => 'What you can do',
+        'lead' => 'Find the weather, crop and planting information needed for the next decision.',
         'items' => [
             ['title' => 'Weather analysis', 'text' => 'Check rainfall, temperature, humidity and wind for Lian.'],
             ['title' => 'Rice production', 'text' => 'Review local records and yield forecasts for planning.'],
@@ -42,6 +51,7 @@ return [
     ],
     'roles' => [
         'title' => 'Who uses it',
+        'lead' => 'Each account provides the information and tools needed for its work.',
         'items' => [
             ['title' => 'Farmer', 'text' => 'Check conditions, planting advice and seasonal information for your farm.', 'items' => ['Climate monitoring', 'Planting guidance', 'Weather risk alerts', 'Seasonal reports']],
             ['title' => 'MAO Staff', 'text' => 'Manage records, compare climate and yield, and prepare reports for the municipality.', 'items' => ['Production monitoring', 'Climate analysis', 'Report generation', 'Record validation']],

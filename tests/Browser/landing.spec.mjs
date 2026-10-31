@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 
 const NAV_HEIGHT = 72;
 // The sage palette (resources/palette.json) as the browser reports it.
-const SAGE = { 50: 'rgb(243, 246, 242)', 200: 'rgb(204, 216, 200)', 500: 'rgb(114, 140, 105)', 700: 'rgb(72, 90, 66)', 800: 'rgb(54, 68, 50)' };
+const SAGE = { 50: 'rgb(243, 246, 242)', 200: 'rgb(204, 216, 200)', 300: 'rgb(169, 187, 163)', 500: 'rgb(114, 140, 105)', 700: 'rgb(72, 90, 66)', 800: 'rgb(54, 68, 50)' };
 const INK = 'rgb(31, 36, 29)';
 const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 const ACCOUNTS = {
@@ -1025,16 +1025,36 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#contactForm')).toBeVisible();
 });
 
-test('S11a About iClimate is a centered reading column with inline data sources', async ({ page }) => {
+test('S11a About iClimate is centered with attributed quote and source grid', async ({ page }) => {
     await openLanding(page);
     const about = page.locator('#about');
     await expect(about.locator('h2')).toHaveText('About iClimate');
     await expect(about.locator('.about-container')).toHaveCSS('max-width', '720px');
     await expect(about.locator('.about-container')).toHaveCSS('text-align', 'center');
+    await expect(about.locator('.about-rule')).toHaveCSS('width', '64px');
+    await expect(about.locator('.about-rule')).toHaveCSS('background-color', SAGE[300]);
     await expect(about.locator('blockquote')).toHaveCSS('border-left-width', '0px');
     await expect(about.locator('blockquote')).toHaveCSS('font-size', '20px');
-    await expect(about.locator('.about-sources')).toHaveText('PAGASA advisories · Open-Meteo forecasts · Stored climate records · MAO rice production records');
+    await expect(about.locator('blockquote + div')).toContainText('Municipal Agriculture Office, Lian, Batangas');
+    await expect(about.locator('.about-sources .about-source')).toHaveCount(4);
+    await expect(about.locator('.about-sources')).toContainText('PAGASA');
+    await expect(about.locator('.about-sources')).toContainText('Official advisories and typhoon bulletins');
+    await expect(about.locator('.about-sources')).toContainText('Open-Meteo');
+    await expect(about.locator('.about-sources')).toContainText('Daily forecasts for each barangay');
+    await expect(about.locator('.about-sources')).toContainText('Climate records');
+    await expect(about.locator('.about-sources')).toContainText('Past rainfall and temperature in Lian');
+    await expect(about.locator('.about-sources')).toContainText('MAO production records');
+    await expect(about.locator('.about-sources')).toContainText('Harvests and yields by barangay and season');
     await expect(about.locator('ul, li')).toHaveCount(0);
+    await expect(about.locator('[data-about-photo]')).toHaveCount(0);
+});
+
+test('S11b section heading blocks share About’s centered alignment', async ({ page }) => {
+    await openLanding(page);
+    for (const id of ['features', 'numbers', 'how', 'roles']) {
+        await expect(page.locator(`#${id} .lp-section-heading`), id).toHaveCSS('text-align', 'center');
+        await expect(page.locator(`#${id} .lp-section-heading .lp-lead`), id).toHaveCSS('text-align', 'center');
+    }
 });
 
 test('S13 Questions and contact are separate centered responsive sections', async ({ page }) => {
