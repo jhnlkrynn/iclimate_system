@@ -305,6 +305,7 @@ class LandingPageTest extends TestCase
             ->assertSee('questions-faq', false)
             ->assertSee('questions-contact', false)
             ->assertSee('contact-map', false)
+            ->assertSee('data-map-marker', false)
             ->assertSee(e(__('landing.questions.items.0.a')), false)
             ->assertSee('href="mailto:mao_lian@yahoo.com"', false)
             ->assertSee('href="https://www.google.com/maps/dir/?api=1&amp;destination=Lian%20Municipal%20Hall%2C%20Lian%2C%20Batangas" target="_blank" rel="noopener noreferrer"', false)

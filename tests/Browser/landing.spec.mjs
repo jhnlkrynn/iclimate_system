@@ -1031,7 +1031,9 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
             const fields = section.querySelector('.contact-form-row');
             const select = section.querySelector('#contact-role');
             return {
-                faqColumns: getComputedStyle(faq).gridTemplateColumns.split(' ').length,
+                faqDisplay: getComputedStyle(faq).display,
+                faqWidth: faq.getBoundingClientRect().width,
+                introWidth: section.querySelector('.questions-intro').getBoundingClientRect().width,
                 contactColumns: getComputedStyle(contact).gridTemplateColumns.split(' ').length,
                 mapRatio: map.getBoundingClientRect().width / map.getBoundingClientRect().height,
                 fieldColumns: getComputedStyle(fields).gridTemplateColumns.split(' ').length,
@@ -1043,12 +1045,14 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
         });
         expect(layout.pageWidth).toBeLessThanOrEqual(width);
         expect(Math.abs(layout.mapRatio - 16 / 9)).toBeLessThan(0.03);
+        expect(layout.faqWidth).toBeLessThanOrEqual(Math.min(width - 32, 800));
+        expect(layout.introWidth).toBeLessThanOrEqual(Math.min(width - 32, 640));
         expect(layout.selectPaddingRight).toBeGreaterThanOrEqual(40);
         if (width >= 1024) {
-            expect(layout.faqColumns).toBe(2);
+            expect(layout.faqDisplay).toBe('block');
             expect(layout.contactColumns).toBe(2);
         } else {
-            expect(layout.faqColumns).toBe(1);
+            expect(layout.faqDisplay).toBe('block');
             expect(layout.contactColumns).toBe(1);
         }
         if (layout.fieldColumns === 2) expect(Math.min(...layout.fieldWidths)).toBeGreaterThanOrEqual(240);
@@ -1067,6 +1071,7 @@ test('S14 Questions and contact keeps one heading, clickable FAQ rows and a clea
     await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');
     await expect(page.locator('#contact [data-directions]')).toHaveCount(0);
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveAttribute('src', /[?&]ll=13\.992,120\.648/);
+    await expect(page.locator('#contact [data-map-marker]')).toHaveCount(1);
 });
 
 test('S12 the four How it works columns fit the requested desktop and mobile widths', async ({ page }) => {
